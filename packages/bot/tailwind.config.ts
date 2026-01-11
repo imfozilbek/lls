@@ -1,0 +1,22 @@
+import type { Config } from "tailwindcss"
+
+const config: Config = {
+    content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+    theme: {
+        extend: {
+            colors: {
+                telegram: {
+                    bg: "var(--tg-theme-bg-color)",
+                    text: "var(--tg-theme-text-color)",
+                    hint: "var(--tg-theme-hint-color)",
+                    link: "var(--tg-theme-link-color)",
+                    button: "var(--tg-theme-button-color)",
+                    buttonText: "var(--tg-theme-button-text-color)",
+                },
+            },
+        },
+    },
+    plugins: [],
+}
+
+export default config
