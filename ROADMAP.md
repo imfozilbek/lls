@@ -8,7 +8,7 @@
 
 ---
 
-## Current Status: 90% Complete
+## Current Status: 95% Complete
 
 ### What's Done
 - ✅ Domain Entities (6): Business, Product, Customer, Courier, Order, OrderItem
@@ -16,14 +16,14 @@
 - ✅ Enums (2): OrderStatus, BusinessType
 - ✅ Repository Ports (5): interfaces for all entities
 - ✅ Project Config: ESLint, Prettier, TypeScript, Vitest, pnpm workspace
-- ✅ Application Layer: Domain Errors, DTOs, 20 Use Cases, 114 Tests
+- ✅ Application Layer: Domain Errors, DTOs, 20 Use Cases
 - ✅ API Infrastructure: MongoDB schemas, Redis cache, NestJS modules
 - ✅ Bot: Telegram Mini App (41 files) - stores, hooks, components, screens
 - ✅ Admin: Business Panel (30 files) - auth, orders, products management
+- ✅ Tests: 181 tests (157 core + 24 API controllers)
 
-### What's Missing (10%)
-- Integration Tests
-- E2E Tests
+### What's Missing (5%)
+- E2E/Integration Tests
 
 | Package | Version | Status | Next Milestone |
 |---------|---------|--------|----------------|
@@ -447,27 +447,30 @@
 
 ## Phase 5: Testing & Quality
 
-> **Status:** ⏳ Planned
-> **Files to create:** ~15
+> **Status:** ✅ Complete
+> **Files created:** 37 test files
+> **Total tests:** 181
 
-### 5.1 Test Coverage Requirements
+### 5.1 Test Coverage
 
-| Layer | Target | Current |
-|-------|--------|---------|
-| Domain Entities | 90% | 0% |
-| Value Objects | 90% | 0% |
-| Use Cases | 80% | 0% |
-| Controllers | 70% | 0% |
+| Layer | Tests | Files |
+|-------|-------|-------|
+| Domain Entities | 55 | 6 |
+| Value Objects | 35 | 4 |
+| Domain Errors | 10 | 1 |
+| Use Cases | 57 | 21 |
+| Controllers | 24 | 5 |
+| **Total** | **181** | **37** |
 
 ### 5.2 Test Files
 
 | Package | Path | Status |
 |---------|------|--------|
-| @lls/core | `__tests__/domain/entities/*.test.ts` | [ ] |
-| @lls/core | `__tests__/domain/value-objects/*.test.ts` | [ ] |
-| @lls/core | `__tests__/application/use-cases/*.test.ts` | [ ] |
-| @lls/api | `__tests__/controllers/*.test.ts` | [ ] |
-| @lls/api | `__tests__/integration/*.test.ts` | [ ] |
+| @lls/core | `__tests__/domain/entities/*.test.ts` | ✅ 6 files |
+| @lls/core | `__tests__/domain/value-objects/*.test.ts` | ✅ 4 files |
+| @lls/core | `__tests__/domain/errors/*.test.ts` | ✅ 1 file |
+| @lls/core | `__tests__/application/use-cases/*.test.ts` | ✅ 21 files |
+| @lls/api | `__tests__/controllers/*.test.ts` | ✅ 5 files |
 
 ---
 
@@ -664,14 +667,14 @@ pnpm test --coverage # Coverage check
 
 ## Summary
 
-| Phase | Package | Files | Status |
-|-------|---------|-------|--------|
-| 1 | @lls/core | 58 | ✅ |
-| 2 | @lls/api | 54 | ✅ |
-| 3 | @lls/bot | 41 | ✅ |
-| 4 | @lls/admin | 30 | ✅ |
-| 5 | Tests | ~15 | ⏳ |
-| **Total** | | **~198** | |
+| Phase | Package | Files | Tests | Status |
+|-------|---------|-------|-------|--------|
+| 1 | @lls/core | 58 | 157 | ✅ |
+| 2 | @lls/api | 54 | 24 | ✅ |
+| 3 | @lls/bot | 41 | - | ✅ |
+| 4 | @lls/admin | 30 | - | ✅ |
+| 5 | Tests | 37 | 181 | ✅ |
+| **Total** | | **220** | **181** | |
 
 **Status Legend:**
 - ✅ Completed
