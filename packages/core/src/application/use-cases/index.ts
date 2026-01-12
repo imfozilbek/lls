@@ -12,3 +12,6 @@ export * from "./courier/index.js"
 
 // Customer Use Cases
 export * from "./customer/index.js"
+
+// Analytics Use Cases
+export * from "./analytics/index.js"

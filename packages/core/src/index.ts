@@ -25,6 +25,7 @@ export * from "./application/ports/product-repository.js"
 export * from "./application/ports/customer-repository.js"
 export * from "./application/ports/courier-repository.js"
 export * from "./application/ports/order-repository.js"
+export * from "./application/ports/analytics-repository.js"
 
 // Application - DTOs
 export * from "./application/dtos/index.js"

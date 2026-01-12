@@ -8,6 +8,7 @@ import { AllExceptionsFilter, DomainExceptionFilter } from "./common/filters/ind
 import { LoggingInterceptor, TransformInterceptor } from "./common/interceptors/index.js"
 import { configuration } from "./config/configuration.js"
 import { DatabaseModule } from "./database/database.module.js"
+import { AnalyticsModule } from "./modules/analytics/analytics.module.js"
 import { BusinessModule } from "./modules/business/business.module.js"
 import { CourierModule } from "./modules/courier/courier.module.js"
 import { CustomerModule } from "./modules/customer/customer.module.js"
@@ -22,6 +23,7 @@ import { ProductModule } from "./modules/product/product.module.js"
         }),
         DatabaseModule,
         CacheModule,
+        AnalyticsModule,
         BusinessModule,
         ProductModule,
         OrderModule,

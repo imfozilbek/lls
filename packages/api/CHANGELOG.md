@@ -2,6 +2,14 @@
 
 All notable changes to @lls/api will be documented in this file.
 
+## [0.2.0] - 2026-01-13
+
+### Added
+- Analytics module with controller, service
+- MongoDB analytics repository with aggregation pipelines
+- API endpoints: GET /analytics/business/:id, /sales, /top-products
+- Period filtering (day, week, month) for analytics
+
 ## [0.1.1] - 2026-01-12
 
 ### Added

@@ -2,6 +2,14 @@
 
 All notable changes to @lls/core will be documented in this file.
 
+## [0.2.0] - 2026-01-13
+
+### Added
+- Analytics DTOs: BusinessStatsDTO, DailySalesDTO, SalesChartDTO, TopProductDTO, OrderStatusBreakdownDTO, AnalyticsDashboardDTO
+- Analytics repository port interface
+- Analytics use cases: GetBusinessAnalyticsUseCase, GetSalesChartUseCase, GetTopProductsUseCase
+- Date range utilities for analytics periods (day, week, month)
+
 ## [0.1.1] - 2026-01-12
 
 ### Added

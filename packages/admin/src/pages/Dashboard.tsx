@@ -1,120 +1,163 @@
-import { OrderStatus } from "@lls/core"
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 
+import {
+    SalesChart,
+    TopProductsList,
+    OrderBreakdown,
+    PeriodSelector,
+} from "../components/analytics/index.js"
 import { Layout } from "../components/layout/Layout.js"
 import { Card, CardTitle } from "../components/ui/Card.js"
-import { TableSkeleton } from "../components/ui/Loading.js"
-import { formatMoney, isToday } from "../lib/utils.js"
+import { FullScreenLoading } from "../components/ui/Loading.js"
+import { formatMoney } from "../lib/utils.js"
+import { useAnalyticsStore } from "../stores/analytics.store.js"
 import { useAuthStore } from "../stores/auth.store.js"
-import { useOrdersStore } from "../stores/orders.store.js"
 
+import type { AnalyticsDashboardDTO, AnalyticsPeriod } from "@lls/core"
 import type { ReactNode } from "react"
 
-// eslint-disable-next-line max-lines-per-function
 export function Dashboard(): ReactNode {
     const business = useAuthStore((state) => state.business)
-    const orders = useOrdersStore((state) => state.orders)
-    const isLoading = useOrdersStore((state) => state.isLoading)
-    const fetchOrders = useOrdersStore((state) => state.fetchOrders)
+    const dashboard = useAnalyticsStore((state) => state.dashboard)
+    const period = useAnalyticsStore((state) => state.period)
+    const isLoading = useAnalyticsStore((state) => state.isLoading)
+    const error = useAnalyticsStore((state) => state.error)
+    const fetchDashboard = useAnalyticsStore((state) => state.fetchDashboard)
+    const setPeriod = useAnalyticsStore((state) => state.setPeriod)
 
     useEffect(() => {
         if (business) {
-            void fetchOrders(business.id)
+            void fetchDashboard(business.id)
         }
-    }, [business, fetchOrders])
+    }, [business, period, fetchDashboard])
 
-    const stats = useMemo(() => {
-        const todayOrders = orders.filter((o) => isToday(o.createdAt))
-        const pendingOrders = orders.filter((o) => o.status === OrderStatus.PENDING)
-        const completedToday = todayOrders.filter((o) => o.status === OrderStatus.DELIVERED)
-        const revenueToday = completedToday.reduce((sum, o) => sum + o.total.amount, 0)
-
-        return {
-            ordersToday: todayOrders.length,
-            pendingCount: pendingOrders.length,
-            completedToday: completedToday.length,
-            revenueToday,
-        }
-    }, [orders])
+    if (isLoading && !dashboard) {
+        return (
+            <Layout>
+                <FullScreenLoading text="Загрузка аналитики..." />
+            </Layout>
+        )
+    }
 
     return (
         <Layout>
-            <div className="space-y-6">
-                <h1 className="text-2xl font-bold text-gray-900">Главная</h1>
+            <DashboardContent
+                dashboard={dashboard}
+                period={period}
+                error={error}
+                isLoading={isLoading}
+                onPeriodChange={setPeriod}
+            />
+        </Layout>
+    )
+}
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard
-                        title="Заказов сегодня"
-                        value={stats.ordersToday}
-                        icon="📋"
-                        color="blue"
-                    />
-                    <StatCard
-                        title="Ожидают обработки"
-                        value={stats.pendingCount}
-                        icon="⏳"
-                        color="yellow"
-                    />
-                    <StatCard
-                        title="Выполнено сегодня"
-                        value={stats.completedToday}
-                        icon="✅"
-                        color="green"
-                    />
-                    <StatCard
-                        title="Выручка сегодня"
-                        value={formatMoney(stats.revenueToday)}
-                        icon="💰"
-                        color="emerald"
-                    />
+interface DashboardContentProps {
+    dashboard: AnalyticsDashboardDTO | null
+    period: AnalyticsPeriod
+    error: string | null
+    isLoading: boolean
+    onPeriodChange: (period: AnalyticsPeriod) => void
+}
+
+function DashboardContent({
+    dashboard,
+    period,
+    error,
+    isLoading,
+    onPeriodChange,
+}: DashboardContentProps): ReactNode {
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-gray-900">Аналитика</h1>
+                <PeriodSelector value={period} onChange={onPeriodChange} />
+            </div>
+
+            {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+                    {error}
                 </div>
+            )}
 
-                {/* Recent Orders */}
+            {dashboard && <DashboardCharts dashboard={dashboard} />}
+
+            {!dashboard && !isLoading && !error && (
+                <div className="text-center py-12">
+                    <p className="text-4xl mb-4">📊</p>
+                    <p className="text-gray-500">Нет данных для отображения</p>
+                </div>
+            )}
+        </div>
+    )
+}
+
+function DashboardCharts({ dashboard }: { dashboard: AnalyticsDashboardDTO }): ReactNode {
+    return (
+        <>
+            <StatsGrid dashboard={dashboard} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
-                    <div className="px-4 py-3 border-b border-gray-200">
-                        <CardTitle>Последние заказы</CardTitle>
+                    <div className="p-4 border-b border-gray-200">
+                        <CardTitle>График продаж</CardTitle>
                     </div>
                     <div className="p-4">
-                        {isLoading ? (
-                            <TableSkeleton rows={5} cols={4} />
-                        ) : orders.length === 0 ? (
-                            <div className="text-center py-8">
-                                <p className="text-4xl mb-2">📭</p>
-                                <p className="text-gray-500">Пока нет заказов</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {orders.slice(0, 5).map((order) => (
-                                    <div
-                                        key={order.id}
-                                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                                    >
-                                        <div>
-                                            <p className="font-medium text-gray-900">
-                                                #{order.id.slice(-6).toUpperCase()}
-                                            </p>
-                                            <p className="text-sm text-gray-500">
-                                                {order.items.length} позиций
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-medium">
-                                                {formatMoney(
-                                                    order.total.amount,
-                                                    order.total.currency,
-                                                )}
-                                            </p>
-                                            <p className="text-sm text-gray-500">{order.status}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <SalesChart data={dashboard.salesChart.data} />
+                    </div>
+                </Card>
+
+                <Card>
+                    <div className="p-4 border-b border-gray-200">
+                        <CardTitle>Топ товаров</CardTitle>
+                    </div>
+                    <div className="p-4">
+                        <TopProductsList products={dashboard.topProducts.products} />
                     </div>
                 </Card>
             </div>
-        </Layout>
+
+            <Card>
+                <div className="p-4 border-b border-gray-200">
+                    <CardTitle>Статусы заказов</CardTitle>
+                </div>
+                <div className="p-4">
+                    <OrderBreakdown breakdown={dashboard.orderBreakdown} />
+                </div>
+            </Card>
+        </>
+    )
+}
+
+function StatsGrid({ dashboard }: { dashboard: AnalyticsDashboardDTO }): ReactNode {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+                title="Выручка"
+                value={formatMoney(
+                    dashboard.stats.totalRevenue.amount,
+                    dashboard.stats.totalRevenue.currency,
+                )}
+                icon="💰"
+                color="emerald"
+            />
+            <StatCard title="Заказов" value={dashboard.stats.totalOrders} icon="📋" color="blue" />
+            <StatCard
+                title="Выполнено"
+                value={dashboard.stats.completedOrders}
+                icon="✅"
+                color="green"
+            />
+            <StatCard
+                title="Средний чек"
+                value={formatMoney(
+                    dashboard.stats.averageOrderValue.amount,
+                    dashboard.stats.averageOrderValue.currency,
+                )}
+                icon="📊"
+                color="purple"
+            />
+        </div>
     )
 }
 
@@ -122,15 +165,15 @@ interface StatCardProps {
     title: string
     value: string | number
     icon: string
-    color: "blue" | "yellow" | "green" | "emerald"
+    color: "blue" | "green" | "emerald" | "purple"
 }
 
 function StatCard({ title, value, icon, color }: StatCardProps): ReactNode {
     const colors = {
         blue: "bg-blue-50 text-blue-600",
-        yellow: "bg-yellow-50 text-yellow-600",
         green: "bg-green-50 text-green-600",
         emerald: "bg-emerald-50 text-emerald-600",
+        purple: "bg-purple-50 text-purple-600",
     }
 
     return (

@@ -1,4 +1,12 @@
-import type { BusinessDTO, ProductDTO, OrderDTO } from "@lls/core"
+import type {
+    BusinessDTO,
+    ProductDTO,
+    OrderDTO,
+    AnalyticsDashboardDTO,
+    AnalyticsPeriod,
+    SalesChartDTO,
+    TopProductsDTO,
+} from "@lls/core"
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4001/api/v1"
 
@@ -88,4 +96,21 @@ export const orderApi = {
     getById: (id: string): Promise<OrderDTO> => api.get(`/orders/${id}`),
     updateStatus: (id: string, status: string): Promise<OrderDTO> =>
         api.patch(`/orders/${id}/status`, { status }),
+}
+
+// Analytics API
+export const analyticsApi = {
+    getDashboard: (
+        businessId: string,
+        period: AnalyticsPeriod = "week",
+    ): Promise<AnalyticsDashboardDTO> =>
+        api.get(`/analytics/business/${businessId}?period=${period}`),
+    getSales: (businessId: string, period: AnalyticsPeriod = "week"): Promise<SalesChartDTO> =>
+        api.get(`/analytics/business/${businessId}/sales?period=${period}`),
+    getTopProducts: (
+        businessId: string,
+        period: AnalyticsPeriod = "week",
+        limit = 5,
+    ): Promise<TopProductsDTO> =>
+        api.get(`/analytics/business/${businessId}/top-products?period=${period}&limit=${limit}`),
 }
