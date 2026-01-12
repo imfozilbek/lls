@@ -70,6 +70,7 @@ export default [
             "**/node_modules/**",
             "**/*.js",
             "**/vite.config.ts",
+            "**/vitest.config.ts",
             "**/tailwind.config.ts",
             "**/postcss.config.js",
         ],

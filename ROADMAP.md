@@ -16,7 +16,7 @@
 - Enums (2): OrderStatus, BusinessType
 - Repository Ports (5): interfaces for all entities
 - Project Config: ESLint, Prettier, TypeScript, Vitest, pnpm workspace
-- API Skeleton: Fastify app, /health, /ready, env validation, logger
+- API Skeleton: NestJS app with Fastify adapter, /health, /ready, env validation, logger
 
 ### What's Missing (90%)
 - Application Layer (Use Cases, DTOs, Errors)
@@ -173,99 +173,106 @@
 
 ---
 
-## Phase 2: @lls/api v0.1.0 — Infrastructure
+## Phase 2: @lls/api v0.1.0 — Infrastructure (NestJS)
 
 > **Status:** ⏳ Planned
 > **Depends on:** Phase 1
-> **Files to create:** ~20
+> **Files to create:** ~25
 
-### 2.1 MongoDB Connection
+### 2.1 Database Module (MongoDB)
 
-**Path:** `packages/api/src/infrastructure/database/`
-
-| File | Status | Description |
-|------|--------|-------------|
-| `connection.ts` | [ ] | MongoDB connection with retry logic |
-| `models/business.model.ts` | [ ] | Mongoose schema for Business |
-| `models/product.model.ts` | [ ] | Mongoose schema for Product |
-| `models/customer.model.ts` | [ ] | Mongoose schema for Customer |
-| `models/courier.model.ts` | [ ] | Mongoose schema for Courier |
-| `models/order.model.ts` | [ ] | Mongoose schema for Order |
-| `models/index.ts` | [ ] | Export all models |
-
-### 2.2 Redis Connection
-
-**Path:** `packages/api/src/infrastructure/cache/`
+**Path:** `packages/api/src/database/`
 
 | File | Status | Description |
 |------|--------|-------------|
-| `redis-client.ts` | [ ] | Redis connection |
+| `database.module.ts` | [ ] | MongooseModule configuration |
+| `schemas/business.schema.ts` | [ ] | Mongoose schema for Business |
+| `schemas/product.schema.ts` | [ ] | Mongoose schema for Product |
+| `schemas/customer.schema.ts` | [ ] | Mongoose schema for Customer |
+| `schemas/courier.schema.ts` | [ ] | Mongoose schema for Courier |
+| `schemas/order.schema.ts` | [ ] | Mongoose schema for Order |
+| `schemas/index.ts` | [ ] | Export all schemas |
+
+### 2.2 Cache Module (Redis)
+
+**Path:** `packages/api/src/cache/`
+
+| File | Status | Description |
+|------|--------|-------------|
+| `cache.module.ts` | [ ] | Redis module configuration |
 | `cache.service.ts` | [ ] | CacheService with TTL |
 
 ### 2.3 Repository Implementations
 
-**Path:** `packages/api/src/infrastructure/repositories/`
+**Path:** `packages/api/src/repositories/`
 
 | File | Status | Implements |
 |------|--------|------------|
-| `mongo-business.repository.ts` | [ ] | BusinessRepository |
-| `mongo-product.repository.ts` | [ ] | ProductRepository |
-| `mongo-customer.repository.ts` | [ ] | CustomerRepository |
-| `mongo-courier.repository.ts` | [ ] | CourierRepository |
-| `mongo-order.repository.ts` | [ ] | OrderRepository |
+| `business.repository.ts` | [ ] | BusinessRepository |
+| `product.repository.ts` | [ ] | ProductRepository |
+| `customer.repository.ts` | [ ] | CustomerRepository |
+| `courier.repository.ts` | [ ] | CourierRepository |
+| `order.repository.ts` | [ ] | OrderRepository |
+| `repositories.module.ts` | [ ] | Export all repositories |
 
-### 2.4 Middleware
+### 2.4 Common Module (Guards, Filters, Interceptors)
 
-**Path:** `packages/api/src/middleware/`
-
-| File | Status | Description |
-|------|--------|-------------|
-| `error-handler.ts` | [ ] | Global error handling (DomainError → HTTP) |
-| `request-logger.ts` | [ ] | Request/Response logging |
-| `telegram-auth.ts` | [ ] | Validate Telegram initData |
-| `business-auth.ts` | [ ] | Validate business access |
-
-### 2.5 Zod Schemas
-
-**Path:** `packages/api/src/schemas/`
+**Path:** `packages/api/src/common/`
 
 | File | Status | Description |
 |------|--------|-------------|
-| `business.schema.ts` | [ ] | Business request/response schemas |
-| `product.schema.ts` | [ ] | Product request/response schemas |
-| `order.schema.ts` | [ ] | Order request/response schemas |
-| `courier.schema.ts` | [ ] | Courier request/response schemas |
-| `common.schema.ts` | [ ] | Shared schemas (pagination, address) |
+| `filters/http-exception.filter.ts` | [ ] | Global exception filter (DomainError → HTTP) |
+| `filters/all-exceptions.filter.ts` | [ ] | Catch-all exception filter |
+| `interceptors/logging.interceptor.ts` | [ ] | Request/Response logging |
+| `guards/telegram-auth.guard.ts` | [ ] | Validate Telegram initData |
+| `guards/business-auth.guard.ts` | [ ] | Validate business access |
+| `decorators/telegram-user.decorator.ts` | [ ] | @TelegramUser() param decorator |
+| `common.module.ts` | [ ] | Export all common providers |
 
-### 2.6 Controllers
+### 2.5 DTOs (Validation with class-validator)
 
-**Path:** `packages/api/src/controllers/`
+**Path:** `packages/api/src/modules/*/dto/`
 
-| File | Status | Routes |
-|------|--------|--------|
-| `business.controller.ts` | [ ] | GET /businesses, GET /businesses/:id |
-| `product.controller.ts` | [ ] | GET /businesses/:id/products, POST/PATCH/DELETE /products |
-| `order.controller.ts` | [ ] | POST /orders, GET /orders/:id, PATCH /orders/:id/status |
-| `courier.controller.ts` | [ ] | GET /couriers/available-orders, POST /couriers/take-order/:id |
-| `customer.controller.ts` | [ ] | GET /customers/me, PATCH /customers/me |
+| Module | Files | Status |
+|--------|-------|--------|
+| business | `create-business.dto.ts`, `update-business.dto.ts` | [ ] |
+| product | `create-product.dto.ts`, `update-product.dto.ts` | [ ] |
+| order | `create-order.dto.ts`, `update-order-status.dto.ts` | [ ] |
+| courier | `take-order.dto.ts` | [ ] |
+| customer | `update-customer.dto.ts` | [ ] |
 
-### 2.7 Routes & DI Container
+### 2.6 Feature Modules
 
-**Path:** `packages/api/src/`
+**Path:** `packages/api/src/modules/`
 
-| File | Status | Description |
-|------|--------|-------------|
-| `routes/index.ts` | [ ] | Register all routes |
-| `container.ts` | [ ] | Dependency Injection container |
+| Module | Files | Status |
+|--------|-------|--------|
+| `business/` | `business.module.ts`, `business.controller.ts`, `business.service.ts` | [ ] |
+| `product/` | `product.module.ts`, `product.controller.ts`, `product.service.ts` | [ ] |
+| `order/` | `order.module.ts`, `order.controller.ts`, `order.service.ts` | [ ] |
+| `courier/` | `courier.module.ts`, `courier.controller.ts`, `courier.service.ts` | [ ] |
+| `customer/` | `customer.module.ts`, `customer.controller.ts`, `customer.service.ts` | [ ] |
 
-### 2.8 Environment Variables
+### 2.7 App Module Updates
 
 | Task | Status |
 |------|--------|
-| Add MONGODB_URI | [ ] |
-| Add REDIS_URI | [ ] |
-| Add TELEGRAM_BOT_TOKEN | [ ] |
-| Update env.ts validation | [ ] |
+| Import DatabaseModule | [ ] |
+| Import CacheModule | [ ] |
+| Import CommonModule | [ ] |
+| Import all feature modules | [ ] |
+| Configure global filters/interceptors | [ ] |
+
+### 2.8 Environment Variables
+
+| Variable | Status | Description |
+|----------|--------|-------------|
+| MONGODB_URI | [x] | MongoDB connection string |
+| REDIS_URL | [x] | Redis connection string |
+| TELEGRAM_BOT_TOKEN | [x] | Telegram bot token |
+| PORT | [x] | Server port (default: 4001) |
+| HOST | [x] | Server host (default: 0.0.0.0) |
+| LOG_LEVEL | [x] | Logging level |
 
 ---
 
@@ -529,22 +536,46 @@ src/
     └── application/use-cases/*.test.ts
 ```
 
-### @lls/api (new files)
+### @lls/api (NestJS structure)
 ```
 src/
-├── infrastructure/
-│   ├── database/
-│   │   ├── connection.ts
-│   │   └── models/*.model.ts
-│   ├── cache/
-│   │   ├── redis-client.ts
-│   │   └── cache.service.ts
-│   └── repositories/*.repository.ts
-├── middleware/*.ts
-├── schemas/*.schema.ts
-├── controllers/*.controller.ts
-├── routes/index.ts
-├── container.ts
+├── main.ts                    # Application entry point
+├── app.module.ts              # Root module
+├── app.controller.ts          # Health/ready endpoints
+├── config/
+│   └── configuration.ts       # Environment validation (Zod)
+├── common/
+│   ├── logger.ts
+│   ├── filters/
+│   │   ├── http-exception.filter.ts
+│   │   └── all-exceptions.filter.ts
+│   ├── interceptors/
+│   │   └── logging.interceptor.ts
+│   ├── guards/
+│   │   ├── telegram-auth.guard.ts
+│   │   └── business-auth.guard.ts
+│   ├── decorators/
+│   │   └── telegram-user.decorator.ts
+│   └── common.module.ts
+├── database/
+│   ├── database.module.ts
+│   └── schemas/*.schema.ts
+├── cache/
+│   ├── cache.module.ts
+│   └── cache.service.ts
+├── repositories/
+│   ├── *.repository.ts
+│   └── repositories.module.ts
+├── modules/
+│   ├── business/
+│   │   ├── business.module.ts
+│   │   ├── business.controller.ts
+│   │   ├── business.service.ts
+│   │   └── dto/*.dto.ts
+│   ├── product/
+│   ├── order/
+│   ├── courier/
+│   └── customer/
 └── __tests__/
 ```
 

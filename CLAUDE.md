@@ -9,7 +9,7 @@ LLS (LocalLoopSolutions) — Local delivery platform for small businesses. TypeS
 | Package | Description |
 |---------|-------------|
 | `@lls/core` | Domain logic (DDD): entities, use cases, ports |
-| `@lls/api` | Fastify REST API |
+| `@lls/api` | NestJS REST API (Fastify adapter) |
 | `@lls/bot` | Telegram Mini App (clients + couriers) |
 | `@lls/admin` | Web admin panel (businesses) |
 
@@ -64,6 +64,30 @@ Infrastructure     → Controllers, Repositories, Adapters
 - API returns DTOs, not entities
 - No magic numbers/strings
 - No hardcoded secrets
+
+## NestJS Architecture (@lls/api)
+
+```
+src/
+├── main.ts                    # Bootstrap with Fastify adapter
+├── app.module.ts              # Root module
+├── app.controller.ts          # Health endpoints
+├── config/configuration.ts    # Env validation (Zod)
+├── common/                    # Shared: guards, filters, interceptors
+├── database/                  # MongooseModule + schemas
+├── cache/                     # Redis module
+├── repositories/              # Repository implementations
+└── modules/                   # Feature modules (business, order, etc.)
+```
+
+**NestJS Rules:**
+- One module per feature (business, product, order, courier, customer)
+- Services inject repositories via constructor
+- Controllers use DTOs with class-validator
+- Guards for auth (Telegram, Business)
+- Filters for exception handling (DomainError → HTTP)
+- Use `@nestjs/mongoose` for MongoDB
+- Use Fastify adapter (not Express)
 
 ## Domain Models
 
