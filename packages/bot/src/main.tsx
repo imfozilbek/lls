@@ -2,7 +2,11 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import { App } from "./App.js"
+import { initTelegram } from "./lib/telegram.js"
 import "./index.css"
+
+// Initialize Telegram SDK
+initTelegram()
 
 const root = document.getElementById("root")
 if (!root) {

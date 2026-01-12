@@ -8,29 +8,28 @@
 
 ---
 
-## Current Status: 10% Complete
+## Current Status: 70% Complete
 
 ### What's Done
-- Domain Entities (6): Business, Product, Customer, Courier, Order, OrderItem
-- Value Objects (4): Money, Address, Phone, TelegramId
-- Enums (2): OrderStatus, BusinessType
-- Repository Ports (5): interfaces for all entities
-- Project Config: ESLint, Prettier, TypeScript, Vitest, pnpm workspace
-- API Skeleton: NestJS app with Fastify adapter, /health, /ready, env validation, logger
+- ✅ Domain Entities (6): Business, Product, Customer, Courier, Order, OrderItem
+- ✅ Value Objects (4): Money, Address, Phone, TelegramId
+- ✅ Enums (2): OrderStatus, BusinessType
+- ✅ Repository Ports (5): interfaces for all entities
+- ✅ Project Config: ESLint, Prettier, TypeScript, Vitest, pnpm workspace
+- ✅ Application Layer: Domain Errors, DTOs, 20 Use Cases, 114 Tests
+- ✅ API Infrastructure: MongoDB schemas, Redis cache, NestJS modules
+- ✅ Bot: Telegram Mini App (41 files) - stores, hooks, components, screens
 
-### What's Missing (90%)
-- Application Layer (Use Cases, DTOs, Errors)
-- Infrastructure (MongoDB, Redis, Repositories)
-- API (Controllers, Routes, Middleware, Schemas)
-- Bot (Telegram SDK, Screens, Components, State)
-- Admin (Auth, Components, Screens)
-- Tests (0% coverage)
+### What's Missing (30%)
+- Admin Panel (Business dashboard)
+- Integration Tests
+- E2E Tests
 
 | Package | Version | Status | Next Milestone |
 |---------|---------|--------|----------------|
-| @lls/core | v0.0.0 | 🔄 In Progress | v0.1.0 - Application Layer |
-| @lls/api | v0.0.0 | ⏳ Planned | v0.1.0 - Infrastructure |
-| @lls/bot | v0.0.0 | ⏳ Planned | v0.1.0 - Customer UI |
+| @lls/core | v0.1.0 | ✅ Complete | v0.2.0 - More Use Cases |
+| @lls/api | v0.1.0 | ✅ Complete | v0.2.0 - More Endpoints |
+| @lls/bot | v0.1.0 | ✅ Complete | v0.2.0 - Polish UI |
 | @lls/admin | v0.0.0 | ⏳ Planned | v0.1.0 - Dashboard |
 
 ---
@@ -78,8 +77,8 @@
 
 ## Phase 1: @lls/core v0.1.0 — Application Layer
 
-> **Status:** ⏳ Planned
-> **Files to create:** ~25
+> **Status:** ✅ Complete
+> **Files created:** 58
 
 ### 1.1 Domain Errors
 
@@ -175,9 +174,9 @@
 
 ## Phase 2: @lls/api v0.1.0 — Infrastructure (NestJS)
 
-> **Status:** ⏳ Planned
+> **Status:** ✅ Complete
 > **Depends on:** Phase 1
-> **Files to create:** ~25
+> **Files created:** 54
 
 ### 2.1 Database Module (MongoDB)
 
@@ -278,9 +277,9 @@
 
 ## Phase 3: @lls/bot v0.1.0 — Telegram Mini App
 
-> **Status:** ⏳ Planned
+> **Status:** ✅ Complete
 > **Depends on:** Phase 2
-> **Files to create:** ~30
+> **Files created:** 41
 
 ### 3.1 Core Setup
 
@@ -667,12 +666,12 @@ pnpm test --coverage # Coverage check
 
 | Phase | Package | Files | Status |
 |-------|---------|-------|--------|
-| 1 | @lls/core | ~25 | ⏳ |
-| 2 | @lls/api | ~20 | ⏳ |
-| 3 | @lls/bot | ~30 | ⏳ |
+| 1 | @lls/core | 58 | ✅ |
+| 2 | @lls/api | 54 | ✅ |
+| 3 | @lls/bot | 41 | ✅ |
 | 4 | @lls/admin | ~20 | ⏳ |
 | 5 | Tests | ~15 | ⏳ |
-| **Total** | | **~110** | |
+| **Total** | | **~188** | |
 
 **Status Legend:**
 - ✅ Completed
