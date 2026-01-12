@@ -30,26 +30,17 @@ export class MongoDbOrderRepository implements OrderRepository {
     }
 
     async findByCustomerId(customerId: string): Promise<OrderEntity[]> {
-        const docs = await this.model
-            .find({ customerId })
-            .sort({ createdAt: -1 })
-            .lean()
+        const docs = await this.model.find({ customerId }).sort({ createdAt: -1 }).lean()
         return docs.map((doc) => this.toDomain(doc))
     }
 
     async findByBusinessId(businessId: string): Promise<OrderEntity[]> {
-        const docs = await this.model
-            .find({ businessId })
-            .sort({ createdAt: -1 })
-            .lean()
+        const docs = await this.model.find({ businessId }).sort({ createdAt: -1 }).lean()
         return docs.map((doc) => this.toDomain(doc))
     }
 
     async findByCourierId(courierId: string): Promise<OrderEntity[]> {
-        const docs = await this.model
-            .find({ courierId })
-            .sort({ createdAt: -1 })
-            .lean()
+        const docs = await this.model.find({ courierId }).sort({ createdAt: -1 }).lean()
         return docs.map((doc) => this.toDomain(doc))
     }
 

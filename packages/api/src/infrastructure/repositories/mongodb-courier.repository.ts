@@ -59,9 +59,10 @@ export class MongoDbCourierRepository implements CourierRepository {
         })
     }
 
-    private toDocument(
-        entity: CourierEntity,
-    ): Omit<Courier, "createdAt" | "updatedAt" | "currentLocation"> & {
+    private toDocument(entity: CourierEntity): Omit<
+        Courier,
+        "createdAt" | "updatedAt" | "currentLocation"
+    > & {
         createdAt: Date
         updatedAt: Date
     } {

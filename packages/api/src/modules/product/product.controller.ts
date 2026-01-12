@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post } from "@nestjs/common"
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpCode,
+    HttpStatus,
+    Param,
+    Patch,
+    Post,
+} from "@nestjs/common"
 
 import { ProductService } from "./product.service.js"
 
@@ -22,10 +32,7 @@ export class ProductController {
     }
 
     @Patch("products/:id")
-    async update(
-        @Param("id") id: string,
-        @Body() input: UpdateProductInput,
-    ): Promise<ProductDTO> {
+    async update(@Param("id") id: string, @Body() input: UpdateProductInput): Promise<ProductDTO> {
         return this.service.update(id, input)
     }
 

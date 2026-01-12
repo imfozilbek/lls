@@ -6,7 +6,6 @@ import { toCustomerDTO } from "../../dtos/customer.dto.js"
 import type { CustomerDTO, UpdateCustomerInput } from "../../dtos/customer.dto.js"
 import type { CustomerRepository } from "../../ports/customer-repository.js"
 
-
 export class UpdateCustomerUseCase {
     constructor(private readonly customerRepository: CustomerRepository) {}
 
@@ -18,14 +17,9 @@ export class UpdateCustomerUseCase {
         }
 
         if (input.name || input.phone) {
-            const phone = input.phone
-                ? Phone.create(input.phone)
-                : customer.phone
+            const phone = input.phone ? Phone.create(input.phone) : customer.phone
 
-            customer.updateProfile(
-                input.name ?? customer.name,
-                phone,
-            )
+            customer.updateProfile(input.name ?? customer.name, phone)
         }
 
         if (input.address) {

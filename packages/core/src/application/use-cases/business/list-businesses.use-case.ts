@@ -3,7 +3,6 @@ import { toBusinessDTO } from "../../dtos/business.dto.js"
 import type { BusinessDTO, BusinessFilter } from "../../dtos/business.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 
-
 export class ListBusinessesUseCase {
     constructor(private readonly businessRepository: BusinessRepository) {}
 

@@ -1,7 +1,6 @@
 import type { AddressDTO } from "./common.dto.js"
 import type { Customer } from "../../domain/entities/customer.js"
 
-
 export interface CustomerDTO {
     id: string
     telegramId: number

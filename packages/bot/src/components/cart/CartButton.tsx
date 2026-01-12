@@ -29,12 +29,7 @@ export function CartButton({ currency = "UZS" }: CartButtonProps): ReactNode {
         >
             <div className="flex items-center gap-3">
                 <div className="relative">
-                    <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                             strokeLinecap="round"
                             strokeLinejoin="round"

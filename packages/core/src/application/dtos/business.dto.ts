@@ -2,7 +2,6 @@ import type { AddressDTO } from "./common.dto.js"
 import type { Business } from "../../domain/entities/business.js"
 import type { BusinessType } from "../../domain/enums/business-type.js"
 
-
 export interface BusinessDTO {
     id: string
     name: string

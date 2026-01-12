@@ -1,7 +1,6 @@
 import type { MoneyDTO } from "./common.dto.js"
 import type { Product } from "../../domain/entities/product.js"
 
-
 export interface ProductDTO {
     id: string
     businessId: string

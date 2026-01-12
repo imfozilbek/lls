@@ -5,7 +5,6 @@ import { toProductDTO } from "../../dtos/product.dto.js"
 import type { ProductDTO, UpdateProductInput } from "../../dtos/product.dto.js"
 import type { ProductRepository } from "../../ports/product-repository.js"
 
-
 export class UpdateProductUseCase {
     constructor(private readonly productRepository: ProductRepository) {}
 

@@ -32,9 +32,7 @@ export function hapticFeedback(type: "light" | "medium" | "heavy" = "light"): vo
     }
 }
 
-export function hapticNotification(
-    type: "error" | "success" | "warning" = "success",
-): void {
+export function hapticNotification(type: "error" | "success" | "warning" = "success"): void {
     try {
         if (typeof window !== "undefined" && window.Telegram?.WebApp?.HapticFeedback) {
             window.Telegram.WebApp.HapticFeedback.notificationOccurred(type)

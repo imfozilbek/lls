@@ -7,7 +7,6 @@ import type { ProductDTO, CreateProductInput } from "../../dtos/product.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { ProductRepository } from "../../ports/product-repository.js"
 
-
 export class CreateProductUseCase {
     constructor(
         private readonly productRepository: ProductRepository,

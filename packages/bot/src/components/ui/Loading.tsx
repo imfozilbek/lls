@@ -45,9 +45,7 @@ export function Loading({
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                 />
             </svg>
-            {text && (
-                <p className="text-sm text-telegram-hint">{text}</p>
-            )}
+            {text && <p className="text-sm text-telegram-hint">{text}</p>}
         </div>
     )
 
@@ -67,12 +65,5 @@ interface LoadingSkeletonProps {
 }
 
 export function Skeleton({ className }: LoadingSkeletonProps): ReactNode {
-    return (
-        <div
-            className={cn(
-                "animate-pulse bg-telegram-secondary rounded",
-                className,
-            )}
-        />
-    )
+    return <div className={cn("animate-pulse bg-telegram-secondary rounded", className)} />
 }

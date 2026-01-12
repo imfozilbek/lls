@@ -9,7 +9,6 @@ interface CartItemProps {
     item: CartItemType
 }
 
-// eslint-disable-next-line max-lines-per-function
 export function CartItem({ item }: CartItemProps): ReactNode {
     const { updateQuantity, remove } = useCart()
     const { product, quantity } = item
@@ -40,9 +39,7 @@ export function CartItem({ item }: CartItemProps): ReactNode {
 
             {/* Product Info */}
             <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-telegram-text text-sm truncate">
-                    {product.name}
-                </h4>
+                <h4 className="font-medium text-telegram-text text-sm truncate">{product.name}</h4>
                 <p className="text-sm text-telegram-hint">
                     {formatMoney(product.price.amount, product.price.currency)}
                 </p>
@@ -72,9 +69,7 @@ export function CartItem({ item }: CartItemProps): ReactNode {
                         "−"
                     )}
                 </button>
-                <span className="w-8 text-center font-medium text-telegram-text">
-                    {quantity}
-                </span>
+                <span className="w-8 text-center font-medium text-telegram-text">{quantity}</span>
                 <button
                     onClick={handleIncrement}
                     className="w-8 h-8 flex items-center justify-center rounded-lg bg-telegram-bg text-telegram-text"
@@ -95,12 +90,7 @@ export function CartItem({ item }: CartItemProps): ReactNode {
                 onClick={handleRemove}
                 className="p-1 text-telegram-hint hover:text-red-500 transition-colors"
             >
-                <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"

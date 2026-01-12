@@ -123,21 +123,14 @@ export function Checkout(): ReactNode {
 
                 {/* Order Summary */}
                 <div className="mb-6">
-                    <h2 className="text-lg font-semibold text-telegram-text mb-3">
-                        Ваш заказ
-                    </h2>
+                    <h2 className="text-lg font-semibold text-telegram-text mb-3">Ваш заказ</h2>
                     <CartSummary />
                 </div>
             </div>
 
             {/* Submit Button */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-telegram-bg border-t border-telegram-secondary safe-area-pb">
-                <Button
-                    fullWidth
-                    size="lg"
-                    loading={isLoading}
-                    onClick={handleSubmit}
-                >
+                <Button fullWidth size="lg" loading={isLoading} onClick={handleSubmit}>
                     Подтвердить заказ
                 </Button>
             </div>

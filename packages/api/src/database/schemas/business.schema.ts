@@ -1,7 +1,6 @@
 import { BusinessType } from "@lls/core"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 
-
 import type { HydratedDocument } from "mongoose"
 
 export type BusinessDocument = HydratedDocument<Business>

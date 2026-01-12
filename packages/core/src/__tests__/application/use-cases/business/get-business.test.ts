@@ -49,8 +49,6 @@ describe("GetBusinessUseCase", () => {
     it("should throw when business not found", async () => {
         vi.mocked(mockRepository.findById).mockResolvedValue(null)
 
-        await expect(useCase.execute("not-found")).rejects.toThrow(
-            EntityNotFoundError,
-        )
+        await expect(useCase.execute("not-found")).rejects.toThrow(EntityNotFoundError)
     })
 })

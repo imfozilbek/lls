@@ -6,7 +6,6 @@ import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { CourierRepository } from "../../ports/courier-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
 
-
 export class TakeOrderUseCase {
     constructor(
         private readonly orderRepository: OrderRepository,

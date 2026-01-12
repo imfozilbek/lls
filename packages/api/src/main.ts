@@ -10,13 +10,9 @@ import { configuration } from "./config/configuration.js"
 async function bootstrap(): Promise<void> {
     const config = configuration()
 
-    const app = await NestFactory.create<NestFastifyApplication>(
-        AppModule,
-        new FastifyAdapter(),
-        {
-            logger: ["error", "warn", "log"],
-        },
-    )
+    const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
+        logger: ["error", "warn", "log"],
+    })
 
     app.enableCors({
         origin: true,

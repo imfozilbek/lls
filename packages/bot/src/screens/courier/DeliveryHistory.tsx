@@ -19,9 +19,7 @@ export function DeliveryHistory(): ReactNode {
         void fetchMyOrders()
     }, [fetchMyOrders])
 
-    const completedOrders = myOrders.filter(
-        (order) => order.status === OrderStatus.DELIVERED,
-    )
+    const completedOrders = myOrders.filter((order) => order.status === OrderStatus.DELIVERED)
 
     // Calculate stats
     const totalDeliveries = completedOrders.length
@@ -42,9 +40,7 @@ export function DeliveryHistory(): ReactNode {
                 {/* Stats */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                     <Card className="text-center">
-                        <p className="text-2xl font-bold text-telegram-button">
-                            {totalDeliveries}
-                        </p>
+                        <p className="text-2xl font-bold text-telegram-button">{totalDeliveries}</p>
                         <p className="text-sm text-telegram-hint">Доставок</p>
                     </Card>
                     <Card className="text-center">
@@ -108,15 +104,11 @@ export function DeliveryHistory(): ReactNode {
                                             d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
                                         />
                                     </svg>
-                                    <span className="truncate">
-                                        {order.deliveryAddress.street}
-                                    </span>
+                                    <span className="truncate">{order.deliveryAddress.street}</span>
                                 </div>
 
                                 <div className="flex justify-between pt-2 border-t border-telegram-bg">
-                                    <span className="text-sm text-telegram-hint">
-                                        Сумма заказа
-                                    </span>
+                                    <span className="text-sm text-telegram-hint">Сумма заказа</span>
                                     <span className="font-medium text-telegram-text">
                                         {formatMoney(order.total.amount, order.total.currency)}
                                     </span>

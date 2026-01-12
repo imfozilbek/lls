@@ -1,10 +1,10 @@
 export const REDIS_CLIENT = Symbol("REDIS_CLIENT")
 
 export const CacheTTL = {
-    SHORT: 60,          // 1 minute
-    MEDIUM: 300,        // 5 minutes
-    LONG: 3600,         // 1 hour
-    DAY: 86400,         // 24 hours
+    SHORT: 60, // 1 minute
+    MEDIUM: 300, // 5 minutes
+    LONG: 3600, // 1 hour
+    DAY: 86400, // 24 hours
 } as const
 
 export const CachePrefix = {

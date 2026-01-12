@@ -1,9 +1,4 @@
-import {
-    useSignal,
-    backButton,
-    mainButton,
-    themeParams,
-} from "@telegram-apps/sdk-react"
+import { useSignal, backButton, mainButton, themeParams } from "@telegram-apps/sdk-react"
 import { useEffect, useCallback } from "react"
 
 interface TelegramUser {

@@ -87,9 +87,7 @@ describe("TakeOrderUseCase", () => {
     it("should throw when order not found", async () => {
         vi.mocked(orderRepo.findById).mockResolvedValue(null)
 
-        await expect(useCase.execute("not-found", "courier-1")).rejects.toThrow(
-            EntityNotFoundError,
-        )
+        await expect(useCase.execute("not-found", "courier-1")).rejects.toThrow(EntityNotFoundError)
     })
 
     it("should throw when courier not available", async () => {

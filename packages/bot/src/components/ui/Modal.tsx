@@ -10,13 +10,7 @@ interface ModalProps {
     className?: string
 }
 
-export function Modal({
-    isOpen,
-    onClose,
-    title,
-    children,
-    className,
-}: ModalProps): ReactNode {
+export function Modal({ isOpen, onClose, title, children, className }: ModalProps): ReactNode {
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = "hidden"
@@ -52,10 +46,7 @@ export function Modal({
     return (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/50 animate-fade-in"
-                onClick={onClose}
-            />
+            <div className="absolute inset-0 bg-black/50 animate-fade-in" onClick={onClose} />
 
             {/* Modal content */}
             <div
@@ -70,9 +61,7 @@ export function Modal({
                 {title && (
                     <div className="sticky top-0 bg-telegram-bg px-4 py-3 border-b border-telegram-secondary">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-telegram-text">
-                                {title}
-                            </h2>
+                            <h2 className="text-lg font-semibold text-telegram-text">{title}</h2>
                             <button
                                 onClick={onClose}
                                 className="p-1 rounded-full hover:bg-telegram-secondary transition-colors"

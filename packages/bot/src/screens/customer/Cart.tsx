@@ -30,15 +30,11 @@ export function Cart(): ReactNode {
             <Layout title="Корзина" showBack>
                 <div className="flex flex-col items-center justify-center h-[60vh]">
                     <div className="text-6xl mb-4">🛒</div>
-                    <h2 className="text-xl font-semibold text-telegram-text mb-2">
-                        Корзина пуста
-                    </h2>
+                    <h2 className="text-xl font-semibold text-telegram-text mb-2">Корзина пуста</h2>
                     <p className="text-telegram-hint text-center mb-6">
                         Добавьте товары из каталога
                     </p>
-                    <Button onClick={handleContinueShopping}>
-                        Перейти к покупкам
-                    </Button>
+                    <Button onClick={handleContinueShopping}>Перейти к покупкам</Button>
                 </div>
             </Layout>
         )

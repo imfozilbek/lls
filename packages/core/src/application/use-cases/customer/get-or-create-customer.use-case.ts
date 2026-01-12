@@ -7,7 +7,6 @@ import { toCustomerDTO } from "../../dtos/customer.dto.js"
 import type { CustomerDTO, TelegramUserData } from "../../dtos/customer.dto.js"
 import type { CustomerRepository } from "../../ports/customer-repository.js"
 
-
 export class GetOrCreateCustomerUseCase {
     constructor(private readonly customerRepository: CustomerRepository) {}
 
@@ -18,9 +17,7 @@ export class GetOrCreateCustomerUseCase {
             return toCustomerDTO(existing)
         }
 
-        const name = data.lastName
-            ? `${data.firstName} ${data.lastName}`
-            : data.firstName
+        const name = data.lastName ? `${data.firstName} ${data.lastName}` : data.firstName
 
         const customer = Customer.create({
             id: crypto.randomUUID(),

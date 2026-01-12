@@ -68,9 +68,7 @@ export function ProductCard({ product }: ProductCardProps): ReactNode {
                         >
                             −
                         </button>
-                        <span className="font-semibold text-telegram-text">
-                            {quantity}
-                        </span>
+                        <span className="font-semibold text-telegram-text">{quantity}</span>
                         <button
                             onClick={handleIncrement}
                             className="px-4 py-2 text-telegram-button font-semibold"

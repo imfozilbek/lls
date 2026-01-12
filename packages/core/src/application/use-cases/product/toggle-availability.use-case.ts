@@ -4,7 +4,6 @@ import { toProductDTO } from "../../dtos/product.dto.js"
 import type { ProductDTO } from "../../dtos/product.dto.js"
 import type { ProductRepository } from "../../ports/product-repository.js"
 
-
 export class ToggleProductAvailabilityUseCase {
     constructor(private readonly productRepository: ProductRepository) {}
 

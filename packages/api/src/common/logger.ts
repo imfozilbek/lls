@@ -16,7 +16,7 @@ function shouldLog(level: LogLevel): boolean {
 
 function formatMessage(level: LogLevel, message: unknown): string {
     const timestamp = new Date().toISOString()
-    const msg = message instanceof Error ? message.stack ?? message.message : String(message)
+    const msg = message instanceof Error ? (message.stack ?? message.message) : String(message)
     return `[${timestamp}] ${level.toUpperCase()}: ${msg}`
 }
 

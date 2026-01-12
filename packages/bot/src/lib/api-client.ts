@@ -7,11 +7,7 @@ function getInitData(): string {
     return ""
 }
 
-async function request<T>(
-    method: string,
-    path: string,
-    body?: unknown,
-): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
     const url = `${API_URL}${path}`
     const initData = getInitData()
 
@@ -95,6 +91,5 @@ export const courierApi = {
         api.post(`/couriers/${courierId}/take-order/${orderId}`),
     completeDelivery: (orderId: string): Promise<OrderDTO> =>
         api.post(`/orders/${orderId}/complete`),
-    getOrders: (courierId: string): Promise<OrderDTO[]> =>
-        api.get(`/couriers/${courierId}/orders`),
+    getOrders: (courierId: string): Promise<OrderDTO[]> => api.get(`/couriers/${courierId}/orders`),
 }

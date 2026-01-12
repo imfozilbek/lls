@@ -55,9 +55,7 @@ export function Business(): ReactNode {
                         </span>
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-telegram-text">
-                            {business.name}
-                        </h1>
+                        <h1 className="text-xl font-bold text-telegram-text">{business.name}</h1>
                         <p className="text-sm text-telegram-hint mt-0.5">
                             {business.address.street}, {business.address.city}
                         </p>

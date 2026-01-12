@@ -14,9 +14,7 @@ export class CourierController {
     }
 
     @Post("orders/:orderId/take")
-    async takeOrder(
-        @Param("orderId") _orderId: string,
-    ): Promise<OrderDTO> {
+    async takeOrder(@Param("orderId") _orderId: string): Promise<OrderDTO> {
         // TODO: Get courierId from authenticated Telegram user
         throw new Error("courierId must be provided - implement Telegram auth")
     }

@@ -120,9 +120,7 @@ export function ActiveDelivery(): ReactNode {
                         </svg>
                         Адрес доставки
                     </h2>
-                    <p className="text-lg text-telegram-text">
-                        {order.deliveryAddress.street}
-                    </p>
+                    <p className="text-lg text-telegram-text">{order.deliveryAddress.street}</p>
                     <p className="text-telegram-hint">{order.deliveryAddress.city}</p>
 
                     {/* Map link placeholder */}
@@ -153,15 +151,10 @@ export function ActiveDelivery(): ReactNode {
 
                 {/* Order Items */}
                 <Card className="mb-4">
-                    <h2 className="font-semibold text-telegram-text mb-3">
-                        Состав заказа
-                    </h2>
+                    <h2 className="font-semibold text-telegram-text mb-3">Состав заказа</h2>
                     <div className="space-y-2">
                         {order.items.map((item, index) => (
-                            <div
-                                key={index}
-                                className="flex justify-between text-sm"
-                            >
+                            <div key={index} className="flex justify-between text-sm">
                                 <span className="text-telegram-text">
                                     {item.productName} × {item.quantity}
                                 </span>
@@ -184,9 +177,7 @@ export function ActiveDelivery(): ReactNode {
 
                 {/* Customer Info */}
                 <Card>
-                    <h2 className="font-semibold text-telegram-text mb-3">
-                        Клиент
-                    </h2>
+                    <h2 className="font-semibold text-telegram-text mb-3">Клиент</h2>
                     <div className="text-sm text-telegram-hint">
                         ID: {order.customerId.slice(-8).toUpperCase()}
                     </div>
@@ -196,12 +187,7 @@ export function ActiveDelivery(): ReactNode {
             {/* Action Buttons */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-telegram-bg border-t border-telegram-secondary safe-area-pb space-y-2">
                 {!isDelivered ? (
-                    <Button
-                        fullWidth
-                        size="lg"
-                        loading={isCompleting}
-                        onClick={handleComplete}
-                    >
+                    <Button fullWidth size="lg" loading={isCompleting} onClick={handleComplete}>
                         ✓ Подтвердить доставку
                     </Button>
                 ) : (

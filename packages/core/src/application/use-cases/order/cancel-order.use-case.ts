@@ -4,7 +4,6 @@ import { toOrderDTO } from "../../dtos/order.dto.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
 
-
 export class CancelOrderUseCase {
     constructor(private readonly orderRepository: OrderRepository) {}
 

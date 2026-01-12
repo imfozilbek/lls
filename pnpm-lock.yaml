@@ -41,6 +41,9 @@ importers:
       '@lls/core':
         specifier: workspace:*
         version: link:../core
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       react:
         specifier: ^19.0.0
         version: 19.2.3
@@ -50,6 +53,9 @@ importers:
       react-router-dom:
         specifier: ^7.1.0
         version: 7.12.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      tailwind-merge:
+        specifier: ^3.4.0
+        version: 3.4.0
       zustand:
         specifier: ^5.0.0
         version: 5.0.9(@types/react@19.2.8)(react@19.2.3)

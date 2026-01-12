@@ -46,9 +46,7 @@ export const useCartStore = create<CartStore>()(
                     return
                 }
 
-                const existingIndex = items.findIndex(
-                    (item) => item.product.id === product.id,
-                )
+                const existingIndex = items.findIndex((item) => item.product.id === product.id)
 
                 if (existingIndex >= 0) {
                     const newItems = [...items]

@@ -36,10 +36,7 @@ export class BusinessRuleViolationError extends DomainError {
     }
 
     static emptyOrder(): BusinessRuleViolationError {
-        return new BusinessRuleViolationError(
-            "EMPTY_ORDER",
-            "Order must contain at least one item",
-        )
+        return new BusinessRuleViolationError("EMPTY_ORDER", "Order must contain at least one item")
     }
 
     static productNotAvailable(productId: string): BusinessRuleViolationError {

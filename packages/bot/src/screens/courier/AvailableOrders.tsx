@@ -74,16 +74,8 @@ export function AvailableOrders(): ReactNode {
             title="Доступные заказы"
             showNav={false}
             headerRight={
-                <button
-                    onClick={handleViewHistory}
-                    className="p-2 text-telegram-button"
-                >
-                    <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
+                <button onClick={handleViewHistory} className="p-2 text-telegram-button">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -185,8 +177,7 @@ export function AvailableOrders(): ReactNode {
                                         />
                                     </svg>
                                     <span>
-                                        {order.deliveryAddress.street},{" "}
-                                        {order.deliveryAddress.city}
+                                        {order.deliveryAddress.street}, {order.deliveryAddress.city}
                                     </span>
                                 </div>
 

@@ -1,7 +1,6 @@
 import { OrderStatus } from "@lls/core"
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose"
 
-
 import type { HydratedDocument } from "mongoose"
 
 export type OrderDocument = HydratedDocument<Order>

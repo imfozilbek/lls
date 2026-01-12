@@ -41,10 +41,7 @@ export class OrderController {
     }
 
     @Post("orders/:id/cancel")
-    async cancel(
-        @Param("id") id: string,
-        @Body("reason") reason?: string,
-    ): Promise<OrderDTO> {
+    async cancel(@Param("id") id: string, @Body("reason") reason?: string): Promise<OrderDTO> {
         return this.service.cancel(id, reason)
     }
 }

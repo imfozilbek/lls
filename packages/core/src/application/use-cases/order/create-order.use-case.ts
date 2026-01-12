@@ -11,7 +11,6 @@ import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { CustomerRepository } from "../../ports/customer-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
 
-
 export class CreateOrderUseCase {
     constructor(
         private readonly orderRepository: OrderRepository,
@@ -38,7 +37,7 @@ export class CreateOrderUseCase {
             input.deliveryAddress.street,
             input.deliveryAddress.city,
             input.deliveryAddress.latitude !== undefined &&
-            input.deliveryAddress.longitude !== undefined
+                input.deliveryAddress.longitude !== undefined
                 ? {
                       latitude: input.deliveryAddress.latitude,
                       longitude: input.deliveryAddress.longitude,

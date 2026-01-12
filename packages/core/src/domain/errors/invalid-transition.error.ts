@@ -10,9 +10,10 @@ export class InvalidOrderTransitionError extends DomainError {
         public readonly fromStatus: OrderStatus,
         public readonly toStatus: OrderStatus,
     ) {
-        super(
-            `Cannot transition order "${orderId}" from "${fromStatus}" to "${toStatus}"`,
-            { orderId, fromStatus, toStatus },
-        )
+        super(`Cannot transition order "${orderId}" from "${fromStatus}" to "${toStatus}"`, {
+            orderId,
+            fromStatus,
+            toStatus,
+        })
     }
 }

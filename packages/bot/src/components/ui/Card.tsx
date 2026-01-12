@@ -31,11 +31,7 @@ interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> {}
 export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
     ({ className, ...props }, ref) => {
         return (
-            <div
-                ref={ref}
-                className={cn("flex items-center gap-3 mb-3", className)}
-                {...props}
-            />
+            <div ref={ref} className={cn("flex items-center gap-3 mb-3", className)} {...props} />
         )
     },
 )
@@ -62,13 +58,7 @@ interface CardContentProps extends HTMLAttributes<HTMLDivElement> {}
 
 export const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
     ({ className, ...props }, ref) => {
-        return (
-            <div
-                ref={ref}
-                className={cn("text-telegram-text", className)}
-                {...props}
-            />
-        )
+        return <div ref={ref} className={cn("text-telegram-text", className)} {...props} />
     },
 )
 

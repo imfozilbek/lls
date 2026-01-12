@@ -21,7 +21,11 @@ export function OrderTracking(): ReactNode {
 
     // Poll for updates every 30 seconds
     useEffect(() => {
-        if (!order || order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {
+        if (
+            !order ||
+            order.status === OrderStatus.DELIVERED ||
+            order.status === OrderStatus.CANCELLED
+        ) {
             return
         }
 
@@ -70,7 +74,8 @@ export function OrderTracking(): ReactNode {
     }
 
     const canCancel = order.status === OrderStatus.PENDING
-    const isCompleted = order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED
+    const isCompleted =
+        order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED
 
     return (
         <Layout showBack showNav={false}>
@@ -80,43 +85,30 @@ export function OrderTracking(): ReactNode {
                     <h1 className="text-xl font-bold text-telegram-text">
                         Заказ #{order.id.slice(-6).toUpperCase()}
                     </h1>
-                    <p className="text-sm text-telegram-hint mt-1">
-                        {formatDate(order.createdAt)}
-                    </p>
+                    <p className="text-sm text-telegram-hint mt-1">{formatDate(order.createdAt)}</p>
                 </div>
 
                 {/* Success Animation for completed orders */}
                 {order.status === OrderStatus.DELIVERED && (
                     <div className="text-center mb-6 p-6 bg-green-50 rounded-xl">
                         <div className="text-5xl mb-3">🎉</div>
-                        <h2 className="text-lg font-semibold text-green-800">
-                            Заказ доставлен!
-                        </h2>
-                        <p className="text-sm text-green-600 mt-1">
-                            Спасибо за заказ
-                        </p>
+                        <h2 className="text-lg font-semibold text-green-800">Заказ доставлен!</h2>
+                        <p className="text-sm text-green-600 mt-1">Спасибо за заказ</p>
                     </div>
                 )}
 
                 {/* Order Timeline */}
                 <div className="mb-6 p-4 bg-telegram-secondary rounded-xl">
-                    <h2 className="font-semibold text-telegram-text mb-4">
-                        Статус заказа
-                    </h2>
+                    <h2 className="font-semibold text-telegram-text mb-4">Статус заказа</h2>
                     <OrderTimeline currentStatus={order.status} />
                 </div>
 
                 {/* Order Items */}
                 <div className="mb-6 p-4 bg-telegram-secondary rounded-xl">
-                    <h2 className="font-semibold text-telegram-text mb-3">
-                        Состав заказа
-                    </h2>
+                    <h2 className="font-semibold text-telegram-text mb-3">Состав заказа</h2>
                     <div className="space-y-2">
                         {order.items.map((item, index) => (
-                            <div
-                                key={index}
-                                className="flex justify-between text-sm"
-                            >
+                            <div key={index} className="flex justify-between text-sm">
                                 <span className="text-telegram-text">
                                     {item.productName} × {item.quantity}
                                 </span>
@@ -139,9 +131,7 @@ export function OrderTracking(): ReactNode {
 
                 {/* Delivery Address */}
                 <div className="mb-6 p-4 bg-telegram-secondary rounded-xl">
-                    <h2 className="font-semibold text-telegram-text mb-2">
-                        Адрес доставки
-                    </h2>
+                    <h2 className="font-semibold text-telegram-text mb-2">Адрес доставки</h2>
                     <div className="flex items-start gap-2 text-sm text-telegram-hint">
                         <svg
                             className="w-5 h-5 flex-shrink-0"

@@ -47,9 +47,7 @@ export function Orders(): ReactNode {
                         <h2 className="text-xl font-semibold text-telegram-text mb-2">
                             Нет заказов
                         </h2>
-                        <p className="text-telegram-hint text-center">
-                            Ваши заказы появятся здесь
-                        </p>
+                        <p className="text-telegram-hint text-center">Ваши заказы появятся здесь</p>
                     </div>
                 ) : (
                     <div className="space-y-3">

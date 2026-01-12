@@ -30,16 +30,12 @@ export function BusinessCard({ business }: BusinessCardProps): ReactNode {
                     </span>
                 </div>
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-telegram-text truncate">
-                        {business.name}
-                    </h3>
+                    <h3 className="font-semibold text-telegram-text truncate">{business.name}</h3>
                     <p className="text-sm text-telegram-hint truncate mt-0.5">
                         {business.address.street}, {business.address.city}
                     </p>
                     <div className="mt-2">
-                        <Badge variant="primary">
-                            {getBusinessTypeLabel(business.type)}
-                        </Badge>
+                        <Badge variant="primary">{getBusinessTypeLabel(business.type)}</Badge>
                     </div>
                 </div>
                 <svg

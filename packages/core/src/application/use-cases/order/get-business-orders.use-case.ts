@@ -4,7 +4,6 @@ import type { OrderStatus } from "../../../domain/enums/order-status.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
 
-
 export interface GetBusinessOrdersInput {
     businessId: string
     status?: OrderStatus

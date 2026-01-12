@@ -2,13 +2,7 @@ import { type HTMLAttributes, forwardRef } from "react"
 
 import { cn } from "../../lib/utils.js"
 
-type BadgeVariant =
-    | "default"
-    | "primary"
-    | "success"
-    | "warning"
-    | "danger"
-    | "info"
+type BadgeVariant = "default" | "primary" | "success" | "warning" | "danger" | "info"
 
 interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
     variant?: BadgeVariant
@@ -76,10 +70,7 @@ const statusLabels: Record<OrderStatusVariant, string> = {
     CANCELLED: "Отменён",
 }
 
-export function OrderStatusBadge({
-    status,
-    className,
-}: OrderStatusBadgeProps): React.ReactNode {
+export function OrderStatusBadge({ status, className }: OrderStatusBadgeProps): React.ReactNode {
     const variant = statusVariants[status as OrderStatusVariant] || "default"
     const label = statusLabels[status as OrderStatusVariant] || status
 

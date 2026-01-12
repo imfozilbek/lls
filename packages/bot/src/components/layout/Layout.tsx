@@ -34,13 +34,7 @@ export function Layout({
                     rightElement={headerRight}
                 />
             )}
-            <main
-                className={cn(
-                    "flex-1 overflow-y-auto",
-                    showNav && "pb-20",
-                    className,
-                )}
-            >
+            <main className={cn("flex-1 overflow-y-auto", showNav && "pb-20", className)}>
                 {children}
             </main>
             {showNav && <BottomNav />}

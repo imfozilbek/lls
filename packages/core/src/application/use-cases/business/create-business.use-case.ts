@@ -6,7 +6,6 @@ import { toBusinessDTO } from "../../dtos/business.dto.js"
 import type { BusinessDTO, CreateBusinessInput } from "../../dtos/business.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 
-
 export class CreateBusinessUseCase {
     constructor(private readonly businessRepository: BusinessRepository) {}
 

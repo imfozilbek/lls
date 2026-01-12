@@ -63,24 +63,21 @@ describe("DomainErrors", () => {
 
     describe("BusinessRuleViolationError", () => {
         it("should create business rule error", () => {
-            const error = new BusinessRuleViolationError(
-                "TEST_RULE",
-                "Test message",
-            )
+            const error = new BusinessRuleViolationError("TEST_RULE", "Test message")
             expect(error.code).toBe("BUSINESS_RULE_VIOLATION")
             expect(error.rule).toBe("TEST_RULE")
         })
 
         it("should have factory methods", () => {
-            expect(
-                BusinessRuleViolationError.orderAlreadyHasCourier("1").rule,
-            ).toBe("ORDER_ALREADY_HAS_COURIER")
-            expect(
-                BusinessRuleViolationError.courierNotAvailable("1").rule,
-            ).toBe("COURIER_NOT_AVAILABLE")
-            expect(
-                BusinessRuleViolationError.orderRequiresCourier("1").rule,
-            ).toBe("ORDER_REQUIRES_COURIER")
+            expect(BusinessRuleViolationError.orderAlreadyHasCourier("1").rule).toBe(
+                "ORDER_ALREADY_HAS_COURIER",
+            )
+            expect(BusinessRuleViolationError.courierNotAvailable("1").rule).toBe(
+                "COURIER_NOT_AVAILABLE",
+            )
+            expect(BusinessRuleViolationError.orderRequiresCourier("1").rule).toBe(
+                "ORDER_REQUIRES_COURIER",
+            )
             expect(BusinessRuleViolationError.emptyOrder().rule).toBe("EMPTY_ORDER")
         })
     })
