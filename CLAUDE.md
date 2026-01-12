@@ -2,6 +2,16 @@
 
 > **ALL RULES ARE MANDATORY. Zero tolerance for violations.**
 
+## Task Workflow (MANDATORY)
+
+**⛔ MUST enter planning mode before starting ANY new task.**
+
+| Rule | Requirement |
+|------|-------------|
+| **New tasks** | Always use `EnterPlanMode` tool first |
+| **Purpose** | Plan implementation steps before writing code |
+| **Exit** | Use `ExitPlanMode` only after plan is approved |
+
 ## Project Overview
 
 LLS (LocalLoopSolutions) — Local delivery platform for small businesses. TypeScript monorepo (pnpm workspaces). Node.js >= 22.0.0.
