@@ -4,6 +4,11 @@
 
 ## Task Workflow (MANDATORY)
 
+**⛔ SLC, NOT MVP!** We don't build MVPs. We follow **SLC (Simple, Lovable, Complete)**:
+- **Simple** — Easy to use, no unnecessary complexity
+- **Lovable** — Delightful UX, polished design, feels premium
+- **Complete** — Fully functional, no "coming soon" placeholders
+
 **⛔ MUST enter planning mode before starting ANY new task.**
 
 | Rule | Requirement |
