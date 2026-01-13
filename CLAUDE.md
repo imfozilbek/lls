@@ -234,31 +234,45 @@ git status  # Verify success
 
 **NEVER add Co-Authored-By or Claude Code footer.**
 
-## Release Command
+## Release Pipeline
 
-When user types `release` or `release @lls/<package>`:
-
-### 1. Quality Gates (run sequentially, stop on failure)
-```bash
-pnpm format   # Must have no changes
-pnpm build    # Must compile
-pnpm lint     # 0 errors, 0 warnings
-pnpm test     # All tests pass
+**⛔ Commit Order (dependencies first):**
+```
+1. @lls/core    (domain, types, use cases)
+2. @lls/api     (uses core)
+3. @lls/bot     (uses core, calls api)
+4. @lls/admin   (uses core, calls api)
 ```
 
-### 2. Documentation
-- Create/update `CHANGELOG.md` with changes since last release
-- Mark completed tasks in `ROADMAP.md` as ✅
+**Atomic Commits (one per module):**
+| Order | Scope | Example |
+|-------|-------|---------|
+| 1 | types | `feat(core): add Order type` |
+| 2 | entity | `feat(core): add Order entity` |
+| 3 | use case | `feat(core): add createOrder use case` |
+| 4 | controller | `feat(api): add order endpoints` |
+| 5 | UI | `feat(bot): add order flow` |
+| 6 | tests | `test(core): add Order tests` |
 
-### 3. Version & Tag
-- Bump version in `package.json` (ask user: patch/minor/major)
-- Create git commit: `chore(<package>): release v<version>`
-- Create git tag: `<package>-v<version>`
+**⛔ RULES:**
+- One module = one commit
+- Each commit must pass all quality gates
+- Never commit unfinished dependencies
+- Commit order: types → entities → use cases → controllers → UI
 
-### 4. Push
-- Push commits and tags to origin
+**Quality Gates (before EACH commit):**
+```bash
+pnpm format && pnpm lint && pnpm typecheck && pnpm test
+```
 
-**If any step fails:** Stop immediately, report error, do not continue.
+**Release Steps:**
+```bash
+# 1. Update CHANGELOG.md, ROADMAP.md
+# 2. Version & tag
+npm version minor
+git tag <package>-v<version>
+git push origin main --tags
+```
 
 ## Security (MANDATORY)
 
