@@ -224,10 +224,9 @@ document.innerHTML = x    // XSS
 | Use Cases | 80% |
 | Controllers | 70% |
 
-## Database
+## Database (MongoDB + Redis, self-hosted)
 
-**MongoDB** for main data storage.
-**Redis** for caching and sessions.
+**⛔ No other databases allowed.**
 
 **MongoDB:**
 ```typescript
@@ -304,7 +303,7 @@ console.log            // Use logger
 
 ## Deployment
 
-**Stack:** PM2 + Nginx. **Docker is PROHIBITED.**
+**Stack:** Hostinger VPS, PM2 + Nginx, CI/CD Gitea (self-hosted). **⛔ Docker is PROHIBITED.**
 
 ```
 Nginx → /api/* → PM2: api (port 4001)
