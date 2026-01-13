@@ -407,6 +407,37 @@ Nginx → /api/* → PM2: api (port 4001)
 4. @lls/admin   (uses core, calls api)
 ```
 
+## SLC Rules (MANDATORY)
+
+| Rule | Requirement |
+|------|-------------|
+| **v1.0 Feature** | Order flow + delivery tracking ONLY |
+| **Quality** | Must be PERFECT, not "good enough" |
+| **No scope creep** | Multi-city, analytics — NOT in v1.0 |
+| **UX** | Order in 3 taps |
+| **Speed** | API response < 200ms |
+
+## Testing Checklist
+
+- [ ] Business registration flow
+- [ ] Product catalog CRUD
+- [ ] Customer order placement
+- [ ] Courier assignment
+- [ ] Order status updates
+- [ ] Push notifications
+- [ ] Payment processing
+- [ ] Empty states handling
+
+## Release Checklist
+
+- [ ] All `console.log` removed
+- [ ] `pnpm lint` passes (0 errors, 0 warnings)
+- [ ] `pnpm typecheck` passes
+- [ ] All tests pass
+- [ ] CHANGELOG.md updated
+- [ ] ROADMAP.md updated
+- [ ] Version bumped in package.json
+
 ---
 
 ## Quick Reference
