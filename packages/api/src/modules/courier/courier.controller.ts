@@ -1,7 +1,11 @@
-import { Controller, Get, Param, Post } from "@nestjs/common"
+import { Controller, Get, Param, Post, UseGuards } from "@nestjs/common"
+
+import { TelegramUserDecorator } from "../../common/decorators/telegram-user.decorator.js"
+import { TelegramAuthGuard } from "../../common/guards/telegram-auth.guard.js"
 
 import { CourierService } from "./courier.service.js"
 
+import type { TelegramUser } from "../../common/guards/telegram-auth.guard.js"
 import type { OrderDTO } from "@lls/core"
 
 @Controller()
@@ -13,10 +17,21 @@ export class CourierController {
         return this.service.getAvailable()
     }
 
+    @Get("couriers/my-orders")
+    @UseGuards(TelegramAuthGuard)
+    async getMyOrders(@TelegramUserDecorator() user: TelegramUser): Promise<OrderDTO[]> {
+        const courier = await this.service.getByTelegramId(user.id)
+        return this.service.getOrders(courier.id)
+    }
+
     @Post("orders/:orderId/take")
-    async takeOrder(@Param("orderId") _orderId: string): Promise<OrderDTO> {
-        // TODO: Get courierId from authenticated Telegram user
-        throw new Error("courierId must be provided - implement Telegram auth")
+    @UseGuards(TelegramAuthGuard)
+    async takeOrder(
+        @Param("orderId") orderId: string,
+        @TelegramUserDecorator() user: TelegramUser,
+    ): Promise<OrderDTO> {
+        const courier = await this.service.getByTelegramId(user.id)
+        return this.service.take(orderId, courier.id)
     }
 
     @Post("couriers/:courierId/take-order/:orderId")

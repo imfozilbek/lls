@@ -1,8 +1,12 @@
 import { OrderStatus } from "@lls/core"
-import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common"
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common"
+
+import { TelegramUserDecorator } from "../../common/decorators/telegram-user.decorator.js"
+import { TelegramAuthGuard } from "../../common/guards/telegram-auth.guard.js"
 
 import { OrderService } from "./order.service.js"
 
+import type { TelegramUser } from "../../common/guards/telegram-auth.guard.js"
 import type { CreateOrderInput, OrderDTO } from "@lls/core"
 
 @Controller()
@@ -12,6 +16,12 @@ export class OrderController {
     @Post("orders")
     async create(@Body() input: CreateOrderInput): Promise<OrderDTO> {
         return this.service.create(input)
+    }
+
+    @Get("orders/my")
+    @UseGuards(TelegramAuthGuard)
+    async getMyOrders(@TelegramUserDecorator() user: TelegramUser): Promise<OrderDTO[]> {
+        return this.service.getByCustomerTelegramId(user.id)
     }
 
     @Get("orders/:id")

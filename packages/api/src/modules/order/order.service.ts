@@ -2,6 +2,7 @@ import {
     CancelOrderUseCase,
     CreateOrderUseCase,
     GetBusinessOrdersUseCase,
+    GetCustomerByTelegramIdUseCase,
     GetCustomerOrdersUseCase,
     GetOrderUseCase,
     UpdateOrderStatusUseCase,
@@ -22,6 +23,7 @@ export class OrderService {
     private readonly getBusinessOrders: GetBusinessOrdersUseCase
     private readonly updateOrderStatus: UpdateOrderStatusUseCase
     private readonly cancelOrder: CancelOrderUseCase
+    private readonly getCustomerByTelegramId: GetCustomerByTelegramIdUseCase
 
     constructor(
         private readonly orderRepository: MongoDbOrderRepository,
@@ -38,6 +40,7 @@ export class OrderService {
         this.getBusinessOrders = new GetBusinessOrdersUseCase(orderRepository)
         this.updateOrderStatus = new UpdateOrderStatusUseCase(orderRepository)
         this.cancelOrder = new CancelOrderUseCase(orderRepository)
+        this.getCustomerByTelegramId = new GetCustomerByTelegramIdUseCase(customerRepository)
     }
 
     async create(input: CreateOrderInput): Promise<OrderDTO> {
@@ -50,6 +53,11 @@ export class OrderService {
 
     async getByCustomer(customerId: string): Promise<OrderDTO[]> {
         return this.getCustomerOrders.execute(customerId)
+    }
+
+    async getByCustomerTelegramId(telegramId: number): Promise<OrderDTO[]> {
+        const customer = await this.getCustomerByTelegramId.execute(telegramId)
+        return this.getCustomerOrders.execute(customer.id)
     }
 
     async getByBusiness(businessId: string, status?: OrderStatus): Promise<OrderDTO[]> {
