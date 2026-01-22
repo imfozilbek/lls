@@ -2,6 +2,17 @@
 
 All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 
+## [0.3.2] - 2026-01-22
+
+### @lls/core
+- **Added:** Analytics use case tests (GetBusinessAnalyticsUseCase, GetSalesChartUseCase, GetTopProductsUseCase)
+- **Added:** Date range utility tests (getDateRangeForPeriod, parseDateRange)
+- **Improved:** Test coverage now at 188 tests (was 166)
+
+### @lls/api
+- **Added:** Analytics controller tests (getDashboard, getSales, getTopProducts)
+- **Improved:** Test coverage now at 37 tests (was 32)
+
 ## [0.3.1] - 2026-01-22
 
 ### @lls/core
