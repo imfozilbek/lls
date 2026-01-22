@@ -18,6 +18,7 @@ All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 - **Added:** GET /orders/my endpoint for customer's orders with Telegram auth
 - **Added:** GET /couriers/my-orders endpoint with Telegram auth
 - **Fixed:** POST /orders/:orderId/take now uses Telegram auth instead of throwing error
+- **Security:** TelegramAuthGuard now validates HMAC-SHA256 signature of initData
 
 ### @lls/bot
 - **Changed:** orderApi now uses getMyOrders() instead of getByCustomer()
