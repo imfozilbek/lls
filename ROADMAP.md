@@ -20,7 +20,7 @@
 - ✅ API Infrastructure: MongoDB schemas, Redis cache, NestJS modules
 - ✅ Bot: Telegram Mini App (41 files) - stores, hooks, components, screens
 - ✅ Admin: Business Panel (30 files) - auth, orders, products management
-- ✅ Tests: 181 tests (157 core + 24 API controllers)
+- ✅ Tests: 225 tests (188 core + 37 API)
 - ✅ Analytics: Dashboard, sales charts, top products
 
 ### Future Improvements
@@ -451,8 +451,8 @@
 ## Phase 5: Testing & Quality
 
 > **Status:** ✅ Complete
-> **Files created:** 37 test files
-> **Total tests:** 181
+> **Files created:** 46 test files
+> **Total tests:** 225
 
 ### 5.1 Test Coverage
 
@@ -461,9 +461,10 @@
 | Domain Entities | 55 | 6 |
 | Value Objects | 35 | 4 |
 | Domain Errors | 10 | 1 |
-| Use Cases | 57 | 21 |
-| Controllers | 24 | 5 |
-| **Total** | **181** | **37** |
+| Use Cases (incl. Analytics) | 88 | 28 |
+| API Controllers | 31 | 6 |
+| API Services | 6 | 1 |
+| **Total** | **225** | **46** |
 
 ### 5.2 Test Files
 
@@ -472,8 +473,9 @@
 | @lls/core | `__tests__/domain/entities/*.test.ts` | ✅ 6 files |
 | @lls/core | `__tests__/domain/value-objects/*.test.ts` | ✅ 4 files |
 | @lls/core | `__tests__/domain/errors/*.test.ts` | ✅ 1 file |
-| @lls/core | `__tests__/application/use-cases/*.test.ts` | ✅ 21 files |
-| @lls/api | `__tests__/controllers/*.test.ts` | ✅ 5 files |
+| @lls/core | `__tests__/application/use-cases/**/*.test.ts` | ✅ 28 files |
+| @lls/api | `__tests__/controllers/*.test.ts` | ✅ 6 files |
+| @lls/api | `__tests__/services/*.test.ts` | ✅ 1 file |
 
 ---
 
@@ -672,12 +674,12 @@ pnpm test --coverage # Coverage check
 
 | Phase | Package | Files | Tests | Status |
 |-------|---------|-------|-------|--------|
-| 1 | @lls/core | 58 | 157 | ✅ |
-| 2 | @lls/api | 54 | 24 | ✅ |
+| 1 | @lls/core | 58 | 188 | ✅ |
+| 2 | @lls/api | 54 | 37 | ✅ |
 | 3 | @lls/bot | 41 | - | ✅ |
 | 4 | @lls/admin | 30 | - | ✅ |
-| 5 | Tests | 37 | 181 | ✅ |
-| **Total** | | **220** | **181** | |
+| 5 | Tests | 46 | 225 | ✅ |
+| **Total** | | **229** | **225** | |
 
 **Status Legend:**
 - ✅ Completed
