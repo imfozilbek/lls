@@ -36,4 +36,12 @@ export class EntityNotFoundError extends DomainError {
     static businessByTelegramId(telegramId: number): EntityNotFoundError {
         return new EntityNotFoundError("Business", `telegram:${telegramId}`)
     }
+
+    static customerByTelegramId(telegramId: number): EntityNotFoundError {
+        return new EntityNotFoundError("Customer", `telegram:${telegramId}`)
+    }
+
+    static courierByTelegramId(telegramId: number): EntityNotFoundError {
+        return new EntityNotFoundError("Courier", `telegram:${telegramId}`)
+    }
 }
