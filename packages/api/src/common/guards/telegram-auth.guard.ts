@@ -1,3 +1,5 @@
+import { createHmac } from "crypto"
+
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
 
@@ -11,6 +13,8 @@ export interface TelegramUser {
     username?: string
     languageCode?: string
 }
+
+const MAX_AUTH_AGE_SECONDS = 86400 // 24 hours for Mini App sessions
 
 @Injectable()
 export class TelegramAuthGuard implements CanActivate {
@@ -38,15 +42,45 @@ export class TelegramAuthGuard implements CanActivate {
         return true
     }
 
-    private validateInitData(initData: string, _botToken: string): TelegramUser | null {
+    private validateInitData(initData: string, botToken: string): TelegramUser | null {
         try {
             const params = new URLSearchParams(initData)
+            const hash = params.get("hash")
             const userParam = params.get("user")
+            const authDateParam = params.get("auth_date")
 
-            if (!userParam) {
+            if (!hash || !userParam || !authDateParam) {
                 return null
             }
 
+            // Validate auth_date is not too old
+            const authDate = parseInt(authDateParam, 10)
+            const currentTimestamp = Math.floor(Date.now() / 1000)
+            if (currentTimestamp - authDate > MAX_AUTH_AGE_SECONDS) {
+                return null
+            }
+
+            // Build data check string (sorted params without hash, newline separated)
+            const dataCheckArr: string[] = []
+            params.forEach((value, key) => {
+                if (key !== "hash") {
+                    dataCheckArr.push(`${key}=${value}`)
+                }
+            })
+            dataCheckArr.sort()
+            const dataCheckString = dataCheckArr.join("\n")
+
+            // Validate HMAC signature
+            const secretKey = createHmac("sha256", "WebAppData").update(botToken).digest()
+            const expectedHash = createHmac("sha256", secretKey)
+                .update(dataCheckString)
+                .digest("hex")
+
+            if (hash !== expectedHash) {
+                return null
+            }
+
+            // Parse user data
             const user = JSON.parse(userParam) as {
                 id: number
                 first_name: string
@@ -54,10 +88,6 @@ export class TelegramAuthGuard implements CanActivate {
                 username?: string
                 language_code?: string
             }
-
-            // TODO: Implement proper HMAC validation with bot token
-            // For now, just parse the user data
-            // In production, use @telegram-apps/init-data-node
 
             return {
                 id: user.id,
