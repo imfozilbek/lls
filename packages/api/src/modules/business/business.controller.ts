@@ -1,12 +1,18 @@
 import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common"
 
+import { TelegramAuthService } from "../../common/services/telegram-auth.service.js"
+
 import { BusinessService } from "./business.service.js"
+import { TelegramLoginDto } from "./dto/telegram-login.dto.js"
 
 import type { BusinessDTO, CreateBusinessInput, UpdateBusinessInput } from "@lls/core"
 
 @Controller("businesses")
 export class BusinessController {
-    constructor(private readonly service: BusinessService) {}
+    constructor(
+        private readonly service: BusinessService,
+        private readonly telegramAuthService: TelegramAuthService,
+    ) {}
 
     @Get()
     async list(): Promise<BusinessDTO[]> {
@@ -29,5 +35,16 @@ export class BusinessController {
         @Body() input: UpdateBusinessInput,
     ): Promise<BusinessDTO> {
         return this.service.update(id, input)
+    }
+
+    @Get("telegram/:telegramId")
+    async getByTelegramId(@Param("telegramId") telegramId: string): Promise<BusinessDTO> {
+        return this.service.getByTelegramId(Number(telegramId))
+    }
+
+    @Post("auth/telegram")
+    async authenticateWithTelegram(@Body() data: TelegramLoginDto): Promise<BusinessDTO> {
+        this.telegramAuthService.validateTelegramLogin(data)
+        return this.service.getByTelegramId(data.id)
     }
 }

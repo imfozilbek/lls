@@ -6,7 +6,7 @@ const envSchema = z.object({
     HOST: z.string().default("0.0.0.0"),
     MONGODB_URI: z.string().default("mongodb://localhost:27017/lls"),
     REDIS_URL: z.string().default("redis://localhost:6379"),
-    TELEGRAM_BOT_TOKEN: z.string().optional(),
+    TELEGRAM_BOT_TOKEN: z.string().min(1, "TELEGRAM_BOT_TOKEN is required"),
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 })
 
@@ -16,7 +16,7 @@ export interface AppConfig {
     host: string
     mongoUri: string
     redisUrl: string
-    telegramBotToken?: string
+    telegramBotToken: string
     logLevel: "debug" | "info" | "warn" | "error"
 }
 

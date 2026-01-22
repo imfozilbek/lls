@@ -1,5 +1,6 @@
 import {
     CreateBusinessUseCase,
+    GetBusinessByTelegramIdUseCase,
     GetBusinessUseCase,
     ListBusinessesUseCase,
     UpdateBusinessUseCase,
@@ -14,12 +15,14 @@ import type { BusinessDTO, CreateBusinessInput, UpdateBusinessInput } from "@lls
 export class BusinessService {
     private readonly listBusinesses: ListBusinessesUseCase
     private readonly getBusiness: GetBusinessUseCase
+    private readonly getBusinessByTelegramId: GetBusinessByTelegramIdUseCase
     private readonly createBusiness: CreateBusinessUseCase
     private readonly updateBusiness: UpdateBusinessUseCase
 
     constructor(private readonly repository: MongoDbBusinessRepository) {
         this.listBusinesses = new ListBusinessesUseCase(repository)
         this.getBusiness = new GetBusinessUseCase(repository)
+        this.getBusinessByTelegramId = new GetBusinessByTelegramIdUseCase(repository)
         this.createBusiness = new CreateBusinessUseCase(repository)
         this.updateBusiness = new UpdateBusinessUseCase(repository)
     }
@@ -38,5 +41,9 @@ export class BusinessService {
 
     async update(id: string, input: UpdateBusinessInput): Promise<BusinessDTO> {
         return this.updateBusiness.execute(id, input)
+    }
+
+    async getByTelegramId(telegramId: number): Promise<BusinessDTO> {
+        return this.getBusinessByTelegramId.execute(telegramId)
     }
 }

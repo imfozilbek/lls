@@ -6,14 +6,19 @@ import { BusinessController } from "../../modules/business/business.controller.j
 
 import type { BusinessDTO } from "@lls/core"
 import type { BusinessService } from "../../modules/business/business.service.js"
+import type { TelegramAuthService } from "../../common/services/telegram-auth.service.js"
 
 describe("BusinessController", () => {
     let controller: BusinessController
     let mockService: {
         list: ReturnType<typeof vi.fn>
         getById: ReturnType<typeof vi.fn>
+        getByTelegramId: ReturnType<typeof vi.fn>
         create: ReturnType<typeof vi.fn>
         update: ReturnType<typeof vi.fn>
+    }
+    let mockTelegramAuthService: {
+        validateTelegramLogin: ReturnType<typeof vi.fn>
     }
 
     const mockBusiness: BusinessDTO = {
@@ -31,11 +36,19 @@ describe("BusinessController", () => {
         mockService = {
             list: vi.fn(),
             getById: vi.fn(),
+            getByTelegramId: vi.fn(),
             create: vi.fn(),
             update: vi.fn(),
         }
 
-        controller = new BusinessController(mockService as unknown as BusinessService)
+        mockTelegramAuthService = {
+            validateTelegramLogin: vi.fn(),
+        }
+
+        controller = new BusinessController(
+            mockService as unknown as BusinessService,
+            mockTelegramAuthService as unknown as TelegramAuthService,
+        )
     })
 
     describe("list", () => {
@@ -90,6 +103,37 @@ describe("BusinessController", () => {
             expect(mockService.update).toHaveBeenCalledWith("business-1", {
                 name: "New Pizza Place",
             })
+        })
+    })
+
+    describe("getByTelegramId", () => {
+        it("should return business by telegram id", async () => {
+            mockService.getByTelegramId.mockResolvedValue(mockBusiness)
+
+            const result = await controller.getByTelegramId("123456789")
+
+            expect(result.telegramId).toBe(123456789)
+            expect(mockService.getByTelegramId).toHaveBeenCalledWith(123456789)
+        })
+    })
+
+    describe("authenticateWithTelegram", () => {
+        it("should validate and return business", async () => {
+            mockTelegramAuthService.validateTelegramLogin.mockImplementation(() => {})
+            mockService.getByTelegramId.mockResolvedValue(mockBusiness)
+
+            const loginData = {
+                id: 123456789,
+                first_name: "Test",
+                auth_date: Math.floor(Date.now() / 1000),
+                hash: "valid_hash",
+            }
+
+            const result = await controller.authenticateWithTelegram(loginData)
+
+            expect(mockTelegramAuthService.validateTelegramLogin).toHaveBeenCalledWith(loginData)
+            expect(mockService.getByTelegramId).toHaveBeenCalledWith(123456789)
+            expect(result.telegramId).toBe(123456789)
         })
     })
 })
