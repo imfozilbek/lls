@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { TelegramLoginButton } from "../components/auth/TelegramLoginButton.js"
 import { Card } from "../components/ui/Card.js"
 import { Loading } from "../components/ui/Loading.js"
+import { useToast } from "../components/ui/Toast.js"
 import { useAuthStore } from "../stores/auth.store.js"
 
 import type { TelegramLoginData } from "../lib/api-client.js"
@@ -13,6 +14,7 @@ const BOT_NAME = (import.meta.env["VITE_TELEGRAM_BOT_NAME"] as string | undefine
 
 export function Login(): ReactNode {
     const navigate = useNavigate()
+    const toast = useToast()
     const loginWithTelegram = useAuthStore((state) => state.loginWithTelegram)
     const isLoading = useAuthStore((state) => state.isLoading)
     const error = useAuthStore((state) => state.error)
@@ -21,12 +23,13 @@ export function Login(): ReactNode {
         async (user: TelegramLoginData): Promise<void> => {
             try {
                 await loginWithTelegram(user)
+                toast.success("Добро пожаловать!")
                 void navigate("/")
             } catch {
-                // Error is handled in store
+                toast.error("Не удалось войти. Попробуйте снова.")
             }
         },
-        [loginWithTelegram, navigate],
+        [loginWithTelegram, navigate, toast],
     )
 
     return (

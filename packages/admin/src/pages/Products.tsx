@@ -7,6 +7,7 @@ import { Button } from "../components/ui/Button.js"
 import { Card } from "../components/ui/Card.js"
 import { TableSkeleton } from "../components/ui/Loading.js"
 import { Modal, ModalFooter } from "../components/ui/Modal.js"
+import { useToast } from "../components/ui/Toast.js"
 import { useAuthStore } from "../stores/auth.store.js"
 import { useProductsStore } from "../stores/products.store.js"
 
@@ -15,6 +16,7 @@ import type { ReactNode } from "react"
 
 // eslint-disable-next-line max-lines-per-function
 export function Products(): ReactNode {
+    const toast = useToast()
     const business = useAuthStore((state) => state.business)
     const products = useProductsStore((state) => state.products)
     const isLoading = useProductsStore((state) => state.isLoading)
@@ -49,27 +51,33 @@ export function Products(): ReactNode {
             return
         }
 
-        if (editingProduct) {
-            await updateProduct(editingProduct.id, {
-                name: data.name,
-                description: data.description || undefined,
-                price: { amount: data.price, currency: "UZS" },
-                category: data.category || undefined,
-                imageUrl: data.imageUrl || undefined,
-            })
-        } else {
-            await createProduct({
-                businessId: business.id,
-                name: data.name,
-                description: data.description || undefined,
-                price: { amount: data.price, currency: "UZS" },
-                category: data.category || undefined,
-                imageUrl: data.imageUrl || undefined,
-            })
-        }
+        try {
+            if (editingProduct) {
+                await updateProduct(editingProduct.id, {
+                    name: data.name,
+                    description: data.description || undefined,
+                    price: { amount: data.price, currency: "UZS" },
+                    category: data.category || undefined,
+                    imageUrl: data.imageUrl || undefined,
+                })
+                toast.success(`Товар "${data.name}" успешно обновлён`)
+            } else {
+                await createProduct({
+                    businessId: business.id,
+                    name: data.name,
+                    description: data.description || undefined,
+                    price: { amount: data.price, currency: "UZS" },
+                    category: data.category || undefined,
+                    imageUrl: data.imageUrl || undefined,
+                })
+                toast.success(`Товар "${data.name}" добавлен`)
+            }
 
-        setIsFormOpen(false)
-        setEditingProduct(null)
+            setIsFormOpen(false)
+            setEditingProduct(null)
+        } catch {
+            toast.error(editingProduct ? "Не удалось обновить товар" : "Не удалось добавить товар")
+        }
     }
 
     const handleDelete = async (): Promise<void> => {
@@ -79,17 +87,24 @@ export function Products(): ReactNode {
 
         try {
             await deleteProduct(deletingProduct.id)
+            toast.success(`Товар "${deletingProduct.name}" удалён`)
             setDeletingProduct(null)
         } catch {
-            // Error handled in store
+            toast.error("Не удалось удалить товар")
         }
     }
 
     const handleToggleAvailability = async (productId: string): Promise<void> => {
         try {
             await toggleAvailability(productId)
+            const product = products.find((p) => p.id === productId)
+            if (product) {
+                toast.success(
+                    product.isAvailable ? "Товар снят с продажи" : "Товар доступен для продажи",
+                )
+            }
         } catch {
-            // Error handled in store
+            toast.error("Не удалось изменить доступность")
         }
     }
 

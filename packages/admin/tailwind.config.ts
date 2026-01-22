@@ -18,6 +18,20 @@ const config: Config = {
                     900: "#0c4a6e",
                 },
             },
+            animation: {
+                "toast-in": "toastIn 0.3s ease-out",
+                "toast-out": "toastOut 0.2s ease-in forwards",
+            },
+            keyframes: {
+                toastIn: {
+                    "0%": { opacity: "0", transform: "translateX(100%)" },
+                    "100%": { opacity: "1", transform: "translateX(0)" },
+                },
+                toastOut: {
+                    "0%": { opacity: "1", transform: "translateX(0)" },
+                    "100%": { opacity: "0", transform: "translateX(100%)" },
+                },
+            },
         },
     },
     plugins: [],

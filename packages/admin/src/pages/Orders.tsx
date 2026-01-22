@@ -8,7 +8,8 @@ import { Button } from "../components/ui/Button.js"
 import { Card } from "../components/ui/Card.js"
 import { TableSkeleton } from "../components/ui/Loading.js"
 import { Modal, ModalFooter } from "../components/ui/Modal.js"
-import { formatMoney, formatDate } from "../lib/utils.js"
+import { useToast } from "../components/ui/Toast.js"
+import { formatDate, formatMoney } from "../lib/utils.js"
 import { useAuthStore } from "../stores/auth.store.js"
 import { useOrdersStore } from "../stores/orders.store.js"
 
@@ -27,6 +28,7 @@ const statusFilters = [
 
 // eslint-disable-next-line max-lines-per-function
 export function Orders(): ReactNode {
+    const toast = useToast()
     const business = useAuthStore((state) => state.business)
     const orders = useOrdersStore((state) => state.orders)
     const isLoading = useOrdersStore((state) => state.isLoading)
@@ -43,11 +45,26 @@ export function Orders(): ReactNode {
         }
     }, [business, fetchOrders, statusFilter])
 
+    const getStatusLabel = (status: string): string => {
+        const labels: Record<string, string> = {
+            [OrderStatus.PENDING]: "Ожидает",
+            [OrderStatus.ACCEPTED]: "Принят",
+            [OrderStatus.PREPARING]: "Готовится",
+            [OrderStatus.READY]: "Готов к выдаче",
+            [OrderStatus.PICKED_UP]: "В пути",
+            [OrderStatus.DELIVERED]: "Доставлен",
+            [OrderStatus.CANCELLED]: "Отменён",
+        }
+        return labels[status] || status
+    }
+
     const handleStatusChange = async (orderId: string, status: string): Promise<void> => {
         try {
             await updateOrderStatus(orderId, status)
+            const statusLabel = getStatusLabel(status)
+            toast.success(`Статус заказа изменён на "${statusLabel}"`)
         } catch {
-            // Error handled in store
+            toast.error("Не удалось изменить статус заказа")
         }
     }
 

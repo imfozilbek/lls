@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"
 
-import { FullScreenLoading } from "./components/ui/Loading.js"
+import { FullScreenLoading, ToastContainer } from "./components/ui/index.js"
 import { Login, Dashboard, Orders, Products, Settings } from "./pages/index.js"
 import { useAuthStore } from "./stores/auth.store.js"
 
@@ -34,6 +34,7 @@ function PublicRoute({ children }: { children: ReactNode }): ReactNode {
 export function App(): ReactNode {
     return (
         <BrowserRouter>
+            <ToastContainer />
             <Routes>
                 {/* Public routes */}
                 <Route
