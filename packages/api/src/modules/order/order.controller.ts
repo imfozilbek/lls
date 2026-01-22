@@ -1,20 +1,22 @@
-import { OrderStatus } from "@lls/core"
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common"
 
+import { BusinessAuthMode } from "../../common/decorators/index.js"
 import { TelegramUserDecorator } from "../../common/decorators/telegram-user.decorator.js"
-import { TelegramAuthGuard } from "../../common/guards/telegram-auth.guard.js"
+import { BusinessAuthGuard, TelegramAuthGuard } from "../../common/guards/index.js"
 
+import { CreateOrderDto, UpdateOrderStatusDto } from "./dto/index.js"
 import { OrderService } from "./order.service.js"
 
 import type { TelegramUser } from "../../common/guards/telegram-auth.guard.js"
-import type { CreateOrderInput, OrderDTO } from "@lls/core"
+import type { OrderDTO, OrderStatus } from "@lls/core"
 
 @Controller()
 export class OrderController {
     constructor(private readonly service: OrderService) {}
 
     @Post("orders")
-    async create(@Body() input: CreateOrderInput): Promise<OrderDTO> {
+    @UseGuards(TelegramAuthGuard)
+    async create(@Body() input: CreateOrderDto): Promise<OrderDTO> {
         return this.service.create(input)
     }
 
@@ -35,6 +37,7 @@ export class OrderController {
     }
 
     @Get("businesses/:businessId/orders")
+    @UseGuards(TelegramAuthGuard, BusinessAuthGuard)
     async getByBusiness(
         @Param("businessId") businessId: string,
         @Query("status") status?: OrderStatus,
@@ -43,14 +46,17 @@ export class OrderController {
     }
 
     @Patch("orders/:id/status")
+    @UseGuards(TelegramAuthGuard, BusinessAuthGuard)
+    @BusinessAuthMode("order")
     async updateStatus(
         @Param("id") id: string,
-        @Body("status") status: OrderStatus,
+        @Body() input: UpdateOrderStatusDto,
     ): Promise<OrderDTO> {
-        return this.service.updateStatus(id, status)
+        return this.service.updateStatus(id, input.status)
     }
 
     @Post("orders/:id/cancel")
+    @UseGuards(TelegramAuthGuard)
     async cancel(@Param("id") id: string, @Body("reason") reason?: string): Promise<OrderDTO> {
         return this.service.cancel(id, reason)
     }

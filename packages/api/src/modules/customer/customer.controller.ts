@@ -4,9 +4,10 @@ import { TelegramUserDecorator } from "../../common/decorators/telegram-user.dec
 import { TelegramAuthGuard } from "../../common/guards/telegram-auth.guard.js"
 
 import { CustomerService } from "./customer.service.js"
+import { UpdateCustomerDto } from "./dto/index.js"
 
 import type { TelegramUser } from "../../common/guards/telegram-auth.guard.js"
-import type { CustomerDTO, TelegramUserData, UpdateCustomerInput } from "@lls/core"
+import type { CustomerDTO, TelegramUserData } from "@lls/core"
 
 @Controller("customers")
 export class CustomerController {
@@ -27,17 +28,15 @@ export class CustomerController {
     @UseGuards(TelegramAuthGuard)
     async updateMe(
         @TelegramUserDecorator() user: TelegramUser,
-        @Body() input: UpdateCustomerInput,
+        @Body() input: UpdateCustomerDto,
     ): Promise<CustomerDTO> {
         const customer = await this.service.getByTelegramId(user.id)
         return this.service.update(customer.id, input)
     }
 
     @Patch(":id")
-    async update(
-        @Param("id") id: string,
-        @Body() input: UpdateCustomerInput,
-    ): Promise<CustomerDTO> {
+    @UseGuards(TelegramAuthGuard)
+    async update(@Param("id") id: string, @Body() input: UpdateCustomerDto): Promise<CustomerDTO> {
         return this.service.update(id, input)
     }
 }

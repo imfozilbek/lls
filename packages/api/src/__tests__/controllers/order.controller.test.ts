@@ -120,7 +120,9 @@ describe("OrderController", () => {
             const updated = { ...mockOrder, status: OrderStatus.ACCEPTED }
             mockService.updateStatus.mockResolvedValue(updated)
 
-            const result = await controller.updateStatus("order-1", OrderStatus.ACCEPTED)
+            const result = await controller.updateStatus("order-1", {
+                status: OrderStatus.ACCEPTED,
+            })
 
             expect(result.status).toBe(OrderStatus.ACCEPTED)
             expect(mockService.updateStatus).toHaveBeenCalledWith("order-1", OrderStatus.ACCEPTED)

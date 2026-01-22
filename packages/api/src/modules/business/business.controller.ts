@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common"
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from "@nestjs/common"
 
+import { BusinessAuthGuard, TelegramAuthGuard } from "../../common/guards/index.js"
 import { TelegramAuthService } from "../../common/services/telegram-auth.service.js"
 
 import { BusinessService } from "./business.service.js"
@@ -30,6 +31,7 @@ export class BusinessController {
     }
 
     @Patch(":id")
+    @UseGuards(TelegramAuthGuard, BusinessAuthGuard)
     async update(
         @Param("id") id: string,
         @Body() input: UpdateBusinessInput,
