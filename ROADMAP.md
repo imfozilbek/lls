@@ -484,31 +484,46 @@
 ### Public (Customer)
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
-| GET | /api/v1/businesses | List businesses | Telegram |
-| GET | /api/v1/businesses/:id | Get business | Telegram |
-| GET | /api/v1/businesses/:id/products | Get products | Telegram |
-| POST | /api/v1/orders | Create order | Telegram |
-| GET | /api/v1/orders/:id | Get order | Telegram |
-| GET | /api/v1/orders/my | My orders | Telegram |
-| GET | /api/v1/customers/me | Get profile | Telegram |
-| PATCH | /api/v1/customers/me | Update profile | Telegram |
+| GET | /businesses | List businesses | Telegram |
+| GET | /businesses/:id | Get business | Telegram |
+| GET | /businesses/:id/products | Get products | Telegram |
+| POST | /orders | Create order | Telegram |
+| GET | /orders/:id | Get order | Telegram |
+| GET | /orders/my | My orders | Telegram |
+| POST | /orders/:id/cancel | Cancel order | Telegram |
+| GET | /customers/me | Get profile | Telegram |
+| PATCH | /customers/me | Update profile | Telegram |
+| POST | /customers/telegram | Get or create customer | Telegram |
 
 ### Courier
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
-| GET | /api/v1/couriers/available-orders | Available orders | Telegram |
-| POST | /api/v1/couriers/take-order/:id | Take order | Telegram |
-| PATCH | /api/v1/orders/:id/status | Update status | Telegram |
-| GET | /api/v1/couriers/my-orders | My deliveries | Telegram |
+| GET | /couriers/available-orders | Available orders | Telegram |
+| POST | /orders/:orderId/take | Take order | Telegram |
+| POST | /orders/:orderId/complete | Complete delivery | Telegram |
+| GET | /couriers/my-orders | My deliveries | Telegram |
+| PATCH | /orders/:id/status | Update status | Telegram |
 
 ### Business (Admin)
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
-| GET | /api/v1/orders/business/:id | Business orders | Business |
-| PATCH | /api/v1/orders/:id/status | Accept/reject | Business |
-| POST | /api/v1/products | Create product | Business |
-| PATCH | /api/v1/products/:id | Update product | Business |
-| DELETE | /api/v1/products/:id | Delete product | Business |
+| POST | /businesses | Create business | - |
+| PATCH | /businesses/:id | Update business | Business |
+| GET | /businesses/telegram/:telegramId | Get by Telegram ID | - |
+| POST | /businesses/auth/telegram | Telegram OAuth login | - |
+| GET | /businesses/:businessId/orders | Business orders | Business |
+| POST | /businesses/:businessId/products | Create product | Business |
+| PATCH | /products/:id | Update product | Business |
+| DELETE | /products/:id | Delete product | Business |
+| PATCH | /products/:id/availability | Toggle availability | Business |
+| PATCH | /orders/:id/status | Accept/reject order | Business |
+
+### Analytics
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| GET | /analytics/business/:businessId | Full dashboard | Business |
+| GET | /analytics/business/:businessId/sales | Sales chart | Business |
+| GET | /analytics/business/:businessId/top-products | Top products | Business |
 
 ---
 
