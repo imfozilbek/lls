@@ -83,7 +83,7 @@ export const productApi = {
         price: { amount: number; currency: string }
         category?: string
         imageUrl?: string
-    }): Promise<ProductDTO> => api.post("/products", data),
+    }): Promise<ProductDTO> => api.post(`/businesses/${data.businessId}/products`, data),
     update: (
         id: string,
         data: {
@@ -97,7 +97,7 @@ export const productApi = {
     ): Promise<ProductDTO> => api.patch(`/products/${id}`, data),
     delete: (id: string): Promise<void> => api.delete(`/products/${id}`),
     toggleAvailability: (id: string): Promise<ProductDTO> =>
-        api.post(`/products/${id}/toggle-availability`),
+        api.patch(`/products/${id}/availability`),
 }
 
 // Order API for business
