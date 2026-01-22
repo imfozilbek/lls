@@ -19,6 +19,17 @@ All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 - **Added:** GET /couriers/my-orders endpoint with Telegram auth
 - **Fixed:** POST /orders/:orderId/take now uses Telegram auth instead of throwing error
 
+### @lls/bot
+- **Changed:** orderApi now uses getMyOrders() instead of getByCustomer()
+- **Changed:** customerApi now uses getMe() and updateMe() methods
+- **Changed:** courierApi now uses takeOrder(orderId) without courierId parameter
+- **Changed:** courierApi now uses getMyOrders() instead of getOrders()
+- **Removed:** Unnecessary courierId state from courier store
+
+### @lls/admin
+- **Fixed:** productApi.create now uses correct /businesses/:businessId/products path
+- **Fixed:** productApi.toggleAvailability now uses PATCH instead of POST
+
 ## [0.3.0] - 2026-01-22
 
 ### @lls/core
