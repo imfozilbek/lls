@@ -2,6 +2,27 @@
 
 All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 
+## [0.3.0] - 2026-01-22
+
+### @lls/core
+- **Added:** GetBusinessByTelegramIdUseCase for authenticating businesses by Telegram ID
+- **Added:** EntityNotFoundError.businessByTelegramId() factory method
+- **Added:** Unit tests for GetBusinessByTelegramIdUseCase
+
+### @lls/api
+- **Added:** TelegramAuthService with HMAC-SHA256 signature validation
+- **Added:** POST /api/v1/businesses/auth/telegram endpoint for OAuth
+- **Added:** GET /api/v1/businesses/telegram/:telegramId endpoint
+- **Added:** TelegramLoginDto with class-validator decorators
+- **Changed:** TELEGRAM_BOT_TOKEN is now required (was optional)
+- **Added:** Unit tests for TelegramAuthService
+
+### @lls/admin
+- **Added:** TelegramLoginButton component with Telegram Login Widget
+- **Changed:** Login page now uses Telegram OAuth instead of manual ID entry
+- **Added:** businessApi.authenticateWithTelegram() API method
+- **Changed:** Auth store uses loginWithTelegram() with signature validation
+
 ## [0.2.0] - 2026-01-22
 
 ### @lls/core
