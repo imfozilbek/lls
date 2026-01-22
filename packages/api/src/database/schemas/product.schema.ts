@@ -9,13 +9,13 @@ export class Product {
     @Prop({ required: true, type: String })
     _id: string
 
-    @Prop({ required: true, index: true })
+    @Prop({ required: true, index: true, type: String })
     businessId: string
 
-    @Prop({ required: true })
+    @Prop({ required: true, type: String })
     name: string
 
-    @Prop()
+    @Prop({ type: String })
     description?: string
 
     @Prop({ required: true, type: Object })
@@ -24,10 +24,10 @@ export class Product {
         currency: string
     }
 
-    @Prop()
+    @Prop({ type: String })
     category?: string
 
-    @Prop({ default: true, index: true })
+    @Prop({ default: true, index: true, type: Boolean })
     isAvailable: boolean
 
     createdAt: Date

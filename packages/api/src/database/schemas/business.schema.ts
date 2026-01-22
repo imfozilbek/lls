@@ -10,10 +10,10 @@ export class Business {
     @Prop({ required: true, type: String })
     _id: string
 
-    @Prop({ required: true })
+    @Prop({ required: true, type: String })
     name: string
 
-    @Prop({ required: true, enum: Object.values(BusinessType) })
+    @Prop({ required: true, type: String, enum: Object.values(BusinessType) })
     type: BusinessType
 
     @Prop({ required: true, type: Object })
@@ -24,10 +24,10 @@ export class Business {
         longitude?: number
     }
 
-    @Prop({ required: true, unique: true, index: true })
+    @Prop({ required: true, unique: true, index: true, type: Number })
     telegramId: number
 
-    @Prop({ default: true, index: true })
+    @Prop({ default: true, index: true, type: Boolean })
     isActive: boolean
 
     createdAt: Date

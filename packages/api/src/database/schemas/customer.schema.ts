@@ -9,13 +9,13 @@ export class Customer {
     @Prop({ required: true, type: String })
     _id: string
 
-    @Prop({ required: true, unique: true, index: true })
+    @Prop({ required: true, unique: true, index: true, type: Number })
     telegramId: number
 
-    @Prop({ required: true })
+    @Prop({ required: true, type: String })
     name: string
 
-    @Prop({ required: true })
+    @Prop({ required: true, type: String })
     phone: string
 
     @Prop({ required: true, type: Object })

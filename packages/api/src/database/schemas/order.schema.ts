@@ -7,16 +7,16 @@ export type OrderDocument = HydratedDocument<Order>
 
 @Schema({ _id: false })
 export class OrderItem {
-    @Prop({ required: true })
+    @Prop({ required: true, type: String })
     id: string
 
-    @Prop({ required: true })
+    @Prop({ required: true, type: String })
     productId: string
 
-    @Prop({ required: true })
+    @Prop({ required: true, type: String })
     productName: string
 
-    @Prop({ required: true, min: 1 })
+    @Prop({ required: true, min: 1, type: Number })
     quantity: number
 
     @Prop({ required: true, type: Object })
@@ -33,13 +33,13 @@ export class Order {
     @Prop({ required: true, type: String })
     _id: string
 
-    @Prop({ required: true, index: true })
+    @Prop({ required: true, index: true, type: String })
     customerId: string
 
-    @Prop({ required: true, index: true })
+    @Prop({ required: true, index: true, type: String })
     businessId: string
 
-    @Prop({ index: true })
+    @Prop({ index: true, type: String })
     courierId?: string
 
     @Prop({ required: true, type: [OrderItemSchema] })
@@ -55,6 +55,7 @@ export class Order {
 
     @Prop({
         required: true,
+        type: String,
         enum: Object.values(OrderStatus),
         default: OrderStatus.PENDING,
         index: true,
