@@ -1,5 +1,5 @@
 import { BusinessType } from "@lls/core"
-import { type ReactNode } from "react"
+import { type ReactNode, useMemo, useState } from "react"
 import { useParams } from "react-router-dom"
 
 import { CartButton } from "../../components/cart/CartButton.js"
@@ -7,13 +7,39 @@ import { Layout } from "../../components/layout/Layout.js"
 import { ProductList } from "../../components/product/ProductList.js"
 import { Badge } from "../../components/ui/Badge.js"
 import { Skeleton } from "../../components/ui/Loading.js"
+import { SearchInput } from "../../components/ui/SearchInput.js"
 import { useBusiness, useProducts } from "../../hooks/useApi.js"
 import { getBusinessTypeLabel } from "../../lib/utils.js"
 
+import type { ProductDTO } from "@lls/core"
+
+// eslint-disable-next-line max-lines-per-function
 export function Business(): ReactNode {
     const { id } = useParams<{ id: string }>()
     const { data: business, isLoading: businessLoading } = useBusiness(id)
     const { data: products, isLoading: productsLoading, error } = useProducts(id)
+    const [searchQuery, setSearchQuery] = useState("")
+
+    const filteredProducts = useMemo((): ProductDTO[] | null => {
+        if (!products) {
+            return null
+        }
+        if (!searchQuery.trim()) {
+            return products
+        }
+
+        const query = searchQuery.toLowerCase().trim()
+        return products.filter(
+            (product) =>
+                product.name.toLowerCase().includes(query) ||
+                (product.description && product.description.toLowerCase().includes(query)) ||
+                (product.category && product.category.toLowerCase().includes(query)),
+        )
+    }, [products, searchQuery])
+
+    const handleSearchClear = (): void => {
+        setSearchQuery("")
+    }
 
     if (businessLoading) {
         return (
@@ -66,6 +92,18 @@ export function Business(): ReactNode {
                 </div>
             </div>
 
+            {/* Search Bar */}
+            {products && products.length > 3 && (
+                <div className="px-4 py-3 border-b border-telegram-secondary">
+                    <SearchInput
+                        placeholder="Поиск товаров..."
+                        value={searchQuery}
+                        onChange={(e): void => setSearchQuery(e.target.value)}
+                        onClear={handleSearchClear}
+                    />
+                </div>
+            )}
+
             {/* Products */}
             <div className="p-4 pb-24">
                 {error && (
@@ -73,7 +111,27 @@ export function Business(): ReactNode {
                         {error}
                     </div>
                 )}
-                <ProductList products={products} isLoading={productsLoading} />
+
+                {/* No Search Results */}
+                {searchQuery && filteredProducts && filteredProducts.length === 0 && (
+                    <div className="text-center py-8">
+                        <div className="text-4xl mb-3">🔍</div>
+                        <p className="text-telegram-hint">
+                            По запросу &quot;{searchQuery}&quot; ничего не найдено
+                        </p>
+                        <button
+                            onClick={handleSearchClear}
+                            className="mt-3 text-sm text-telegram-button"
+                        >
+                            Сбросить поиск
+                        </button>
+                    </div>
+                )}
+
+                {/* Product List */}
+                {(!searchQuery || (filteredProducts && filteredProducts.length > 0)) && (
+                    <ProductList products={filteredProducts} isLoading={productsLoading} />
+                )}
             </div>
 
             <CartButton />

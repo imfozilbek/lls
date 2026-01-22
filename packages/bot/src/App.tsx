@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 
-// Customer screens
+import { ToastContainer } from "./components/ui/Toast.js"
 import { ActiveDelivery } from "./screens/courier/ActiveDelivery.js"
 import { AvailableOrders } from "./screens/courier/AvailableOrders.js"
 import { DeliveryHistory } from "./screens/courier/DeliveryHistory.js"
@@ -11,11 +11,10 @@ import { Home } from "./screens/customer/Home.js"
 import { OrderTracking } from "./screens/customer/OrderTracking.js"
 import { Orders } from "./screens/customer/Orders.js"
 
-// Courier screens
-
 export function App(): React.ReactNode {
     return (
         <BrowserRouter>
+            <ToastContainer />
             <Routes>
                 {/* Customer Routes */}
                 <Route path="/" element={<Home />} />

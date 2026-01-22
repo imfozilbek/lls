@@ -1,12 +1,13 @@
 import { OrderStatus } from "@lls/core"
 import { type ReactNode, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 
 import { Layout } from "../../components/layout/Layout.js"
 import { OrderStatusBadge } from "../../components/ui/Badge.js"
 import { Button } from "../../components/ui/Button.js"
 import { Card } from "../../components/ui/Card.js"
 import { Loading } from "../../components/ui/Loading.js"
+import { useToast } from "../../components/ui/Toast.js"
 import { useOrder } from "../../hooks/useApi.js"
 import { hapticFeedback, hapticNotification } from "../../lib/telegram.js"
 import { formatMoney } from "../../lib/utils.js"
@@ -16,6 +17,7 @@ import { useCourierStore } from "../../stores/courier.store.js"
 export function ActiveDelivery(): ReactNode {
     const { id } = useParams<{ id: string }>()
     const navigate = useNavigate()
+    const toast = useToast()
     const { data: order, isLoading, error, refetch } = useOrder(id)
     const completeDelivery = useCourierStore((state) => state.completeDelivery)
     const isCompleting = useCourierStore((state) => state.isLoading)
@@ -42,9 +44,11 @@ export function ActiveDelivery(): ReactNode {
         try {
             await completeDelivery(id)
             hapticNotification("success")
+            toast.success("Доставка завершена! Отличная работа!")
             void navigate("/courier")
         } catch {
             hapticNotification("error")
+            toast.error("Не удалось завершить доставку.")
         }
     }
 

@@ -39,10 +39,10 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Home screen (business list) | `src/screens/home.tsx` | [ ] |
-| Business card component | `src/components/business-card.tsx` | [ ] |
+| Home screen (business list) | `src/screens/customer/Home.tsx` | [x] |
+| Business card component | `src/components/business/BusinessCard.tsx` | [x] |
 | Business filter (by type) | `src/components/business-filter.tsx` | [ ] |
-| Search bar | `src/components/search-bar.tsx` | [ ] |
+| Search bar | `src/components/ui/SearchInput.tsx` | [x] |
 
 ### Screens - Products
 
@@ -88,11 +88,11 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Bottom navigation | `src/components/bottom-nav.tsx` | [ ] |
-| Loading spinner | `src/components/spinner.tsx` | [ ] |
-| Error boundary | `src/components/error-boundary.tsx` | [ ] |
+| Bottom navigation | `src/components/layout/BottomNav.tsx` | [x] |
+| Loading spinner | `src/components/ui/Loading.tsx` | [x] |
+| Error boundary | `src/components/ErrorBoundary.tsx` | [x] |
 | Pull to refresh | `src/components/pull-refresh.tsx` | [ ] |
-| Toast notifications | `src/components/toast.tsx` | [ ] |
+| Toast notifications | `src/components/ui/Toast.tsx` | [x] |
 
 ### Hooks
 
@@ -135,13 +135,13 @@
 | Delivery confirmation | `src/components/delivery-confirm.tsx` | [ ] |
 | Navigation to address | `src/components/navigation-link.tsx` | [ ] |
 
-### Screens - Earnings
+### Screens - Earnings / Delivery History
 
 | Task | File | Status |
 |------|------|--------|
-| Earnings screen | `src/screens/courier/earnings.tsx` | [ ] |
-| Earnings summary | `src/components/earnings-summary.tsx` | [ ] |
-| Delivery history | `src/components/delivery-history.tsx` | [ ] |
+| Delivery history screen | `src/screens/courier/DeliveryHistory.tsx` | [x] |
+| Earnings summary | `src/screens/courier/DeliveryHistory.tsx` | [x] |
+| Delivery history list | `src/screens/courier/DeliveryHistory.tsx` | [x] |
 
 ### Hooks - Courier
 

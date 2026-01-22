@@ -6,6 +6,7 @@ import { Badge } from "../../components/ui/Badge.js"
 import { Button } from "../../components/ui/Button.js"
 import { Card } from "../../components/ui/Card.js"
 import { Skeleton } from "../../components/ui/Loading.js"
+import { useToast } from "../../components/ui/Toast.js"
 import { hapticFeedback, hapticNotification } from "../../lib/telegram.js"
 import { formatMoney, formatRelativeTime } from "../../lib/utils.js"
 import { useCourierStore } from "../../stores/courier.store.js"
@@ -13,6 +14,7 @@ import { useCourierStore } from "../../stores/courier.store.js"
 // eslint-disable-next-line max-lines-per-function
 export function AvailableOrders(): ReactNode {
     const navigate = useNavigate()
+    const toast = useToast()
     const availableOrders = useCourierStore((state) => state.availableOrders)
     const currentDelivery = useCourierStore((state) => state.currentDelivery)
     const isLoading = useCourierStore((state) => state.isLoading)
@@ -31,9 +33,11 @@ export function AvailableOrders(): ReactNode {
         try {
             await takeOrder(orderId)
             hapticNotification("success")
+            toast.success("Заказ взят! Перейдите к доставке.")
             void navigate(`/courier/delivery/${orderId}`)
         } catch {
             hapticNotification("error")
+            toast.error("Не удалось взять заказ. Попробуйте снова.")
         }
     }
 

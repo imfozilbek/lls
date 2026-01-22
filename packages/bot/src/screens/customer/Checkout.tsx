@@ -5,6 +5,7 @@ import { CartSummary } from "../../components/cart/CartSummary.js"
 import { Layout } from "../../components/layout/Layout.js"
 import { Button } from "../../components/ui/Button.js"
 import { Input } from "../../components/ui/Input.js"
+import { useToast } from "../../components/ui/Toast.js"
 import { useCart } from "../../hooks/useCart.js"
 import { hapticNotification } from "../../lib/telegram.js"
 import { useAuthStore } from "../../stores/auth.store.js"
@@ -13,6 +14,7 @@ import { useOrderStore } from "../../stores/order.store.js"
 // eslint-disable-next-line max-lines-per-function
 export function Checkout(): ReactNode {
     const navigate = useNavigate()
+    const toast = useToast()
     const { businessId, isEmpty } = useCart()
     const customer = useAuthStore((state) => state.customer)
     const createOrder = useOrderStore((state) => state.createOrder)
@@ -66,9 +68,11 @@ export function Checkout(): ReactNode {
             })
 
             hapticNotification("success")
+            toast.success("Заказ успешно создан!")
             void navigate(`/order/${order.id}`)
         } catch {
             hapticNotification("error")
+            toast.error("Не удалось создать заказ. Попробуйте снова.")
         }
     }
 

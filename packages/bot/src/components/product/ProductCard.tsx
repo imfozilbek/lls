@@ -1,9 +1,11 @@
 import { type ReactNode } from "react"
 
 import { useCart } from "../../hooks/useCart.js"
+import { hapticFeedback } from "../../lib/telegram.js"
 import { formatMoney } from "../../lib/utils.js"
 import { Button } from "../ui/Button.js"
 import { Card } from "../ui/Card.js"
+import { useToast } from "../ui/Toast.js"
 
 import type { ProductDTO } from "@lls/core"
 
@@ -13,10 +15,13 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps): ReactNode {
     const { add, updateQuantity, getItemQuantity } = useCart()
+    const toast = useToast()
     const quantity = getItemQuantity(product.id)
 
     const handleAdd = (): void => {
         add(product)
+        hapticFeedback("light")
+        toast.success(`${product.name} добавлен в корзину`)
     }
 
     const handleIncrement = (): void => {
