@@ -3,13 +3,14 @@ import { persist } from "zustand/middleware"
 
 import { businessApi } from "../lib/api-client.js"
 
+import type { TelegramLoginData } from "../lib/api-client.js"
 import type { BusinessDTO } from "@lls/core"
 
 interface AuthState {
     business: BusinessDTO | null
     isLoading: boolean
     error: string | null
-    login: (telegramId: number) => Promise<void>
+    loginWithTelegram: (data: TelegramLoginData) => Promise<void>
     logout: () => void
     updateBusiness: (data: Partial<BusinessDTO>) => Promise<void>
 }
@@ -21,11 +22,11 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false,
             error: null,
 
-            login: async (telegramId: number): Promise<void> => {
+            loginWithTelegram: async (data: TelegramLoginData): Promise<void> => {
                 set({ isLoading: true, error: null })
                 try {
-                    localStorage.setItem("business_telegram_id", String(telegramId))
-                    const business = await businessApi.getByTelegramId(telegramId)
+                    const business = await businessApi.authenticateWithTelegram(data)
+                    localStorage.setItem("business_telegram_id", String(data.id))
                     set({ business, isLoading: false })
                 } catch (err) {
                     localStorage.removeItem("business_telegram_id")

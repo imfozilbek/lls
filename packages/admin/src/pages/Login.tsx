@@ -1,39 +1,33 @@
-import { useState } from "react"
+import { useCallback } from "react"
 import { useNavigate } from "react-router-dom"
 
-import { Button } from "../components/ui/Button.js"
+import { TelegramLoginButton } from "../components/auth/TelegramLoginButton.js"
 import { Card } from "../components/ui/Card.js"
-import { Input } from "../components/ui/Input.js"
+import { Loading } from "../components/ui/Loading.js"
 import { useAuthStore } from "../stores/auth.store.js"
 
-import type { ReactNode, FormEvent } from "react"
+import type { TelegramLoginData } from "../lib/api-client.js"
+import type { ReactNode } from "react"
+
+const BOT_NAME = (import.meta.env["VITE_TELEGRAM_BOT_NAME"] as string | undefined) || "llsbot"
 
 export function Login(): ReactNode {
     const navigate = useNavigate()
-    const login = useAuthStore((state) => state.login)
+    const loginWithTelegram = useAuthStore((state) => state.loginWithTelegram)
     const isLoading = useAuthStore((state) => state.isLoading)
     const error = useAuthStore((state) => state.error)
 
-    const [telegramId, setTelegramId] = useState("")
-    const [formError, setFormError] = useState("")
-
-    const handleSubmit = async (e: FormEvent): Promise<void> => {
-        e.preventDefault()
-        setFormError("")
-
-        const id = Number(telegramId.trim())
-        if (!id || isNaN(id)) {
-            setFormError("Введите корректный Telegram ID")
-            return
-        }
-
-        try {
-            await login(id)
-            void navigate("/")
-        } catch {
-            // Error is handled in store
-        }
-    }
+    const handleTelegramAuth = useCallback(
+        async (user: TelegramLoginData): Promise<void> => {
+            try {
+                await loginWithTelegram(user)
+                void navigate("/")
+            } catch {
+                // Error is handled in store
+            }
+        },
+        [loginWithTelegram, navigate],
+    )
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -43,29 +37,27 @@ export function Login(): ReactNode {
                     <p className="text-gray-600 mt-1">Вход для бизнеса</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {(error || formError) && (
-                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-                            {formError || error}
-                        </div>
-                    )}
+                {error && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 mb-4">
+                        {error}
+                    </div>
+                )}
 
-                    <Input
-                        label="Telegram ID"
-                        type="text"
-                        placeholder="123456789"
-                        value={telegramId}
-                        onChange={(e): void => setTelegramId(e.target.value)}
-                        hint="Введите Telegram ID вашего бизнеса"
+                {isLoading ? (
+                    <div className="flex justify-center py-4">
+                        <Loading size="lg" />
+                    </div>
+                ) : (
+                    <TelegramLoginButton
+                        botName={BOT_NAME}
+                        onAuth={handleTelegramAuth}
+                        buttonSize="large"
+                        cornerRadius={8}
                     />
-
-                    <Button type="submit" fullWidth loading={isLoading}>
-                        Войти
-                    </Button>
-                </form>
+                )}
 
                 <p className="text-xs text-gray-500 text-center mt-6">
-                    Telegram ID можно узнать у @userinfobot
+                    Войдите через Telegram для доступа к панели управления
                 </p>
             </Card>
         </div>

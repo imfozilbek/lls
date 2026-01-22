@@ -51,10 +51,23 @@ export const api = {
     delete: <T>(path: string): Promise<T> => request<T>("DELETE", path),
 }
 
+// Telegram login data interface
+export interface TelegramLoginData {
+    id: number
+    first_name: string
+    last_name?: string
+    username?: string
+    photo_url?: string
+    auth_date: number
+    hash: string
+}
+
 // Business API
 export const businessApi = {
     getByTelegramId: (telegramId: number): Promise<BusinessDTO> =>
         api.get(`/businesses/telegram/${telegramId}`),
+    authenticateWithTelegram: (data: TelegramLoginData): Promise<BusinessDTO> =>
+        api.post("/businesses/auth/telegram", data),
     update: (id: string, data: Partial<BusinessDTO>): Promise<BusinessDTO> =>
         api.patch(`/businesses/${id}`, data),
 }
