@@ -75,15 +75,10 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     },
 
     updateCustomer: async (data): Promise<void> => {
-        const { customer } = get()
-        if (!customer) {
-            return
-        }
-
         set({ isLoading: true, error: null })
 
         try {
-            const updated = await customerApi.update(customer.id, data)
+            const updated = await customerApi.updateMe(data)
             set({ customer: updated, isLoading: false })
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to update"

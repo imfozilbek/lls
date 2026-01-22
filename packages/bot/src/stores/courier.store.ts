@@ -4,7 +4,6 @@ import { create } from "zustand"
 import { courierApi } from "../lib/api-client.js"
 
 interface CourierState {
-    courierId: string | null
     isOnline: boolean
     availableOrders: OrderDTO[]
     currentDelivery: OrderDTO | null
@@ -14,7 +13,6 @@ interface CourierState {
 }
 
 interface CourierActions {
-    setCourierId: (id: string) => void
     setOnlineStatus: (isOnline: boolean) => void
     fetchAvailableOrders: () => Promise<void>
     fetchMyOrders: () => Promise<void>
@@ -26,7 +24,6 @@ interface CourierActions {
 type CourierStore = CourierState & CourierActions
 
 const initialState: CourierState = {
-    courierId: null,
     isOnline: false,
     availableOrders: [],
     currentDelivery: null,
@@ -37,10 +34,6 @@ const initialState: CourierState = {
 
 export const useCourierStore = create<CourierStore>((set, get) => ({
     ...initialState,
-
-    setCourierId: (id: string): void => {
-        set({ courierId: id })
-    },
 
     setOnlineStatus: (isOnline: boolean): void => {
         set({ isOnline })
@@ -59,15 +52,10 @@ export const useCourierStore = create<CourierStore>((set, get) => ({
     },
 
     fetchMyOrders: async (): Promise<void> => {
-        const { courierId } = get()
-        if (!courierId) {
-            return
-        }
-
         set({ isLoading: true, error: null })
 
         try {
-            const orders = await courierApi.getOrders(courierId)
+            const orders = await courierApi.getMyOrders()
             const currentDelivery = orders.find(
                 (o) => o.status === OrderStatus.PICKED_UP || o.status === OrderStatus.READY,
             )
@@ -83,16 +71,10 @@ export const useCourierStore = create<CourierStore>((set, get) => ({
     },
 
     takeOrder: async (orderId: string): Promise<void> => {
-        const { courierId } = get()
-        if (!courierId) {
-            set({ error: "Courier ID not set" })
-            return
-        }
-
         set({ isLoading: true, error: null })
 
         try {
-            const order = await courierApi.takeOrder(orderId, courierId)
+            const order = await courierApi.takeOrder(orderId)
             set({
                 currentDelivery: order,
                 availableOrders: get().availableOrders.filter((o) => o.id !== orderId),

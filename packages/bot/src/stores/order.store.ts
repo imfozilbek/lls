@@ -14,7 +14,7 @@ interface OrderState {
 }
 
 interface OrderActions {
-    fetchOrders: (customerId: string) => Promise<void>
+    fetchMyOrders: () => Promise<void>
     fetchOrder: (orderId: string) => Promise<void>
     createOrder: (data: {
         customerId: string
@@ -38,11 +38,11 @@ const initialState: OrderState = {
 export const useOrderStore = create<OrderStore>((set, get) => ({
     ...initialState,
 
-    fetchOrders: async (customerId: string): Promise<void> => {
+    fetchMyOrders: async (): Promise<void> => {
         set({ isLoading: true, error: null })
 
         try {
-            const orders = await orderApi.getByCustomer(customerId)
+            const orders = await orderApi.getMyOrders()
             set({ orders, isLoading: false })
         } catch (error) {
             const message = error instanceof Error ? error.message : "Failed to fetch orders"

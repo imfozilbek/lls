@@ -67,8 +67,7 @@ export const orderApi = {
         deliveryAddress: { street: string; city: string }
     }): Promise<OrderDTO> => api.post("/orders", data),
     getById: (id: string): Promise<OrderDTO> => api.get(`/orders/${id}`),
-    getByCustomer: (customerId: string): Promise<OrderDTO[]> =>
-        api.get(`/customers/${customerId}/orders`),
+    getMyOrders: (): Promise<OrderDTO[]> => api.get("/orders/my"),
     cancel: (id: string): Promise<OrderDTO> => api.post(`/orders/${id}/cancel`),
 }
 
@@ -79,17 +78,18 @@ export const customerApi = {
         phone: string
         address: { street: string; city: string }
     }): Promise<CustomerDTO> => api.post("/customers/telegram", telegramData),
-    update: (
-        id: string,
-        data: { name?: string; phone?: string; address?: { street: string; city: string } },
-    ): Promise<CustomerDTO> => api.patch(`/customers/${id}`, data),
+    getMe: (): Promise<CustomerDTO> => api.get("/customers/me"),
+    updateMe: (data: {
+        name?: string
+        phone?: string
+        address?: { street: string; city: string }
+    }): Promise<CustomerDTO> => api.patch("/customers/me", data),
 }
 
 export const courierApi = {
     getAvailableOrders: (): Promise<OrderDTO[]> => api.get("/couriers/available-orders"),
-    takeOrder: (orderId: string, courierId: string): Promise<OrderDTO> =>
-        api.post(`/couriers/${courierId}/take-order/${orderId}`),
+    takeOrder: (orderId: string): Promise<OrderDTO> => api.post(`/orders/${orderId}/take`),
     completeDelivery: (orderId: string): Promise<OrderDTO> =>
         api.post(`/orders/${orderId}/complete`),
-    getOrders: (courierId: string): Promise<OrderDTO[]> => api.get(`/couriers/${courierId}/orders`),
+    getMyOrders: (): Promise<OrderDTO[]> => api.get("/couriers/my-orders"),
 }

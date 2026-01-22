@@ -129,29 +129,23 @@ export function useOrder(orderId: string | undefined): UseQueryResult<OrderDTO> 
     return { data, isLoading, error, refetch }
 }
 
-export function useCustomerOrders(customerId: string | undefined): UseQueryResult<OrderDTO[]> {
+export function useMyOrders(): UseQueryResult<OrderDTO[]> {
     const [data, setData] = useState<OrderDTO[] | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
     const refetch = useCallback(async (): Promise<void> => {
-        if (!customerId) {
-            setData(null)
-            setIsLoading(false)
-            return
-        }
-
         setIsLoading(true)
         setError(null)
         try {
-            const result = await orderApi.getByCustomer(customerId)
+            const result = await orderApi.getMyOrders()
             setData(result)
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to fetch orders")
         } finally {
             setIsLoading(false)
         }
-    }, [customerId])
+    }, [])
 
     useEffect(() => {
         void refetch()

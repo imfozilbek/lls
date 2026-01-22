@@ -3,21 +3,17 @@ import { type ReactNode, useEffect } from "react"
 import { Layout } from "../../components/layout/Layout.js"
 import { OrderCard } from "../../components/order/OrderCard.js"
 import { Skeleton } from "../../components/ui/Loading.js"
-import { useAuthStore } from "../../stores/auth.store.js"
 import { useOrderStore } from "../../stores/order.store.js"
 
 export function Orders(): ReactNode {
-    const customer = useAuthStore((state) => state.customer)
     const orders = useOrderStore((state) => state.orders)
     const isLoading = useOrderStore((state) => state.isLoading)
     const error = useOrderStore((state) => state.error)
-    const fetchOrders = useOrderStore((state) => state.fetchOrders)
+    const fetchMyOrders = useOrderStore((state) => state.fetchMyOrders)
 
     useEffect(() => {
-        if (customer?.id) {
-            void fetchOrders(customer.id)
-        }
-    }, [customer?.id, fetchOrders])
+        void fetchMyOrders()
+    }, [fetchMyOrders])
 
     return (
         <Layout title="Мои заказы">
