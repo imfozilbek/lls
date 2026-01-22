@@ -2,6 +2,34 @@
 
 All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 
+## [0.3.4] - 2026-01-22
+
+### @lls/bot
+- **Added:** Toast notification system with success/error/warning/info variants
+- **Added:** ErrorBoundary component for graceful error handling
+- **Added:** SearchInput component for filtering content
+- **Added:** Search functionality on Home screen (businesses)
+- **Added:** Search functionality on Business screen (products)
+- **Added:** Toast notifications for cart actions, order creation, courier actions
+- **Improved:** User feedback for all critical actions
+
+### @lls/admin
+- **Added:** Toast notification system with title/message support
+- **Added:** Toast notifications for product CRUD operations
+- **Added:** Toast notifications for order status changes
+- **Added:** Toast notifications for login success/error
+- **Improved:** User feedback for all admin actions
+
+## [0.3.3] - 2026-01-22
+
+### @lls/api
+- **Added:** BusinessAuthGuard for protecting business-specific endpoints
+- **Added:** BusinessAuthMode decorator for specifying auth mode (business/product/order)
+- **Added:** Input validation DTOs: CreateProductDto, UpdateProductDto, CreateOrderDto, UpdateOrderStatusDto, UpdateCustomerDto
+- **Added:** BusinessAuthGuard unit tests (10 tests)
+- **Security:** Business endpoints now protected - users can only modify their own business resources
+- **Improved:** Test coverage now at 47 tests (was 37)
+
 ## [0.3.2] - 2026-01-22
 
 ### @lls/core

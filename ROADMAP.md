@@ -18,9 +18,10 @@
 - ✅ Project Config: ESLint, Prettier, TypeScript, Vitest, pnpm workspace
 - ✅ Application Layer: Domain Errors, DTOs, 20 Use Cases
 - ✅ API Infrastructure: MongoDB schemas, Redis cache, NestJS modules
+- ✅ API Security: BusinessAuthGuard, TelegramAuthGuard, input validation DTOs
 - ✅ Bot: Telegram Mini App (41 files) - stores, hooks, components, screens
 - ✅ Admin: Business Panel (30 files) - auth, orders, products management
-- ✅ Tests: 225 tests (188 core + 37 API)
+- ✅ Tests: 235 tests (188 core + 47 API)
 - ✅ Analytics: Dashboard, sales charts, top products
 
 ### Future Improvements
@@ -370,7 +371,7 @@
 |------|--------|-------------|
 | `AvailableOrders.tsx` | [ ] | Available orders list |
 | `ActiveDelivery.tsx` | [ ] | Active delivery |
-| `Earnings.tsx` | [ ] | Earnings view |
+| `DeliveryHistory.tsx` | [x] | Delivery history and earnings view |
 
 ### 3.9 App Router
 
@@ -452,7 +453,7 @@
 
 > **Status:** ✅ Complete
 > **Files created:** 46 test files
-> **Total tests:** 225
+> **Total tests:** 235
 
 ### 5.1 Test Coverage
 
@@ -463,8 +464,9 @@
 | Domain Errors | 10 | 1 |
 | Use Cases (incl. Analytics) | 88 | 28 |
 | API Controllers | 31 | 6 |
+| API Guards | 10 | 1 |
 | API Services | 6 | 1 |
-| **Total** | **225** | **46** |
+| **Total** | **235** | **47** |
 
 ### 5.2 Test Files
 
@@ -475,6 +477,7 @@
 | @lls/core | `__tests__/domain/errors/*.test.ts` | ✅ 1 file |
 | @lls/core | `__tests__/application/use-cases/**/*.test.ts` | ✅ 28 files |
 | @lls/api | `__tests__/controllers/*.test.ts` | ✅ 6 files |
+| @lls/api | `__tests__/guards/*.test.ts` | ✅ 1 file |
 | @lls/api | `__tests__/services/*.test.ts` | ✅ 1 file |
 
 ---
@@ -693,8 +696,8 @@ pnpm test --coverage # Coverage check
 | 2 | @lls/api | 54 | 37 | ✅ |
 | 3 | @lls/bot | 41 | - | ✅ |
 | 4 | @lls/admin | 30 | - | ✅ |
-| 5 | Tests | 46 | 225 | ✅ |
-| **Total** | | **229** | **225** | |
+| 5 | Tests | 47 | 235 | ✅ |
+| **Total** | | **235** | **235** | |
 
 **Status Legend:**
 - ✅ Completed
