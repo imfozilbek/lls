@@ -2,6 +2,23 @@
 
 All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 
+## [0.3.1] - 2026-01-22
+
+### @lls/core
+- **Added:** GetCustomerByTelegramIdUseCase for authenticated customer endpoints
+- **Added:** GetCourierByTelegramIdUseCase for authenticated courier endpoints
+- **Added:** EntityNotFoundError.customerByTelegramId() factory method
+- **Added:** EntityNotFoundError.courierByTelegramId() factory method
+- **Added:** Unit tests for GetCustomerByTelegramIdUseCase
+- **Added:** Unit tests for GetCourierByTelegramIdUseCase
+
+### @lls/api
+- **Added:** GET /customers/me endpoint with Telegram auth
+- **Added:** PATCH /customers/me endpoint with Telegram auth
+- **Added:** GET /orders/my endpoint for customer's orders with Telegram auth
+- **Added:** GET /couriers/my-orders endpoint with Telegram auth
+- **Fixed:** POST /orders/:orderId/take now uses Telegram auth instead of throwing error
+
 ## [0.3.0] - 2026-01-22
 
 ### @lls/core
