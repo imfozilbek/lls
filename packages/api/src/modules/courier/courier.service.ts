@@ -10,7 +10,9 @@ import { Injectable } from "@nestjs/common"
 
 import { EventsGateway } from "../../gateway/events.gateway.js"
 import { MongoDbCourierRepository } from "../../infrastructure/repositories/mongodb-courier.repository.js"
+import { MongoDbCustomerRepository } from "../../infrastructure/repositories/mongodb-customer.repository.js"
 import { MongoDbOrderRepository } from "../../infrastructure/repositories/mongodb-order.repository.js"
+import { TelegramNotificationService } from "../../notifications/telegram-notification.service.js"
 
 import type { CourierDTO, OrderDTO } from "@lls/core"
 
@@ -26,7 +28,9 @@ export class CourierService {
     constructor(
         private readonly orderRepository: MongoDbOrderRepository,
         private readonly courierRepository: MongoDbCourierRepository,
+        private readonly customerRepository: MongoDbCustomerRepository,
         private readonly eventsGateway: EventsGateway,
+        private readonly notificationService: TelegramNotificationService,
     ) {
         this.getAvailableOrders = new GetAvailableOrdersUseCase(orderRepository)
         this.takeOrder = new TakeOrderUseCase(orderRepository, courierRepository)
@@ -60,6 +64,20 @@ export class CourierService {
                 courierName: courier.name,
                 assignedAt: order.updatedAt,
             })
+
+            // Send Telegram notification to customer about courier assignment
+            try {
+                const customer = await this.customerRepository.findById(order.customerId)
+                if (customer?.telegramId) {
+                    void this.notificationService.sendCourierAssignedNotification(
+                        customer.telegramId,
+                        order.id,
+                        courier.name,
+                    )
+                }
+            } catch {
+                // Skip notification if customer not found
+            }
         }
 
         // Emit order status changed event
@@ -86,6 +104,19 @@ export class CourierService {
             newStatus: order.status,
             updatedAt: order.updatedAt,
         })
+
+        // Send Telegram notification for delivery completion
+        try {
+            const customer = await this.customerRepository.findById(order.customerId)
+            if (customer?.telegramId) {
+                void this.notificationService.sendDeliveryCompleteNotification(
+                    customer.telegramId,
+                    order.id,
+                )
+            }
+        } catch {
+            // Skip notification if customer not found
+        }
 
         return order
     }

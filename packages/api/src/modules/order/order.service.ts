@@ -6,6 +6,7 @@ import {
     GetCustomerByTelegramIdUseCase,
     GetCustomerOrdersUseCase,
     GetOrderUseCase,
+    OrderStatus as OrderStatusEnum,
     UpdateOrderStatusUseCase,
 } from "@lls/core"
 import { Injectable } from "@nestjs/common"
@@ -14,6 +15,7 @@ import { EventsGateway } from "../../gateway/events.gateway.js"
 import { MongoDbBusinessRepository } from "../../infrastructure/repositories/mongodb-business.repository.js"
 import { MongoDbCustomerRepository } from "../../infrastructure/repositories/mongodb-customer.repository.js"
 import { MongoDbOrderRepository } from "../../infrastructure/repositories/mongodb-order.repository.js"
+import { TelegramNotificationService } from "../../notifications/telegram-notification.service.js"
 
 import type { CreateOrderInput, OrderDTO, OrderStatus } from "@lls/core"
 
@@ -33,6 +35,7 @@ export class OrderService {
         private readonly customerRepository: MongoDbCustomerRepository,
         private readonly businessRepository: MongoDbBusinessRepository,
         private readonly eventsGateway: EventsGateway,
+        private readonly notificationService: TelegramNotificationService,
     ) {
         this.createOrder = new CreateOrderUseCase(
             orderRepository,
@@ -51,13 +54,24 @@ export class OrderService {
     async create(input: CreateOrderInput): Promise<OrderDTO> {
         const order = await this.createOrder.execute(input)
 
-        // Get business name for notification
+        // Get business and customer for notifications
         let businessName = "Unknown"
+        let businessTelegramId: number | { value: number } | null = null
+        let customerTelegramId: number | { value: number } | null = null
+
         try {
             const business = await this.getBusiness.execute(order.businessId)
             businessName = business.name
+            businessTelegramId = business.telegramId
         } catch {
-            // Use default if business not found
+            // Use defaults if not found
+        }
+
+        try {
+            const customer = await this.customerRepository.findById(order.customerId)
+            customerTelegramId = customer?.telegramId ?? null
+        } catch {
+            // Skip customer notification if not found
         }
 
         // Emit WebSocket event for new order
@@ -79,6 +93,18 @@ export class OrderService {
             total: order.total,
             createdAt: order.createdAt,
         })
+
+        // Send Telegram notifications
+        if (customerTelegramId) {
+            void this.notificationService.sendOrderConfirmation(
+                customerTelegramId,
+                order,
+                businessName,
+            )
+        }
+        if (businessTelegramId) {
+            void this.notificationService.sendNewOrderNotification(businessTelegramId, order)
+        }
 
         return order
     }
@@ -114,6 +140,29 @@ export class OrderService {
             newStatus: order.status,
             updatedAt: order.updatedAt,
         })
+
+        // Send Telegram notification for status change
+        try {
+            const customer = await this.customerRepository.findById(order.customerId)
+            if (customer?.telegramId) {
+                void this.notificationService.sendStatusChangeNotification(
+                    customer.telegramId,
+                    order.id,
+                    previousStatus as OrderStatusEnum,
+                    order.status as OrderStatusEnum,
+                )
+
+                // Send delivery complete notification
+                if (order.status === OrderStatusEnum.DELIVERED) {
+                    void this.notificationService.sendDeliveryCompleteNotification(
+                        customer.telegramId,
+                        order.id,
+                    )
+                }
+            }
+        } catch {
+            // Skip notification if customer not found
+        }
 
         return order
     }

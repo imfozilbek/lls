@@ -5,6 +5,7 @@ import { MongoDbBusinessRepository } from "../../infrastructure/repositories/mon
 import { MongoDbCustomerRepository } from "../../infrastructure/repositories/mongodb-customer.repository.js"
 import { MongoDbOrderRepository } from "../../infrastructure/repositories/mongodb-order.repository.js"
 import { MongoDbProductRepository } from "../../infrastructure/repositories/mongodb-product.repository.js"
+import { TelegramNotificationService } from "../../notifications/telegram-notification.service.js"
 
 import { OrderController } from "./order.controller.js"
 import { OrderService } from "./order.service.js"
@@ -18,6 +19,7 @@ import { OrderService } from "./order.service.js"
         MongoDbBusinessRepository,
         MongoDbProductRepository,
         BusinessAuthGuard,
+        TelegramNotificationService,
     ],
     exports: [OrderService, MongoDbOrderRepository],
 })

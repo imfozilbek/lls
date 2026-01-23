@@ -9,7 +9,7 @@
 | v0.1.0 | Infrastructure | @lls/core v0.1.0 | ✅ Complete |
 | v0.2.0 | Feature Modules | @lls/core v0.2.0 | ✅ Complete |
 | v0.3.0 | WebSocket Events | v0.2.0 | ✅ Complete |
-| v0.4.0 | Advanced Security | v0.3.0 | ⏳ Planned |
+| v0.4.0 | Advanced Security | v0.3.0 | ✅ Complete |
 
 ---
 
@@ -222,22 +222,22 @@
 
 ## v0.4.0 - Advanced Security
 
-> Rate limiting, enhanced auth (Planned)
+> Rate limiting, enhanced auth
 
 ### Security
 
 | Task | File | Status |
 |------|------|--------|
-| Rate limiter | `src/middleware/rate-limiter.ts` | [ ] |
-| Helmet security headers | `src/middleware/helmet.ts` | [ ] |
-| Input sanitization | `src/middleware/sanitize.ts` | [ ] |
+| Rate limiter | `src/middleware/rate-limiter.ts` | [x] |
+| Helmet security headers | `src/middleware/helmet.ts` | [x] |
+| Input sanitization | `src/middleware/sanitize.ts` | [x] |
 
 ### Advanced Auth
 
 | Task | File | Status |
 |------|------|--------|
-| Session management (Redis) | `src/auth/session.ts` | [ ] |
-| Role-based access | `src/auth/rbac.ts` | [ ] |
+| Session management (Redis) | `src/auth/session.ts` | [x] |
+| Role-based access | `src/auth/rbac.ts` | [x] |
 
 ---
 
