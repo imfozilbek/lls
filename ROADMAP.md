@@ -21,7 +21,7 @@
 - ✅ API Security: BusinessAuthGuard, TelegramAuthGuard, input validation DTOs
 - ✅ Bot: Telegram Mini App (41 files) - stores, hooks, components, screens
 - ✅ Admin: Business Panel (30 files) - auth, orders, products management
-- ✅ Tests: 235 tests (188 core + 47 API)
+- ✅ Tests: 318 tests (271 core + 47 API)
 - ✅ Analytics: Dashboard, sales charts, top products
 
 ### Future Improvements
@@ -31,9 +31,9 @@
 
 | Package | Version | Status | Next Milestone |
 |---------|---------|--------|----------------|
-| @lls/core | v0.2.0 | ✅ Complete | v0.3.0 - Domain Events |
-| @lls/api | v0.3.0 | ✅ Complete | v0.4.0 - Rate Limiting |
-| @lls/bot | v0.3.0 | ✅ Complete | v0.4.0 - Push Notifications |
+| @lls/core | v0.3.0 | ✅ Complete | v0.4.0 - Advanced Rules |
+| @lls/api | v0.4.0 | ✅ Complete | v0.5.0 - API Gateway |
+| @lls/bot | v0.4.0 | ✅ Complete | v0.5.0 - Offline Support |
 | @lls/admin | v0.1.0 | ✅ Complete | v0.2.0 - More analytics |
 
 ---
@@ -704,12 +704,12 @@ pnpm test --coverage # Coverage check
 
 | Phase | Package | Files | Tests | Status |
 |-------|---------|-------|-------|--------|
-| 1 | @lls/core | 58 | 188 | ✅ |
-| 2 | @lls/api | 54 | 37 | ✅ |
-| 3 | @lls/bot | 41 | - | ✅ |
+| 1 | @lls/core | 75 | 271 | ✅ |
+| 2 | @lls/api | 65 | 47 | ✅ |
+| 3 | @lls/bot | 45 | - | ✅ |
 | 4 | @lls/admin | 30 | - | ✅ |
-| 5 | Tests | 47 | 235 | ✅ |
-| **Total** | | **235** | **235** | |
+| 5 | Tests | 51 | 318 | ✅ |
+| **Total** | | **266** | **318** | |
 
 **Status Legend:**
 - ✅ Completed

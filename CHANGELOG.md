@@ -2,6 +2,53 @@
 
 All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 
+## [0.3.6] - 2026-01-23
+
+### @lls/core v0.3.0
+- **Added:** Domain events infrastructure (`src/domain/events/`)
+- **Added:** `DomainEvent` base class with `eventId`, `occurredOn`, and `eventName`
+- **Added:** `OrderCreatedEvent` for order creation notification
+- **Added:** `OrderStatusChangedEvent` for status change tracking
+- **Added:** `CourierAssignedEvent` for courier assignment notification
+- **Added:** `EventDispatcher` singleton with pub/sub pattern and wildcard support
+- **Added:** Order status transition rules (`src/domain/rules/order-status-rules.ts`)
+- **Added:** `isValidTransition()` and `getValidTransitions()` functions
+- **Added:** `calculateProgress()` for order status progress percentage
+- **Added:** Business hours validation (`src/domain/rules/business-hours.ts`)
+- **Added:** `isBusinessOpen()`, `getDaySchedule()`, `getNextOpenTime()` functions
+- **Added:** Order calculator service (`src/domain/services/order-calculator.ts`)
+- **Added:** `calculateOrderTotal()` with delivery fee threshold
+- **Added:** `calculateDiscount()` and `applyDiscount()` functions
+- **Added:** Unit tests for all new modules (83 new tests)
+- **Improved:** Total tests now at 271 (was 188)
+
+### @lls/api v0.4.0
+- **Added:** Rate limiting with @nestjs/throttler (`src/middleware/rate-limiter.ts`)
+- **Added:** `RateLimiterGuard` with IP extraction from Fastify request
+- **Added:** Rate limit presets: general, auth, createOrder
+- **Added:** Helmet security headers configuration (`src/middleware/helmet.ts`)
+- **Added:** Input sanitization utilities (`src/middleware/sanitize.ts`)
+- **Added:** `sanitizeString()`, `sanitizeObject()` functions
+- **Added:** `hasSqlInjection()`, `hasNoSqlInjection()` detection
+- **Added:** Session management service (`src/auth/session.ts`)
+- **Added:** Redis-backed session storage with TTL
+- **Added:** Role-based access control (`src/auth/rbac.ts`)
+- **Added:** `Role`, `Resource`, `Action` enums
+- **Added:** `RolesGuard` with permission checking
+- **Dependencies:** Added @nestjs/throttler, @fastify/helmet
+
+### @lls/bot v0.4.0 (via @lls/api)
+- **Added:** Telegram notification service (`src/notifications/telegram-notification.service.ts`)
+- **Added:** `sendOrderConfirmation()` - order placed notification
+- **Added:** `sendStatusChangeNotification()` - order status updates
+- **Added:** `sendCourierAssignedNotification()` - courier assignment
+- **Added:** `sendDeliveryCompleteNotification()` - delivery complete
+- **Added:** `sendNewOrderNotification()` - new order for business
+- **Added:** `sendNewOrderAvailableNotification()` - new order for couriers
+- **Added:** `OrderService` integration with notification service
+- **Added:** `CourierService` integration with notification service
+- **Added:** Russian language message templates
+
 ## [0.3.5] - 2026-01-23
 
 ### @lls/api
