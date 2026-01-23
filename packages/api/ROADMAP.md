@@ -8,7 +8,7 @@
 |---------|-------|------------|--------|
 | v0.1.0 | Infrastructure | @lls/core v0.1.0 | ✅ Complete |
 | v0.2.0 | Feature Modules | @lls/core v0.2.0 | ✅ Complete |
-| v0.3.0 | WebSocket Events | v0.2.0 | ⏳ Planned |
+| v0.3.0 | WebSocket Events | v0.2.0 | ✅ Complete |
 | v0.4.0 | Advanced Security | v0.3.0 | ⏳ Planned |
 
 ---
@@ -83,13 +83,12 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Business repository | `src/repositories/business.repository.ts` | [x] |
-| Product repository | `src/repositories/product.repository.ts` | [x] |
-| Customer repository | `src/repositories/customer.repository.ts` | [x] |
-| Courier repository | `src/repositories/courier.repository.ts` | [x] |
-| Order repository | `src/repositories/order.repository.ts` | [x] |
-| Analytics repository | `src/repositories/analytics.repository.ts` | [x] |
-| Repositories module | `src/repositories/repositories.module.ts` | [x] |
+| Business repository | `src/infrastructure/repositories/mongodb-business.repository.ts` | [x] |
+| Product repository | `src/infrastructure/repositories/mongodb-product.repository.ts` | [x] |
+| Customer repository | `src/infrastructure/repositories/mongodb-customer.repository.ts` | [x] |
+| Courier repository | `src/infrastructure/repositories/mongodb-courier.repository.ts` | [x] |
+| Order repository | `src/infrastructure/repositories/mongodb-order.repository.ts` | [x] |
+| Analytics repository | `src/infrastructure/repositories/mongodb-analytics.repository.ts` | [x] |
 
 ### Business Module
 
@@ -189,25 +188,41 @@
 
 | Task | File | Status |
 |------|------|--------|
-| WebSocket gateway | `src/gateway/events.gateway.ts` | [ ] |
-| WebSocket module | `src/gateway/gateway.module.ts` | [ ] |
-| Order events | `src/gateway/order-events.ts` | [ ] |
-| Courier events | `src/gateway/courier-events.ts` | [ ] |
+| WebSocket gateway | `src/gateway/events.gateway.ts` | [x] |
+| WebSocket module | `src/gateway/gateway.module.ts` | [x] |
+| Event types | `src/gateway/events.types.ts` | [x] |
+| Index exports | `src/gateway/index.ts` | [x] |
 
-### Events
+### WebSocket Events
 
-| Task | File | Status |
-|------|------|--------|
-| Order created event | `src/events/order-created.event.ts` | [ ] |
-| Order status changed event | `src/events/order-status-changed.event.ts` | [ ] |
-| Courier assigned event | `src/events/courier-assigned.event.ts` | [ ] |
-| Event emitter integration | `src/events/event-emitter.ts` | [ ] |
+| Event | Description | Status |
+|-------|-------------|--------|
+| `order_created` | New order notification to business | [x] |
+| `order_status_changed` | Order status update | [x] |
+| `order_cancelled` | Order cancellation | [x] |
+| `courier_assigned` | Courier took the order | [x] |
+| `new_order_available` | New order for couriers | [x] |
+
+### Room Management
+
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Order rooms | `order:{orderId}` - track specific order | [x] |
+| Business rooms | `business:{businessId}` - business notifications | [x] |
+| Courier room | `couriers` - all available couriers | [x] |
+
+### Service Integration
+
+| Task | Description | Status |
+|------|-------------|--------|
+| OrderService events | Emit on create/update/cancel | [x] |
+| CourierService events | Emit on take/complete | [x] |
 
 ---
 
 ## v0.4.0 - Advanced Security
 
-> Rate limiting, enhanced auth
+> Rate limiting, enhanced auth (Planned)
 
 ### Security
 
@@ -250,9 +265,9 @@ packages/api/
 │   │   ├── cache.module.ts
 │   │   ├── cache.service.ts
 │   │   └── cache.constants.ts
-│   ├── repositories/
-│   │   ├── *.repository.ts
-│   │   └── repositories.module.ts
+│   ├── infrastructure/
+│   │   └── repositories/
+│   │       └── *.repository.ts
 │   ├── modules/
 │   │   ├── business/
 │   │   ├── product/
@@ -260,8 +275,11 @@ packages/api/
 │   │   ├── courier/
 │   │   ├── customer/
 │   │   └── analytics/
-│   └── gateway/ (planned)
-│       └── events.gateway.ts
+│   └── gateway/
+│       ├── events.gateway.ts
+│       ├── events.types.ts
+│       ├── gateway.module.ts
+│       └── index.ts
 └── __tests__/
     ├── controllers/
     ├── guards/
