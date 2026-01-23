@@ -6,8 +6,8 @@
 
 | Version | Focus | Depends On | Status |
 |---------|-------|------------|--------|
-| v0.1.0 | Customer Interface | @lls/api v0.3.0 | ⏳ Planned |
-| v0.2.0 | Courier Interface | v0.1.0 | ⏳ Planned |
+| v0.1.0 | Customer Interface | @lls/api v0.3.0 | ✅ Complete |
+| v0.2.0 | Courier Interface | v0.1.0 | ✅ Complete |
 | v0.3.0 | Notifications | v0.2.0 | ⏳ Planned |
 
 ---
@@ -20,20 +20,21 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Vite + React setup | `vite.config.ts` | [ ] |
-| Telegram Mini App SDK | `src/lib/telegram.ts` | [ ] |
-| initData validation | `src/lib/auth.ts` | [ ] |
-| API client | `src/lib/api-client.ts` | [ ] |
-| Router setup | `src/router.tsx` | [ ] |
-| Tailwind CSS | `tailwind.config.ts` | [ ] |
+| Vite + React setup | `vite.config.ts` | [x] |
+| Telegram Mini App SDK | `src/lib/telegram.ts` | [x] |
+| initData validation | `src/stores/auth.store.ts` | [x] |
+| API client | `src/lib/api-client.ts` | [x] |
+| Router setup | `src/App.tsx` | [x] |
+| Tailwind CSS | `tailwind.config.ts` | [x] |
 
 ### State Management
 
 | Task | File | Status |
 |------|------|--------|
-| Cart store (zustand) | `src/stores/cart-store.ts` | [ ] |
-| User store | `src/stores/user-store.ts` | [ ] |
-| Order store | `src/stores/order-store.ts` | [ ] |
+| Cart store (zustand) | `src/stores/cart.store.ts` | [x] |
+| Auth store | `src/stores/auth.store.ts` | [x] |
+| Order store | `src/stores/order.store.ts` | [x] |
+| Toast store | `src/stores/toast.store.ts` | [x] |
 
 ### Screens - Browse
 
@@ -41,67 +42,67 @@
 |------|------|--------|
 | Home screen (business list) | `src/screens/customer/Home.tsx` | [x] |
 | Business card component | `src/components/business/BusinessCard.tsx` | [x] |
-| Business filter (by type) | `src/components/business-filter.tsx` | [ ] |
+| Business list component | `src/components/business/BusinessList.tsx` | [x] |
 | Search bar | `src/components/ui/SearchInput.tsx` | [x] |
 
 ### Screens - Products
 
 | Task | File | Status |
 |------|------|--------|
-| Business detail screen | `src/screens/business.tsx` | [ ] |
-| Product list | `src/components/product-list.tsx` | [ ] |
-| Product card | `src/components/product-card.tsx` | [ ] |
-| Product categories | `src/components/category-tabs.tsx` | [ ] |
-| Add to cart button | `src/components/add-to-cart.tsx` | [ ] |
+| Business detail screen | `src/screens/customer/Business.tsx` | [x] |
+| Product list | `src/components/product/ProductList.tsx` | [x] |
+| Product card | `src/components/product/ProductCard.tsx` | [x] |
+| Add to cart (in ProductCard) | `src/components/product/ProductCard.tsx` | [x] |
 
 ### Screens - Cart
 
 | Task | File | Status |
 |------|------|--------|
-| Cart screen | `src/screens/cart.tsx` | [ ] |
-| Cart item | `src/components/cart-item.tsx` | [ ] |
-| Quantity controls | `src/components/quantity-control.tsx` | [ ] |
-| Cart summary | `src/components/cart-summary.tsx` | [ ] |
-| Empty cart state | `src/components/empty-cart.tsx` | [ ] |
+| Cart screen | `src/screens/customer/Cart.tsx` | [x] |
+| Cart item | `src/components/cart/CartItem.tsx` | [x] |
+| Cart summary | `src/components/cart/CartSummary.tsx` | [x] |
+| Cart button (floating) | `src/components/cart/CartButton.tsx` | [x] |
 
 ### Screens - Checkout
 
 | Task | File | Status |
 |------|------|--------|
-| Checkout screen | `src/screens/checkout.tsx` | [ ] |
-| Address input | `src/components/address-input.tsx` | [ ] |
-| Phone input | `src/components/phone-input.tsx` | [ ] |
-| Order confirmation | `src/components/order-confirm.tsx` | [ ] |
-| Place order action | `src/hooks/use-place-order.ts` | [ ] |
+| Checkout screen | `src/screens/customer/Checkout.tsx` | [x] |
+| Address/phone inputs | `src/screens/customer/Checkout.tsx` | [x] |
+| Order placement | `src/screens/customer/Checkout.tsx` | [x] |
 
 ### Screens - Orders
 
 | Task | File | Status |
 |------|------|--------|
-| Order history screen | `src/screens/orders.tsx` | [ ] |
-| Order card | `src/components/order-card.tsx` | [ ] |
-| Order detail screen | `src/screens/order-detail.tsx` | [ ] |
-| Order status badge | `src/components/status-badge.tsx` | [ ] |
-| Order timeline | `src/components/order-timeline.tsx` | [ ] |
+| Order history screen | `src/screens/customer/Orders.tsx` | [x] |
+| Order card | `src/components/order/OrderCard.tsx` | [x] |
+| Order tracking screen | `src/screens/customer/OrderTracking.tsx` | [x] |
+| Order timeline | `src/components/order/OrderTimeline.tsx` | [x] |
 
 ### Common Components
 
 | Task | File | Status |
 |------|------|--------|
 | Bottom navigation | `src/components/layout/BottomNav.tsx` | [x] |
+| Header | `src/components/layout/Header.tsx` | [x] |
+| Layout | `src/components/layout/Layout.tsx` | [x] |
 | Loading spinner | `src/components/ui/Loading.tsx` | [x] |
 | Error boundary | `src/components/ErrorBoundary.tsx` | [x] |
-| Pull to refresh | `src/components/pull-refresh.tsx` | [ ] |
 | Toast notifications | `src/components/ui/Toast.tsx` | [x] |
+| Button | `src/components/ui/Button.tsx` | [x] |
+| Card | `src/components/ui/Card.tsx` | [x] |
+| Input | `src/components/ui/Input.tsx` | [x] |
+| Modal | `src/components/ui/Modal.tsx` | [x] |
+| Badge | `src/components/ui/Badge.tsx` | [x] |
 
 ### Hooks
 
 | Task | File | Status |
 |------|------|--------|
-| useBusinesses | `src/hooks/use-businesses.ts` | [ ] |
-| useProducts | `src/hooks/use-products.ts` | [ ] |
-| useOrders | `src/hooks/use-orders.ts` | [ ] |
-| useTelegram | `src/hooks/use-telegram.ts` | [ ] |
+| useApi (all API calls) | `src/hooks/useApi.ts` | [x] |
+| useCart | `src/hooks/useCart.ts` | [x] |
+| useTelegram | `src/hooks/useTelegram.ts` | [x] |
 
 ---
 
@@ -109,31 +110,19 @@
 
 > Available orders, take order, deliver
 
-### Mode Switching
+### State Management
 
 | Task | File | Status |
 |------|------|--------|
-| Courier/Customer toggle | `src/components/mode-toggle.tsx` | [ ] |
-| Mode store | `src/stores/mode-store.ts` | [ ] |
-| Courier registration | `src/screens/courier-register.tsx` | [ ] |
+| Courier store | `src/stores/courier.store.ts` | [x] |
 
 ### Screens - Courier
 
 | Task | File | Status |
 |------|------|--------|
-| Available orders screen | `src/screens/courier/available-orders.tsx` | [ ] |
-| Order map view | `src/components/order-map.tsx` | [ ] |
-| Order details (courier view) | `src/screens/courier/order-detail.tsx` | [ ] |
-| Take order action | `src/hooks/use-take-order.ts` | [ ] |
-
-### Screens - Active Delivery
-
-| Task | File | Status |
-|------|------|--------|
-| Active delivery screen | `src/screens/courier/active-delivery.tsx` | [ ] |
-| Pickup confirmation | `src/components/pickup-confirm.tsx` | [ ] |
-| Delivery confirmation | `src/components/delivery-confirm.tsx` | [ ] |
-| Navigation to address | `src/components/navigation-link.tsx` | [ ] |
+| Available orders screen | `src/screens/courier/AvailableOrders.tsx` | [x] |
+| Active delivery screen | `src/screens/courier/ActiveDelivery.tsx` | [x] |
+| Delivery history screen | `src/screens/courier/DeliveryHistory.tsx` | [x] |
 
 ### Screens - Earnings / Delivery History
 
@@ -142,14 +131,6 @@
 | Delivery history screen | `src/screens/courier/DeliveryHistory.tsx` | [x] |
 | Earnings summary | `src/screens/courier/DeliveryHistory.tsx` | [x] |
 | Delivery history list | `src/screens/courier/DeliveryHistory.tsx` | [x] |
-
-### Hooks - Courier
-
-| Task | File | Status |
-|------|------|--------|
-| useAvailableOrders | `src/hooks/use-available-orders.ts` | [ ] |
-| useCourierOrders | `src/hooks/use-courier-orders.ts` | [ ] |
-| useEarnings | `src/hooks/use-earnings.ts` | [ ] |
 
 ---
 

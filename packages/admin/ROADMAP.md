@@ -6,9 +6,9 @@
 
 | Version | Focus | Depends On | Status |
 |---------|-------|------------|--------|
-| v0.1.0 | Dashboard & Orders | @lls/api v0.3.0 | ⏳ Planned |
-| v0.2.0 | Product Management | v0.1.0 | ⏳ Planned |
-| v0.3.0 | Analytics | v0.2.0 | ⏳ Planned |
+| v0.1.0 | Dashboard & Orders | @lls/api v0.3.0 | ✅ Complete |
+| v0.2.0 | Product Management | v0.1.0 | ✅ Complete |
+| v0.3.0 | Analytics | v0.2.0 | ✅ Complete |
 
 ---
 
@@ -20,70 +20,58 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Vite + React setup | `vite.config.ts` | [ ] |
-| Tailwind CSS | `tailwind.config.ts` | [ ] |
-| Router setup | `src/router.tsx` | [ ] |
-| API client | `src/lib/api-client.ts` | [ ] |
-| Auth context | `src/contexts/auth-context.tsx` | [ ] |
+| Vite + React setup | `vite.config.ts` | [x] |
+| Tailwind CSS | `tailwind.config.ts` | [x] |
+| Router setup | `src/App.tsx` | [x] |
+| API client | `src/lib/api-client.ts` | [x] |
+| Auth store | `src/stores/auth.store.ts` | [x] |
 
 ### Authentication
 
 | Task | File | Status |
 |------|------|--------|
-| Login page | `src/pages/login.tsx` | [ ] |
-| Telegram login widget | `src/components/telegram-login.tsx` | [ ] |
-| Auth guard | `src/components/auth-guard.tsx` | [ ] |
-| Session storage | `src/lib/session.ts` | [ ] |
+| Login page | `src/pages/Login.tsx` | [x] |
+| Telegram login button | `src/components/auth/TelegramLoginButton.tsx` | [x] |
+| Auth guard (in App.tsx) | `src/App.tsx` | [x] |
 
 ### Layout
 
 | Task | File | Status |
 |------|------|--------|
-| Main layout | `src/layouts/main-layout.tsx` | [ ] |
-| Sidebar navigation | `src/components/sidebar.tsx` | [ ] |
-| Header | `src/components/header.tsx` | [ ] |
-| Mobile menu | `src/components/mobile-menu.tsx` | [ ] |
+| Main layout | `src/components/layout/Layout.tsx` | [x] |
+| Sidebar navigation | `src/components/layout/Sidebar.tsx` | [x] |
+| Header | `src/components/layout/Header.tsx` | [x] |
 
 ### Dashboard
 
 | Task | File | Status |
 |------|------|--------|
-| Dashboard page | `src/pages/dashboard.tsx` | [ ] |
-| Stats cards (orders today, revenue) | `src/components/stats-cards.tsx` | [ ] |
-| Recent orders widget | `src/components/recent-orders.tsx` | [ ] |
-| Quick actions | `src/components/quick-actions.tsx` | [ ] |
+| Dashboard page | `src/pages/Dashboard.tsx` | [x] |
+| Analytics stats | `src/pages/Dashboard.tsx` | [x] |
+| Sales chart | `src/components/analytics/SalesChart.tsx` | [x] |
+| Top products | `src/components/analytics/TopProductsList.tsx` | [x] |
 
 ### Orders Management
 
 | Task | File | Status |
 |------|------|--------|
-| Orders list page | `src/pages/orders.tsx` | [ ] |
-| Orders table | `src/components/orders-table.tsx` | [ ] |
-| Order filters (status, date) | `src/components/order-filters.tsx` | [ ] |
-| Order detail modal | `src/components/order-detail-modal.tsx` | [ ] |
-| Accept order action | `src/hooks/use-accept-order.ts` | [ ] |
-| Reject order action | `src/hooks/use-reject-order.ts` | [ ] |
-| Mark ready action | `src/hooks/use-mark-ready.ts` | [ ] |
-
-### Order States
-
-| Task | File | Status |
-|------|------|--------|
-| Pending orders tab | `src/components/pending-orders.tsx` | [ ] |
-| Active orders tab | `src/components/active-orders.tsx` | [ ] |
-| Completed orders tab | `src/components/completed-orders.tsx` | [ ] |
-| Order status update | `src/hooks/use-update-status.ts` | [ ] |
+| Orders list page | `src/pages/Orders.tsx` | [x] |
+| Orders table | `src/components/orders/OrdersTable.tsx` | [x] |
+| Order detail modal | `src/pages/Orders.tsx` | [x] |
+| Order status update | `src/stores/orders.store.ts` | [x] |
 
 ### Common Components
 
 | Task | File | Status |
 |------|------|--------|
-| Data table | `src/components/ui/data-table.tsx` | [ ] |
-| Button | `src/components/ui/button.tsx` | [ ] |
-| Modal | `src/components/ui/modal.tsx` | [ ] |
-| Badge | `src/components/ui/badge.tsx` | [ ] |
-| Spinner | `src/components/ui/spinner.tsx` | [ ] |
-| Toast | `src/components/ui/toast.tsx` | [ ] |
+| Table | `src/components/ui/Table.tsx` | [x] |
+| Button | `src/components/ui/Button.tsx` | [x] |
+| Modal | `src/components/ui/Modal.tsx` | [x] |
+| Badge | `src/components/ui/Badge.tsx` | [x] |
+| Loading | `src/components/ui/Loading.tsx` | [x] |
+| Card | `src/components/ui/Card.tsx` | [x] |
+| Input | `src/components/ui/Input.tsx` | [x] |
+| Toast | `src/components/ui/Toast.tsx` | [x] |
 
 ---
 
@@ -95,47 +83,19 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Products list page | `src/pages/products.tsx` | [ ] |
-| Products table | `src/components/products-table.tsx` | [ ] |
-| Product search | `src/components/product-search.tsx` | [ ] |
-| Category filter | `src/components/category-filter.tsx` | [ ] |
+| Products list page | `src/pages/Products.tsx` | [x] |
+| Products table | `src/components/products/ProductsTable.tsx` | [x] |
+| Products store | `src/stores/products.store.ts` | [x] |
 
 ### Product CRUD
 
 | Task | File | Status |
 |------|------|--------|
-| Create product modal | `src/components/create-product-modal.tsx` | [ ] |
-| Edit product modal | `src/components/edit-product-modal.tsx` | [ ] |
-| Product form | `src/components/product-form.tsx` | [ ] |
-| Delete confirmation | `src/components/delete-confirm.tsx` | [ ] |
-| useProducts hook | `src/hooks/use-products.ts` | [ ] |
-
-### Product Details
-
-| Task | File | Status |
-|------|------|--------|
-| Price input | `src/components/price-input.tsx` | [ ] |
-| Availability toggle | `src/components/availability-toggle.tsx` | [ ] |
-| Image upload | `src/components/image-upload.tsx` | [ ] |
-| Image preview | `src/components/image-preview.tsx` | [ ] |
-
-### Categories
-
-| Task | File | Status |
-|------|------|--------|
-| Categories page | `src/pages/categories.tsx` | [ ] |
-| Category list | `src/components/category-list.tsx` | [ ] |
-| Create category | `src/components/create-category.tsx` | [ ] |
-| Edit category | `src/components/edit-category.tsx` | [ ] |
-| Reorder categories | `src/components/category-reorder.tsx` | [ ] |
-
-### Bulk Actions
-
-| Task | File | Status |
-|------|------|--------|
-| Multi-select products | `src/components/multi-select.tsx` | [ ] |
-| Bulk availability toggle | `src/hooks/use-bulk-toggle.ts` | [ ] |
-| Bulk delete | `src/hooks/use-bulk-delete.ts` | [ ] |
+| Product form (create/edit) | `src/components/products/ProductForm.tsx` | [x] |
+| Create product | `src/pages/Products.tsx` | [x] |
+| Edit product | `src/pages/Products.tsx` | [x] |
+| Delete product | `src/pages/Products.tsx` | [x] |
+| Toggle availability | `src/pages/Products.tsx` | [x] |
 
 ---
 
@@ -147,35 +107,23 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Analytics page | `src/pages/analytics.tsx` | [ ] |
-| Date range picker | `src/components/date-range-picker.tsx` | [ ] |
-| Period comparison | `src/components/period-compare.tsx` | [ ] |
+| Dashboard with analytics | `src/pages/Dashboard.tsx` | [x] |
+| Period selector | `src/components/analytics/PeriodSelector.tsx` | [x] |
+| Analytics store | `src/stores/analytics.store.ts` | [x] |
 
 ### Charts
 
 | Task | File | Status |
 |------|------|--------|
-| Orders chart (daily/weekly) | `src/components/charts/orders-chart.tsx` | [ ] |
-| Revenue chart | `src/components/charts/revenue-chart.tsx` | [ ] |
-| Top products chart | `src/components/charts/top-products.tsx` | [ ] |
-| Order status breakdown | `src/components/charts/status-pie.tsx` | [ ] |
-
-### Reports
-
-| Task | File | Status |
-|------|------|--------|
-| Summary stats | `src/components/summary-stats.tsx` | [ ] |
-| Export to CSV | `src/utils/export-csv.ts` | [ ] |
-| Print report | `src/utils/print-report.ts` | [ ] |
+| Sales chart | `src/components/analytics/SalesChart.tsx` | [x] |
+| Top products list | `src/components/analytics/TopProductsList.tsx` | [x] |
+| Order breakdown | `src/components/analytics/OrderBreakdown.tsx` | [x] |
 
 ### Business Settings
 
 | Task | File | Status |
 |------|------|--------|
-| Settings page | `src/pages/settings.tsx` | [ ] |
-| Business profile edit | `src/components/business-profile.tsx` | [ ] |
-| Working hours | `src/components/working-hours.tsx` | [ ] |
-| Delivery settings | `src/components/delivery-settings.tsx` | [ ] |
+| Settings page | `src/pages/Settings.tsx` | [x] |
 
 ---
 

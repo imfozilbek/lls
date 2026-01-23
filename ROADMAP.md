@@ -90,12 +90,12 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `domain-error.ts` | [ ] | Base class for all domain errors |
-| `entity-not-found.error.ts` | [ ] | EntityNotFoundError |
-| `invalid-transition.error.ts` | [ ] | InvalidOrderTransitionError |
-| `validation.error.ts` | [ ] | ValidationError |
-| `business-rule.error.ts` | [ ] | BusinessRuleViolationError |
-| `index.ts` | [ ] | Export all errors |
+| `domain-error.ts` | [x] | Base class for all domain errors |
+| `entity-not-found.error.ts` | [x] | EntityNotFoundError |
+| `invalid-transition.error.ts` | [x] | InvalidOrderTransitionError |
+| `validation.error.ts` | [x] | ValidationError |
+| `business-rule.error.ts` | [x] | BusinessRuleViolationError |
+| `index.ts` | [x] | Export all errors |
 
 ### 1.2 DTOs (Data Transfer Objects)
 
@@ -103,12 +103,12 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `business.dto.ts` | [ ] | BusinessDTO, BusinessListDTO |
-| `product.dto.ts` | [ ] | ProductDTO, ProductListDTO |
-| `customer.dto.ts` | [ ] | CustomerDTO |
-| `courier.dto.ts` | [ ] | CourierDTO |
-| `order.dto.ts` | [ ] | OrderDTO, OrderItemDTO, OrderListDTO |
-| `index.ts` | [ ] | Export all DTOs |
+| `business.dto.ts` | [x] | BusinessDTO, BusinessListDTO |
+| `product.dto.ts` | [x] | ProductDTO, ProductListDTO |
+| `customer.dto.ts` | [x] | CustomerDTO |
+| `courier.dto.ts` | [x] | CourierDTO |
+| `order.dto.ts` | [x] | OrderDTO, OrderItemDTO, OrderListDTO |
+| `index.ts` | [x] | Export all DTOs |
 
 ### 1.3 Use Cases
 
@@ -117,43 +117,43 @@
 #### Business Use Cases
 | File | Status | Method | Input → Output |
 |------|--------|--------|----------------|
-| `list-businesses.use-case.ts` | [ ] | execute(filter?) | BusinessFilter → BusinessDTO[] |
-| `get-business.use-case.ts` | [ ] | execute(id) | string → BusinessDTO |
-| `get-business-products.use-case.ts` | [ ] | execute(businessId) | string → ProductDTO[] |
-| `create-business.use-case.ts` | [ ] | execute(data) | CreateBusinessInput → BusinessDTO |
-| `update-business.use-case.ts` | [ ] | execute(id, data) | UpdateBusinessInput → BusinessDTO |
+| `list-businesses.use-case.ts` | [x] | execute(filter?) | BusinessFilter → BusinessDTO[] |
+| `get-business.use-case.ts` | [x] | execute(id) | string → BusinessDTO |
+| `list-products.use-case.ts` | [x] | execute(filter) | ListProductsFilter → ProductDTO[] |
+| `create-business.use-case.ts` | [x] | execute(data) | CreateBusinessInput → BusinessDTO |
+| `update-business.use-case.ts` | [x] | execute(id, data) | UpdateBusinessInput → BusinessDTO |
 
 #### Product Use Cases
 | File | Status | Method | Input → Output |
 |------|--------|--------|----------------|
-| `create-product.use-case.ts` | [ ] | execute(data) | CreateProductInput → ProductDTO |
-| `update-product.use-case.ts` | [ ] | execute(id, data) | UpdateProductInput → ProductDTO |
-| `delete-product.use-case.ts` | [ ] | execute(id) | string → void |
-| `toggle-product-availability.use-case.ts` | [ ] | execute(id) | string → ProductDTO |
+| `create-product.use-case.ts` | [x] | execute(data) | CreateProductInput → ProductDTO |
+| `update-product.use-case.ts` | [x] | execute(id, data) | UpdateProductInput → ProductDTO |
+| `delete-product.use-case.ts` | [x] | execute(id) | string → void |
+| `toggle-availability.use-case.ts` | [x] | execute(id) | string → ProductDTO |
 
 #### Order Use Cases
 | File | Status | Method | Input → Output |
 |------|--------|--------|----------------|
-| `create-order.use-case.ts` | [ ] | execute(data) | CreateOrderInput → OrderDTO |
-| `get-order.use-case.ts` | [ ] | execute(id) | string → OrderDTO |
-| `get-customer-orders.use-case.ts` | [ ] | execute(customerId) | string → OrderDTO[] |
-| `get-business-orders.use-case.ts` | [ ] | execute(businessId, status?) | GetBusinessOrdersInput → OrderDTO[] |
-| `update-order-status.use-case.ts` | [ ] | execute(id, status) | UpdateOrderStatusInput → OrderDTO |
-| `cancel-order.use-case.ts` | [ ] | execute(id, reason?) | CancelOrderInput → OrderDTO |
+| `create-order.use-case.ts` | [x] | execute(data) | CreateOrderInput → OrderDTO |
+| `get-order.use-case.ts` | [x] | execute(id) | string → OrderDTO |
+| `get-customer-orders.use-case.ts` | [x] | execute(customerId) | string → OrderDTO[] |
+| `get-business-orders.use-case.ts` | [x] | execute(businessId, status?) | GetBusinessOrdersInput → OrderDTO[] |
+| `update-order-status.use-case.ts` | [x] | execute(id, status) | UpdateOrderStatusInput → OrderDTO |
+| `cancel-order.use-case.ts` | [x] | execute(id, reason?) | CancelOrderInput → OrderDTO |
 
 #### Courier Use Cases
 | File | Status | Method | Input → Output |
 |------|--------|--------|----------------|
-| `get-available-orders.use-case.ts` | [ ] | execute(courierId) | string → OrderDTO[] |
-| `take-order.use-case.ts` | [ ] | execute(orderId, courierId) | TakeOrderInput → OrderDTO |
-| `complete-delivery.use-case.ts` | [ ] | execute(orderId) | string → OrderDTO |
-| `get-courier-orders.use-case.ts` | [ ] | execute(courierId) | string → OrderDTO[] |
+| `get-available-orders.use-case.ts` | [x] | execute(courierId) | string → OrderDTO[] |
+| `take-order.use-case.ts` | [x] | execute(orderId, courierId) | TakeOrderInput → OrderDTO |
+| `complete-delivery.use-case.ts` | [x] | execute(orderId) | string → OrderDTO |
+| `get-courier-orders.use-case.ts` | [x] | execute(courierId) | string → OrderDTO[] |
 
 #### Customer Use Cases
 | File | Status | Method | Input → Output |
 |------|--------|--------|----------------|
-| `get-or-create-customer.use-case.ts` | [ ] | execute(telegramData) | TelegramUserData → CustomerDTO |
-| `update-customer.use-case.ts` | [ ] | execute(id, data) | UpdateCustomerInput → CustomerDTO |
+| `get-or-create-customer.use-case.ts` | [x] | execute(telegramData) | TelegramUserData → CustomerDTO |
+| `update-customer.use-case.ts` | [x] | execute(id, data) | UpdateCustomerInput → CustomerDTO |
 
 ### 1.4 Tests
 
@@ -161,18 +161,18 @@
 
 | Directory | Status | Coverage Target |
 |-----------|--------|-----------------|
-| `domain/entities/*.test.ts` | [ ] | 90% |
-| `domain/value-objects/*.test.ts` | [ ] | 90% |
-| `domain/errors/*.test.ts` | [ ] | 90% |
-| `application/use-cases/*.test.ts` | [ ] | 80% |
+| `domain/entities/*.test.ts` | [x] | 90% |
+| `domain/value-objects/*.test.ts` | [x] | 90% |
+| `domain/errors/*.test.ts` | [x] | 90% |
+| `application/use-cases/*.test.ts` | [x] | 80% |
 
 ### 1.5 Update index.ts exports
 
 | Task | Status |
 |------|--------|
-| Export domain errors | [ ] |
-| Export DTOs | [ ] |
-| Export Use Cases | [ ] |
+| Export domain errors | [x] |
+| Export DTOs | [x] |
+| Export Use Cases | [x] |
 
 ---
 
@@ -188,13 +188,13 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `database.module.ts` | [ ] | MongooseModule configuration |
-| `schemas/business.schema.ts` | [ ] | Mongoose schema for Business |
-| `schemas/product.schema.ts` | [ ] | Mongoose schema for Product |
-| `schemas/customer.schema.ts` | [ ] | Mongoose schema for Customer |
-| `schemas/courier.schema.ts` | [ ] | Mongoose schema for Courier |
-| `schemas/order.schema.ts` | [ ] | Mongoose schema for Order |
-| `schemas/index.ts` | [ ] | Export all schemas |
+| `database.module.ts` | [x] | MongooseModule configuration |
+| `schemas/business.schema.ts` | [x] | Mongoose schema for Business |
+| `schemas/product.schema.ts` | [x] | Mongoose schema for Product |
+| `schemas/customer.schema.ts` | [x] | Mongoose schema for Customer |
+| `schemas/courier.schema.ts` | [x] | Mongoose schema for Courier |
+| `schemas/order.schema.ts` | [x] | Mongoose schema for Order |
+| `schemas/index.ts` | [x] | Export all schemas |
 
 ### 2.2 Cache Module (Redis)
 
@@ -202,8 +202,8 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `cache.module.ts` | [ ] | Redis module configuration |
-| `cache.service.ts` | [ ] | CacheService with TTL |
+| `cache.module.ts` | [x] | Redis module configuration |
+| `cache.service.ts` | [x] | CacheService with TTL |
 
 ### 2.3 Repository Implementations
 
@@ -211,12 +211,12 @@
 
 | File | Status | Implements |
 |------|--------|------------|
-| `business.repository.ts` | [ ] | BusinessRepository |
-| `product.repository.ts` | [ ] | ProductRepository |
-| `customer.repository.ts` | [ ] | CustomerRepository |
-| `courier.repository.ts` | [ ] | CourierRepository |
-| `order.repository.ts` | [ ] | OrderRepository |
-| `repositories.module.ts` | [ ] | Export all repositories |
+| `business.repository.ts` | [x] | BusinessRepository |
+| `product.repository.ts` | [x] | ProductRepository |
+| `customer.repository.ts` | [x] | CustomerRepository |
+| `courier.repository.ts` | [x] | CourierRepository |
+| `order.repository.ts` | [x] | OrderRepository |
+| `repositories.module.ts` | [x] | Export all repositories |
 
 ### 2.4 Common Module (Guards, Filters, Interceptors)
 
@@ -224,13 +224,13 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `filters/http-exception.filter.ts` | [ ] | Global exception filter (DomainError → HTTP) |
-| `filters/all-exceptions.filter.ts` | [ ] | Catch-all exception filter |
-| `interceptors/logging.interceptor.ts` | [ ] | Request/Response logging |
-| `guards/telegram-auth.guard.ts` | [ ] | Validate Telegram initData |
-| `guards/business-auth.guard.ts` | [ ] | Validate business access |
-| `decorators/telegram-user.decorator.ts` | [ ] | @TelegramUser() param decorator |
-| `common.module.ts` | [ ] | Export all common providers |
+| `filters/http-exception.filter.ts` | [x] | Global exception filter (DomainError → HTTP) |
+| `filters/all-exceptions.filter.ts` | [x] | Catch-all exception filter |
+| `interceptors/logging.interceptor.ts` | [x] | Request/Response logging |
+| `guards/telegram-auth.guard.ts` | [x] | Validate Telegram initData |
+| `guards/business-auth.guard.ts` | [x] | Validate business access |
+| `decorators/telegram-user.decorator.ts` | [x] | @TelegramUser() param decorator |
+| `common.module.ts` | [x] | Export all common providers |
 
 ### 2.5 DTOs (Validation with class-validator)
 
@@ -238,11 +238,10 @@
 
 | Module | Files | Status |
 |--------|-------|--------|
-| business | `create-business.dto.ts`, `update-business.dto.ts` | [ ] |
-| product | `create-product.dto.ts`, `update-product.dto.ts` | [ ] |
-| order | `create-order.dto.ts`, `update-order-status.dto.ts` | [ ] |
-| courier | `take-order.dto.ts` | [ ] |
-| customer | `update-customer.dto.ts` | [ ] |
+| business | `telegram-login.dto.ts` | [x] |
+| product | `create-product.dto.ts`, `update-product.dto.ts` | [x] |
+| order | `create-order.dto.ts`, `update-order-status.dto.ts` | [x] |
+| customer | `update-customer.dto.ts` | [x] |
 
 ### 2.6 Feature Modules
 
@@ -250,21 +249,22 @@
 
 | Module | Files | Status |
 |--------|-------|--------|
-| `business/` | `business.module.ts`, `business.controller.ts`, `business.service.ts` | [ ] |
-| `product/` | `product.module.ts`, `product.controller.ts`, `product.service.ts` | [ ] |
-| `order/` | `order.module.ts`, `order.controller.ts`, `order.service.ts` | [ ] |
-| `courier/` | `courier.module.ts`, `courier.controller.ts`, `courier.service.ts` | [ ] |
-| `customer/` | `customer.module.ts`, `customer.controller.ts`, `customer.service.ts` | [ ] |
+| `business/` | `business.module.ts`, `business.controller.ts`, `business.service.ts` | [x] |
+| `product/` | `product.module.ts`, `product.controller.ts`, `product.service.ts` | [x] |
+| `order/` | `order.module.ts`, `order.controller.ts`, `order.service.ts` | [x] |
+| `courier/` | `courier.module.ts`, `courier.controller.ts`, `courier.service.ts` | [x] |
+| `customer/` | `customer.module.ts`, `customer.controller.ts`, `customer.service.ts` | [x] |
+| `analytics/` | `analytics.module.ts`, `analytics.controller.ts`, `analytics.service.ts` | [x] |
 
 ### 2.7 App Module Updates
 
 | Task | Status |
 |------|--------|
-| Import DatabaseModule | [ ] |
-| Import CacheModule | [ ] |
-| Import CommonModule | [ ] |
-| Import all feature modules | [ ] |
-| Configure global filters/interceptors | [ ] |
+| Import DatabaseModule | [x] |
+| Import CacheModule | [x] |
+| Import CommonModule | [x] |
+| Import all feature modules | [x] |
+| Configure global filters/interceptors | [x] |
 
 ### 2.8 Environment Variables
 
@@ -291,9 +291,9 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `telegram.ts` | [ ] | Telegram SDK initialization |
-| `api-client.ts` | [ ] | HTTP client for @lls/api |
-| `utils.ts` | [ ] | Helper functions (cn, formatMoney) |
+| `telegram.ts` | [x] | Telegram SDK initialization |
+| `api-client.ts` | [x] | HTTP client for @lls/api |
+| `utils.ts` | [x] | Helper functions (cn, formatMoney) |
 
 ### 3.2 State Management (Zustand)
 
@@ -301,10 +301,11 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `auth.store.ts` | [ ] | Telegram user state |
-| `cart.store.ts` | [ ] | Shopping cart |
-| `order.store.ts` | [ ] | Orders |
-| `courier.store.ts` | [ ] | Courier mode |
+| `auth.store.ts` | [x] | Telegram user state |
+| `cart.store.ts` | [x] | Shopping cart |
+| `order.store.ts` | [x] | Orders |
+| `courier.store.ts` | [x] | Courier mode |
+| `toast.store.ts` | [x] | Toast notifications |
 
 ### 3.3 Hooks
 
@@ -312,9 +313,9 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `useApi.ts` | [ ] | API hooks |
-| `useTelegram.ts` | [ ] | Telegram hooks |
-| `useCart.ts` | [ ] | Cart logic |
+| `useApi.ts` | [x] | API hooks |
+| `useTelegram.ts` | [x] | Telegram hooks |
+| `useCart.ts` | [x] | Cart logic |
 
 ### 3.4 UI Components
 
@@ -322,12 +323,14 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `Button.tsx` | [ ] | Button component |
-| `Input.tsx` | [ ] | Input component |
-| `Card.tsx` | [ ] | Card component |
-| `Modal.tsx` | [ ] | Modal component |
-| `Loading.tsx` | [ ] | Loading spinner |
-| `Badge.tsx` | [ ] | Badge component |
+| `Button.tsx` | [x] | Button component |
+| `Input.tsx` | [x] | Input component |
+| `Card.tsx` | [x] | Card component |
+| `Modal.tsx` | [x] | Modal component |
+| `Loading.tsx` | [x] | Loading spinner |
+| `Badge.tsx` | [x] | Badge component |
+| `Toast.tsx` | [x] | Toast notifications |
+| `SearchInput.tsx` | [x] | Search input |
 
 ### 3.5 Layout Components
 
@@ -335,9 +338,9 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `Header.tsx` | [ ] | Header with back button |
-| `BottomNav.tsx` | [ ] | Bottom navigation |
-| `Layout.tsx` | [ ] | Main layout wrapper |
+| `Header.tsx` | [x] | Header with back button |
+| `BottomNav.tsx` | [x] | Bottom navigation |
+| `Layout.tsx` | [x] | Main layout wrapper |
 
 ### 3.6 Feature Components
 
@@ -345,10 +348,11 @@
 
 | Directory | Files | Status |
 |-----------|-------|--------|
-| `business/` | BusinessCard.tsx, BusinessList.tsx | [ ] |
-| `product/` | ProductCard.tsx, ProductList.tsx | [ ] |
-| `cart/` | CartItem.tsx, CartSummary.tsx, CartButton.tsx | [ ] |
-| `order/` | OrderCard.tsx, OrderStatus.tsx, OrderHistory.tsx | [ ] |
+| `business/` | BusinessCard.tsx, BusinessList.tsx | [x] |
+| `product/` | ProductCard.tsx, ProductList.tsx | [x] |
+| `cart/` | CartItem.tsx, CartSummary.tsx, CartButton.tsx | [x] |
+| `order/` | OrderCard.tsx, OrderTimeline.tsx | [x] |
+| `ErrorBoundary.tsx` | Error boundary component | [x] |
 
 ### 3.7 Customer Screens
 
@@ -356,12 +360,12 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `Home.tsx` | [ ] | Business list |
-| `Business.tsx` | [ ] | Products of business |
-| `Cart.tsx` | [ ] | Cart view |
-| `Checkout.tsx` | [ ] | Place order |
-| `OrderTracking.tsx` | [ ] | Track order |
-| `Orders.tsx` | [ ] | Order history |
+| `Home.tsx` | [x] | Business list |
+| `Business.tsx` | [x] | Products of business |
+| `Cart.tsx` | [x] | Cart view |
+| `Checkout.tsx` | [x] | Place order |
+| `OrderTracking.tsx` | [x] | Track order |
+| `Orders.tsx` | [x] | Order history |
 
 ### 3.8 Courier Screens
 
@@ -369,16 +373,16 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `AvailableOrders.tsx` | [ ] | Available orders list |
-| `ActiveDelivery.tsx` | [ ] | Active delivery |
+| `AvailableOrders.tsx` | [x] | Available orders list |
+| `ActiveDelivery.tsx` | [x] | Active delivery |
 | `DeliveryHistory.tsx` | [x] | Delivery history and earnings view |
 
 ### 3.9 App Router
 
 | Task | Status |
 |------|--------|
-| Update App.tsx with routes | [ ] |
-| Configure react-router-dom | [ ] |
+| Update App.tsx with routes | [x] |
+| Configure react-router-dom | [x] |
 
 ---
 
@@ -394,8 +398,8 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `api-client.ts` | [ ] | HTTP client for @lls/api |
-| `utils.ts` | [ ] | Helper functions |
+| `api-client.ts` | [x] | HTTP client for @lls/api |
+| `utils.ts` | [x] | Helper functions |
 
 ### 4.2 State Management
 
@@ -403,8 +407,11 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `auth.store.ts` | [ ] | Business auth state |
-| `orders.store.ts` | [ ] | Orders state |
+| `auth.store.ts` | [x] | Business auth state |
+| `orders.store.ts` | [x] | Orders state |
+| `products.store.ts` | [x] | Products state |
+| `analytics.store.ts` | [x] | Analytics state |
+| `toast.store.ts` | [x] | Toast notifications |
 
 ### 4.3 UI Components
 
@@ -412,11 +419,14 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `Button.tsx` | [ ] | Button component |
-| `Input.tsx` | [ ] | Input component |
-| `Table.tsx` | [ ] | Table component |
-| `Modal.tsx` | [ ] | Modal component |
-| `Badge.tsx` | [ ] | Badge component |
+| `Button.tsx` | [x] | Button component |
+| `Input.tsx` | [x] | Input component |
+| `Table.tsx` | [x] | Table component |
+| `Modal.tsx` | [x] | Modal component |
+| `Badge.tsx` | [x] | Badge component |
+| `Card.tsx` | [x] | Card component |
+| `Loading.tsx` | [x] | Loading spinner |
+| `Toast.tsx` | [x] | Toast notifications |
 
 ### 4.4 Layout Components
 
@@ -424,16 +434,18 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `Sidebar.tsx` | [ ] | Sidebar navigation |
-| `Header.tsx` | [ ] | Header component |
-| `Layout.tsx` | [ ] | Main layout wrapper |
+| `Sidebar.tsx` | [x] | Sidebar navigation |
+| `Header.tsx` | [x] | Header component |
+| `Layout.tsx` | [x] | Main layout wrapper |
 
 ### 4.5 Feature Components
 
 | Directory | Files | Status |
 |-----------|-------|--------|
-| `orders/` | OrdersTable.tsx, OrderDetails.tsx, OrderStatusBadge.tsx | [ ] |
-| `products/` | ProductsTable.tsx, ProductForm.tsx, ProductCard.tsx | [ ] |
+| `orders/` | OrdersTable.tsx | [x] |
+| `products/` | ProductsTable.tsx, ProductForm.tsx | [x] |
+| `analytics/` | SalesChart.tsx, TopProductsList.tsx, OrderBreakdown.tsx, PeriodSelector.tsx | [x] |
+| `auth/` | TelegramLoginButton.tsx | [x] |
 
 ### 4.6 Pages
 
@@ -441,11 +453,11 @@
 
 | File | Status | Description |
 |------|--------|-------------|
-| `Login.tsx` | [ ] | Login page |
-| `Dashboard.tsx` | [ ] | Stats overview |
-| `Orders.tsx` | [ ] | Orders management |
-| `Products.tsx` | [ ] | Products CRUD |
-| `Settings.tsx` | [ ] | Settings page |
+| `Login.tsx` | [x] | Login page |
+| `Dashboard.tsx` | [x] | Stats overview with analytics |
+| `Orders.tsx` | [x] | Orders management |
+| `Products.tsx` | [x] | Products CRUD |
+| `Settings.tsx` | [x] | Settings page |
 
 ---
 
