@@ -10,6 +10,7 @@
 | v0.2.0 | Feature Modules | @lls/core v0.2.0 | ✅ Complete |
 | v0.3.0 | WebSocket Events | v0.2.0 | ✅ Complete |
 | v0.4.0 | Advanced Security | v0.3.0 | ✅ Complete |
+| v0.5.0 | Production Readiness | v0.4.0 | ⏳ Planned |
 
 ---
 
@@ -238,6 +239,56 @@
 |------|------|--------|
 | Session management (Redis) | `src/auth/session.ts` | [x] |
 | Role-based access | `src/auth/rbac.ts` | [x] |
+
+---
+
+## v0.5.0 - Production Readiness
+
+> Security hardening, middleware activation, pagination
+
+### Security Hardening (CRITICAL)
+
+| Task | File | Status |
+|------|------|--------|
+| Fix CORS - restrict to specific origins | `src/main.ts` | [ ] |
+| Fix WebSocket CORS - remove wildcard with credentials | `src/gateway/events.gateway.ts` | [ ] |
+| Register Helmet middleware with Fastify | `src/main.ts` | [ ] |
+| Register Rate Limiter globally | `src/app.module.ts` | [ ] |
+| Add TelegramAuthGuard to courier endpoints | `src/modules/courier/courier.controller.ts` | [ ] |
+| Remove console.log/error from production code | `src/config/configuration.ts` | [ ] |
+
+### Pagination & Filtering
+
+| Task | File | Status |
+|------|------|--------|
+| Add pagination to GET /businesses | `src/modules/business/business.controller.ts` | [ ] |
+| Add pagination to GET /orders | `src/modules/order/order.controller.ts` | [ ] |
+| Add pagination to GET /products | `src/modules/product/product.controller.ts` | [ ] |
+| Add date range filter to orders | `src/modules/order/order.service.ts` | [ ] |
+| Create PaginationDto | `src/common/dto/pagination.dto.ts` | [ ] |
+
+### Database Optimization
+
+| Task | File | Status |
+|------|------|--------|
+| Add composite index (businessId, category, isAvailable) | `src/database/schemas/product.schema.ts` | [ ] |
+| Add index on customer phone | `src/database/schemas/customer.schema.ts` | [ ] |
+| Configure MongoDB connection pooling | `src/database/database.module.ts` | [ ] |
+
+### Monitoring & Logging
+
+| Task | File | Status |
+|------|------|--------|
+| Replace console.error with structured logger | `src/common/logger.ts` | [ ] |
+| Add request logging with correlation ID | `src/common/interceptors/logging.interceptor.ts` | [ ] |
+| Add health check endpoint tests | `src/__tests__/app.controller.test.ts` | [ ] |
+
+### API Documentation
+
+| Task | File | Status |
+|------|------|--------|
+| Add Swagger/OpenAPI setup | `src/main.ts` | [ ] |
+| Add API decorators to all controllers | `src/modules/*/` | [ ] |
 
 ---
 

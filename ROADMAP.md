@@ -8,9 +8,9 @@
 
 ---
 
-## Current Status: v1.0.0 Ready (100% Core Features)
+## Current Status: Production Hardening Required
 
-### What's Done
+### What's Done (Core Features)
 - ✅ Domain Entities (6): Business, Product, Customer, Courier, Order, OrderItem
 - ✅ Value Objects (4): Money, Address, Phone, TelegramId
 - ✅ Enums (2): OrderStatus, BusinessType
@@ -19,22 +19,77 @@
 - ✅ Application Layer: Domain Errors, DTOs, 20 Use Cases
 - ✅ API Infrastructure: MongoDB schemas, Redis cache, NestJS modules
 - ✅ API Security: BusinessAuthGuard, TelegramAuthGuard, input validation DTOs
-- ✅ Bot: Telegram Mini App (41 files) - stores, hooks, components, screens
+- ✅ Bot: Telegram Mini App (45 files) - stores, hooks, components, screens
 - ✅ Admin: Business Panel (30 files) - auth, orders, products management
 - ✅ Tests: 318 tests (271 core + 47 API)
 - ✅ Analytics: Dashboard, sales charts, top products
 
-### Future Improvements
-- E2E/Integration Tests (deferred to v1.1.0)
-- Performance optimizations
-- Additional analytics features
+### Production Blockers (Must Fix Before Launch)
+- 🔴 CORS security - wildcard origin allowed
+- 🔴 WebSocket CORS - credentials with wildcard
+- 🔴 Courier endpoints missing auth guards
+- 🔴 Helmet headers not registered
+- 🔴 Rate limiting not applied
+- 🔴 Pagination missing on all list endpoints
 
 | Package | Version | Status | Next Milestone |
 |---------|---------|--------|----------------|
-| @lls/core | v0.3.0 | ✅ Complete | v0.4.0 - Advanced Rules |
-| @lls/api | v0.4.0 | ✅ Complete | v0.5.0 - API Gateway |
-| @lls/bot | v0.4.0 | ✅ Complete | v0.5.0 - Offline Support |
-| @lls/admin | v0.1.0 | ✅ Complete | v0.2.0 - More analytics |
+| @lls/core | v0.3.0 | ✅ Complete | - |
+| @lls/api | v0.4.0 | ✅ Complete | v0.5.0 - Production Readiness |
+| @lls/bot | v0.4.0 | ✅ Complete | v0.5.0 - Production Hardening |
+| @lls/admin | v0.3.0 | ✅ Complete | v0.4.0 - Production Hardening |
+
+---
+
+## Phase 6: Production Readiness
+
+> **Status:** ⏳ Planned
+> **Priority:** CRITICAL for launch
+
+### 6.1 @lls/api v0.5.0 (MUST DO FIRST)
+
+| Task | Priority | Depends On |
+|------|----------|------------|
+| Fix CORS - restrict to specific origins | 🔴 CRITICAL | - |
+| Fix WebSocket CORS | 🔴 CRITICAL | - |
+| Register Helmet middleware | 🔴 CRITICAL | - |
+| Register Rate Limiter globally | 🔴 CRITICAL | - |
+| Add TelegramAuthGuard to courier endpoints | 🔴 CRITICAL | - |
+| Add pagination to all list endpoints | 🟡 HIGH | - |
+| Add MongoDB composite indexes | 🟡 HIGH | - |
+| Add Swagger/OpenAPI documentation | 🟢 MEDIUM | - |
+
+### 6.2 @lls/bot v0.5.0
+
+| Task | Priority | Depends On |
+|------|----------|------------|
+| Create .env.example | 🟡 HIGH | - |
+| Add error screens (404, 500) | 🟡 HIGH | - |
+| Handle 401/403/500 in API client | 🟡 HIGH | @lls/api v0.5.0 |
+| Add WebSocket reconnection | 🟡 HIGH | - |
+| Remove console.log from production | 🟡 HIGH | - |
+| Add skeleton loaders | 🟢 MEDIUM | - |
+
+### 6.3 @lls/admin v0.4.0
+
+| Task | Priority | Depends On |
+|------|----------|------------|
+| Create .env.example | 🟡 HIGH | - |
+| Add logout functionality | 🟡 HIGH | - |
+| Add error handling UI | 🟡 HIGH | @lls/api v0.5.0 |
+| Add product image upload | 🟡 HIGH | - |
+| Add pagination to Orders | 🟡 HIGH | @lls/api v0.5.0 |
+| Add CSV export | 🟢 MEDIUM | - |
+
+### Dependency Order
+
+```
+1. @lls/api v0.5.0    (FIRST - backend must be secure)
+   ↓
+2. @lls/bot v0.5.0    (depends on API pagination/security)
+   ↓
+3. @lls/admin v0.4.0  (depends on API pagination/security)
+```
 
 ---
 

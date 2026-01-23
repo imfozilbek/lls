@@ -10,6 +10,7 @@
 | v0.2.0 | Courier Interface | v0.1.0 | ✅ Complete |
 | v0.3.0 | Real-time Updates | v0.2.0 | ✅ Complete |
 | v0.4.0 | Push Notifications | v0.3.0 | ✅ Complete |
+| v0.5.0 | Production Hardening | v0.4.0, @lls/api v0.5.0 | ⏳ Planned |
 
 ---
 
@@ -186,6 +187,56 @@
 |------|------|--------|
 | OrderService notification integration | `@lls/api: src/modules/order/order.service.ts` | [x] |
 | CourierService notification integration | `@lls/api: src/modules/courier/courier.service.ts` | [x] |
+
+---
+
+## v0.5.0 - Production Hardening
+
+> Error handling, reconnection, environment config
+
+### Environment Configuration
+
+| Task | File | Status |
+|------|------|--------|
+| Create .env.example with all variables | `.env.example` | [ ] |
+| Add environment validation | `src/lib/env.ts` | [ ] |
+| Production/dev mode detection | `src/lib/env.ts` | [ ] |
+
+### Error Handling
+
+| Task | File | Status |
+|------|------|--------|
+| Add 404 Not Found screen | `src/screens/NotFound.tsx` | [ ] |
+| Add generic Error screen | `src/screens/Error.tsx` | [ ] |
+| Handle 401 errors - redirect to auth | `src/lib/api-client.ts` | [ ] |
+| Handle 403 errors - show permission denied | `src/lib/api-client.ts` | [ ] |
+| Handle 500 errors - show server error | `src/lib/api-client.ts` | [ ] |
+| Add try-catch to all API calls in screens | `src/screens/**/*.tsx` | [ ] |
+
+### WebSocket Resilience
+
+| Task | File | Status |
+|------|------|--------|
+| Add automatic reconnection with backoff | `src/lib/websocket.ts` | [ ] |
+| Add connection status indicator | `src/components/ui/ConnectionStatus.tsx` | [ ] |
+| Clean up event listeners on unmount | `src/hooks/useOrderUpdates.ts` | [ ] |
+| Clean up event listeners on unmount | `src/hooks/useNewOrders.ts` | [ ] |
+
+### Logging & Debugging
+
+| Task | File | Status |
+|------|------|--------|
+| Replace console.log with proper logger | `src/lib/logger.ts` | [ ] |
+| Remove all console.warn/error from production | `src/lib/websocket.ts` | [ ] |
+| Remove all console.error from production | `src/lib/telegram.ts` | [ ] |
+
+### Loading States
+
+| Task | File | Status |
+|------|------|--------|
+| Add skeleton loaders to Home screen | `src/screens/customer/Home.tsx` | [ ] |
+| Add skeleton loaders to Business screen | `src/screens/customer/Business.tsx` | [ ] |
+| Add skeleton loaders to Orders screen | `src/screens/customer/Orders.tsx` | [ ] |
 
 ---
 

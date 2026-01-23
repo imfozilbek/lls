@@ -9,6 +9,7 @@
 | v0.1.0 | Dashboard & Orders | @lls/api v0.3.0 | ✅ Complete |
 | v0.2.0 | Product Management | v0.1.0 | ✅ Complete |
 | v0.3.0 | Analytics | v0.2.0 | ✅ Complete |
+| v0.4.0 | Production Hardening | v0.3.0, @lls/api v0.5.0 | ⏳ Planned |
 
 ---
 
@@ -124,6 +125,60 @@
 | Task | File | Status |
 |------|------|--------|
 | Settings page | `src/pages/Settings.tsx` | [x] |
+
+---
+
+## v0.4.0 - Production Hardening
+
+> Authentication, error handling, exports, image upload
+
+### Environment Configuration
+
+| Task | File | Status |
+|------|------|--------|
+| Create .env.example with all variables | `.env.example` | [ ] |
+| Add environment validation | `src/lib/env.ts` | [ ] |
+
+### Authentication Improvements
+
+| Task | File | Status |
+|------|------|--------|
+| Verify business exists before storing telegram_id | `src/stores/auth.store.ts` | [ ] |
+| Add logout functionality | `src/stores/auth.store.ts` | [ ] |
+| Add logout button to header/sidebar | `src/components/layout/Header.tsx` | [ ] |
+| Handle failed Telegram validation | `src/pages/Login.tsx` | [ ] |
+| Use secure session storage | `src/lib/session.ts` | [ ] |
+
+### Error Handling
+
+| Task | File | Status |
+|------|------|--------|
+| Add error recovery UI for failed API calls | `src/pages/Dashboard.tsx` | [ ] |
+| Add "Try Again" button on errors | `src/components/ui/ErrorState.tsx` | [ ] |
+| Handle 401/403/500 errors gracefully | `src/lib/api-client.ts` | [ ] |
+
+### Product Image Upload
+
+| Task | File | Status |
+|------|------|--------|
+| Add image upload component | `src/components/ui/ImageUpload.tsx` | [ ] |
+| Integrate image upload in ProductForm | `src/components/products/ProductForm.tsx` | [ ] |
+| Image preview in product list | `src/components/products/ProductsTable.tsx` | [ ] |
+
+### Performance & UX
+
+| Task | File | Status |
+|------|------|--------|
+| Add pagination to Orders page | `src/pages/Orders.tsx` | [ ] |
+| Add data caching | `src/lib/cache.ts` | [ ] |
+| Add skeleton loaders | `src/components/ui/Skeleton.tsx` | [ ] |
+
+### Export Features
+
+| Task | File | Status |
+|------|------|--------|
+| Export orders to CSV | `src/pages/Orders.tsx` | [ ] |
+| Export analytics to CSV | `src/pages/Dashboard.tsx` | [ ] |
 
 ---
 
