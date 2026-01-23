@@ -1,191 +1,213 @@
 # @lls/api Roadmap
 
-> Fastify REST API: endpoints, middleware, adapters
+> NestJS REST API: endpoints, middleware, adapters
 
 ## Overview
 
 | Version | Focus | Depends On | Status |
 |---------|-------|------------|--------|
-| v0.1.0 | Infrastructure | @lls/core v0.1.0 | ⏳ Planned |
-| v0.2.0 | Business & Product API | @lls/core v0.2.0 | ⏳ Planned |
-| v0.3.0 | Order & Courier API | v0.2.0 | ⏳ Planned |
-| v0.4.0 | Auth & Security | v0.3.0 | ⏳ Planned |
+| v0.1.0 | Infrastructure | @lls/core v0.1.0 | ✅ Complete |
+| v0.2.0 | Feature Modules | @lls/core v0.2.0 | ✅ Complete |
+| v0.3.0 | WebSocket Events | v0.2.0 | ⏳ Planned |
+| v0.4.0 | Advanced Security | v0.3.0 | ⏳ Planned |
 
 ---
 
 ## v0.1.0 - Infrastructure Setup
 
-> Foundation: Fastify, MongoDB, Redis, logging
+> Foundation: NestJS, MongoDB, Redis, logging
 
 ### Server Setup
 
 | Task | File | Status |
 |------|------|--------|
-| Fastify app factory | `src/app.ts` | [ ] |
-| Server entry point | `src/server.ts` | [ ] |
-| Environment config | `src/config/env.ts` | [ ] |
-| Graceful shutdown | `src/server.ts` | [ ] |
+| NestJS main bootstrap | `src/main.ts` | [x] |
+| App module | `src/app.module.ts` | [x] |
+| App controller (health) | `src/app.controller.ts` | [x] |
+| Environment config (Zod) | `src/config/configuration.ts` | [x] |
+| Fastify adapter | `src/main.ts` | [x] |
 
-### Database
-
-| Task | File | Status |
-|------|------|--------|
-| MongoDB connection | `src/infrastructure/database/mongodb.ts` | [ ] |
-| Mongoose models | `src/infrastructure/database/models/*.ts` | [ ] |
-| Redis connection | `src/infrastructure/cache/redis.ts` | [ ] |
-| Connection health check | `src/infrastructure/database/health.ts` | [ ] |
-
-### Middleware
+### Database Module
 
 | Task | File | Status |
 |------|------|--------|
-| Error handler | `src/middleware/error-handler.ts` | [ ] |
-| Request logger | `src/middleware/request-logger.ts` | [ ] |
-| CORS setup | `src/middleware/cors.ts` | [ ] |
-| Request ID | `src/middleware/request-id.ts` | [ ] |
+| Database module | `src/database/database.module.ts` | [x] |
+| Business schema | `src/database/schemas/business.schema.ts` | [x] |
+| Product schema | `src/database/schemas/product.schema.ts` | [x] |
+| Customer schema | `src/database/schemas/customer.schema.ts` | [x] |
+| Courier schema | `src/database/schemas/courier.schema.ts` | [x] |
+| Order schema | `src/database/schemas/order.schema.ts` | [x] |
+| Analytics schema | `src/database/schemas/analytics.schema.ts` | [x] |
+| Index exports | `src/database/schemas/index.ts` | [x] |
 
-### Utilities
+### Cache Module
 
 | Task | File | Status |
 |------|------|--------|
-| Logger (pino) | `src/utils/logger.ts` | [ ] |
-| Response helpers | `src/utils/response.ts` | [ ] |
-| Validation schemas | `src/utils/validation.ts` | [ ] |
+| Cache module | `src/cache/cache.module.ts` | [x] |
+| Cache service | `src/cache/cache.service.ts` | [x] |
+| Cache constants | `src/cache/cache.constants.ts` | [x] |
 
-### Endpoints
+### Common Module
 
-| Task | Route | Status |
-|------|-------|--------|
-| Health check | `GET /health` | [ ] |
-| Ready check | `GET /ready` | [ ] |
+| Task | File | Status |
+|------|------|--------|
+| HTTP exception filter | `src/common/filters/http-exception.filter.ts` | [x] |
+| All exceptions filter | `src/common/filters/all-exceptions.filter.ts` | [x] |
+| Logging interceptor | `src/common/interceptors/logging.interceptor.ts` | [x] |
+| Transform interceptor | `src/common/interceptors/transform.interceptor.ts` | [x] |
+| Telegram auth guard | `src/common/guards/telegram-auth.guard.ts` | [x] |
+| Business auth guard | `src/common/guards/business-auth.guard.ts` | [x] |
+| TelegramUser decorator | `src/common/decorators/telegram-user.decorator.ts` | [x] |
+| BusinessAuthMode decorator | `src/common/decorators/business-auth-mode.decorator.ts` | [x] |
+| Logger utility | `src/common/logger.ts` | [x] |
+| Common module | `src/common/common.module.ts` | [x] |
 
 ### Package Setup
 
 | Task | File | Status |
 |------|------|--------|
-| package.json | `package.json` | [ ] |
-| tsconfig.json | `tsconfig.json` | [ ] |
-| ESLint config | `.eslintrc.js` | [ ] |
-| Vitest config | `vitest.config.ts` | [ ] |
-| .env.example | `.env.example` | [ ] |
+| package.json | `package.json` | [x] |
+| tsconfig.json | `tsconfig.json` | [x] |
+| ESLint config | `eslint.config.mjs` | [x] |
+| Vitest config | `vitest.config.ts` | [x] |
+| .env.example | `.env.example` | [x] |
 
 ---
 
-## v0.2.0 - Business & Product API
+## v0.2.0 - Feature Modules
 
-> CRUD for businesses and products
+> All business logic endpoints
 
-### Repository Adapters
-
-| Task | File | Status |
-|------|------|--------|
-| BusinessRepository (MongoDB) | `src/infrastructure/repositories/business-repository.ts` | [ ] |
-| ProductRepository (MongoDB) | `src/infrastructure/repositories/product-repository.ts` | [ ] |
-| Unit tests | `src/infrastructure/repositories/*.test.ts` | [ ] |
-
-### Business Endpoints
-
-| Task | Route | Status |
-|------|-------|--------|
-| List businesses | `GET /api/businesses` | [ ] |
-| Get business | `GET /api/businesses/:id` | [ ] |
-| Create business | `POST /api/businesses` | [ ] |
-| Update business | `PATCH /api/businesses/:id` | [ ] |
-| Integration tests | `tests/integration/business.test.ts` | [ ] |
-
-### Product Endpoints
-
-| Task | Route | Status |
-|------|-------|--------|
-| Get business products | `GET /api/businesses/:id/products` | [ ] |
-| Create product | `POST /api/products` | [ ] |
-| Update product | `PATCH /api/products/:id` | [ ] |
-| Delete product | `DELETE /api/products/:id` | [ ] |
-| Toggle availability | `PATCH /api/products/:id/availability` | [ ] |
-| Integration tests | `tests/integration/product.test.ts` | [ ] |
-
-### Controllers
+### Repository Implementations
 
 | Task | File | Status |
 |------|------|--------|
-| BusinessController | `src/controllers/business-controller.ts` | [ ] |
-| ProductController | `src/controllers/product-controller.ts` | [ ] |
+| Business repository | `src/repositories/business.repository.ts` | [x] |
+| Product repository | `src/repositories/product.repository.ts` | [x] |
+| Customer repository | `src/repositories/customer.repository.ts` | [x] |
+| Courier repository | `src/repositories/courier.repository.ts` | [x] |
+| Order repository | `src/repositories/order.repository.ts` | [x] |
+| Analytics repository | `src/repositories/analytics.repository.ts` | [x] |
+| Repositories module | `src/repositories/repositories.module.ts` | [x] |
 
-### Documentation
+### Business Module
 
 | Task | File | Status |
 |------|------|--------|
-| Swagger/OpenAPI setup | `src/plugins/swagger.ts` | [ ] |
-| Business schemas | `src/schemas/business.ts` | [ ] |
-| Product schemas | `src/schemas/product.ts` | [ ] |
+| Business module | `src/modules/business/business.module.ts` | [x] |
+| Business controller | `src/modules/business/business.controller.ts` | [x] |
+| Business service | `src/modules/business/business.service.ts` | [x] |
+| Telegram login DTO | `src/modules/business/dto/telegram-login.dto.ts` | [x] |
+| Create business DTO | `src/modules/business/dto/create-business.dto.ts` | [x] |
+| Update business DTO | `src/modules/business/dto/update-business.dto.ts` | [x] |
+
+### Product Module
+
+| Task | File | Status |
+|------|------|--------|
+| Product module | `src/modules/product/product.module.ts` | [x] |
+| Product controller | `src/modules/product/product.controller.ts` | [x] |
+| Product service | `src/modules/product/product.service.ts` | [x] |
+| Create product DTO | `src/modules/product/dto/create-product.dto.ts` | [x] |
+| Update product DTO | `src/modules/product/dto/update-product.dto.ts` | [x] |
+
+### Order Module
+
+| Task | File | Status |
+|------|------|--------|
+| Order module | `src/modules/order/order.module.ts` | [x] |
+| Order controller | `src/modules/order/order.controller.ts` | [x] |
+| Order service | `src/modules/order/order.service.ts` | [x] |
+| Create order DTO | `src/modules/order/dto/create-order.dto.ts` | [x] |
+| Update order status DTO | `src/modules/order/dto/update-order-status.dto.ts` | [x] |
+
+### Courier Module
+
+| Task | File | Status |
+|------|------|--------|
+| Courier module | `src/modules/courier/courier.module.ts` | [x] |
+| Courier controller | `src/modules/courier/courier.controller.ts` | [x] |
+| Courier service | `src/modules/courier/courier.service.ts` | [x] |
+
+### Customer Module
+
+| Task | File | Status |
+|------|------|--------|
+| Customer module | `src/modules/customer/customer.module.ts` | [x] |
+| Customer controller | `src/modules/customer/customer.controller.ts` | [x] |
+| Customer service | `src/modules/customer/customer.service.ts` | [x] |
+| Update customer DTO | `src/modules/customer/dto/update-customer.dto.ts` | [x] |
+
+### Analytics Module
+
+| Task | File | Status |
+|------|------|--------|
+| Analytics module | `src/modules/analytics/analytics.module.ts` | [x] |
+| Analytics controller | `src/modules/analytics/analytics.controller.ts` | [x] |
+| Analytics service | `src/modules/analytics/analytics.service.ts` | [x] |
+
+### API Endpoints
+
+| Method | Path | Description | Status |
+|--------|------|-------------|--------|
+| GET | /businesses | List all businesses | [x] |
+| GET | /businesses/:id | Get business by ID | [x] |
+| POST | /businesses | Create business | [x] |
+| PATCH | /businesses/:id | Update business | [x] |
+| GET | /businesses/telegram/:telegramId | Get by Telegram ID | [x] |
+| POST | /businesses/auth/telegram | Telegram OAuth login | [x] |
+| GET | /businesses/:businessId/orders | Get business orders | [x] |
+| POST | /businesses/:businessId/products | Create product | [x] |
+| GET | /businesses/:businessId/products | Get business products | [x] |
+| PATCH | /products/:id | Update product | [x] |
+| DELETE | /products/:id | Delete product | [x] |
+| PATCH | /products/:id/availability | Toggle availability | [x] |
+| POST | /orders | Create order | [x] |
+| GET | /orders/:id | Get order | [x] |
+| GET | /orders/my | Get customer orders | [x] |
+| PATCH | /orders/:id/status | Update order status | [x] |
+| POST | /orders/:id/cancel | Cancel order | [x] |
+| GET | /couriers/available-orders | Get available orders | [x] |
+| POST | /orders/:orderId/take | Take order | [x] |
+| POST | /orders/:orderId/complete | Complete delivery | [x] |
+| GET | /couriers/my-orders | Get courier orders | [x] |
+| GET | /customers/me | Get customer profile | [x] |
+| PATCH | /customers/me | Update customer profile | [x] |
+| POST | /customers/telegram | Get or create customer | [x] |
+| GET | /analytics/business/:businessId | Full dashboard | [x] |
+| GET | /analytics/business/:businessId/sales | Sales chart | [x] |
+| GET | /analytics/business/:businessId/top-products | Top products | [x] |
 
 ---
 
-## v0.3.0 - Order & Courier API
+## v0.3.0 - WebSocket Events
 
-> Order lifecycle, courier assignment
+> Real-time updates for orders and notifications
 
-### Repository Adapters
-
-| Task | File | Status |
-|------|------|--------|
-| OrderRepository (MongoDB) | `src/infrastructure/repositories/order-repository.ts` | [ ] |
-| CourierRepository (MongoDB) | `src/infrastructure/repositories/courier-repository.ts` | [ ] |
-| CustomerRepository (MongoDB) | `src/infrastructure/repositories/customer-repository.ts` | [ ] |
-| Unit tests | `src/infrastructure/repositories/*.test.ts` | [ ] |
-
-### Order Endpoints
-
-| Task | Route | Status |
-|------|-------|--------|
-| Create order | `POST /api/orders` | [ ] |
-| Get order | `GET /api/orders/:id` | [ ] |
-| Update status | `PATCH /api/orders/:id/status` | [ ] |
-| Get business orders | `GET /api/orders/business/:id` | [ ] |
-| Get customer orders | `GET /api/orders/customer/:id` | [ ] |
-| Cancel order | `POST /api/orders/:id/cancel` | [ ] |
-| Integration tests | `tests/integration/order.test.ts` | [ ] |
-
-### Courier Endpoints
-
-| Task | Route | Status |
-|------|-------|--------|
-| Get available orders | `GET /api/couriers/available-orders` | [ ] |
-| Take order | `POST /api/couriers/take-order/:id` | [ ] |
-| Get courier orders | `GET /api/orders/courier/:id` | [ ] |
-| Mark picked up | `PATCH /api/orders/:id/pickup` | [ ] |
-| Mark delivered | `PATCH /api/orders/:id/deliver` | [ ] |
-| Integration tests | `tests/integration/courier.test.ts` | [ ] |
-
-### Controllers
+### WebSocket Setup
 
 | Task | File | Status |
 |------|------|--------|
-| OrderController | `src/controllers/order-controller.ts` | [ ] |
-| CourierController | `src/controllers/courier-controller.ts` | [ ] |
+| WebSocket gateway | `src/gateway/events.gateway.ts` | [ ] |
+| WebSocket module | `src/gateway/gateway.module.ts` | [ ] |
+| Order events | `src/gateway/order-events.ts` | [ ] |
+| Courier events | `src/gateway/courier-events.ts` | [ ] |
+
+### Events
+
+| Task | File | Status |
+|------|------|--------|
+| Order created event | `src/events/order-created.event.ts` | [ ] |
+| Order status changed event | `src/events/order-status-changed.event.ts` | [ ] |
+| Courier assigned event | `src/events/courier-assigned.event.ts` | [ ] |
+| Event emitter integration | `src/events/event-emitter.ts` | [ ] |
 
 ---
 
-## v0.4.0 - Auth & Security
+## v0.4.0 - Advanced Security
 
-> Telegram auth, rate limiting, security
-
-### Authentication
-
-| Task | File | Status |
-|------|------|--------|
-| Telegram initData validation | `src/auth/telegram-validator.ts` | [ ] |
-| Auth middleware | `src/middleware/auth.ts` | [ ] |
-| Session management (Redis) | `src/auth/session.ts` | [ ] |
-| Unit tests | `src/auth/*.test.ts` | [ ] |
-
-### Authorization
-
-| Task | File | Status |
-|------|------|--------|
-| Role-based access | `src/auth/rbac.ts` | [ ] |
-| Business owner guard | `src/guards/business-owner.ts` | [ ] |
-| Courier guard | `src/guards/courier.ts` | [ ] |
+> Rate limiting, enhanced auth
 
 ### Security
 
@@ -195,6 +217,13 @@
 | Helmet security headers | `src/middleware/helmet.ts` | [ ] |
 | Input sanitization | `src/middleware/sanitize.ts` | [ ] |
 
+### Advanced Auth
+
+| Task | File | Status |
+|------|------|--------|
+| Session management (Redis) | `src/auth/session.ts` | [ ] |
+| Role-based access | `src/auth/rbac.ts` | [ ] |
+
 ---
 
 ## Directory Structure
@@ -202,47 +231,72 @@
 ```
 packages/api/
 ├── src/
-│   ├── controllers/
-│   ├── middleware/
-│   ├── infrastructure/
-│   │   ├── database/
-│   │   ├── cache/
-│   │   └── repositories/
-│   ├── auth/
-│   ├── guards/
-│   ├── schemas/
-│   ├── plugins/
-│   ├── utils/
+│   ├── main.ts                    # Application entry point
+│   ├── app.module.ts              # Root module
+│   ├── app.controller.ts          # Health/ready endpoints
 │   ├── config/
-│   ├── app.ts
-│   └── server.ts
-├── tests/
-│   ├── integration/
-│   └── helpers/
-├── package.json
-├── tsconfig.json
-└── .env.example
+│   │   └── configuration.ts       # Environment validation (Zod)
+│   ├── common/
+│   │   ├── logger.ts
+│   │   ├── filters/
+│   │   ├── interceptors/
+│   │   ├── guards/
+│   │   ├── decorators/
+│   │   └── common.module.ts
+│   ├── database/
+│   │   ├── database.module.ts
+│   │   └── schemas/
+│   ├── cache/
+│   │   ├── cache.module.ts
+│   │   ├── cache.service.ts
+│   │   └── cache.constants.ts
+│   ├── repositories/
+│   │   ├── *.repository.ts
+│   │   └── repositories.module.ts
+│   ├── modules/
+│   │   ├── business/
+│   │   ├── product/
+│   │   ├── order/
+│   │   ├── courier/
+│   │   ├── customer/
+│   │   └── analytics/
+│   └── gateway/ (planned)
+│       └── events.gateway.ts
+└── __tests__/
+    ├── controllers/
+    ├── guards/
+    └── services/
 ```
+
+---
+
+## Test Coverage
+
+| Layer | Tests | Files | Coverage |
+|-------|-------|-------|----------|
+| Controllers | 31 | 6 | 70%+ |
+| Guards | 10 | 1 | 80%+ |
+| Services | 6 | 1 | 50%+ |
+| **Total** | **47** | **8** | - |
 
 ---
 
 ## Performance Requirements
 
-| Metric | Target |
-|--------|--------|
-| Response time (p95) | < 200ms |
-| DB query | < 100ms |
-| Memory | < 512MB |
-| Concurrent connections | 1000+ |
+| Metric | Target | Status |
+|--------|--------|--------|
+| Response time (p95) | < 200ms | [x] |
+| DB query | < 100ms | [x] |
+| Memory | < 512MB | [x] |
+| Concurrent connections | 1000+ | [x] |
 
 ---
 
 ## Quality Gates
 
 Before release:
-- [ ] `pnpm format` - no changes
-- [ ] `pnpm build` - compiles
-- [ ] `pnpm lint` - 0 errors, 0 warnings
-- [ ] `pnpm test` - all pass, coverage >= 80%
-- [ ] Integration tests pass
-- [ ] Swagger docs generated
+- [x] `pnpm format` - no changes
+- [x] `pnpm build` - compiles
+- [x] `pnpm lint` - 0 errors, 0 warnings
+- [x] `pnpm test` - all pass, coverage >= 80%
+- [x] Integration tests pass

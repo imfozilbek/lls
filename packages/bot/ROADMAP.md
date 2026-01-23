@@ -8,7 +8,8 @@
 |---------|-------|------------|--------|
 | v0.1.0 | Customer Interface | @lls/api v0.3.0 | ✅ Complete |
 | v0.2.0 | Courier Interface | v0.1.0 | ✅ Complete |
-| v0.3.0 | Notifications | v0.2.0 | ⏳ Planned |
+| v0.3.0 | Real-time Updates | v0.2.0 | ✅ Complete |
+| v0.4.0 | Push Notifications | v0.3.0 | ⏳ Planned |
 
 ---
 
@@ -134,26 +135,47 @@
 
 ---
 
-## v0.3.0 - Notifications
+## v0.3.0 - Real-time Updates
 
-> Real-time updates, push notifications
+> WebSocket connection for live order updates
 
-### Real-time
+### WebSocket Client
 
 | Task | File | Status |
 |------|------|--------|
-| WebSocket connection | `src/lib/websocket.ts` | [ ] |
-| Order status updates | `src/hooks/use-order-updates.ts` | [ ] |
-| New order alerts (courier) | `src/hooks/use-new-orders.ts` | [ ] |
+| WebSocket client class | `src/lib/websocket.ts` | [x] |
+| Connection management | `src/lib/websocket.ts` | [x] |
+| Room management | `src/lib/websocket.ts` | [x] |
+| Event types | `src/lib/websocket.ts` | [x] |
+
+### Real-time Hooks
+
+| Task | File | Status |
+|------|------|--------|
+| Order status updates hook | `src/hooks/useOrderUpdates.ts` | [x] |
+| New order alerts hook (courier) | `src/hooks/useNewOrders.ts` | [x] |
+
+### Integration
+
+| Task | File | Status |
+|------|------|--------|
+| OrderTracking real-time updates | `src/screens/customer/OrderTracking.tsx` | [x] |
+| Courier new order notifications | `src/screens/courier/AvailableOrders.tsx` | [x] |
+
+---
+
+## v0.4.0 - Push Notifications
+
+> Telegram bot notifications (planned)
 
 ### Telegram Notifications
 
 | Task | File | Status |
 |------|------|--------|
-| Order confirmation message | Integration | [ ] |
-| Status change notification | Integration | [ ] |
-| Courier assigned notification | Integration | [ ] |
-| Delivery complete notification | Integration | [ ] |
+| Order confirmation message | Integration with bot | [ ] |
+| Status change notification | Integration with bot | [ ] |
+| Courier assigned notification | Integration with bot | [ ] |
+| Delivery complete notification | Integration with bot | [ ] |
 
 ---
 
@@ -163,21 +185,41 @@
 packages/bot/
 ├── src/
 │   ├── screens/
-│   │   ├── home.tsx
-│   │   ├── business.tsx
-│   │   ├── cart.tsx
-│   │   ├── checkout.tsx
-│   │   ├── orders.tsx
-│   │   ├── order-detail.tsx
+│   │   ├── customer/
+│   │   │   ├── Home.tsx
+│   │   │   ├── Business.tsx
+│   │   │   ├── Cart.tsx
+│   │   │   ├── Checkout.tsx
+│   │   │   ├── Orders.tsx
+│   │   │   └── OrderTracking.tsx
 │   │   └── courier/
-│   │       ├── available-orders.tsx
-│   │       ├── active-delivery.tsx
-│   │       └── earnings.tsx
+│   │       ├── AvailableOrders.tsx
+│   │       ├── ActiveDelivery.tsx
+│   │       └── DeliveryHistory.tsx
 │   ├── components/
+│   │   ├── ui/
+│   │   ├── layout/
+│   │   ├── business/
+│   │   ├── product/
+│   │   ├── cart/
+│   │   └── order/
 │   ├── hooks/
+│   │   ├── useApi.ts
+│   │   ├── useCart.ts
+│   │   ├── useTelegram.ts
+│   │   ├── useOrderUpdates.ts
+│   │   └── useNewOrders.ts
 │   ├── stores/
+│   │   ├── auth.store.ts
+│   │   ├── cart.store.ts
+│   │   ├── order.store.ts
+│   │   ├── courier.store.ts
+│   │   └── toast.store.ts
 │   ├── lib/
-│   ├── router.tsx
+│   │   ├── api-client.ts
+│   │   ├── telegram.ts
+│   │   ├── utils.ts
+│   │   └── websocket.ts
 │   ├── App.tsx
 │   └── main.tsx
 ├── public/
@@ -194,36 +236,48 @@ packages/bot/
 ### Customer Flow
 
 ```
-Home → Select Business → Browse Products → Add to Cart → Checkout → Track Order
+Home → Select Business → Browse Products → Add to Cart → Checkout → Track Order (real-time)
 ```
 
 ### Courier Flow
 
 ```
-Toggle Mode → Available Orders → Take Order → Navigate → Pickup → Deliver → Confirm
+Toggle Mode → Available Orders (real-time) → Take Order → Navigate → Pickup → Deliver → Confirm
 ```
 
 ---
 
 ## Telegram Integration
 
-| Feature | API |
-|---------|-----|
-| Theme colors | `window.Telegram.WebApp.themeParams` |
-| Back button | `window.Telegram.WebApp.BackButton` |
-| Main button | `window.Telegram.WebApp.MainButton` |
-| Haptic feedback | `window.Telegram.WebApp.HapticFeedback` |
-| User data | `window.Telegram.WebApp.initDataUnsafe` |
-| Closing app | `window.Telegram.WebApp.close()` |
+| Feature | API | Status |
+|---------|-----|--------|
+| Theme colors | `window.Telegram.WebApp.themeParams` | [x] |
+| Back button | `window.Telegram.WebApp.BackButton` | [x] |
+| Main button | `window.Telegram.WebApp.MainButton` | [x] |
+| Haptic feedback | `window.Telegram.WebApp.HapticFeedback` | [x] |
+| User data | `window.Telegram.WebApp.initDataUnsafe` | [x] |
+| Closing app | `window.Telegram.WebApp.close()` | [x] |
+
+---
+
+## Real-time Events
+
+| Event | Description | Status |
+|-------|-------------|--------|
+| `order_status_changed` | Order status updates | [x] |
+| `order_created` | New order for business | [x] |
+| `order_cancelled` | Order cancelled | [x] |
+| `courier_assigned` | Courier took order | [x] |
+| `new_order_available` | New order for couriers | [x] |
 
 ---
 
 ## Quality Gates
 
 Before release:
-- [ ] `pnpm format` - no changes
-- [ ] `pnpm build` - compiles
-- [ ] `pnpm lint` - 0 errors, 0 warnings
+- [x] `pnpm format` - no changes
+- [x] `pnpm build` - compiles
+- [x] `pnpm lint` - 0 errors, 0 warnings
 - [ ] `pnpm test` - all pass, coverage >= 70%
-- [ ] Tested in Telegram (iOS + Android)
-- [ ] initData validation works
+- [x] Tested in Telegram (iOS + Android)
+- [x] initData validation works

@@ -7,6 +7,7 @@ import { OrderTimeline } from "../../components/order/OrderTimeline.js"
 import { Button } from "../../components/ui/Button.js"
 import { Loading } from "../../components/ui/Loading.js"
 import { useOrder } from "../../hooks/useApi.js"
+import { useOrderUpdates } from "../../hooks/useOrderUpdates.js"
 import { hapticNotification } from "../../lib/telegram.js"
 import { formatMoney, formatDate } from "../../lib/utils.js"
 import { useOrderStore } from "../../stores/order.store.js"
@@ -19,7 +20,10 @@ export function OrderTracking(): ReactNode {
     const cancelOrder = useOrderStore((state) => state.cancelOrder)
     const isCancelling = useOrderStore((state) => state.isLoading)
 
-    // Poll for updates every 30 seconds
+    // Subscribe to real-time order updates via WebSocket
+    useOrderUpdates(id ?? null)
+
+    // Fallback: Poll for updates every 30 seconds if WebSocket is not available
     useEffect(() => {
         if (
             !order ||

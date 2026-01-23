@@ -7,6 +7,7 @@ import { Button } from "../../components/ui/Button.js"
 import { Card } from "../../components/ui/Card.js"
 import { Skeleton } from "../../components/ui/Loading.js"
 import { useToast } from "../../components/ui/Toast.js"
+import { useNewOrders } from "../../hooks/useNewOrders.js"
 import { hapticFeedback, hapticNotification } from "../../lib/telegram.js"
 import { formatMoney, formatRelativeTime } from "../../lib/utils.js"
 import { useCourierStore } from "../../stores/courier.store.js"
@@ -22,6 +23,9 @@ export function AvailableOrders(): ReactNode {
     const fetchAvailableOrders = useCourierStore((state) => state.fetchAvailableOrders)
     const fetchMyOrders = useCourierStore((state) => state.fetchMyOrders)
     const takeOrder = useCourierStore((state) => state.takeOrder)
+
+    // Subscribe to real-time new order notifications
+    useNewOrders(true)
 
     useEffect(() => {
         void fetchAvailableOrders()

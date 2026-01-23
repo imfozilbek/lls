@@ -31,9 +31,9 @@
 
 | Package | Version | Status | Next Milestone |
 |---------|---------|--------|----------------|
-| @lls/core | v0.2.0 | ✅ Complete | v0.3.0 - Notifications |
-| @lls/api | v0.2.0 | ✅ Complete | v0.3.0 - WebSocket events |
-| @lls/bot | v0.1.0 | ✅ Complete | v0.2.0 - Polish UI |
+| @lls/core | v0.2.0 | ✅ Complete | v0.3.0 - Domain Events |
+| @lls/api | v0.3.0 | ✅ Complete | v0.4.0 - Rate Limiting |
+| @lls/bot | v0.3.0 | ✅ Complete | v0.4.0 - Push Notifications |
 | @lls/admin | v0.1.0 | ✅ Complete | v0.2.0 - More analytics |
 
 ---

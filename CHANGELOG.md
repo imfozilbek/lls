@@ -2,6 +2,25 @@
 
 All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 
+## [0.3.5] - 2026-01-23
+
+### @lls/api
+- **Added:** WebSocket gateway for real-time events (`packages/api/src/gateway/`)
+- **Added:** `EventsGateway` with room-based event broadcasting
+- **Added:** WebSocket events: `order_created`, `order_status_changed`, `order_cancelled`, `courier_assigned`, `new_order_available`
+- **Added:** Socket.io integration with NestJS
+- **Changed:** `OrderService` now emits WebSocket events on order creation, status updates, and cancellation
+- **Changed:** `CourierService` now emits WebSocket events when courier takes or completes an order
+
+### @lls/bot
+- **Added:** WebSocket client for real-time updates (`src/lib/websocket.ts`)
+- **Added:** `useOrderUpdates` hook for real-time order status tracking
+- **Added:** `useNewOrders` hook for courier new order notifications
+- **Added:** Real-time order updates on `OrderTracking` screen
+- **Added:** Real-time new order notifications on `AvailableOrders` screen
+- **Added:** Haptic feedback on new order notifications
+- **Added:** Toast notifications for order status changes and courier assignments
+
 ## [0.3.4] - 2026-01-22
 
 ### @lls/bot

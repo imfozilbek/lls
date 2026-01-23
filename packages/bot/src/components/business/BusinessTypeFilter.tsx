@@ -1,8 +1,7 @@
+import { BusinessType } from "@lls/core"
 import { type ReactNode } from "react"
 
 import { cn } from "../../lib/utils.js"
-
-import { BusinessType } from "@lls/core"
 
 interface FilterOption {
     value: BusinessType | "all"
