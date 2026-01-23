@@ -8,7 +8,7 @@
 |---------|-------|--------|
 | v0.1.0 | Domain Types | ✅ Complete |
 | v0.2.0 | Use Cases | ✅ Complete |
-| v0.3.0 | Events & Validation | ⏳ Planned |
+| v0.3.0 | Events & Validation | ✅ Complete |
 
 ---
 
@@ -168,27 +168,27 @@
 
 ## v0.3.0 - Events & Validation
 
-> Domain events, advanced validation (Planned for future release)
+> Domain events, advanced validation
 
 ### Domain Events
 
 | Task | File | Status |
 |------|------|--------|
-| Event base class | `src/domain/events/domain-event.ts` | [ ] |
-| OrderCreated event | `src/domain/events/order-created.ts` | [ ] |
-| OrderStatusChanged event | `src/domain/events/order-status-changed.ts` | [ ] |
-| CourierAssigned event | `src/domain/events/courier-assigned.ts` | [ ] |
-| Event dispatcher | `src/domain/events/event-dispatcher.ts` | [ ] |
-| Unit tests | `src/domain/events/*.test.ts` | [ ] |
+| Event base class | `src/domain/events/domain-event.ts` | [x] |
+| OrderCreated event | `src/domain/events/order-created.event.ts` | [x] |
+| OrderStatusChanged event | `src/domain/events/order-status-changed.event.ts` | [x] |
+| CourierAssigned event | `src/domain/events/courier-assigned.event.ts` | [x] |
+| Event dispatcher | `src/domain/events/event-dispatcher.ts` | [x] |
+| Unit tests | `src/__tests__/domain/events/*.test.ts` | [x] |
 
 ### Validation
 
 | Task | File | Status |
 |------|------|--------|
-| Order status transition rules | `src/domain/rules/order-status-rules.ts` | [ ] |
-| Business hours validation | `src/domain/rules/business-hours.ts` | [ ] |
-| Order total calculation | `src/domain/services/order-calculator.ts` | [ ] |
-| Unit tests | `src/domain/rules/*.test.ts` | [ ] |
+| Order status transition rules | `src/domain/rules/order-status-rules.ts` | [x] |
+| Business hours validation | `src/domain/rules/business-hours.ts` | [x] |
+| Order total calculation | `src/domain/services/order-calculator.ts` | [x] |
+| Unit tests | `src/__tests__/domain/rules/*.test.ts` | [x] |
 
 ---
 
@@ -237,8 +237,11 @@ packages/core/
 | Domain Entities | 55 | 6 | 90%+ |
 | Value Objects | 35 | 4 | 90%+ |
 | Domain Errors | 10 | 1 | 90%+ |
+| Domain Events | 15 | 1 | 90%+ |
+| Domain Rules | 32 | 2 | 90%+ |
+| Domain Services | 16 | 1 | 90%+ |
 | Use Cases | 88 | 28 | 80%+ |
-| **Total** | **188** | **39** | - |
+| **Total** | **271** | **43** | - |
 
 ---
 
