@@ -9,7 +9,7 @@
 | v0.1.0 | Customer Interface | @lls/api v0.3.0 | ✅ Complete |
 | v0.2.0 | Courier Interface | v0.1.0 | ✅ Complete |
 | v0.3.0 | Real-time Updates | v0.2.0 | ✅ Complete |
-| v0.4.0 | Push Notifications | v0.3.0 | ⏳ Planned |
+| v0.4.0 | Push Notifications | v0.3.0 | ✅ Complete |
 
 ---
 
@@ -166,16 +166,26 @@
 
 ## v0.4.0 - Push Notifications
 
-> Telegram bot notifications (planned)
+> Telegram bot notifications via API
 
 ### Telegram Notifications
 
 | Task | File | Status |
 |------|------|--------|
-| Order confirmation message | Integration with bot | [ ] |
-| Status change notification | Integration with bot | [ ] |
-| Courier assigned notification | Integration with bot | [ ] |
-| Delivery complete notification | Integration with bot | [ ] |
+| Notification service | `@lls/api: src/notifications/telegram-notification.service.ts` | [x] |
+| Order confirmation message | `TelegramNotificationService.sendOrderConfirmation()` | [x] |
+| Status change notification | `TelegramNotificationService.sendStatusChangeNotification()` | [x] |
+| Courier assigned notification | `TelegramNotificationService.sendCourierAssignedNotification()` | [x] |
+| Delivery complete notification | `TelegramNotificationService.sendDeliveryCompleteNotification()` | [x] |
+| New order notification (business) | `TelegramNotificationService.sendNewOrderNotification()` | [x] |
+| New order available (courier) | `TelegramNotificationService.sendNewOrderAvailableNotification()` | [x] |
+
+### Integration
+
+| Task | File | Status |
+|------|------|--------|
+| OrderService notification integration | `@lls/api: src/modules/order/order.service.ts` | [x] |
+| CourierService notification integration | `@lls/api: src/modules/courier/courier.service.ts` | [x] |
 
 ---
 
