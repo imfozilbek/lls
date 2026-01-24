@@ -78,16 +78,16 @@ describe("canBeCancelled", () => {
         expect(canBeCancelled(OrderStatus.ACCEPTED)).toBe(true)
     })
 
-    it("should return true for PREPARING", () => {
-        expect(canBeCancelled(OrderStatus.PREPARING)).toBe(true)
+    it("should return false for PREPARING (resources committed)", () => {
+        expect(canBeCancelled(OrderStatus.PREPARING)).toBe(false)
     })
 
-    it("should return true for READY", () => {
-        expect(canBeCancelled(OrderStatus.READY)).toBe(true)
+    it("should return false for READY (order is ready)", () => {
+        expect(canBeCancelled(OrderStatus.READY)).toBe(false)
     })
 
-    it("should return true for PICKED_UP", () => {
-        expect(canBeCancelled(OrderStatus.PICKED_UP)).toBe(true)
+    it("should return false for PICKED_UP (courier is delivering)", () => {
+        expect(canBeCancelled(OrderStatus.PICKED_UP)).toBe(false)
     })
 
     it("should return false for DELIVERED", () => {

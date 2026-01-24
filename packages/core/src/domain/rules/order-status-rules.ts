@@ -2,13 +2,21 @@ import { OrderStatus } from "../enums/order-status.js"
 
 /**
  * Valid order status transitions
+ *
+ * Cancellation rules:
+ * - PENDING: Customer can cancel freely (order not yet accepted)
+ * - ACCEPTED: Customer can cancel (business hasn't started preparing)
+ * - PREPARING: Cannot cancel (food is being made, resources committed)
+ * - READY: Cannot cancel (order is ready for pickup)
+ * - PICKED_UP: Cannot cancel (courier is delivering)
+ * - DELIVERED/CANCELLED: Terminal states
  */
 const VALID_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
     [OrderStatus.PENDING]: [OrderStatus.ACCEPTED, OrderStatus.CANCELLED],
     [OrderStatus.ACCEPTED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
-    [OrderStatus.PREPARING]: [OrderStatus.READY, OrderStatus.CANCELLED],
-    [OrderStatus.READY]: [OrderStatus.PICKED_UP, OrderStatus.CANCELLED],
-    [OrderStatus.PICKED_UP]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
+    [OrderStatus.PREPARING]: [OrderStatus.READY],
+    [OrderStatus.READY]: [OrderStatus.PICKED_UP],
+    [OrderStatus.PICKED_UP]: [OrderStatus.DELIVERED],
     [OrderStatus.DELIVERED]: [],
     [OrderStatus.CANCELLED]: [],
 }
