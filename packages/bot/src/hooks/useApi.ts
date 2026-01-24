@@ -83,7 +83,7 @@ export function useProducts(businessId: string | undefined): UseQueryResult<Prod
         setError(null)
         try {
             const result = await productApi.listByBusiness(businessId)
-            setData(result)
+            setData(result.data)
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to fetch products")
         } finally {

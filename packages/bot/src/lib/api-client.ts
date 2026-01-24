@@ -1,4 +1,37 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4001/api/v1"
+import { env } from "./env.js"
+import { logger } from "./logger.js"
+
+const log = logger.child("api")
+
+/**
+ * HTTP Error types for proper handling
+ */
+export class ApiError extends Error {
+    constructor(
+        public readonly status: number,
+        message: string,
+        public readonly code?: string,
+    ) {
+        super(message)
+        this.name = "ApiError"
+    }
+
+    get isUnauthorized(): boolean {
+        return this.status === 401
+    }
+
+    get isForbidden(): boolean {
+        return this.status === 403
+    }
+
+    get isNotFound(): boolean {
+        return this.status === 404
+    }
+
+    get isServerError(): boolean {
+        return this.status >= 500
+    }
+}
 
 function getInitData(): string {
     if (typeof window !== "undefined" && window.Telegram?.WebApp?.initData) {
@@ -8,7 +41,7 @@ function getInitData(): string {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const url = `${API_URL}${path}`
+    const url = `${env.apiUrl}${path}`
     const initData = getInitData()
 
     const headers: Record<string, string> = {
@@ -19,19 +52,43 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
         headers["X-Telegram-Init-Data"] = initData
     }
 
-    const response = await fetch(url, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-    })
+    try {
+        const response = await fetch(url, {
+            method,
+            headers,
+            body: body ? JSON.stringify(body) : undefined,
+        })
 
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Request failed" }))
-        throw new Error(error.message || `HTTP ${response.status}`)
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: "Request failed" }))
+            const apiError = new ApiError(
+                response.status,
+                error.message || `HTTP ${response.status}`,
+                error.code,
+            )
+
+            // Log errors appropriately
+            if (apiError.isServerError) {
+                log.error(`Server error on ${method} ${path}`, { status: response.status })
+            } else if (apiError.isUnauthorized) {
+                log.warn(`Unauthorized request to ${path}`)
+            } else if (apiError.isForbidden) {
+                log.warn(`Forbidden request to ${path}`)
+            }
+
+            throw apiError
+        }
+
+        const result = await response.json()
+        return result.data as T
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error
+        }
+        // Network error or other issues
+        log.error(`Network error on ${method} ${path}`, { error })
+        throw new ApiError(0, "Network error. Please check your connection.")
     }
-
-    const result = await response.json()
-    return result.data as T
 }
 
 export const api = {
@@ -44,14 +101,31 @@ export const api = {
 // Typed API methods
 import type { BusinessDTO, ProductDTO, OrderDTO, CustomerDTO } from "@lls/core"
 
+export interface PaginatedResponse<T> {
+    data: T[]
+    meta: {
+        page: number
+        limit: number
+        total: number
+        totalPages: number
+        hasNext: boolean
+        hasPrev: boolean
+    }
+}
+
 export const businessApi = {
     list: (): Promise<BusinessDTO[]> => api.get("/businesses"),
     getById: (id: string): Promise<BusinessDTO> => api.get(`/businesses/${id}`),
 }
 
 export const productApi = {
-    listByBusiness: (businessId: string): Promise<ProductDTO[]> =>
-        api.get(`/businesses/${businessId}/products`),
+    listByBusiness: async (
+        businessId: string,
+        page = 1,
+        limit = 50,
+    ): Promise<PaginatedResponse<ProductDTO>> => {
+        return api.get(`/businesses/${businessId}/products?page=${page}&limit=${limit}`)
+    },
 }
 
 export const orderApi = {

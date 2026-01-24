@@ -7,6 +7,10 @@ import {
     mainButton,
 } from "@telegram-apps/sdk-react"
 
+import { logger } from "./logger.js"
+
+const log = logger.child("telegram")
+
 export function initTelegram(): void {
     try {
         init()
@@ -18,7 +22,7 @@ export function initTelegram(): void {
 
         void viewport.expand()
     } catch (error) {
-        console.error("Failed to initialize Telegram SDK:", error)
+        log.error("Failed to initialize Telegram SDK", { error })
     }
 }
 

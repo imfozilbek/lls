@@ -3,3 +3,5 @@ export { useTelegramUser, useThemeParams, useBackButton, useMainButton } from ".
 export { useCart } from "./useCart.js"
 export { useOrderUpdates } from "./useOrderUpdates.js"
 export { useNewOrders } from "./useNewOrders.js"
+export { useNetworkStatus } from "./useNetworkStatus.js"
+export { useWebSocket } from "./useWebSocket.js"

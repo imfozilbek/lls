@@ -198,9 +198,9 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Create .env.example with all variables | `.env.example` | [ ] |
-| Add environment validation | `src/lib/env.ts` | [ ] |
-| Production/dev mode detection | `src/lib/env.ts` | [ ] |
+| Create .env.example with all variables | `.env.example` | [x] |
+| Add environment validation | `src/lib/env.ts` | [x] |
+| Production/dev mode detection | `src/lib/env.ts` | [x] |
 
 ### Error Handling
 
@@ -208,16 +208,16 @@
 |------|------|--------|
 | Add 404 Not Found screen | `src/screens/NotFound.tsx` | [ ] |
 | Add generic Error screen | `src/screens/Error.tsx` | [ ] |
-| Handle 401 errors - redirect to auth | `src/lib/api-client.ts` | [ ] |
-| Handle 403 errors - show permission denied | `src/lib/api-client.ts` | [ ] |
-| Handle 500 errors - show server error | `src/lib/api-client.ts` | [ ] |
+| Handle 401 errors - typed ApiError | `src/lib/api-client.ts` | [x] |
+| Handle 403 errors - typed ApiError | `src/lib/api-client.ts` | [x] |
+| Handle 500 errors - typed ApiError | `src/lib/api-client.ts` | [x] |
 | Add try-catch to all API calls in screens | `src/screens/**/*.tsx` | [ ] |
 
 ### WebSocket Resilience
 
 | Task | File | Status |
 |------|------|--------|
-| Add automatic reconnection with backoff | `src/lib/websocket.ts` | [ ] |
+| Add automatic reconnection with backoff | `src/lib/websocket.ts` | [x] |
 | Add connection status indicator | `src/components/ui/ConnectionStatus.tsx` | [ ] |
 | Clean up event listeners on unmount | `src/hooks/useOrderUpdates.ts` | [ ] |
 | Clean up event listeners on unmount | `src/hooks/useNewOrders.ts` | [ ] |
@@ -226,9 +226,9 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Replace console.log with proper logger | `src/lib/logger.ts` | [ ] |
-| Remove all console.warn/error from production | `src/lib/websocket.ts` | [ ] |
-| Remove all console.error from production | `src/lib/telegram.ts` | [ ] |
+| Replace console.log with proper logger | `src/lib/logger.ts` | [x] |
+| Remove all console.warn/error from production | `src/lib/websocket.ts` | [x] |
+| Remove all console.error from production | `src/lib/telegram.ts` | [x] |
 
 ### Loading States
 

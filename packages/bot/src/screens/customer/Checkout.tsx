@@ -98,6 +98,7 @@ export function Checkout(): ReactNode {
                             value={phone}
                             onChange={(e): void => setPhone(e.target.value)}
                             error={formErrors.phone}
+                            disabled={isLoading}
                         />
                     </div>
                 </div>
@@ -114,6 +115,7 @@ export function Checkout(): ReactNode {
                             value={city}
                             onChange={(e): void => setCity(e.target.value)}
                             error={formErrors.city}
+                            disabled={isLoading}
                         />
                         <Input
                             label="Улица и дом"
@@ -121,6 +123,7 @@ export function Checkout(): ReactNode {
                             value={street}
                             onChange={(e): void => setStreet(e.target.value)}
                             error={formErrors.street}
+                            disabled={isLoading}
                         />
                     </div>
                 </div>
