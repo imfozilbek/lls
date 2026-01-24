@@ -4,6 +4,7 @@ export { Card, CardHeader, CardTitle } from "./Card.js"
 export { Input, Textarea } from "./Input.js"
 export { FullScreenLoading, Loading, Skeleton, TableSkeleton } from "./Loading.js"
 export { Modal, ModalFooter } from "./Modal.js"
+export { Pagination } from "./Pagination.js"
 export {
     Table,
     TableBody,

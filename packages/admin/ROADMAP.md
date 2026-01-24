@@ -136,8 +136,8 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Create .env.example with all variables | `.env.example` | [ ] |
-| Add environment validation | `src/lib/env.ts` | [ ] |
+| Create .env.example with all variables | `.env.example` | [x] |
+| Add environment validation | `src/lib/env.ts` | [x] |
 
 ### Authentication Improvements
 
@@ -155,7 +155,7 @@
 |------|------|--------|
 | Add error recovery UI for failed API calls | `src/pages/Dashboard.tsx` | [ ] |
 | Add "Try Again" button on errors | `src/components/ui/ErrorState.tsx` | [ ] |
-| Handle 401/403/500 errors gracefully | `src/lib/api-client.ts` | [ ] |
+| Handle 401/403/500 errors gracefully | `src/lib/api-client.ts` | [x] |
 
 ### Product Image Upload
 

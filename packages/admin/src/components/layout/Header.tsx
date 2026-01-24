@@ -1,14 +1,18 @@
+import { useNavigate } from "react-router-dom"
+
 import { getBusinessTypeLabel } from "../../lib/utils.js"
 import { useAuthStore } from "../../stores/auth.store.js"
 
 import type { ReactNode } from "react"
 
 export function Header(): ReactNode {
+    const navigate = useNavigate()
     const business = useAuthStore((state) => state.business)
     const logout = useAuthStore((state) => state.logout)
 
     const handleLogout = (): void => {
         logout()
+        void navigate("/login", { replace: true })
     }
 
     return (

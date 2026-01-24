@@ -1,3 +1,5 @@
+import { env } from "./env.js"
+
 import type {
     BusinessDTO,
     ProductDTO,
@@ -8,7 +10,35 @@ import type {
     TopProductsDTO,
 } from "@lls/core"
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4001/api/v1"
+/**
+ * HTTP Error types for proper handling
+ */
+export class ApiError extends Error {
+    constructor(
+        public readonly status: number,
+        message: string,
+        public readonly code?: string,
+    ) {
+        super(message)
+        this.name = "ApiError"
+    }
+
+    get isUnauthorized(): boolean {
+        return this.status === 401
+    }
+
+    get isForbidden(): boolean {
+        return this.status === 403
+    }
+
+    get isNotFound(): boolean {
+        return this.status === 404
+    }
+
+    get isServerError(): boolean {
+        return this.status >= 500
+    }
+}
 
 function getBusinessTelegramId(): string | null {
     if (typeof window !== "undefined") {
@@ -18,7 +48,7 @@ function getBusinessTelegramId(): string | null {
 }
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-    const url = `${API_URL}${path}`
+    const url = `${env.apiUrl}${path}`
     const telegramId = getBusinessTelegramId()
 
     const headers: Record<string, string> = {
@@ -29,19 +59,41 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
         headers["X-Business-Telegram-Id"] = telegramId
     }
 
-    const response = await fetch(url, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined,
-    })
+    try {
+        const response = await fetch(url, {
+            method,
+            headers,
+            body: body ? JSON.stringify(body) : undefined,
+        })
 
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: "Request failed" }))
-        throw new Error(error.message || `HTTP ${response.status}`)
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ message: "Request failed" }))
+            const apiError = new ApiError(
+                response.status,
+                error.message || `HTTP ${response.status}`,
+                error.code,
+            )
+
+            // Handle specific error cases
+            if (apiError.isUnauthorized) {
+                // Clear auth and redirect to login
+                localStorage.removeItem("business_telegram_id")
+                localStorage.removeItem("business_id")
+                window.location.href = "/login"
+            }
+
+            throw apiError
+        }
+
+        const result = await response.json()
+        return result.data as T
+    } catch (error) {
+        if (error instanceof ApiError) {
+            throw error
+        }
+        // Network error or other issues
+        throw new ApiError(0, "Network error. Please check your connection.")
     }
-
-    const result = await response.json()
-    return result.data as T
 }
 
 export const api = {
@@ -62,6 +114,24 @@ export interface TelegramLoginData {
     hash: string
 }
 
+// Pagination interfaces
+export interface PaginatedResponse<T> {
+    data: T[]
+    meta: {
+        page: number
+        limit: number
+        total: number
+        totalPages: number
+        hasNext: boolean
+        hasPrev: boolean
+    }
+}
+
+export interface PaginationParams {
+    page?: number
+    limit?: number
+}
+
 // Business API
 export const businessApi = {
     getByTelegramId: (telegramId: number): Promise<BusinessDTO> =>
@@ -74,8 +144,20 @@ export const businessApi = {
 
 // Product API
 export const productApi = {
-    listByBusiness: (businessId: string): Promise<ProductDTO[]> =>
-        api.get(`/businesses/${businessId}/products`),
+    listByBusiness: (
+        businessId: string,
+        pagination?: PaginationParams,
+    ): Promise<PaginatedResponse<ProductDTO>> => {
+        const params = new URLSearchParams()
+        if (pagination?.page) {
+            params.set("page", String(pagination.page))
+        }
+        if (pagination?.limit) {
+            params.set("limit", String(pagination.limit))
+        }
+        const query = params.toString() ? `?${params.toString()}` : ""
+        return api.get(`/businesses/${businessId}/products${query}`)
+    },
     create: (data: {
         businessId: string
         name: string
@@ -102,8 +184,22 @@ export const productApi = {
 
 // Order API for business
 export const orderApi = {
-    listByBusiness: (businessId: string, status?: string): Promise<OrderDTO[]> => {
-        const query = status ? `?status=${status}` : ""
+    listByBusiness: (
+        businessId: string,
+        status?: string,
+        pagination?: PaginationParams,
+    ): Promise<PaginatedResponse<OrderDTO>> => {
+        const params = new URLSearchParams()
+        if (status) {
+            params.set("status", status)
+        }
+        if (pagination?.page) {
+            params.set("page", String(pagination.page))
+        }
+        if (pagination?.limit) {
+            params.set("limit", String(pagination.limit))
+        }
+        const query = params.toString() ? `?${params.toString()}` : ""
         return api.get(`/businesses/${businessId}/orders${query}`)
     },
     getById: (id: string): Promise<OrderDTO> => api.get(`/orders/${id}`),

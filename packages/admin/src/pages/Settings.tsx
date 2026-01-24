@@ -1,5 +1,6 @@
 import { BusinessType } from "@lls/core"
 import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
 import { Layout } from "../components/layout/Layout.js"
 import { Button } from "../components/ui/Button.js"
@@ -12,10 +13,12 @@ import type { ReactNode, FormEvent } from "react"
 
 // eslint-disable-next-line max-lines-per-function
 export function Settings(): ReactNode {
+    const navigate = useNavigate()
     const business = useAuthStore((state) => state.business)
     const isLoading = useAuthStore((state) => state.isLoading)
     const error = useAuthStore((state) => state.error)
     const updateBusiness = useAuthStore((state) => state.updateBusiness)
+    const logout = useAuthStore((state) => state.logout)
 
     const [name, setName] = useState("")
     const [street, setStreet] = useState("")
@@ -132,6 +135,27 @@ export function Settings(): ReactNode {
                         <p className="text-sm text-gray-500 mt-1">
                             Используется для входа в систему
                         </p>
+                    </div>
+                </Card>
+
+                {/* Logout */}
+                <Card padding="none">
+                    <CardHeader>
+                        <CardTitle>Выход</CardTitle>
+                    </CardHeader>
+                    <div className="p-4">
+                        <p className="text-sm text-gray-500 mb-4">
+                            Выйти из аккаунта и вернуться на страницу входа
+                        </p>
+                        <Button
+                            variant="danger"
+                            onClick={(): void => {
+                                logout()
+                                void navigate("/login", { replace: true })
+                            }}
+                        >
+                            Выйти из аккаунта
+                        </Button>
                     </div>
                 </Card>
             </div>

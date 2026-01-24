@@ -44,8 +44,8 @@ export const useProductsStore = create<ProductsState>()((set) => ({
     fetchProducts: async (businessId: string): Promise<void> => {
         set({ isLoading: true, error: null })
         try {
-            const products = await productApi.listByBusiness(businessId)
-            set({ products, isLoading: false })
+            const response = await productApi.listByBusiness(businessId, { limit: 100 })
+            set({ products: response.data, isLoading: false })
         } catch (err) {
             const message = err instanceof Error ? err.message : "Не удалось загрузить товары"
             set({ error: message, isLoading: false })

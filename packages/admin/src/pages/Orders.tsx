@@ -8,6 +8,7 @@ import { Button } from "../components/ui/Button.js"
 import { Card } from "../components/ui/Card.js"
 import { TableSkeleton } from "../components/ui/Loading.js"
 import { Modal, ModalFooter } from "../components/ui/Modal.js"
+import { Pagination } from "../components/ui/Pagination.js"
 import { useToast } from "../components/ui/Toast.js"
 import { formatDate, formatMoney } from "../lib/utils.js"
 import { useAuthStore } from "../stores/auth.store.js"
@@ -31,10 +32,13 @@ export function Orders(): ReactNode {
     const toast = useToast()
     const business = useAuthStore((state) => state.business)
     const orders = useOrdersStore((state) => state.orders)
+    const pagination = useOrdersStore((state) => state.pagination)
+    const currentPage = useOrdersStore((state) => state.currentPage)
     const isLoading = useOrdersStore((state) => state.isLoading)
     const statusFilter = useOrdersStore((state) => state.statusFilter)
     const fetchOrders = useOrdersStore((state) => state.fetchOrders)
     const setStatusFilter = useOrdersStore((state) => state.setStatusFilter)
+    const setPage = useOrdersStore((state) => state.setPage)
     const updateOrderStatus = useOrdersStore((state) => state.updateOrderStatus)
 
     const [selectedOrder, setSelectedOrder] = useState<OrderDTO | null>(null)
@@ -114,12 +118,29 @@ export function Orders(): ReactNode {
                             <TableSkeleton rows={5} cols={6} />
                         </div>
                     ) : (
-                        <OrdersTable
-                            orders={orders}
-                            isLoading={isLoading}
-                            onUpdateStatus={handleStatusChange}
-                            onViewDetails={setSelectedOrder}
-                        />
+                        <>
+                            <OrdersTable
+                                orders={orders}
+                                isLoading={isLoading}
+                                onUpdateStatus={handleStatusChange}
+                                onViewDetails={setSelectedOrder}
+                            />
+                            {pagination && (
+                                <Pagination
+                                    page={currentPage}
+                                    totalPages={pagination.totalPages}
+                                    hasNext={pagination.hasNext}
+                                    hasPrev={pagination.hasPrev}
+                                    isLoading={isLoading}
+                                    onPageChange={(page): void => {
+                                        setPage(page)
+                                        if (business) {
+                                            void fetchOrders(business.id, page)
+                                        }
+                                    }}
+                                />
+                            )}
+                        </>
                     )}
                 </Card>
             </div>
