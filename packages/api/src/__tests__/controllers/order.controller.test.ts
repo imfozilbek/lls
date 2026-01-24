@@ -94,23 +94,53 @@ describe("OrderController", () => {
     })
 
     describe("getByBusiness", () => {
+        const mockPaginatedResult = {
+            data: [mockOrder],
+            meta: {
+                page: 1,
+                limit: 20,
+                total: 1,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            },
+        }
+
         it("should return business orders", async () => {
-            mockService.getByBusiness.mockResolvedValue([mockOrder])
+            mockService.getByBusiness.mockResolvedValue(mockPaginatedResult)
 
             const result = await controller.getByBusiness("business-1")
 
-            expect(result).toHaveLength(1)
-            expect(mockService.getByBusiness).toHaveBeenCalledWith("business-1", undefined)
+            expect(result.data).toHaveLength(1)
+            expect(mockService.getByBusiness).toHaveBeenCalledWith(
+                "business-1",
+                undefined,
+                undefined,
+            )
         })
 
         it("should filter by status", async () => {
-            mockService.getByBusiness.mockResolvedValue([mockOrder])
+            mockService.getByBusiness.mockResolvedValue(mockPaginatedResult)
 
             await controller.getByBusiness("business-1", OrderStatus.PENDING)
 
             expect(mockService.getByBusiness).toHaveBeenCalledWith(
                 "business-1",
                 OrderStatus.PENDING,
+                undefined,
+            )
+        })
+
+        it("should support pagination", async () => {
+            mockService.getByBusiness.mockResolvedValue(mockPaginatedResult)
+            const pagination = { page: 2, limit: 10 }
+
+            await controller.getByBusiness("business-1", undefined, pagination)
+
+            expect(mockService.getByBusiness).toHaveBeenCalledWith(
+                "business-1",
+                undefined,
+                pagination,
             )
         })
     })

@@ -31,3 +31,6 @@ export class Customer {
 }
 
 export const CustomerSchema = SchemaFactory.createForClass(Customer)
+
+// Index for phone lookups
+CustomerSchema.index({ phone: 1 })

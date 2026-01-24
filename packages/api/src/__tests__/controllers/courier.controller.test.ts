@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { CourierController } from "../../modules/courier/courier.controller.js"
 
-import type { OrderDTO } from "@lls/core"
+import type { CourierDTO, OrderDTO } from "@lls/core"
 import type { CourierService } from "../../modules/courier/courier.service.js"
 
 describe("CourierController", () => {
@@ -14,6 +14,17 @@ describe("CourierController", () => {
         take: ReturnType<typeof vi.fn>
         complete: ReturnType<typeof vi.fn>
         getOrders: ReturnType<typeof vi.fn>
+        getByTelegramId: ReturnType<typeof vi.fn>
+    }
+
+    const mockCourier: CourierDTO = {
+        id: "courier-1",
+        name: "Test Courier",
+        phone: "+998901234567",
+        telegramId: 123456789,
+        isAvailable: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     }
 
     const mockOrder: OrderDTO = {
@@ -44,6 +55,7 @@ describe("CourierController", () => {
             take: vi.fn(),
             complete: vi.fn(),
             getOrders: vi.fn(),
+            getByTelegramId: vi.fn().mockResolvedValue(mockCourier),
         }
 
         controller = new CourierController(mockService as unknown as CourierService)
@@ -60,13 +72,14 @@ describe("CourierController", () => {
         })
     })
 
-    describe("takeOrderByCourier", () => {
+    describe("takeOrder", () => {
         it("should assign courier to order", async () => {
             mockService.take.mockResolvedValue(mockOrder)
 
-            const result = await controller.takeOrderByCourier("order-1", "courier-1")
+            const result = await controller.takeOrder("order-1", { id: 123456789 } as never)
 
             expect(result.courierId).toBe("courier-1")
+            expect(mockService.getByTelegramId).toHaveBeenCalledWith(123456789)
             expect(mockService.take).toHaveBeenCalledWith("order-1", "courier-1")
         })
     })
@@ -76,20 +89,22 @@ describe("CourierController", () => {
             const delivered = { ...mockOrder, status: OrderStatus.DELIVERED }
             mockService.complete.mockResolvedValue(delivered)
 
-            const result = await controller.completeDelivery("order-1")
+            const result = await controller.completeDelivery("order-1", { id: 123456789 } as never)
 
             expect(result.status).toBe(OrderStatus.DELIVERED)
-            expect(mockService.complete).toHaveBeenCalledWith("order-1")
+            expect(mockService.getByTelegramId).toHaveBeenCalledWith(123456789)
+            expect(mockService.complete).toHaveBeenCalledWith("order-1", "courier-1")
         })
     })
 
-    describe("getCourierOrders", () => {
-        it("should return orders assigned to courier", async () => {
+    describe("getMyOrders", () => {
+        it("should return orders assigned to authenticated courier", async () => {
             mockService.getOrders.mockResolvedValue([mockOrder])
 
-            const result = await controller.getCourierOrders("courier-1")
+            const result = await controller.getMyOrders({ id: 123456789 } as never)
 
             expect(result).toHaveLength(1)
+            expect(mockService.getByTelegramId).toHaveBeenCalledWith(123456789)
             expect(mockService.getOrders).toHaveBeenCalledWith("courier-1")
         })
     })

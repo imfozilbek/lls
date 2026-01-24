@@ -42,14 +42,35 @@ describe("ProductController", () => {
     })
 
     describe("listByBusiness", () => {
+        const mockPaginatedResult = {
+            data: [mockProduct],
+            meta: {
+                page: 1,
+                limit: 20,
+                total: 1,
+                totalPages: 1,
+                hasNext: false,
+                hasPrev: false,
+            },
+        }
+
         it("should return products for business", async () => {
-            mockService.listByBusiness.mockResolvedValue([mockProduct])
+            mockService.listByBusiness.mockResolvedValue(mockPaginatedResult)
 
             const result = await controller.listByBusiness("business-1")
 
-            expect(result).toHaveLength(1)
-            expect(result[0].name).toBe("Pizza Margherita")
-            expect(mockService.listByBusiness).toHaveBeenCalledWith("business-1")
+            expect(result.data).toHaveLength(1)
+            expect(result.data[0].name).toBe("Pizza Margherita")
+            expect(mockService.listByBusiness).toHaveBeenCalledWith("business-1", undefined)
+        })
+
+        it("should support pagination", async () => {
+            mockService.listByBusiness.mockResolvedValue(mockPaginatedResult)
+            const pagination = { page: 2, limit: 10 }
+
+            await controller.listByBusiness("business-1", pagination)
+
+            expect(mockService.listByBusiness).toHaveBeenCalledWith("business-1", pagination)
         })
     })
 

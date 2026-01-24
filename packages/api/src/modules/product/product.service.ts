@@ -7,6 +7,7 @@ import {
 } from "@lls/core"
 import { Injectable } from "@nestjs/common"
 
+import { paginate, PaginatedResult, PaginationDto } from "../../common/dto/pagination.dto.js"
 import { MongoDbBusinessRepository } from "../../infrastructure/repositories/mongodb-business.repository.js"
 import { MongoDbProductRepository } from "../../infrastructure/repositories/mongodb-product.repository.js"
 
@@ -31,8 +32,19 @@ export class ProductService {
         this.toggleAvailability = new ToggleProductAvailabilityUseCase(productRepository)
     }
 
-    async listByBusiness(businessId: string): Promise<ProductDTO[]> {
-        return this.listProducts.execute({ businessId })
+    async listByBusiness(
+        businessId: string,
+        pagination?: PaginationDto,
+    ): Promise<PaginatedResult<ProductDTO>> {
+        const page = pagination?.page ?? 1
+        const limit = pagination?.limit ?? 20
+
+        const all = await this.listProducts.execute({ businessId })
+        const total = all.length
+        const start = (page - 1) * limit
+        const items = all.slice(start, start + limit)
+
+        return paginate(items, total, page, limit)
     }
 
     async create(input: CreateProductInput): Promise<ProductDTO> {

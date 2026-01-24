@@ -54,7 +54,9 @@ export class TelegramNotificationService {
 
             return true
         } catch (error) {
-            logger.error(`Telegram notification error: ${error instanceof Error ? error.message : String(error)}`)
+            logger.error(
+                `Telegram notification error: ${error instanceof Error ? error.message : String(error)}`,
+            )
             return false
         }
     }
@@ -133,7 +135,10 @@ export class TelegramNotificationService {
     /**
      * Send new order notification to business
      */
-    async sendNewOrderNotification(businessTelegramId: TelegramIdLike, order: OrderDTO): Promise<boolean> {
+    async sendNewOrderNotification(
+        businessTelegramId: TelegramIdLike,
+        order: OrderDTO,
+    ): Promise<boolean> {
         const message = `🔔 <b>Новый заказ!</b>
 
 Заказ: #${order.id.slice(-6).toUpperCase()}
@@ -174,7 +179,9 @@ export class TelegramNotificationService {
     }
 
     private formatOrderConfirmation(order: OrderDTO, businessName: string): string {
-        const itemsList = order.items.map((item) => `• ${item.productName} x${item.quantity}`).join("\n")
+        const itemsList = order.items
+            .map((item) => `• ${item.productName} x${item.quantity}`)
+            .join("\n")
 
         return `✅ <b>Заказ оформлен!</b>
 
@@ -191,7 +198,11 @@ ${itemsList}
 Мы уведомим вас об изменении статуса.`
     }
 
-    private formatStatusChange(orderId: string, _previousStatus: OrderStatus, newStatus: OrderStatus): string {
+    private formatStatusChange(
+        orderId: string,
+        _previousStatus: OrderStatus,
+        newStatus: OrderStatus,
+    ): string {
         const statusEmoji = this.getStatusEmoji(newStatus)
         const statusText = this.getStatusText(newStatus)
 

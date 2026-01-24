@@ -1,4 +1,7 @@
-import { Controller, Get, Param, Query } from "@nestjs/common"
+import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common"
+import { ApiTags } from "@nestjs/swagger"
+
+import { BusinessAuthGuard, TelegramAuthGuard } from "../../common/guards/index.js"
 
 import { AnalyticsService } from "./analytics.service.js"
 
@@ -9,7 +12,9 @@ import type {
     TopProductsDTO,
 } from "@lls/core"
 
+@ApiTags("analytics")
 @Controller("analytics")
+@UseGuards(TelegramAuthGuard, BusinessAuthGuard)
 export class AnalyticsController {
     constructor(private readonly service: AnalyticsService) {}
 

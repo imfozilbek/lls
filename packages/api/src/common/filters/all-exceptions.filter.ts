@@ -1,10 +1,12 @@
-import { ArgumentsHost, Catch, HttpException, HttpStatus } from "@nestjs/common"
+import { ArgumentsHost, Catch, HttpException, HttpStatus, Logger } from "@nestjs/common"
 import { BaseExceptionFilter } from "@nestjs/core"
 
 import type { FastifyReply } from "fastify"
 
 @Catch()
 export class AllExceptionsFilter extends BaseExceptionFilter {
+    private readonly logger = new Logger(AllExceptionsFilter.name)
+
     catch(exception: unknown, host: ArgumentsHost): void {
         const ctx = host.switchToHttp()
         const response = ctx.getResponse<FastifyReply>()
@@ -25,7 +27,7 @@ export class AllExceptionsFilter extends BaseExceptionFilter {
             }
         } else if (exception instanceof Error) {
             message = exception.message
-            console.error("Unhandled exception:", exception.stack)
+            this.logger.error("Unhandled exception:", exception.stack)
         }
 
         const body = {

@@ -8,6 +8,8 @@ import {
     WebSocketServer,
 } from "@nestjs/websockets"
 
+import { configuration } from "../config/configuration.js"
+
 import { WS_EVENTS } from "./events.types.js"
 
 import type {
@@ -18,9 +20,12 @@ import type {
 } from "./events.types.js"
 import type { Server, Socket } from "socket.io"
 
+const config = configuration()
+
 @WebSocketGateway({
     cors: {
-        origin: "*",
+        // Security: Use specific origins, not wildcard with credentials
+        origin: config.nodeEnv === "development" ? true : config.corsOrigins,
         credentials: true,
     },
     namespace: "/events",

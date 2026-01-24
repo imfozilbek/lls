@@ -250,29 +250,29 @@
 
 | Task | File | Status |
 |------|------|--------|
-| Fix CORS - restrict to specific origins | `src/main.ts` | [ ] |
-| Fix WebSocket CORS - remove wildcard with credentials | `src/gateway/events.gateway.ts` | [ ] |
-| Register Helmet middleware with Fastify | `src/main.ts` | [ ] |
-| Register Rate Limiter globally | `src/app.module.ts` | [ ] |
-| Add TelegramAuthGuard to courier endpoints | `src/modules/courier/courier.controller.ts` | [ ] |
-| Remove console.log/error from production code | `src/config/configuration.ts` | [ ] |
+| Fix CORS - restrict to specific origins | `src/main.ts` | [x] |
+| Fix WebSocket CORS - remove wildcard with credentials | `src/gateway/events.gateway.ts` | [x] |
+| Register Helmet middleware with Fastify | `src/main.ts` | [x] |
+| Register Rate Limiter globally | `src/app.module.ts` | [x] |
+| Add TelegramAuthGuard to courier endpoints | `src/modules/courier/courier.controller.ts` | [x] |
+| Remove console.log/error from production code | `src/config/configuration.ts` | [x] |
 
 ### Pagination & Filtering
 
 | Task | File | Status |
 |------|------|--------|
-| Add pagination to GET /businesses | `src/modules/business/business.controller.ts` | [ ] |
-| Add pagination to GET /orders | `src/modules/order/order.controller.ts` | [ ] |
-| Add pagination to GET /products | `src/modules/product/product.controller.ts` | [ ] |
+| Add pagination to GET /businesses | `src/modules/business/business.controller.ts` | [x] |
+| Add pagination to GET /orders | `src/modules/order/order.controller.ts` | [x] |
+| Add pagination to GET /products | `src/modules/product/product.controller.ts` | [x] |
 | Add date range filter to orders | `src/modules/order/order.service.ts` | [ ] |
-| Create PaginationDto | `src/common/dto/pagination.dto.ts` | [ ] |
+| Create PaginationDto | `src/common/dto/pagination.dto.ts` | [x] |
 
 ### Database Optimization
 
 | Task | File | Status |
 |------|------|--------|
-| Add composite index (businessId, category, isAvailable) | `src/database/schemas/product.schema.ts` | [ ] |
-| Add index on customer phone | `src/database/schemas/customer.schema.ts` | [ ] |
+| Add composite index (businessId, category, isAvailable) | `src/database/schemas/product.schema.ts` | [x] |
+| Add index on customer phone | `src/database/schemas/customer.schema.ts` | [x] |
 | Configure MongoDB connection pooling | `src/database/database.module.ts` | [ ] |
 
 ### Monitoring & Logging
@@ -343,10 +343,10 @@ packages/api/
 
 | Layer | Tests | Files | Coverage |
 |-------|-------|-------|----------|
-| Controllers | 31 | 6 | 70%+ |
+| Controllers | 33 | 6 | 70%+ |
 | Guards | 10 | 1 | 80%+ |
 | Services | 6 | 1 | 50%+ |
-| **Total** | **47** | **8** | - |
+| **Total** | **49** | **8** | - |
 
 ---
 

@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from "@nestjs/common"
+import { ApiTags } from "@nestjs/swagger"
 
 import { TelegramUserDecorator } from "../../common/decorators/telegram-user.decorator.js"
 import { TelegramAuthGuard } from "../../common/guards/telegram-auth.guard.js"
@@ -9,6 +10,7 @@ import { UpdateCustomerDto } from "./dto/index.js"
 import type { TelegramUser } from "../../common/guards/telegram-auth.guard.js"
 import type { CustomerDTO, TelegramUserData } from "@lls/core"
 
+@ApiTags("customers")
 @Controller("customers")
 export class CustomerController {
     constructor(private readonly service: CustomerService) {}

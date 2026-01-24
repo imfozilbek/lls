@@ -6,7 +6,7 @@ import {
     GetOrderUseCase,
     TakeOrderUseCase,
 } from "@lls/core"
-import { Injectable } from "@nestjs/common"
+import { ForbiddenException, Injectable } from "@nestjs/common"
 
 import { EventsGateway } from "../../gateway/events.gateway.js"
 import { MongoDbCourierRepository } from "../../infrastructure/repositories/mongodb-courier.repository.js"
@@ -91,9 +91,14 @@ export class CourierService {
         return order
     }
 
-    async complete(orderId: string): Promise<OrderDTO> {
+    async complete(orderId: string, courierId?: string): Promise<OrderDTO> {
         const previousOrder = await this.getOrder.execute(orderId)
         const previousStatus = previousOrder.status
+
+        // Security: Verify courier owns this order if courierId provided
+        if (courierId && previousOrder.courierId !== courierId) {
+            throw new ForbiddenException("You are not authorized to complete this order")
+        }
 
         const order = await this.completeDelivery.execute(orderId)
 

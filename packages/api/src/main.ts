@@ -1,7 +1,9 @@
 import "reflect-metadata"
+import helmet from "@fastify/helmet"
 import { ValidationPipe } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
 import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify"
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger"
 
 import { AppModule } from "./app.module.js"
 import { logger } from "./common/logger.js"
@@ -14,8 +16,25 @@ async function bootstrap(): Promise<void> {
         logger: ["error", "warn", "log"],
     })
 
+    // Security: Register Helmet for security headers
+    await app.register(helmet, {
+        contentSecurityPolicy: {
+            directives: {
+                defaultSrc: ["'self'"],
+                styleSrc: ["'self'", "'unsafe-inline'"],
+                imgSrc: ["'self'", "data:", "https:"],
+                scriptSrc: ["'self'"],
+            },
+        },
+        crossOriginEmbedderPolicy: false,
+    })
+
+    // Security: CORS with specific origins (not wildcard)
     app.enableCors({
-        origin: true,
+        origin: config.nodeEnv === "development" ? true : config.corsOrigins,
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allowedHeaders: ["Content-Type", "Authorization", "X-Telegram-Init-Data"],
     })
 
     app.useGlobalPipes(
@@ -28,6 +47,34 @@ async function bootstrap(): Promise<void> {
 
     app.setGlobalPrefix("api/v1", {
         exclude: ["health", "ready"],
+    })
+
+    // Swagger API Documentation
+    const swaggerConfig = new DocumentBuilder()
+        .setTitle("LLS API")
+        .setDescription("LocalLoopSolutions - Local Delivery Platform API")
+        .setVersion("1.0")
+        .addTag("businesses", "Business management endpoints")
+        .addTag("products", "Product catalog endpoints")
+        .addTag("orders", "Order management endpoints")
+        .addTag("customers", "Customer endpoints")
+        .addTag("couriers", "Courier endpoints")
+        .addTag("analytics", "Analytics and reporting")
+        .addApiKey(
+            { type: "apiKey", name: "X-Telegram-Init-Data", in: "header" },
+            "telegram-auth",
+        )
+        .addApiKey(
+            { type: "apiKey", name: "X-Business-Telegram-Id", in: "header" },
+            "business-auth",
+        )
+        .build()
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig)
+    SwaggerModule.setup("docs", app, document, {
+        swaggerOptions: {
+            persistAuthorization: true,
+        },
     })
 
     const shutdown = async (): Promise<void> => {

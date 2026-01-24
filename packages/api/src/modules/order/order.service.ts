@@ -11,6 +11,7 @@ import {
 } from "@lls/core"
 import { Injectable } from "@nestjs/common"
 
+import { paginate, PaginatedResult, PaginationDto } from "../../common/dto/pagination.dto.js"
 import { EventsGateway } from "../../gateway/events.gateway.js"
 import { MongoDbBusinessRepository } from "../../infrastructure/repositories/mongodb-business.repository.js"
 import { MongoDbCustomerRepository } from "../../infrastructure/repositories/mongodb-customer.repository.js"
@@ -122,8 +123,20 @@ export class OrderService {
         return this.getCustomerOrders.execute(customer.id)
     }
 
-    async getByBusiness(businessId: string, status?: OrderStatus): Promise<OrderDTO[]> {
-        return this.getBusinessOrders.execute({ businessId, status })
+    async getByBusiness(
+        businessId: string,
+        status?: OrderStatus,
+        pagination?: PaginationDto,
+    ): Promise<PaginatedResult<OrderDTO>> {
+        const page = pagination?.page ?? 1
+        const limit = pagination?.limit ?? 20
+
+        const all = await this.getBusinessOrders.execute({ businessId, status })
+        const total = all.length
+        const start = (page - 1) * limit
+        const items = all.slice(start, start + limit)
+
+        return paginate(items, total, page, limit)
     }
 
     async updateStatus(id: string, status: OrderStatus): Promise<OrderDTO> {

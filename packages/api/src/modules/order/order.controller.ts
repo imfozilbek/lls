@@ -1,7 +1,9 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common"
+import { ApiTags } from "@nestjs/swagger"
 
 import { BusinessAuthMode } from "../../common/decorators/index.js"
 import { TelegramUserDecorator } from "../../common/decorators/telegram-user.decorator.js"
+import { PaginatedResult, PaginationDto } from "../../common/dto/pagination.dto.js"
 import { BusinessAuthGuard, TelegramAuthGuard } from "../../common/guards/index.js"
 
 import { CreateOrderDto, UpdateOrderStatusDto } from "./dto/index.js"
@@ -10,6 +12,7 @@ import { OrderService } from "./order.service.js"
 import type { TelegramUser } from "../../common/guards/telegram-auth.guard.js"
 import type { OrderDTO, OrderStatus } from "@lls/core"
 
+@ApiTags("orders")
 @Controller()
 export class OrderController {
     constructor(private readonly service: OrderService) {}
@@ -41,8 +44,9 @@ export class OrderController {
     async getByBusiness(
         @Param("businessId") businessId: string,
         @Query("status") status?: OrderStatus,
-    ): Promise<OrderDTO[]> {
-        return this.service.getByBusiness(businessId, status)
+        @Query() pagination?: PaginationDto,
+    ): Promise<PaginatedResult<OrderDTO>> {
+        return this.service.getByBusiness(businessId, status, pagination)
     }
 
     @Patch("orders/:id/status")

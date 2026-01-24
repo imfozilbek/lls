@@ -27,6 +27,9 @@ export class Product {
     @Prop({ type: String })
     category?: string
 
+    @Prop({ type: String })
+    imageUrl?: string
+
     @Prop({ default: true, index: true, type: Boolean })
     isAvailable: boolean
 
@@ -36,4 +39,6 @@ export class Product {
 
 export const ProductSchema = SchemaFactory.createForClass(Product)
 
+// Composite indexes for common queries
 ProductSchema.index({ businessId: 1, isAvailable: 1 })
+ProductSchema.index({ businessId: 1, category: 1, isAvailable: 1 })

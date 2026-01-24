@@ -8,10 +8,13 @@ import {
     Param,
     Patch,
     Post,
+    Query,
     UseGuards,
 } from "@nestjs/common"
+import { ApiTags } from "@nestjs/swagger"
 
 import { BusinessAuthMode } from "../../common/decorators/index.js"
+import { PaginatedResult, PaginationDto } from "../../common/dto/pagination.dto.js"
 import { BusinessAuthGuard, TelegramAuthGuard } from "../../common/guards/index.js"
 
 import { CreateProductDto, UpdateProductDto } from "./dto/index.js"
@@ -19,13 +22,17 @@ import { ProductService } from "./product.service.js"
 
 import type { ProductDTO } from "@lls/core"
 
+@ApiTags("products")
 @Controller()
 export class ProductController {
     constructor(private readonly service: ProductService) {}
 
     @Get("businesses/:businessId/products")
-    async listByBusiness(@Param("businessId") businessId: string): Promise<ProductDTO[]> {
-        return this.service.listByBusiness(businessId)
+    async listByBusiness(
+        @Param("businessId") businessId: string,
+        @Query() pagination?: PaginationDto,
+    ): Promise<PaginatedResult<ProductDTO>> {
+        return this.service.listByBusiness(businessId, pagination)
     }
 
     @Post("businesses/:businessId/products")
