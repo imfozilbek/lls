@@ -2,6 +2,56 @@
 
 All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 
+## [0.4.0] - 2026-01-24
+
+### Production Readiness Release
+
+This release completes Phase 6 (Production Readiness) with security hardening, error handling, and deployment configurations.
+
+### @lls/core v0.4.0
+- **Improved:** Order status rules with better `calculateProgress()` implementation
+- **Improved:** Test coverage for order status transitions
+
+### @lls/api v0.6.0
+- **Security:** CORS restricted to specific origins (no wildcard)
+- **Security:** WebSocket CORS configured with specific origin
+- **Security:** Helmet security headers registered globally
+- **Security:** Rate limiting applied globally with @nestjs/throttler
+- **Security:** TelegramAuthGuard on all sensitive endpoints (courier, analytics, business)
+- **Added:** Pagination on all list endpoints
+- **Added:** MongoDB composite indexes for performance
+- **Added:** Swagger/OpenAPI documentation at `/docs`
+- **Added:** CreateBusinessDTO with class-validator validation
+- **Added:** `.env.example` with all required variables
+- **Improved:** NestJS Logger instead of console.error
+- **Improved:** ForbiddenException in courier service for proper error handling
+- **Improved:** Filter inactive businesses from public list
+
+### @lls/bot v0.6.0
+- **Added:** `.env.example` configuration template
+- **Added:** Error screens (404, 500, network error)
+- **Added:** Production logger service
+- **Added:** Network status detection with `useNetworkStatus` hook
+- **Added:** WebSocket auto-reconnection with exponential backoff
+- **Added:** Connection status indicator UI component
+- **Added:** `useWebSocket` hook for real-time updates
+- **Improved:** Pagination handling in API client
+- **Improved:** Checkout form disabled during submission
+
+### @lls/admin v0.5.0
+- **Added:** `.env.example` configuration template
+- **Added:** Logout functionality in Settings page
+- **Added:** Logout navigation in Header
+- **Added:** Pagination component
+- **Added:** Pagination UI in Orders page
+- **Added:** Product image preview in ProductForm
+- **Improved:** Pagination handling in API client
+
+### Deployment
+- **Added:** PM2 ecosystem configuration
+- **Added:** Nginx configuration for reverse proxy
+- **Added:** Deployment script and documentation
+
 ## [0.3.6] - 2026-01-23
 
 ### @lls/core v0.3.0

@@ -8,7 +8,7 @@
 
 ---
 
-## Current Status: Production Hardening Required
+## Current Status: 🟢 READY FOR LAUNCH
 
 ### What's Done (Core Features)
 - ✅ Domain Entities (6): Business, Product, Customer, Courier, Order, OrderItem
@@ -21,75 +21,125 @@
 - ✅ API Security: BusinessAuthGuard, TelegramAuthGuard, input validation DTOs
 - ✅ Bot: Telegram Mini App (45 files) - stores, hooks, components, screens
 - ✅ Admin: Business Panel (30 files) - auth, orders, products management
-- ✅ Tests: 318 tests (271 core + 47 API)
+- ✅ Tests: 320 tests (271 core + 49 API)
 - ✅ Analytics: Dashboard, sales charts, top products
 
-### Production Blockers (Must Fix Before Launch)
-- 🔴 CORS security - wildcard origin allowed
-- 🔴 WebSocket CORS - credentials with wildcard
-- 🔴 Courier endpoints missing auth guards
-- 🔴 Helmet headers not registered
-- 🔴 Rate limiting not applied
-- 🔴 Pagination missing on all list endpoints
+### Production Security ✅ COMPLETE
+- ✅ CORS security - restricted to specific origins
+- ✅ WebSocket CORS - configured with specific origin
+- ✅ Courier endpoints - TelegramAuthGuard applied
+- ✅ Helmet headers - registered globally
+- ✅ Rate limiting - applied globally
+- ✅ Pagination - implemented on all list endpoints
+- ✅ Deployment configs - PM2, Nginx ready
 
 | Package | Version | Status | Next Milestone |
 |---------|---------|--------|----------------|
-| @lls/core | v0.3.0 | ✅ Complete | - |
-| @lls/api | v0.4.0 | ✅ Complete | v0.5.0 - Production Readiness |
-| @lls/bot | v0.4.0 | ✅ Complete | v0.5.0 - Production Hardening |
-| @lls/admin | v0.3.0 | ✅ Complete | v0.4.0 - Production Hardening |
+| @lls/core | v0.4.0 | ✅ Complete | - |
+| @lls/api | v0.6.0 | ✅ Complete | v0.7.0 - Business hours validation |
+| @lls/bot | v0.6.0 | ✅ Complete | v0.7.0 - Improved error handling |
+| @lls/admin | v0.5.0 | ✅ Complete | v0.6.0 - CSV export |
 
 ---
 
 ## Phase 6: Production Readiness
 
-> **Status:** ⏳ Planned
+> **Status:** ✅ Complete
 > **Priority:** CRITICAL for launch
 
-### 6.1 @lls/api v0.5.0 (MUST DO FIRST)
+### 6.1 @lls/api v0.6.0 ✅ COMPLETE
 
-| Task | Priority | Depends On |
-|------|----------|------------|
-| Fix CORS - restrict to specific origins | 🔴 CRITICAL | - |
-| Fix WebSocket CORS | 🔴 CRITICAL | - |
-| Register Helmet middleware | 🔴 CRITICAL | - |
-| Register Rate Limiter globally | 🔴 CRITICAL | - |
-| Add TelegramAuthGuard to courier endpoints | 🔴 CRITICAL | - |
-| Add pagination to all list endpoints | 🟡 HIGH | - |
-| Add MongoDB composite indexes | 🟡 HIGH | - |
-| Add Swagger/OpenAPI documentation | 🟢 MEDIUM | - |
+| Task | Priority | Status |
+|------|----------|--------|
+| Fix CORS - restrict to specific origins | 🔴 CRITICAL | ✅ |
+| Fix WebSocket CORS | 🔴 CRITICAL | ✅ |
+| Register Helmet middleware | 🔴 CRITICAL | ✅ |
+| Register Rate Limiter globally | 🔴 CRITICAL | ✅ |
+| Add TelegramAuthGuard to courier endpoints | 🔴 CRITICAL | ✅ |
+| Add TelegramAuthGuard to business getByTelegramId | 🔴 CRITICAL | ✅ |
+| Add TelegramAuthGuard to analytics endpoints | 🔴 CRITICAL | ✅ |
+| Add pagination to all list endpoints | 🟡 HIGH | ✅ |
+| Add MongoDB composite indexes | 🟡 HIGH | ✅ |
+| Register NotificationsModule | 🔴 CRITICAL | ✅ |
+| Add imageUrl to Product schema | 🔴 CRITICAL | ✅ |
+| Add Swagger/OpenAPI documentation | 🟢 MEDIUM | ✅ |
+| Add CreateBusinessDTO with validation | 🔴 CRITICAL | ✅ |
+| Use NestJS Logger instead of console.error | 🟡 HIGH | ✅ |
+| Use ForbiddenException in courier service | 🟡 HIGH | ✅ |
+| Filter inactive businesses from public list | 🟡 HIGH | ✅ |
 
-### 6.2 @lls/bot v0.5.0
+### 6.2 @lls/bot v0.6.0 ✅ COMPLETE
 
-| Task | Priority | Depends On |
-|------|----------|------------|
-| Create .env.example | 🟡 HIGH | - |
-| Add error screens (404, 500) | 🟡 HIGH | - |
-| Handle 401/403/500 in API client | 🟡 HIGH | @lls/api v0.5.0 |
-| Add WebSocket reconnection | 🟡 HIGH | - |
-| Remove console.log from production | 🟡 HIGH | - |
-| Add skeleton loaders | 🟢 MEDIUM | - |
+| Task | Priority | Status |
+|------|----------|--------|
+| Create .env.example | 🟡 HIGH | ✅ |
+| Add error screens (404, 500, network) | 🟡 HIGH | ✅ |
+| Handle pagination in API client | 🟡 HIGH | ✅ |
+| Add production logger | 🟡 HIGH | ✅ |
+| Add network status detection | 🟡 HIGH | ✅ |
+| Add WebSocket auto-reconnection | 🟡 HIGH | ✅ |
+| Add connection status indicator UI | 🟢 MEDIUM | ✅ |
+| Add useWebSocket hook | 🟢 MEDIUM | ✅ |
+| Disable checkout form during submission | 🟡 HIGH | ✅ |
 
-### 6.3 @lls/admin v0.4.0
+### 6.3 @lls/admin v0.5.0 ✅ COMPLETE
 
-| Task | Priority | Depends On |
-|------|----------|------------|
-| Create .env.example | 🟡 HIGH | - |
-| Add logout functionality | 🟡 HIGH | - |
-| Add error handling UI | 🟡 HIGH | @lls/api v0.5.0 |
-| Add product image upload | 🟡 HIGH | - |
-| Add pagination to Orders | 🟡 HIGH | @lls/api v0.5.0 |
-| Add CSV export | 🟢 MEDIUM | - |
+| Task | Priority | Status |
+|------|----------|--------|
+| Create .env.example | 🟡 HIGH | ✅ |
+| Add logout functionality (Settings page) | 🟡 HIGH | ✅ |
+| Add logout navigation (Header) | 🟡 HIGH | ✅ |
+| Handle pagination in API client | 🟡 HIGH | ✅ |
+| Add pagination UI to Orders | 🟡 HIGH | ✅ |
+| Add product image preview in form | 🟡 HIGH | ✅ |
+| Add Toast notifications | 🟡 HIGH | ✅ |
+| Add CSV export | 🟢 MEDIUM | ⏳ v0.6.0 |
 
-### Dependency Order
+### 6.4 Deployment ✅ COMPLETE
 
-```
-1. @lls/api v0.5.0    (FIRST - backend must be secure)
-   ↓
-2. @lls/bot v0.5.0    (depends on API pagination/security)
-   ↓
-3. @lls/admin v0.4.0  (depends on API pagination/security)
-```
+| Task | Priority | Status |
+|------|----------|--------|
+| Create PM2 ecosystem config | 🟡 HIGH | ✅ |
+| Create Nginx config | 🟡 HIGH | ✅ |
+| Create deployment script | 🟡 HIGH | ✅ |
+| Create deployment documentation | 🟡 HIGH | ✅ |
+
+---
+
+## Phase 7: Post-Launch Improvements
+
+> **Status:** ⏳ Planned
+
+### 7.1 @lls/core v0.5.0
+
+| Task | Priority |
+|------|----------|
+| Add BusinessHours to Business entity | 🟢 MEDIUM |
+| Add cancellation reason to Order entity | 🟢 MEDIUM |
+
+### 7.2 @lls/api v0.7.0
+
+| Task | Priority |
+|------|----------|
+| Integrate business hours validation on order creation | 🟢 MEDIUM |
+| Add order progress calculation to response | 🟢 MEDIUM |
+| Add image upload endpoint (S3/CDN) | 🟢 MEDIUM |
+
+### 7.3 @lls/bot v0.7.0
+
+| Task | Priority |
+|------|----------|
+| Improve error handling for 401/403/500 | 🟢 MEDIUM |
+| Add skeleton loaders | 🟢 MEDIUM |
+
+### 7.4 @lls/admin v0.6.0
+
+| Task | Priority |
+|------|----------|
+| Add product image file upload (requires API endpoint) | 🟡 HIGH |
+| Add CSV export for orders | 🟢 MEDIUM |
+| Add CSV export for products | 🟢 MEDIUM |
+| Add skeleton loaders | 🟢 MEDIUM |
 
 ---
 
@@ -760,11 +810,22 @@ pnpm test --coverage # Coverage check
 | Phase | Package | Files | Tests | Status |
 |-------|---------|-------|-------|--------|
 | 1 | @lls/core | 75 | 271 | ✅ |
-| 2 | @lls/api | 65 | 47 | ✅ |
-| 3 | @lls/bot | 45 | - | ✅ |
-| 4 | @lls/admin | 30 | - | ✅ |
-| 5 | Tests | 51 | 318 | ✅ |
-| **Total** | | **266** | **318** | |
+| 2 | @lls/api | 70 | 49 | ✅ |
+| 3 | @lls/bot | 50 | - | ✅ |
+| 4 | @lls/admin | 35 | - | ✅ |
+| 5 | Tests | 51 | 320 | ✅ |
+| 6 | Production | +15 | - | ✅ |
+| **Total** | | **296** | **320** | |
+
+**Launch Readiness:** 🟢 **READY**
+
+### Recent Changes (v0.6.0)
+- ✅ Swagger/OpenAPI documentation at `/docs`
+- ✅ WebSocket auto-reconnection with room subscription tracking
+- ✅ Product image preview in admin form
+- ✅ TelegramAuthGuard on all sensitive endpoints
+- ✅ Order cancellation business rules (no cancel after PREPARING)
+- ✅ Connection status indicator in bot
 
 **Status Legend:**
 - ✅ Completed
