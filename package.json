@@ -3,21 +3,25 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
-    "packageManager": "pnpm@9.15.0",
+    "packageManager": "bun@1.2.4",
     "engines": {
         "node": ">=22.0.0"
     },
+    "workspaces": [
+        "packages/*"
+    ],
     "scripts": {
-        "build": "pnpm -r build",
-        "dev": "pnpm -r --parallel dev",
-        "test": "pnpm -r test",
+        "build": "bun run --filter @lls/core build && bun run --filter '*' build",
+        "dev": "bun run --filter '*' dev",
+        "test": "bun run --filter '*' test",
         "lint": "eslint packages --ext .ts,.tsx",
         "lint:fix": "eslint packages --ext .ts,.tsx --fix",
         "format": "prettier --write \"packages/**/*.{ts,tsx,json}\"",
         "format:check": "prettier --check \"packages/**/*.{ts,tsx,json}\"",
-        "clean": "pnpm -r clean && rm -rf node_modules"
+        "clean": "rm -rf node_modules packages/*/node_modules packages/*/dist bun.lockb"
     },
     "devDependencies": {
+        "@eslint/js": "^9.39.2",
         "@types/node": "^22.10.0",
         "@typescript-eslint/eslint-plugin": "^8.18.0",
         "@typescript-eslint/parser": "^8.18.0",

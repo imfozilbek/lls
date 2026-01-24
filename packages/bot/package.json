@@ -11,7 +11,7 @@
         "clean": "rm -rf dist"
     },
     "dependencies": {
-        "@lls/core": "workspace:*",
+        "@lls/core": "*",
         "@telegram-apps/sdk-react": "^2.0.0",
         "clsx": "^2.1.1",
         "react": "^19.0.0",

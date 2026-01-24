@@ -147,7 +147,7 @@
 
 ## Project Overview
 
-LLS (LocalLoopSolutions) — Local delivery platform for small businesses. TypeScript monorepo (pnpm workspaces). Node.js >= 22.0.0.
+LLS (LocalLoopSolutions) — Local delivery platform for small businesses. TypeScript monorepo (Bun workspaces). Bun >= 1.2.4.
 
 | Package | Description |
 |---------|-------------|
@@ -161,12 +161,12 @@ LLS (LocalLoopSolutions) — Local delivery platform for small businesses. TypeS
 ## Commands
 
 ```bash
-pnpm build                    # Build all
-pnpm test                     # Test all
-pnpm format                   # Format (4 spaces)
-pnpm lint                     # Lint (0 errors, 0 warnings)
-pnpm dev                      # Dev mode
-pnpm --filter @lls/api build  # Build specific package
+bun run build                      # Build all
+bun run test                       # Test all
+bun run format                     # Format (4 spaces)
+bun run lint                       # Lint (0 errors, 0 warnings)
+bun run dev                        # Dev mode
+bun run --filter @lls/api build    # Build specific package
 ```
 
 ## Code Style (MANDATORY)
@@ -316,7 +316,7 @@ git status  # Verify success
 
 **Quality Gates (before EACH commit):**
 ```bash
-pnpm format && pnpm lint && pnpm typecheck && pnpm test
+bun run format && bun run lint && bun run test
 ```
 
 **Release Steps:**
@@ -485,8 +485,8 @@ Nginx → /api/* → PM2: api (port 4001)
 ## Release Checklist
 
 - [ ] All `console.log` removed
-- [ ] `pnpm lint` passes (0 errors, 0 warnings)
-- [ ] `pnpm typecheck` passes
+- [ ] `bun run lint` passes (0 errors, 0 warnings)
+- [ ] `bun run build` passes
 - [ ] All tests pass
 - [ ] CHANGELOG.md updated
 - [ ] ROADMAP.md updated
@@ -500,5 +500,5 @@ Nginx → /api/* → PM2: api (port 4001)
 MUST: Return types | await promises | const | curly braces | ===
 NEVER: any | console.log | floating promises | var | secrets in code | Docker
 LIMITS: 5 params | 100 lines | 4 depth | 15 complexity
-COMMANDS: pnpm format → pnpm lint → pnpm test → pnpm build
+COMMANDS: bun run format → bun run lint → bun run test → bun run build
 ```
