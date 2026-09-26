@@ -14,7 +14,8 @@ export default defineConfig(async () => {
                     bindings: {
                         TEST_MIGRATIONS: migrations,
                         // Test-only secrets. Production values are set with `wrangler secret put`.
-                        TOKEN_ENC_KEY: "a2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2s=",
+                        // secret-scan: fake (a known test key, never used outside tests)
+                        TOKEN_ENC_KEY: "a2tra2tra2tra2tra2tra2tra2tra2tra2tra2tra2s=", // secret-scan: fake
                         PLATFORM_BOT_TOKEN: "100000:platform-bot-token-for-tests-only-xxxxx",
                         PLATFORM_WEBHOOK_SECRET: "platform-webhook-secret",
                         PLATFORM_ADMIN_IDS: "9999",

@@ -6,6 +6,8 @@
 #
 # Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS.
 set -euo pipefail
+# Temp files (the Worker secrets file) are readable by this user only.
+umask 077
 
 readonly WORKER="lls-worker"
 readonly DATABASE="lls"
@@ -90,7 +92,8 @@ ensure_workers_subdomain() {
     local sub=""
     if [[ "$CF_STATUS" == 200 ]]; then sub="$(jq -r '.result.subdomain // empty' <<<"$CF_BODY")"; fi
     if [[ -z "$sub" ]]; then
-        sub="lls-${CLOUDFLARE_ACCOUNT_ID:0:8}"
+        # Random, not derived from the account id: the URL is public, the account id is not.
+        sub="lls-$(openssl rand -hex 4)"
         cf_call PUT "/workers/subdomain" "$(jq -n --arg s "$sub" '{subdomain: $s}')"
         [[ "$CF_STATUS" == 200 ]] || fail "Cannot create the workers.dev subdomain (HTTP ${CF_STATUS})."
     fi

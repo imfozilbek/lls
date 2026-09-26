@@ -1,0 +1,19 @@
+# Keeps pinned GitHub Actions and packages up to date. Dependabot PRs run CI without secrets.
+version: 2
+updates:
+    - package-ecosystem: github-actions
+      directory: /
+      schedule:
+          interval: monthly
+      groups:
+          actions:
+              patterns: ["*"]
+
+    - package-ecosystem: bun
+      directory: /
+      schedule:
+          interval: monthly
+      open-pull-requests-limit: 3
+      groups:
+          minor-and-patch:
+              update-types: [minor, patch]

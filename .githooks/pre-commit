@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Stops a commit that carries a secret (bot token, key, .dev.vars). Installed by `bun install`.
+exec "$(git rev-parse --show-toplevel)/scripts/check-secrets.sh"

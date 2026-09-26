@@ -369,6 +369,14 @@ document.innerHTML = x                 // XSS
 - CORS: allow only `APP_ORIGIN` (the Pages address)
 - Check `git diff` before commit
 
+**Public repository (GitHub, free CI):** the code is public, the keys never are.
+- Workflows: `permissions: contents: read`; actions pinned to a commit SHA; `persist-credentials: false`.
+- Secrets only in the deploy job, only in the step that needs them, only for a push to `main` of
+  this repository. **NEVER** `pull_request_target` or `workflow_run` with secrets or with
+  checked-out PR code. Never `${{ github.event.* }}` text inside `run:` (script injection).
+- `scripts/check-secrets.sh` runs in CI and as the git pre-commit hook; fake test keys carry a
+  `secret-scan: fake` comment. Details and the leak playbook: `SECURITY.md`.
+
 ## Performance (MANDATORY)
 
 | Metric | Limit |
@@ -511,6 +519,18 @@ docs: update roadmap              # no package for repo-wide changes
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
 
 **⛔ NEVER add Co-Authored-By or a Claude Code footer.**
+
+### Pull Requests
+
+**⛔ Watch every PR Claude opens until it is merged or closed.**
+
+| Step | Action |
+|------|--------|
+| 1 | Right after creating the PR, subscribe to its activity (CI, reviews, comments) |
+| 2 | CI red → find the root cause, fix, pass the quality gates locally, push |
+| 3 | Review comment → fix it, or reply why not |
+| 4 | Report to the user only when the PR is green, blocked, or needs a decision |
+| 5 | Stop watching when the PR is merged or closed, or the user says stop |
 
 ### Commit Command
 

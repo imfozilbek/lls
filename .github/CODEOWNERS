@@ -1,0 +1,4 @@
+# Workflows, deploy scripts and the secret check guard the production keys.
+# With branch protection ("Require review from Code Owners") changes here need the owner.
+/.github/ @imfozilbek
+/scripts/ @imfozilbek
