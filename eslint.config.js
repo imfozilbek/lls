@@ -73,6 +73,7 @@ export default [
             "**/vitest.config.ts",
             "**/tailwind.config.ts",
             "**/postcss.config.js",
+            "**/worker-configuration.d.ts",
             "**/__tests__/**",
             "**/*.test.ts",
         ],
