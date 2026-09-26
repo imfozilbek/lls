@@ -512,6 +512,18 @@ Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
 
 **⛔ NEVER add Co-Authored-By or a Claude Code footer.**
 
+### Pull Requests
+
+**⛔ Watch every PR Claude opens until it is merged or closed.**
+
+| Step | Action |
+|------|--------|
+| 1 | Right after creating the PR, subscribe to its activity (CI, reviews, comments) |
+| 2 | CI red → find the root cause, fix, pass the quality gates locally, push |
+| 3 | Review comment → fix it, or reply why not |
+| 4 | Report to the user only when the PR is green, blocked, or needs a decision |
+| 5 | Stop watching when the PR is merged or closed, or the user says stop |
+
 ### Commit Command
 
 When user types `закоммить` or `commit`:
