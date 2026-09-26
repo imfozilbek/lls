@@ -11,6 +11,7 @@ import type { OrderRepository } from "../application/ports/order-repository.js"
 import type {
     ProductListQuery,
     ProductRepository,
+    ShowcaseSearch,
 } from "../application/ports/product-repository.js"
 import type { Business } from "../domain/entities/business.js"
 import type { Courier, CourierInvite } from "../domain/entities/courier.js"
@@ -42,6 +43,9 @@ export class InMemoryBusinesses implements BusinessRepository {
     async listByOwner(ownerTelegramId: number): Promise<Business[]> {
         return [...this.items.values()].filter((b) => b.isOwnedBy(ownerTelegramId))
     }
+    async listInShowcase(): Promise<Business[]> {
+        return [...this.items.values()].filter((b) => b.isInShowcase())
+    }
     async insert(business: Business, botToken: string): Promise<void> {
         this.items.set(business.id, business)
         this.tokens.set(business.id, botToken)
@@ -53,6 +57,8 @@ export class InMemoryBusinesses implements BusinessRepository {
 
 export class InMemoryProducts implements ProductRepository {
     readonly items = new Map<string, Product>()
+
+    constructor(private readonly businesses?: InMemoryBusinesses) {}
 
     async findById(id: string): Promise<Product | null> {
         return this.items.get(id) ?? null
@@ -72,6 +78,15 @@ export class InMemoryProducts implements ProductRepository {
             .filter((p) => query.availableAt === undefined || p.isAvailableAt(query.availableAt))
             .filter((p) => query.category === undefined || p.category === query.category)
             .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name))
+        return paginate(matching, page)
+    }
+    async searchShowcase(search: ShowcaseSearch, page: PageRequest): Promise<Page<Product>> {
+        const shops = new Set((await this.businesses?.listInShowcase())?.map((b) => b.id))
+        const matching = [...this.items.values()]
+            .filter((p) => shops.has(p.businessId) && p.isAvailableAt(search.availableAt))
+            .filter((p) => search.category === undefined || p.category === search.category)
+            .filter((p) => search.words.every((word) => p.searchText.includes(word)))
+            .sort((a, b) => a.name.localeCompare(b.name))
         return paginate(matching, page)
     }
     async save(product: Product): Promise<void> {

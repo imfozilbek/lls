@@ -309,7 +309,12 @@ export class Business {
         return this.props.bottleDeposit.multiply(Math.max(0, returnableOrdered - bottlesReturned))
     }
 
-    /** Signs the marketplace deal. Stage 2 uses it; stage 1 only stores it. */
+    /** Shown in the LLS showcase: an active shop with a signed marketplace deal. */
+    isInShowcase(): boolean {
+        return this.isActive() && this.props.marketplace !== undefined
+    }
+
+    /** Signs the marketplace deal: the shop appears in the LLS showcase with this commission. */
     joinMarketplace(commissionBps: number, now: Date): void {
         this.props.marketplace = {
             commissionBps: requireInteger("commissionBps", commissionBps, 0, MAX_COMMISSION_BPS),

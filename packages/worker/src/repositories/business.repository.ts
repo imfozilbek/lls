@@ -1,6 +1,7 @@
 import {
     BUSINESS_STATUSES,
     BUSINESS_TYPES,
+    BusinessStatus,
     BrandColor,
     Business,
     FEATURES,
@@ -155,6 +156,17 @@ export class D1BusinessRepository implements BusinessRepository {
                 `SELECT ${COLUMNS} FROM businesses WHERE owner_telegram_id = ? ORDER BY created_at`,
             )
             .bind(ownerTelegramId)
+            .all<BusinessRow>()
+        return results.map(toBusiness)
+    }
+
+    async listInShowcase(): Promise<Business[]> {
+        const { results } = await this.db
+            .prepare(
+                `SELECT ${COLUMNS} FROM businesses
+                 WHERE marketplace_commission_bps IS NOT NULL AND status = ? ORDER BY name`,
+            )
+            .bind(BusinessStatus.ACTIVE)
             .all<BusinessRow>()
         return results.map(toBusiness)
     }

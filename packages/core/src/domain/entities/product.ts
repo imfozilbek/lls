@@ -2,6 +2,7 @@ import { CATEGORIES } from "../enums/category.js"
 import { DEFAULT_KG_STEP, UNITS, Unit } from "../enums/unit.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { optionalText, requireInteger, requireOneOf, requireText } from "../shared/guards.js"
+import { searchText } from "../shared/search-text.js"
 import { addDays, startOfLocalDay } from "../shared/time.js"
 import { Money } from "../value-objects/money.js"
 
@@ -120,6 +121,10 @@ export class Product {
     }
     get step(): number {
         return this.props.step
+    }
+    /** Name and description in one search spelling (see `searchText`). */
+    get searchText(): string {
+        return searchText(this.props.name, this.props.description)
     }
     get unavailableUntil(): Date | undefined {
         return this.props.unavailableUntil

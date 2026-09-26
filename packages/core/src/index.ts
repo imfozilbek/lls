@@ -10,6 +10,7 @@ export * from "./domain/enums/order-status.js"
 export * from "./domain/enums/unit.js"
 
 // Domain - Shared
+export * from "./domain/shared/search-text.js"
 export * from "./domain/shared/time.js"
 
 // Domain - Value Objects

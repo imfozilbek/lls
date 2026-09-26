@@ -1,8 +1,14 @@
-import { CATEGORIES, Money, Product, UNITS, offsetOf } from "@lls/core"
+import { BusinessStatus, CATEGORIES, Money, Product, UNITS, offsetOf } from "@lls/core"
 
 import { bool, flag, oneOf, optional, placeholders } from "./rows.js"
 
-import type { Page, PageRequest, ProductListQuery, ProductRepository } from "@lls/core"
+import type {
+    Page,
+    PageRequest,
+    ProductListQuery,
+    ProductRepository,
+    ShowcaseSearch,
+} from "@lls/core"
 
 interface ProductRow {
     id: string
@@ -24,6 +30,14 @@ interface ProductRow {
 
 const COLUMNS = `id, business_id, name, description, price, unit, step, category, image_key,
     is_available, unavailable_until, returnable, position, created_at, updated_at`
+
+/** The same columns read through the `p` alias of a join. */
+const JOINED_COLUMNS = COLUMNS.split(",")
+    .map((column) => `p.${column.trim()}`)
+    .join(", ")
+
+/** Enough for any real query, and far below D1's limit of bound parameters. */
+const MAX_SEARCH_WORDS = 6
 
 function toProduct(row: ProductRow): Product {
     return Product.reconstitute({
@@ -107,12 +121,45 @@ export class D1ProductRepository implements ProductRepository {
         }
     }
 
+    async searchShowcase(search: ShowcaseSearch, page: PageRequest): Promise<Page<Product>> {
+        const conditions = [
+            "b.status = ?",
+            "b.marketplace_commission_bps IS NOT NULL",
+            "p.is_available = 1",
+            "(p.unavailable_until IS NULL OR p.unavailable_until <= ?)",
+        ]
+        const params: (string | number)[] = [BusinessStatus.ACTIVE, search.availableAt.getTime()]
+        if (search.category !== undefined) {
+            conditions.push("p.category = ?")
+            params.push(search.category)
+        }
+        for (const word of search.words.slice(0, MAX_SEARCH_WORDS)) {
+            // Words hold only [a-z0-9] (see searchText), so no LIKE wildcards can slip in.
+            conditions.push("p.search_text LIKE ?")
+            params.push(`%${word}%`)
+        }
+        const from = `FROM products p JOIN businesses b ON b.id = p.business_id
+            WHERE ${conditions.join(" AND ")}`
+        const [rows, count] = await this.db.batch([
+            this.db
+                .prepare(`SELECT ${JOINED_COLUMNS} ${from} ORDER BY p.name LIMIT ? OFFSET ?`)
+                .bind(...params, page.limit, offsetOf(page)),
+            this.db.prepare(`SELECT COUNT(*) AS total ${from}`).bind(...params),
+        ])
+        const total = (count?.results[0] as { total: number } | undefined)?.total ?? 0
+        return {
+            data: ((rows?.results ?? []) as ProductRow[]).map(toProduct),
+            meta: { page: page.page, limit: page.limit, total },
+        }
+    }
+
     async save(product: Product): Promise<void> {
         await this.db
             .prepare(
-                `INSERT INTO products (${COLUMNS})
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `INSERT INTO products (${COLUMNS}, search_text)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT (id) DO UPDATE SET name = excluded.name,
+                    search_text = excluded.search_text,
                     description = excluded.description, price = excluded.price,
                     unit = excluded.unit, step = excluded.step, category = excluded.category,
                     image_key = excluded.image_key, is_available = excluded.is_available,
@@ -136,6 +183,7 @@ export class D1ProductRepository implements ProductRepository {
                 product.position,
                 product.createdAt.getTime(),
                 product.updatedAt.getTime(),
+                product.searchText,
             )
             .run()
     }
