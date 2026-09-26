@@ -34,9 +34,20 @@ Yandex Eats / Uzum and other aggregators do not operate.
 |---------|-------------|
 | `@lls/core` | Domain logic (DDD): entities, value objects, use cases, ports. Pure TS, no deps |
 | `@lls/worker` | Cloudflare Worker: HTTP API (Hono) + Telegram bot webhook + cron |
-| `@lls/app` | Telegram Mini App (React): customer storefront + owner section "Мой магазин" |
+| `@lls/app` | Telegram Mini App (React), hosted on Pages: customer storefront, owner section "Мой магазин", shop onboarding |
 
 **Root:** `/Users/fozilbeksamiyev/projects/lls`
+
+## White-Label Model
+
+LLS is the platform brand. Customers see the **shop's brand**; the app shows a small "powered by LLS".
+
+- **One bot per shop.** The owner creates it in BotFather. The chat, name and avatar are the shop's.
+- **Platform bot (LLS).** Owners connect their shop through it (self-serve onboarding).
+  Platform admins (`PLATFORM_ADMIN_IDS`) approve new shops with a button.
+- **One Worker serves all bots:** webhook `/tg/:botId` for shop bots, `/tg/platform` for the LLS bot.
+- **One Mini App for all shops.** The shop bot's menu button opens it with `?shop=<slug>`.
+- **Per-shop branding:** name, logo, brand color. Everything else is shared.
 
 ## Product Stages
 
@@ -166,7 +177,9 @@ bun run lint                                   # Lint (0 errors, 0 warnings)
 bun run dev                                    # Dev mode
 bun run --filter @lls/core build               # Build specific package
 bunx wrangler dev                              # Run Worker locally (in packages/worker)
-bunx wrangler d1 migrations apply lls --local  # Apply D1 migrations locally
+bunx wrangler d1 migrations apply lls --local  # Apply D1 migrations locally (default)
+bunx wrangler d1 migrations apply lls --remote # Apply D1 migrations in production
+bunx wrangler types                            # Regenerate Env types after wrangler.jsonc changes
 bunx wrangler deploy                           # Deploy Worker
 ```
 
@@ -192,11 +205,14 @@ Infrastructure     → Routes, Repositories, Adapters (@lls/worker)
 src/
 ├── index.ts          # Hono app: routes + webhook + scheduled() for cron
 ├── env.ts            # Bindings (DB, BUCKET) + secrets, validated with zod
-├── auth.ts           # Telegram initData check → current user + role
-├── routes/           # HTTP routes, one file per feature (shop, product, order, customer)
+├── crypto.ts         # initData HMAC check, AES-GCM for bot tokens
+├── auth.ts           # X-Shop → shop's bot token → verify initData → current user + role
+├── routes/           # HTTP routes, one file per feature (shop, product, order, me, owner, platform)
 ├── repositories/     # D1 implementations of @lls/core ports
-├── telegram/         # Bot API client, webhook handler, owner notifications
-└── cron.ts           # Scheduled jobs (reminders)
+├── telegram/         # Bot API gateway, webhooks (shop + platform), notifications
+└── cron.ts           # Scheduled jobs (only when a real client needs one)
+wrangler.jsonc        # Bindings: DB (D1), BUCKET (R2), vars; run `wrangler types` after changes
+migrations/           # D1 SQL migrations
 ```
 
 **Worker Rules:**
@@ -211,11 +227,11 @@ src/
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (food/water/grocery/…), owner_telegram_id, location, delivery_zone, working_hours, features, is_active |
+| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours, features, accepting_orders |
 | Product | id, business_id, name, price (integer UZS), unit, category (shared taxonomy), image_key, is_available |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at — whose customer this is |
-| Order | id, business_id, customer_id, items (name + price snapshot), delivery_fee, total, status, address, location, landmark |
+| Order | id, business_id, number (per shop), customer_id, items (name + unit + price snapshot), subtotal, delivery_fee, total, status, address, location, landmark, comment, cancel_reason |
 
 **Money:** integer UZS. Never floats.
 
@@ -277,6 +293,13 @@ cancelled  cancelled  cancelled  cancelled  cancelled
   `X-Telegram-Bot-Api-Secret-Token` header.
 - Button presses: user = `callback_query.from.id`. Check that this user owns the business.
 
+**Which token verifies initData:** Telegram signs initData with the token of the bot that opened
+the Mini App. The app sends `X-Shop: <slug>` → Worker loads that shop's bot token → verifies.
+No `X-Shop` → verify with the platform bot token (onboarding only).
+
+**Bot tokens:** stored in D1 encrypted with AES-GCM (key: secret `TOKEN_ENC_KEY`). Never logged,
+never returned by the API. Validate a new token with `getMe` before saving.
+
 **Roles:** `customer` (default) and `owner` (`business.owner_telegram_id`). One app, one auth.
 
 **Entry:** `t.me/<bot>?startapp=shop_<slug>` opens the shop storefront.
@@ -284,6 +307,9 @@ cancelled  cancelled  cancelled  cancelled  cancelled
 **Notifications (no WebSockets):**
 - New order → message to the owner with a button for the **next allowed status** + "Отменить".
 - Status change → message to the customer.
+- Before the first order, the app calls `requestWriteAccess()` so the shop bot may message the customer.
+- Phone: `requestContact()` → Telegram sends a `contact` message to the shop bot webhook →
+  save it only if `contact.user_id === from.id`.
 
 **Regional UX (required):**
 - Languages: Uzbek (Latin) + Russian. Simple dictionary, no heavy i18n library
@@ -313,6 +339,7 @@ document.innerHTML = x                 // XSS
 - Prices, totals and `customerId` are computed on the server. Never trust them from the client
 - Check ownership on every route (owner edits only own shop, customer sees only own orders)
 - Frontend NEVER talks to D1/R2 directly. Only through the Worker
+- CORS: allow only `APP_ORIGIN` (the Pages address)
 - Check `git diff` before commit
 
 ## Performance (MANDATORY)
@@ -438,6 +465,11 @@ console.log            // Use logger
 | Use Cases | 80% |
 | Routes | 70% |
 
+**Tooling:** Vitest 4.1 (required by `@cloudflare/vitest-plugin`).
+- `@lls/core`, `@lls/app`: plain Vitest (node environment).
+- `@lls/worker`: `@cloudflare/vitest-plugin` — tests run in workerd with real D1; migrations are
+  applied in `test/setup.ts`. Telegram calls go through a `TelegramGateway` interface, faked in tests.
+
 Measure with `vitest run --coverage` (`@vitest/coverage-v8`).
 
 ## Git Commits
@@ -510,10 +542,12 @@ bun run format && bun run lint && bun run test && bun run build
 CI/CD: GitHub Actions. **⛔ Docker is PROHIBITED. No VPS.**
 
 ```
-Telegram ─► Mini App (Pages, *.pages.dev) ─► Worker (*.workers.dev) ─► D1 / R2
-Telegram Bot API ─► webhook ─► Worker
-Cron Trigger ─► Worker scheduled()
+Telegram ─► Mini App (Pages, *.pages.dev) ─► Worker (*.workers.dev, /api) ─► D1 / R2
+Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 ```
+
+**Worker secrets:** `TOKEN_ENC_KEY`, `PLATFORM_BOT_TOKEN`, `PLATFORM_WEBHOOK_SECRET`, `PLATFORM_ADMIN_IDS`.
+**Worker vars:** `APP_ORIGIN` (Pages URL).
 
 - Custom domain: later, optional.
 - Deploy only after quality gates pass on `main`.
