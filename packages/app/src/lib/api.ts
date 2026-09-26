@@ -8,7 +8,9 @@ import type {
     Page,
     ProductDTO,
     ShopOwnerDTO,
+    ShopPublicDTO,
     ShopStatsDTO,
+    ShowcaseProductDTO,
 } from "@lls/core"
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8787"
@@ -30,17 +32,30 @@ interface ErrorBody {
 }
 
 let currentShop: string | null = null
+let viaShowcase = false
 
-/** Every request carries the shop from the launch URL, so the Worker verifies with its bot token. */
-export function setShop(slug: string | null): void {
+/**
+ * Every request carries the shop, so the Worker verifies with the right bot token: the shop's own
+ * bot, or the LLS bot when the shop was opened from the showcase (`viaShowcase`).
+ */
+export function setShop(slug: string | null, options: { viaShowcase?: boolean } = {}): void {
     currentShop = slug
+    viaShowcase = options.viaShowcase ?? false
 }
 
-async function request<T>(method: string, path: string, body?: BodyInit | object): Promise<T> {
+function authHeaders(): Headers {
     const headers = new Headers({ "X-Telegram-Init-Data": webApp()?.initData ?? "" })
     if (currentShop) {
         headers.set("X-Shop", currentShop)
+        if (viaShowcase) {
+            headers.set("X-Via", "marketplace")
+        }
     }
+    return headers
+}
+
+async function request<T>(method: string, path: string, body?: BodyInit | object): Promise<T> {
+    const headers = authHeaders()
     let payload: BodyInit | undefined
     if (body instanceof Blob) {
         headers.set("Content-Type", body.type)
@@ -199,6 +214,23 @@ export const api = {
         orders: (): Promise<{ data: OrderDTO[] }> => request("GET", "/api/courier/orders"),
         setStatus: (id: string, status: "picked_up" | "delivered"): Promise<OrderDTO> =>
             request("PATCH", `/api/courier/orders/${id}`, { status }),
+    },
+
+    showcase: {
+        shops: (): Promise<Page<ShopPublicDTO>> => request("GET", "/api/showcase/shops"),
+        search: (
+            query: { q?: string; category?: string },
+            page: number,
+        ): Promise<Page<ShowcaseProductDTO>> => {
+            const params = new URLSearchParams({ page: String(page) })
+            if (query.q) {
+                params.set("q", query.q)
+            }
+            if (query.category) {
+                params.set("category", query.category)
+            }
+            return request("GET", `/api/showcase/products?${params.toString()}`)
+        },
     },
 
     platform: {

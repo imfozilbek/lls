@@ -101,6 +101,8 @@ export interface LaunchParams {
     onboarding: boolean
     /** `?mode=courier`: the courier's deliveries, opened from the shop bot. */
     courier: boolean
+    /** `?mode=market`: the LLS showcase, opened from the LLS bot. */
+    market: boolean
 }
 
 export function readLaunchParams(url: URL, app: WebApp | null): LaunchParams {
@@ -109,6 +111,7 @@ export function readLaunchParams(url: URL, app: WebApp | null): LaunchParams {
         shop: url.searchParams.get("shop") ?? fromStart ?? null,
         onboarding: url.searchParams.get("mode") === "onboarding",
         courier: url.searchParams.get("mode") === "courier",
+        market: url.searchParams.get("mode") === "market",
     }
 }
 

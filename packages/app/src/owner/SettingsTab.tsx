@@ -1,7 +1,7 @@
 import { FEATURES, Feature, WEEKDAYS } from "@lls/core"
 import { useEffect, useRef, useState } from "react"
 
-import { errorText, useT } from "../i18n/index.js"
+import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api, imageUrl } from "../lib/api.js"
 import { BRAND_SWATCHES, applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
@@ -53,6 +53,7 @@ interface Form {
 }
 
 const METERS_PER_KM = 1000
+const BPS_PER_PERCENT = 100
 const MAX_RADIUS_KM = 100
 
 const DEFAULT_OPEN = "09:00"
@@ -624,6 +625,17 @@ export function SettingsTab(): React.JSX.Element {
             <CouriersSection shopName={shop.name} />
             <Section title={t.owner.settings.link}>
                 <ShopLink shop={shop} />
+            </Section>
+            <Section title={t.owner.settings.showcase}>
+                <p className="rounded-tile bg-tg-secondary p-4 text-sm text-tg-subtitle">
+                    {shop.marketplace
+                        ? fill(t.owner.settings.showcaseOn, {
+                              rate: String(
+                                  shop.marketplace.commissionBps / BPS_PER_PERCENT,
+                              ).replace(".", ","),
+                          })
+                        : t.owner.settings.showcaseOff}
+                </p>
             </Section>
             <BottomSpacer />
         </div>

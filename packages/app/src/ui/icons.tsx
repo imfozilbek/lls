@@ -26,6 +26,12 @@ function Icon({
     )
 }
 
+export const SearchIcon = (p: IconProps): React.JSX.Element => (
+    <Icon {...p}>
+        <circle cx="11" cy="11" r="6.5" />
+        <path d="m20 20-4.2-4.2" />
+    </Icon>
+)
 export const PlusIcon = (p: IconProps): React.JSX.Element => (
     <Icon {...p}>
         <path d="M12 5v14M5 12h14" />

@@ -13,6 +13,7 @@ describe("readLaunchParams", () => {
             shop: "osh",
             onboarding: false,
             courier: false,
+            market: false,
         })
     })
 
@@ -28,7 +29,13 @@ describe("readLaunchParams", () => {
             shop: null,
             onboarding: true,
             courier: false,
+            market: false,
         })
+    })
+
+    it("detects the LLS showcase opened from the LLS bot", () => {
+        const url = new URL("https://x.pages.dev/?mode=market")
+        expect(readLaunchParams(url, null)).toMatchObject({ shop: null, market: true })
     })
 
     it("detects the courier mode opened from the shop bot", () => {
@@ -37,6 +44,7 @@ describe("readLaunchParams", () => {
             shop: "osh",
             onboarding: false,
             courier: true,
+            market: false,
         })
     })
 })

@@ -272,7 +272,12 @@ export const uz = {
             copy: "Nusxa olish",
             copied: "Nusxa olindi",
             saved: "Saqlandi",
+            showcase: "LLS vitrinasi",
+            showcaseOn:
+                "Do'koningiz LLS botidagi qidiruvda. Vitrina orqali sotuvdan komissiya: {rate}%.",
+            showcaseOff: "Do'koningiz LLS vitrinasida emas. Qo'shilish uchun LLS bilan bog'laning.",
         },
+        showcaseOrder: "LLS vitrinasidan · komissiya {sum}",
     },
     courier: {
         title: "Yetkazishlarim",
@@ -285,6 +290,18 @@ export const uz = {
         pickedUp: "Oldim",
         delivered: "Yetkazdim",
         waitReady: "Buyurtma tayyorlanmoqda — tayyor bo'lganda xabar keladi",
+    },
+    showcase: {
+        title: "Tumaningiz do'konlari",
+        subtitle: "Mahsulotni qidiring va do'kondan buyurtma bering",
+        search: "Mahsulot qidirish",
+        shops: "Do'konlar",
+        found: "Topildi: {n}",
+        emptyTitle: "Hech narsa topilmadi",
+        emptyText: "Boshqacha yozib ko'ring, masalan «osh» yoki «suv».",
+        noShopsTitle: "Hozircha do'konlar yo'q",
+        noShopsText: "Tez orada tumaningiz do'konlari shu yerda bo'ladi.",
+        clear: "Tozalash",
     },
     onboarding: {
         title: "Do'koningizni ulang",

@@ -1,8 +1,8 @@
-import { LANGUAGES, WEEKDAYS, toLocalTime } from "@lls/core"
+import { WEEKDAYS, toLocalTime } from "@lls/core"
 import { useMemo, useState } from "react"
 
-import { fill, useLanguage, useLanguageStore, useT } from "../i18n/index.js"
-import { api, imageUrl } from "../lib/api.js"
+import { fill, useLanguage, useT } from "../i18n/index.js"
+import { imageUrl } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, formatQuantity } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
@@ -11,6 +11,7 @@ import { summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { BagIcon, PlusIcon, ReceiptIcon, ScooterIcon, StoreIcon } from "../ui/icons.js"
+import { LanguageSwitch } from "../ui/language-switch.js"
 import { EmptyState, PoweredBy, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
@@ -34,37 +35,6 @@ function ShopAvatar({ shop }: { shop: Shop }): React.JSX.Element {
         <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[1.1rem] bg-brand text-2xl font-bold text-brand-ink">
             {shop.name.trim().charAt(0).toUpperCase()}
         </span>
-    )
-}
-
-function LanguageSwitch(): React.JSX.Element {
-    const language = useLanguage()
-    const setLanguage = useLanguageStore((state) => state.setLanguage)
-    const choose = (next: Language): void => {
-        if (next === language) {
-            return
-        }
-        haptic.select()
-        setLanguage(next)
-        api.setLanguage(next).catch(() => undefined)
-    }
-    return (
-        <div className="flex rounded-full bg-tg-secondary p-0.5 text-xs font-semibold">
-            {LANGUAGES.map((code) => (
-                <button
-                    key={code}
-                    type="button"
-                    onClick={(): void => choose(code)}
-                    aria-pressed={code === language}
-                    className={cn(
-                        "tap h-10 min-w-11 rounded-full px-2.5 uppercase transition-colors duration-200",
-                        code === language ? "bg-tg-bg text-tg-text shadow-sm" : "text-tg-hint",
-                    )}
-                >
-                    {code}
-                </button>
-            ))}
-        </div>
     )
 }
 

@@ -1,4 +1,4 @@
-import { OrderStatus, formatPhone, isFinalStatus } from "@lls/core"
+import { OrderChannel, OrderStatus, formatPhone, isFinalStatus } from "@lls/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -222,6 +222,14 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
             {order.bottlesReturned > 0 ? (
                 <p className="text-sm text-tg-subtitle">
                     {fill(t.owner.bottlesBack, { n: order.bottlesReturned })}
+                </p>
+            ) : null}
+            {order.channel === OrderChannel.MARKETPLACE ? (
+                <p className="mt-2 flex items-center gap-2 text-sm text-tg-subtitle">
+                    <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs font-bold text-tg-text">
+                        LLS
+                    </span>
+                    {fill(t.owner.showcaseOrder, { sum: formatMoney(order.commission, language) })}
                 </p>
             ) : null}
             <div className="mt-3 flex flex-col gap-2 text-sm">
