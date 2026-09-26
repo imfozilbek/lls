@@ -1,12 +1,12 @@
 /**
- * Prints initData signed with the DEV shop bot token, like Telegram would send it.
+ * Prints initData signed with a DEV shop bot token, like Telegram would send it.
  * For local checks with curl or a browser shim:
  *
- *   bun run init-data:dev customer
+ *   bun run init-data:dev <customer|owner|courier> [shop-slug]
  *   curl -H "X-Shop: osh-markaz-dev" -H "X-Telegram-Init-Data: $(bun run -s init-data:dev)" \
  *        http://localhost:8787/api/shop
  */
-import { DEV_BOT, DEV_CUSTOMER, DEV_OWNER } from "./dev-fixtures.js"
+import { DEV_COURIER, DEV_CUSTOMER, devShop } from "./dev-fixtures.js"
 
 const encoder = new TextEncoder()
 
@@ -37,8 +37,10 @@ export async function signInitData(user: object, botToken: string): Promise<stri
     return params.toString()
 }
 
-const who = process.argv[2] === "owner" ? DEV_OWNER : DEV_CUSTOMER
-signInitData(who, DEV_BOT.token)
+const shop = devShop(process.argv[3])
+const people = { owner: shop.owner, courier: DEV_COURIER, customer: DEV_CUSTOMER }
+const who = people[process.argv[2] as keyof typeof people] ?? DEV_CUSTOMER
+signInitData(who, shop.bot.token)
     .then((initData) => process.stdout.write(`${initData}\n`))
     .catch((error: unknown) => {
         console.error(error)
