@@ -1,4 +1,4 @@
-import { Language, OrderStatus } from "@lls/core"
+import { Language, OrderChannel, OrderStatus } from "@lls/core"
 
 import { platformAdminIds } from "../env.js"
 
@@ -7,6 +7,7 @@ import {
     formatNewOrderForOwner,
     formatOrderForCourier,
     formatOrderForOwner,
+    formatRate,
     formatStatusForCustomer,
     orderKeyboard,
 } from "./format.js"
@@ -30,6 +31,11 @@ export function courierAppUrl(appOrigin: string, slug: string): string {
 
 export function onboardingAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=onboarding`
+}
+
+/** The LLS showcase: search across shops, opened from the LLS bot. */
+export function showcaseAppUrl(appOrigin: string): string {
+    return `${appOrigin}/?mode=market`
 }
 
 /**
@@ -104,6 +110,23 @@ export class Notifier {
         const { language } = await this.readerFor(ownerId, business)
         const text = fill(textsFor(language).courierJoinedOwner, { name: escapeHtml(courierName) })
         await this.services.telegram.sendMessage(token, ownerId, text)
+    }
+
+    /** Tells the owner (in the LLS bot, where they applied) that the showcase deal changed. */
+    async showcaseChanged(shop: ShopOwnerDTO): Promise<void> {
+        const t = textsFor(await this.languageOf(shop.ownerTelegramId))
+        const name = `<b>${escapeHtml(shop.name)}</b>`
+        const text = shop.marketplace
+            ? fill(t.showcaseJoined, {
+                  shop: name,
+                  rate: formatRate(shop.marketplace.commissionBps),
+              })
+            : fill(t.showcaseLeft, { shop: name })
+        await this.services.telegram.sendMessage(
+            this.services.env.PLATFORM_BOT_TOKEN,
+            shop.ownerTelegramId,
+            text,
+        )
     }
 
     async shopRegistered(shop: ShopOwnerDTO): Promise<void> {
@@ -248,9 +271,20 @@ export class Notifier {
             language: customer.language,
             type: business.type,
         })
-        if (text) {
-            await this.services.telegram.sendMessage(token, customer.telegramId.value, text)
+        if (!text) {
+            return
         }
+        // A showcase customer started only the LLS bot, so the LLS bot writes, naming the shop.
+        if (order.channel === OrderChannel.MARKETPLACE) {
+            const shop = `<b>${escapeHtml(business.name)}</b>`
+            await this.services.telegram.sendMessage(
+                this.services.env.PLATFORM_BOT_TOKEN,
+                customer.telegramId.value,
+                `${shop}\n${text}`,
+            )
+            return
+        }
+        await this.services.telegram.sendMessage(token, customer.telegramId.value, text)
     }
 
     private async shopToken(businessId: string): Promise<string> {

@@ -3,9 +3,21 @@ import { Hono } from "hono"
 import { z } from "zod"
 
 import { timingSafeEqual } from "../crypto.js"
-import { parseCourierInvite, parseOrderCallback, parseReviewCallback } from "../telegram/format.js"
+import { platformAdminIds } from "../env.js"
+import {
+    formatRate,
+    parseCourierInvite,
+    parseOrderCallback,
+    parseReviewCallback,
+} from "../telegram/format.js"
 import { TelegramApiError, escapeHtml } from "../telegram/gateway.js"
-import { Notifier, courierAppUrl, onboardingAppUrl, shopAppUrl } from "../telegram/notifier.js"
+import {
+    Notifier,
+    courierAppUrl,
+    onboardingAppUrl,
+    shopAppUrl,
+    showcaseAppUrl,
+} from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 
 import type { AppEnv } from "../env.js"
@@ -112,6 +124,22 @@ async function joinAsCourier(
     }
 }
 
+/**
+ * Saves the customer's phone from a shared contact. Only the sender's own contact counts:
+ * a forwarded contact must not change anyone's phone. Returns false when nothing was saved.
+ */
+async function saveOwnPhone(services: Services, message: ShopMessage): Promise<boolean> {
+    const { from, contact } = message
+    if (!from || !contact || contact.user_id !== from.id) {
+        return false
+    }
+    await services.useCases.updateCustomer.execute({
+        user: toTelegramUser(from),
+        phone: contact.phone_number,
+    })
+    return true
+}
+
 /** A shared contact: the customer's phone, and the courier's too if the sender is one. */
 async function saveContact(
     services: Services,
@@ -120,14 +148,9 @@ async function saveContact(
     message: ShopMessage,
 ): Promise<void> {
     const { from, contact } = message
-    // Only the sender's own contact counts: a forwarded contact must not change anyone's phone.
-    if (!from || !contact || contact.user_id !== from.id) {
+    if (!from || !contact || !(await saveOwnPhone(services, message))) {
         return
     }
-    await services.useCases.updateCustomer.execute({
-        user: toTelegramUser(from),
-        phone: contact.phone_number,
-    })
     const courier = await services.couriers.findByTelegramId(business.id, from.id)
     if (courier) {
         courier.setPhone(Phone.create(contact.phone_number), services.clock.now())
@@ -291,6 +314,80 @@ async function handleSafely(work: () => Promise<void>): Promise<void> {
     }
 }
 
+const MARKET_COMMAND = /^\/market(?:@\w+)?\s+([a-z0-9-]{3,40})\s+(off|\d{1,2}(?:[.,]\d{1,2})?)\s*$/i
+const BPS_PER_PERCENT = 100
+
+/** `/market <slug> <percent|off>` from a platform admin: sign or end a showcase deal. */
+async function handleMarketCommand(services: Services, message: ShopMessage): Promise<void> {
+    const from = message.from
+    const token = services.env.PLATFORM_BOT_TOKEN
+    // Everyone else gets no hint that the command exists.
+    if (!from || !platformAdminIds(services.env).includes(from.id)) {
+        return
+    }
+    const texts = textsFor(languageFromTelegram(from.language_code))
+    const match = MARKET_COMMAND.exec(message.text?.trim() ?? "")
+    if (!match?.[1] || !match[2]) {
+        await services.telegram.sendMessage(token, message.chat.id, texts.showcaseUsage)
+        return
+    }
+    const off = match[2].toLowerCase() === "off"
+    try {
+        const shop = await services.useCases.setMarketplaceTerms.execute({
+            actorTelegramId: from.id,
+            slug: match[1].toLowerCase(),
+            commissionBps: off
+                ? null
+                : Math.round(Number(match[2].replace(",", ".")) * BPS_PER_PERCENT),
+        })
+        const name = `<b>${escapeHtml(shop.name)}</b>`
+        const reply = shop.marketplace
+            ? fill(texts.showcaseSet, {
+                  shop: name,
+                  rate: formatRate(shop.marketplace.commissionBps),
+              })
+            : fill(texts.showcaseOff, { shop: name })
+        await services.telegram.sendMessage(token, message.chat.id, reply)
+        await new Notifier(services).showcaseChanged(shop)
+    } catch (error) {
+        if (!(error instanceof DomainError)) {
+            throw error
+        }
+        await services.telegram.sendMessage(token, message.chat.id, escapeHtml(error.message))
+    }
+}
+
+/** The LLS bot: welcome with the showcase and onboarding buttons, phones, admin commands. */
+async function handlePlatformMessage(services: Services, message: ShopMessage): Promise<void> {
+    const from = message.from
+    if (!from) {
+        return
+    }
+    const token = services.env.PLATFORM_BOT_TOKEN
+    const texts = textsFor(languageFromTelegram(from.language_code))
+    if (message.contact) {
+        if (await saveOwnPhone(services, message)) {
+            await services.telegram.sendMessage(token, message.chat.id, texts.phoneSaved)
+        }
+        return
+    }
+    if (message.text?.trim().startsWith("/market")) {
+        await handleMarketCommand(services, message)
+        return
+    }
+    if (isStart(message.text)) {
+        const origin = services.env.APP_ORIGIN
+        await services.telegram.sendMessage(token, message.chat.id, texts.platformWelcome, {
+            keyboard: {
+                inline_keyboard: [
+                    [{ text: texts.openShowcase, web_app: { url: showcaseAppUrl(origin) } }],
+                    [{ text: texts.connectShop, web_app: { url: onboardingAppUrl(origin) } }],
+                ],
+            },
+        })
+    }
+}
+
 /** Telegram webhooks. Always answer 200 to valid updates so Telegram does not retry. */
 export const webhookRoutes = new Hono<AppEnv>()
     .post("/platform", async (c) => {
@@ -301,25 +398,8 @@ export const webhookRoutes = new Hono<AppEnv>()
         const services = c.get("services")
         const update = await readUpdate(c.req.raw)
         const message = update?.message
-        const from = message?.from
-        if (message && from && isStart(message.text)) {
-            const texts = textsFor(languageFromTelegram(from.language_code))
-            await handleSafely(() =>
-                services.telegram
-                    .sendMessage(c.env.PLATFORM_BOT_TOKEN, message.chat.id, texts.platformWelcome, {
-                        keyboard: {
-                            inline_keyboard: [
-                                [
-                                    {
-                                        text: texts.connectShop,
-                                        web_app: { url: onboardingAppUrl(c.env.APP_ORIGIN) },
-                                    },
-                                ],
-                            ],
-                        },
-                    })
-                    .then(() => undefined),
-            )
+        if (message) {
+            await handleSafely(() => handlePlatformMessage(services, message))
         }
         if (update?.callback_query) {
             const callback = update.callback_query

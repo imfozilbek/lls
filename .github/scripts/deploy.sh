@@ -156,7 +156,7 @@ connect_platform_bot() {
         --data-urlencode "url=${WORKER_URL}/tg/platform" \
         --data-urlencode "secret_token=${PLATFORM_WEBHOOK_SECRET}" \
         --data-urlencode 'allowed_updates=["message","callback_query"]'
-    telegram setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=onboarding" \
+    telegram setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=market" \
         '{type: "web_app", text: "LLS", web_app: {url: $url}}')"
     echo "webhook and menu button set"
 }

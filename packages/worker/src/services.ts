@@ -16,10 +16,13 @@ import {
     ListMyShopsUseCase,
     ListProductsUseCase,
     ListShopOrdersUseCase,
+    ListShowcaseShopsUseCase,
     PlaceOrderUseCase,
     RegisterShopUseCase,
     ResolveCustomerUseCase,
     ReviewShopUseCase,
+    SearchShowcaseUseCase,
+    SetMarketplaceTermsUseCase,
     UpdateCustomerUseCase,
     UpdateProductUseCase,
     UpdateShopUseCase,
@@ -66,6 +69,9 @@ export interface UseCases {
     deactivateCourier: DeactivateCourierUseCase
     assignCourier: AssignCourierUseCase
     listCourierOrders: ListCourierOrdersUseCase
+    listShowcaseShops: ListShowcaseShopsUseCase
+    searchShowcase: SearchShowcaseUseCase
+    setMarketplaceTerms: SetMarketplaceTermsUseCase
 }
 
 export interface Services extends ServiceDeps {
@@ -123,6 +129,13 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             deactivateCourier: new DeactivateCourierUseCase(courierAccess),
             assignCourier: new AssignCourierUseCase(courierAccess),
             listCourierOrders: new ListCourierOrdersUseCase(courierAccess),
+            listShowcaseShops: new ListShowcaseShopsUseCase(businesses, clock),
+            searchShowcase: new SearchShowcaseUseCase(businesses, products, clock),
+            setMarketplaceTerms: new SetMarketplaceTermsUseCase(
+                businesses,
+                platformAdminIds(env),
+                clock,
+            ),
         },
     }
 }

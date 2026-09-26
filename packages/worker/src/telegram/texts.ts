@@ -51,8 +51,17 @@ const BASE = {
         openMenu: "🛒 Katalogni ochish",
         phoneSaved: "✅ Telefon raqamingiz saqlandi.",
         platformWelcome:
-            "LLS — do'koningiz uchun Telegram'da o'z buyurtma boti. Ulash uchun tugmani bosing.",
+            "LLS — tumaningiz do'konlari bir joyda. Mahsulotni qidiring va do'kondan buyurtma bering.\n\nDo'kon egasimisiz? O'z buyurtma botingizni ulang.",
         connectShop: "🏪 Do'konni ulash",
+        openShowcase: "🔍 Do'konlar va mahsulotlar",
+        showcaseOrder: "🛍 LLS vitrinasidan · komissiya {rate}%: {sum}",
+        showcaseJoined:
+            "🛍 {shop} LLS vitrinasiga qo'shildi. Mijozlar uni LLS botida topadi.\nKomissiya: vitrina orqali sotilgan tovarlarning {rate}%. O'z botingiz orqali sotuvdan komissiya olinmaydi.",
+        showcaseLeft: "{shop} LLS vitrinasidan olindi.",
+        showcaseUsage:
+            "Buyruq: /market <slug> <foiz>, masalan /market osh-markaz 5\nO'chirish: /market <slug> off",
+        showcaseSet: "✅ {shop}: vitrinada, komissiya {rate}%",
+        showcaseOff: "✅ {shop}: vitrinadan olindi",
         applicationReceived: "✅ {shop} arizasi qabul qilindi. Tekshiruvdan so'ng xabar beramiz.",
         shopApproved: "🎉 {shop} ishga tushdi! Mijozlaringizga ushbu havolani yuboring:",
         shopRejected: "😔 {shop} arizasi rad etildi. Savollar bo'lsa, bizga yozing.",
@@ -129,8 +138,17 @@ const BASE = {
         openMenu: "🛒 Открыть каталог",
         phoneSaved: "✅ Ваш номер сохранён.",
         platformWelcome:
-            "LLS — собственный бот для заказов вашего магазина в Telegram. Нажмите кнопку, чтобы подключиться.",
+            "LLS — магазины вашего района в одном месте. Найдите товар и закажите в магазине.\n\nВы владелец магазина? Подключите свой бот для заказов.",
         connectShop: "🏪 Подключить магазин",
+        openShowcase: "🔍 Магазины и товары",
+        showcaseOrder: "🛍 Из витрины LLS · комиссия {rate}%: {sum}",
+        showcaseJoined:
+            "🛍 {shop} теперь в витрине LLS. Клиенты найдут вас в боте LLS.\nКомиссия: {rate}% от товаров, проданных через витрину. С продаж через ваш бот комиссии нет.",
+        showcaseLeft: "{shop} убран из витрины LLS.",
+        showcaseUsage:
+            "Команда: /market <slug> <процент>, например /market osh-markaz 5\nУбрать: /market <slug> off",
+        showcaseSet: "✅ {shop}: в витрине, комиссия {rate}%",
+        showcaseOff: "✅ {shop}: убран из витрины",
         applicationReceived: "✅ Заявка {shop} принята. Сообщим после проверки.",
         shopApproved: "🎉 {shop} запущен! Отправьте клиентам эту ссылку:",
         shopRejected: "😔 Заявка {shop} отклонена. Если есть вопросы, напишите нам.",

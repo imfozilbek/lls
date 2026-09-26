@@ -54,7 +54,7 @@ describe("platform bot", () => {
         expect(response.status).toBe(200)
         const [welcome] = client.telegram.sent
         expect(welcome?.chatId).toBe(OWNER.id)
-        expect(welcome?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
+        expect(welcome?.options?.keyboard?.inline_keyboard[1]?.[0]?.web_app?.url).toBe(
             "https://lls-app.pages.dev/?mode=onboarding",
         )
     })

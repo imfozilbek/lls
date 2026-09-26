@@ -119,7 +119,7 @@ export interface TestClient {
     /** Request as `user` inside the Mini App opened from `botToken` (X-Shop = slug). */
     as(
         user: object,
-        options: { botToken?: string; shop?: string },
+        options: { botToken?: string; shop?: string; via?: "marketplace" },
     ): (path: string, init?: RequestInit & { json?: unknown }) => Promise<Response>
 }
 
@@ -139,12 +139,15 @@ export function testClient(
     return {
         telegram,
         request,
-        as(user, { botToken = env.PLATFORM_BOT_TOKEN, shop }) {
+        as(user, { botToken = env.PLATFORM_BOT_TOKEN, shop, via }) {
             return async (path, init = {}) => {
                 const headers = new Headers(init.headers)
                 headers.set("X-Telegram-Init-Data", await signInitData(user, botToken))
                 if (shop) {
                     headers.set("X-Shop", shop)
+                }
+                if (via) {
+                    headers.set("X-Via", via)
                 }
                 let body = init.body
                 if (init.json !== undefined) {

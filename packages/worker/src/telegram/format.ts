@@ -1,4 +1,4 @@
-import { OrderStatus, Unit, formatPhone, mapUrl } from "@lls/core"
+import { OrderChannel, OrderStatus, Unit, formatPhone, mapUrl } from "@lls/core"
 
 import { escapeHtml } from "./gateway.js"
 import { fill, textsFor } from "./texts.js"
@@ -72,10 +72,21 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
         lines.push(`🚚 ${t.courier}: ${escapeHtml(order.courierName)}`)
     }
     lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
+    if (order.channel === OrderChannel.MARKETPLACE) {
+        const sum = formatMoney(order.commission, language)
+        lines.push(fill(t.showcaseOrder, { rate: formatRate(order.commissionBps), sum }))
+    }
     if (order.cancelReason) {
         lines.push(`${t.reason}: ${escapeHtml(order.cancelReason)}`)
     }
     return lines.join("\n")
+}
+
+const BPS_PER_PERCENT = 100
+
+/** 500 bps → "5", 250 bps → "2,5" (Uzbek and Russian use a decimal comma). */
+export function formatRate(bps: number): string {
+    return String(bps / BPS_PER_PERCENT).replace(".", ",")
 }
 
 export function formatNewOrderForOwner(order: OrderDTO, reader: Reader): string {

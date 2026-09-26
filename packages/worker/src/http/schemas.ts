@@ -28,6 +28,9 @@ export const pageQuery = z.object({
 
 export const productsQuery = pageQuery.extend({ category: z.enum(CATEGORIES).optional() })
 
+/** Showcase search: free text (any alphabet) and/or a shared category. */
+export const showcaseQuery = productsQuery.extend({ q: z.string().trim().max(100).optional() })
+
 export const ownerOrdersQuery = pageQuery.extend({
     filter: z.enum(["active", "done", "all"]).optional(),
 })

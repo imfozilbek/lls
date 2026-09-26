@@ -1,4 +1,4 @@
-import { EntityNotFoundError, ForbiddenError } from "@lls/core"
+import { EntityNotFoundError, ForbiddenError, OrderChannel } from "@lls/core"
 import { createMiddleware } from "hono/factory"
 
 import { verifyInitData } from "./crypto.js"
@@ -10,10 +10,16 @@ import type { Business } from "@lls/core"
 
 export const INIT_DATA_HEADER = "X-Telegram-Init-Data"
 export const SHOP_HEADER = "X-Shop"
+/** `marketplace`: a shop opened from the LLS showcase, inside the LLS bot. */
+export const VIA_HEADER = "X-Via"
+export const VIA_MARKETPLACE = "marketplace"
 
 /**
  * Verifies Telegram initData with the token of the bot that opened the Mini App:
- * the shop's own bot when `X-Shop` is sent, otherwise the platform bot (onboarding).
+ * - `X-Shop` alone: the shop's own bot;
+ * - `X-Shop` + `X-Via: marketplace`: the LLS bot, and the shop must be in the showcase;
+ * - nothing: the LLS bot (onboarding, showcase search).
+ * The token that verified the signature fixes the order channel, so the client cannot pick it.
  */
 export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
     const initData = c.req.header(INIT_DATA_HEADER)
@@ -22,10 +28,16 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
     }
     const services = c.get("services")
     const slug = c.req.header(SHOP_HEADER)
+    const viaShowcase = c.req.header(VIA_HEADER) === VIA_MARKETPLACE
 
     let business: Business | null = null
     let botToken = c.env.PLATFORM_BOT_TOKEN
-    if (slug) {
+    if (slug && viaShowcase) {
+        business = await services.businesses.findBySlug(slug)
+        if (!business?.isInShowcase()) {
+            throw EntityNotFoundError.businessBySlug(slug)
+        }
+    } else if (slug) {
         business = await services.businesses.findBySlug(slug)
         const credentials = business
             ? await services.businesses.getBotCredentials(business.id)
@@ -40,10 +52,16 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
     if (!verified) {
         throw unauthorized()
     }
+    const channel = viaShowcase ? OrderChannel.MARKETPLACE : OrderChannel.SHOP_BOT
     c.set("auth", {
         user: verified.user,
         business,
-        role: business ? await roleIn(services, business, verified.user.id) : "customer",
+        channel,
+        // Owner and courier screens open only from the shop's own bot.
+        role:
+            business && !viaShowcase
+                ? await roleIn(services, business, verified.user.id)
+                : "customer",
     })
     await next()
 })

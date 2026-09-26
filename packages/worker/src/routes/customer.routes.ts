@@ -1,5 +1,4 @@
 import { zValidator } from "@hono/zod-validator"
-import { OrderChannel } from "@lls/core"
 import { Hono } from "hono"
 
 import { shopOf } from "../auth.js"
@@ -60,8 +59,8 @@ export const customerRoutes = new Hono<AppEnv>()
             ...c.req.valid("json"),
             user: c.get("auth").user,
             businessId: business.id,
-            // Opened from the shop's own bot: never a marketplace sale, never commissioned.
-            channel: OrderChannel.SHOP_BOT,
+            // Fixed by the bot that signed the request: own bot = never commissioned.
+            channel: c.get("auth").channel,
         })
         inBackground(c.executionCtx, new Notifier(services).orderPlaced(business, order))
         return c.json(order, 201)

@@ -2,13 +2,14 @@ import { systemClock } from "@lls/core"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 
-import { INIT_DATA_HEADER, SHOP_HEADER, authenticate } from "./auth.js"
+import { INIT_DATA_HEADER, SHOP_HEADER, VIA_HEADER, authenticate } from "./auth.js"
 import { toErrorResponse } from "./http/errors.js"
 import { courierRoutes } from "./routes/courier.routes.js"
 import { customerRoutes } from "./routes/customer.routes.js"
 import { imageRoutes } from "./routes/image.routes.js"
 import { ownerRoutes } from "./routes/owner.routes.js"
 import { platformRoutes } from "./routes/platform.routes.js"
+import { showcaseRoutes } from "./routes/showcase.routes.js"
 import { webhookRoutes } from "./routes/webhook.routes.js"
 import { createServices } from "./services.js"
 import { HttpTelegramGateway } from "./telegram/gateway.js"
@@ -34,7 +35,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         cors({
             origin: (origin, c) => (origin === c.env.APP_ORIGIN ? origin : null),
             allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
-            allowHeaders: ["Content-Type", INIT_DATA_HEADER, SHOP_HEADER],
+            allowHeaders: ["Content-Type", INIT_DATA_HEADER, SHOP_HEADER, VIA_HEADER],
             maxAge: 86_400,
         }),
     )
@@ -47,6 +48,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         .route("/owner", ownerRoutes)
         .route("/courier", courierRoutes)
         .route("/platform", platformRoutes)
+        .route("/showcase", showcaseRoutes)
     app.route("/api", api)
     app.route("/img", imageRoutes)
     app.route("/tg", webhookRoutes)
