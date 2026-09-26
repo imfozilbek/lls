@@ -216,7 +216,8 @@ migrations/           # D1 SQL migrations
 - Every body, query and param is validated with zod.
 - Identity (customer, owner) comes ONLY from verified Telegram data, never from the request body.
 - Check ownership on every route that reads or changes business-owned data.
-- DomainError → HTTP: validation 400, forbidden 403, not found 404, business rule 422.
+- DomainError → HTTP: validation 400, unauthorized 401, forbidden 403, not found 404,
+  conflict / invalid status transition 409, business rule 422.
 - Frameworks: Hono + zod only. No NestJS, no Express, no ORM.
 
 ## Domain Models
@@ -271,7 +272,8 @@ cancelled  cancelled  cancelled  cancelled  cancelled
 
 **List response (always):** `{ data: T[], meta: { page, limit, total } }`
 
-**Error response (always):** `{ error: { code, message } }`
+**Error response (always):** `{ error: { code, message, details? } }`. For business rules `code` is
+the rule id (e.g. `PHONE_REQUIRED`, `SHOP_CLOSED`) so the app can show a translated message.
 
 ## Telegram
 
