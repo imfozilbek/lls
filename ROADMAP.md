@@ -7,16 +7,16 @@ Each shop gets its own Telegram bot and brand; the app says "powered by LLS".
 > Rules, stack and architecture: `CLAUDE.md`. Product context for design: `PRODUCT.md`.
 > Technical debt: `TODO.md`. Owner's launch steps: `docs/launch-checklist.md`.
 
-## Current status: stage 1 — code complete, waiting for Cloudflare accounts
+## Current status: stage 1 — code complete for three shops, waiting for Cloudflare accounts
 
 | Part | Status | Notes |
 |------|--------|-------|
-| `@lls/core` | ✅ Done | Domain + use cases, 92 tests, domain coverage ≥ 90% |
-| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth, shop + platform bot webhooks, 43 tests |
-| `@lls/app` | ✅ Done | Storefront, cart, checkout, tracking, owner section, onboarding; 29 tests; 96 KB gzip |
+| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list; 130 tests |
+| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth, roles owner/courier/customer, bot webhooks; 51 tests |
+| `@lls/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, onboarding; 37 tests; 92 KB gzip |
 | CI | ✅ Done | format, lint, build, test, coverage on every push |
 | Deploy | 🟡 Ready | `deploy.yml` waits for GitHub secrets (`docs/launch-checklist.md`) |
-| Pilot (food) | ⏳ Next | After the first deploy |
+| Pilot (food, water, grocery) | ⏳ Next | Three friends' shops, each with its own bot and couriers |
 
 **Blocking:** Cloudflare account, API token and the LLS platform bot — owner tasks in
 `docs/launch-checklist.md`.
@@ -27,11 +27,12 @@ Each shop gets its own Telegram bot and brand; the app says "powered by LLS".
 
 | Stage | What | Revenue | Status |
 |-------|------|---------|--------|
-| **1. Own bot per business** | Storefront + orders + owner notifications. Business delivers itself | Subscription | 🔨 Now |
-| 2. District marketplace | One Mini App, one cart from several shops, search across shops | Commission + subscription | Later |
+| **1. Own bot per business** | Storefront + orders + notifications. Each shop delivers with its own couriers | Subscription | 🔨 Now |
+| 2. District marketplace | One Mini App, one cart from several shops, search across shops. Data is ready now: every order stores its channel and commission | Commission on marketplace sales + subscription | Later |
 | 3. Own delivery | Shared couriers, several pickups per trip | Delivery fee | Later |
 
-Pilot order: **food → water → grocery.**
+Pilot: **food, water and grocery at the same time.** Sales through a shop's own bot never carry
+an LLS commission; only marketplace sales will (stage 2).
 
 ---
 
@@ -71,19 +72,27 @@ Pilot order: **food → water → grocery.**
 - [x] Light and dark Telegram themes; bundle within 100 KB gzip
 - [x] Local end-to-end run on the real Worker (`bun run seed:dev`)
 
+### M4b. Three verticals and own couriers ✅
+- [x] Fixed: an order could be read or moved through another shop's bot
+- [x] Couriers per shop: one-time invite link in the shop bot, owner assigns, courier moves
+      `ready → picked_up → delivered` from the bot card or the courier screen
+- [x] Order channel (`shop_bot` / `marketplace`) and commission snapshot; 0 for the shop bot
+- [x] Water: returnable bottles with a deposit, "order again"
+- [x] Grocery: weight items in grams with a selling step, stop-list until midnight (Tashkent)
+- [x] Feature switches per shop; defaults by type; bot and app words by type (menu vs catalog)
+- [x] `bun run seed:dev` seeds three demo shops; end-to-end run of all three passes
+
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)
 - [ ] Owner: Cloudflare account, API token, platform bot, GitHub secrets
 - [ ] First production deploy
 - [ ] Production check: connect a test shop → order → statuses → notifications
-- [ ] Friend with food connects the shop and fills the menu
+- [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
 
 ---
 
 ## After the pilot (only when a real client asks)
 
-- Water shop: `reorder` and `bottleDeposit` features
-- Grocery: `weightItems`, `stopList`
 - Different working hours per day (see `TODO.md`)
 - Custom domain

@@ -42,6 +42,27 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Added:** three-step onboarding wizard in the platform bot
 - **Added:** light and dark Telegram themes, pressed and focus states, empty states; 96 KB gzip
 
+### Three verticals, own couriers, marketplace-ready data
+- **Security (core, worker):** an order is found only inside the shop from `X-Shop`; before, a
+  customer or an owner of two shops could reach an order through the wrong bot
+- **Added (core):** `Courier` and one-time `CourierInvite` (48 h, only a hash is stored);
+  `canActorMove` next to the one status table: owner — every step, courier — only
+  `ready → picked_up → delivered` of their own order, customer — cancel while `pending`
+- **Added (core):** order `channel` (`shop_bot` / `marketplace`) with a commission snapshot on the
+  goods subtotal; always 0 for the shop's own bot. `Business.marketplace` holds the future deal
+- **Added (core):** weight items (quantity in grams, selling step), returnable bottles with a
+  deposit, stop-list until the next Tashkent midnight, feature defaults per business type
+- **Added (worker):** routes for couriers and invites, `/start c_<code>` in the shop bot, courier
+  order card with "Picked up / Delivered", ping when the order is ready; bot words by shop type;
+  admin card in uz/ru; Yandex Maps links
+- **Added (app):** courier screen (`?mode=courier`), couriers in settings (invite, share, remove),
+  assign courier and cancel reason on owner orders, stop-list sheet, weight step and returnable
+  switch in the product editor, feature switches, bottle deposit, delivery radius
+- **Added (app):** "order again" in order history, bottles field in checkout, shop facts
+  (delivery price, minimum, today's hours) in the header; menu vs catalog words by shop type
+- **Removed:** `tailwind-merge`, unused core docs, dead value-object methods and dictionary keys
+- **Changed:** `bun run seed:dev` seeds three demo shops (food, water, grocery) and a courier
+
 ## [0.4.0] - 2026-01-24
 
 ### Production Readiness Release
