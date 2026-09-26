@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+# Deploys LLS to Cloudflare. Idempotent: safe to run on every push to main.
+#
+# Creates what is missing (D1, R2, Pages project, workers.dev subdomain), applies D1 migrations,
+# deploys the Worker with its secrets, deploys the Mini App to Pages and connects the platform bot.
+#
+# Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS.
+set -euo pipefail
+
+readonly WORKER="lls-worker"
+readonly DATABASE="lls"
+readonly BUCKET="lls-media"
+readonly PAGES_PROJECT="lls-app"
+readonly DB_PLACEHOLDER="00000000-0000-0000-0000-000000000000"
+readonly CF_API="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}"
+
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+readonly ROOT
+readonly WORKER_DIR="${ROOT}/packages/worker"
+readonly APP_DIR="${ROOT}/packages/app"
+
+log() { printf '\n==> %s\n' "$*"; }
+fail() { printf '::error::%s\n' "$*"; exit 1; }
+wrangler() { (cd "$WORKER_DIR" && bunx wrangler "$@"); }
+
+# GET/POST/PUT to the Cloudflare API. Prints the body; returns non-zero on HTTP errors.
+cf() {
+    local method="$1" path="$2" body="${3:-}"
+    local args=(-sS -X "$method" -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
+        -H "Content-Type: application/json" -w '\n%{http_code}')
+    if [[ -n "$body" ]]; then args+=(--data "$body"); fi
+    curl "${args[@]}" "${CF_API}${path}"
+}
+
+# Splits "body\nstatus" from cf(): sets CF_BODY and CF_STATUS.
+cf_call() {
+    local response
+    response="$(cf "$@")"
+    CF_STATUS="${response##*$'\n'}"
+    CF_BODY="${response%$'\n'*}"
+}
+
+ensure_d1() {
+    log "D1 database '${DATABASE}'"
+    cf_call GET "/d1/database?name=${DATABASE}"
+    [[ "$CF_STATUS" == 200 ]] || fail "Cannot list D1 databases (HTTP ${CF_STATUS}). Check the API token has D1 Edit."
+    DATABASE_ID="$(jq -r --arg n "$DATABASE" '.result[] | select(.name == $n) | .uuid' <<<"$CF_BODY" | head -n1)"
+    if [[ -z "$DATABASE_ID" ]]; then
+        cf_call POST "/d1/database" "$(jq -n --arg n "$DATABASE" '{name: $n}')"
+        [[ "$CF_STATUS" == 200 ]] || fail "Cannot create D1 database (HTTP ${CF_STATUS})."
+        DATABASE_ID="$(jq -r '.result.uuid' <<<"$CF_BODY")"
+        echo "created ${DATABASE_ID}"
+    else
+        echo "exists ${DATABASE_ID}"
+    fi
+    # Only the CI checkout is changed; the repo keeps the placeholder for local dev.
+    sed -i "s/${DB_PLACEHOLDER}/${DATABASE_ID}/" "${WORKER_DIR}/wrangler.jsonc"
+}
+
+ensure_r2() {
+    log "R2 bucket '${BUCKET}'"
+    cf_call GET "/r2/buckets/${BUCKET}"
+    if [[ "$CF_STATUS" == 200 ]]; then echo "exists"; return; fi
+    [[ "$CF_STATUS" == 404 ]] || fail "Cannot read R2 (HTTP ${CF_STATUS}). Is R2 enabled for the account?"
+    cf_call POST "/r2/buckets" "$(jq -n --arg n "$BUCKET" '{name: $n}')"
+    [[ "$CF_STATUS" == 200 ]] || fail "Cannot create R2 bucket (HTTP ${CF_STATUS})."
+    echo "created"
+}
+
+ensure_pages() {
+    log "Pages project '${PAGES_PROJECT}'"
+    cf_call GET "/pages/projects/${PAGES_PROJECT}"
+    if [[ "$CF_STATUS" == 404 ]]; then
+        cf_call POST "/pages/projects" \
+            "$(jq -n --arg n "$PAGES_PROJECT" '{name: $n, production_branch: "main"}')"
+        [[ "$CF_STATUS" == 200 ]] || fail "Cannot create Pages project (HTTP ${CF_STATUS})."
+    elif [[ "$CF_STATUS" != 200 ]]; then
+        fail "Cannot read Pages project (HTTP ${CF_STATUS}). Check the API token has Pages Edit."
+    fi
+    APP_ORIGIN="https://$(jq -r '.result.subdomain' <<<"$CF_BODY")"
+    echo "$APP_ORIGIN"
+}
+
+ensure_workers_subdomain() {
+    SECRETS_FILE="$(mktemp)"
+    chmod 600 "$SECRETS_FILE"
+    trap 'rm -f "$SECRETS_FILE" "${SECRETS_FILE}.new"' EXIT
+    log "workers.dev subdomain"
+    cf_call GET "/workers/subdomain"
+    local sub=""
+    if [[ "$CF_STATUS" == 200 ]]; then sub="$(jq -r '.result.subdomain // empty' <<<"$CF_BODY")"; fi
+    if [[ -z "$sub" ]]; then
+        sub="lls-${CLOUDFLARE_ACCOUNT_ID:0:8}"
+        cf_call PUT "/workers/subdomain" "$(jq -n --arg s "$sub" '{subdomain: $s}')"
+        [[ "$CF_STATUS" == 200 ]] || fail "Cannot create the workers.dev subdomain (HTTP ${CF_STATUS})."
+    fi
+    WORKER_URL="https://${WORKER}.${sub}.workers.dev"
+    echo "$WORKER_URL"
+}
+
+# TOKEN_ENC_KEY encrypts shop bot tokens. It is generated ONCE and never replaced:
+# a new key would make every stored token unreadable.
+needs_encryption_key() {
+    cf_call GET "/workers/scripts/${WORKER}/secrets"
+    if [[ "$CF_STATUS" == 404 ]]; then return 0; fi
+    [[ "$CF_STATUS" == 200 ]] || fail "Cannot read Worker secrets (HTTP ${CF_STATUS}). Refusing to guess."
+    ! jq -e '.result[] | select(.name == "TOKEN_ENC_KEY")' <<<"$CF_BODY" >/dev/null
+}
+
+deploy_worker() {
+    log "Migrations"
+    wrangler d1 migrations apply "$DATABASE" --remote
+
+    log "Worker"
+    # Derived, not stored: the same bot token always gives the same webhook secret.
+    local webhook_secret
+    webhook_secret="$(printf '%s' "lls-platform-webhook" \
+        | openssl dgst -sha256 -hmac "$PLATFORM_BOT_TOKEN" -r | cut -d' ' -f1)"
+    PLATFORM_WEBHOOK_SECRET="$webhook_secret"
+    echo "::add-mask::${PLATFORM_WEBHOOK_SECRET}"
+
+    local secrets_file="$SECRETS_FILE"
+    jq -n --arg bot "$PLATFORM_BOT_TOKEN" --arg admins "$PLATFORM_ADMIN_IDS" \
+        --arg hook "$PLATFORM_WEBHOOK_SECRET" \
+        '{PLATFORM_BOT_TOKEN: $bot, PLATFORM_ADMIN_IDS: $admins, PLATFORM_WEBHOOK_SECRET: $hook}' \
+        >"$secrets_file"
+    if needs_encryption_key; then
+        echo "generating TOKEN_ENC_KEY (first deploy)"
+        local key
+        key="$(openssl rand -base64 32)"
+        echo "::add-mask::${key}"
+        jq --arg key "$key" '. + {TOKEN_ENC_KEY: $key}' "$secrets_file" >"${secrets_file}.new"
+        mv "${secrets_file}.new" "$secrets_file"
+    fi
+    wrangler deploy --var "APP_ORIGIN:${APP_ORIGIN}" --secrets-file "$secrets_file"
+}
+
+deploy_app() {
+    log "Mini App"
+    (cd "$APP_DIR" && VITE_API_URL="$WORKER_URL" bun run build)
+    wrangler pages deploy "${APP_DIR}/dist" --project-name "$PAGES_PROJECT" --branch main \
+        --commit-dirty=true
+}
+
+telegram() {
+    local method="$1"
+    shift
+    local result
+    result="$(curl -sS "https://api.telegram.org/bot${PLATFORM_BOT_TOKEN}/${method}" "$@")"
+    jq -e '.ok' <<<"$result" >/dev/null || fail "Telegram ${method} failed: $(jq -r '.description' <<<"$result")"
+}
+
+connect_platform_bot() {
+    log "Platform bot"
+    telegram setWebhook \
+        --data-urlencode "url=${WORKER_URL}/tg/platform" \
+        --data-urlencode "secret_token=${PLATFORM_WEBHOOK_SECRET}" \
+        --data-urlencode 'allowed_updates=["message","callback_query"]'
+    telegram setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=onboarding" \
+        '{type: "web_app", text: "LLS", web_app: {url: $url}}')"
+    echo "webhook and menu button set"
+}
+
+smoke_test() {
+    log "Smoke test"
+    local status=""
+    for _ in 1 2 3 4 5 6; do
+        status="$(curl -s -o /dev/null -w '%{http_code}' "${WORKER_URL}/health" || true)"
+        if [[ "$status" == 200 ]]; then break; fi
+        sleep 5
+    done
+    [[ "$status" == 200 ]] || fail "${WORKER_URL}/health answered ${status}"
+    echo "Worker:   ${WORKER_URL}"
+    echo "Mini App: ${APP_ORIGIN}"
+    {
+        echo "### Deployed"
+        echo "- Worker: ${WORKER_URL}"
+        echo "- Mini App: ${APP_ORIGIN}"
+    } >>"${GITHUB_STEP_SUMMARY:-/dev/null}"
+}
+
+main() {
+    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN PLATFORM_ADMIN_IDS; do
+        [[ -n "${!name:-}" ]] || fail "Secret ${name} is not set."
+    done
+    ensure_d1
+    ensure_r2
+    ensure_pages
+    ensure_workers_subdomain
+    deploy_worker
+    deploy_app
+    connect_platform_bot
+    smoke_test
+}
+
+main "$@"
