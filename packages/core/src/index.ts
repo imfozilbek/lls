@@ -28,3 +28,8 @@ export * from "./domain/entities/product.js"
 
 // Domain - Errors
 export * from "./domain/errors/index.js"
+
+// Application
+export * from "./application/dtos/index.js"
+export * from "./application/ports/index.js"
+export * from "./application/use-cases/index.js"

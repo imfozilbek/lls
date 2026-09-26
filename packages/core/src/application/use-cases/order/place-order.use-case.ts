@@ -1,0 +1,134 @@
+import { OrderItem } from "../../../domain/entities/order-item.js"
+import { MAX_ORDER_LINES, Order, subtotalOf } from "../../../domain/entities/order.js"
+import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
+import { ConflictError } from "../../../domain/errors/conflict.error.js"
+import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
+import { Location } from "../../../domain/value-objects/location.js"
+import { toOrderDTO } from "../../dtos/order.dto.js"
+import { resolveCustomer } from "../customer/customer.use-cases.js"
+import { requireBusiness } from "../shared.js"
+
+import type { Product } from "../../../domain/entities/product.js"
+import type { OrderDTO } from "../../dtos/order.dto.js"
+import type { LocationDTO } from "../../dtos/shop.dto.js"
+import type { TelegramUser } from "../../dtos/telegram-user.js"
+import type { BusinessRepository } from "../../ports/business-repository.js"
+import type { Clock } from "../../ports/clock.js"
+import type { CustomerRepository } from "../../ports/customer-repository.js"
+import type { OrderRepository } from "../../ports/order-repository.js"
+import type { ProductRepository } from "../../ports/product-repository.js"
+
+const MAX_NUMBER_ATTEMPTS = 3
+
+export interface OrderLineInput {
+    productId: string
+    quantity: number
+}
+
+export interface PlaceOrderInput {
+    user: TelegramUser
+    businessId: string
+    /** Only ids and quantities. Names and prices always come from the database. */
+    items: OrderLineInput[]
+    address: string
+    landmark?: string
+    location?: LocationDTO
+    comment?: string
+}
+
+export interface PlaceOrderDeps {
+    businesses: BusinessRepository
+    products: ProductRepository
+    customers: CustomerRepository
+    orders: OrderRepository
+    clock: Clock
+}
+
+/** Same product twice → one line with the summed quantity. */
+function mergeLines(lines: readonly OrderLineInput[]): OrderLineInput[] {
+    const merged = new Map<string, number>()
+    for (const line of lines) {
+        merged.set(line.productId, (merged.get(line.productId) ?? 0) + line.quantity)
+    }
+    return [...merged].map(([productId, quantity]) => ({ productId, quantity }))
+}
+
+function buildItems(lines: OrderLineInput[], products: Product[]): OrderItem[] {
+    const byId = new Map(products.map((product) => [product.id, product]))
+    return lines.map((line) => {
+        const product = byId.get(line.productId)
+        if (!product) {
+            throw EntityNotFoundError.product(line.productId)
+        }
+        if (!product.isAvailable) {
+            throw BusinessRuleViolationError.productNotAvailable(product.id)
+        }
+        return OrderItem.create({
+            productId: product.id,
+            name: product.name,
+            unit: product.unit,
+            unitPrice: product.price,
+            quantity: line.quantity,
+        })
+    })
+}
+
+export class PlaceOrderUseCase {
+    constructor(private readonly deps: PlaceOrderDeps) {}
+
+    async execute(input: PlaceOrderInput): Promise<OrderDTO> {
+        const { businesses, products, customers, orders, clock } = this.deps
+        const now = clock.now()
+
+        const business = await requireBusiness(businesses, input.businessId)
+        business.assertCanAcceptOrders(now)
+
+        const lines = mergeLines(input.items)
+        if (lines.length === 0) {
+            throw BusinessRuleViolationError.emptyOrder()
+        }
+        if (lines.length > MAX_ORDER_LINES) {
+            throw BusinessRuleViolationError.tooManyItems(MAX_ORDER_LINES)
+        }
+
+        const customer = await resolveCustomer(customers, input.user)
+        if (!customer.hasPhone()) {
+            throw BusinessRuleViolationError.phoneRequired()
+        }
+
+        const location = input.location
+            ? Location.create(input.location.latitude, input.location.longitude)
+            : undefined
+        business.assertDeliversTo(location)
+
+        const found = await products.findByIds(
+            business.id,
+            lines.map((line) => line.productId),
+        )
+        const items = buildItems(lines, found)
+        const subtotal = subtotalOf(items)
+        business.assertMinOrder(subtotal)
+
+        for (let attempt = 0; attempt < MAX_NUMBER_ATTEMPTS; attempt++) {
+            const order = Order.place({
+                id: crypto.randomUUID(),
+                businessId: business.id,
+                customerId: customer.id,
+                number: await orders.nextNumber(business.id),
+                items,
+                deliveryFee: business.deliveryFeeFor(subtotal),
+                address: input.address,
+                landmark: input.landmark,
+                location,
+                comment: input.comment,
+                customerName: customer.name,
+                customerPhone: customer.phone,
+            })
+            if (await orders.insert(order)) {
+                await customers.linkToBusiness(customer.id, business.id, now)
+                return toOrderDTO(order)
+            }
+        }
+        throw new ConflictError("Could not assign an order number, please try again")
+    }
+}
