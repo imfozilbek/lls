@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { API_URL, ApiError, api, setShop } from "./api.js"
+import { API_URL, ApiError, api, fetchAll, setShop } from "./api.js"
 
 function reply(status: number, body?: unknown): Response {
     return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -74,5 +74,24 @@ describe("api client", () => {
         expect(init?.method).toBe("PUT")
         expect(new Headers(init?.headers).get("Content-Type")).toBe("image/webp")
         expect(init?.body).toBe(image)
+    })
+})
+
+describe("fetchAll", () => {
+    it("loads every page until the total is reached", async () => {
+        const pages = [[1, 2], [3, 4], [5]]
+        const load = vi.fn((page: number) =>
+            Promise.resolve({ data: pages[page - 1] ?? [], meta: { page, limit: 2, total: 5 } }),
+        )
+        await expect(fetchAll(load)).resolves.toEqual([1, 2, 3, 4, 5])
+        expect(load).toHaveBeenCalledTimes(3)
+    })
+
+    it("stops on an empty page even if the total says more", async () => {
+        const load = vi.fn((page: number) =>
+            Promise.resolve({ data: page === 1 ? [1] : [], meta: { page, limit: 1, total: 9 } }),
+        )
+        await expect(fetchAll(load)).resolves.toEqual([1])
+        expect(load).toHaveBeenCalledTimes(2)
     })
 })

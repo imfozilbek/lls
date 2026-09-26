@@ -195,9 +195,9 @@ function DeliveryStep({
     )
 }
 
-function Sent({ onDone }: { onDone(): void }): React.JSX.Element {
+/** Success screen. Its "Done" button is declared by <Wizard/>: one screen, one main action. */
+function Sent(): React.JSX.Element {
     const t = useT()
-    useMainAction({ text: t.common.done, onClick: onDone })
     return (
         <EmptyState
             art={<CheckIcon size={44} strokeWidth={2.25} />}
@@ -273,7 +273,7 @@ export function Wizard({
 
     useMainAction(
         sent
-            ? null
+            ? { text: t.common.done, onClick: onDone }
             : {
                   text: actionText(t, step, sending),
                   onClick: (): void => void next(),
@@ -283,7 +283,7 @@ export function Wizard({
     )
 
     if (sent) {
-        return <Sent onDone={onDone} />
+        return <Sent />
     }
     return (
         <main className="flex flex-col gap-5 px-4 pt-4">

@@ -19,9 +19,12 @@ export function ProductImage({
     className?: string
     iconSize?: number
 }): React.JSX.Element {
-    const [loaded, setLoaded] = useState(false)
-    const [failed, setFailed] = useState(false)
     const src = imageUrl(imageKey)
+    // State is tied to the URL, so a new or removed photo starts from a clean placeholder.
+    const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
+    const [failedSrc, setFailedSrc] = useState<string | null>(null)
+    const loaded = src !== undefined && loadedSrc === src
+    const failed = src !== undefined && failedSrc === src
     return (
         <div className={cn("relative overflow-hidden bg-brand/10 text-brand/70", className)}>
             {!loaded ? (
@@ -35,8 +38,8 @@ export function ProductImage({
                     alt={alt}
                     loading="lazy"
                     decoding="async"
-                    onLoad={(): void => setLoaded(true)}
-                    onError={(): void => setFailed(true)}
+                    onLoad={(): void => setLoadedSrc(src)}
+                    onError={(): void => setFailedSrc(src)}
                     className={cn(
                         "absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ease-out-quart",
                         loaded ? "opacity-100" : "opacity-0",

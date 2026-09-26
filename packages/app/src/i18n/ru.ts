@@ -15,6 +15,7 @@ export const ru: Dictionary = {
         poweredBy: "Работает на LLS",
         language: "Язык",
         free: "бесплатно",
+        more: "Показать ещё",
     },
     errors: {
         NETWORK: "Нет связи с интернетом. Проверьте сеть и попробуйте ещё раз.",
@@ -29,6 +30,7 @@ export const ru: Dictionary = {
         ORDER_CANNOT_BE_CANCELLED: "Магазин уже принял заказ.",
         INVALID_BOT_TOKEN: "Неверный токен. Скопируйте его из BotFather целиком.",
         CONFLICT: "Этот бот уже подключён.",
+        INVALID_ORDER_TRANSITION: "Статус заказа уже изменился. Список обновлён.",
         IMAGE_TOO_LARGE: "Фото слишком большое.",
         UNSUPPORTED_IMAGE: "Этот формат фото не поддерживается.",
         VALIDATION_ERROR: "Проверьте поля.",
@@ -89,6 +91,7 @@ export const ru: Dictionary = {
         checkout: "Оформить",
         minOrderLeft: "До минимального заказа ещё {sum}",
         freeDeliveryLeft: "До бесплатной доставки ещё {sum}",
+        removed: "Закончилось товаров из корзины: {n}. Мы их убрали.",
         unavailable: "Закончилось",
         clear: "Очистить",
     },

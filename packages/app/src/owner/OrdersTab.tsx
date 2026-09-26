@@ -1,16 +1,19 @@
 import { isFinalStatus } from "@lls/core"
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { formatMoney, formatTime } from "../lib/format.js"
+import { usePagedList } from "../lib/paged.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { PhoneIcon, PinIcon, ReceiptIcon, WifiOffIcon } from "../ui/icons.js"
+import { LoadMore } from "../ui/load-more.js"
 import { StatusBadge } from "../ui/order-status.js"
 import { Button, EmptyState, Segmented, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import type { PagedList } from "../lib/paged.js"
 import type { OrderDTO, OrderStatus } from "@lls/core"
 
 type Filter = "active" | "done"
@@ -23,13 +26,14 @@ function mapLink(order: OrderDTO): string | null {
     return point ? `https://maps.google.com/?q=${point.latitude},${point.longitude}` : null
 }
 
-function OrderActions({
-    order,
-    onChange,
-}: {
+interface CardProps {
     order: OrderDTO
     onChange(order: OrderDTO): void
-}): React.JSX.Element | null {
+    /** The order moved elsewhere (e.g. from the bot chat): refresh the list. */
+    onStale(): void
+}
+
+function OrderActions({ order, onChange, onStale }: CardProps): React.JSX.Element | null {
     const t = useT()
     const [busy, setBusy] = useState<OrderStatus | null>(null)
     if (isFinalStatus(order.status)) {
@@ -47,6 +51,7 @@ function OrderActions({
         } catch (caught) {
             haptic.error()
             toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+            onStale()
         } finally {
             setBusy(null)
         }
@@ -78,13 +83,7 @@ function OrderActions({
     )
 }
 
-function OrderCard({
-    order,
-    onChange,
-}: {
-    order: OrderDTO
-    onChange(order: OrderDTO): void
-}): React.JSX.Element {
+function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     const map = mapLink(order)
@@ -143,32 +142,16 @@ function OrderCard({
                     </a>
                 ) : null}
             </div>
-            <OrderActions order={order} onChange={onChange} />
+            <OrderActions order={order} onChange={onChange} onStale={onStale} />
         </li>
     )
 }
 
-function useShopOrders(filter: Filter): {
-    orders: OrderDTO[] | null
-    error: string | null
-    reload(): Promise<void>
-    replace(order: OrderDTO): void
-} {
-    const [orders, setOrders] = useState<OrderDTO[] | null>(null)
-    const [error, setError] = useState<string | null>(null)
-
-    const reload = useCallback(async (): Promise<void> => {
-        try {
-            setOrders((await api.owner.orders(filter)).data)
-            setError(null)
-        } catch (caught) {
-            setError(caught instanceof ApiError ? caught.code : "generic")
-        }
-    }, [filter])
-
+/** Orders of one filter; the active list refreshes calmly while it is on screen. */
+function useShopOrders(filter: Filter): PagedList<OrderDTO> {
+    const list = usePagedList(filter, (page) => api.owner.orders(filter, page))
+    const { reload } = list
     useEffect(() => {
-        setOrders(null)
-        void reload()
         if (filter !== "active") {
             return undefined
         }
@@ -179,26 +162,26 @@ function useShopOrders(filter: Filter): {
         }, POLL_MS)
         return (): void => window.clearInterval(timer)
     }, [filter, reload])
-
-    const replace = (order: OrderDTO): void =>
-        setOrders((list) => list?.map((o) => (o.id === order.id ? order : o)) ?? null)
-
-    return { orders, error, reload, replace }
+    return list
 }
 
 export function OrdersTab(): React.JSX.Element {
     const t = useT()
     const [filter, setFilter] = useState<Filter>("active")
-    const { orders, error, reload, replace } = useShopOrders(filter)
+    const list = useShopOrders(filter)
+    const orders = list.items
+    const replace = (order: OrderDTO): void =>
+        list.update((items) => items.map((o) => (o.id === order.id ? order : o)))
+    const refresh = (): void => void list.reload()
 
     let body: React.JSX.Element
-    if (error) {
+    if (list.error && orders === null) {
         body = (
             <EmptyState
                 art={<WifiOffIcon size={44} />}
-                title={errorText(t, error)}
+                title={errorText(t, list.error)}
                 action={
-                    <Button variant="secondary" onClick={(): void => void reload()}>
+                    <Button variant="secondary" onClick={refresh}>
                         {t.common.retry}
                     </Button>
                 }
@@ -222,11 +205,19 @@ export function OrdersTab(): React.JSX.Element {
         )
     } else {
         body = (
-            <ul className="flex flex-col gap-3">
-                {orders.map((order) => (
-                    <OrderCard key={order.id} order={order} onChange={replace} />
-                ))}
-            </ul>
+            <div>
+                <ul className="flex flex-col gap-3">
+                    {orders.map((order) => (
+                        <OrderCard
+                            key={order.id}
+                            order={order}
+                            onChange={replace}
+                            onStale={refresh}
+                        />
+                    ))}
+                </ul>
+                <LoadMore list={list} />
+            </div>
         )
     }
 

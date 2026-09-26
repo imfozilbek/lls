@@ -14,6 +14,7 @@ export const uz = {
         poweredBy: "LLS asosida",
         language: "Til",
         free: "bepul",
+        more: "Yana ko'rsatish",
     },
     errors: {
         NETWORK: "Internet bilan aloqa yo'q. Tarmoqni tekshirib, qayta urinib ko'ring.",
@@ -28,6 +29,7 @@ export const uz = {
         ORDER_CANNOT_BE_CANCELLED: "Do'kon buyurtmani allaqachon qabul qildi.",
         INVALID_BOT_TOKEN: "Token noto'g'ri. BotFather'dan to'liq nusxa oling.",
         CONFLICT: "Bu bot allaqachon ulangan.",
+        INVALID_ORDER_TRANSITION: "Buyurtma holati allaqachon o'zgargan. Ro'yxat yangilandi.",
         IMAGE_TOO_LARGE: "Rasm juda katta.",
         UNSUPPORTED_IMAGE: "Bu rasm formati qo'llab-quvvatlanmaydi.",
         VALIDATION_ERROR: "Maydonlarni tekshiring.",
@@ -88,6 +90,7 @@ export const uz = {
         checkout: "Rasmiylashtirish",
         minOrderLeft: "Minimal buyurtmagacha yana {sum}",
         freeDeliveryLeft: "Bepul yetkazishgacha yana {sum}",
+        removed: "Savatdagi {n} ta mahsulot tugab qoldi, ularni olib tashladik.",
         unavailable: "Tugagan",
         clear: "Tozalash",
     },

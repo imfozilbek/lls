@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, useLanguage, useT } from "../i18n/index.js"
-import { ApiError, api } from "../lib/api.js"
+import { ApiError, api, loadCatalog } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
@@ -57,12 +57,13 @@ function PhoneRow(): React.JSX.Element {
     const setMe = useSession((state) => state.setMe)
     const [waiting, setWaiting] = useState(false)
     const cancelled = useRef(false)
-    useEffect(
-        () => (): void => {
+    useEffect(() => {
+        // Reset on every mount: StrictMode mounts twice in development.
+        cancelled.current = false
+        return (): void => {
             cancelled.current = true
-        },
-        [],
-    )
+        }
+    }, [])
 
     const share = async (): Promise<void> => {
         haptic.tap()
@@ -205,8 +206,11 @@ function usePlaceOrder(delivery: Delivery): { placing: boolean; place(): Promise
             const code = error instanceof ApiError ? error.code : "generic"
             toast(errorText(t, code), "error")
             if (code === "PRODUCT_NOT_AVAILABLE") {
-                api.products()
-                    .then((page) => setCatalog(page.data))
+                loadCatalog()
+                    .then((products) => {
+                        setCatalog(products)
+                        useCart.getState().prune(products.map((p) => p.id))
+                    })
                     .catch(() => undefined)
             }
         } finally {

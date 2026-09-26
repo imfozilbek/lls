@@ -91,3 +91,18 @@ describe("deliveryFee", () => {
         expect(deliveryFee(1, { fee: 7_000 })).toBe(7_000)
     })
 })
+
+describe("prune", () => {
+    beforeEach(() => {
+        vi.stubGlobal("localStorage", memoryStorage())
+        useCart.getState().load("osh")
+    })
+
+    it("drops products that are no longer on sale and reports how many", () => {
+        useCart.getState().setQuantity("a", 2)
+        useCart.getState().setQuantity("gone", 1)
+        expect(useCart.getState().prune(["a", "b"])).toBe(1)
+        expect(useCart.getState().lines).toEqual({ a: 2 })
+        expect(useCart.getState().prune(["a"])).toBe(0)
+    })
+})

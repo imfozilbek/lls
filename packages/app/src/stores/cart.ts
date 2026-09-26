@@ -16,6 +16,8 @@ interface CartState {
     remove(productId: string): void
     setQuantity(productId: string, quantity: number): void
     clear(): void
+    /** Drops lines whose product is no longer on sale. Returns how many were dropped. */
+    prune(availableIds: readonly string[]): number
 }
 
 function read(shop: string): CartLines {
@@ -82,6 +84,19 @@ export const useCart = create<CartState>((set, get) => {
             update(lines)
         },
         clear: (): void => update({}),
+        prune: (availableIds): number => {
+            const available = new Set(availableIds)
+            const lines = { ...get().lines }
+            const gone = Object.keys(lines).filter((id) => !available.has(id))
+            if (gone.length === 0) {
+                return 0
+            }
+            for (const id of gone) {
+                delete lines[id]
+            }
+            update(lines)
+            return gone.length
+        },
     }
 })
 

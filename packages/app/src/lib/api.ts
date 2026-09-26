@@ -183,3 +183,26 @@ export const api = {
             request("POST", "/api/platform/shops", body),
     },
 }
+
+/** Safety cap: 20 pages × 100 = 2000 products, far above a small shop's menu. */
+const MAX_PAGES = 20
+
+/** Loads every page of a list. Menus are small, so the whole catalog comes at once. */
+export async function fetchAll<T>(load: (page: number) => Promise<Page<T>>): Promise<T[]> {
+    const items: T[] = []
+    for (let page = 1; page <= MAX_PAGES; page++) {
+        const result = await load(page)
+        items.push(...result.data)
+        if (result.data.length === 0 || items.length >= result.meta.total) {
+            break
+        }
+    }
+    return items
+}
+
+/** The storefront: every available product of the current shop. */
+export const loadCatalog = (): Promise<ProductDTO[]> => fetchAll((page) => api.products(page))
+
+/** The owner's menu, hidden products included. */
+export const loadOwnerProducts = (): Promise<ProductDTO[]> =>
+    fetchAll((page) => api.owner.products(page))

@@ -1,6 +1,6 @@
 import { create } from "zustand"
 
-import { api } from "../lib/api.js"
+import { loadCatalog, loadOwnerProducts } from "../lib/api.js"
 import { useSession } from "../stores/session.js"
 
 import type { ProductDTO } from "@lls/core"
@@ -19,8 +19,8 @@ interface OwnerState {
 
 /** The storefront must show the owner's edits right away. */
 function refreshStorefront(): void {
-    api.products()
-        .then((page) => useSession.getState().setCatalog(page.data))
+    loadCatalog()
+        .then((products) => useSession.getState().setCatalog(products))
         .catch(() => undefined)
 }
 
@@ -29,7 +29,7 @@ export const useOwner = create<OwnerState>((set, get) => ({
     products: null,
     setTab: (tab): void => set({ tab }),
     loadProducts: async (): Promise<void> => {
-        set({ products: (await api.owner.products()).data })
+        set({ products: await loadOwnerProducts() })
     },
     upsert: (product): void => {
         const list = get().products ?? []

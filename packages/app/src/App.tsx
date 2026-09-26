@@ -1,8 +1,8 @@
 import { languageFromTelegram } from "@lls/core"
 import { Suspense, lazy, useCallback, useEffect, useState } from "react"
 
-import { errorText, useLanguageStore, useT } from "./i18n/index.js"
-import { ApiError, api, setShop } from "./lib/api.js"
+import { dictionaryFor, errorText, fill, useLanguageStore, useT } from "./i18n/index.js"
+import { ApiError, api, loadCatalog, setShop } from "./lib/api.js"
 import { applyBrand } from "./lib/brand.js"
 import { useBackButton } from "./lib/main-button.js"
 import { webApp } from "./lib/telegram.js"
@@ -14,6 +14,7 @@ import { OrdersScreen } from "./shop/OrdersScreen.js"
 import { useCart } from "./stores/cart.js"
 import { useCurrentRoute, useRouter } from "./stores/router.js"
 import { useSession } from "./stores/session.js"
+import { toast } from "./stores/toast.js"
 import { BotIcon, WifiOffIcon } from "./ui/icons.js"
 import { Button, EmptyState, Skeleton } from "./ui/primitives.js"
 import { BottomBar, ToastHost } from "./ui/shell.js"
@@ -81,14 +82,18 @@ function useShopBootstrap(slug: string): { state: LoadState; retry(): void } {
             const [shop, me, products] = await Promise.all([
                 api.shop() as Promise<Shop>,
                 api.me(),
-                api.products(),
+                loadCatalog(),
             ])
             applyBrand(shop.brandColor)
             setLanguage(me.language)
             const session = useSession.getState()
             session.setShop(shop)
             session.setMe(me)
-            session.setCatalog(products.data)
+            session.setCatalog(products)
+            const removed = useCart.getState().prune(products.map((p) => p.id))
+            if (removed > 0) {
+                toast(fill(dictionaryFor(me.language).cart.removed, { n: removed }))
+            }
             document.title = shop.name
             setState({ kind: "ready" })
         } catch (caught) {

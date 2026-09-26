@@ -179,7 +179,8 @@ function PhotoPicker({
     )
 }
 
-async function saveProduct(product: ProductDTO | undefined, draft: Draft): Promise<ProductDTO> {
+/** Creates or updates the product's fields. */
+async function saveFields(product: ProductDTO | undefined, draft: Draft): Promise<ProductDTO> {
     const input: ProductInput = {
         name: draft.name.trim(),
         description: draft.description.trim() || undefined,
@@ -187,19 +188,23 @@ async function saveProduct(product: ProductDTO | undefined, draft: Draft): Promi
         unit: draft.unit,
         category: draft.category,
     }
-    let saved = product
-        ? await api.owner.updateProduct(product.id, {
+    return product
+        ? api.owner.updateProduct(product.id, {
               ...input,
               description: input.description ?? null,
               isAvailable: draft.isAvailable,
           })
-        : await api.owner.createProduct(input)
-    if (draft.photo instanceof Blob) {
-        saved = await api.owner.uploadProductImage(saved.id, draft.photo)
-    } else if (draft.photo === "remove" && saved.imageKey) {
-        saved = await api.owner.removeProductImage(saved.id)
+        : api.owner.createProduct(input)
+}
+
+async function savePhoto(product: ProductDTO, photo: Draft["photo"]): Promise<ProductDTO> {
+    if (photo instanceof Blob) {
+        return api.owner.uploadProductImage(product.id, photo)
     }
-    return saved
+    if (photo === "remove" && product.imageKey) {
+        return api.owner.removeProductImage(product.id)
+    }
+    return product
 }
 
 function useEditor(id: string | null): {
@@ -314,12 +319,14 @@ function KindFields({
     )
 }
 
-function EditorForm({ product }: { product: ProductDTO | undefined }): React.JSX.Element {
+function EditorForm({ product: initial }: { product: ProductDTO | undefined }): React.JSX.Element {
     const t = useT()
     const back = useRouter((state) => state.back)
     const shopType = useSession((state) => state.shop?.type)
     const upsert = useOwner((state) => state.upsert)
-    const [draft, setDraft] = useState<Draft>(() => draftOf(product, shopType))
+    const [draft, setDraft] = useState<Draft>(() => draftOf(initial, shopType))
+    // Once created, the product exists: a retry after a failed photo upload must not create it again.
+    const [product, setProduct] = useState(initial)
     const [saving, setSaving] = useState(false)
     const patch = (change: Partial<Draft>): void => setDraft((d) => ({ ...d, ...change }))
     const valid = draft.name.trim().length > 0 && (draft.price ?? 0) > 0
@@ -330,9 +337,15 @@ function EditorForm({ product }: { product: ProductDTO | undefined }): React.JSX
     }
 
     const save = async (): Promise<void> => {
+        if (saving) {
+            return
+        }
         setSaving(true)
         try {
-            upsert(await saveProduct(product, draft))
+            const fields = await saveFields(product, draft)
+            setProduct(fields)
+            upsert(fields)
+            upsert(await savePhoto(fields, draft.photo))
             haptic.success()
             toast(t.owner.settings.saved, "success")
             back()
