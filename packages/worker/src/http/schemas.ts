@@ -1,0 +1,129 @@
+import { BUSINESS_TYPES, CATEGORIES, LANGUAGES, ORDER_STATUSES, UNITS, WEEKDAYS } from "@lls/core"
+import { z } from "zod"
+
+import type { Context } from "hono"
+
+const money = z.number().int().min(0).max(1_000_000_000)
+const optionalMoney = money.nullable().optional()
+const text = (max: number): z.ZodString => z.string().trim().min(1).max(max)
+
+export const locationSchema = z.object({
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+})
+
+export const pageQuery = z.object({
+    page: z.coerce.number().int().positive().optional(),
+    limit: z.coerce.number().int().positive().max(100).optional(),
+})
+
+export const productsQuery = pageQuery.extend({ category: z.enum(CATEGORIES).optional() })
+
+export const ownerOrdersQuery = pageQuery.extend({
+    filter: z.enum(["active", "done", "all"]).optional(),
+})
+
+export const idParam = z.object({ id: z.string().min(1).max(64) })
+
+export const meBody = z.object({ language: z.enum(LANGUAGES) })
+
+export const placeOrderBody = z.object({
+    items: z
+        .array(
+            z.object({
+                productId: z.string().min(1).max(64),
+                quantity: z.number().int().min(1).max(99),
+            }),
+        )
+        .min(1)
+        .max(50),
+    address: text(200),
+    landmark: z.string().trim().max(200).optional(),
+    location: locationSchema.optional(),
+    comment: z.string().trim().max(300).optional(),
+})
+
+export const customerCancelBody = z.object({
+    status: z.literal("cancelled"),
+    reason: z.string().trim().max(200).optional(),
+})
+
+export const ownerOrderBody = z.object({
+    status: z.enum(ORDER_STATUSES),
+    reason: z.string().trim().max(200).optional(),
+})
+
+export const productBody = z.object({
+    name: text(80),
+    description: z.string().trim().max(500).optional(),
+    price: z.number().int().min(1).max(100_000_000),
+    unit: z.enum(UNITS),
+    category: z.enum(CATEGORIES),
+    position: z.number().int().min(0).max(100_000).optional(),
+})
+
+export const productPatchBody = productBody.partial().extend({
+    description: z.string().trim().max(500).nullable().optional(),
+    isAvailable: z.boolean().optional(),
+})
+
+const timeRange = z.object({
+    open: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+    close: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+})
+
+export const shopPatchBody = z.object({
+    name: text(60).optional(),
+    brandColor: z
+        .string()
+        .regex(/^#[0-9a-fA-F]{6}$/)
+        .optional(),
+    address: z.string().trim().max(200).nullable().optional(),
+    location: locationSchema.nullable().optional(),
+    delivery: z
+        .object({
+            fee: money,
+            freeFrom: optionalMoney,
+            minOrder: optionalMoney,
+            radiusMeters: z.number().int().min(1).max(100_000).nullable().optional(),
+        })
+        .optional(),
+    workingHours: z.partialRecord(z.enum(WEEKDAYS), timeRange).nullable().optional(),
+    acceptingOrders: z.boolean().optional(),
+})
+
+export const registerShopBody = z.object({
+    botToken: z.string().regex(/^\d{5,15}:[A-Za-z0-9_-]{30,64}$/),
+    name: text(60),
+    type: z.enum(BUSINESS_TYPES),
+    address: z.string().trim().max(200).optional(),
+    location: locationSchema.optional(),
+    deliveryFee: money,
+    freeDeliveryFrom: money.optional(),
+    minOrder: money.optional(),
+})
+
+interface ValidationResult {
+    success: boolean
+    error?: { issues: readonly { path: readonly PropertyKey[]; message: string }[] }
+}
+
+/** zValidator hook: our standard 400 error body. */
+export function onInvalid(result: ValidationResult, c: Context): Response | undefined {
+    if (result.success) {
+        return undefined
+    }
+    return c.json(
+        {
+            error: {
+                code: "VALIDATION_ERROR",
+                message: "Invalid request",
+                details: (result.error?.issues ?? []).map((issue) => ({
+                    field: issue.path.map(String).join("."),
+                    message: issue.message,
+                })),
+            },
+        },
+        400,
+    )
+}

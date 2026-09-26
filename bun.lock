@@ -53,6 +53,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@hono/zod-validator": "^0.9.1",
+        "@lls/core": "*",
         "hono": "^4.13.9",
         "zod": "^4.6.5",
       },

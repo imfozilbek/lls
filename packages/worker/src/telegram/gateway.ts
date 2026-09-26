@@ -1,0 +1,142 @@
+const API_BASE = "https://api.telegram.org"
+
+export interface InlineButton {
+    text: string
+    callback_data?: string
+    url?: string
+    web_app?: { url: string }
+}
+
+export interface InlineKeyboard {
+    inline_keyboard: InlineButton[][]
+}
+
+export interface MessageOptions {
+    keyboard?: InlineKeyboard
+}
+
+export interface BotInfo {
+    id: number
+    username: string
+    firstName: string
+}
+
+/** Everything the Worker needs from the Bot API. Faked in tests. */
+export interface TelegramGateway {
+    getMe(token: string): Promise<BotInfo>
+    sendMessage(
+        token: string,
+        chatId: number,
+        html: string,
+        options?: MessageOptions,
+    ): Promise<{ messageId: number }>
+    editMessage(
+        token: string,
+        chatId: number,
+        messageId: number,
+        html: string,
+        options?: MessageOptions,
+    ): Promise<void>
+    answerCallback(token: string, callbackQueryId: string, text?: string): Promise<void>
+    setWebhook(token: string, url: string, secretToken: string): Promise<void>
+    setMenuButton(token: string, text: string, webAppUrl: string): Promise<void>
+}
+
+export class TelegramApiError extends Error {
+    constructor(
+        public readonly method: string,
+        public readonly description: string,
+    ) {
+        super(`Telegram ${method} failed: ${description}`)
+        this.name = "TelegramApiError"
+    }
+}
+
+interface ApiResponse<T> {
+    ok: boolean
+    result?: T
+    description?: string
+}
+
+/** Escapes text for Telegram HTML parse mode. */
+export function escapeHtml(text: string): string {
+    return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+}
+
+export class HttpTelegramGateway implements TelegramGateway {
+    constructor(private readonly fetcher: typeof fetch = fetch) {}
+
+    async getMe(token: string): Promise<BotInfo> {
+        const me = await this.call<{ id: number; username?: string; first_name: string }>(
+            token,
+            "getMe",
+            {},
+        )
+        return { id: me.id, username: me.username ?? "", firstName: me.first_name }
+    }
+
+    async sendMessage(
+        token: string,
+        chatId: number,
+        html: string,
+        options: MessageOptions = {},
+    ): Promise<{ messageId: number }> {
+        const message = await this.call<{ message_id: number }>(token, "sendMessage", {
+            chat_id: chatId,
+            text: html,
+            parse_mode: "HTML",
+            link_preview_options: { is_disabled: true },
+            reply_markup: options.keyboard,
+        })
+        return { messageId: message.message_id }
+    }
+
+    async editMessage(
+        token: string,
+        chatId: number,
+        messageId: number,
+        html: string,
+        options: MessageOptions = {},
+    ): Promise<void> {
+        await this.call(token, "editMessageText", {
+            chat_id: chatId,
+            message_id: messageId,
+            text: html,
+            parse_mode: "HTML",
+            link_preview_options: { is_disabled: true },
+            reply_markup: options.keyboard ?? { inline_keyboard: [] },
+        })
+    }
+
+    async answerCallback(token: string, callbackQueryId: string, text?: string): Promise<void> {
+        await this.call(token, "answerCallbackQuery", { callback_query_id: callbackQueryId, text })
+    }
+
+    async setWebhook(token: string, url: string, secretToken: string): Promise<void> {
+        await this.call(token, "setWebhook", {
+            url,
+            secret_token: secretToken,
+            allowed_updates: ["message", "callback_query"],
+            drop_pending_updates: true,
+        })
+    }
+
+    async setMenuButton(token: string, text: string, webAppUrl: string): Promise<void> {
+        await this.call(token, "setChatMenuButton", {
+            menu_button: { type: "web_app", text, web_app: { url: webAppUrl } },
+        })
+    }
+
+    private async call<T>(token: string, method: string, body: object): Promise<T> {
+        const response = await this.fetcher(`${API_BASE}/bot${token}/${method}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        })
+        const data = (await response.json()) as ApiResponse<T>
+        if (!data.ok || data.result === undefined) {
+            throw new TelegramApiError(method, data.description ?? `HTTP ${response.status}`)
+        }
+        return data.result
+    }
+}
