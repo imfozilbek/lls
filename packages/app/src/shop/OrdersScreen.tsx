@@ -10,15 +10,21 @@ import { StatusBadge } from "../ui/order-status.js"
 import { Button, EmptyState, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import { useReorder } from "./reorder.js"
+
 import type { OrderDTO } from "@lls/core"
 
 function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     const push = useRouter((state) => state.push)
+    const reorder = useReorder(order)
     const preview = order.items.map((item) => item.name).join(", ")
     return (
-        <li className="animate-rise" style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}>
+        <li
+            className="flex animate-rise flex-col gap-1.5"
+            style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
+        >
             <button
                 type="button"
                 onClick={(): void => {
@@ -46,6 +52,15 @@ function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.J
                 </div>
                 <ChevronIcon size={18} className="shrink-0 text-tg-hint" />
             </button>
+            {reorder ? (
+                <button
+                    type="button"
+                    onClick={reorder}
+                    className="tap h-11 self-end rounded-full px-4 text-sm font-semibold text-brand"
+                >
+                    {t.order.reorder}
+                </button>
+            ) : null}
         </li>
     )
 }

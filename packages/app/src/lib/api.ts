@@ -1,12 +1,13 @@
 import { webApp } from "./telegram.js"
 
+import type { Shop } from "../stores/session.js"
 import type {
+    CourierDTO,
     CustomerDTO,
     OrderDTO,
     Page,
     ProductDTO,
     ShopOwnerDTO,
-    ShopPublicDTO,
     ShopStatsDTO,
 } from "@lls/core"
 
@@ -97,6 +98,7 @@ export interface PlaceOrderBody {
     landmark?: string
     location?: { latitude: number; longitude: number }
     comment?: string
+    bottlesReturned?: number
 }
 
 export type ShopPatch = Partial<{
@@ -112,6 +114,8 @@ export type ShopPatch = Partial<{
     }
     workingHours: Record<string, { open: string; close: string }> | null
     acceptingOrders: boolean
+    features: string[]
+    bottleDeposit: number
 }>
 
 export interface ProductInput {
@@ -120,6 +124,8 @@ export interface ProductInput {
     price: number
     unit: string
     category: string
+    step?: number
+    returnable?: boolean
     position?: number
 }
 
@@ -133,8 +139,13 @@ export interface RegisterShopBody {
     minOrder?: number
 }
 
+export interface CourierInvite {
+    link: string
+    expiresAt: string
+}
+
 export const api = {
-    shop: (): Promise<ShopPublicDTO> => request("GET", "/api/shop"),
+    shop: (): Promise<Shop> => request("GET", "/api/shop"),
     products: (page = 1): Promise<Page<ProductDTO>> =>
         request("GET", `/api/shop/products${query({ page, limit: 100 })}`),
     me: (): Promise<CustomerDTO> => request("GET", "/api/me"),
@@ -166,6 +177,7 @@ export const api = {
             id: string,
             patch: Omit<Partial<ProductInput>, "description"> & {
                 isAvailable?: boolean
+                stopForToday?: true
                 description?: string | null
             },
         ): Promise<ProductDTO> => request("PATCH", `/api/owner/products/${id}`, patch),
@@ -175,6 +187,18 @@ export const api = {
             request("PUT", `/api/owner/products/${id}/image`, image),
         removeProductImage: (id: string): Promise<ProductDTO> =>
             request("DELETE", `/api/owner/products/${id}/image`),
+        couriers: (): Promise<CourierDTO[]> => request("GET", "/api/owner/couriers"),
+        inviteCourier: (): Promise<CourierInvite> => request("POST", "/api/owner/couriers/invites"),
+        removeCourier: (id: string): Promise<void> =>
+            request("DELETE", `/api/owner/couriers/${id}`),
+        assignCourier: (orderId: string, courierId: string): Promise<OrderDTO> =>
+            request("PUT", `/api/owner/orders/${orderId}/courier`, { courierId }),
+    },
+
+    courier: {
+        orders: (): Promise<{ data: OrderDTO[] }> => request("GET", "/api/courier/orders"),
+        setStatus: (id: string, status: "picked_up" | "delivered"): Promise<OrderDTO> =>
+            request("PATCH", `/api/courier/orders/${id}`, { status }),
     },
 
     platform: {

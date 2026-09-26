@@ -1,3 +1,4 @@
+import { BUSINESS_TYPES, BusinessType } from "@lls/core"
 import { useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
@@ -14,9 +15,7 @@ import type { Dictionary } from "../i18n/index.js"
 
 /** Same shape the Worker accepts; checked here so the owner sees the mistake at once. */
 const TOKEN_PATTERN = /^\d{5,15}:[A-Za-z0-9_-]{30,64}$/
-const SHOP_TYPES = ["food", "water", "grocery"] as const
-
-type ShopType = (typeof SHOP_TYPES)[number]
+type ShopType = BusinessType
 type Step = 1 | 2 | 3
 
 interface Draft {
@@ -32,7 +31,7 @@ interface Draft {
 const EMPTY: Draft = {
     botToken: "",
     name: "",
-    type: "food",
+    type: BusinessType.FOOD,
     address: "",
     fee: null,
     freeFrom: null,
@@ -131,7 +130,7 @@ function ShopStep({
             </Field>
             <Field label={t.type}>
                 <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t.type}>
-                    {SHOP_TYPES.map((type) => (
+                    {BUSINESS_TYPES.map((type) => (
                         <button
                             key={type}
                             type="button"

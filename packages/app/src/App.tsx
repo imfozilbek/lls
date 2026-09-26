@@ -20,12 +20,14 @@ import { Button, EmptyState, Skeleton } from "./ui/primitives.js"
 import { BottomBar, ToastHost } from "./ui/shell.js"
 
 import type { LaunchParams } from "./lib/telegram.js"
-import type { Shop } from "./stores/session.js"
 
 // Customers never download these chunks.
 const OwnerApp = lazy(() => import("./owner/OwnerApp.js").then((m) => ({ default: m.OwnerApp })))
 const ProductEditor = lazy(() =>
     import("./owner/ProductEditor.js").then((m) => ({ default: m.ProductEditor })),
+)
+const CourierApp = lazy(() =>
+    import("./courier/CourierApp.js").then((m) => ({ default: m.CourierApp })),
 )
 const OnboardingApp = lazy(() =>
     import("./onboarding/OnboardingApp.js").then((m) => ({ default: m.OnboardingApp })),
@@ -71,8 +73,11 @@ function NotInTelegram(): React.JSX.Element {
     )
 }
 
-/** Loads the shop, the customer and the catalog in parallel, then paints the shop's brand. */
-function useShopBootstrap(slug: string): { state: LoadState; retry(): void } {
+/**
+ * Loads the shop, the user and the catalog in parallel, then paints the shop's brand.
+ * A courier's screen needs no catalog, so it is skipped there.
+ */
+function useShopBootstrap(slug: string, withCatalog: boolean): { state: LoadState; retry(): void } {
     const [state, setState] = useState<LoadState>({ kind: "loading" })
     const setLanguage = useLanguageStore((s) => s.setLanguage)
 
@@ -80,9 +85,9 @@ function useShopBootstrap(slug: string): { state: LoadState; retry(): void } {
         setState({ kind: "loading" })
         try {
             const [shop, me, products] = await Promise.all([
-                api.shop() as Promise<Shop>,
+                api.shop(),
                 api.me(),
-                loadCatalog(),
+                withCatalog ? loadCatalog() : Promise.resolve([]),
             ])
             applyBrand(shop.brandColor)
             setLanguage(me.language)
@@ -99,7 +104,7 @@ function useShopBootstrap(slug: string): { state: LoadState; retry(): void } {
         } catch (caught) {
             setState({ kind: "error", code: caught instanceof ApiError ? caught.code : "generic" })
         }
-    }, [setLanguage])
+    }, [setLanguage, withCatalog])
 
     useEffect(() => {
         setShop(slug)
@@ -127,6 +132,12 @@ function Screen(): React.JSX.Element {
                     <OwnerApp />
                 </Suspense>
             )
+        case "courier":
+            return (
+                <Suspense fallback={<MenuSkeleton />}>
+                    <CourierApp />
+                </Suspense>
+            )
         case "product":
             return (
                 <Suspense fallback={<MenuSkeleton />}>
@@ -138,9 +149,9 @@ function Screen(): React.JSX.Element {
     }
 }
 
-function ShopApp({ slug }: { slug: string }): React.JSX.Element {
+function ShopApp({ slug, courier }: { slug: string; courier: boolean }): React.JSX.Element {
     const t = useT()
-    const { state, retry } = useShopBootstrap(slug)
+    const { state, retry } = useShopBootstrap(slug, !courier)
     const depth = useRouter((s) => s.stack.length)
     const back = useRouter((s) => s.back)
     const route = useCurrentRoute()
@@ -183,7 +194,7 @@ export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
             </Suspense>
         )
     } else if (launch.shop) {
-        content = <ShopApp slug={launch.shop} />
+        content = <ShopApp slug={launch.shop} courier={launch.courier} />
     } else {
         content = <NotInTelegram />
     }

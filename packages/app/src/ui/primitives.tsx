@@ -75,20 +75,22 @@ export function Spinner({ className }: { className?: string }): React.JSX.Elemen
 /** "−  2  +" that grows out of the "+" button. The number bumps on every change. */
 export function Stepper({
     quantity,
+    display,
     onAdd,
     onRemove,
-    size = "md",
     label,
 }: {
     quantity: number
+    /** What to show instead of the raw number, e.g. "1,5 kg". */
+    display?: string
     onAdd(): void
     onRemove(): void
-    size?: "sm" | "md"
     label: string
 }): React.JSX.Element {
+    const t = useT()
     const [bumpKey, setBumpKey] = useState(0)
     useEffect(() => setBumpKey((k) => k + 1), [quantity])
-    const box = size === "sm" ? "h-9 w-9" : "h-10 w-10"
+    const box = "h-11 w-11"
     return (
         <div
             className="inline-flex animate-pop items-center rounded-full bg-brand text-brand-ink"
@@ -102,16 +104,16 @@ export function Stepper({
                     haptic.tap()
                     onRemove()
                 }}
-                aria-label="−"
+                aria-label={t.common.decrease}
             >
                 <MinusIcon size={18} strokeWidth={2.25} />
             </button>
             <span
                 key={bumpKey}
-                className="min-w-6 animate-bump text-center font-semibold tabular-nums"
+                className="min-w-6 animate-bump whitespace-nowrap text-center font-semibold tabular-nums"
                 aria-live="polite"
             >
-                {quantity}
+                {display ?? quantity}
             </span>
             <button
                 type="button"
@@ -120,7 +122,7 @@ export function Stepper({
                     haptic.tap()
                     onAdd()
                 }}
-                aria-label="+"
+                aria-label={t.common.increase}
             >
                 <PlusIcon size={18} strokeWidth={2.25} />
             </button>

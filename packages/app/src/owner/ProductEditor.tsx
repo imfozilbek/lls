@@ -1,9 +1,19 @@
-import { CATEGORIES, UNITS } from "@lls/core"
+import {
+    CATEGORIES,
+    DEFAULT_KG_STEP,
+    Feature,
+    GRAMS_PER_KG,
+    SUGGESTED_CATEGORIES,
+    SUGGESTED_UNITS,
+    UNITS,
+    Unit,
+} from "@lls/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
+import { formatQuantity } from "../lib/format.js"
 import { compressImage } from "../lib/image.js"
 import { useMainAction } from "../lib/main-button.js"
 import { confirm, haptic } from "../lib/telegram.js"
@@ -27,14 +37,10 @@ import { BottomSpacer } from "../ui/shell.js"
 import { useOwner } from "./store.js"
 
 import type { ProductInput } from "../lib/api.js"
-import type { BusinessType, Category, ProductDTO, Unit } from "@lls/core"
+import type { BusinessType, Category, ProductDTO } from "@lls/core"
 
-/** Sensible first choice per business type, so a new product usually needs no extra taps. */
-const DEFAULTS: Record<string, { unit: Unit; category: Category }> = {
-    food: { unit: "portion" as Unit, category: "meals" },
-    water: { unit: "bottle_19l" as Unit, category: "water" },
-    grocery: { unit: "pcs" as Unit, category: "groceries" },
-}
+/** Selling steps offered for weight items, in grams. */
+const KG_STEPS = [100, 250, 500, GRAMS_PER_KG] as const
 
 interface Draft {
     name: string
@@ -42,20 +48,43 @@ interface Draft {
     price: number | null
     unit: Unit
     category: Category
+    /** Selling step in grams; used only for kg. */
+    step: number
+    returnable: boolean
     isAvailable: boolean
     /** New photo picked on this screen, or "remove" to drop the current one. */
     photo: Blob | "remove" | null
 }
 
-function draftOf(product: ProductDTO | undefined, type: BusinessType | undefined): Draft {
-    const fallback = DEFAULTS[type ?? "food"] ?? { unit: "pcs" as Unit, category: "other" }
+/** A new product starts with the first unit and category that fit the shop, so it rarely needs a tap. */
+function newDraft(type: BusinessType | undefined): Draft {
+    const unit = (type && SUGGESTED_UNITS[type][0]) || Unit.PIECE
     return {
-        name: product?.name ?? "",
-        description: product?.description ?? "",
-        price: product?.price ?? null,
-        unit: product?.unit ?? fallback.unit,
-        category: product?.category ?? fallback.category,
-        isAvailable: product?.isAvailable ?? true,
+        name: "",
+        description: "",
+        price: null,
+        unit,
+        category: (type && SUGGESTED_CATEGORIES[type][0]) || "other",
+        step: DEFAULT_KG_STEP,
+        returnable: unit === Unit.BOTTLE_19L,
+        isAvailable: true,
+        photo: null,
+    }
+}
+
+function draftOf(product: ProductDTO | undefined, type: BusinessType | undefined): Draft {
+    if (!product) {
+        return newDraft(type)
+    }
+    return {
+        name: product.name,
+        description: product.description ?? "",
+        price: product.price,
+        unit: product.unit,
+        category: product.category,
+        step: product.unit === Unit.KG ? product.step : DEFAULT_KG_STEP,
+        returnable: product.returnable,
+        isAvailable: product.isAvailable,
         photo: null,
     }
 }
@@ -83,7 +112,7 @@ function Chips<T extends string>({
                         onChange(option)
                     }}
                     className={cn(
-                        "tap h-9 rounded-full px-3.5 text-sm font-medium transition-colors duration-200",
+                        "tap h-11 rounded-full px-3.5 text-sm font-medium transition-colors duration-200",
                         option === value ? "bg-brand text-brand-ink" : "bg-tg-secondary",
                     )}
                 >
@@ -187,14 +216,18 @@ async function saveFields(product: ProductDTO | undefined, draft: Draft): Promis
         price: draft.price ?? 0,
         unit: draft.unit,
         category: draft.category,
+        returnable: draft.returnable,
+        ...(draft.unit === Unit.KG ? { step: draft.step } : {}),
     }
-    return product
-        ? api.owner.updateProduct(product.id, {
-              ...input,
-              description: input.description ?? null,
-              isAvailable: draft.isAvailable,
-          })
-        : api.owner.createProduct(input)
+    if (!product) {
+        return api.owner.createProduct(input)
+    }
+    return api.owner.updateProduct(product.id, {
+        ...input,
+        description: input.description ?? null,
+        // Sent only when changed: showing a product again also clears today's stop-list mark.
+        ...(draft.isAvailable !== product.isAvailable ? { isAvailable: draft.isAvailable } : {}),
+    })
 }
 
 async function savePhoto(product: ProductDTO, photo: Draft["photo"]): Promise<ProductDTO> {
@@ -286,7 +319,46 @@ function ProductExtras({
     )
 }
 
-/** Unit and category: tap a chip, no dropdowns. */
+/** The shop's own units first; a unit set earlier stays visible even if it is not suggested. */
+function unitOptions(type: BusinessType | undefined, current: Unit): readonly Unit[] {
+    const suggested = type ? SUGGESTED_UNITS[type] : UNITS
+    return suggested.includes(current) ? suggested : [...suggested, current]
+}
+
+function CategoryField({
+    value,
+    onChange,
+}: {
+    value: Category
+    onChange(category: Category): void
+}): React.JSX.Element {
+    const t = useT()
+    const type = useSession((state) => state.shop?.type)
+    const suggested = type ? SUGGESTED_CATEGORIES[type] : CATEGORIES
+    const [all, setAll] = useState(!suggested.includes(value))
+    const categories = t.categories as Record<string, string>
+    return (
+        <Section title={t.owner.product.category}>
+            <Chips
+                value={value}
+                options={all ? CATEGORIES : suggested}
+                label={(c): string => categories[c] ?? c}
+                onChange={onChange}
+            />
+            {all ? null : (
+                <button
+                    type="button"
+                    onClick={(): void => setAll(true)}
+                    className="tap self-start px-1 py-2 text-sm font-medium text-tg-link"
+                >
+                    {t.owner.product.moreCategories}
+                </button>
+            )}
+        </Section>
+    )
+}
+
+/** Unit, weight step, returnable bottle and category: tap a chip, no dropdowns. */
 function KindFields({
     draft,
     patch,
@@ -295,26 +367,48 @@ function KindFields({
     patch(change: Partial<Draft>): void
 }): React.JSX.Element {
     const t = useT()
+    const shop = useSession((state) => state.shop)
     const units = t.units as Record<string, string>
-    const categories = t.categories as Record<string, string>
+    const deposit = shop?.features.includes(Feature.BOTTLE_DEPOSIT) ?? false
     return (
         <>
             <Section title={t.owner.product.unit}>
                 <Chips
                     value={draft.unit}
-                    options={UNITS}
+                    options={unitOptions(shop?.type, draft.unit)}
                     label={(u): string => units[u] ?? u}
                     onChange={(unit): void => patch({ unit })}
                 />
             </Section>
-            <Section title={t.owner.product.category}>
-                <Chips
-                    value={draft.category}
-                    options={CATEGORIES}
-                    label={(c): string => categories[c] ?? c}
-                    onChange={(category): void => patch({ category })}
-                />
-            </Section>
+            {draft.unit === Unit.KG ? (
+                <Section title={t.owner.product.step}>
+                    <Chips
+                        value={String(draft.step)}
+                        options={KG_STEPS.map(String)}
+                        label={(g): string => formatQuantity(Number(g), Unit.KG, t.units.kg)}
+                        onChange={(g): void => patch({ step: Number(g) })}
+                    />
+                </Section>
+            ) : null}
+            {deposit || draft.returnable ? (
+                <label className="flex items-center justify-between gap-3 rounded-control bg-tg-secondary px-4 py-3">
+                    <span>
+                        <span className="block font-medium">{t.owner.product.returnable}</span>
+                        <span className="block text-sm text-tg-hint">
+                            {t.owner.product.returnableHint}
+                        </span>
+                    </span>
+                    <Switch
+                        checked={draft.returnable}
+                        onChange={(returnable): void => patch({ returnable })}
+                        label={t.owner.product.returnable}
+                    />
+                </label>
+            ) : null}
+            <CategoryField
+                value={draft.category}
+                onChange={(category): void => patch({ category })}
+            />
         </>
     )
 }
@@ -382,7 +476,7 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
                 />
             </Field>
             <Field
-                label={t.owner.product.price}
+                label={draft.unit === Unit.KG ? t.owner.product.pricePerKg : t.owner.product.price}
                 htmlFor="product-price"
                 hint={t.owner.product.priceHint}
             >

@@ -1,17 +1,20 @@
-import { isFinalStatus } from "@lls/core"
+import { OrderStatus, isFinalStatus } from "@lls/core"
 import { useCallback, useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
-import { formatMoney, formatTime } from "../lib/format.js"
+import { formatTime } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { toast } from "../stores/toast.js"
-import { PinIcon, WifiOffIcon } from "../ui/icons.js"
+import { PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import { OrderItems } from "../ui/order-items.js"
 import { StatusHero, StatusTimeline } from "../ui/order-status.js"
 import { Button, EmptyState, Section, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
+
+import { useReorder } from "./reorder.js"
 
 import type { OrderDTO } from "@lls/core"
 
@@ -66,45 +69,6 @@ function OrderSkeleton(): React.JSX.Element {
     )
 }
 
-function Items({ order }: { order: OrderDTO }): React.JSX.Element {
-    const t = useT()
-    const language = useLanguage()
-    const units = t.units as Record<string, string>
-    return (
-        <div className="rounded-tile bg-tg-secondary p-4">
-            <ul className="flex flex-col gap-2">
-                {order.items.map((item) => (
-                    <li key={item.productId} className="flex gap-3">
-                        <span className="w-8 shrink-0 font-semibold tabular-nums text-tg-hint">
-                            {item.quantity}×
-                        </span>
-                        <span className="min-w-0 flex-1">
-                            {item.name}
-                            <span className="text-tg-hint"> · {units[item.unit] ?? item.unit}</span>
-                        </span>
-                        <span className="shrink-0 tabular-nums">
-                            {formatMoney(item.total, language)}
-                        </span>
-                    </li>
-                ))}
-            </ul>
-            <div className="my-3 h-px bg-tg-separator" />
-            <div className="flex justify-between text-tg-subtitle">
-                <span>{t.cart.delivery}</span>
-                <span className="tabular-nums">
-                    {order.deliveryFee === 0
-                        ? t.common.free
-                        : formatMoney(order.deliveryFee, language)}
-                </span>
-            </div>
-            <div className="mt-1 flex justify-between text-lg font-bold">
-                <span>{t.cart.total}</span>
-                <span className="tabular-nums">{formatMoney(order.total, language)}</span>
-            </div>
-        </div>
-    )
-}
-
 function Address({ order }: { order: OrderDTO }): React.JSX.Element {
     return (
         <div className="flex gap-3 rounded-tile bg-tg-secondary p-4">
@@ -120,6 +84,59 @@ function Address({ order }: { order: OrderDTO }): React.JSX.Element {
     )
 }
 
+/** Under the order: repeat a finished one, or cancel while the shop has not accepted it yet. */
+function OrderActions({
+    order,
+    onChange,
+    onStale,
+}: {
+    order: OrderDTO
+    onChange(order: OrderDTO): void
+    onStale(): Promise<void>
+}): React.JSX.Element | null {
+    const t = useT()
+    const reorder = useReorder(order)
+    const [cancelling, setCancelling] = useState(false)
+
+    const cancel = async (): Promise<void> => {
+        if (!(await confirm(t.order.cancelConfirm))) {
+            return
+        }
+        setCancelling(true)
+        try {
+            onChange(await api.cancelOrder(order.id))
+            haptic.success()
+        } catch (caught) {
+            haptic.error()
+            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+            await onStale()
+        } finally {
+            setCancelling(false)
+        }
+    }
+
+    if (reorder) {
+        return (
+            <Button variant="secondary" className="w-full" onClick={reorder}>
+                {t.order.reorder}
+            </Button>
+        )
+    }
+    if (order.status === OrderStatus.PENDING) {
+        return (
+            <Button
+                variant="danger"
+                className="w-full"
+                loading={cancelling}
+                onClick={(): void => void cancel()}
+            >
+                {t.order.cancel}
+            </Button>
+        )
+    }
+    return null
+}
+
 export function OrderScreen({
     id,
     justPlaced = false,
@@ -131,29 +148,11 @@ export function OrderScreen({
     const language = useLanguage()
     const reset = useRouter((state) => state.reset)
     const { order, error, reload, setOrder } = useOrder(id)
-    const [cancelling, setCancelling] = useState(false)
 
     // After placing, the big button leads back to the menu; the order stays in "My orders".
     useMainAction(
         justPlaced && order ? { text: t.cart.toMenu, onClick: (): void => reset() } : null,
     )
-
-    const cancel = async (): Promise<void> => {
-        if (!(await confirm(t.order.cancelConfirm))) {
-            return
-        }
-        setCancelling(true)
-        try {
-            setOrder(await api.cancelOrder(id))
-            haptic.success()
-        } catch (caught) {
-            haptic.error()
-            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
-            await reload()
-        } finally {
-            setCancelling(false)
-        }
-    }
 
     if (!order) {
         if (!error) {
@@ -198,23 +197,21 @@ export function OrderScreen({
                 </p>
             ) : null}
 
+            {order.courierName && !isFinalStatus(order.status) ? (
+                <p className="flex items-center gap-2 rounded-control bg-brand/10 px-4 py-3 font-medium">
+                    <ScooterIcon size={20} className="text-brand" />
+                    {fill(t.order.courier, { name: order.courierName })}
+                </p>
+            ) : null}
+
             <Section title={t.order.items}>
-                <Items order={order} />
+                <OrderItems order={order} />
             </Section>
             <Section title={t.order.address}>
                 <Address order={order} />
             </Section>
 
-            {order.status === "pending" ? (
-                <Button
-                    variant="danger"
-                    className="w-full"
-                    loading={cancelling}
-                    onClick={(): void => void cancel()}
-                >
-                    {t.order.cancel}
-                </Button>
-            ) : null}
+            <OrderActions order={order} onChange={setOrder} onStale={reload} />
             <BottomSpacer />
         </main>
     )

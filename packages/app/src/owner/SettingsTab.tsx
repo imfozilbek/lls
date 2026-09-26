@@ -1,10 +1,11 @@
-import { WEEKDAYS } from "@lls/core"
+import { FEATURES, Feature, WEEKDAYS } from "@lls/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, useT } from "../i18n/index.js"
 import { ApiError, api, imageUrl } from "../lib/api.js"
-import { BRAND_SWATCHES, applyBrand } from "../lib/brand.js"
+import { BRAND_SWATCHES, applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
+import { hexToRgbChannels } from "../lib/format.js"
 import { compressImage } from "../lib/image.js"
 import { useMainAction } from "../lib/main-button.js"
 import { getLocation, haptic } from "../lib/telegram.js"
@@ -22,6 +23,8 @@ import {
     TextInput,
 } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
+
+import { CouriersSection } from "./CouriersSection.js"
 
 import type { ShopPatch } from "../lib/api.js"
 import type { ShopOwnerDTO, WeeklySchedule } from "@lls/core"
@@ -42,8 +45,15 @@ interface Form {
     fee: number | null
     freeFrom: number | null
     minOrder: number | null
+    /** Delivery radius in whole km; empty = no limit. */
+    radiusKm: number | null
     hours: Hours
+    features: Feature[]
+    bottleDeposit: number | null
 }
+
+const METERS_PER_KM = 1000
+const MAX_RADIUS_KM = 100
 
 const DEFAULT_OPEN = "09:00"
 const DEFAULT_CLOSE = "22:00"
@@ -89,7 +99,12 @@ function formOf(shop: ShopOwnerDTO): Form {
         fee: shop.delivery.fee,
         freeFrom: shop.delivery.freeFrom ?? null,
         minOrder: shop.delivery.minOrder ?? null,
+        radiusKm: shop.deliveryRadiusMeters
+            ? Math.round(shop.deliveryRadiusMeters / METERS_PER_KM)
+            : null,
         hours: hoursOf(shop.workingHours),
+        features: [...shop.features],
+        bottleDeposit: shop.bottleDeposit || null,
     }
 }
 
@@ -99,8 +114,16 @@ function patchOf(form: Form): ShopPatch {
         brandColor: form.brandColor,
         address: form.address.trim() || null,
         location: form.location,
-        delivery: { fee: form.fee ?? 0, freeFrom: form.freeFrom, minOrder: form.minOrder },
+        delivery: {
+            fee: form.fee ?? 0,
+            freeFrom: form.freeFrom,
+            minOrder: form.minOrder,
+            radiusMeters: form.radiusKm ? form.radiusKm * METERS_PER_KM : null,
+        },
         workingHours: scheduleOf(form.hours),
+        // Canonical order, so ticking a box off and on again leaves the form clean.
+        features: FEATURES.filter((f) => form.features.includes(f)),
+        bottleDeposit: form.bottleDeposit ?? 0,
     }
 }
 
@@ -255,9 +278,12 @@ function ColorPicker({
                             haptic.select()
                             onChange(color)
                         }}
-                        style={{ backgroundColor: color }}
+                        style={{
+                            backgroundColor: color,
+                            color: `rgb(${readableInk(hexToRgbChannels(color) ?? "")})`,
+                        }}
                         className={cn(
-                            "tap grid h-11 w-11 place-items-center rounded-full text-white transition-shadow duration-200",
+                            "tap grid h-11 w-11 place-items-center rounded-full transition-shadow duration-200",
                             selected && "ring-4 ring-tg-text/15",
                         )}
                     >
@@ -303,7 +329,7 @@ function HoursEditor({
                                     onChange({ ...hours, days })
                                 }}
                                 className={cn(
-                                    "tap h-10 rounded-full text-sm font-semibold transition-colors duration-200",
+                                    "tap h-11 rounded-full text-sm font-semibold transition-colors duration-200",
                                     hours.days[index]
                                         ? "bg-brand text-brand-ink"
                                         : "bg-tg-bg text-tg-hint",
@@ -397,6 +423,21 @@ function DeliveryFields({
                     onChange={(minOrder): void => patch({ minOrder })}
                 />
             </Field>
+            <Field label={s.radius} htmlFor="radius">
+                <TextInput
+                    id="radius"
+                    inputMode="numeric"
+                    value={form.radiusKm === null ? "" : String(form.radiusKm)}
+                    onChange={(e): void => {
+                        const digits = e.target.value.replace(/\D/g, "")
+                        patch({
+                            radiusKm: digits
+                                ? Math.min(Number(digits), MAX_RADIUS_KM) || null
+                                : null,
+                        })
+                    }}
+                />
+            </Field>
         </Section>
     )
 }
@@ -437,6 +478,46 @@ function LocationFields({
             >
                 {form.location ? s.setLocation : s.location}
             </Button>
+        </Section>
+    )
+}
+
+/** Vertical features the owner switches on or off; the bottle deposit lives with its switch. */
+function FeatureFields({
+    form,
+    patch,
+}: {
+    form: Form
+    patch(change: Partial<Form>): void
+}): React.JSX.Element {
+    const s = useT().owner.settings
+    const toggle = (feature: Feature, on: boolean): void => {
+        const rest = form.features.filter((f) => f !== feature)
+        patch({ features: on ? [...rest, feature] : rest })
+    }
+    return (
+        <Section title={s.features}>
+            <div className="flex flex-col divide-y divide-tg-separator rounded-tile bg-tg-secondary px-4">
+                {FEATURES.map((feature) => (
+                    <label key={feature} className="flex min-h-[52px] items-center gap-3 py-2">
+                        <span className="flex-1 font-medium">{s.featureNames[feature]}</span>
+                        <Switch
+                            checked={form.features.includes(feature)}
+                            onChange={(on): void => toggle(feature, on)}
+                            label={s.featureNames[feature]}
+                        />
+                    </label>
+                ))}
+            </div>
+            {form.features.includes(Feature.BOTTLE_DEPOSIT) ? (
+                <Field label={s.bottleDeposit} htmlFor="bottle-deposit">
+                    <MoneyInput
+                        id="bottle-deposit"
+                        value={form.bottleDeposit}
+                        onChange={(bottleDeposit): void => patch({ bottleDeposit })}
+                    />
+                </Field>
+            ) : null}
         </Section>
     )
 }
@@ -507,6 +588,7 @@ function SettingsForm({
                 <HoursEditor hours={form.hours} onChange={(hours): void => patch({ hours })} />
             </Section>
             <LocationFields form={form} patch={patch} />
+            <FeatureFields form={form} patch={patch} />
         </>
     )
 }
@@ -539,6 +621,7 @@ export function SettingsTab(): React.JSX.Element {
         <div className="flex flex-col gap-6 px-4 pt-2">
             <AcceptingCard shop={shop} onSaved={setShop} />
             <SettingsForm shop={shop} onSaved={setShop} />
+            <CouriersSection shopName={shop.name} />
             <Section title={t.owner.settings.link}>
                 <ShopLink shop={shop} />
             </Section>

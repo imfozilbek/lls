@@ -1,5 +1,8 @@
+import { BusinessType, OrderStatus } from "@lls/core"
+
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
+import { useSession } from "../stores/session.js"
 
 import {
     BoxIcon,
@@ -11,7 +14,6 @@ import {
     ScooterIcon,
 } from "./icons.js"
 
-import type { OrderStatus } from "@lls/core"
 import type { ReactNode } from "react"
 
 const FLOW: readonly OrderStatus[] = [
@@ -33,6 +35,13 @@ const ICONS: Record<OrderStatus, (size: number) => ReactNode> = {
     cancelled: (s) => <CloseIcon size={s} />,
 }
 
+/** A chef for shops that cook; a box for water and grocery shops that collect goods. */
+function useIcon(): (status: OrderStatus, size: number) => ReactNode {
+    const cooks = useSession((state) => state.shop?.type) === BusinessType.FOOD
+    return (status, size) =>
+        status === OrderStatus.PREPARING && !cooks ? <BoxIcon size={size} /> : ICONS[status](size)
+}
+
 /** Status tone: in progress = amber, done = green, cancelled = red, new = neutral.
  * Text stays in the theme color (AA in light and dark); only the tint and icon carry the hue. */
 export function toneOf(status: OrderStatus): { tint: string; icon: string } {
@@ -50,6 +59,7 @@ export function toneOf(status: OrderStatus): { tint: string; icon: string } {
 
 export function StatusBadge({ status }: { status: OrderStatus }): React.JSX.Element {
     const t = useT()
+    const icon = useIcon()
     return (
         <span
             className={cn(
@@ -57,7 +67,7 @@ export function StatusBadge({ status }: { status: OrderStatus }): React.JSX.Elem
                 toneOf(status).tint,
             )}
         >
-            <span className={toneOf(status).icon}>{ICONS[status](14)}</span>
+            <span className={toneOf(status).icon}>{icon(status, 14)}</span>
             {t.order.steps[status]}
         </span>
     )
@@ -74,6 +84,7 @@ export function StatusHero({
     hint?: string
 }): React.JSX.Element {
     const t = useT()
+    const icon = useIcon()
     const active = status !== "delivered" && status !== "cancelled"
     return (
         <div className="flex flex-col items-center py-6 text-center">
@@ -92,7 +103,7 @@ export function StatusHero({
                               : "bg-brand text-brand-ink",
                     )}
                 >
-                    {ICONS[status](40)}
+                    {icon(status, 40)}
                 </span>
             </div>
             <h1 className="text-2xl font-bold">{title ?? t.order.steps[status]}</h1>
@@ -104,6 +115,7 @@ export function StatusHero({
 /** Vertical progress: done steps filled, the current one highlighted, the rest quiet. */
 export function StatusTimeline({ status }: { status: OrderStatus }): React.JSX.Element {
     const t = useT()
+    const icon = useIcon()
     const current = FLOW.indexOf(status)
     const cancelled = status === "cancelled"
     return (
@@ -122,7 +134,7 @@ export function StatusTimeline({ status }: { status: OrderStatus }): React.JSX.E
                                     !done && !isCurrent && "bg-tg-secondary text-tg-hint",
                                 )}
                             >
-                                {done ? <CheckIcon size={15} strokeWidth={2.5} /> : ICONS[step](15)}
+                                {done ? <CheckIcon size={15} strokeWidth={2.5} /> : icon(step, 15)}
                             </span>
                             {index < FLOW.length - 1 ? (
                                 <span

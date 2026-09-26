@@ -43,3 +43,11 @@ export function hexToRgbChannels(hex: string): string | null {
     const value = Number.parseInt(match[1], 16)
     return `${(value >> 16) & 255} ${(value >> 8) & 255} ${value & 255}`
 }
+
+/** "2" for pieces, "1,5 kg" / "1,5 кг" for weight items (quantity in grams). */
+export function formatQuantity(quantity: number, unit: string, kgLabel: string): string {
+    if (unit !== "kg") {
+        return String(quantity)
+    }
+    return `${String(quantity / 1000).replace(".", ",")} ${kgLabel}`
+}

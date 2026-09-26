@@ -1,6 +1,9 @@
-import { Language } from "@lls/core"
+import { BusinessType, Language } from "@lls/core"
 import { create } from "zustand"
 
+import { useSession } from "../stores/session.js"
+
+import { FOOD_RU, FOOD_UZ } from "./food.js"
 import { ru } from "./ru.js"
 import { uz } from "./uz.js"
 
@@ -9,6 +12,11 @@ import type { Dictionary } from "./uz.js"
 export type { Dictionary }
 
 const DICTIONARIES: Record<Language, Dictionary> = { uz, ru }
+/** Same keys, food words: "Menyu", "Tayyorlanmoqda", "Yoqimli ishtaha!". */
+const FOOD_DICTIONARIES: Record<Language, Dictionary> = {
+    uz: { ...uz, ...FOOD_UZ(uz) } as Dictionary,
+    ru: { ...ru, ...FOOD_RU(ru) } as Dictionary,
+}
 
 interface LanguageState {
     language: Language
@@ -23,8 +31,11 @@ export const useLanguageStore = create<LanguageState>((set) => ({
     },
 }))
 
+/** The dictionary for the current language, worded for the current shop's kind of business. */
 export function useT(): Dictionary {
-    return DICTIONARIES[useLanguageStore((state) => state.language)]
+    const language = useLanguageStore((state) => state.language)
+    const type = useSession((state) => state.shop?.type)
+    return dictionaryFor(language, type)
 }
 
 export function useLanguage(): Language {
@@ -44,6 +55,6 @@ export function errorText(t: Dictionary, code: string): string {
     return known ?? t.errors.generic
 }
 
-export function dictionaryFor(language: Language): Dictionary {
-    return DICTIONARIES[language]
+export function dictionaryFor(language: Language, type?: BusinessType): Dictionary {
+    return type === BusinessType.FOOD ? FOOD_DICTIONARIES[language] : DICTIONARIES[language]
 }

@@ -1,20 +1,25 @@
-import { isFinalStatus, mapUrl } from "@lls/core"
+import { OrderStatus, formatPhone, isFinalStatus } from "@lls/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
-import { formatMoney, formatTime } from "../lib/format.js"
+import { formatMoney, formatQuantity, formatTime } from "../lib/format.js"
 import { usePagedList } from "../lib/paged.js"
-import { confirm, haptic } from "../lib/telegram.js"
+import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
-import { PhoneIcon, PinIcon, ReceiptIcon, WifiOffIcon } from "../ui/icons.js"
+import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
+import { ReceiptIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
 import { LoadMore } from "../ui/load-more.js"
 import { StatusBadge } from "../ui/order-status.js"
-import { Button, EmptyState, Segmented, Skeleton } from "../ui/primitives.js"
+import { Button, EmptyState, Field, Segmented, Skeleton, TextInput } from "../ui/primitives.js"
+import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import { useOwner } from "./store.js"
+
+import type { Dictionary } from "../i18n/index.js"
 import type { PagedList } from "../lib/paged.js"
-import type { OrderDTO, OrderStatus } from "@lls/core"
+import type { OrderDTO } from "@lls/core"
 
 type Filter = "active" | "done"
 
@@ -28,52 +33,159 @@ interface CardProps {
     onStale(): void
 }
 
-function OrderActions({ order, onChange, onStale }: CardProps): React.JSX.Element | null {
+const ASSIGNABLE: readonly string[] = [
+    OrderStatus.ACCEPTED,
+    OrderStatus.PREPARING,
+    OrderStatus.READY,
+]
+
+function failToast(t: Dictionary, caught: unknown): void {
+    haptic.error()
+    toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+}
+
+/** Pick one of the shop's couriers. Couriers are invited in Settings. */
+function CourierSheet({
+    order,
+    onChange,
+    onStale,
+    onClose,
+}: CardProps & { onClose(): void }): React.JSX.Element {
     const t = useT()
-    const [busy, setBusy] = useState<OrderStatus | null>(null)
+    const couriers = useOwner((state) => state.couriers)
+    const loadCouriers = useOwner((state) => state.loadCouriers)
+    useEffect(() => {
+        loadCouriers().catch(() => undefined)
+    }, [loadCouriers])
+
+    const assign = async (courierId: string): Promise<void> => {
+        onClose()
+        try {
+            onChange(await api.owner.assignCourier(order.id, courierId))
+            haptic.success()
+        } catch (caught) {
+            failToast(t, caught)
+            onStale()
+        }
+    }
+
+    return (
+        <Sheet title={t.owner.assign} onClose={onClose}>
+            {couriers === null ? <Skeleton className="h-[52px]" /> : null}
+            {couriers?.length === 0 ? <p className="text-tg-hint">{t.owner.noCouriers}</p> : null}
+            {couriers?.map((courier) => (
+                <SheetOption
+                    key={courier.id}
+                    label={courier.name}
+                    hint={courier.phone ? formatPhone(courier.phone) : undefined}
+                    onClick={(): void => void assign(courier.id)}
+                />
+            ))}
+        </Sheet>
+    )
+}
+
+/** Cancel with an optional reason: the customer sees it. */
+function CancelSheet({
+    order,
+    onChange,
+    onStale,
+    onClose,
+}: CardProps & { onClose(): void }): React.JSX.Element {
+    const t = useT()
+    const [reason, setReason] = useState("")
+    const [busy, setBusy] = useState(false)
+    const cancel = async (): Promise<void> => {
+        setBusy(true)
+        try {
+            onChange(
+                await api.owner.setStatus(
+                    order.id,
+                    OrderStatus.CANCELLED,
+                    reason.trim() || undefined,
+                ),
+            )
+            haptic.success()
+            onClose()
+        } catch (caught) {
+            failToast(t, caught)
+            onStale()
+            onClose()
+        } finally {
+            setBusy(false)
+        }
+    }
+    return (
+        <Sheet title={t.owner.cancelConfirm} onClose={onClose}>
+            <Field label={t.owner.cancelReason} htmlFor="cancel-reason">
+                <TextInput
+                    id="cancel-reason"
+                    value={reason}
+                    maxLength={200}
+                    placeholder={t.owner.cancelReasonPlaceholder}
+                    onChange={(e): void => setReason(e.target.value)}
+                />
+            </Field>
+            <Button variant="danger" size="lg" loading={busy} onClick={(): void => void cancel()}>
+                {t.owner.cancelOrder}
+            </Button>
+        </Sheet>
+    )
+}
+
+function OrderActions(props: CardProps): React.JSX.Element | null {
+    const { order, onChange, onStale } = props
+    const t = useT()
+    const [busy, setBusy] = useState(false)
+    const [sheet, setSheet] = useState<"courier" | "cancel" | null>(null)
     if (isFinalStatus(order.status)) {
         return null
     }
 
-    const move = async (status: OrderStatus): Promise<void> => {
-        if (status === "cancelled" && !(await confirm(`${t.owner.cancelOrder}?`))) {
-            return
-        }
-        setBusy(status)
+    const advance = async (status: OrderStatus): Promise<void> => {
+        setBusy(true)
         try {
             onChange(await api.owner.setStatus(order.id, status))
             haptic.success()
         } catch (caught) {
-            haptic.error()
-            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+            failToast(t, caught)
             onStale()
         } finally {
-            setBusy(null)
+            setBusy(false)
         }
     }
 
     const next = order.nextStatus
     const actions = t.owner.actions as Record<string, string>
+    const close = (): void => setSheet(null)
     return (
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-col gap-2">
             {next ? (
-                <Button
-                    className="flex-1"
-                    loading={busy === next}
-                    disabled={busy !== null}
-                    onClick={(): void => void move(next)}
-                >
+                <Button loading={busy} onClick={(): void => void advance(next)}>
                     {actions[next] ?? next}
                 </Button>
             ) : null}
-            <Button
-                variant="danger"
-                loading={busy === "cancelled"}
-                disabled={busy !== null}
-                onClick={(): void => void move("cancelled" as OrderStatus)}
-            >
-                {t.owner.cancelOrder}
-            </Button>
+            <div className="flex gap-2">
+                {ASSIGNABLE.includes(order.status) ? (
+                    <Button
+                        variant="secondary"
+                        className="flex-1"
+                        icon={<ScooterIcon size={18} />}
+                        onClick={(): void => setSheet("courier")}
+                    >
+                        {order.courierName ? t.owner.reassign : t.owner.assign}
+                    </Button>
+                ) : null}
+                <Button
+                    variant="danger"
+                    className="flex-1"
+                    onClick={(): void => setSheet("cancel")}
+                >
+                    {t.owner.cancelOrder}
+                </Button>
+            </div>
+            {sheet === "courier" ? <CourierSheet {...props} onClose={close} /> : null}
+            {sheet === "cancel" ? <CancelSheet {...props} onClose={close} /> : null}
         </div>
     )
 }
@@ -81,7 +193,6 @@ function OrderActions({ order, onChange, onStale }: CardProps): React.JSX.Elemen
 function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
-    const map = order.location ? mapUrl(order.location) : null
     return (
         <li className="animate-rise rounded-tile bg-tg-secondary p-4">
             <div className="flex items-center justify-between gap-2">
@@ -96,8 +207,8 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
             <ul className="mt-3 flex flex-col gap-1">
                 {order.items.map((item) => (
                     <li key={item.productId} className="flex gap-2">
-                        <span className="w-7 shrink-0 font-semibold tabular-nums">
-                            {item.quantity}×
+                        <span className="shrink-0 font-semibold tabular-nums">
+                            {formatQuantity(item.quantity, item.unit, t.units.kg)}×
                         </span>
                         <span className="flex-1">{item.name}</span>
                     </li>
@@ -107,35 +218,20 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
                 <span>{t.cart.total}</span>
                 <span className="tabular-nums">{formatMoney(order.total, language)}</span>
             </p>
-            <div className="mt-3 flex gap-2 rounded-control bg-tg-bg p-3 text-sm">
-                <PinIcon size={18} className="mt-0.5 shrink-0 text-brand" />
-                <div className="min-w-0">
-                    <p className="font-medium">{order.address}</p>
-                    {order.landmark ? <p className="text-tg-hint">{order.landmark}</p> : null}
-                    {order.comment ? <p className="mt-1 italic">«{order.comment}»</p> : null}
-                </div>
-            </div>
-            <div className="mt-3 flex gap-2">
-                {order.customerPhone ? (
-                    <a
-                        href={`tel:${order.customerPhone}`}
-                        className="tap flex h-11 flex-1 items-center justify-center gap-2 rounded-control bg-tg-bg font-semibold"
-                    >
-                        <PhoneIcon size={18} className="text-brand" />
-                        {t.owner.call}
-                    </a>
+            {order.bottlesReturned > 0 ? (
+                <p className="text-sm text-tg-subtitle">
+                    {fill(t.owner.bottlesBack, { n: order.bottlesReturned })}
+                </p>
+            ) : null}
+            <div className="mt-3 flex flex-col gap-2 text-sm">
+                <AddressBlock order={order} />
+                {order.courierName ? (
+                    <p className="flex items-center gap-2 px-1 font-medium">
+                        <ScooterIcon size={18} className="text-brand" />
+                        {t.owner.courier}: {order.courierName}
+                    </p>
                 ) : null}
-                {map ? (
-                    <a
-                        href={map}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="tap flex h-11 flex-1 items-center justify-center gap-2 rounded-control bg-tg-bg font-semibold"
-                    >
-                        <PinIcon size={18} className="text-brand" />
-                        {t.owner.map}
-                    </a>
-                ) : null}
+                <ContactLinks order={order} />
             </div>
             <OrderActions order={order} onChange={onChange} onStale={onStale} />
         </li>

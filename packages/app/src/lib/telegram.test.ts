@@ -12,6 +12,7 @@ describe("readLaunchParams", () => {
         expect(readLaunchParams(new URL("https://x.pages.dev/?shop=osh"), null)).toEqual({
             shop: "osh",
             onboarding: false,
+            courier: false,
         })
     })
 
@@ -23,6 +24,19 @@ describe("readLaunchParams", () => {
 
     it("detects the onboarding mode of the platform bot", () => {
         const url = new URL("https://x.pages.dev/?mode=onboarding")
-        expect(readLaunchParams(url, null)).toEqual({ shop: null, onboarding: true })
+        expect(readLaunchParams(url, null)).toEqual({
+            shop: null,
+            onboarding: true,
+            courier: false,
+        })
+    })
+
+    it("detects the courier mode opened from the shop bot", () => {
+        const url = new URL("https://x.pages.dev/?shop=osh&mode=courier")
+        expect(readLaunchParams(url, null)).toEqual({
+            shop: "osh",
+            onboarding: false,
+            courier: true,
+        })
     })
 })

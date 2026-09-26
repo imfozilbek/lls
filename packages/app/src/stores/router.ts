@@ -7,6 +7,7 @@ export type Route =
     | { name: "order"; id: string; justPlaced?: boolean }
     | { name: "orders" }
     | { name: "owner" }
+    | { name: "courier" }
     /** Owner's product editor; `id: null` creates a new product. */
     | { name: "product"; id: string | null }
 
@@ -14,6 +15,8 @@ interface RouterState {
     stack: Route[]
     push(route: Route): void
     back(): void
+    /** A different first screen, e.g. the courier's deliveries. */
+    start(route: Route): void
     /** Replace everything after the root, e.g. checkout → order without a way back to checkout. */
     reset(...routes: Route[]): void
 }
@@ -31,8 +34,9 @@ export const useRouter = create<RouterState>((set, get) => ({
             set({ stack: stack.slice(0, -1) })
         }
     },
+    start: (route): void => set({ stack: [route] }),
     reset: (...routes): void => {
-        set({ stack: [{ name: "menu" }, ...routes] })
+        set({ stack: [get().stack[0] ?? { name: "menu" }, ...routes] })
         window.scrollTo({ top: 0 })
     },
 }))

@@ -1,5 +1,5 @@
 import { fill, useLanguage, useT } from "../i18n/index.js"
-import { formatMoney } from "../lib/format.js"
+import { formatMoney, formatQuantity } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
@@ -45,16 +45,16 @@ function Line({ line, faded }: { line: CartLine; faded?: boolean }): React.JSX.E
                     type="button"
                     onClick={(): void => setQuantity(product.id, 0)}
                     aria-label={t.common.delete}
-                    className="tap grid h-10 w-10 place-items-center rounded-full bg-tg-secondary text-tg-hint"
+                    className="tap grid h-11 w-11 place-items-center rounded-full bg-tg-secondary text-tg-hint"
                 >
                     <TrashIcon size={18} />
                 </button>
             ) : (
                 <Stepper
-                    size="sm"
                     quantity={line.quantity}
-                    onAdd={(): void => add(product.id)}
-                    onRemove={(): void => remove(product.id)}
+                    display={formatQuantity(line.quantity, product.unit, t.units.kg)}
+                    onAdd={(): void => add(product.id, product.step)}
+                    onRemove={(): void => remove(product.id, product.step)}
                     label={product.name}
                 />
             )}

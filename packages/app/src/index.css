@@ -49,7 +49,12 @@
         background: linear-gradient(
             90deg,
             var(--tg-theme-secondary-bg-color, #f3f4f6) 25%,
-            color-mix(in srgb, var(--tg-theme-secondary-bg-color, #f3f4f6) 60%, #ffffff) 50%,
+            color-mix(
+                    in srgb,
+                    var(--tg-theme-secondary-bg-color, #f3f4f6) 70%,
+                    var(--tg-theme-bg-color, #ffffff)
+                )
+                50%,
             var(--tg-theme-secondary-bg-color, #f3f4f6) 75%
         );
         background-size: 200% 100%;

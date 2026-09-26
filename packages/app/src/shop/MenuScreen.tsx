@@ -1,20 +1,21 @@
-import { LANGUAGES } from "@lls/core"
+import { LANGUAGES, WEEKDAYS, toLocalTime } from "@lls/core"
 import { useMemo, useState } from "react"
 
-import { useLanguage, useLanguageStore, useT } from "../i18n/index.js"
+import { fill, useLanguage, useLanguageStore, useT } from "../i18n/index.js"
 import { api, imageUrl } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
-import { formatMoney } from "../lib/format.js"
+import { formatMoney, formatQuantity } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
 import { summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
-import { BagIcon, PlusIcon, ReceiptIcon, StoreIcon } from "../ui/icons.js"
+import { BagIcon, PlusIcon, ReceiptIcon, ScooterIcon, StoreIcon } from "../ui/icons.js"
 import { EmptyState, PoweredBy, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import type { Dictionary } from "../i18n/index.js"
 import type { Shop } from "../stores/session.js"
 import type { Language, ProductDTO } from "@lls/core"
 
@@ -56,7 +57,7 @@ function LanguageSwitch(): React.JSX.Element {
                     onClick={(): void => choose(code)}
                     aria-pressed={code === language}
                     className={cn(
-                        "tap h-7 rounded-full px-2.5 uppercase transition-colors duration-200",
+                        "tap h-10 min-w-11 rounded-full px-2.5 uppercase transition-colors duration-200",
                         code === language ? "bg-tg-bg text-tg-text shadow-sm" : "text-tg-hint",
                     )}
                 >
@@ -67,16 +68,69 @@ function LanguageSwitch(): React.JSX.Element {
     )
 }
 
+/** "Today 9:00–22:00" or "day off" in Tashkent time; nothing for shops that are always open. */
+function hoursToday(shop: Shop, t: Dictionary): string | null {
+    if (shop.workingHours === null) {
+        return null
+    }
+    const day = WEEKDAYS[toLocalTime(new Date()).weekday]
+    const range = day ? shop.workingHours[day] : undefined
+    return range ? fill(t.shop.hoursToday, { from: range.open, to: range.close }) : t.shop.dayOff
+}
+
+/** Short facts customers need before ordering: delivery price, free-from, minimum, hours. */
+function shopFacts(shop: Shop, t: Dictionary, language: Language): string[] {
+    const { delivery } = shop
+    const money = (amount: number): string => formatMoney(amount, language)
+    const facts = [
+        delivery.fee === 0
+            ? t.shop.deliveryFree
+            : fill(t.shop.deliveryFee, { sum: money(delivery.fee) }),
+    ]
+    if (delivery.freeFrom && delivery.fee > 0) {
+        facts.push(fill(t.shop.freeFrom, { sum: money(delivery.freeFrom) }))
+    }
+    if (delivery.minOrder) {
+        facts.push(fill(t.shop.minOrder, { sum: money(delivery.minOrder) }))
+    }
+    const hours = hoursToday(shop, t)
+    if (hours) {
+        facts.push(hours)
+    }
+    return facts
+}
+
+function HeaderAction({
+    icon,
+    label,
+    onClick,
+    accent = false,
+}: {
+    icon: React.JSX.Element
+    label: string
+    onClick(): void
+    accent?: boolean
+}): React.JSX.Element {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(
+                "tap flex h-11 shrink-0 items-center gap-1.5 rounded-full px-4 font-medium",
+                accent ? "bg-brand/15 text-tg-text" : "bg-tg-secondary",
+            )}
+        >
+            {icon}
+            {label}
+        </button>
+    )
+}
+
 function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     const push = useRouter((state) => state.push)
-    const { delivery } = shop
     const status = !shop.acceptingOrders ? t.shop.paused : shop.isOpen ? t.shop.open : t.shop.closed
-    const fee =
-        delivery.fee === 0
-            ? `${t.shop.delivery} ${t.common.free}`
-            : `${t.shop.delivery} ${formatMoney(delivery.fee, language)}`
     return (
         <header className="px-4 pb-2 pt-4">
             <div className="flex items-start justify-between gap-3">
@@ -97,32 +151,30 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                 </div>
                 <LanguageSwitch />
             </div>
-            <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 text-sm [scrollbar-width:none]">
-                <span className="shrink-0 rounded-full bg-tg-secondary px-3 py-1.5">{fee}</span>
-                {delivery.freeFrom ? (
-                    <span className="shrink-0 rounded-full bg-tg-secondary px-3 py-1.5">
-                        {language === "uz"
-                            ? `${formatMoney(delivery.freeFrom, language)}${t.shop.freeFrom}`
-                            : `${t.shop.freeFrom} ${formatMoney(delivery.freeFrom, language)}`}
-                    </span>
-                ) : null}
-                <button
-                    type="button"
+            <p className="mt-3 text-sm text-tg-subtitle">
+                {shopFacts(shop, t, language).join(" · ")}
+            </p>
+            <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 text-sm [scrollbar-width:none]">
+                <HeaderAction
+                    icon={<ReceiptIcon size={16} />}
+                    label={t.shop.myOrders}
                     onClick={(): void => push({ name: "orders" })}
-                    className="tap flex shrink-0 items-center gap-1.5 rounded-full bg-tg-secondary px-3 py-1.5"
-                >
-                    <ReceiptIcon size={16} />
-                    {t.shop.myOrders}
-                </button>
+                />
                 {shop.viewerRole === "owner" ? (
-                    <button
-                        type="button"
+                    <HeaderAction
+                        icon={<StoreIcon size={16} />}
+                        label={t.shop.manage}
                         onClick={(): void => push({ name: "owner" })}
-                        className="tap flex shrink-0 items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1.5 font-medium text-tg-text"
-                    >
-                        <StoreIcon size={16} />
-                        {t.shop.manage}
-                    </button>
+                        accent
+                    />
+                ) : null}
+                {shop.viewerRole === "courier" ? (
+                    <HeaderAction
+                        icon={<ScooterIcon size={16} />}
+                        label={t.shop.deliveries}
+                        onClick={(): void => push({ name: "courier" })}
+                        accent
+                    />
                 ) : null}
             </div>
         </header>
@@ -152,7 +204,7 @@ function CategoryChips({
             }}
             aria-pressed={active === key}
             className={cn(
-                "tap h-9 shrink-0 rounded-full px-4 text-sm font-semibold transition-colors duration-200",
+                "tap h-11 shrink-0 rounded-full px-4 text-sm font-semibold transition-colors duration-200",
                 active === key ? "bg-brand text-brand-ink" : "bg-tg-secondary text-tg-text",
             )}
         >
@@ -197,26 +249,31 @@ function ProductTile({
                         type="button"
                         onClick={(): void => {
                             haptic.tap()
-                            add(product.id)
+                            add(product.id, product.step)
                         }}
                         aria-label={`${t.shop.add}: ${product.name}`}
-                        className="tap absolute bottom-2 right-2 grid h-10 w-10 place-items-center rounded-full bg-tg-bg text-brand shadow-md"
+                        className="tap absolute bottom-2 right-2 grid h-11 w-11 place-items-center rounded-full bg-tg-bg text-brand shadow-md"
                     >
                         <PlusIcon size={22} strokeWidth={2.25} />
                     </button>
                 ) : (
                     <div className="absolute bottom-2 right-2">
                         <Stepper
-                            size="sm"
                             quantity={quantity}
-                            onAdd={(): void => add(product.id)}
-                            onRemove={(): void => remove(product.id)}
+                            display={formatQuantity(quantity, product.unit, t.units.kg)}
+                            onAdd={(): void => add(product.id, product.step)}
+                            onRemove={(): void => remove(product.id, product.step)}
                             label={product.name}
                         />
                     </div>
                 )}
             </div>
             <h3 className="mt-2 line-clamp-2 px-0.5 font-medium leading-snug">{product.name}</h3>
+            {product.description ? (
+                <p className="mt-0.5 line-clamp-2 px-0.5 text-sm text-tg-hint">
+                    {product.description}
+                </p>
+            ) : null}
             <p className="mt-0.5 px-0.5 text-sm">
                 <span className="font-semibold">{formatMoney(product.price, language)}</span>
                 <span className="text-tg-hint"> / {unit}</span>

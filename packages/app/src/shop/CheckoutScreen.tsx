@@ -1,7 +1,7 @@
-import { formatPhone } from "@lls/core"
+import { Feature, formatPhone } from "@lls/core"
 import { useEffect, useRef, useState } from "react"
 
-import { errorText, useLanguage, useT } from "../i18n/index.js"
+import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api, loadCatalog } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney } from "../lib/format.js"
@@ -12,12 +12,14 @@ import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
-import { Button, Field, Section, TextArea, TextInput } from "../ui/primitives.js"
+import { Button, Field, Section, Stepper, TextArea, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
 const CONTACT_POLL_MS = 1500
 const CONTACT_POLL_TRIES = 10
 const LAST_ADDRESS_KEY = "lls:address"
+/** A customer may hand back a few more empty bottles than they order. */
+const MAX_EXTRA_BOTTLES = 5
 
 interface SavedAddress {
     address: string
@@ -108,6 +110,8 @@ interface Delivery {
     landmark: string
     comment: string
     location: Point | null
+    /** Empty returnable bottles handed back (water shops). */
+    bottlesReturned: number
 }
 
 function AddressSection({
@@ -189,6 +193,7 @@ function usePlaceOrder(delivery: Delivery): { placing: boolean; place(): Promise
                 landmark: delivery.landmark.trim() || undefined,
                 location: delivery.location ?? undefined,
                 comment: delivery.comment.trim() || undefined,
+                bottlesReturned: delivery.bottlesReturned || undefined,
             })
             saveAddress({ address: delivery.address.trim(), landmark: delivery.landmark.trim() })
             clearCart()
@@ -213,6 +218,61 @@ function usePlaceOrder(delivery: Delivery): { placing: boolean; place(): Promise
     return { placing, place }
 }
 
+/** Water shops: how many empty bottles go back; kept bottles carry the shop's deposit. */
+function BottlesField({
+    returnable,
+    value,
+    onChange,
+}: {
+    returnable: number
+    value: number
+    onChange(value: number): void
+}): React.JSX.Element {
+    const t = useT()
+    const language = useLanguage()
+    const deposit = useSession((state) => state.shop?.bottleDeposit ?? 0)
+    return (
+        <Section title={t.checkout.bottles}>
+            <div className="flex items-center justify-between gap-3 rounded-control bg-tg-secondary px-4 py-3">
+                <p className="text-sm text-tg-subtitle">
+                    {fill(t.checkout.bottlesHint, { sum: formatMoney(deposit, language) })}
+                </p>
+                <Stepper
+                    quantity={value}
+                    onAdd={(): void =>
+                        onChange(Math.min(value + 1, returnable + MAX_EXTRA_BOTTLES))
+                    }
+                    onRemove={(): void => onChange(Math.max(value - 1, 0))}
+                    label={t.checkout.bottles}
+                />
+            </div>
+        </Section>
+    )
+}
+
+function Totals({ rows }: { rows: [string, number | string, boolean?][] }): React.JSX.Element {
+    const language = useLanguage()
+    return (
+        <div className="flex flex-col gap-2 rounded-tile bg-tg-secondary p-4">
+            {rows.map(([label, value, strong]) => (
+                <div
+                    key={label}
+                    className={
+                        strong
+                            ? "flex justify-between text-lg font-bold"
+                            : "flex justify-between text-tg-subtitle"
+                    }
+                >
+                    <span>{label}</span>
+                    <span className="tabular-nums">
+                        {typeof value === "number" ? formatMoney(value, language) : value}
+                    </span>
+                </div>
+            ))}
+        </div>
+    )
+}
+
 export function CheckoutScreen(): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -224,11 +284,18 @@ export function CheckoutScreen(): React.JSX.Element {
         ...loadAddress(),
         comment: "",
         location: null,
+        bottlesReturned: 0,
     }))
     const { placing, place } = usePlaceOrder(delivery)
 
     const cart = summarize(lines, catalog)
-    const total = cart.subtotal + deliveryFee(cart.subtotal, shop?.delivery ?? { fee: 0 })
+    const fee = deliveryFee(cart.subtotal, shop?.delivery ?? { fee: 0 })
+    const usesBottles =
+        Boolean(shop?.features.includes(Feature.BOTTLE_DEPOSIT)) && cart.returnable > 0
+    const deposit = usesBottles
+        ? (shop?.bottleDeposit ?? 0) * Math.max(0, cart.returnable - delivery.bottlesReturned)
+        : 0
+    const total = cart.subtotal + fee + deposit
     const ready = Boolean(me?.phone) && delivery.address.trim().length > 0 && cart.count > 0
 
     useMainAction({
@@ -267,6 +334,25 @@ export function CheckoutScreen(): React.JSX.Element {
                     maxLength={300}
                 />
             </Field>
+
+            {usesBottles ? (
+                <BottlesField
+                    returnable={cart.returnable}
+                    value={delivery.bottlesReturned}
+                    onChange={(bottlesReturned): void =>
+                        setDelivery((d) => ({ ...d, bottlesReturned }))
+                    }
+                />
+            ) : null}
+
+            <Totals
+                rows={[
+                    [t.cart.subtotal, cart.subtotal],
+                    [t.cart.delivery, fee === 0 ? t.common.free : fee],
+                    ...(deposit > 0 ? [[t.cart.deposit, deposit] as [string, number]] : []),
+                    [t.cart.total, total, true],
+                ]}
+            />
 
             <p className="rounded-control bg-tg-secondary px-4 py-3 text-sm text-tg-subtitle">
                 {t.checkout.payment}

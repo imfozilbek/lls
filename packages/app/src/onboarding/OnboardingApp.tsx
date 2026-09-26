@@ -2,8 +2,9 @@ import { useEffect, useState } from "react"
 
 import { errorText, useT } from "../i18n/index.js"
 import { ApiError, api, imageUrl } from "../lib/api.js"
-import { applyBrand } from "../lib/brand.js"
+import { applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
+import { hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { haptic, openTelegramLink } from "../lib/telegram.js"
 import { BotIcon, ChevronIcon, WifiOffIcon } from "../ui/icons.js"
@@ -36,8 +37,11 @@ function ShopRow({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
                     <img src={logo} alt="" className="h-12 w-12 rounded-control object-cover" />
                 ) : (
                     <span
-                        className="grid h-12 w-12 place-items-center rounded-control text-lg font-bold text-white"
-                        style={{ backgroundColor: shop.brandColor }}
+                        className="grid h-12 w-12 place-items-center rounded-control text-lg font-bold"
+                        style={{
+                            backgroundColor: shop.brandColor,
+                            color: `rgb(${readableInk(hexToRgbChannels(shop.brandColor) ?? "")})`,
+                        }}
                     >
                         {shop.name.trim().charAt(0).toUpperCase()}
                     </span>

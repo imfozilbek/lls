@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { readableInk } from "./brand.js"
-import { formatMoney, formatTime, hexToRgbChannels } from "./format.js"
+import { formatMoney, formatQuantity, formatTime, hexToRgbChannels } from "./format.js"
 
 import type { Language } from "@lls/core"
 
@@ -34,5 +34,16 @@ describe("colors", () => {
     it("picks readable text on the brand color", () => {
         expect(readableInk("220 38 38")).toBe("255 255 255")
         expect(readableInk("245 158 11")).toBe("17 24 39")
+    })
+})
+
+describe("formatQuantity", () => {
+    it("shows grams as kilograms with a comma", () => {
+        expect(formatQuantity(1500, "kg", "kg")).toBe("1,5 kg")
+        expect(formatQuantity(250, "kg", "кг")).toBe("0,25 кг")
+    })
+
+    it("shows pieces as they are", () => {
+        expect(formatQuantity(3, "pcs", "kg")).toBe("3")
     })
 })

@@ -1,3 +1,4 @@
+import { Feature } from "@lls/core"
 import { useEffect, useState } from "react"
 
 import { errorText, useLanguage, useT } from "../i18n/index.js"
@@ -7,29 +8,78 @@ import { formatMoney } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
+import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { BagIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, Skeleton, Switch } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
+import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
 
 import { useOwner } from "./store.js"
 
 import type { ProductDTO } from "@lls/core"
 
+/** Until the server answers with the real midnight. */
+const PLACEHOLDER_STOP_MS = 60 * 60 * 1000
+
+type ProductPatch = Parameters<typeof api.owner.updateProduct>[1]
+
+/** On today's stop-list: the mark is still in the future. */
+function stoppedToday(product: ProductDTO): boolean {
+    return (
+        product.unavailableUntil !== undefined && Date.parse(product.unavailableUntil) > Date.now()
+    )
+}
+
+/** The "take off sale" choice: only for today, or for good. */
+function OffSheet({
+    onPick,
+    onClose,
+}: {
+    onPick(patch: ProductPatch): void
+    onClose(): void
+}): React.JSX.Element {
+    const t = useT()
+    return (
+        <Sheet title={t.owner.offTitle} onClose={onClose}>
+            <SheetOption
+                label={t.owner.stopToday}
+                hint={t.owner.stopTodayHint}
+                onClick={(): void => onPick({ stopForToday: true })}
+            />
+            <SheetOption
+                label={t.owner.hideForGood}
+                onClick={(): void => onPick({ isAvailable: false })}
+            />
+        </Sheet>
+    )
+}
+
 function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     const push = useRouter((state) => state.push)
     const upsert = useOwner((state) => state.upsert)
+    const canStop = useSession((state) => state.shop?.features.includes(Feature.STOP_LIST) ?? false)
     const [saving, setSaving] = useState(false)
+    const [asking, setAsking] = useState(false)
+    const today = stoppedToday(product)
+    const onSale = product.isAvailable && !today
 
-    const toggle = async (isAvailable: boolean): Promise<void> => {
+    const save = async (patch: ProductPatch): Promise<void> => {
+        setAsking(false)
         setSaving(true)
         // Optimistic: the switch moves at once, and rolls back if the save fails.
-        upsert({ ...product, isAvailable })
+        upsert({
+            ...product,
+            isAvailable: patch.isAvailable ?? true,
+            unavailableUntil: patch.stopForToday
+                ? new Date(Date.now() + PLACEHOLDER_STOP_MS).toISOString()
+                : undefined,
+        })
         try {
-            upsert(await api.owner.updateProduct(product.id, { isAvailable }))
+            upsert(await api.owner.updateProduct(product.id, patch))
         } catch (caught) {
             upsert(product)
             haptic.error()
@@ -56,27 +106,41 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
                     iconSize={24}
                     className={cn(
                         "h-14 w-14 shrink-0 rounded-control transition-opacity duration-200",
-                        !product.isAvailable && "opacity-40",
+                        !onSale && "opacity-40",
                     )}
                 />
                 <span className="min-w-0">
                     <span className="line-clamp-1 font-medium">{product.name}</span>
                     <span className="block text-sm text-tg-hint">
-                        {product.isAvailable
+                        {onSale
                             ? formatMoney(product.price, language)
-                            : t.owner.hidden}
+                            : today
+                              ? t.owner.stoppedToday
+                              : t.owner.hidden}
                     </span>
                 </span>
             </button>
             <Switch
-                checked={product.isAvailable}
+                checked={onSale}
                 onChange={(next): void => {
-                    if (!saving) {
-                        void toggle(next)
+                    if (saving) {
+                        return
                     }
+                    if (!next && canStop) {
+                        haptic.tap()
+                        setAsking(true)
+                        return
+                    }
+                    void save({ isAvailable: next })
                 }}
                 label={`${t.owner.product.available}: ${product.name}`}
             />
+            {asking ? (
+                <OffSheet
+                    onPick={(patch): void => void save(patch)}
+                    onClose={(): void => setAsking(false)}
+                />
+            ) : null}
         </li>
     )
 }
