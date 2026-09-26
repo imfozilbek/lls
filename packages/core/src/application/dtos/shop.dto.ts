@@ -28,14 +28,19 @@ export interface ShopPublicDTO {
     acceptingOrders: boolean
     isOpen: boolean
     botUsername: string
+    /** Switched-on vertical features: reorder, bottle deposit, weight items, stop-list. */
+    features: Feature[]
+    /** Deposit per kept returnable bottle, UZS. */
+    bottleDeposit: number
 }
 
 /** What the owner sees in "Мой магазин". */
 export interface ShopOwnerDTO extends ShopPublicDTO {
     status: BusinessStatus
     ownerTelegramId: number
-    features: Feature[]
     deliveryRadiusMeters?: number
+    /** The shop's marketplace deal with LLS, if signed. */
+    marketplace?: { commissionBps: number; joinedAt: string }
     createdAt: string
 }
 
@@ -61,6 +66,8 @@ export function toShopPublicDTO(business: Business, now: Date): ShopPublicDTO {
         acceptingOrders: business.acceptingOrders,
         isOpen: business.isOpenAt(now),
         botUsername: business.bot.username,
+        features: business.features,
+        bottleDeposit: business.bottleDeposit.amount,
     }
 }
 
@@ -69,8 +76,11 @@ export function toShopOwnerDTO(business: Business, now: Date): ShopOwnerDTO {
         ...toShopPublicDTO(business, now),
         status: business.status,
         ownerTelegramId: business.ownerTelegramId.value,
-        features: business.features,
         deliveryRadiusMeters: business.delivery.radiusMeters,
+        marketplace: business.marketplace && {
+            commissionBps: business.marketplace.commissionBps,
+            joinedAt: business.marketplace.joinedAt.toISOString(),
+        },
         createdAt: business.createdAt.toISOString(),
     }
 }

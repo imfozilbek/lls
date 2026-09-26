@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { Product } from "../../../domain/entities/product.js"
 import { Language } from "../../../domain/enums/language.js"
 import { Unit } from "../../../domain/enums/unit.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
@@ -54,6 +55,78 @@ describe("Product", () => {
 
         expect(() => product.update({ unit: "ton" })).toThrow(ValidationError)
         expect(() => product.update({ category: "cars" })).toThrow(ValidationError)
+    })
+})
+
+describe("Product for grocery and water", () => {
+    const NOON = new Date("2026-09-28T07:00:00Z") // 12:00 in Tashkent
+
+    function kg(step?: number): Product {
+        return Product.create({
+            id: "p-kg",
+            businessId: "biz-1",
+            name: "Pomidor",
+            price: 12_000,
+            unit: Unit.KG,
+            category: "produce",
+            step,
+        })
+    }
+
+    it("weight items sell in gram steps; pieces always step 1", () => {
+        expect(kg().step).toBe(500)
+        expect(kg(250).step).toBe(250)
+        expect(makeProduct().step).toBe(1)
+        expect(() => kg(5)).toThrow(ValidationError)
+    })
+
+    it("checks quantities against the step", () => {
+        const tomatoes = kg()
+        tomatoes.assertQuantity(1500)
+        expect(() => tomatoes.assertQuantity(700)).toThrow(ValidationError)
+        expect(() => tomatoes.assertQuantity(0)).toThrow(ValidationError)
+        expect(() => tomatoes.assertQuantity(500 * 100)).toThrow(ValidationError)
+        makeProduct().assertQuantity(99)
+        expect(() => makeProduct().assertQuantity(100)).toThrow(ValidationError)
+    })
+
+    it("switching the unit resets or keeps the step sensibly", () => {
+        const product = makeProduct()
+        product.update({ unit: Unit.KG })
+        expect(product.step).toBe(500)
+        product.update({ step: 250 })
+        expect(product.step).toBe(250)
+        product.update({ name: "Olma" })
+        expect(product.step).toBe(250)
+        product.update({ unit: Unit.PIECE })
+        expect(product.step).toBe(1)
+    })
+
+    it("stop-list for today ends at the next Tashkent midnight", () => {
+        const product = makeProduct()
+        product.stopForToday(NOON)
+        expect(product.isAvailableAt(NOON)).toBe(false)
+        expect(product.unavailableUntil?.toISOString()).toBe("2026-09-28T19:00:00.000Z")
+        expect(product.isAvailableAt(new Date("2026-09-28T19:00:00Z"))).toBe(true)
+        product.setAvailability(true)
+        expect(product.unavailableUntil).toBeUndefined()
+        product.setAvailability(false)
+        expect(product.isAvailableAt(NOON)).toBe(false)
+    })
+
+    it("marks returnable bottles", () => {
+        const bottle = Product.create({
+            id: "w1",
+            businessId: "biz-1",
+            name: "Suv 19 l",
+            price: 15_000,
+            unit: Unit.BOTTLE_19L,
+            category: "water",
+            returnable: true,
+        })
+        expect(bottle.returnable).toBe(true)
+        bottle.update({ returnable: false })
+        expect(bottle.returnable).toBe(false)
     })
 })
 

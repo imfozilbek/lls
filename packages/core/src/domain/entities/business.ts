@@ -1,4 +1,7 @@
+import { DEFAULT_FEATURES } from "../enums/business-profile.js"
 import { BusinessStatus } from "../enums/business-status.js"
+import { Feature } from "../enums/feature.js"
+import { OrderChannel } from "../enums/order-channel.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { optionalText, requireInteger, requireText } from "../shared/guards.js"
@@ -7,7 +10,6 @@ import { Money } from "../value-objects/money.js"
 import { WorkingHours } from "../value-objects/working-hours.js"
 
 import type { BusinessType } from "../enums/business-type.js"
-import type { Feature } from "../enums/feature.js"
 import type { Location } from "../value-objects/location.js"
 import type { Slug } from "../value-objects/slug.js"
 import type { TelegramId } from "../value-objects/telegram-id.js"
@@ -15,6 +17,9 @@ import type { TelegramId } from "../value-objects/telegram-id.js"
 const NAME_MAX = 60
 const ADDRESS_MAX = 200
 const MAX_RADIUS_METERS = 100_000
+/** A commission above 50% would be a mistake, not a deal. */
+const MAX_COMMISSION_BPS = 5_000
+const MAX_BOTTLE_DEPOSIT = 1_000_000
 
 export interface ShopBot {
     id: number
@@ -26,6 +31,13 @@ export interface DeliverySettings {
     freeFrom?: Money
     minOrder?: Money
     radiusMeters?: number
+}
+
+/** The shop's deal with LLS for sales through the marketplace channel. */
+export interface MarketplaceTerms {
+    /** Commission in basis points of the goods subtotal: 1% = 100. */
+    commissionBps: number
+    joinedAt: Date
 }
 
 export interface BusinessProps {
@@ -44,6 +56,10 @@ export interface BusinessProps {
     workingHours: WorkingHours
     features: Feature[]
     acceptingOrders: boolean
+    /** Deposit per returnable bottle the customer keeps. Zero means "just count the bottles". */
+    bottleDeposit: Money
+    /** Undefined: the shop sells only through its own bot. */
+    marketplace?: MarketplaceTerms
     createdAt: Date
     updatedAt: Date
 }
@@ -96,8 +112,9 @@ export class Business {
             location: input.location,
             delivery: validateDelivery(input.delivery),
             workingHours: WorkingHours.alwaysOpen(),
-            features: [],
+            features: [...DEFAULT_FEATURES[input.type]],
             acceptingOrders: true,
+            bottleDeposit: Money.zero(),
             createdAt: now,
             updatedAt: now,
         })
@@ -151,6 +168,12 @@ export class Business {
     }
     get acceptingOrders(): boolean {
         return this.props.acceptingOrders
+    }
+    get bottleDeposit(): Money {
+        return this.props.bottleDeposit
+    }
+    get marketplace(): MarketplaceTerms | undefined {
+        return this.props.marketplace ? { ...this.props.marketplace } : undefined
     }
     get createdAt(): Date {
         return this.props.createdAt
@@ -267,6 +290,48 @@ export class Business {
     setFeatures(features: Feature[]): void {
         this.props.features = [...new Set(features)]
         this.touch()
+    }
+
+    setBottleDeposit(amount: Money): void {
+        requireInteger("bottleDeposit", amount.amount, 0, MAX_BOTTLE_DEPOSIT)
+        this.props.bottleDeposit = amount
+        this.touch()
+    }
+
+    /**
+     * Deposit for bottles the customer keeps: returnable bottles ordered minus empty ones given back.
+     * Only for shops with the bottle feature; everyone else pays nothing extra.
+     */
+    depositFor(returnableOrdered: number, bottlesReturned: number): Money {
+        if (!this.hasFeature(Feature.BOTTLE_DEPOSIT)) {
+            return Money.zero()
+        }
+        return this.props.bottleDeposit.multiply(Math.max(0, returnableOrdered - bottlesReturned))
+    }
+
+    /** Signs the marketplace deal. Stage 2 uses it; stage 1 only stores it. */
+    joinMarketplace(commissionBps: number, now: Date): void {
+        this.props.marketplace = {
+            commissionBps: requireInteger("commissionBps", commissionBps, 0, MAX_COMMISSION_BPS),
+            joinedAt: now,
+        }
+        this.touch()
+    }
+
+    leaveMarketplace(): void {
+        this.props.marketplace = undefined
+        this.touch()
+    }
+
+    /** Own-bot sales are never commissioned. Marketplace sales need a signed deal. */
+    commissionBpsFor(channel: OrderChannel): number {
+        if (channel === OrderChannel.SHOP_BOT) {
+            return 0
+        }
+        if (!this.props.marketplace) {
+            throw BusinessRuleViolationError.notInMarketplace(this.props.id)
+        }
+        return this.props.marketplace.commissionBps
     }
 
     private touch(): void {

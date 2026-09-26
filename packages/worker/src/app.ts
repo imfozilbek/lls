@@ -4,6 +4,7 @@ import { cors } from "hono/cors"
 
 import { INIT_DATA_HEADER, SHOP_HEADER, authenticate } from "./auth.js"
 import { toErrorResponse } from "./http/errors.js"
+import { courierRoutes } from "./routes/courier.routes.js"
 import { customerRoutes } from "./routes/customer.routes.js"
 import { imageRoutes } from "./routes/image.routes.js"
 import { ownerRoutes } from "./routes/owner.routes.js"
@@ -44,6 +45,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         .use(authenticate)
         .route("/", customerRoutes)
         .route("/owner", ownerRoutes)
+        .route("/courier", courierRoutes)
         .route("/platform", platformRoutes)
     app.route("/api", api)
     app.route("/img", imageRoutes)

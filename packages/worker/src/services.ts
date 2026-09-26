@@ -1,11 +1,17 @@
 import {
     AdvanceOrderUseCase,
+    AssignCourierUseCase,
     CancelOrderUseCase,
+    CreateCourierInviteUseCase,
     CreateProductUseCase,
+    DeactivateCourierUseCase,
     DeleteProductUseCase,
     GetOrderUseCase,
     GetShopBySlugUseCase,
     GetShopStatsUseCase,
+    JoinAsCourierUseCase,
+    ListCourierOrdersUseCase,
+    ListCouriersUseCase,
     ListMyOrdersUseCase,
     ListMyShopsUseCase,
     ListProductsUseCase,
@@ -21,6 +27,7 @@ import {
 
 import { platformAdminIds } from "./env.js"
 import { D1BusinessRepository } from "./repositories/business.repository.js"
+import { D1CourierRepository } from "./repositories/courier.repository.js"
 import { D1CustomerRepository } from "./repositories/customer.repository.js"
 import { D1OrderRepository } from "./repositories/order.repository.js"
 import { D1ProductRepository } from "./repositories/product.repository.js"
@@ -53,6 +60,12 @@ export interface UseCases {
     listMyOrders: ListMyOrdersUseCase
     listShopOrders: ListShopOrdersUseCase
     shopStats: GetShopStatsUseCase
+    createCourierInvite: CreateCourierInviteUseCase
+    joinAsCourier: JoinAsCourierUseCase
+    listCouriers: ListCouriersUseCase
+    deactivateCourier: DeactivateCourierUseCase
+    assignCourier: AssignCourierUseCase
+    listCourierOrders: ListCourierOrdersUseCase
 }
 
 export interface Services extends ServiceDeps {
@@ -61,6 +74,7 @@ export interface Services extends ServiceDeps {
     products: D1ProductRepository
     customers: D1CustomerRepository
     orders: D1OrderRepository
+    couriers: D1CourierRepository
     useCases: UseCases
 }
 
@@ -70,8 +84,10 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const products = new D1ProductRepository(env.DB)
     const customers = new D1CustomerRepository(env.DB)
     const orders = new D1OrderRepository(env.DB)
+    const couriers = new D1CourierRepository(env.DB)
     const { clock, telegram } = deps
-    const orderAccess = { businesses, customers, orders }
+    const orderAccess = { businesses, customers, couriers, orders }
+    const courierAccess = { businesses, couriers, orders, clock }
 
     return {
         env,
@@ -81,6 +97,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         products,
         customers,
         orders,
+        couriers,
         useCases: {
             registerShop: new RegisterShopUseCase(businesses, clock),
             reviewShop: new ReviewShopUseCase(businesses, platformAdminIds(env), clock),
@@ -88,18 +105,24 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             listMyShops: new ListMyShopsUseCase(businesses, clock),
             updateShop: new UpdateShopUseCase(businesses, clock),
             createProduct: new CreateProductUseCase(businesses, products),
-            updateProduct: new UpdateProductUseCase(businesses, products),
+            updateProduct: new UpdateProductUseCase(businesses, products, clock),
             deleteProduct: new DeleteProductUseCase(businesses, products),
-            listProducts: new ListProductsUseCase(businesses, products),
+            listProducts: new ListProductsUseCase(businesses, products, clock),
             resolveCustomer: new ResolveCustomerUseCase(customers),
             updateCustomer: new UpdateCustomerUseCase(customers),
             placeOrder: new PlaceOrderUseCase({ businesses, products, customers, orders, clock }),
             getOrder: new GetOrderUseCase(orderAccess),
             cancelOrder: new CancelOrderUseCase(orderAccess),
-            advanceOrder: new AdvanceOrderUseCase(businesses, orders),
+            advanceOrder: new AdvanceOrderUseCase(orderAccess),
             listMyOrders: new ListMyOrdersUseCase(customers, orders),
             listShopOrders: new ListShopOrdersUseCase(businesses, orders),
             shopStats: new GetShopStatsUseCase(businesses, orders, clock),
+            createCourierInvite: new CreateCourierInviteUseCase(courierAccess),
+            joinAsCourier: new JoinAsCourierUseCase(courierAccess),
+            listCouriers: new ListCouriersUseCase(courierAccess),
+            deactivateCourier: new DeactivateCourierUseCase(courierAccess),
+            assignCourier: new AssignCourierUseCase(courierAccess),
+            listCourierOrders: new ListCourierOrdersUseCase(courierAccess),
         },
     }
 }

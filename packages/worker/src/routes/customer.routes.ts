@@ -1,4 +1,5 @@
 import { zValidator } from "@hono/zod-validator"
+import { OrderChannel } from "@lls/core"
 import { Hono } from "hono"
 
 import { shopOf } from "../auth.js"
@@ -18,12 +19,12 @@ import type { AppEnv } from "../env.js"
 /** What a customer does inside a shop's Mini App. */
 export const customerRoutes = new Hono<AppEnv>()
     .get("/shop", async (c) => {
-        const { user, isOwner } = c.get("auth")
+        const { user, role } = c.get("auth")
         const shop = await c
             .get("services")
             .useCases.getShopBySlug.execute(shopOf(c).slug.value, user.id)
-        // Lets the app show "Мой магазин" to the owner without exposing the owner's id.
-        return c.json({ ...shop, viewerIsOwner: isOwner })
+        // Lets the app show "Мой магазин" or "Мои доставки" without exposing anyone's id.
+        return c.json({ ...shop, viewerRole: role })
     })
 
     .get("/shop/products", zValidator("query", productsQuery, onInvalid), async (c) => {
@@ -59,6 +60,8 @@ export const customerRoutes = new Hono<AppEnv>()
             ...c.req.valid("json"),
             user: c.get("auth").user,
             businessId: business.id,
+            // Opened from the shop's own bot: never a marketplace sale, never commissioned.
+            channel: OrderChannel.SHOP_BOT,
         })
         inBackground(c.executionCtx, new Notifier(services).orderPlaced(business, order))
         return c.json(order, 201)

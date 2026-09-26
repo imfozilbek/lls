@@ -107,7 +107,7 @@ function patchOf(form: Form): ShopPatch {
 /** Keeps the storefront (and the brand color) in sync with what the owner just saved. */
 function publish(shop: ShopOwnerDTO): void {
     applyBrand(shop.brandColor)
-    useSession.getState().setShop({ ...shop, viewerIsOwner: true })
+    useSession.getState().setShop({ ...shop, viewerRole: "owner" })
 }
 
 function useOwnerShop(): {

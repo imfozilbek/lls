@@ -1,15 +1,20 @@
 import { CATEGORIES } from "../enums/category.js"
-import { UNITS } from "../enums/unit.js"
+import { DEFAULT_KG_STEP, UNITS, Unit } from "../enums/unit.js"
+import { ValidationError } from "../errors/validation.error.js"
 import { optionalText, requireInteger, requireOneOf, requireText } from "../shared/guards.js"
+import { addDays, startOfLocalDay } from "../shared/time.js"
 import { Money } from "../value-objects/money.js"
 
 import type { Category } from "../enums/category.js"
-import type { Unit } from "../enums/unit.js"
 
 const NAME_MAX = 80
 const DESCRIPTION_MAX = 500
 const MAX_PRICE = 100_000_000
 const MAX_POSITION = 100_000
+/** A line holds at most 99 steps: 99 pieces, or 49.5 kg with a 500 g step. */
+const MAX_STEPS_PER_LINE = 99
+const MIN_KG_STEP = 10
+const MAX_KG_STEP = 10_000
 
 export interface ProductProps {
     id: string
@@ -18,9 +23,15 @@ export interface ProductProps {
     description?: string
     price: Money
     unit: Unit
+    /** Selling step in base units: grams for `kg`, always 1 for pieces. */
+    step: number
     category: Category
     imageKey?: string
     isAvailable: boolean
+    /** Stop-list: hidden until this moment (the next local midnight), then back on sale. */
+    unavailableUntil?: Date
+    /** A returnable container, e.g. a 19 l water bottle with a deposit. */
+    returnable: boolean
     position: number
     createdAt: Date
     updatedAt: Date
@@ -34,6 +45,8 @@ export interface CreateProductProps {
     price: number
     unit: string
     category: string
+    step?: number
+    returnable?: boolean
     position?: number
 }
 
@@ -43,7 +56,17 @@ export interface ProductPatch {
     price?: number
     unit?: string
     category?: string
+    step?: number
+    returnable?: boolean
     position?: number
+}
+
+/** Weight items sell in gram steps (default 500 g); everything else sells by the piece. */
+function validStep(unit: Unit, step: number | undefined): number {
+    if (unit !== Unit.KG) {
+        return 1
+    }
+    return requireInteger("step", step ?? DEFAULT_KG_STEP, MIN_KG_STEP, MAX_KG_STEP)
 }
 
 function validPrice(amount: number): Money {
@@ -55,15 +78,18 @@ export class Product {
 
     static create(input: CreateProductProps): Product {
         const now = new Date()
+        const unit = requireOneOf("unit", input.unit, UNITS)
         return new Product({
             id: input.id,
             businessId: input.businessId,
             name: requireText("name", input.name, NAME_MAX),
             description: optionalText("description", input.description, DESCRIPTION_MAX),
             price: validPrice(input.price),
-            unit: requireOneOf("unit", input.unit, UNITS),
+            unit,
+            step: validStep(unit, input.step),
             category: requireOneOf("category", input.category, CATEGORIES),
             isAvailable: true,
+            returnable: input.returnable ?? false,
             position: requireInteger("position", input.position ?? 0, 0, MAX_POSITION),
             createdAt: now,
             updatedAt: now,
@@ -92,6 +118,15 @@ export class Product {
     get unit(): Unit {
         return this.props.unit
     }
+    get step(): number {
+        return this.props.step
+    }
+    get unavailableUntil(): Date | undefined {
+        return this.props.unavailableUntil
+    }
+    get returnable(): boolean {
+        return this.props.returnable
+    }
     get category(): Category {
         return this.props.category
     }
@@ -115,6 +150,21 @@ export class Product {
         return this.props.businessId === businessId
     }
 
+    /** On sale right now: not hidden and not on today's stop-list. */
+    isAvailableAt(now: Date): boolean {
+        const until = this.props.unavailableUntil
+        return this.props.isAvailable && (until === undefined || now >= until)
+    }
+
+    /** Checks an ordered quantity (base units) against the selling step. */
+    assertQuantity(quantity: number): void {
+        const { step } = this.props
+        requireInteger("quantity", quantity, step, step * MAX_STEPS_PER_LINE)
+        if (quantity % step !== 0) {
+            throw ValidationError.fromField("quantity", `Must be a multiple of ${step}`, quantity)
+        }
+    }
+
     update(patch: ProductPatch): void {
         if (patch.name !== undefined) {
             this.props.name = requireText("name", patch.name, NAME_MAX)
@@ -128,6 +178,16 @@ export class Product {
         if (patch.unit !== undefined) {
             this.props.unit = requireOneOf("unit", patch.unit, UNITS)
         }
+        if (patch.unit !== undefined || patch.step !== undefined) {
+            const keepStep = this.props.unit === Unit.KG && this.props.step > 1
+            this.props.step = validStep(
+                this.props.unit,
+                patch.step ?? (keepStep ? this.props.step : undefined),
+            )
+        }
+        if (patch.returnable !== undefined) {
+            this.props.returnable = patch.returnable
+        }
         if (patch.category !== undefined) {
             this.props.category = requireOneOf("category", patch.category, CATEGORIES)
         }
@@ -137,8 +197,17 @@ export class Product {
         this.touch()
     }
 
+    /** Hide or show for good. Clears today's stop-list mark. */
     setAvailability(isAvailable: boolean): void {
         this.props.isAvailable = isAvailable
+        this.props.unavailableUntil = undefined
+        this.touch()
+    }
+
+    /** "Sold out today": hidden until the next midnight in Tashkent, then back by itself. */
+    stopForToday(now: Date): void {
+        this.props.isAvailable = true
+        this.props.unavailableUntil = addDays(startOfLocalDay(now), 1)
         this.touch()
     }
 

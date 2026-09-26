@@ -85,4 +85,36 @@ export class BusinessRuleViolationError extends DomainError {
             businessId,
         })
     }
+
+    static inviteUsed(): BusinessRuleViolationError {
+        return new BusinessRuleViolationError("INVITE_USED", "This invite link was already used")
+    }
+
+    static inviteExpired(): BusinessRuleViolationError {
+        return new BusinessRuleViolationError("INVITE_EXPIRED", "This invite link has expired")
+    }
+
+    static orderNotAssignable(orderId: string, status: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "ORDER_NOT_ASSIGNABLE",
+            "A courier can be assigned only before the order is picked up",
+            { orderId, status },
+        )
+    }
+
+    static courierNotAvailable(courierId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "COURIER_NOT_AVAILABLE",
+            "This courier does not work for the shop",
+            { courierId },
+        )
+    }
+
+    static notInMarketplace(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NOT_IN_MARKETPLACE",
+            "The shop has no marketplace agreement",
+            { businessId },
+        )
+    }
 }

@@ -11,16 +11,19 @@ interface ProductRow {
     description: string | null
     price: number
     unit: string
+    step: number
     category: string
     image_key: string | null
     is_available: number
+    unavailable_until: number | null
+    returnable: number
     position: number
     created_at: number
     updated_at: number
 }
 
-const COLUMNS = `id, business_id, name, description, price, unit, category, image_key,
-    is_available, position, created_at, updated_at`
+const COLUMNS = `id, business_id, name, description, price, unit, step, category, image_key,
+    is_available, unavailable_until, returnable, position, created_at, updated_at`
 
 function toProduct(row: ProductRow): Product {
     return Product.reconstitute({
@@ -30,9 +33,13 @@ function toProduct(row: ProductRow): Product {
         description: optional(row.description),
         price: Money.of(row.price),
         unit: oneOf(row.unit, UNITS, "unit"),
+        step: row.step,
         category: oneOf(row.category, CATEGORIES, "category"),
         imageKey: optional(row.image_key),
         isAvailable: bool(row.is_available),
+        unavailableUntil:
+            row.unavailable_until === null ? undefined : new Date(row.unavailable_until),
+        returnable: bool(row.returnable),
         position: row.position,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
@@ -71,8 +78,11 @@ export class D1ProductRepository implements ProductRepository {
     ): Promise<Page<Product>> {
         const conditions = ["business_id = ?"]
         const params: (string | number)[] = [businessId]
-        if (query.availableOnly) {
-            conditions.push("is_available = 1")
+        if (query.availableAt !== undefined) {
+            conditions.push(
+                "is_available = 1 AND (unavailable_until IS NULL OR unavailable_until <= ?)",
+            )
+            params.push(query.availableAt.getTime())
         }
         if (query.category !== undefined) {
             conditions.push("category = ?")
@@ -100,12 +110,15 @@ export class D1ProductRepository implements ProductRepository {
     async save(product: Product): Promise<void> {
         await this.db
             .prepare(
-                `INSERT INTO products (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                `INSERT INTO products (${COLUMNS})
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT (id) DO UPDATE SET name = excluded.name,
                     description = excluded.description, price = excluded.price,
-                    unit = excluded.unit, category = excluded.category,
+                    unit = excluded.unit, step = excluded.step, category = excluded.category,
                     image_key = excluded.image_key, is_available = excluded.is_available,
-                    position = excluded.position, updated_at = excluded.updated_at`,
+                    unavailable_until = excluded.unavailable_until,
+                    returnable = excluded.returnable, position = excluded.position,
+                    updated_at = excluded.updated_at`,
             )
             .bind(
                 product.id,
@@ -114,9 +127,12 @@ export class D1ProductRepository implements ProductRepository {
                 product.description ?? null,
                 product.price.amount,
                 product.unit,
+                product.step,
                 product.category,
                 product.imageKey ?? null,
                 flag(product.isAvailable),
+                product.unavailableUntil?.getTime() ?? null,
+                flag(product.returnable),
                 product.position,
                 product.createdAt.getTime(),
                 product.updatedAt.getTime(),

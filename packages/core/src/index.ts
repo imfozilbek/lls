@@ -1,9 +1,11 @@
 // Domain - Enums
 export * from "./domain/enums/business-type.js"
+export * from "./domain/enums/business-profile.js"
 export * from "./domain/enums/business-status.js"
 export * from "./domain/enums/category.js"
 export * from "./domain/enums/feature.js"
 export * from "./domain/enums/language.js"
+export * from "./domain/enums/order-channel.js"
 export * from "./domain/enums/order-status.js"
 export * from "./domain/enums/unit.js"
 
@@ -21,6 +23,7 @@ export * from "./domain/value-objects/working-hours.js"
 
 // Domain - Entities
 export * from "./domain/entities/business.js"
+export * from "./domain/entities/courier.js"
 export * from "./domain/entities/customer.js"
 export * from "./domain/entities/order.js"
 export * from "./domain/entities/order-item.js"

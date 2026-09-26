@@ -3,7 +3,8 @@ import type { Category } from "../../domain/enums/category.js"
 import type { Page, PageRequest } from "../dtos/pagination.js"
 
 export interface ProductListQuery {
-    availableOnly: boolean
+    /** Only products on sale at this moment (not hidden, not on today's stop-list). */
+    availableAt?: Date
     category?: Category
 }
 

@@ -15,8 +15,11 @@ export interface AuthContext {
     user: TelegramUser
     /** The shop from `X-Shop`, or null when the platform bot opened the app (onboarding). */
     business: Business | null
-    isOwner: boolean
+    /** The viewer's role in this shop; `customer` outside a shop (onboarding). */
+    role: ViewerRole
 }
+
+export type ViewerRole = "owner" | "courier" | "customer"
 
 export interface AppEnv {
     Bindings: Bindings

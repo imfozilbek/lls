@@ -15,6 +15,10 @@ describe("Money", () => {
         expect(Money.optional(0)).toBeUndefined()
         expect(Money.optional(null)).toBeUndefined()
         expect(Money.optional(50_000)?.amount).toBe(50_000)
+        expect(Money.of(12_000).multiplyRatio(1500, 1000).amount).toBe(18_000)
+        expect(Money.of(70_000).percent(750).amount).toBe(5_250)
+        expect(() => Money.of(1).multiplyRatio(1, 0)).toThrow(ValidationError)
+        expect(() => Money.of(1).multiplyRatio(-1, 1)).toThrow(ValidationError)
         for (const bad of [-1, 0.5, Number.NaN, Number.POSITIVE_INFINITY, 2 ** 60]) {
             expect(() => Money.of(bad)).toThrow(ValidationError)
         }

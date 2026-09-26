@@ -1,10 +1,11 @@
 import { offsetOf } from "../application/dtos/pagination.js"
-import { OrderStatus } from "../domain/enums/order-status.js"
+import { ACTIVE_ORDER_STATUSES, OrderStatus } from "../domain/enums/order-status.js"
 
 import type { Page, PageRequest } from "../application/dtos/pagination.js"
 import type { OrderStatsDTO } from "../application/dtos/stats.dto.js"
 import type { BusinessRepository } from "../application/ports/business-repository.js"
 import type { Clock } from "../application/ports/clock.js"
+import type { CourierRepository } from "../application/ports/courier-repository.js"
 import type { CustomerRepository } from "../application/ports/customer-repository.js"
 import type { OrderRepository } from "../application/ports/order-repository.js"
 import type {
@@ -12,6 +13,7 @@ import type {
     ProductRepository,
 } from "../application/ports/product-repository.js"
 import type { Business } from "../domain/entities/business.js"
+import type { Courier, CourierInvite } from "../domain/entities/courier.js"
 import type { Customer } from "../domain/entities/customer.js"
 import type { Order } from "../domain/entities/order.js"
 import type { Product } from "../domain/entities/product.js"
@@ -67,7 +69,7 @@ export class InMemoryProducts implements ProductRepository {
     ): Promise<Page<Product>> {
         const matching = [...this.items.values()]
             .filter((p) => p.belongsTo(businessId))
-            .filter((p) => !query.availableOnly || p.isAvailable)
+            .filter((p) => query.availableAt === undefined || p.isAvailableAt(query.availableAt))
             .filter((p) => query.category === undefined || p.category === query.category)
             .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name))
         return paginate(matching, page)
@@ -137,6 +139,12 @@ export class InMemoryOrders implements OrderRepository {
             .sort((a, b) => b.number - a.number)
         return paginate(matching, page)
     }
+    async listByCourier(courierId: string, since: Date): Promise<Order[]> {
+        return [...this.items.values()]
+            .filter((o) => o.courierId === courierId)
+            .filter((o) => ACTIVE_ORDER_STATUSES.includes(o.status) || o.updatedAt >= since)
+            .sort((a, b) => b.number - a.number)
+    }
     async listByCustomer(
         customerId: string,
         businessId: string,
@@ -163,4 +171,32 @@ export class InMemoryOrders implements OrderRepository {
 
 export function fixedClock(date: Date): Clock {
     return { now: () => date }
+}
+
+export class InMemoryCouriers implements CourierRepository {
+    readonly items = new Map<string, Courier>()
+    readonly invites = new Map<string, CourierInvite>()
+
+    async findById(id: string): Promise<Courier | null> {
+        return this.items.get(id) ?? null
+    }
+    async findByTelegramId(businessId: string, telegramId: number): Promise<Courier | null> {
+        return (
+            [...this.items.values()].find(
+                (c) => c.businessId === businessId && c.telegramId.value === telegramId,
+            ) ?? null
+        )
+    }
+    async listActive(businessId: string): Promise<Courier[]> {
+        return [...this.items.values()].filter((c) => c.worksFor(businessId))
+    }
+    async save(courier: Courier): Promise<void> {
+        this.items.set(courier.id, courier)
+    }
+    async saveInvite(invite: CourierInvite): Promise<void> {
+        this.invites.set(invite.code, invite)
+    }
+    async findInvite(code: string): Promise<CourierInvite | null> {
+        return this.invites.get(code) ?? null
+    }
 }

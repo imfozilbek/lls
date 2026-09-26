@@ -114,7 +114,7 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                     <ReceiptIcon size={16} />
                     {t.shop.myOrders}
                 </button>
-                {shop.viewerIsOwner ? (
+                {shop.viewerRole === "owner" ? (
                     <button
                         type="button"
                         onClick={(): void => push({ name: "owner" })}

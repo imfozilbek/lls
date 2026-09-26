@@ -1,15 +1,16 @@
-import { DomainError, ForbiddenError, languageFromTelegram } from "@lls/core"
+import { DomainError, ForbiddenError, Phone, languageFromTelegram } from "@lls/core"
 import { Hono } from "hono"
 import { z } from "zod"
 
 import { timingSafeEqual } from "../crypto.js"
-import { parseOrderCallback, parseReviewCallback } from "../telegram/format.js"
+import { parseCourierInvite, parseOrderCallback, parseReviewCallback } from "../telegram/format.js"
 import { TelegramApiError, escapeHtml } from "../telegram/gateway.js"
-import { Notifier, onboardingAppUrl, shopAppUrl } from "../telegram/notifier.js"
+import { Notifier, courierAppUrl, onboardingAppUrl, shopAppUrl } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
+import type { InlineKeyboard } from "../telegram/gateway.js"
 import type { Business, OrderDTO, TelegramUser } from "@lls/core"
 
 const SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
@@ -47,6 +48,7 @@ const updateSchema = z.object({
 
 type Update = z.infer<typeof updateSchema>
 type Callback = NonNullable<Update["callback_query"]>
+type ShopMessage = NonNullable<Update["message"]>
 
 function toTelegramUser(user: z.infer<typeof userSchema>): TelegramUser {
     return {
@@ -67,50 +69,114 @@ function isStart(text: string | undefined): boolean {
     return text?.trim().startsWith("/start") ?? false
 }
 
-async function handleShopMessage(
+function openButton(label: string, url: string): InlineKeyboard {
+    return { inline_keyboard: [[{ text: label, web_app: { url } }]] }
+}
+
+/** `/start c_<code>`: the sender joins the shop as a courier. */
+async function joinAsCourier(
     services: Services,
     business: Business,
     token: string,
-    message: NonNullable<Update["message"]>,
+    message: ShopMessage,
+    code: string,
 ): Promise<void> {
     const from = message.from
     if (!from) {
         return
     }
-    const texts = textsFor(languageFromTelegram(from.language_code))
-    if (message.contact) {
-        // Only the sender's own contact counts: a forwarded contact must not change anyone's phone.
-        if (message.contact.user_id !== from.id) {
-            return
-        }
-        await services.useCases.updateCustomer.execute({
+    const texts = textsFor(languageFromTelegram(from.language_code), business.type)
+    try {
+        const courier = await services.useCases.joinAsCourier.execute({
+            code,
+            businessId: business.id,
             user: toTelegramUser(from),
-            phone: message.contact.phone_number,
         })
-        await services.telegram.sendMessage(token, message.chat.id, texts.phoneSaved)
-        return
-    }
-    if (isStart(message.text)) {
         await services.telegram.sendMessage(
             token,
             message.chat.id,
-            fill(texts.shopWelcome, { shop: `<b>${escapeHtml(business.name)}</b>` }),
+            fill(texts.courierJoined, { shop: `<b>${escapeHtml(business.name)}</b>` }),
             {
-                keyboard: {
-                    inline_keyboard: [
-                        [
-                            {
-                                text: texts.openMenu,
-                                web_app: {
-                                    url: shopAppUrl(services.env.APP_ORIGIN, business.slug.value),
-                                },
-                            },
-                        ],
-                    ],
-                },
+                keyboard: openButton(
+                    texts.myDeliveries,
+                    courierAppUrl(services.env.APP_ORIGIN, business.slug.value),
+                ),
             },
         )
+        await new Notifier(services).courierJoined(business, courier.name)
+    } catch (error) {
+        if (!(error instanceof DomainError)) {
+            throw error
+        }
+        await services.telegram.sendMessage(token, message.chat.id, texts.inviteInvalid)
     }
+}
+
+/** A shared contact: the customer's phone, and the courier's too if the sender is one. */
+async function saveContact(
+    services: Services,
+    business: Business,
+    token: string,
+    message: ShopMessage,
+): Promise<void> {
+    const { from, contact } = message
+    // Only the sender's own contact counts: a forwarded contact must not change anyone's phone.
+    if (!from || !contact || contact.user_id !== from.id) {
+        return
+    }
+    await services.useCases.updateCustomer.execute({
+        user: toTelegramUser(from),
+        phone: contact.phone_number,
+    })
+    const courier = await services.couriers.findByTelegramId(business.id, from.id)
+    if (courier) {
+        courier.setPhone(Phone.create(contact.phone_number), services.clock.now())
+        await services.couriers.save(courier)
+    }
+    const texts = textsFor(languageFromTelegram(from.language_code), business.type)
+    await services.telegram.sendMessage(token, message.chat.id, texts.phoneSaved)
+}
+
+async function handleShopMessage(
+    services: Services,
+    business: Business,
+    token: string,
+    message: ShopMessage,
+): Promise<void> {
+    const from = message.from
+    if (!from) {
+        return
+    }
+    if (message.contact) {
+        await saveContact(services, business, token, message)
+        return
+    }
+    const invite = parseCourierInvite(message.text)
+    if (invite) {
+        await joinAsCourier(services, business, token, message, invite)
+        return
+    }
+    if (!isStart(message.text)) {
+        return
+    }
+    const texts = textsFor(languageFromTelegram(from.language_code), business.type)
+    const origin = services.env.APP_ORIGIN
+    const courier = await services.couriers.findByTelegramId(business.id, from.id)
+    const keyboard = openButton(texts.openMenu, shopAppUrl(origin, business.slug.value))
+    if (courier?.worksFor(business.id)) {
+        keyboard.inline_keyboard.push([
+            {
+                text: texts.myDeliveries,
+                web_app: { url: courierAppUrl(origin, business.slug.value) },
+            },
+        ])
+    }
+    await services.telegram.sendMessage(
+        token,
+        message.chat.id,
+        fill(texts.shopWelcome, { shop: `<b>${escapeHtml(business.name)}</b>` }),
+        { keyboard },
+    )
 }
 
 function callbackErrorText(error: unknown, texts: ReturnType<typeof textsFor>): string {
@@ -129,7 +195,7 @@ async function handleOrderCallback(
     token: string,
     callback: Callback,
 ): Promise<void> {
-    const texts = textsFor(languageFromTelegram(callback.from.language_code))
+    const texts = textsFor(languageFromTelegram(callback.from.language_code), business.type)
     const action = parseOrderCallback(callback.data ?? "")
     if (!action) {
         await services.telegram.answerCallback(token, callback.id)
@@ -191,15 +257,17 @@ async function handleReviewCallback(
         })
         // Connect the shop bot first: a failed card edit or answer must not skip it.
         await new Notifier(services).shopReviewed(shop, workerOrigin)
+        const texts = textsFor(languageFromTelegram(callback.from.language_code))
+        const status = texts.shopStatus[shop.status]
         if (callback.message) {
             await services.telegram.editMessage(
                 token,
                 callback.message.chat.id,
                 callback.message.message_id,
-                `🏪 <b>${escapeHtml(shop.name)}</b> — ${shop.status}`,
+                `🏪 <b>${escapeHtml(shop.name)}</b> — ${status}`,
             )
         }
-        await services.telegram.answerCallback(token, callback.id, shop.status)
+        await services.telegram.answerCallback(token, callback.id, status)
     } catch (error) {
         if (!(error instanceof DomainError)) {
             throw error

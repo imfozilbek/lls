@@ -34,6 +34,11 @@ async function hmacSha256(key: ArrayBuffer | Uint8Array, data: string): Promise<
     return crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(data))
 }
 
+/** Hex SHA-256, e.g. to store invite codes without keeping the code itself. */
+export async function sha256Hex(value: string): Promise<string> {
+    return toHex(await crypto.subtle.digest("SHA-256", encoder.encode(value)))
+}
+
 /** Compares two strings without leaking where they differ. */
 export function timingSafeEqual(a: string, b: string): boolean {
     const left = encoder.encode(a)

@@ -8,6 +8,8 @@ await applyD1Migrations(env.DB, env.TEST_MIGRATIONS)
 const TABLES = [
     "order_items",
     "orders",
+    "courier_invites",
+    "couriers",
     "customer_businesses",
     "customers",
     "products",

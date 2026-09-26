@@ -1,3 +1,5 @@
+import { FEATURES } from "../../../domain/enums/feature.js"
+import { requireOneOf } from "../../../domain/shared/guards.js"
 import { BrandColor } from "../../../domain/value-objects/brand-color.js"
 import { Location } from "../../../domain/value-objects/location.js"
 import { Money } from "../../../domain/value-objects/money.js"
@@ -26,6 +28,10 @@ export interface ShopSettingsPatch {
     /** `null` = always open. */
     workingHours?: WeeklySchedule | null
     acceptingOrders?: boolean
+    /** Vertical toggles the owner switched on. */
+    features?: string[]
+    /** Deposit per kept returnable bottle, UZS (0 = only count bottles). */
+    bottleDeposit?: number
 }
 
 export interface UpdateShopInput {
@@ -67,6 +73,12 @@ function applyPatch(business: Business, patch: ShopSettingsPatch): void {
     }
     if (patch.acceptingOrders !== undefined) {
         business.setAcceptingOrders(patch.acceptingOrders)
+    }
+    if (patch.features !== undefined) {
+        business.setFeatures(patch.features.map((f) => requireOneOf("features", f, FEATURES)))
+    }
+    if (patch.bottleDeposit !== undefined) {
+        business.setBottleDeposit(Money.of(patch.bottleDeposit))
     }
 }
 

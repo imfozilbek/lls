@@ -16,7 +16,7 @@
     "scripts": {
         "build": "tsc",
         "dev": "tsc --watch",
-        "test": "vitest run",
+        "test": "tsc -p tsconfig.test.json && vitest run",
         "test:watch": "vitest",
         "test:coverage": "vitest run --coverage",
         "clean": "rm -rf dist"

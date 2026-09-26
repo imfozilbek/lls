@@ -5,6 +5,7 @@ import { Hono } from "hono"
 import { requireOwner, shopOf } from "../auth.js"
 import { deleteImage, storeImage } from "../http/images.js"
 import {
+    assignCourierBody,
     idParam,
     ownerOrderBody,
     ownerOrdersQuery,
@@ -96,6 +97,57 @@ export const ownerRoutes = new Hono<AppEnv>()
             return c.json(order)
         },
     )
+
+    .put(
+        "/orders/:id/courier",
+        zValidator("param", idParam, onInvalid),
+        zValidator("json", assignCourierBody, onInvalid),
+        async (c) => {
+            const services = c.get("services")
+            const business = shopOf(c)
+            const orderId = c.req.valid("param").id
+            const previous = await services.orders.findById(orderId)
+            const order = await services.useCases.assignCourier.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: business.id,
+                orderId,
+                courierId: c.req.valid("json").courierId,
+            })
+            inBackground(
+                c.executionCtx,
+                new Notifier(services).courierAssigned(business, order, previous?.courierId),
+            )
+            return c.json(order)
+        },
+    )
+
+    .get("/couriers", async (c) => {
+        const couriers = await c.get("services").useCases.listCouriers.execute({
+            actorTelegramId: c.get("auth").user.id,
+            businessId: shopOf(c).id,
+        })
+        return c.json(couriers)
+    })
+
+    /** A one-time link for the shop bot: `t.me/<bot>?start=c_<code>`. */
+    .post("/couriers/invites", async (c) => {
+        const business = shopOf(c)
+        const invite = await c.get("services").useCases.createCourierInvite.execute({
+            actorTelegramId: c.get("auth").user.id,
+            businessId: business.id,
+        })
+        const link = `https://t.me/${business.bot.username}?start=c_${invite.code}`
+        return c.json({ link, expiresAt: invite.expiresAt }, 201)
+    })
+
+    .delete("/couriers/:id", zValidator("param", idParam, onInvalid), async (c) => {
+        await c.get("services").useCases.deactivateCourier.execute({
+            actorTelegramId: c.get("auth").user.id,
+            businessId: shopOf(c).id,
+            courierId: c.req.valid("param").id,
+        })
+        return c.body(null, 204)
+    })
 
     .get("/products", zValidator("query", productsQuery, onInvalid), async (c) => {
         const page = await c.get("services").useCases.listProducts.execute({

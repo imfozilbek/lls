@@ -4,7 +4,8 @@ import { createMiddleware } from "hono/factory"
 import { verifyInitData } from "./crypto.js"
 import { ApiError, unauthorized } from "./http/errors.js"
 
-import type { AppEnv } from "./env.js"
+import type { AppEnv, ViewerRole } from "./env.js"
+import type { Services } from "./services.js"
 import type { Business } from "@lls/core"
 
 export const INIT_DATA_HEADER = "X-Telegram-Init-Data"
@@ -42,10 +43,23 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
     c.set("auth", {
         user: verified.user,
         business,
-        isOwner: business?.isOwnedBy(verified.user.id) ?? false,
+        role: business ? await roleIn(services, business, verified.user.id) : "customer",
     })
     await next()
 })
+
+/** Owner by the shop record, courier by an active courier row, everyone else is a customer. */
+async function roleIn(
+    services: Services,
+    business: Business,
+    telegramId: number,
+): Promise<ViewerRole> {
+    if (business.isOwnedBy(telegramId)) {
+        return "owner"
+    }
+    const courier = await services.couriers.findByTelegramId(business.id, telegramId)
+    return courier?.worksFor(business.id) ? "courier" : "customer"
+}
 
 /** The route works inside a shop (the app was opened from a shop bot). */
 export function shopOf(c: { get(key: "auth"): AppEnv["Variables"]["auth"] }): Business {
@@ -58,8 +72,16 @@ export function shopOf(c: { get(key: "auth"): AppEnv["Variables"]["auth"] }): Bu
 
 export const requireOwner = createMiddleware<AppEnv>(async (c, next) => {
     const business = shopOf(c)
-    if (!c.get("auth").isOwner) {
+    if (c.get("auth").role !== "owner") {
         throw ForbiddenError.notOwner(business.id)
+    }
+    await next()
+})
+
+export const requireCourier = createMiddleware<AppEnv>(async (c, next) => {
+    const business = shopOf(c)
+    if (c.get("auth").role !== "courier") {
+        throw ForbiddenError.notCourier(business.id)
     }
     await next()
 })

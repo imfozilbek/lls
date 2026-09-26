@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest"
 import { Business } from "../../../domain/entities/business.js"
 import { BusinessStatus } from "../../../domain/enums/business-status.js"
 import { Feature } from "../../../domain/enums/feature.js"
+import { OrderChannel } from "../../../domain/enums/order-channel.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { BrandColor } from "../../../domain/value-objects/brand-color.js"
@@ -18,7 +19,9 @@ describe("Business", () => {
         expect(business.brandColor.hex).toBe("#0ea5e9")
         expect(business.workingHours.toJSON()).toBeNull()
         expect(business.acceptingOrders).toBe(true)
-        expect(business.features).toEqual([])
+        expect(business.features).toEqual([Feature.REORDER, Feature.STOP_LIST])
+        expect(business.bottleDeposit.amount).toBe(0)
+        expect(business.marketplace).toBeUndefined()
         expect(business.bot).toEqual({ id: 777, username: "osh_markaz_bot" })
         expect(business.slug.value).toBe("osh-markaz")
     })
@@ -115,6 +118,32 @@ describe("Business", () => {
         business.setFeatures([Feature.REORDER, Feature.REORDER])
         expect(business.features).toEqual([Feature.REORDER])
         expect(business.hasFeature(Feature.REORDER)).toBe(true)
+    })
+
+    it("charges a deposit only for kept bottles and only with the feature on", () => {
+        const water = makeBusiness()
+        water.setBottleDeposit(Money.of(30_000))
+        expect(water.depositFor(2, 0).amount).toBe(0)
+        water.setFeatures([Feature.BOTTLE_DEPOSIT])
+        expect(water.depositFor(2, 0).amount).toBe(60_000)
+        expect(water.depositFor(2, 1).amount).toBe(30_000)
+        expect(water.depositFor(2, 5).amount).toBe(0)
+        expect(() => water.setBottleDeposit(Money.of(2_000_000))).toThrow(ValidationError)
+    })
+
+    it("takes a commission only on marketplace sales, with a signed deal", () => {
+        const shop = makeBusiness()
+        expect(shop.commissionBpsFor(OrderChannel.SHOP_BOT)).toBe(0)
+        expect(() => shop.commissionBpsFor(OrderChannel.MARKETPLACE)).toThrow(
+            BusinessRuleViolationError,
+        )
+        shop.joinMarketplace(800, NOON_MONDAY_UZ)
+        expect(shop.commissionBpsFor(OrderChannel.MARKETPLACE)).toBe(800)
+        expect(shop.commissionBpsFor(OrderChannel.SHOP_BOT)).toBe(0)
+        expect(shop.marketplace?.joinedAt).toBe(NOON_MONDAY_UZ)
+        expect(() => shop.joinMarketplace(6_000, NOON_MONDAY_UZ)).toThrow(ValidationError)
+        shop.leaveMarketplace()
+        expect(shop.marketplace).toBeUndefined()
     })
 
     it("rejects a broken bot", () => {

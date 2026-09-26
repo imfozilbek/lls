@@ -1,44 +1,75 @@
-import { OrderStatus, formatPhone, mapUrl } from "@lls/core"
+import { OrderStatus, Unit, formatPhone, mapUrl } from "@lls/core"
 
 import { escapeHtml } from "./gateway.js"
 import { fill, textsFor } from "./texts.js"
 
 import type { InlineKeyboard } from "./gateway.js"
-import type { Language, OrderDTO } from "@lls/core"
+import type { BotTexts } from "./texts.js"
+import type { BusinessType, Language, OrderDTO, OrderItemDTO } from "@lls/core"
 
-/** 70000 → "70 000 so'm". Narrow no-break spaces keep the number on one line. */
+/** Who reads a message: their language and the kind of shop the order is from. */
+export interface Reader {
+    language: Language
+    type: BusinessType
+}
+
+const GRAMS_PER_KG = 1000
+
+/** 70000 → "70 000 so'm". */
 export function formatMoney(amount: number, language: Language): string {
-    const grouped = String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")
+    const grouped = String(amount).replace(/\B(?=(\d{3})+(?!\d))/g, " ")
     return `${grouped} ${textsFor(language).currency}`
 }
 
-function orderMapUrl(order: OrderDTO): string | undefined {
-    return order.location ? mapUrl(order.location) : undefined
+/** "× 2" for pieces, "× 1,5 kg" for weight items (quantity is in grams). */
+function quantityLabel(item: OrderItemDTO, t: BotTexts): string {
+    if (item.unit !== Unit.KG) {
+        return `× ${item.quantity}`
+    }
+    const kg = String(item.quantity / GRAMS_PER_KG).replace(".", ",")
+    return `× ${kg} ${t.kg}`
 }
 
-/** The owner's order card: items, totals, customer, address, current status. */
-export function formatOrderForOwner(order: OrderDTO, language: Language): string {
-    const t = textsFor(language)
-    const lines = [`<b>${t.order} #${order.number}</b>`, ""]
-    for (const item of order.items) {
-        lines.push(
-            `${escapeHtml(item.name)} × ${item.quantity} — ${formatMoney(item.total, language)}`,
-        )
-    }
-    const delivery = order.deliveryFee === 0 ? t.free : formatMoney(order.deliveryFee, language)
-    lines.push(`${t.delivery}: ${delivery}`)
-    lines.push(`<b>${t.total}: ${formatMoney(order.total, language)}</b>`, "")
+function itemLines(order: OrderDTO, t: BotTexts, language: Language): string[] {
+    return order.items.map(
+        (item) =>
+            `${escapeHtml(item.name)} ${quantityLabel(item, t)} — ${formatMoney(item.total, language)}`,
+    )
+}
 
+function addressLines(order: OrderDTO, t: BotTexts): string[] {
     const phone = order.customerPhone ? `, ${formatPhone(order.customerPhone)}` : ""
-    lines.push(`👤 ${escapeHtml(order.customerName)}${phone}`)
     const landmark = order.landmark ? ` (${t.landmark}: ${escapeHtml(order.landmark)})` : ""
-    lines.push(`📍 ${escapeHtml(order.address)}${landmark}`)
-    const map = orderMapUrl(order)
-    if (map) {
-        lines.push(`🗺 <a href="${map}">${t.map}</a>`)
+    const lines = [
+        `👤 ${escapeHtml(order.customerName)}${phone}`,
+        `📍 ${escapeHtml(order.address)}${landmark}`,
+    ]
+    if (order.location) {
+        lines.push(`🗺 <a href="${mapUrl(order.location)}">${t.map}</a>`)
     }
     if (order.comment) {
         lines.push(`💬 ${escapeHtml(order.comment)}`)
+    }
+    return lines
+}
+
+/** The owner's order card: items, totals, customer, address, courier, current status. */
+export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
+    const { language } = reader
+    const t = textsFor(language, reader.type)
+    const lines = [`<b>${t.order} #${order.number}</b>`, "", ...itemLines(order, t, language)]
+    const delivery = order.deliveryFee === 0 ? t.free : formatMoney(order.deliveryFee, language)
+    lines.push(`${t.delivery}: ${delivery}`)
+    if (order.depositTotal > 0) {
+        lines.push(`${t.deposit}: ${formatMoney(order.depositTotal, language)}`)
+    }
+    lines.push(`<b>${t.total}: ${formatMoney(order.total, language)}</b>`)
+    if (order.bottlesReturned > 0) {
+        lines.push(fill(t.bottlesBack, { n: order.bottlesReturned }))
+    }
+    lines.push("", ...addressLines(order, t))
+    if (order.courierName) {
+        lines.push(`🚚 ${t.courier}: ${escapeHtml(order.courierName)}`)
     }
     lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
     if (order.cancelReason) {
@@ -47,19 +78,43 @@ export function formatOrderForOwner(order: OrderDTO, language: Language): string
     return lines.join("\n")
 }
 
-export function formatNewOrderForOwner(order: OrderDTO, language: Language): string {
-    return `${textsFor(language).newOrder}\n\n${formatOrderForOwner(order, language)}`
+export function formatNewOrderForOwner(order: OrderDTO, reader: Reader): string {
+    return `${textsFor(reader.language).newOrder}\n\n${formatOrderForOwner(order, reader)}`
 }
 
-export function formatStatusForCustomer(order: OrderDTO, language: Language): string | null {
-    const template = textsFor(language).customerStatus[order.status]
+/** The courier's card: where to go, whom to call, how much cash and how many bottles to take. */
+export function formatOrderForCourier(order: OrderDTO, reader: Reader): string {
+    const { language } = reader
+    const t = textsFor(language, reader.type)
+    const lines = [
+        `<b>${t.courierCard} · ${t.order} #${order.number}</b>`,
+        "",
+        ...itemLines(order, t, language),
+        "",
+        fill(t.collect, { sum: `<b>${formatMoney(order.total, language)}</b>` }),
+    ]
+    if (order.bottlesReturned > 0) {
+        lines.push(fill(t.bottlesToCollect, { n: order.bottlesReturned }))
+    }
+    lines.push("", ...addressLines(order, t))
+    lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
+    if (order.status === OrderStatus.ACCEPTED || order.status === OrderStatus.PREPARING) {
+        lines.push(t.courierWait)
+    }
+    return lines.join("\n")
+}
+
+export function formatStatusForCustomer(order: OrderDTO, reader: Reader): string | null {
+    const t = textsFor(reader.language, reader.type)
+    const template =
+        order.status === OrderStatus.PICKED_UP && order.courierName
+            ? t.courierOnTheWay
+            : t.customerStatus[order.status]
     if (!template) {
         return null
     }
-    const text = fill(template, { n: order.number })
-    const reason = order.cancelReason
-        ? `\n${textsFor(language).reason}: ${escapeHtml(order.cancelReason)}`
-        : ""
+    const text = fill(template, { n: order.number, courier: escapeHtml(order.courierName ?? "") })
+    const reason = order.cancelReason ? `\n${t.reason}: ${escapeHtml(order.cancelReason)}` : ""
     return text + reason
 }
 
@@ -84,9 +139,9 @@ export function parseOrderCallback(data: string): OrderCallback | null {
     return null
 }
 
-/** Next-step button + cancel, or no buttons for a finished order. */
-export function orderKeyboard(order: OrderDTO, language: Language): InlineKeyboard {
-    const t = textsFor(language)
+/** Owner: next-step button + cancel, or no buttons for a finished order. */
+export function orderKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard {
+    const t = textsFor(reader.language, reader.type)
     const next = order.nextStatus
     if (!next) {
         return { inline_keyboard: [] }
@@ -95,6 +150,23 @@ export function orderKeyboard(order: OrderDTO, language: Language): InlineKeyboa
         inline_keyboard: [
             [{ text: t.actions[next] ?? next, callback_data: `a:${order.id}:${next}` }],
             [{ text: t.cancel, callback_data: `x:${order.id}` }],
+        ],
+    }
+}
+
+/** Courier: "Picked up" once the order is ready, then "Delivered". Nothing before or after. */
+export function courierKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard {
+    const t = textsFor(reader.language, reader.type)
+    const next =
+        order.status === OrderStatus.READY || order.status === OrderStatus.PICKED_UP
+            ? order.nextStatus
+            : null
+    if (!next) {
+        return { inline_keyboard: [] }
+    }
+    return {
+        inline_keyboard: [
+            [{ text: t.courierActions[next] ?? next, callback_data: `a:${order.id}:${next}` }],
         ],
     }
 }
@@ -108,4 +180,10 @@ export function parseReviewCallback(
         return null
     }
     return { businessId, decision }
+}
+
+/** Invite payload of `/start c_<code>`, or null for a plain /start. */
+export function parseCourierInvite(text: string | undefined): string | null {
+    const match = /^\/start\s+c_([A-Za-z0-9_-]{8,40})\s*$/.exec(text?.trim() ?? "")
+    return match?.[1] ?? null
 }

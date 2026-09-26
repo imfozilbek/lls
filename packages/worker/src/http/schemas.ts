@@ -1,4 +1,13 @@
-import { BUSINESS_TYPES, CATEGORIES, LANGUAGES, ORDER_STATUSES, UNITS, WEEKDAYS } from "@lls/core"
+import {
+    BUSINESS_TYPES,
+    CATEGORIES,
+    FEATURES,
+    LANGUAGES,
+    ORDER_STATUSES,
+    OrderStatus,
+    UNITS,
+    WEEKDAYS,
+} from "@lls/core"
 import { z } from "zod"
 
 import type { Context } from "hono"
@@ -32,7 +41,8 @@ export const placeOrderBody = z.object({
         .array(
             z.object({
                 productId: z.string().min(1).max(64),
-                quantity: z.number().int().min(1).max(99),
+                // Pieces, or grams for weight items; the product checks its own step.
+                quantity: z.number().int().min(1).max(1_000_000),
             }),
         )
         .min(1)
@@ -41,6 +51,7 @@ export const placeOrderBody = z.object({
     landmark: z.string().trim().max(200).optional(),
     location: locationSchema.optional(),
     comment: z.string().trim().max(300).optional(),
+    bottlesReturned: z.number().int().min(0).max(99).optional(),
 })
 
 export const customerCancelBody = z.object({
@@ -59,12 +70,22 @@ export const productBody = z.object({
     price: z.number().int().min(1).max(100_000_000),
     unit: z.enum(UNITS),
     category: z.enum(CATEGORIES),
+    step: z.number().int().min(10).max(10_000).optional(),
+    returnable: z.boolean().optional(),
     position: z.number().int().min(0).max(100_000).optional(),
 })
 
 export const productPatchBody = productBody.partial().extend({
     description: z.string().trim().max(500).nullable().optional(),
     isAvailable: z.boolean().optional(),
+    stopForToday: z.literal(true).optional(),
+})
+
+export const assignCourierBody = z.object({ courierId: z.string().min(1).max(64) })
+
+/** A courier moves only the delivery part. */
+export const courierOrderBody = z.object({
+    status: z.enum([OrderStatus.PICKED_UP, OrderStatus.DELIVERED]),
 })
 
 const timeRange = z.object({
@@ -90,6 +111,8 @@ export const shopPatchBody = z.object({
         .optional(),
     workingHours: z.partialRecord(z.enum(WEEKDAYS), timeRange).nullable().optional(),
     acceptingOrders: z.boolean().optional(),
+    features: z.array(z.enum(FEATURES)).max(10).optional(),
+    bottleDeposit: z.number().int().min(0).max(1_000_000).optional(),
 })
 
 export const registerShopBody = z.object({

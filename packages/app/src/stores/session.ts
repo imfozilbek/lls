@@ -2,7 +2,10 @@ import { create } from "zustand"
 
 import type { CustomerDTO, ProductDTO, ShopPublicDTO } from "@lls/core"
 
-export type Shop = ShopPublicDTO & { viewerIsOwner: boolean }
+/** The viewer's role in this shop, decided by the server from verified Telegram data. */
+export type ViewerRole = "owner" | "courier" | "customer"
+
+export type Shop = ShopPublicDTO & { viewerRole: ViewerRole }
 
 interface SessionState {
     shop: Shop | null

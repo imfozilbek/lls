@@ -1,5 +1,7 @@
 import { OrderItem } from "../../../domain/entities/order-item.js"
 import { MAX_ORDER_LINES, Order, subtotalOf } from "../../../domain/entities/order.js"
+import { Feature } from "../../../domain/enums/feature.js"
+import { OrderChannel } from "../../../domain/enums/order-channel.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../../domain/errors/conflict.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
@@ -34,6 +36,10 @@ export interface PlaceOrderInput {
     landmark?: string
     location?: LocationDTO
     comment?: string
+    /** Empty returnable bottles the customer gives back (water shops). */
+    bottlesReturned?: number
+    /** Decided by the server from which bot opened the app; never sent by the client. */
+    channel?: OrderChannel
 }
 
 export interface PlaceOrderDeps {
@@ -53,24 +59,37 @@ function mergeLines(lines: readonly OrderLineInput[]): OrderLineInput[] {
     return [...merged].map(([productId, quantity]) => ({ productId, quantity }))
 }
 
-function buildItems(lines: OrderLineInput[], products: Product[]): OrderItem[] {
+interface PricedLines {
+    items: OrderItem[]
+    /** How many returnable bottles are ordered (they are counted in pieces). */
+    returnable: number
+}
+
+function buildItems(lines: OrderLineInput[], products: Product[], now: Date): PricedLines {
     const byId = new Map(products.map((product) => [product.id, product]))
-    return lines.map((line) => {
+    let returnable = 0
+    const items = lines.map((line) => {
         const product = byId.get(line.productId)
         if (!product) {
             throw EntityNotFoundError.product(line.productId)
         }
-        if (!product.isAvailable) {
+        if (!product.isAvailableAt(now)) {
             throw BusinessRuleViolationError.productNotAvailable(product.id)
+        }
+        product.assertQuantity(line.quantity)
+        if (product.returnable) {
+            returnable += line.quantity
         }
         return OrderItem.create({
             productId: product.id,
             name: product.name,
             unit: product.unit,
+            category: product.category,
             unitPrice: product.price,
             quantity: line.quantity,
         })
     })
+    return { items, returnable }
 }
 
 export class PlaceOrderUseCase {
@@ -105,9 +124,16 @@ export class PlaceOrderUseCase {
             business.id,
             lines.map((line) => line.productId),
         )
-        const items = buildItems(lines, found)
+        const { items, returnable } = buildItems(lines, found, now)
         const subtotal = subtotalOf(items)
         business.assertMinOrder(subtotal)
+
+        const channel = input.channel ?? OrderChannel.SHOP_BOT
+        const commissionBps = business.commissionBpsFor(channel)
+        const bottlesReturned = business.hasFeature(Feature.BOTTLE_DEPOSIT)
+            ? (input.bottlesReturned ?? 0)
+            : 0
+        const depositTotal = business.depositFor(returnable, bottlesReturned)
 
         for (let attempt = 0; attempt < MAX_NUMBER_ATTEMPTS; attempt++) {
             const order = Order.place({
@@ -115,8 +141,12 @@ export class PlaceOrderUseCase {
                 businessId: business.id,
                 customerId: customer.id,
                 number: await orders.nextNumber(business.id),
+                channel,
                 items,
                 deliveryFee: business.deliveryFeeFor(subtotal),
+                depositTotal,
+                bottlesReturned,
+                commissionBps,
                 address: input.address,
                 landmark: input.landmark,
                 location,

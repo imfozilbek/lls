@@ -168,8 +168,8 @@ describe("inside a shop", () => {
             brandColor: "#0ea5e9",
         })
         expect(shop).not.toHaveProperty("ownerTelegramId")
-        expect(shop).toMatchObject({ viewerIsOwner: false })
-        expect(await json(await asOwner()("/api/shop"))).toMatchObject({ viewerIsOwner: true })
+        expect(shop).toMatchObject({ viewerRole: "customer" })
+        expect(await json(await asOwner()("/api/shop"))).toMatchObject({ viewerRole: "owner" })
 
         const products = await json<{ data: { name: string }[]; meta: Json }>(
             await asCustomer()("/api/shop/products"),
@@ -292,6 +292,7 @@ describe("inside a shop", () => {
                 status, 999, 'other_shop_bot', bot_token_enc, webhook_secret, brand_color,
                 logo_key, address, latitude, longitude, delivery_fee, free_delivery_from,
                 min_order, delivery_radius_m, working_hours, features, accepting_orders,
+                bottle_deposit, marketplace_commission_bps, marketplace_joined_at,
                 created_at, updated_at FROM businesses WHERE slug = ?`,
         )
             .bind(slug)

@@ -5,18 +5,22 @@ import { toOrderDTO } from "../../dtos/order.dto.js"
 import { emptyPage, mapPage, normalizePage } from "../../dtos/pagination.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
-import type { CancelledBy, Order } from "../../../domain/entities/order.js"
+import type { Order, OrderMover } from "../../../domain/entities/order.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { Page } from "../../dtos/pagination.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
+import type { CourierRepository } from "../../ports/courier-repository.js"
 import type { CustomerRepository } from "../../ports/customer-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
 
 export interface OrderAccessDeps {
     businesses: BusinessRepository
     customers: CustomerRepository
+    couriers: CourierRepository
     orders: OrderRepository
 }
+
+type Participant = OrderMover | { role: "customer" }
 
 /** Loads an order of this shop. An order of another shop is "not found", never leaked. */
 async function requireOrder(
@@ -31,19 +35,23 @@ async function requireOrder(
     return order
 }
 
-/** Who is asking about this order: its shop owner, the customer who placed it, or nobody. */
-async function roleOf(
+/** Who is asking: the shop owner, the courier the order is assigned to, the customer, or nobody. */
+async function participantOf(
     deps: OrderAccessDeps,
     order: Order,
     telegramId: number,
-): Promise<CancelledBy> {
+): Promise<Participant> {
     const business = await requireBusiness(deps.businesses, order.businessId)
     if (business.isOwnedBy(telegramId)) {
-        return "owner"
+        return { role: "owner" }
+    }
+    const courier = await deps.couriers.findByTelegramId(order.businessId, telegramId)
+    if (courier?.worksFor(order.businessId) && order.isAssignedTo(courier.id)) {
+        return { role: "courier", courierId: courier.id }
     }
     const customer = await deps.customers.findByTelegramId(telegramId)
     if (customer && order.isPlacedBy(customer.id)) {
-        return "customer"
+        return { role: "customer" }
     }
     throw ForbiddenError.notOrderParticipant(order.id)
 }
@@ -57,7 +65,7 @@ export class GetOrderUseCase {
         orderId: string
     }): Promise<OrderDTO> {
         const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
-        await roleOf(this.deps, order, input.telegramId)
+        await participantOf(this.deps, order, input.telegramId)
         return toOrderDTO(order)
     }
 }
@@ -72,7 +80,11 @@ export class CancelOrderUseCase {
         reason?: string
     }): Promise<OrderDTO> {
         const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
-        const role = await roleOf(this.deps, order, input.telegramId)
+        const { role } = await participantOf(this.deps, order, input.telegramId)
+        // Couriers never cancel: they call the owner, who decides.
+        if (role === "courier") {
+            throw ForbiddenError.stepNotAllowed(order.id, OrderStatus.CANCELLED)
+        }
         order.cancel(role, input.reason)
         await this.deps.orders.save(order)
         return toOrderDTO(order)
@@ -80,22 +92,25 @@ export class CancelOrderUseCase {
 }
 
 export class AdvanceOrderUseCase {
-    constructor(
-        private readonly businesses: BusinessRepository,
-        private readonly orders: OrderRepository,
-    ) {}
+    constructor(private readonly deps: OrderAccessDeps) {}
 
-    /** `to` is explicit so a double tap on an old button fails instead of skipping a step. */
+    /**
+     * The owner makes any step; the assigned courier only "picked up" and "delivered".
+     * `to` is explicit so a double tap on an old button fails instead of skipping a step.
+     */
     async execute(input: {
         actorTelegramId: number
         businessId: string
         orderId: string
         to: OrderStatus
     }): Promise<OrderDTO> {
-        const order = await requireOrder(this.orders, input.orderId, input.businessId)
-        await requireOwnedBusiness(this.businesses, order.businessId, input.actorTelegramId)
-        order.advanceTo(input.to)
-        await this.orders.save(order)
+        const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
+        const mover = await participantOf(this.deps, order, input.actorTelegramId)
+        if (mover.role === "customer") {
+            throw ForbiddenError.notOwner(order.businessId)
+        }
+        order.advanceTo(input.to, mover)
+        await this.deps.orders.save(order)
         return toOrderDTO(order)
     }
 }

@@ -28,6 +28,7 @@ import {
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
+    InMemoryCouriers,
     InMemoryCustomers,
     InMemoryOrders,
     InMemoryProducts,
@@ -43,6 +44,7 @@ describe("order use cases", () => {
     let products: InMemoryProducts
     let customers: InMemoryCustomers
     let orders: InMemoryOrders
+    let couriers: InMemoryCouriers
     let placeOrder: PlaceOrderUseCase
 
     function input(overrides: Partial<PlaceOrderInput> = {}): PlaceOrderInput {
@@ -61,6 +63,7 @@ describe("order use cases", () => {
         products = new InMemoryProducts()
         customers = new InMemoryCustomers()
         orders = new InMemoryOrders()
+        couriers = new InMemoryCouriers()
         await businesses.save(
             makeBusiness({ delivery: { fee: Money.of(10_000), freeFrom: Money.of(200_000) } }),
         )
@@ -183,9 +186,10 @@ describe("order use cases", () => {
         function deps(): {
             businesses: InMemoryBusinesses
             customers: InMemoryCustomers
+            couriers: InMemoryCouriers
             orders: InMemoryOrders
         } {
-            return { businesses, customers, orders }
+            return { businesses, customers, couriers, orders }
         }
 
         it("only the owner and the customer can see the order", async () => {
@@ -207,7 +211,7 @@ describe("order use cases", () => {
         it("an order is visible only inside its own shop", async () => {
             const get = new GetOrderUseCase(deps())
             const cancel = new CancelOrderUseCase(deps())
-            const advance = new AdvanceOrderUseCase(businesses, orders)
+            const advance = new AdvanceOrderUseCase(deps())
             const elsewhere = { businessId: "biz-2", orderId }
             await expect(get.execute({ ...elsewhere, telegramId: CUSTOMER_TG })).rejects.toThrow(
                 EntityNotFoundError,
@@ -225,7 +229,7 @@ describe("order use cases", () => {
         })
 
         it("owner advances step by step; a stale button fails", async () => {
-            const advance = new AdvanceOrderUseCase(businesses, orders)
+            const advance = new AdvanceOrderUseCase(deps())
             const accepted = await advance.execute({
                 businessId: "biz-1",
                 actorTelegramId: OWNER_TG,
@@ -261,7 +265,7 @@ describe("order use cases", () => {
             expect(byCustomer.cancelledBy).toBe("customer")
 
             const second = (await placeOrder.execute(input())).id
-            await new AdvanceOrderUseCase(businesses, orders).execute({
+            await new AdvanceOrderUseCase(deps()).execute({
                 businessId: "biz-1",
                 actorTelegramId: OWNER_TG,
                 orderId: second,
@@ -315,7 +319,7 @@ describe("order use cases", () => {
         })
 
         it("stats count today and this week in Tashkent time", async () => {
-            const advance = new AdvanceOrderUseCase(businesses, orders)
+            const advance = new AdvanceOrderUseCase(deps())
             for (const to of [
                 OrderStatus.ACCEPTED,
                 OrderStatus.PREPARING,

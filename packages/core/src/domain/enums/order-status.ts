@@ -37,3 +37,24 @@ export function isFinalStatus(status: OrderStatus): boolean {
 export const ACTIVE_ORDER_STATUSES: readonly OrderStatus[] = ORDER_STATUSES.filter(
     (status) => !isFinalStatus(status),
 )
+
+/** Who moves an order. Stage 3 may add more actors; the rule stays in this file. */
+export type OrderActor = "owner" | "courier" | "customer"
+
+/**
+ * The ONLY actor rule, next to the transitions table:
+ * the owner makes every step, the assigned courier only the delivery part,
+ * the customer only cancels while the order is still pending.
+ */
+export function canActorMove(actor: OrderActor, from: OrderStatus, to: OrderStatus): boolean {
+    if (!canTransitionTo(from, to)) {
+        return false
+    }
+    if (actor === "owner") {
+        return true
+    }
+    if (actor === "courier") {
+        return to === OrderStatus.PICKED_UP || to === OrderStatus.DELIVERED
+    }
+    return to === OrderStatus.CANCELLED && from === OrderStatus.PENDING
+}

@@ -16,6 +16,8 @@ export interface OrderRepository {
         statuses: readonly OrderStatus[] | undefined,
         page: PageRequest,
     ): Promise<Page<Order>>
+    /** A courier's orders: every active one, plus the ones finished since `since`. Newest first. */
+    listByCourier(courierId: string, since: Date): Promise<Order[]>
     /** Newest first. */
     listByCustomer(customerId: string, businessId: string, page: PageRequest): Promise<Page<Order>>
     /** Orders created in [from, to). */

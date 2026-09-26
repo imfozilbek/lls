@@ -10,6 +10,7 @@ import type { ProductPatch } from "../../../domain/entities/product.js"
 import type { Page } from "../../dtos/pagination.js"
 import type { ProductDTO } from "../../dtos/product.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
+import type { Clock } from "../../ports/clock.js"
 import type { ProductRepository } from "../../ports/product-repository.js"
 
 export interface CreateProductInput {
@@ -20,6 +21,8 @@ export interface CreateProductInput {
     price: number
     unit: string
     category: string
+    step?: number
+    returnable?: boolean
     position?: number
 }
 
@@ -39,6 +42,8 @@ export class CreateProductUseCase {
             price: input.price,
             unit: input.unit,
             category: input.category,
+            step: input.step,
+            returnable: input.returnable,
             position: input.position,
         })
         await this.products.save(product)
@@ -50,21 +55,30 @@ export interface UpdateProductInput {
     actorTelegramId: number
     businessId: string
     productId: string
-    patch: ProductPatch & { isAvailable?: boolean; imageKey?: string | null }
+    patch: ProductPatch & {
+        isAvailable?: boolean
+        /** "Sold out today": back on sale after the next local midnight. */
+        stopForToday?: boolean
+        imageKey?: string | null
+    }
 }
 
 export class UpdateProductUseCase {
     constructor(
         private readonly businesses: BusinessRepository,
         private readonly products: ProductRepository,
+        private readonly clock: Clock,
     ) {}
 
     async execute(input: UpdateProductInput): Promise<ProductDTO> {
         const product = await requireOwnedProduct(this.businesses, this.products, input)
-        const { isAvailable, imageKey, ...fields } = input.patch
+        const { isAvailable, stopForToday, imageKey, ...fields } = input.patch
         product.update(fields)
         if (isAvailable !== undefined) {
             product.setAvailability(isAvailable)
+        }
+        if (stopForToday) {
+            product.stopForToday(this.clock.now())
         }
         if (imageKey !== undefined) {
             product.setImage(imageKey)
@@ -108,6 +122,7 @@ export class ListProductsUseCase {
     constructor(
         private readonly businesses: BusinessRepository,
         private readonly products: ProductRepository,
+        private readonly clock: Clock,
     ) {}
 
     async execute(input: ListProductsInput): Promise<Page<ProductDTO>> {
@@ -122,7 +137,7 @@ export class ListProductsUseCase {
         const page = await this.products.list(
             input.businessId,
             {
-                availableOnly: input.audience === "customer",
+                availableAt: input.audience === "customer" ? this.clock.now() : undefined,
                 category:
                     input.category === undefined
                         ? undefined

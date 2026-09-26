@@ -1,5 +1,7 @@
 import { ValidationError } from "../errors/validation.error.js"
 
+const BASIS_POINTS = 10_000
+
 /** Amount of Uzbek sum (UZS). Always a non-negative safe integer. */
 export class Money {
     private constructor(public readonly amount: number) {}
@@ -28,6 +30,26 @@ export class Money {
 
     add(other: Money): Money {
         return Money.of(this.amount + other.amount)
+    }
+
+    /** Price per unit × a part of it, e.g. per-kg price × 1500 g / 1000. Rounded to whole sum. */
+    multiplyRatio(numerator: number, denominator: number): Money {
+        if (!Number.isSafeInteger(numerator) || numerator < 0) {
+            throw ValidationError.fromField("quantity", "Must be a non-negative integer", numerator)
+        }
+        if (!Number.isSafeInteger(denominator) || denominator <= 0) {
+            throw ValidationError.fromField(
+                "denominator",
+                "Must be a positive integer",
+                denominator,
+            )
+        }
+        return Money.of(Math.round((this.amount * numerator) / denominator))
+    }
+
+    /** Share in basis points (1% = 100 bps), rounded to whole sum. Used for commissions. */
+    percent(basisPoints: number): Money {
+        return this.multiplyRatio(basisPoints, BASIS_POINTS)
     }
 
     multiply(quantity: number): Money {

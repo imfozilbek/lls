@@ -38,13 +38,17 @@ interface BusinessRow {
     working_hours: string | null
     features: string
     accepting_orders: number
+    bottle_deposit: number
+    marketplace_commission_bps: number | null
+    marketplace_joined_at: number | null
     created_at: number
     updated_at: number
 }
 
 const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_username, brand_color,
     logo_key, address, latitude, longitude, delivery_fee, free_delivery_from, min_order,
-    delivery_radius_m, working_hours, features, accepting_orders, created_at, updated_at`
+    delivery_radius_m, working_hours, features, accepting_orders, bottle_deposit,
+    marketplace_commission_bps, marketplace_joined_at, created_at, updated_at`
 
 export interface BotCredentials {
     botId: number
@@ -82,30 +86,47 @@ function toBusiness(row: BusinessRow): Business {
         ),
         features,
         acceptingOrders: bool(row.accepting_orders),
+        bottleDeposit: Money.of(row.bottle_deposit),
+        marketplace:
+            row.marketplace_commission_bps === null || row.marketplace_joined_at === null
+                ? undefined
+                : {
+                      commissionBps: row.marketplace_commission_bps,
+                      joinedAt: new Date(row.marketplace_joined_at),
+                  },
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
 }
 
+function optionalValues(b: Business): (string | number | null)[] {
+    const { freeFrom, minOrder, radiusMeters } = b.delivery
+    return [
+        b.logoKey ?? null,
+        b.address ?? null,
+        b.location?.latitude ?? null,
+        b.location?.longitude ?? null,
+        b.delivery.fee.amount,
+        freeFrom?.amount ?? null,
+        minOrder?.amount ?? null,
+        radiusMeters ?? null,
+    ]
+}
+
 /** Values for every mutable column, in the order used by INSERT and UPDATE. */
 function mutableValues(b: Business): (string | number | null)[] {
-    const { fee, freeFrom, minOrder, radiusMeters } = b.delivery
     const hours = b.workingHours.toJSON()
     return [
         b.name,
         b.status,
         b.brandColor.hex,
-        b.logoKey ?? null,
-        b.address ?? null,
-        b.location?.latitude ?? null,
-        b.location?.longitude ?? null,
-        fee.amount,
-        freeFrom?.amount ?? null,
-        minOrder?.amount ?? null,
-        radiusMeters ?? null,
+        ...optionalValues(b),
         hours === null ? null : JSON.stringify(hours),
         JSON.stringify(b.features),
         flag(b.acceptingOrders),
+        b.bottleDeposit.amount,
+        b.marketplace?.commissionBps ?? null,
+        b.marketplace?.joinedAt.getTime() ?? null,
         b.updatedAt.getTime(),
     ]
 }
@@ -144,10 +165,12 @@ export class D1BusinessRepository implements BusinessRepository {
             .prepare(
                 `INSERT INTO businesses (name, status, brand_color, logo_key, address, latitude,
                     longitude, delivery_fee, free_delivery_from, min_order, delivery_radius_m,
-                    working_hours, features, accepting_orders, updated_at,
+                    working_hours, features, accepting_orders, bottle_deposit,
+                    marketplace_commission_bps, marketplace_joined_at, updated_at,
                     id, slug, type, owner_telegram_id, bot_id, bot_username, bot_token_enc,
                     webhook_secret, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?)`,
             )
             .bind(
                 ...mutableValues(business),
@@ -170,7 +193,8 @@ export class D1BusinessRepository implements BusinessRepository {
                 `UPDATE businesses SET name = ?, status = ?, brand_color = ?, logo_key = ?,
                     address = ?, latitude = ?, longitude = ?, delivery_fee = ?,
                     free_delivery_from = ?, min_order = ?, delivery_radius_m = ?,
-                    working_hours = ?, features = ?, accepting_orders = ?, updated_at = ?
+                    working_hours = ?, features = ?, accepting_orders = ?, bottle_deposit = ?,
+                    marketplace_commission_bps = ?, marketplace_joined_at = ?, updated_at = ?
                  WHERE id = ?`,
             )
             .bind(...mutableValues(business), business.id)

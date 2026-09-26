@@ -1,16 +1,20 @@
 import {
     OrderStatus,
+    canActorMove,
     canTransitionTo,
     getNextStatus,
     isFinalStatus,
 } from "../enums/order-status.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
+import { ForbiddenError } from "../errors/forbidden.error.js"
 import { InvalidOrderTransitionError } from "../errors/invalid-transition.error.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { optionalText, requireInteger, requireText } from "../shared/guards.js"
 import { Money } from "../value-objects/money.js"
 
+import type { Courier } from "./courier.js"
 import type { OrderItem } from "./order-item.js"
+import type { OrderChannel } from "../enums/order-channel.js"
 import type { Location } from "../value-objects/location.js"
 import type { Phone } from "../value-objects/phone.js"
 
@@ -19,19 +23,41 @@ const ADDRESS_MAX = 200
 const LANDMARK_MAX = 200
 const COMMENT_MAX = 300
 const REASON_MAX = 200
+const MAX_BOTTLES_RETURNED = 99
 
 export type CancelledBy = "customer" | "owner"
+
+/** Who moves the order forward: the owner, or the courier the order is assigned to. */
+export type OrderMover = { role: "owner" } | { role: "courier"; courierId: string }
+
+const OWNER: OrderMover = { role: "owner" }
+
+/** A courier can take the order from the moment the shop accepted it until pickup. */
+const ASSIGNABLE: readonly OrderStatus[] = [
+    OrderStatus.ACCEPTED,
+    OrderStatus.PREPARING,
+    OrderStatus.READY,
+]
 
 export interface OrderProps {
     id: string
     businessId: string
     customerId: string
     number: number
+    channel: OrderChannel
     items: readonly OrderItem[]
     subtotal: Money
     deliveryFee: Money
+    /** Deposit for returnable bottles the customer keeps. */
+    depositTotal: Money
+    bottlesReturned: number
     total: Money
+    /** Snapshot of the LLS commission at placement: rate and amount on the goods subtotal. */
+    commissionBps: number
+    commission: Money
     status: OrderStatus
+    courierId?: string
+    courierName?: string
     address: string
     landmark?: string
     location?: Location
@@ -49,8 +75,12 @@ export interface PlaceOrderProps {
     businessId: string
     customerId: string
     number: number
+    channel: OrderChannel
     items: OrderItem[]
     deliveryFee: Money
+    depositTotal?: Money
+    bottlesReturned?: number
+    commissionBps: number
     address: string
     landmark?: string
     location?: Location
@@ -74,16 +104,28 @@ export class Order {
             throw BusinessRuleViolationError.tooManyItems(MAX_ORDER_LINES)
         }
         const subtotal = subtotalOf(input.items)
+        const depositTotal = input.depositTotal ?? Money.zero()
         const now = new Date()
         return new Order({
             id: input.id,
             businessId: input.businessId,
             customerId: input.customerId,
             number: requireInteger("number", input.number, 1, Number.MAX_SAFE_INTEGER),
+            channel: input.channel,
             items: [...input.items],
             subtotal,
             deliveryFee: input.deliveryFee,
-            total: subtotal.add(input.deliveryFee),
+            depositTotal,
+            bottlesReturned: requireInteger(
+                "bottlesReturned",
+                input.bottlesReturned ?? 0,
+                0,
+                MAX_BOTTLES_RETURNED,
+            ),
+            total: subtotal.add(input.deliveryFee).add(depositTotal),
+            // Commission is on goods only: never on delivery or bottle deposits.
+            commissionBps: input.commissionBps,
+            commission: subtotal.percent(input.commissionBps),
             status: OrderStatus.PENDING,
             address: requireText("address", input.address, ADDRESS_MAX),
             landmark: optionalText("landmark", input.landmark, LANDMARK_MAX),
@@ -112,6 +154,9 @@ export class Order {
     get number(): number {
         return this.props.number
     }
+    get channel(): OrderChannel {
+        return this.props.channel
+    }
     get items(): readonly OrderItem[] {
         return this.props.items
     }
@@ -121,8 +166,26 @@ export class Order {
     get deliveryFee(): Money {
         return this.props.deliveryFee
     }
+    get depositTotal(): Money {
+        return this.props.depositTotal
+    }
+    get bottlesReturned(): number {
+        return this.props.bottlesReturned
+    }
     get total(): Money {
         return this.props.total
+    }
+    get commissionBps(): number {
+        return this.props.commissionBps
+    }
+    get commission(): Money {
+        return this.props.commission
+    }
+    get courierId(): string | undefined {
+        return this.props.courierId
+    }
+    get courierName(): string | undefined {
+        return this.props.courierName
     }
     get status(): OrderStatus {
         return this.props.status
@@ -170,21 +233,50 @@ export class Order {
         return getNextStatus(this.props.status)
     }
 
-    /** Owner moves the order forward. Cancelling goes through `cancel()`. */
-    advanceTo(status: OrderStatus): void {
+    isAssignedTo(courierId: string): boolean {
+        return this.props.courierId === courierId
+    }
+
+    /**
+     * Moves the order forward. The owner may make every step; a courier only the delivery part
+     * of an order assigned to them. Cancelling goes through `cancel()`.
+     */
+    advanceTo(status: OrderStatus, by: OrderMover = OWNER): void {
         if (status === OrderStatus.CANCELLED) {
             throw ValidationError.fromField("status", "Use cancel() to cancel an order", status)
         }
+        if (by.role === "courier" && !this.isAssignedTo(by.courierId)) {
+            throw ForbiddenError.notAssignedCourier(this.props.id)
+        }
         if (!canTransitionTo(this.props.status, status)) {
             throw new InvalidOrderTransitionError(this.props.id, this.props.status, status)
+        }
+        if (!canActorMove(by.role, this.props.status, status)) {
+            throw ForbiddenError.stepNotAllowed(this.props.id, status)
         }
         this.props.status = status
         this.touch()
     }
 
+    /** The owner hands the order to one of the shop's couriers (or to another one, before pickup). */
+    assignCourier(courier: Courier): void {
+        if (!ASSIGNABLE.includes(this.props.status)) {
+            throw BusinessRuleViolationError.orderNotAssignable(this.props.id, this.props.status)
+        }
+        if (!courier.worksFor(this.props.businessId)) {
+            throw BusinessRuleViolationError.courierNotAvailable(courier.id)
+        }
+        this.props.courierId = courier.id
+        this.props.courierName = courier.name
+        this.touch()
+    }
+
     /** A customer may cancel only while the order is pending. The owner may cancel any active order. */
     cancel(by: CancelledBy, reason?: string): void {
-        if (by === "customer" && this.props.status !== OrderStatus.PENDING) {
+        if (
+            by === "customer" &&
+            !canActorMove("customer", this.props.status, OrderStatus.CANCELLED)
+        ) {
             throw BusinessRuleViolationError.orderCannotBeCancelled(
                 this.props.id,
                 this.props.status,

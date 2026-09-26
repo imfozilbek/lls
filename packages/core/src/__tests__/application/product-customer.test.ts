@@ -16,8 +16,20 @@ import { Language } from "../../domain/enums/language.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../domain/errors/not-found.error.js"
 import { ValidationError } from "../../domain/errors/validation.error.js"
-import { CUSTOMER_TG, OWNER_TG, STRANGER_TG, makeBusiness, makeProduct } from "../fixtures.js"
-import { InMemoryBusinesses, InMemoryCustomers, InMemoryProducts } from "../in-memory.js"
+import {
+    CUSTOMER_TG,
+    NOON_MONDAY_UZ,
+    OWNER_TG,
+    STRANGER_TG,
+    makeBusiness,
+    makeProduct,
+} from "../fixtures.js"
+import {
+    InMemoryBusinesses,
+    InMemoryCustomers,
+    InMemoryProducts,
+    fixedClock,
+} from "../in-memory.js"
 
 describe("product use cases", () => {
     let businesses: InMemoryBusinesses
@@ -56,7 +68,10 @@ describe("product use cases", () => {
             }),
         ).rejects.toThrow(ForbiddenError)
         await expect(
-            new UpdateProductUseCase(businesses, products).execute({ ...target, patch: {} }),
+            new UpdateProductUseCase(businesses, products, fixedClock(NOON_MONDAY_UZ)).execute({
+                ...target,
+                patch: {},
+            }),
         ).rejects.toThrow(ForbiddenError)
         await expect(
             new DeleteProductUseCase(businesses, products).execute(target),
@@ -67,7 +82,7 @@ describe("product use cases", () => {
         await products.save(makeProduct())
         // biz-2 has the same owner in fixtures, so the product lookup must still reject it
         await expect(
-            new UpdateProductUseCase(businesses, products).execute({
+            new UpdateProductUseCase(businesses, products, fixedClock(NOON_MONDAY_UZ)).execute({
                 actorTelegramId: OWNER_TG,
                 businessId: "biz-2",
                 productId: "prod-1",
@@ -78,7 +93,11 @@ describe("product use cases", () => {
 
     it("updates fields, availability and image", async () => {
         await products.save(makeProduct())
-        const updated = await new UpdateProductUseCase(businesses, products).execute({
+        const updated = await new UpdateProductUseCase(
+            businesses,
+            products,
+            fixedClock(NOON_MONDAY_UZ),
+        ).execute({
             actorTelegramId: OWNER_TG,
             businessId: "biz-1",
             productId: "prod-1",
@@ -105,7 +124,7 @@ describe("product use cases", () => {
         hidden.setAvailability(false)
         await products.save(makeProduct())
         await products.save(hidden)
-        const list = new ListProductsUseCase(businesses, products)
+        const list = new ListProductsUseCase(businesses, products, fixedClock(NOON_MONDAY_UZ))
 
         const forCustomer = await list.execute({
             businessId: "biz-1",
@@ -138,7 +157,7 @@ describe("product use cases", () => {
 
     it("an inactive shop's catalog is hidden from customers", async () => {
         await businesses.save(makeBusiness({ id: "biz-3", active: false }))
-        const list = new ListProductsUseCase(businesses, products)
+        const list = new ListProductsUseCase(businesses, products, fixedClock(NOON_MONDAY_UZ))
         await expect(
             list.execute({
                 businessId: "biz-3",
