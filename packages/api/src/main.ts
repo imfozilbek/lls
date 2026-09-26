@@ -60,10 +60,7 @@ async function bootstrap(): Promise<void> {
         .addTag("customers", "Customer endpoints")
         .addTag("couriers", "Courier endpoints")
         .addTag("analytics", "Analytics and reporting")
-        .addApiKey(
-            { type: "apiKey", name: "X-Telegram-Init-Data", in: "header" },
-            "telegram-auth",
-        )
+        .addApiKey({ type: "apiKey", name: "X-Telegram-Init-Data", in: "header" }, "telegram-auth")
         .addApiKey(
             { type: "apiKey", name: "X-Business-Telegram-Id", in: "header" },
             "business-auth",
