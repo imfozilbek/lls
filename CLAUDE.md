@@ -10,16 +10,12 @@
 ## Migration Status (READ FIRST)
 
 The code is being migrated from the old stack to the stack described in this file.
-
-| Old (being removed) | New |
-|---------------------|-----|
-| `@lls/api` — NestJS + Fastify + MongoDB + Redis + socket.io | `@lls/worker` — Hono + D1 |
-| `@lls/bot` + `@lls/admin` — two React apps | `@lls/app` — one Mini App |
-| VPS + PM2 + Nginx + Gitea CI | Cloudflare Pages + Workers + GitHub Actions |
+The old packages (`@lls/api` NestJS + MongoDB, `@lls/bot`, `@lls/admin`), `deploy/` and `.gitea/`
+are **deleted**. The old code is available at git tag `legacy-v0` for reference
+(e.g. `git show legacy-v0:packages/bot/src/screens/customer/Checkout.tsx`).
 
 **RULES:**
-- Do NOT add features to `@lls/api`, `@lls/bot`, `@lls/admin`. Only move code out of them.
-- Delete an old package only after its replacement works.
+- Reuse ideas and UI from `legacy-v0` when useful, but never copy its bugs.
 - `@lls/core` stays. Prune unused parts, fix bugs, reuse the rest.
 
 ## Project Overview
@@ -585,7 +581,7 @@ Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 ```
 MUST: Return types | await promises | const | curly braces | ===
 NEVER: any | console.log | floating promises | var | secrets in code | Docker
-NEVER: frontend → DB directly | prices or customerId from client | new features in old packages
+NEVER: frontend → DB directly | prices or customerId from client
 LIMITS: 5 params | 100 lines | 4 depth | 15 complexity
 STACK: Cloudflare Pages + Workers (Hono) + D1 + R2 | React + Vite | Telegram Bot API
 GATES: bun run format → bun run lint → bun run test → bun run build

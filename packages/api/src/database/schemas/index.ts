@@ -1,5 +1,0 @@
-export * from "./business.schema.js"
-export * from "./product.schema.js"
-export * from "./customer.schema.js"
-export * from "./courier.schema.js"
-export * from "./order.schema.js"
