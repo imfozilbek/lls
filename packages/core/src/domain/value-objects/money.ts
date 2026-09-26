@@ -1,55 +1,48 @@
+import { ValidationError } from "../errors/validation.error.js"
+
+/** Amount of Uzbek sum (UZS). Always a non-negative safe integer. */
 export class Money {
-    private constructor(
-        public readonly amount: number,
-        public readonly currency: string,
-    ) {
-        if (amount < 0) {
-            throw new Error("Money amount cannot be negative")
+    private constructor(public readonly amount: number) {}
+
+    static of(amount: number): Money {
+        if (!Number.isSafeInteger(amount) || amount < 0) {
+            throw ValidationError.fromField(
+                "amount",
+                "Must be a non-negative whole number of sum",
+                amount,
+            )
         }
+        return new Money(amount)
     }
 
-    static create(amount: number, currency: string = "UZS"): Money {
-        return new Money(amount, currency)
-    }
-
-    static zero(currency: string = "UZS"): Money {
-        return new Money(0, currency)
+    static zero(): Money {
+        return new Money(0)
     }
 
     add(other: Money): Money {
-        this.ensureSameCurrency(other)
-        return new Money(this.amount + other.amount, this.currency)
+        return Money.of(this.amount + other.amount)
     }
 
-    subtract(other: Money): Money {
-        this.ensureSameCurrency(other)
-        return new Money(this.amount - other.amount, this.currency)
-    }
-
-    multiply(factor: number): Money {
-        return new Money(this.amount * factor, this.currency)
-    }
-
-    equals(other: Money): boolean {
-        return this.amount === other.amount && this.currency === other.currency
+    multiply(quantity: number): Money {
+        if (!Number.isSafeInteger(quantity) || quantity < 0) {
+            throw ValidationError.fromField("quantity", "Must be a non-negative integer", quantity)
+        }
+        return Money.of(this.amount * quantity)
     }
 
     isZero(): boolean {
         return this.amount === 0
     }
 
-    isGreaterThan(other: Money): boolean {
-        this.ensureSameCurrency(other)
-        return this.amount > other.amount
+    isLessThan(other: Money): boolean {
+        return this.amount < other.amount
     }
 
-    format(): string {
-        return `${this.amount.toLocaleString()} ${this.currency}`
+    isAtLeast(other: Money): boolean {
+        return this.amount >= other.amount
     }
 
-    private ensureSameCurrency(other: Money): void {
-        if (this.currency !== other.currency) {
-            throw new Error(`Currency mismatch: ${this.currency} vs ${other.currency}`)
-        }
+    equals(other: Money): boolean {
+        return this.amount === other.amount
     }
 }

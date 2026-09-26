@@ -1,154 +1,139 @@
-import { describe, it, expect } from "vitest"
+import { describe, expect, it } from "vitest"
 
-import { Order } from "../../../domain/entities/order.js"
+import { MAX_ORDER_LINES, Order } from "../../../domain/entities/order.js"
 import { OrderItem } from "../../../domain/entities/order-item.js"
 import { OrderStatus } from "../../../domain/enums/order-status.js"
-import { Address } from "../../../domain/value-objects/address.js"
+import { Unit } from "../../../domain/enums/unit.js"
+import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
+import { InvalidOrderTransitionError } from "../../../domain/errors/invalid-transition.error.js"
+import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { Money } from "../../../domain/value-objects/money.js"
 
+function item(quantity = 2, price = 35_000): OrderItem {
+    return OrderItem.create({
+        productId: "prod-1",
+        name: "Osh",
+        unit: Unit.PORTION,
+        unitPrice: Money.of(price),
+        quantity,
+    })
+}
+
+function placeOrder(items: OrderItem[] = [item()]): Order {
+    return Order.place({
+        id: "order-1",
+        businessId: "biz-1",
+        customerId: "cust-1",
+        number: 1,
+        items,
+        deliveryFee: Money.of(10_000),
+        address: "Navoiy ko'chasi 12",
+        landmark: "Maktab yonida",
+        customerName: "Aziz",
+    })
+}
+
+describe("OrderItem", () => {
+    it("computes total and validates quantity", () => {
+        expect(item(3, 10_000).total.amount).toBe(30_000)
+        expect(() => item(0)).toThrow(ValidationError)
+        expect(() => item(100)).toThrow(ValidationError)
+        expect(() => item(1.5)).toThrow(ValidationError)
+    })
+})
+
 describe("Order", () => {
-    const createOrderItem = (): OrderItem => {
-        return OrderItem.create({
-            id: "item-id",
-            productId: "prod-id",
-            productName: "Test Product",
-            quantity: 2,
-            unitPrice: Money.create(10000),
-        })
-    }
-
-    const createOrder = (): Order => {
-        return Order.create({
-            id: "order-id",
-            customerId: "cust-id",
-            businessId: "biz-id",
-            items: [createOrderItem()],
-            deliveryAddress: Address.create("Main St", "Tashkent"),
-        })
-    }
-
-    describe("create", () => {
-        it("should create order with valid data", () => {
-            const order = createOrder()
-            expect(order.id).toBe("order-id")
-            expect(order.status).toBe(OrderStatus.PENDING)
-            expect(order.courierId).toBeUndefined()
-        })
-
-        it("should calculate total from items", () => {
-            const order = createOrder()
-            expect(order.total.amount).toBe(20000)
-        })
-
-        it("should throw on empty items", () => {
-            expect(() =>
-                Order.create({
-                    id: "order-id",
-                    customerId: "cust-id",
-                    businessId: "biz-id",
-                    items: [],
-                    deliveryAddress: Address.create("Main St", "Tashkent"),
-                }),
-            ).toThrow()
-        })
+    it("is placed as pending with server-side totals", () => {
+        const order = placeOrder()
+        expect(order.status).toBe(OrderStatus.PENDING)
+        expect(order.subtotal.amount).toBe(70_000)
+        expect(order.deliveryFee.amount).toBe(10_000)
+        expect(order.total.amount).toBe(80_000)
+        expect(order.landmark).toBe("Maktab yonida")
+        expect(order.isPlacedBy("cust-1")).toBe(true)
+        expect(order.nextStatus()).toBe(OrderStatus.ACCEPTED)
     })
 
-    describe("status transitions", () => {
-        it("should accept order", () => {
-            const order = createOrder()
-            order.accept()
-            expect(order.status).toBe(OrderStatus.ACCEPTED)
-        })
-
-        it("should start preparing", () => {
-            const order = createOrder()
-            order.accept()
-            order.startPreparing()
-            expect(order.status).toBe(OrderStatus.PREPARING)
-        })
-
-        it("should mark ready", () => {
-            const order = createOrder()
-            order.accept()
-            order.startPreparing()
-            order.markReady()
-            expect(order.status).toBe(OrderStatus.READY)
-        })
-
-        it("should pickup with courier", () => {
-            const order = createOrder()
-            order.accept()
-            order.startPreparing()
-            order.markReady()
-            order.assignCourier("courier-id")
-            order.pickup()
-            expect(order.status).toBe(OrderStatus.PICKED_UP)
-        })
-
-        it("should deliver", () => {
-            const order = createOrder()
-            order.accept()
-            order.startPreparing()
-            order.markReady()
-            order.assignCourier("courier-id")
-            order.pickup()
-            order.deliver()
-            expect(order.status).toBe(OrderStatus.DELIVERED)
-        })
-
-        it("should cancel pending order", () => {
-            const order = createOrder()
-            order.cancel()
-            expect(order.status).toBe(OrderStatus.CANCELLED)
-        })
-
-        it("should throw on invalid transition", () => {
-            const order = createOrder()
-            expect(() => order.deliver()).toThrow()
-        })
+    it("rejects empty, oversized and address-less orders", () => {
+        expect(() => placeOrder([])).toThrow(BusinessRuleViolationError)
+        const many = Array.from({ length: MAX_ORDER_LINES + 1 }, () => item(1))
+        expect(() => placeOrder(many)).toThrow(/at most/)
+        expect(() =>
+            Order.place({
+                id: "o",
+                businessId: "b",
+                customerId: "c",
+                number: 1,
+                items: [item()],
+                deliveryFee: Money.zero(),
+                address: " ",
+                customerName: "A",
+            }),
+        ).toThrow(ValidationError)
     })
 
-    describe("assignCourier", () => {
-        it("should assign courier to order", () => {
-            const order = createOrder()
-            order.assignCourier("courier-id")
-            expect(order.courierId).toBe("courier-id")
-        })
-
-        it("should throw when courier already assigned", () => {
-            const order = createOrder()
-            order.assignCourier("courier-1")
-            expect(() => order.assignCourier("courier-2")).toThrow()
-        })
+    it("moves forward step by step", () => {
+        const order = placeOrder()
+        for (const status of [
+            OrderStatus.ACCEPTED,
+            OrderStatus.PREPARING,
+            OrderStatus.READY,
+            OrderStatus.PICKED_UP,
+            OrderStatus.DELIVERED,
+        ]) {
+            order.advanceTo(status)
+            expect(order.status).toBe(status)
+        }
+        expect(order.isFinal()).toBe(true)
+        expect(order.nextStatus()).toBeNull()
     })
 
-    describe("query methods", () => {
-        it("should check if pending", () => {
-            const order = createOrder()
-            expect(order.isPending()).toBe(true)
-        })
+    it("does not skip steps or cancel through advanceTo", () => {
+        const order = placeOrder()
+        expect(() => order.advanceTo(OrderStatus.READY)).toThrow(InvalidOrderTransitionError)
+        expect(() => order.advanceTo(OrderStatus.CANCELLED)).toThrow(ValidationError)
+    })
 
-        it("should check if active", () => {
-            const order = createOrder()
-            order.accept()
-            expect(order.isActive()).toBe(true)
-        })
+    it("customer can cancel only while pending", () => {
+        const pending = placeOrder()
+        pending.cancel("customer", "Adashdim")
+        expect(pending.status).toBe(OrderStatus.CANCELLED)
+        expect(pending.cancelledBy).toBe("customer")
+        expect(pending.cancelReason).toBe("Adashdim")
 
-        it("should check if completed", () => {
-            const order = createOrder()
-            order.accept()
-            order.startPreparing()
-            order.markReady()
-            order.assignCourier("courier-id")
-            order.pickup()
-            order.deliver()
-            expect(order.isCompleted()).toBe(true)
-        })
+        const accepted = placeOrder()
+        accepted.advanceTo(OrderStatus.ACCEPTED)
+        expect(() => accepted.cancel("customer")).toThrow(BusinessRuleViolationError)
+    })
 
-        it("should check if cancelled", () => {
-            const order = createOrder()
-            order.cancel()
-            expect(order.isCancelled()).toBe(true)
+    it("owner can cancel any active order, but not a final one", () => {
+        const order = placeOrder()
+        order.advanceTo(OrderStatus.ACCEPTED)
+        order.advanceTo(OrderStatus.PREPARING)
+        order.cancel("owner", "Tugab qoldi")
+        expect(order.cancelledBy).toBe("owner")
+        expect(() => order.cancel("owner")).toThrow(InvalidOrderTransitionError)
+    })
+
+    it("reconstitutes from stored props", () => {
+        const order = placeOrder()
+        const copy = Order.reconstitute({
+            id: order.id,
+            businessId: order.businessId,
+            customerId: order.customerId,
+            number: 7,
+            items: order.items,
+            subtotal: order.subtotal,
+            deliveryFee: order.deliveryFee,
+            total: order.total,
+            status: OrderStatus.READY,
+            address: order.address,
+            customerName: order.customerName,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
         })
+        expect(copy.number).toBe(7)
+        expect(copy.status).toBe(OrderStatus.READY)
+        expect(copy.items).toHaveLength(1)
     })
 })

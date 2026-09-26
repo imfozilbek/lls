@@ -7,14 +7,15 @@ export class EntityNotFoundError extends DomainError {
         public readonly entityName: string,
         public readonly entityId: string,
     ) {
-        super(`${entityName} with id "${entityId}" not found`, {
-            entityName,
-            entityId,
-        })
+        super(`${entityName} "${entityId}" not found`, { entityName, entityId })
     }
 
     static business(id: string): EntityNotFoundError {
         return new EntityNotFoundError("Business", id)
+    }
+
+    static businessBySlug(slug: string): EntityNotFoundError {
+        return new EntityNotFoundError("Business", `slug:${slug}`)
     }
 
     static product(id: string): EntityNotFoundError {
@@ -27,13 +28,5 @@ export class EntityNotFoundError extends DomainError {
 
     static order(id: string): EntityNotFoundError {
         return new EntityNotFoundError("Order", id)
-    }
-
-    static businessByTelegramId(telegramId: number): EntityNotFoundError {
-        return new EntityNotFoundError("Business", `telegram:${telegramId}`)
-    }
-
-    static customerByTelegramId(telegramId: number): EntityNotFoundError {
-        return new EntityNotFoundError("Customer", `telegram:${telegramId}`)
     }
 }

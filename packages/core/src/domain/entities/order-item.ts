@@ -1,55 +1,37 @@
-import { Money } from "../value-objects/money.js"
+import { requireInteger, requireText } from "../shared/guards.js"
 
-export interface OrderItemProps {
-    id: string
-    productId: string
-    productName: string
-    quantity: number
-    unitPrice: Money
-}
+import type { Unit } from "../enums/unit.js"
+import type { Money } from "../value-objects/money.js"
 
+export const MAX_ITEM_QUANTITY = 99
+
+/** A line of an order. Name, unit and price are copied from the product when the order is placed. */
 export class OrderItem {
-    private constructor(private props: OrderItemProps) {}
+    private constructor(
+        public readonly productId: string,
+        public readonly name: string,
+        public readonly unit: Unit,
+        public readonly unitPrice: Money,
+        public readonly quantity: number,
+    ) {}
 
-    static create(props: OrderItemProps): OrderItem {
-        if (props.quantity <= 0) {
-            throw new Error("Quantity must be positive")
-        }
-        return new OrderItem(props)
-    }
-
-    get id(): string {
-        return this.props.id
-    }
-
-    get productId(): string {
-        return this.props.productId
-    }
-
-    get productName(): string {
-        return this.props.productName
-    }
-
-    get quantity(): number {
-        return this.props.quantity
-    }
-
-    get unitPrice(): Money {
-        return this.props.unitPrice
+    static create(input: {
+        productId: string
+        name: string
+        unit: Unit
+        unitPrice: Money
+        quantity: number
+    }): OrderItem {
+        return new OrderItem(
+            input.productId,
+            requireText("name", input.name, 200),
+            input.unit,
+            input.unitPrice,
+            requireInteger("quantity", input.quantity, 1, MAX_ITEM_QUANTITY),
+        )
     }
 
     get total(): Money {
-        return this.props.unitPrice.multiply(this.props.quantity)
-    }
-
-    updateQuantity(quantity: number): void {
-        if (quantity <= 0) {
-            throw new Error("Quantity must be positive")
-        }
-        this.props.quantity = quantity
-    }
-
-    toJSON(): OrderItemProps {
-        return { ...this.props }
+        return this.unitPrice.multiply(this.quantity)
     }
 }

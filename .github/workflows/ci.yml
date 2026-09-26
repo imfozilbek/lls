@@ -32,3 +32,6 @@ jobs:
 
             - name: Test
               run: bun run test
+
+            - name: Core coverage (domain ≥ 90%, use cases ≥ 80%)
+              run: bun run --filter @lls/core test:coverage
