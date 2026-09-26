@@ -87,7 +87,7 @@ function SearchField(): React.JSX.Element {
             />
             <input
                 ref={input}
-                type="search"
+                type="text"
                 inputMode="search"
                 enterKeyHint="search"
                 value={text}

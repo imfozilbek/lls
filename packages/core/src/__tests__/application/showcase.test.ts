@@ -82,6 +82,7 @@ describe("LLS showcase", () => {
         await products.save(product("p2", "biz-2", "Pomidor", "produce"))
         await products.save(product("p3", "biz-33", "Toza suv 19 l", "water"))
         await products.save(product("p4", "biz-444", "Osh tayyor"))
+        await products.save(product("p6", "biz-2", "Mol go'shti", "meat"))
         const stopped = product("p5", "biz-2", "Osh uchun sabzi", "produce")
         stopped.stopForToday(NOON_MONDAY_UZ)
         await products.save(stopped)
@@ -95,7 +96,9 @@ describe("LLS showcase", () => {
 
     it("hides shops without a deal, disabled shops and today's stop-list", async () => {
         expect((await search.execute({ text: "suv" })).data).toHaveLength(0)
+        // «osh» starts a word in «To'y oshi», but only sits inside «go'shti».
         expect((await search.execute({ text: "osh" })).data.map((p) => p.id)).toEqual(["p1"])
+        expect((await search.execute({ text: "gosht" })).data.map((p) => p.id)).toEqual(["p6"])
     })
 
     it("filters by category and returns nothing for an empty query", async () => {

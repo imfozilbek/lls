@@ -60,7 +60,7 @@ export function searchText(...parts: readonly (string | undefined)[]): string {
     return latin.replace(NOT_WORD, " ").trim()
 }
 
-/** The words of a query; each must appear in the product text. */
+/** The words of a query; each must start a word of the product text («osh» finds «To'y oshi», not «go'shti»). */
 export function searchWords(query: string): string[] {
     return searchText(query)
         .split(" ")

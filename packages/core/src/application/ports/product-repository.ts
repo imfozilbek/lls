@@ -9,7 +9,10 @@ export interface ProductListQuery {
 }
 
 export interface ShowcaseSearch {
-    /** Words in search spelling (`searchWords`); every word must appear. Empty = no text filter. */
+    /**
+     * Words in search spelling (`searchWords`); each must start a word of the product text.
+     * Empty = no text filter.
+     */
     words: readonly string[]
     category?: Category
     /** Only products on sale at this moment. */

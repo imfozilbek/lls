@@ -85,7 +85,7 @@ export class InMemoryProducts implements ProductRepository {
         const matching = [...this.items.values()]
             .filter((p) => shops.has(p.businessId) && p.isAvailableAt(search.availableAt))
             .filter((p) => search.category === undefined || p.category === search.category)
-            .filter((p) => search.words.every((word) => p.searchText.includes(word)))
+            .filter((p) => search.words.every((word) => ` ${p.searchText}`.includes(` ${word}`)))
             .sort((a, b) => a.name.localeCompare(b.name))
         return paginate(matching, page)
     }

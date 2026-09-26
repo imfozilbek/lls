@@ -45,7 +45,7 @@ CREATE TABLE products (
     is_available  INTEGER NOT NULL DEFAULT 1,
     unavailable_until INTEGER,                   -- stop-list: hidden until this moment
     returnable    INTEGER NOT NULL DEFAULT 0,    -- 19 l bottle with a deposit
-    search_text   TEXT    NOT NULL DEFAULT '',   -- name + description in one spelling (core searchText)
+    search_text   TEXT    NOT NULL DEFAULT '',   -- ' ' + name + description in one spelling (core searchText)
     position      INTEGER NOT NULL DEFAULT 0,
     created_at    INTEGER NOT NULL,
     updated_at    INTEGER NOT NULL

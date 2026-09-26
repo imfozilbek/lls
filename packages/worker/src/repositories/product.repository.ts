@@ -135,8 +135,9 @@ export class D1ProductRepository implements ProductRepository {
         }
         for (const word of search.words.slice(0, MAX_SEARCH_WORDS)) {
             // Words hold only [a-z0-9] (see searchText), so no LIKE wildcards can slip in.
+            // The stored text starts with a space, so "% word%" matches the start of any word.
             conditions.push("p.search_text LIKE ?")
-            params.push(`%${word}%`)
+            params.push(`% ${word}%`)
         }
         const from = `FROM products p JOIN businesses b ON b.id = p.business_id
             WHERE ${conditions.join(" AND ")}`
@@ -183,7 +184,7 @@ export class D1ProductRepository implements ProductRepository {
                 product.position,
                 product.createdAt.getTime(),
                 product.updatedAt.getTime(),
-                product.searchText,
+                ` ${product.searchText}`,
             )
             .run()
     }
