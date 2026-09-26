@@ -21,6 +21,7 @@
       "name": "@lls/app",
       "version": "0.1.0",
       "dependencies": {
+        "@lls/core": "*",
         "clsx": "^2",
         "react": "^19",
         "react-dom": "^19",

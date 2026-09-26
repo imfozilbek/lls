@@ -11,6 +11,7 @@
         "test:watch": "vitest"
     },
     "dependencies": {
+        "@lls/core": "*",
         "clsx": "^2",
         "react": "^19",
         "react-dom": "^19",
