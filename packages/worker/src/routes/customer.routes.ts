@@ -76,6 +76,7 @@ export const customerRoutes = new Hono<AppEnv>()
     .get("/orders/:id", zValidator("param", idParam, onInvalid), async (c) => {
         const order = await c.get("services").useCases.getOrder.execute({
             telegramId: c.get("auth").user.id,
+            businessId: shopOf(c).id,
             orderId: c.req.valid("param").id,
         })
         return c.json(order)
@@ -89,6 +90,7 @@ export const customerRoutes = new Hono<AppEnv>()
             const services = c.get("services")
             const order = await services.useCases.cancelOrder.execute({
                 telegramId: c.get("auth").user.id,
+                businessId: shopOf(c).id,
                 orderId: c.req.valid("param").id,
                 reason: c.req.valid("json").reason,
             })

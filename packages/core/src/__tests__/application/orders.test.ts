@@ -190,29 +190,60 @@ describe("order use cases", () => {
 
         it("only the owner and the customer can see the order", async () => {
             const get = new GetOrderUseCase(deps())
-            expect((await get.execute({ telegramId: OWNER_TG, orderId })).id).toBe(orderId)
-            expect((await get.execute({ telegramId: CUSTOMER_TG, orderId })).id).toBe(orderId)
-            await expect(get.execute({ telegramId: STRANGER_TG, orderId })).rejects.toThrow(
-                ForbiddenError,
-            )
-            await expect(get.execute({ telegramId: OWNER_TG, orderId: "nope" })).rejects.toThrow(
+            expect(
+                (await get.execute({ businessId: "biz-1", telegramId: OWNER_TG, orderId })).id,
+            ).toBe(orderId)
+            expect(
+                (await get.execute({ businessId: "biz-1", telegramId: CUSTOMER_TG, orderId })).id,
+            ).toBe(orderId)
+            await expect(
+                get.execute({ businessId: "biz-1", telegramId: STRANGER_TG, orderId }),
+            ).rejects.toThrow(ForbiddenError)
+            await expect(
+                get.execute({ businessId: "biz-1", telegramId: OWNER_TG, orderId: "nope" }),
+            ).rejects.toThrow(EntityNotFoundError)
+        })
+
+        it("an order is visible only inside its own shop", async () => {
+            const get = new GetOrderUseCase(deps())
+            const cancel = new CancelOrderUseCase(deps())
+            const advance = new AdvanceOrderUseCase(businesses, orders)
+            const elsewhere = { businessId: "biz-2", orderId }
+            await expect(get.execute({ ...elsewhere, telegramId: CUSTOMER_TG })).rejects.toThrow(
                 EntityNotFoundError,
             )
+            await expect(cancel.execute({ ...elsewhere, telegramId: CUSTOMER_TG })).rejects.toThrow(
+                EntityNotFoundError,
+            )
+            await expect(
+                advance.execute({
+                    ...elsewhere,
+                    actorTelegramId: OWNER_TG,
+                    to: OrderStatus.ACCEPTED,
+                }),
+            ).rejects.toThrow(EntityNotFoundError)
         })
 
         it("owner advances step by step; a stale button fails", async () => {
             const advance = new AdvanceOrderUseCase(businesses, orders)
             const accepted = await advance.execute({
+                businessId: "biz-1",
                 actorTelegramId: OWNER_TG,
                 orderId,
                 to: OrderStatus.ACCEPTED,
             })
             expect(accepted.nextStatus).toBe(OrderStatus.PREPARING)
             await expect(
-                advance.execute({ actorTelegramId: OWNER_TG, orderId, to: OrderStatus.ACCEPTED }),
+                advance.execute({
+                    businessId: "biz-1",
+                    actorTelegramId: OWNER_TG,
+                    orderId,
+                    to: OrderStatus.ACCEPTED,
+                }),
             ).rejects.toThrow(InvalidOrderTransitionError)
             await expect(
                 advance.execute({
+                    businessId: "biz-1",
                     actorTelegramId: CUSTOMER_TG,
                     orderId,
                     to: OrderStatus.PREPARING,
@@ -222,26 +253,32 @@ describe("order use cases", () => {
 
         it("customer cancels while pending; owner cancels later", async () => {
             const cancel = new CancelOrderUseCase(deps())
-            const byCustomer = await cancel.execute({ telegramId: CUSTOMER_TG, orderId })
+            const byCustomer = await cancel.execute({
+                businessId: "biz-1",
+                telegramId: CUSTOMER_TG,
+                orderId,
+            })
             expect(byCustomer.cancelledBy).toBe("customer")
 
             const second = (await placeOrder.execute(input())).id
             await new AdvanceOrderUseCase(businesses, orders).execute({
+                businessId: "biz-1",
                 actorTelegramId: OWNER_TG,
                 orderId: second,
                 to: OrderStatus.ACCEPTED,
             })
             await expect(
-                cancel.execute({ telegramId: CUSTOMER_TG, orderId: second }),
+                cancel.execute({ businessId: "biz-1", telegramId: CUSTOMER_TG, orderId: second }),
             ).rejects.toThrow(BusinessRuleViolationError)
             const byOwner = await cancel.execute({
+                businessId: "biz-1",
                 telegramId: OWNER_TG,
                 orderId: second,
                 reason: "Tugadi",
             })
             expect(byOwner).toMatchObject({ cancelledBy: "owner", cancelReason: "Tugadi" })
             await expect(
-                cancel.execute({ telegramId: STRANGER_TG, orderId: second }),
+                cancel.execute({ businessId: "biz-1", telegramId: STRANGER_TG, orderId: second }),
             ).rejects.toThrow(ForbiddenError)
         })
 
@@ -286,7 +323,12 @@ describe("order use cases", () => {
                 OrderStatus.PICKED_UP,
                 OrderStatus.DELIVERED,
             ]) {
-                await advance.execute({ actorTelegramId: OWNER_TG, orderId, to })
+                await advance.execute({
+                    businessId: "biz-1",
+                    actorTelegramId: OWNER_TG,
+                    orderId,
+                    to,
+                })
             }
             const stats = await new GetShopStatsUseCase(
                 businesses,

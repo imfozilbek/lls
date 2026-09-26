@@ -141,6 +141,7 @@ async function handleOrderCallback(
             action.kind === "advance"
                 ? await services.useCases.advanceOrder.execute({
                       actorTelegramId: callback.from.id,
+                      businessId: business.id,
                       orderId: action.orderId,
                       to: action.to,
                   })
@@ -164,7 +165,11 @@ async function requireOwnerCancel(
     if (!business.isOwnedBy(actorTelegramId)) {
         throw ForbiddenError.notOwner(business.id)
     }
-    return services.useCases.cancelOrder.execute({ telegramId: actorTelegramId, orderId })
+    return services.useCases.cancelOrder.execute({
+        telegramId: actorTelegramId,
+        businessId: business.id,
+        orderId,
+    })
 }
 
 async function handleReviewCallback(

@@ -75,17 +75,20 @@ export const ownerRoutes = new Hono<AppEnv>()
         async (c) => {
             const services = c.get("services")
             const actor = c.get("auth").user.id
+            const businessId = shopOf(c).id
             const orderId = c.req.valid("param").id
             const { status, reason } = c.req.valid("json")
             const order =
                 status === OrderStatus.CANCELLED
                     ? await services.useCases.cancelOrder.execute({
                           telegramId: actor,
+                          businessId,
                           orderId,
                           reason,
                       })
                     : await services.useCases.advanceOrder.execute({
                           actorTelegramId: actor,
+                          businessId,
                           orderId,
                           to: status,
                       })

@@ -277,6 +277,43 @@ describe("inside a shop", () => {
         expect(stats.today).toMatchObject({ orders: 1, cancelled: 1 })
     })
 
+    it("an order of one shop cannot be read or changed through another shop", async () => {
+        const osh = await addProduct("Osh", 35_000)
+        await givePhone()
+        const placed = await json<{ id: string }>(
+            await asCustomer()("/api/orders", {
+                method: "POST",
+                json: { items: [{ productId: osh, quantity: 1 }], address: "Navoiy 12" },
+            }),
+        )
+        // A second shop of the same owner (same bot token for simplicity).
+        await env.DB.prepare(
+            `INSERT INTO businesses SELECT 'shop-b', 'other-shop', name, type, owner_telegram_id,
+                status, 999, 'other_shop_bot', bot_token_enc, webhook_secret, brand_color,
+                logo_key, address, latitude, longitude, delivery_fee, free_delivery_from,
+                min_order, delivery_radius_m, working_hours, features, accepting_orders,
+                created_at, updated_at FROM businesses WHERE slug = ?`,
+        )
+            .bind(slug)
+            .run()
+        const sentBefore = client.telegram.sent.length
+        const viaOther = { botToken: SHOP_BOT_TOKEN, shop: "other-shop" }
+
+        const read = await client.as(CUSTOMER, viaOther)(`/api/orders/${placed.id}`)
+        expect(read.status).toBe(404)
+        const cancel = await client.as(CUSTOMER, viaOther)(`/api/orders/${placed.id}`, {
+            method: "PATCH",
+            json: { status: "cancelled" },
+        })
+        expect(cancel.status).toBe(404)
+        const advance = await client.as(OWNER, viaOther)(`/api/owner/orders/${placed.id}`, {
+            method: "PATCH",
+            json: { status: "accepted" },
+        })
+        expect(advance.status).toBe(404)
+        expect(client.telegram.sent.length).toBe(sentBefore)
+    })
+
     it("ordering needs a phone; errors carry the rule code", async () => {
         const osh = await addProduct("Osh", 35_000)
         const response = await asCustomer()("/api/orders", {

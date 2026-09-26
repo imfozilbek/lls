@@ -18,9 +18,14 @@ export interface OrderAccessDeps {
     orders: OrderRepository
 }
 
-async function requireOrder(orders: OrderRepository, orderId: string): Promise<Order> {
+/** Loads an order of this shop. An order of another shop is "not found", never leaked. */
+async function requireOrder(
+    orders: OrderRepository,
+    orderId: string,
+    businessId: string,
+): Promise<Order> {
     const order = await orders.findById(orderId)
-    if (!order) {
+    if (!order || order.businessId !== businessId) {
         throw EntityNotFoundError.order(orderId)
     }
     return order
@@ -46,8 +51,12 @@ async function roleOf(
 export class GetOrderUseCase {
     constructor(private readonly deps: OrderAccessDeps) {}
 
-    async execute(input: { telegramId: number; orderId: string }): Promise<OrderDTO> {
-        const order = await requireOrder(this.deps.orders, input.orderId)
+    async execute(input: {
+        telegramId: number
+        businessId: string
+        orderId: string
+    }): Promise<OrderDTO> {
+        const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
         await roleOf(this.deps, order, input.telegramId)
         return toOrderDTO(order)
     }
@@ -58,10 +67,11 @@ export class CancelOrderUseCase {
 
     async execute(input: {
         telegramId: number
+        businessId: string
         orderId: string
         reason?: string
     }): Promise<OrderDTO> {
-        const order = await requireOrder(this.deps.orders, input.orderId)
+        const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
         const role = await roleOf(this.deps, order, input.telegramId)
         order.cancel(role, input.reason)
         await this.deps.orders.save(order)
@@ -78,10 +88,11 @@ export class AdvanceOrderUseCase {
     /** `to` is explicit so a double tap on an old button fails instead of skipping a step. */
     async execute(input: {
         actorTelegramId: number
+        businessId: string
         orderId: string
         to: OrderStatus
     }): Promise<OrderDTO> {
-        const order = await requireOrder(this.orders, input.orderId)
+        const order = await requireOrder(this.orders, input.orderId, input.businessId)
         await requireOwnedBusiness(this.businesses, order.businessId, input.actorTelegramId)
         order.advanceTo(input.to)
         await this.orders.save(order)
