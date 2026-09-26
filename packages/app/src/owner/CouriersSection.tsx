@@ -47,12 +47,13 @@ function InviteCard({
     return (
         <div className="flex animate-rise flex-col gap-3 rounded-tile bg-brand/10 p-4">
             <p className="break-all font-medium">{invite.link}</p>
-            <div className="flex gap-2">
-                <Button className="flex-1" onClick={share}>
+            <div className="flex flex-wrap gap-2">
+                <Button className="grow whitespace-nowrap" onClick={share}>
                     {s.inviteShare}
                 </Button>
                 <Button
-                    variant="secondary"
+                    variant="surface"
+                    className="grow whitespace-nowrap"
                     icon={copied ? <CheckIcon size={18} /> : <CopyIcon size={18} />}
                     onClick={(): void => void copy()}
                 >

@@ -14,11 +14,13 @@ import type {
     TextareaHTMLAttributes,
 } from "react"
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger"
+type ButtonVariant = "primary" | "secondary" | "surface" | "ghost" | "danger"
 
 const VARIANTS: Record<ButtonVariant, string> = {
     primary: "bg-brand text-brand-ink shadow-[0_6px_16px_-8px_rgb(var(--brand-rgb)/0.8)]",
     secondary: "bg-tg-secondary text-tg-text",
+    /** A secondary button placed on a secondary-colored card. */
+    surface: "bg-tg-bg text-tg-text",
     ghost: "bg-transparent text-brand",
     danger: "bg-danger/10 text-tg-destructive",
 }

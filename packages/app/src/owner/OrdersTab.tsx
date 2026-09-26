@@ -165,11 +165,12 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
                     {actions[next] ?? next}
                 </Button>
             ) : null}
-            <div className="flex gap-2">
+            {/* Side by side when both fit; each on its own row in longer languages. */}
+            <div className="flex flex-wrap gap-2">
                 {ASSIGNABLE.includes(order.status) ? (
                     <Button
-                        variant="secondary"
-                        className="flex-1"
+                        variant="surface"
+                        className="grow whitespace-nowrap"
                         icon={<ScooterIcon size={18} />}
                         onClick={(): void => setSheet("courier")}
                     >
@@ -178,7 +179,7 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
                 ) : null}
                 <Button
                     variant="danger"
-                    className="flex-1"
+                    className="grow whitespace-nowrap"
                     onClick={(): void => setSheet("cancel")}
                 >
                     {t.owner.cancelOrder}

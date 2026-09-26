@@ -189,7 +189,7 @@ export const uz = {
         map: "Xarita",
         courier: "Kuryer",
         assign: "Kuryer tayinlash",
-        reassign: "Kuryerni almashtirish",
+        reassign: "Boshqa kuryer",
         noCouriers: "Hali kuryer yo'q. Sozlamalarda taklif qiling.",
         bottlesBack: "Bo'sh idish qaytaradi: {n} ta",
         addProduct: "Mahsulot qo'shish",

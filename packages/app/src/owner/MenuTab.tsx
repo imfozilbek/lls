@@ -1,4 +1,4 @@
-import { Feature } from "@lls/core"
+import { Feature, Unit } from "@lls/core"
 import { useEffect, useState } from "react"
 
 import { errorText, useLanguage, useT } from "../i18n/index.js"
@@ -113,7 +113,7 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
                     <span className="line-clamp-1 font-medium">{product.name}</span>
                     <span className="block text-sm text-tg-hint">
                         {onSale
-                            ? formatMoney(product.price, language)
+                            ? `${formatMoney(product.price, language)}${product.unit === Unit.KG ? ` / ${t.units.kg}` : ""}`
                             : today
                               ? t.owner.stoppedToday
                               : t.owner.hidden}
