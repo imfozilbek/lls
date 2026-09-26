@@ -1,4 +1,4 @@
-import { isFinalStatus } from "@lls/core"
+import { isFinalStatus, mapUrl } from "@lls/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -20,11 +20,6 @@ type Filter = "active" | "done"
 
 /** New orders also arrive as bot messages; the list refreshes calmly while it is open. */
 const POLL_MS = 20_000
-
-function mapLink(order: OrderDTO): string | null {
-    const point = order.location
-    return point ? `https://maps.google.com/?q=${point.latitude},${point.longitude}` : null
-}
 
 interface CardProps {
     order: OrderDTO
@@ -86,7 +81,7 @@ function OrderActions({ order, onChange, onStale }: CardProps): React.JSX.Elemen
 function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
-    const map = mapLink(order)
+    const map = order.location ? mapUrl(order.location) : null
     return (
         <li className="animate-rise rounded-tile bg-tg-secondary p-4">
             <div className="flex items-center justify-between gap-2">

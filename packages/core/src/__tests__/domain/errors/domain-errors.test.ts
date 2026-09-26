@@ -35,20 +35,10 @@ describe("domain errors", () => {
         }
     })
 
-    it("ValidationError keeps field details", () => {
-        const error = ValidationError.fromFields([
-            { field: "a", message: "bad" },
-            { field: "b", message: "bad" },
-        ])
-        expect(error.message).toContain("a, b")
-        expect(error.errors).toHaveLength(2)
-    })
-
     it("not found factories name the entity", () => {
         expect(EntityNotFoundError.business("1").entityName).toBe("Business")
         expect(EntityNotFoundError.businessBySlug("osh").entityId).toBe("slug:osh")
         expect(EntityNotFoundError.product("1").entityName).toBe("Product")
-        expect(EntityNotFoundError.customer("1").entityName).toBe("Customer")
     })
 
     it("business rule factories carry the rule id", () => {

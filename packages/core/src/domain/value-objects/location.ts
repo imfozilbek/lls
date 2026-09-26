@@ -35,8 +35,9 @@ export class Location {
                 Math.sin(dLng / 2) ** 2
         return Math.round(2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(a)))
     }
+}
 
-    equals(other: Location): boolean {
-        return this.latitude === other.latitude && this.longitude === other.longitude
-    }
+/** Yandex Maps link with a pin: the map app most people use in Uzbekistan. */
+export function mapUrl(point: { latitude: number; longitude: number }): string {
+    return `https://yandex.uz/maps/?pt=${point.longitude},${point.latitude}&z=17&l=map`
 }

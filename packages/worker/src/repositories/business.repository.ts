@@ -52,10 +52,6 @@ export interface BotCredentials {
     webhookSecret: string
 }
 
-function optionalMoney(amount: number | null): Money | undefined {
-    return amount === null ? undefined : Money.of(amount)
-}
-
 function toBusiness(row: BusinessRow): Business {
     const features = (JSON.parse(row.features) as string[]).map((f) =>
         oneOf(f, FEATURES, "feature"),
@@ -77,8 +73,8 @@ function toBusiness(row: BusinessRow): Business {
                 : Location.create(row.latitude, row.longitude),
         delivery: {
             fee: Money.of(row.delivery_fee),
-            freeFrom: optionalMoney(row.free_delivery_from),
-            minOrder: optionalMoney(row.min_order),
+            freeFrom: Money.optional(row.free_delivery_from),
+            minOrder: Money.optional(row.min_order),
             radiusMeters: optional(row.delivery_radius_m),
         },
         workingHours: WorkingHours.fromJSON(

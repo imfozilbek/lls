@@ -15,6 +15,13 @@ export class Money {
         return new Money(amount)
     }
 
+    /** An optional limit such as "free delivery from": missing or 0 means "not set". */
+    static optional(amount: number | null | undefined): Money | undefined {
+        return amount === undefined || amount === null || amount === 0
+            ? undefined
+            : Money.of(amount)
+    }
+
     static zero(): Money {
         return new Money(0)
     }
@@ -30,19 +37,11 @@ export class Money {
         return Money.of(this.amount * quantity)
     }
 
-    isZero(): boolean {
-        return this.amount === 0
-    }
-
     isLessThan(other: Money): boolean {
         return this.amount < other.amount
     }
 
     isAtLeast(other: Money): boolean {
         return this.amount >= other.amount
-    }
-
-    equals(other: Money): boolean {
-        return this.amount === other.amount
     }
 }

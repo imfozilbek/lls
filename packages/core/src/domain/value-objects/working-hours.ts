@@ -50,10 +50,6 @@ export class WorkingHours {
         return value === null ? WorkingHours.alwaysOpen() : WorkingHours.create(value)
     }
 
-    isAlwaysOpen(): boolean {
-        return this.schedule === null
-    }
-
     isOpenAt(date: Date, offsetMinutes: number = UZ_UTC_OFFSET_MINUTES): boolean {
         if (this.schedule === null) {
             return true

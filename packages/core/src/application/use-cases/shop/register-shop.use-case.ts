@@ -51,8 +51,8 @@ export class RegisterShopUseCase {
                 : undefined,
             delivery: {
                 fee: Money.of(input.deliveryFee),
-                freeFrom: optionalMoney(input.freeDeliveryFrom),
-                minOrder: optionalMoney(input.minOrder),
+                freeFrom: Money.optional(input.freeDeliveryFrom),
+                minOrder: Money.optional(input.minOrder),
             },
         })
 
@@ -69,8 +69,4 @@ export class RegisterShopUseCase {
         }
         throw ConflictError.slugTaken(base.value)
     }
-}
-
-export function optionalMoney(amount: number | undefined | null): Money | undefined {
-    return amount === undefined || amount === null || amount === 0 ? undefined : Money.of(amount)
 }

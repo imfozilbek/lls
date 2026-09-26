@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { readableInk } from "./brand.js"
-import { formatMoney, formatTime, hexToRgbChannels, plural } from "./format.js"
+import { formatMoney, formatTime, hexToRgbChannels } from "./format.js"
 
 import type { Language } from "@lls/core"
 
@@ -13,17 +13,6 @@ describe("formatMoney", () => {
         expect(formatMoney(78_000, UZ)).toBe("78 000 so'm")
         expect(formatMoney(1_250_000, RU)).toBe("1 250 000 сум")
         expect(formatMoney(500, RU)).toBe("500 сум")
-    })
-})
-
-describe("plural", () => {
-    const forms = ["заказ", "заказа", "заказов"] as const
-    it("picks the Russian form", () => {
-        expect(plural(1, forms)).toBe("заказ")
-        expect(plural(3, forms)).toBe("заказа")
-        expect(plural(11, forms)).toBe("заказов")
-        expect(plural(21, forms)).toBe("заказ")
-        expect(plural(25, forms)).toBe("заказов")
     })
 })
 

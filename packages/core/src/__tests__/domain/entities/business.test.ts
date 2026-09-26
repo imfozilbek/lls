@@ -16,7 +16,7 @@ describe("Business", () => {
         const business = makeBusiness({ active: false })
         expect(business.status).toBe(BusinessStatus.PENDING)
         expect(business.brandColor.hex).toBe("#0ea5e9")
-        expect(business.workingHours.isAlwaysOpen()).toBe(true)
+        expect(business.workingHours.toJSON()).toBeNull()
         expect(business.acceptingOrders).toBe(true)
         expect(business.features).toEqual([])
         expect(business.bot).toEqual({ id: 777, username: "osh_markaz_bot" })

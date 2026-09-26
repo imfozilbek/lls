@@ -21,9 +21,4 @@ export class ValidationError extends DomainError {
             { field, message, value },
         ])
     }
-
-    static fromFields(errors: ValidationErrorDetail[]): ValidationError {
-        const fields = errors.map((e) => e.field).join(", ")
-        return new ValidationError(`Validation failed for fields: ${fields}`, errors)
-    }
 }

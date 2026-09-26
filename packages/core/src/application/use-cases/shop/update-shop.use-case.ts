@@ -5,8 +5,6 @@ import { WorkingHours } from "../../../domain/value-objects/working-hours.js"
 import { toShopOwnerDTO } from "../../dtos/shop.dto.js"
 import { requireOwnedBusiness } from "../shared.js"
 
-import { optionalMoney } from "./register-shop.use-case.js"
-
 import type { Business, ProfilePatch } from "../../../domain/entities/business.js"
 import type { WeeklySchedule } from "../../../domain/value-objects/working-hours.js"
 import type { LocationDTO, ShopOwnerDTO } from "../../dtos/shop.dto.js"
@@ -59,8 +57,8 @@ function applyPatch(business: Business, patch: ShopSettingsPatch): void {
     if (patch.delivery) {
         business.updateDelivery({
             fee: Money.of(patch.delivery.fee),
-            freeFrom: optionalMoney(patch.delivery.freeFrom),
-            minOrder: optionalMoney(patch.delivery.minOrder),
+            freeFrom: Money.optional(patch.delivery.freeFrom),
+            minOrder: Money.optional(patch.delivery.minOrder),
             radiusMeters: patch.delivery.radiusMeters ?? undefined,
         })
     }

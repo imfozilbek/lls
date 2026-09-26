@@ -9,8 +9,4 @@ export class TelegramId {
         }
         return new TelegramId(value)
     }
-
-    equals(other: TelegramId): boolean {
-        return this.value === other.value
-    }
 }

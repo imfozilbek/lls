@@ -49,7 +49,6 @@ export interface WebApp {
     ready(): void
     expand(): void
     isVersionAtLeast(version: string): boolean
-    setHeaderColor?(color: string): void
     MainButton: BottomButton
     BackButton: BackButtonApi
     HapticFeedback: {
@@ -62,7 +61,6 @@ export interface WebApp {
     requestWriteAccess?(callback: (allowed: boolean) => void): void
     showConfirm?(message: string, callback: (ok: boolean) => void): void
     openTelegramLink?(url: string): void
-    openLink?(url: string): void
 }
 
 declare global {

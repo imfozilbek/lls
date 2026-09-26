@@ -1,3 +1,4 @@
+import { formatPhone } from "@lls/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, useLanguage, useT } from "../i18n/index.js"
@@ -40,14 +41,6 @@ function saveAddress(value: SavedAddress): void {
     } catch {
         // Not critical: the customer just types the address again next time.
     }
-}
-
-function formatPhone(phone: string): string {
-    if (phone.startsWith("+998") && phone.length === 13) {
-        const d = phone.slice(4)
-        return `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7)}`
-    }
-    return phone
 }
 
 /** Phone comes from Telegram's "share contact": the bot receives it, we wait for it to land. */

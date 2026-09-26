@@ -22,10 +22,6 @@ export class EntityNotFoundError extends DomainError {
         return new EntityNotFoundError("Product", id)
     }
 
-    static customer(id: string): EntityNotFoundError {
-        return new EntityNotFoundError("Customer", id)
-    }
-
     static order(id: string): EntityNotFoundError {
         return new EntityNotFoundError("Order", id)
     }

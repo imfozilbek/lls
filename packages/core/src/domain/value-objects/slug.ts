@@ -33,10 +33,6 @@ export class Slug {
         return Slug.create(head + suffix)
     }
 
-    equals(other: Slug): boolean {
-        return this.value === other.value
-    }
-
     private static normalize(value: string): string {
         return value
             .replace(/[^a-z0-9]+/g, "-")

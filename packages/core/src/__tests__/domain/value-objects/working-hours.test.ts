@@ -11,7 +11,7 @@ function tashkent(isoLocal: string): Date {
 describe("WorkingHours", () => {
     it("always open by default", () => {
         const hours = WorkingHours.alwaysOpen()
-        expect(hours.isAlwaysOpen()).toBe(true)
+        expect(hours.toJSON()).toBeNull()
         expect(hours.isOpenAt(tashkent("2026-09-28T03:00:00"))).toBe(true)
         expect(hours.toJSON()).toBeNull()
     })
@@ -54,6 +54,6 @@ describe("WorkingHours", () => {
     it("round-trips through JSON", () => {
         const schedule = { mon: { open: "09:00", close: "18:00" } }
         expect(WorkingHours.fromJSON(schedule).toJSON()).toEqual(schedule)
-        expect(WorkingHours.fromJSON(null).isAlwaysOpen()).toBe(true)
+        expect(WorkingHours.fromJSON(null).toJSON()).toBeNull()
     })
 })

@@ -1,4 +1,4 @@
-import { OrderStatus } from "@lls/core"
+import { OrderStatus, formatPhone, mapUrl } from "@lls/core"
 
 import { escapeHtml } from "./gateway.js"
 import { fill, textsFor } from "./texts.js"
@@ -12,20 +12,8 @@ export function formatMoney(amount: number, language: Language): string {
     return `${grouped} ${textsFor(language).currency}`
 }
 
-function formatPhone(phone: string): string {
-    if (phone.startsWith("+998") && phone.length === 13) {
-        const d = phone.slice(4)
-        return `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7)}`
-    }
-    return phone
-}
-
-function mapUrl(order: OrderDTO): string | undefined {
-    if (!order.location) {
-        return undefined
-    }
-    const { latitude, longitude } = order.location
-    return `https://maps.google.com/?q=${latitude},${longitude}`
+function orderMapUrl(order: OrderDTO): string | undefined {
+    return order.location ? mapUrl(order.location) : undefined
 }
 
 /** The owner's order card: items, totals, customer, address, current status. */
@@ -45,7 +33,7 @@ export function formatOrderForOwner(order: OrderDTO, language: Language): string
     lines.push(`👤 ${escapeHtml(order.customerName)}${phone}`)
     const landmark = order.landmark ? ` (${t.landmark}: ${escapeHtml(order.landmark)})` : ""
     lines.push(`📍 ${escapeHtml(order.address)}${landmark}`)
-    const map = mapUrl(order)
+    const map = orderMapUrl(order)
     if (map) {
         lines.push(`🗺 <a href="${map}">${t.map}</a>`)
     }

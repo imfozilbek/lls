@@ -19,21 +19,13 @@ export class Phone {
         }
         return new Phone(`+${digits}`)
     }
+}
 
-    isUzbek(): boolean {
-        return this.number.startsWith(`+${UZ_COUNTRY_CODE}`)
+/** "+998901234567" → "+998 90 123 45 67". Other countries stay in E.164 form. */
+export function formatPhone(e164: string): string {
+    if (!e164.startsWith(`+${UZ_COUNTRY_CODE}`) || e164.length !== 13) {
+        return e164
     }
-
-    /** "+998 90 123 45 67" for Uzbek numbers, E.164 otherwise. */
-    format(): string {
-        if (!this.isUzbek() || this.number.length !== 13) {
-            return this.number
-        }
-        const d = this.number.slice(4)
-        return `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7)}`
-    }
-
-    equals(other: Phone): boolean {
-        return this.number === other.number
-    }
+    const d = e164.slice(4)
+    return `+998 ${d.slice(0, 2)} ${d.slice(2, 5)} ${d.slice(5, 7)} ${d.slice(7)}`
 }
