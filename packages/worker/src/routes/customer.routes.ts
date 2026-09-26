@@ -11,6 +11,7 @@ import {
     productsQuery,
     onInvalid,
 } from "../http/schemas.js"
+import { Notifier, inBackground } from "../telegram/notifier.js"
 
 import type { AppEnv } from "../env.js"
 
@@ -52,11 +53,13 @@ export const customerRoutes = new Hono<AppEnv>()
 
     .post("/orders", zValidator("json", placeOrderBody, onInvalid), async (c) => {
         const services = c.get("services")
+        const business = shopOf(c)
         const order = await services.useCases.placeOrder.execute({
             ...c.req.valid("json"),
             user: c.get("auth").user,
-            businessId: shopOf(c).id,
+            businessId: business.id,
         })
+        inBackground(c.executionCtx, new Notifier(services).orderPlaced(business, order))
         return c.json(order, 201)
     })
 
@@ -82,11 +85,13 @@ export const customerRoutes = new Hono<AppEnv>()
         zValidator("param", idParam, onInvalid),
         zValidator("json", customerCancelBody, onInvalid),
         async (c) => {
-            const order = await c.get("services").useCases.cancelOrder.execute({
+            const services = c.get("services")
+            const order = await services.useCases.cancelOrder.execute({
                 telegramId: c.get("auth").user.id,
                 orderId: c.req.valid("param").id,
                 reason: c.req.valid("json").reason,
             })
+            inBackground(c.executionCtx, new Notifier(services).orderChanged(shopOf(c), order))
             return c.json(order)
         },
     )

@@ -8,6 +8,7 @@ import { customerRoutes } from "./routes/customer.routes.js"
 import { imageRoutes } from "./routes/image.routes.js"
 import { ownerRoutes } from "./routes/owner.routes.js"
 import { platformRoutes } from "./routes/platform.routes.js"
+import { webhookRoutes } from "./routes/webhook.routes.js"
 import { createServices } from "./services.js"
 import { HttpTelegramGateway } from "./telegram/gateway.js"
 
@@ -46,6 +47,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         .route("/platform", platformRoutes)
     app.route("/api", api)
     app.route("/img", imageRoutes)
+    app.route("/tg", webhookRoutes)
 
     app.notFound((c) => c.json({ error: { code: "NOT_FOUND", message: "Not found" } }, 404))
     app.onError((error, c) => {

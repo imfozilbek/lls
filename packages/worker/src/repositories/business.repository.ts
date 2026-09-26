@@ -47,6 +47,7 @@ const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_us
     delivery_radius_m, working_hours, features, accepting_orders, created_at, updated_at`
 
 export interface BotCredentials {
+    botId: number
     token: string
     webhookSecret: string
 }
@@ -183,13 +184,14 @@ export class D1BusinessRepository implements BusinessRepository {
     /** Decrypted bot token and webhook secret. Never return these from the API. */
     async getBotCredentials(businessId: string): Promise<BotCredentials | null> {
         const row = await this.db
-            .prepare("SELECT bot_token_enc, webhook_secret FROM businesses WHERE id = ?")
+            .prepare("SELECT bot_id, bot_token_enc, webhook_secret FROM businesses WHERE id = ?")
             .bind(businessId)
-            .first<{ bot_token_enc: string; webhook_secret: string }>()
+            .first<{ bot_id: number; bot_token_enc: string; webhook_secret: string }>()
         if (!row) {
             return null
         }
         return {
+            botId: row.bot_id,
             token: await decryptSecret(row.bot_token_enc, this.encryptionKey),
             webhookSecret: row.webhook_secret,
         }

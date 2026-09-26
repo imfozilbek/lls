@@ -25,6 +25,14 @@ export default defineConfig(async () => {
         ],
         test: {
             setupFiles: ["./test/setup.ts"],
+            // workerd supports istanbul coverage only (not v8).
+            coverage: {
+                provider: "istanbul" as const,
+                include: ["src/**"],
+                thresholds: {
+                    "src/routes/**": { lines: 70, functions: 70, statements: 70 },
+                },
+            },
         },
     }
 })

@@ -35,3 +35,6 @@ jobs:
 
             - name: Core coverage (domain ≥ 90%, use cases ≥ 80%)
               run: bun run --filter @lls/core test:coverage
+
+            - name: Worker coverage (routes ≥ 70%)
+              run: bun run --filter @lls/worker test:coverage

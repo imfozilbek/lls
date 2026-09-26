@@ -14,6 +14,7 @@ import {
     shopPatchBody,
     onInvalid,
 } from "../http/schemas.js"
+import { Notifier, inBackground } from "../telegram/notifier.js"
 
 import type { AppEnv } from "../env.js"
 
@@ -72,18 +73,23 @@ export const ownerRoutes = new Hono<AppEnv>()
         zValidator("param", idParam, onInvalid),
         zValidator("json", ownerOrderBody, onInvalid),
         async (c) => {
-            const { useCases } = c.get("services")
+            const services = c.get("services")
             const actor = c.get("auth").user.id
             const orderId = c.req.valid("param").id
             const { status, reason } = c.req.valid("json")
             const order =
                 status === OrderStatus.CANCELLED
-                    ? await useCases.cancelOrder.execute({ telegramId: actor, orderId, reason })
-                    : await useCases.advanceOrder.execute({
+                    ? await services.useCases.cancelOrder.execute({
+                          telegramId: actor,
+                          orderId,
+                          reason,
+                      })
+                    : await services.useCases.advanceOrder.execute({
                           actorTelegramId: actor,
                           orderId,
                           to: status,
                       })
+            inBackground(c.executionCtx, new Notifier(services).orderChanged(shopOf(c), order))
             return c.json(order)
         },
     )

@@ -4,6 +4,7 @@ import { Hono } from "hono"
 import { ApiError } from "../http/errors.js"
 import { onInvalid, registerShopBody } from "../http/schemas.js"
 import { TelegramApiError } from "../telegram/gateway.js"
+import { Notifier, inBackground } from "../telegram/notifier.js"
 
 import type { AppEnv } from "../env.js"
 import type { BotInfo, TelegramGateway } from "../telegram/gateway.js"
@@ -46,5 +47,6 @@ export const platformRoutes = new Hono<AppEnv>()
             ownerTelegramId: c.get("auth").user.id,
             bot: { id: bot.id, username: bot.username, token: botToken },
         })
+        inBackground(c.executionCtx, new Notifier(services).shopRegistered(registered))
         return c.json(registered, 201)
     })
