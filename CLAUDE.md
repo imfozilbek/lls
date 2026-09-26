@@ -5,34 +5,24 @@
 ## Session Start
 
 1. Read `./ROADMAP.md` to understand current status.
-2. If ROADMAP.md conflicts with this file, **this file wins** (see Migration Status).
+2. If ROADMAP.md conflicts with this file, **this file wins**.
 
-## Migration Status (READ FIRST)
-
-The code is being migrated from the old stack to the stack described in this file.
-The old packages (`@lls/api` NestJS + MongoDB, `@lls/bot`, `@lls/admin`), `deploy/` and `.gitea/`
-are **deleted**. The old code is available at git tag `legacy-v0` for reference
-(e.g. `git show legacy-v0:packages/bot/src/screens/customer/Checkout.tsx`).
-
-**RULES:**
-- Reuse ideas and UI from `legacy-v0` when useful, but never copy its bugs.
-- `@lls/core` stays. Prune unused parts, fix bugs, reuse the rest.
+The old NestJS + MongoDB code is kept only at git tag `legacy-v0`. Reuse ideas from it, never its bugs.
 
 ## Project Overview
 
 LLS (LocalLoopSolutions) — local delivery platform for small businesses.
-TypeScript monorepo (Bun workspaces). Bun >= 1.2.4.
+TypeScript monorepo (Bun workspaces). Bun 1.3.
 
 **Target market:** small businesses in regions and districts of Uzbekistan, where
-Yandex Eats / Uzum and other aggregators do not operate.
+Yandex Eats / Uzum and other aggregators do not operate. The goal is to own these small markets:
+first every shop gets its own bot, then all their products join one LLS marketplace.
 
 | Package | Description |
 |---------|-------------|
 | `@lls/core` | Domain logic (DDD): entities, value objects, use cases, ports. Pure TS, no deps |
-| `@lls/worker` | Cloudflare Worker: HTTP API (Hono) + Telegram bot webhook + cron |
-| `@lls/app` | Telegram Mini App (React), hosted on Pages: customer storefront, owner section "Мой магазин", shop onboarding |
-
-**Root:** `/Users/fozilbeksamiyev/projects/lls`
+| `@lls/worker` | Cloudflare Worker: HTTP API (Hono) + Telegram bot webhooks |
+| `@lls/app` | Telegram Mini App (React), hosted on Pages: customer storefront, owner section "Мой магазин", courier section, shop onboarding |
 
 ## White-Label Model
 
@@ -49,22 +39,31 @@ LLS is the platform brand. Customers see the **shop's brand**; the app shows a s
 
 | Stage | What | Revenue |
 |-------|------|---------|
-| **1. Own bot per business (NOW)** | Storefront + orders + owner notifications. Business delivers itself | Subscription |
-| 2. District marketplace | One Mini App, one cart from several shops, search across shops | Small commission + subscription |
-| 3. Own delivery | Shared couriers, several pickups per trip | Delivery fee + volume terms |
+| **1. Own bot per business (NOW)** | Storefront + orders + notifications. The shop delivers with **its own couriers** | Subscription |
+| 2. District marketplace | One Mini App, one cart from several shops, search across shops | Commission on marketplace sales only |
+| 3. Shared delivery | Shared courier pool, several pickups per trip | Delivery fee + volume terms |
 
-**Pilot order:** food → water → grocery.
+**Pilot:** three shops at once — food, water, grocery. Each has its own bot.
+
+**Money rule of the platform:** LLS takes a commission **only** on sales made through the LLS
+marketplace channel. Sales through a shop's own bot are the shop's business (a separate
+subscription deal); the system never takes a cut there.
 
 **⛔ RULES:**
-- Build ONLY stage 1 now. No shared cart, courier pool, routing, settlements.
-- One universal core for all business types. Vertical specifics = feature toggles per business
-  (e.g. `reorder`, `bottleDeposit`, `stopList`, `weightItems`).
+- Build ONLY stage 1 now. No marketplace storefront, shared cart, shared courier pool, routing,
+  settlements or payouts.
+- One universal core for all business types. Vertical specifics = feature toggles per business:
+  `reorder`, `bottleDeposit` (water), `weightItems` and `stopList` (grocery, food). Defaults come
+  from the business type; the owner can switch them.
 - Add a feature only when a real client asks for it.
 - Design stage 1 so stages 2–3 need no rewrite:
   - multi-tenant: `business_id` in every business-owned table
   - one global customer per `telegram_id` + customer↔business link
   - shared category taxonomy + units (шт, кг, л, 19 л)
   - geo: business location + delivery zone, customer location
+  - every order stores its **channel** (`shop_bot` | `marketplace`) and a **commission snapshot**
+    (rate + amount, integer UZS, 0 for `shop_bot`), fixed when the order is placed
+  - couriers belong to one business now (`business_id`); stage 3 adds a shared pool on top
 
 ## SLC Rules (MANDATORY)
 
@@ -75,9 +74,9 @@ LLS is the platform brand. Customers see the **shop's brand**; the app shows a s
 
 | Rule | Requirement |
 |------|-------------|
-| **v1.0 scope** | Stage 1: order flow + status tracking ONLY |
+| **v1.0 scope** | Stage 1: orders, status tracking, shop couriers, vertical toggles |
 | **Quality** | Must be PERFECT, not "good enough" |
-| **No scope creep** | Marketplace, couriers, multi-city, online payments — NOT in v1.0 |
+| **No scope creep** | Marketplace storefront, shared courier pool, multi-city, online payments — NOT in v1.0 |
 | **UX** | Order in 3 taps |
 | **Cost** | $0/month until real usage requires more |
 
@@ -199,22 +198,28 @@ Infrastructure     → Routes, Repositories, Adapters (@lls/worker)
 
 ```
 src/
-├── index.ts          # Hono app: routes + webhook + scheduled() for cron
-├── env.ts            # Bindings (DB, BUCKET) + secrets, validated with zod
+├── index.ts          # Worker entry
+├── app.ts            # Hono app: CORS, /health, /api, /img, /tg
+├── env.ts            # Bindings (DB, BUCKET) + secrets
 ├── crypto.ts         # initData HMAC check, AES-GCM for bot tokens
-├── auth.ts           # X-Shop → shop's bot token → verify initData → current user + role
-├── routes/           # HTTP routes, one file per feature (shop, product, order, me, owner, platform)
+├── auth.ts           # X-Shop → shop's bot token → verify initData → user + role (owner/courier/customer)
+├── services.ts       # Wires repositories, gateway and use cases
+├── http/             # Error mapping, zod schemas, image upload
+├── routes/           # customer, owner, courier, platform, image, webhook
 ├── repositories/     # D1 implementations of @lls/core ports
-├── telegram/         # Bot API gateway, webhooks (shop + platform), notifications
-└── cron.ts           # Scheduled jobs (only when a real client needs one)
+└── telegram/         # Bot API gateway, texts (uz/ru, per business type), notifier
+scripts/              # Local dev only: seed-dev.ts, sign-init-data.ts
 wrangler.jsonc        # Bindings: DB (D1), BUCKET (R2), vars; run `wrangler types` after changes
 migrations/           # D1 SQL migrations
+```
+No cron: add `scheduled()` only when a real client needs a timed job.
+```
 ```
 
 **Worker Rules:**
 - Worker is a thin layer. Business logic lives in `@lls/core` use cases.
 - Every body, query and param is validated with zod.
-- Identity (customer, owner) comes ONLY from verified Telegram data, never from the request body.
+- Identity (customer, owner, courier) comes ONLY from verified Telegram data, never from the request body.
 - Check ownership on every route that reads or changes business-owned data.
 - DomainError → HTTP: validation 400, unauthorized 401, forbidden 403, not found 404,
   conflict / invalid status transition 409, business rule 422.
@@ -224,13 +229,15 @@ migrations/           # D1 SQL migrations
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours, features, accepting_orders |
-| Product | id, business_id, name, price (integer UZS), unit, category (shared taxonomy), image_key, is_available |
+| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours, features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none |
+| Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at — whose customer this is |
-| Order | id, business_id, number (per shop), customer_id, items (name + unit + price snapshot), subtotal, delivery_fee, total, status, address, location, landmark, comment, cancel_reason |
+| Courier | id, business_id, telegram_id, name, phone, is_active — the shop's own delivery person |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason |
 
-**Money:** integer UZS. Never floats.
+**Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
+items; line total = `round(price × grams / 1000)`.
 
 **Order Status Flow (single source of truth: `@lls/core` enum):**
 ```
@@ -238,9 +245,11 @@ pending → accepted → preparing → ready → picked_up → delivered
     ↓         ↓          ↓         ↓         ↓
 cancelled  cancelled  cancelled  cancelled  cancelled
 ```
-- `pending → ready` = business part. `picked_up → delivered` = delivery part.
-- Stage 1: the owner moves all statuses. Stage 3: the delivery part moves to a `Delivery` entity.
-- Only ONE transitions table in the codebase.
+- `pending → ready` = shop part. `picked_up → delivered` = delivery part.
+- Owner moves every step and may cancel. The assigned courier moves only
+  `ready → picked_up → delivered` and never cancels. The customer cancels only while `pending`.
+- The owner assigns a courier (`accepted`…`ready`); without couriers the owner delivers.
+- Only ONE transitions table (and one actor rule next to it) in the codebase.
 
 ## Database (Cloudflare D1)
 
@@ -298,13 +307,21 @@ No `X-Shop` → verify with the platform bot token (onboarding only).
 **Bot tokens:** stored in D1 encrypted with AES-GCM (key: secret `TOKEN_ENC_KEY`). Never logged,
 never returned by the API. Validate a new token with `getMe` before saving.
 
-**Roles:** `customer` (default) and `owner` (`business.owner_telegram_id`). One app, one auth.
+**Roles** (per shop, one app, one auth): `customer` (default), `owner`
+(`business.owner_telegram_id`), `courier` (active row in `couriers` for this shop).
 
-**Entry:** `t.me/<bot>?startapp=shop_<slug>` opens the shop storefront.
+**Entry:** the shop bot's menu button opens `?shop=<slug>`. Couriers get a button to
+`?shop=<slug>&mode=courier`. Onboarding: the platform bot opens `?mode=onboarding`.
+
+**Courier invite:** the owner creates a one-time link `t.me/<shop_bot>?start=c_<code>` (48 h).
+`/start c_<code>` in the shop bot makes the sender a courier of that shop.
 
 **Notifications (no WebSockets):**
 - New order → message to the owner with a button for the **next allowed status** + "Отменить".
-- Status change → message to the customer.
+- Courier assigned → order card to the courier (address, landmark, map, phone, cash to collect,
+  empty bottles) with "Забрал" / "Доставил".
+- Status change → message to the customer (courier name, never the courier's phone).
+- Texts depend on the business type (food: «Меню», «Готовится»; water/grocery: «Каталог», «Собираем»).
 - Before the first order, the app calls `requestWriteAccess()` so the shop bot may message the customer.
 - Phone: `requestContact()` → Telegram sends a `contact` message to the shop bot webhook →
   save it only if `contact.user_id === from.id`.
@@ -317,7 +334,8 @@ never returned by the API. Validate a new token with `getMe` before saving.
 
 **User Flow:**
 - Customer: Open shop link → Browse → Cart → Order → Track
-- Owner: New order message → Accept → Next status; catalog in "Мой магазин"
+- Owner: New order message → Accept → Next status → assign courier; catalog and couriers in "Мой магазин"
+- Courier: Invite link → Start → assigned order card → Picked up → Delivered
 
 ## Security (MANDATORY)
 
@@ -436,15 +454,15 @@ console.log            // Use logger
 
 **REQUIRED:**
 - Micro-interactions on all interactive elements
-- Personality: illustrations, custom icons, empty states with character
+- Personality: custom icons and empty states with character (no stock illustrations)
 
 ## Skills Usage (MANDATORY)
 
 | Skill | When to Use | Status |
 |-------|-------------|--------|
 | `brand-guidelines` | Before any UI work — colors, typography, spacing | In repo: `.skills/brand-guidelines/` |
-| `software-architecture` | New features, refactoring, architecture decisions | Use if installed |
-| `test-driven-development` | Writing or updating tests | Use if installed |
+| `ddd` (plugin) | New features, refactoring, architecture decisions | Use if installed |
+| `tdd` (plugin) | Writing or updating tests | Use if installed |
 
 **⛔ RULES:**
 - Invoke skills proactively, don't wait for the user to ask
@@ -468,7 +486,7 @@ console.log            // Use logger
 - `@lls/worker`: `@cloudflare/vitest-plugin` — tests run in workerd with real D1; migrations are
   applied in `test/setup.ts`. Telegram calls go through a `TelegramGateway` interface, faked in tests.
 
-Measure with `vitest run --coverage` (`@vitest/coverage-v8`).
+Measure with `vitest run --coverage` (core: `@vitest/coverage-v8`, worker: `@vitest/coverage-istanbul`).
 
 ## Git Commits
 
@@ -565,6 +583,10 @@ Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 - [ ] Customer order placement (contact + location + landmark)
 - [ ] Owner notification with buttons
 - [ ] Order status updates → customer notification
+- [ ] Courier invite → assign → picked up → delivered
+- [ ] Water: empty bottles + deposit; reorder
+- [ ] Grocery: weight items (kg steps); stop-list for today
+- [ ] Each order stores channel + commission (0 for own bot)
 - [ ] Cancel flow
 - [ ] Uzbek + Russian texts
 - [ ] Empty states handling

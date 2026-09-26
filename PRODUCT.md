@@ -6,20 +6,26 @@ product
 
 ## Users
 
-- **Customers** in small towns and districts of Uzbekistan, mostly young people, ordering food
-  (later water and groceries) from a shop they already know. They open the shop's own Telegram
+- **Customers** in small towns and districts of Uzbekistan, mostly young people, ordering food,
+  drinking water (19 l bottles) or groceries from a shop they already know. They open the shop's own Telegram
   bot on a phone, often on slow mobile internet, and want to order in about three taps.
   They speak Uzbek (Latin) or Russian.
-- **Shop owners**: small local businesses (a café that cooks and delivers itself, a water
-  producer, a grocery store). They manage orders from the Telegram chat between other work and
-  edit the menu in "Мой магазин" on the phone. They are not tech people.
+- **Shop owners**: small local businesses (a café, a water producer, a grocery store). They manage
+  orders from the Telegram chat between other work, edit the catalog in "Мой магазин" on the
+  phone and hand orders to their own couriers. They are not tech people.
+- **Couriers** of one shop (often a family member or a hired driver). They get an order card in
+  the shop's bot and press "Забрал" / "Доставил". They need the address, the landmark, the
+  customer's phone and how much cash to collect — nothing else.
 
 ## Product Purpose
 
 LLS gives each small shop its own ordering bot and Mini App under the shop's own brand
 ("powered by LLS"). Customers order without calls and voice messages; owners get every order as
-one clear card with one button for the next step. Success: a real first order at the pilot café,
-owners stop taking orders by phone, and customers come back to reorder.
+one clear card with one button for the next step. Success: real orders at the three pilot
+shops (food, water, grocery), owners stop taking orders by phone, and customers come back to reorder.
+
+Long term, the products of all shops in a district join one LLS marketplace. LLS earns a
+commission only on sales that come through that marketplace; a shop's own bot stays the shop's.
 
 ## Brand Personality
 
@@ -34,7 +40,7 @@ corporation. Short, plain sentences. Big touch targets, very little text, friend
 
 ## Design Principles
 
-1. **The shop is the hero.** Its name, color and food come first; LLS stays a quiet footer.
+1. **The shop is the hero.** Its name, color and products come first; LLS stays a quiet footer.
 2. **One obvious next step.** Every screen has one primary action, placed where the thumb is
    (Telegram MainButton).
 3. **Native to Telegram.** Follow the user's Telegram theme (light and dark) and system font, so it
