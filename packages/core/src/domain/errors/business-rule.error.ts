@@ -11,30 +11,6 @@ export class BusinessRuleViolationError extends DomainError {
         super(message, { rule, ...details })
     }
 
-    static orderAlreadyHasCourier(orderId: string): BusinessRuleViolationError {
-        return new BusinessRuleViolationError(
-            "ORDER_ALREADY_HAS_COURIER",
-            `Order "${orderId}" already has an assigned courier`,
-            { orderId },
-        )
-    }
-
-    static courierNotAvailable(courierId: string): BusinessRuleViolationError {
-        return new BusinessRuleViolationError(
-            "COURIER_NOT_AVAILABLE",
-            `Courier "${courierId}" is not available to take orders`,
-            { courierId },
-        )
-    }
-
-    static orderRequiresCourier(orderId: string): BusinessRuleViolationError {
-        return new BusinessRuleViolationError(
-            "ORDER_REQUIRES_COURIER",
-            `Order "${orderId}" requires a courier to be assigned before pickup`,
-            { orderId },
-        )
-    }
-
     static emptyOrder(): BusinessRuleViolationError {
         return new BusinessRuleViolationError("EMPTY_ORDER", "Order must contain at least one item")
     }

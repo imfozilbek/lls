@@ -43,7 +43,6 @@ describe("DomainErrors", () => {
             expect(EntityNotFoundError.business("1").entityName).toBe("Business")
             expect(EntityNotFoundError.product("1").entityName).toBe("Product")
             expect(EntityNotFoundError.customer("1").entityName).toBe("Customer")
-            expect(EntityNotFoundError.courier("1").entityName).toBe("Courier")
             expect(EntityNotFoundError.order("1").entityName).toBe("Order")
         })
     })
@@ -69,15 +68,6 @@ describe("DomainErrors", () => {
         })
 
         it("should have factory methods", () => {
-            expect(BusinessRuleViolationError.orderAlreadyHasCourier("1").rule).toBe(
-                "ORDER_ALREADY_HAS_COURIER",
-            )
-            expect(BusinessRuleViolationError.courierNotAvailable("1").rule).toBe(
-                "COURIER_NOT_AVAILABLE",
-            )
-            expect(BusinessRuleViolationError.orderRequiresCourier("1").rule).toBe(
-                "ORDER_REQUIRES_COURIER",
-            )
             expect(BusinessRuleViolationError.emptyOrder().rule).toBe("EMPTY_ORDER")
         })
     })

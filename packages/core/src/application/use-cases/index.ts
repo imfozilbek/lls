@@ -7,9 +7,6 @@ export * from "./product/index.js"
 // Order Use Cases
 export * from "./order/index.js"
 
-// Courier Use Cases
-export * from "./courier/index.js"
-
 // Customer Use Cases
 export * from "./customer/index.js"
 

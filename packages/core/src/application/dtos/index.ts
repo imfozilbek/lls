@@ -24,10 +24,6 @@ export type {
 } from "./customer.dto.js"
 export { toCustomerDTO } from "./customer.dto.js"
 
-// Courier DTOs
-export type { CourierDTO, CreateCourierInput, UpdateCourierInput } from "./courier.dto.js"
-export { toCourierDTO } from "./courier.dto.js"
-
 // Order DTOs
 export type {
     OrderDTO,
