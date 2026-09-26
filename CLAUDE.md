@@ -369,6 +369,14 @@ document.innerHTML = x                 // XSS
 - CORS: allow only `APP_ORIGIN` (the Pages address)
 - Check `git diff` before commit
 
+**Public repository (GitHub, free CI):** the code is public, the keys never are.
+- Workflows: `permissions: contents: read`; actions pinned to a commit SHA; `persist-credentials: false`.
+- Secrets only in the deploy job, only in the step that needs them, only for a push to `main` of
+  this repository. **NEVER** `pull_request_target` or `workflow_run` with secrets or with
+  checked-out PR code. Never `${{ github.event.* }}` text inside `run:` (script injection).
+- `scripts/check-secrets.sh` runs in CI and as the git pre-commit hook; fake test keys carry a
+  `secret-scan: fake` comment. Details and the leak playbook: `SECURITY.md`.
+
 ## Performance (MANDATORY)
 
 | Metric | Limit |

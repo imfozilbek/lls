@@ -15,7 +15,7 @@ Each shop gets its own Telegram bot and brand; the app says "powered by LLS".
 | `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or LLS bot), roles, bot webhooks, `/market`; 57 tests |
 | `@lls/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, LLS showcase, onboarding; 38 tests; 93 KB gzip |
 | CI | ✅ Done | format, lint, build, test, coverage on every push |
-| Deploy | 🟡 Ready | `deploy.yml` waits for GitHub secrets (`docs/launch-checklist.md`) |
+| Deploy | 🟡 Ready | Deploy job in `ci.yml` waits for GitHub secrets (`docs/launch-checklist.md`); public-repo hardening in `SECURITY.md` |
 | Pilot (food, water, grocery) | ⏳ Next | Three friends' shops, each with its own bot and couriers |
 
 **Blocking:** Cloudflare account, API token and the LLS platform bot — owner tasks in

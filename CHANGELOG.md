@@ -42,6 +42,15 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Added:** three-step onboarding wizard in the platform bot
 - **Added:** light and dark Telegram themes, pressed and focus states, empty states; 96 KB gzip
 
+### Security (public repository)
+- **Fixed:** the deploy workflow ran on `workflow_run` for any CI run from a branch named `main`,
+  including fork pull requests, and deployed that code with the production secrets. Deploy is
+  now a job in CI that runs only for a push to `main` of this repository, after green checks
+- **Added:** actions pinned to commits, read-only token, secrets only in the deploy step,
+  `production` environment, `scripts/check-secrets.sh` in CI and as a git pre-commit hook,
+  Dependabot, `SECURITY.md`, `CODEOWNERS`
+- **Changed:** the workers.dev subdomain is random instead of derived from the account id
+
 ### LLS showcase
 - **Added (core):** `searchText` — one spelling for Latin/Cyrillic Uzbek and Russian; showcase search
   across shops with a marketplace deal; `SetMarketplaceTerms` for platform admins
