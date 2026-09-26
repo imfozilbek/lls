@@ -65,6 +65,8 @@ export class FakeTelegram implements TelegramGateway {
     readonly webhooks: { token: string; url: string; secret: string }[] = []
     readonly menuButtons: { token: string; url: string }[] = []
     readonly answered: string[] = []
+    /** Simulates a blocked bot or Telegram outage: replies to users fail. */
+    failReplies = false
     private nextMessageId = 100
 
     constructor(private readonly bots: Record<string, BotInfo> = {}) {}
@@ -82,6 +84,9 @@ export class FakeTelegram implements TelegramGateway {
         html: string,
         options?: MessageOptions,
     ): Promise<{ messageId: number }> {
+        if (this.failReplies) {
+            throw new TelegramApiError("sendMessage", "Forbidden: bot was blocked by the user")
+        }
         this.sent.push({ token, chatId, html, options })
         return { messageId: this.nextMessageId++ }
     }
@@ -95,6 +100,9 @@ export class FakeTelegram implements TelegramGateway {
         this.edited.push({ token, chatId, html, options, messageId })
     }
     async answerCallback(_token: string, callbackQueryId: string): Promise<void> {
+        if (this.failReplies) {
+            throw new TelegramApiError("answerCallbackQuery", "Bad Request: query is too old")
+        }
         this.answered.push(callbackQueryId)
     }
     async setWebhook(token: string, url: string, secret: string): Promise<void> {

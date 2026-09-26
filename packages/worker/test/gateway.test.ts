@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { HttpTelegramGateway, TelegramApiError, escapeHtml } from "../src/telegram/gateway.js"
 
@@ -25,6 +25,25 @@ function fakeFetch(result: unknown, ok = true): { fetcher: typeof fetch; calls: 
 }
 
 describe("HttpTelegramGateway", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals()
+    })
+
+    it("calls the global fetch unbound, as workerd requires", async () => {
+        // workerd throws "Illegal invocation" when fetch runs with `this` set to another object.
+        const strictFetch = vi.fn(function (this: unknown): Promise<Response> {
+            if (this !== undefined && this !== globalThis) {
+                throw new TypeError("Illegal invocation")
+            }
+            const result = { id: 7, username: "osh_bot", first_name: "Osh" }
+            return Promise.resolve(new Response(JSON.stringify({ ok: true, result })))
+        })
+        vi.stubGlobal("fetch", strictFetch)
+        const bot = await new HttpTelegramGateway().getMe("7:token")
+        expect(bot.username).toBe("osh_bot")
+        expect(strictFetch).toHaveBeenCalledOnce()
+    })
+
     it("getMe maps the bot", async () => {
         const { fetcher, calls } = fakeFetch({ id: 7, username: "osh_bot", first_name: "Osh" })
         const bot = await new HttpTelegramGateway(fetcher).getMe("7:token")

@@ -64,7 +64,11 @@ export function escapeHtml(text: string): string {
 }
 
 export class HttpTelegramGateway implements TelegramGateway {
-    constructor(private readonly fetcher: typeof fetch = fetch) {}
+    /** The default calls the global `fetch` unbound: workerd throws "Illegal invocation" otherwise. */
+    constructor(
+        private readonly fetcher: typeof fetch = (input, init): Promise<Response> =>
+            fetch(input, init),
+    ) {}
 
     async getMe(token: string): Promise<BotInfo> {
         const me = await this.call<{ id: number; username?: string; first_name: string }>(

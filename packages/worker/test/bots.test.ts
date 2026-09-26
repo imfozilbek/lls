@@ -191,6 +191,25 @@ describe("shop bot", () => {
         expect(client.telegram.sent.at(-1)?.html).toContain("номер")
     })
 
+    it("answers 200 even when the reply to the user fails, so Telegram does not resend", async () => {
+        client.telegram.failReplies = true
+        const response = await shopUpdate({
+            message: {
+                from: CUSTOMER,
+                chat: { id: CUSTOMER.id },
+                contact: { phone_number: "998901234567", user_id: CUSTOMER.id },
+            },
+        })
+        expect(response.status).toBe(200)
+        const row = await env.DB.prepare("SELECT phone FROM customers").first<{ phone: string }>()
+        expect(row?.phone).toBe("+998901234567")
+
+        const start = await shopUpdate({
+            message: { from: CUSTOMER, chat: { id: CUSTOMER.id }, text: "/start" },
+        })
+        expect(start.status).toBe(200)
+    })
+
     it("new order → owner card with buttons; accept → card edited, customer told", async () => {
         const order = await placeOrder()
         const card = client.telegram.sent.at(-1)
@@ -221,6 +240,20 @@ describe("shop bot", () => {
         })
         const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
         expect(row?.status).toBe("accepted")
+    })
+
+    it("a failed answer to the button still updates the order and the owner card", async () => {
+        const order = await placeOrder()
+        client.telegram.failReplies = true
+        const response = await shopUpdate({
+            callback_query: { id: "cb-1", from: OWNER, data: `a:${order.id}:accepted` },
+        })
+        expect(response.status).toBe(200)
+        const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
+        expect(row?.status).toBe("accepted")
+        expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual(
+            expect.objectContaining({ callback_data: `a:${order.id}:preparing` }),
+        )
     })
 
     it("buttons pressed by someone else change nothing", async () => {

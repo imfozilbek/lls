@@ -4,7 +4,7 @@ import { z } from "zod"
 
 import { timingSafeEqual } from "../crypto.js"
 import { parseOrderCallback, parseReviewCallback } from "../telegram/format.js"
-import { escapeHtml } from "../telegram/gateway.js"
+import { TelegramApiError, escapeHtml } from "../telegram/gateway.js"
 import { Notifier, onboardingAppUrl, shopAppUrl } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 
@@ -149,8 +149,9 @@ async function handleOrderCallback(
         await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, texts))
         return
     }
-    await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
+    // Notify first: if answering the button fails, the owner card and the customer still update.
     await new Notifier(services).orderChanged(business, order)
+    await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
 }
 
 /** Cancel buttons live only in the owner's chat, but check ownership anyway. */
@@ -183,7 +184,8 @@ async function handleReviewCallback(
             businessId: review.businessId,
             decision: review.decision,
         })
-        await services.telegram.answerCallback(token, callback.id, shop.status)
+        // Connect the shop bot first: a failed card edit or answer must not skip it.
+        await new Notifier(services).shopReviewed(shop, workerOrigin)
         if (callback.message) {
             await services.telegram.editMessage(
                 token,
@@ -192,12 +194,27 @@ async function handleReviewCallback(
                 `🏪 <b>${escapeHtml(shop.name)}</b> — ${shop.status}`,
             )
         }
-        await new Notifier(services).shopReviewed(shop, workerOrigin)
+        await services.telegram.answerCallback(token, callback.id, shop.status)
     } catch (error) {
         if (!(error instanceof DomainError)) {
             throw error
         }
         await services.telegram.answerCallback(token, callback.id, error.message)
+    }
+}
+
+/**
+ * Runs an update handler. A failed reply (bot blocked, query too old, Telegram down) is logged,
+ * not thrown: the update is already applied, and a 500 would make Telegram resend it for hours.
+ */
+async function handleSafely(work: () => Promise<void>): Promise<void> {
+    try {
+        await work()
+    } catch (error) {
+        if (!(error instanceof TelegramApiError)) {
+            throw error
+        }
+        console.error("Telegram reply failed:", error.message)
     }
 }
 
@@ -211,28 +228,31 @@ export const webhookRoutes = new Hono<AppEnv>()
         const services = c.get("services")
         const update = await readUpdate(c.req.raw)
         const message = update?.message
-        if (message?.from && isStart(message.text)) {
-            const texts = textsFor(languageFromTelegram(message.from.language_code))
-            await services.telegram.sendMessage(
-                c.env.PLATFORM_BOT_TOKEN,
-                message.chat.id,
-                texts.platformWelcome,
-                {
-                    keyboard: {
-                        inline_keyboard: [
-                            [
-                                {
-                                    text: texts.connectShop,
-                                    web_app: { url: onboardingAppUrl(c.env.APP_ORIGIN) },
-                                },
+        const from = message?.from
+        if (message && from && isStart(message.text)) {
+            const texts = textsFor(languageFromTelegram(from.language_code))
+            await handleSafely(() =>
+                services.telegram
+                    .sendMessage(c.env.PLATFORM_BOT_TOKEN, message.chat.id, texts.platformWelcome, {
+                        keyboard: {
+                            inline_keyboard: [
+                                [
+                                    {
+                                        text: texts.connectShop,
+                                        web_app: { url: onboardingAppUrl(c.env.APP_ORIGIN) },
+                                    },
+                                ],
                             ],
-                        ],
-                    },
-                },
+                        },
+                    })
+                    .then(() => undefined),
             )
         }
         if (update?.callback_query) {
-            await handleReviewCallback(services, update.callback_query, new URL(c.req.url).origin)
+            const callback = update.callback_query
+            await handleSafely(() =>
+                handleReviewCallback(services, callback, new URL(c.req.url).origin),
+            )
         }
         return c.json({ ok: true })
     })
@@ -254,11 +274,17 @@ export const webhookRoutes = new Hono<AppEnv>()
             return c.json({ ok: false }, 401)
         }
         const update = await readUpdate(c.req.raw)
-        if (update?.message) {
-            await handleShopMessage(services, business, credentials.token, update.message)
+        const message = update?.message
+        if (message) {
+            await handleSafely(() =>
+                handleShopMessage(services, business, credentials.token, message),
+            )
         }
-        if (update?.callback_query) {
-            await handleOrderCallback(services, business, credentials.token, update.callback_query)
+        const callback = update?.callback_query
+        if (callback) {
+            await handleSafely(() =>
+                handleOrderCallback(services, business, credentials.token, callback),
+            )
         }
         return c.json({ ok: true })
     })
