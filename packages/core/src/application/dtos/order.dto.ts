@@ -17,6 +17,7 @@ export interface OrderItemDTO {
 export interface OrderDTO {
     id: string
     businessId: string
+    customerId: string
     number: number
     status: OrderStatus
     nextStatus: OrderStatus | null
@@ -40,6 +41,7 @@ export function toOrderDTO(order: Order): OrderDTO {
     return {
         id: order.id,
         businessId: order.businessId,
+        customerId: order.customerId,
         number: order.number,
         status: order.status,
         nextStatus: order.nextStatus(),
