@@ -123,13 +123,15 @@
 3. Plan with animations and micro-interactions
 4. Result must NOT look "AI-generated" — must feel human-crafted
 
-**UI Libraries (by task type):**
-| Task | Libraries |
-|------|-----------|
-| Landing pages | Aceternity UI, Magic UI |
-| Dashboards | Origin UI, Tremor |
-| Animations | Framer Motion, Motion Primitives |
-| Base components | shadcn/ui + custom tokens |
+**UI Stack (by task type):**
+| Task | Stack |
+|------|-------|
+| Mini App (customer + owner) | React + Vite + Tailwind, Telegram theme variables + brand tokens |
+| Animations in Mini App | CSS transitions/keyframes first; Motion only where CSS is not enough |
+| Owner section ("Мой магазин") | Same Mini App, lazy-loaded chunk (customers never download it) |
+| Future marketing site (stage 2) | Astro; Aceternity UI / Magic UI allowed there |
+
+**Bundle budget (Mini App):** initial customer JS ≤ 100 KB gzip. Regional mobile internet is slow.
 
 **⛔ FORBIDDEN (generic AI look):**
 - Default shadcn/ui without customization
@@ -149,24 +151,66 @@
 
 LLS (LocalLoopSolutions) — Local delivery platform for small businesses. TypeScript monorepo (Bun workspaces). Bun >= 1.2.4.
 
+**Target market:** small businesses in regions and districts of Uzbekistan, where
+Yandex Eats / Uzum and other aggregators do not operate.
+
 | Package | Description |
 |---------|-------------|
-| `@lls/core` | Domain logic (DDD): entities, use cases, ports |
-| `@lls/api` | NestJS REST API (Fastify adapter) |
-| `@lls/bot` | Telegram Mini App (clients + couriers) |
-| `@lls/admin` | Web admin panel (businesses) |
+| `@lls/core` | Domain logic (DDD): entities, value objects, use cases, ports. Pure TS, no deps |
+| `@lls/worker` | Cloudflare Worker: HTTP API (Hono) + Telegram bot webhook + cron |
+| `@lls/app` | Telegram Mini App (React): customer storefront + owner section "Мой магазин" |
 
 **Root:** `/Users/fozilbeksamiyev/projects/lls`
+
+## Migration Status (READ FIRST)
+
+The code is being migrated from the old stack to the stack described in this file.
+
+| Old (being removed) | New |
+|---------------------|-----|
+| `@lls/api` — NestJS + Fastify + MongoDB + Redis + socket.io | `@lls/worker` — Hono + D1 |
+| `@lls/bot` + `@lls/admin` — two React apps | `@lls/app` — one Mini App |
+| VPS + PM2 + Nginx + Gitea CI | Cloudflare Pages + Workers + GitHub Actions |
+
+**RULES:**
+- Do NOT add features to `@lls/api`, `@lls/bot`, `@lls/admin`. Only move code out of them.
+- Delete an old package only after its replacement works.
+- `@lls/core` stays. Prune unused parts, fix bugs, reuse the rest.
+
+## Product Stages
+
+| Stage | What | Revenue |
+|-------|------|---------|
+| **1. Own bot per business (NOW)** | Storefront + orders + owner notifications. Business delivers itself | Subscription |
+| 2. District marketplace | One Mini App, one cart from several shops, search across shops | Small commission + subscription |
+| 3. Own delivery | Shared couriers, several pickups per trip | Delivery fee + volume terms |
+
+**Pilot:** food business first, then water, then grocery.
+
+**⛔ RULES:**
+- Build ONLY stage 1 now. No shared cart, courier pool, routing, settlements.
+- Universal core for all business types. Vertical specifics = feature toggles per business
+  (e.g. `reorder`, `bottleDeposit`, `stopList`, `weightItems`).
+- Add a feature only when a real client asks for it.
+- Design stage 1 so stages 2–3 need no rewrite:
+  - multi-tenant: `business_id` in every business-owned table
+  - one global customer per `telegram_id` + customer↔business link
+  - shared category taxonomy + units (шт, кг, л, 19 л)
+  - geo: business location + delivery zone, customer location
+  - two status levels: order (business) and delivery
 
 ## Commands
 
 ```bash
-bun run build                      # Build all
-bun run test                       # Test all
-bun run format                     # Format (4 spaces)
-bun run lint                       # Lint (0 errors, 0 warnings)
-bun run dev                        # Dev mode
-bun run --filter @lls/api build    # Build specific package
+bun run build                                  # Build all
+bun run test                                   # Test all
+bun run format                                 # Format (4 spaces)
+bun run lint                                   # Lint (0 errors, 0 warnings)
+bun run dev                                    # Dev mode
+bun run --filter @lls/core build               # Build specific package
+bunx wrangler dev                              # Run Worker locally (in packages/worker)
+bunx wrangler d1 migrations apply lls --local  # Apply D1 migrations locally
+bunx wrangler deploy                           # Deploy Worker
 ```
 
 ## Code Style (MANDATORY)
@@ -197,7 +241,7 @@ bun run --filter @lls/api build    # Build specific package
 ```
 Domain (inner)     → Entities, Value Objects, Events — NO framework imports
 Application        → Use Cases, Ports (interfaces)
-Infrastructure     → Controllers, Repositories, Adapters
+Infrastructure     → Routes, Repositories, Adapters (@lls/worker)
 ```
 
 **RULES:**
@@ -208,53 +252,54 @@ Infrastructure     → Controllers, Repositories, Adapters
 - No magic numbers/strings
 - No hardcoded secrets
 
-## NestJS Architecture (@lls/api)
+## Worker Architecture (@lls/worker)
 
 ```
 src/
-├── main.ts                    # Bootstrap with Fastify adapter
-├── app.module.ts              # Root module
-├── app.controller.ts          # Health endpoints
-├── config/configuration.ts    # Env validation (Zod)
-├── common/                    # Shared: guards, filters, interceptors
-├── database/                  # MongooseModule + schemas
-├── cache/                     # Redis module
-├── repositories/              # Repository implementations
-└── modules/                   # Feature modules (business, order, etc.)
+├── index.ts          # Hono app: routes + webhook + scheduled() for cron
+├── env.ts            # Bindings (DB, BUCKET) + secrets, validated with zod
+├── auth.ts           # Telegram initData check → current user + role
+├── routes/           # HTTP routes, one file per feature (shop, product, order, customer)
+├── repositories/     # D1 implementations of @lls/core ports
+├── telegram/         # Bot API client, webhook handler, owner notifications
+└── cron.ts           # Scheduled jobs (reminders)
 ```
 
-**NestJS Rules:**
-- One module per feature (business, product, order, courier, customer)
-- Services inject repositories via constructor
-- Controllers use DTOs with class-validator
-- Guards for auth (Telegram, Business)
-- Filters for exception handling (DomainError → HTTP)
-- Use `@nestjs/mongoose` for MongoDB
-- Use Fastify adapter (not Express)
+**Worker Rules:**
+- Worker is a thin layer. Business logic lives in `@lls/core` use cases.
+- Every body, query and param is validated with zod.
+- Identity (customer, owner) comes ONLY from verified initData, never from the request body.
+- Check ownership on every route that reads or changes business-owned data.
+- DomainError → HTTP: validation 400, not found 404, business rule 422, forbidden 403.
+- Frameworks: Hono + zod only. No NestJS, no Express, no ORM.
 
 ## Domain Models
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, name, type (food/construction/water), address, telegram_id |
-| Product | id, business_id, name, price, category, is_available |
-| Customer | id, telegram_id, name, phone, address |
-| Courier | id, telegram_id, name, phone, is_available |
-| Order | id, customer_id, business_id, courier_id, items, status, total |
+| Business | id, slug, name, type (food/water/grocery/…), owner_telegram_id, location, delivery_zone, working_hours, features, is_active |
+| Product | id, business_id, name, price (integer UZS), unit, category (shared taxonomy), image_key, is_available |
+| Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
+| CustomerBusiness | customer_id, business_id, first_order_at — whose customer this is |
+| Order | id, business_id, customer_id, items (name + price snapshot), delivery_fee, total, status, delivery_status, address, location, landmark |
 
-**Order Status Flow:**
+**Money:** integer UZS. Never floats.
+
+**Order Status Flow (single source of truth: `@lls/core` enum):**
 ```
 pending → accepted → preparing → ready → picked_up → delivered
     ↓         ↓          ↓         ↓         ↓
 cancelled  cancelled  cancelled  cancelled  cancelled
 ```
+- Stage 1: the owner moves all statuses (from bot buttons or the owner section).
+- Only ONE transitions table in the codebase.
 
 ## Git Commits
 
 ```
 <type>(<package>): <subject>
-feat(api): add order endpoints
-fix(bot): resolve cart issue
+feat(worker): add order routes
+fix(app): resolve cart issue
 ```
 
 Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
@@ -293,9 +338,8 @@ git status  # Verify success
 **⛔ Commit Order (dependencies first):**
 ```
 1. @lls/core    (domain, types, use cases)
-2. @lls/api     (uses core)
-3. @lls/bot     (uses core, calls api)
-4. @lls/admin   (uses core, calls api)
+2. @lls/worker  (uses core)
+3. @lls/app     (uses core types, calls worker)
 ```
 
 **Atomic Commits (one per module):**
@@ -304,15 +348,15 @@ git status  # Verify success
 | 1 | types | `feat(core): add Order type` |
 | 2 | entity | `feat(core): add Order entity` |
 | 3 | use case | `feat(core): add createOrder use case` |
-| 4 | controller | `feat(api): add order endpoints` |
-| 5 | UI | `feat(bot): add order flow` |
+| 4 | route | `feat(worker): add order routes` |
+| 5 | UI | `feat(app): add order flow` |
 | 6 | tests | `test(core): add Order tests` |
 
 **⛔ RULES:**
 - One module = one commit
 - Each commit must pass all quality gates
 - Never commit unfinished dependencies
-- Commit order: types → entities → use cases → controllers → UI
+- Commit order: types → entities → use cases → routes → UI
 
 **Quality Gates (before EACH commit):**
 ```bash
@@ -332,17 +376,20 @@ git push origin main --tags
 
 **FORBIDDEN:**
 ```typescript
-eval(userInput)           // Code injection
-new Function(userInput)   // Code injection
-document.innerHTML = x    // XSS
-`query ${userInput}`      // Injection
+eval(userInput)                        // Code injection
+new Function(userInput)                // Code injection
+document.innerHTML = x                 // XSS
+`SELECT ... WHERE id = ${userInput}`   // SQL injection — use D1 .bind()
 ```
 
 **REQUIRED:**
-- Secrets in `.env` only
-- Validate all inputs (especially Telegram data)
+- Secrets: `wrangler secret put` in prod, `.dev.vars` locally (never committed)
+- Validate all inputs with zod (especially Telegram data)
 - Never log passwords/tokens/secrets
-- Verify Telegram WebApp initData
+- Verify Telegram initData on every request
+- Prices, totals and `customerId` are computed on the server. Never trust them from the client
+- Check ownership on every route (owner edits only own shop, customer sees only own orders)
+- Frontend NEVER talks to D1/R2 directly. Only through the Worker
 - Check `git diff` before commit
 
 ## Testing (MANDATORY)
@@ -351,24 +398,37 @@ document.innerHTML = x    // XSS
 |-------|--------------|
 | Domain | 90% |
 | Use Cases | 80% |
-| Controllers | 70% |
+| Routes | 70% |
 
-## Database (MongoDB + Redis, self-hosted)
+## Database (Cloudflare D1)
 
-**⛔ No other databases allowed.**
+**⛔ D1 is the only database. No MongoDB, Redis, Postgres or others without an explicit decision.**
 
-**MongoDB:**
+**D1 (SQLite):**
 ```typescript
-// Always: index frequently queried fields
-// Always: use transactions for multi-doc ops
-// Index: business_id, customer_id, courier_id, status
+// Schema changes ONLY via SQL migrations: packages/worker/migrations/*.sql
+// Always: parameterized queries — db.prepare(sql).bind(...)
+// Always: index every WHERE / ORDER BY column (free tier counts ROWS READ, not queries)
+// Index: business_id, customer_id, status, created_at, telegram_id, slug
+// Multi-statement writes: db.batch([...]) (runs as one transaction)
+// Money: INTEGER (UZS). Timestamps: INTEGER (unix ms), UTC
 ```
 
-**Redis:**
-```typescript
-// Key pattern: lls:{entity}:{id}:{field}
-// Always set TTL: redis.setex(key, 3600, value)
-```
+**Files:** product photos in R2. Store only the key in D1.
+
+**No cache layer.** Add one only when measurements show a need.
+
+## Free Tier Limits
+
+| Service | Free limit | Upgrade when |
+|---------|-----------|--------------|
+| Workers | 100,000 requests/day, 10 ms CPU/request, 50 subrequests/request | > 70k requests/day → Workers Paid ($5/mo) |
+| D1 | 500 MB per database, 5M rows read/day, 100k rows written/day, 7-day Time Travel | DB > 400 MB or reads near limit |
+| R2 | 10 GB storage, free egress | > 8 GB |
+| Pages | Static hosting, `*.pages.dev` | Not needed |
+| Cron Triggers | 5 per account | — |
+
+**⛔ Design to stay free:** no polling faster than 15 s, paginate lists, index queries.
 
 ## Performance (MANDATORY)
 
@@ -376,14 +436,16 @@ document.innerHTML = x    // XSS
 |--------|-------|
 | API response | < 200ms (p95) |
 | DB query | < 100ms |
-| Memory | < 512MB |
+| Worker CPU | < 10ms per request |
+| Worker memory | < 128MB |
+| Mini App initial JS | ≤ 100 KB gzip |
 
 **AVOID:**
-- N+1 queries — use aggregation
+- N+1 queries — use JOIN or `db.batch`
 - Missing indexes
-- Fetching all fields — use projection
+- `SELECT *` — select needed columns
 - No pagination
-- Cache without TTL
+- Heavy libraries in the Worker or the customer bundle
 
 ## API Design
 
@@ -399,14 +461,30 @@ document.innerHTML = x    // XSS
 
 **Validation:**
 ```typescript
-// ALWAYS validate initData from Telegram
-// Use @telegram-apps/init-data-node
+// ALWAYS validate initData on the Worker with WebCrypto:
+//   secret = HMAC_SHA256(key="WebAppData", msg=bot_token)
+//   hash   = HMAC_SHA256(key=secret, msg=sorted "key=value" lines joined by "\n")
+// Constant-time compare. Reject auth_date older than 24h or in the future
 // Never trust client-side data without validation
 ```
 
+**Roles:** `customer` (default) and `owner` (`business.owner_telegram_id`). One app, one auth.
+
+**Entry:** `t.me/<bot>?startapp=shop_<slug>` opens the shop storefront.
+
+**Owner notifications:** new order → bot message with inline buttons
+(Принять / Готовится / В пути / Доставлен / Отменить). Status change → message to the customer.
+No WebSockets.
+
+**Regional UX (required):**
+- Languages: Uzbek (Latin) + Russian. Simple dictionary, no heavy i18n library
+- Address: Telegram location + "ориентир" (landmark) field
+- Phone: Telegram "share contact" button, never typed by hand
+- Payment: cash on delivery (online payments later)
+
 **User Flow:**
-- Customer: Browse → Cart → Order → Track
-- Courier: Available orders → Take → Deliver
+- Customer: Open shop link → Browse → Cart → Order → Track
+- Owner: New order message → Accept → Update status; catalog in "Мой магазин"
 
 ## Import Order
 
@@ -432,17 +510,22 @@ console.log            // Use logger
 
 ## Deployment
 
-**Stack:** Hostinger VPS, PM2 + Nginx, CI/CD Gitea (self-hosted). **⛔ Docker is PROHIBITED.**
+**Stack:** Cloudflare Pages (Mini App) + Cloudflare Workers (API + bot webhook) + D1 + R2.
+CI/CD: GitHub Actions. **⛔ Docker is PROHIBITED. No VPS.**
 
 ```
-Nginx → /api/* → PM2: api (port 4001)
-      → /admin/* → static files
-      → Bot webhook → PM2: bot
+Telegram ─► Mini App (Pages, *.pages.dev) ─► Worker (*.workers.dev) ─► D1 / R2
+Telegram Bot API ─► webhook ─► Worker
+Cron Trigger ─► Worker scheduled()
 ```
+
+- Custom domain: later, optional.
+- Deploy only after quality gates pass on `main`.
 
 ## Session Start
 
 **MUST read `./ROADMAP.md` first** to understand current status.
+If ROADMAP.md conflicts with this file, this file wins (see Migration Status).
 
 ## Package Documentation (MANDATORY)
 
@@ -456,30 +539,31 @@ Nginx → /api/* → PM2: api (port 4001)
 
 ```
 1. @lls/core    (domain, types, use cases)
-2. @lls/api     (uses core)
-3. @lls/bot     (uses core, calls api)
-4. @lls/admin   (uses core, calls api)
+2. @lls/worker  (uses core)
+3. @lls/app     (uses core types, calls worker)
 ```
 
 ## SLC Rules (MANDATORY)
 
 | Rule | Requirement |
 |------|-------------|
-| **v1.0 Feature** | Order flow + delivery tracking ONLY |
+| **v1.0 Feature** | Stage 1: order flow + status tracking ONLY |
+| **Pilot** | Food business first |
 | **Quality** | Must be PERFECT, not "good enough" |
-| **No scope creep** | Multi-city, analytics — NOT in v1.0 |
+| **No scope creep** | Marketplace, couriers, multi-city, online payments — NOT in v1.0 |
 | **UX** | Order in 3 taps |
 | **Speed** | API response < 200ms |
+| **Cost** | $0/month until real usage requires more |
 
 ## Testing Checklist
 
-- [ ] Business registration flow
-- [ ] Product catalog CRUD
-- [ ] Customer order placement
-- [ ] Courier assignment
-- [ ] Order status updates
-- [ ] Push notifications
-- [ ] Payment processing
+- [ ] Shop setup (owner) + shop link
+- [ ] Product catalog CRUD with photos
+- [ ] Customer order placement (contact + location + landmark)
+- [ ] Owner notification with buttons
+- [ ] Order status updates → customer notification
+- [ ] Cancel flow
+- [ ] Uzbek + Russian texts
 - [ ] Empty states handling
 
 ## Release Checklist
@@ -499,6 +583,8 @@ Nginx → /api/* → PM2: api (port 4001)
 ```
 MUST: Return types | await promises | const | curly braces | ===
 NEVER: any | console.log | floating promises | var | secrets in code | Docker
+NEVER: frontend → DB directly | prices or customerId from client | new features in old packages
 LIMITS: 5 params | 100 lines | 4 depth | 15 complexity
+STACK: Cloudflare Pages + Workers (Hono) + D1 + R2 | React + Vite | Telegram Bot API
 COMMANDS: bun run format → bun run lint → bun run test → bun run build
 ```
