@@ -168,6 +168,8 @@ describe("inside a shop", () => {
             brandColor: "#0ea5e9",
         })
         expect(shop).not.toHaveProperty("ownerTelegramId")
+        expect(shop).toMatchObject({ viewerIsOwner: false })
+        expect(await json(await asOwner()("/api/shop"))).toMatchObject({ viewerIsOwner: true })
 
         const products = await json<{ data: { name: string }[]; meta: Json }>(
             await asCustomer()("/api/shop/products"),
