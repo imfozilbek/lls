@@ -2,6 +2,46 @@
 
 All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 
+## [Unreleased] — new stack (Cloudflare) and white-label stage 1
+
+The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
+deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
+
+### Stack
+- **Removed:** `@lls/api` (NestJS, MongoDB, Redis), `@lls/bot`, `@lls/admin`, `deploy/`, `.gitea/`
+- **Added:** `@lls/worker` — Cloudflare Worker (Hono + zod), D1 database, R2 for photos
+- **Added:** `@lls/app` — one Telegram Mini App (React + Vite + Tailwind) for customers,
+  owners ("Мой магазин") and shop onboarding
+- **Changed:** Bun 1.3, Vitest 4.1, GitHub Actions CI and an idempotent Cloudflare deploy
+
+### @lls/core
+- **Changed:** domain rebuilt for white-label shops: one bot and brand per shop, integer UZS money,
+  working hours in UTC+5 (night shifts supported), shared category taxonomy and units
+- **Changed:** one status table; the owner moves `pending → … → delivered`, the customer can
+  cancel only while `pending`
+- **Added:** use cases for shop onboarding and admin review, catalog, orders, stats
+- **Security:** prices, totals and the customer are always taken from the server, never the client
+- **Removed:** couriers, domain events, analytics charts (stage 3 / unused)
+
+### @lls/worker
+- **Added:** Telegram initData check with the token of the bot that opened the app
+- **Added:** AES-GCM encryption of shop bot tokens
+- **Added:** shop bot webhook (`/start`, contact, owner status buttons) and platform bot webhook
+  (onboarding, approve/reject, automatic webhook and menu button for approved shops)
+- **Added:** notifications: new order → owner card with buttons, status change → customer
+- **Fixed:** Telegram messages were never sent on workerd ("Illegal invocation" on unbound `fetch`)
+- **Fixed:** a failed reply to Telegram no longer returns 500, so Telegram does not resend updates
+- **Added:** `bun run seed:dev` and `bun run init-data:dev` for local end-to-end runs
+
+### @lls/app
+- **Added:** storefront with a two-column menu, categories, Uzbek and Russian texts
+- **Added:** per-shop cart, checkout with Telegram contact, location and landmark, cash on delivery
+- **Added:** order tracking (20 s refresh) and order history with "show more"
+- **Added:** owner section: orders with status buttons, menu with photo upload (resized to WebP),
+  stats for today and 7 days, shop settings (name, logo, color, delivery, hours, location)
+- **Added:** three-step onboarding wizard in the platform bot
+- **Added:** light and dark Telegram themes, pressed and focus states, empty states; 96 KB gzip
+
 ## [0.4.0] - 2026-01-24
 
 ### Production Readiness Release
