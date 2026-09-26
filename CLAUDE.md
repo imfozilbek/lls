@@ -39,8 +39,8 @@ LLS is the platform brand. Customers see the **shop's brand**; the app shows a s
 
 | Stage | What | Revenue |
 |-------|------|---------|
-| **1. Own bot per business (NOW)** | Storefront + orders + notifications. The shop delivers with **its own couriers** | Subscription |
-| 2. District marketplace | One Mini App, one cart from several shops, search across shops | Commission on marketplace sales only |
+| **1. Own bot per business (NOW)** | Storefront + orders + notifications. The shop delivers with **its own couriers**. **LLS showcase**: search across shops in the LLS bot, the order goes to one shop | Subscription + commission on showcase orders |
+| 2. District marketplace | One cart from several shops, district filter | Commission on marketplace sales only |
 | 3. Shared delivery | Shared courier pool, several pickups per trip | Delivery fee + volume terms |
 
 **Pilot:** three shops at once — food, water, grocery. Each has its own bot.
@@ -50,8 +50,11 @@ marketplace channel. Sales through a shop's own bot are the shop's business (a s
 subscription deal); the system never takes a cut there.
 
 **⛔ RULES:**
-- Build ONLY stage 1 now. No marketplace storefront, shared cart, shared courier pool, routing,
-  settlements or payouts.
+- Build ONLY stage 1 now. The LLS showcase is in: search across shops + shop list in the LLS bot;
+  a tap opens that shop's storefront inside the LLS bot; cart and order stay per shop.
+  No shared cart, shared courier pool, routing, settlements or payouts.
+- Only shops with a marketplace deal (`business.marketplace`) appear in the showcase. A platform
+  admin sets the deal in the LLS bot: `/market <slug> <percent>` or `/market <slug> off`.
 - One universal core for all business types. Vertical specifics = feature toggles per business:
   `reorder`, `bottleDeposit` (water), `weightItems` and `stopList` (grocery, food). Defaults come
   from the business type; the owner can switch them.
@@ -76,7 +79,7 @@ subscription deal); the system never takes a cut there.
 |------|-------------|
 | **v1.0 scope** | Stage 1: orders, status tracking, shop couriers, vertical toggles |
 | **Quality** | Must be PERFECT, not "good enough" |
-| **No scope creep** | Marketplace storefront, shared courier pool, multi-city, online payments — NOT in v1.0 |
+| **No scope creep** | Shared cart, shared courier pool, multi-city, online payments — NOT in v1.0 |
 | **UX** | Order in 3 taps |
 | **Cost** | $0/month until real usage requires more |
 
@@ -302,16 +305,21 @@ the rule id (e.g. `PHONE_REQUIRED`, `SHOP_CLOSED`) so the app can show a transla
 
 **Which token verifies initData:** Telegram signs initData with the token of the bot that opened
 the Mini App. The app sends `X-Shop: <slug>` → Worker loads that shop's bot token → verifies.
-No `X-Shop` → verify with the platform bot token (onboarding only).
+No `X-Shop` → verify with the platform bot token (onboarding, showcase search).
+`X-Shop` + `X-Via: marketplace` → verify with the **platform** bot token; the shop must be active
+and in the marketplace. The token that verified the signature decides the order channel
+(`shop_bot` or `marketplace`); the client can never choose it.
 
 **Bot tokens:** stored in D1 encrypted with AES-GCM (key: secret `TOKEN_ENC_KEY`). Never logged,
 never returned by the API. Validate a new token with `getMe` before saving.
 
 **Roles** (per shop, one app, one auth): `customer` (default), `owner`
 (`business.owner_telegram_id`), `courier` (active row in `couriers` for this shop).
+Through the showcase (`X-Via: marketplace`) the role is always `customer`.
 
 **Entry:** the shop bot's menu button opens `?shop=<slug>`. Couriers get a button to
 `?shop=<slug>&mode=courier`. Onboarding: the platform bot opens `?mode=onboarding`.
+Showcase: the platform bot opens `?mode=market`.
 
 **Courier invite:** the owner creates a one-time link `t.me/<shop_bot>?start=c_<code>` (48 h).
 `/start c_<code>` in the shop bot makes the sender a courier of that shop.
@@ -320,11 +328,13 @@ never returned by the API. Validate a new token with `getMe` before saving.
 - New order → message to the owner with a button for the **next allowed status** + "Отменить".
 - Courier assigned → order card to the courier (address, landmark, map, phone, cash to collect,
   empty bottles) with "Забрал" / "Доставил".
-- Status change → message to the customer (courier name, never the courier's phone).
+- Status change → message to the customer (courier name, never the courier's phone). Showcase
+  orders: the LLS bot writes to the customer (with the shop name); owner and courier still get
+  messages from the shop bot.
 - Texts depend on the business type (food: «Меню», «Готовится»; water/grocery: «Каталог», «Собираем»).
 - Before the first order, the app calls `requestWriteAccess()` so the shop bot may message the customer.
-- Phone: `requestContact()` → Telegram sends a `contact` message to the shop bot webhook →
-  save it only if `contact.user_id === from.id`.
+- Phone: `requestContact()` → Telegram sends a `contact` message to the bot that opened the app
+  (shop bot or LLS bot) → save it only if `contact.user_id === from.id`.
 
 **Regional UX (required):**
 - Languages: Uzbek (Latin) + Russian. Simple dictionary, no heavy i18n library
@@ -334,6 +344,7 @@ never returned by the API. Validate a new token with `getMe` before saving.
 
 **User Flow:**
 - Customer: Open shop link → Browse → Cart → Order → Track
+- Showcase customer: LLS bot → Search → Shop → Cart → Order → Track
 - Owner: New order message → Accept → Next status → assign courier; catalog and couriers in "Мой магазин"
 - Courier: Invite link → Start → assigned order card → Picked up → Delivered
 

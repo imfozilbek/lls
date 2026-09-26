@@ -24,8 +24,10 @@ LLS gives each small shop its own ordering bot and Mini App under the shop's own
 one clear card with one button for the next step. Success: real orders at the three pilot
 shops (food, water, grocery), owners stop taking orders by phone, and customers come back to reorder.
 
-Long term, the products of all shops in a district join one LLS marketplace. LLS earns a
-commission only on sales that come through that marketplace; a shop's own bot stays the shop's.
+The LLS bot is the showcase of the district: one search across the products of every shop that
+signed a marketplace deal. A tap opens that shop's storefront inside the LLS bot; the order goes
+to that one shop. LLS earns a commission only on these showcase orders; a shop's own bot stays the
+shop's. Later the showcase grows into a marketplace with one cart from several shops.
 
 ## Brand Personality
 
