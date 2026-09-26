@@ -12,7 +12,7 @@ export default [
             parserOptions: {
                 ecmaVersion: "latest",
                 sourceType: "module",
-                project: ["./packages/*/tsconfig.json"],
+                project: ["./packages/*/tsconfig.json", "./packages/worker/scripts/tsconfig.json"],
             },
         },
         plugins: {
@@ -68,11 +68,13 @@ export default [
         ignores: [
             "**/dist/**",
             "**/node_modules/**",
+            "**/.wrangler/**",
             "**/*.js",
             "**/vite.config.ts",
             "**/vitest.config.ts",
             "**/tailwind.config.ts",
             "**/postcss.config.js",
+            "**/worker-configuration.d.ts",
             "**/__tests__/**",
             "**/*.test.ts",
         ],

@@ -1,85 +1,84 @@
-import { describe, it, expect } from "vitest"
+import { describe, expect, it } from "vitest"
 
-import { Courier } from "../../../domain/entities/courier.js"
+import { COURIER_INVITE_TTL_MS, Courier, CourierInvite } from "../../../domain/entities/courier.js"
+import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
+import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { Phone } from "../../../domain/value-objects/phone.js"
 import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
 
+const NOW = new Date("2026-09-26T09:00:00Z")
+
+function join(): Courier {
+    return Courier.join({
+        id: "c1",
+        businessId: "biz-1",
+        telegramId: TelegramId.create(5005),
+        name: " Jasur ",
+        now: NOW,
+    })
+}
+
 describe("Courier", () => {
-    const createCourier = (): Courier => {
-        return Courier.create({
-            id: "courier-id",
-            telegramId: TelegramId.create(123456789),
-            name: "John Courier",
-            phone: Phone.create("+998901234567"),
-        })
-    }
-
-    describe("create", () => {
-        it("should create courier with valid data", () => {
-            const courier = createCourier()
-            expect(courier.id).toBe("courier-id")
-            expect(courier.name).toBe("John Courier")
-            expect(courier.isAvailable).toBe(true)
-            expect(courier.isActive).toBe(true)
-        })
+    it("joins one shop and works only for it", () => {
+        const courier = join()
+        expect(courier.name).toBe("Jasur")
+        expect(courier.worksFor("biz-1")).toBe(true)
+        expect(courier.worksFor("biz-2")).toBe(false)
+        expect(courier.createdAt).toBe(NOW)
     })
 
-    describe("updateProfile", () => {
-        it("should update courier profile", () => {
-            const courier = createCourier()
-            const newPhone = Phone.create("+998909876543")
-            courier.updateProfile("New Name", newPhone)
-            expect(courier.name).toBe("New Name")
-        })
+    it("leaves and comes back with a new invite", () => {
+        const courier = join()
+        courier.deactivate(NOW)
+        expect(courier.isActive).toBe(false)
+        expect(courier.worksFor("biz-1")).toBe(false)
+        courier.rejoin("Jasur aka", NOW)
+        expect(courier.worksFor("biz-1")).toBe(true)
+        expect(courier.name).toBe("Jasur aka")
+        expect(() => courier.rejoin(" ", NOW)).toThrow(ValidationError)
     })
 
-    describe("goOnline/goOffline", () => {
-        it("should go offline", () => {
-            const courier = createCourier()
-            courier.goOffline()
-            expect(courier.isAvailable).toBe(false)
-        })
-
-        it("should go online", () => {
-            const courier = createCourier()
-            courier.goOffline()
-            courier.goOnline()
-            expect(courier.isAvailable).toBe(true)
-        })
+    it("keeps a phone", () => {
+        const courier = join()
+        courier.setPhone(Phone.create("901112233"), NOW)
+        expect(courier.phone?.number).toBe("+998901112233")
     })
 
-    describe("activate/deactivate", () => {
-        it("should deactivate courier", () => {
-            const courier = createCourier()
-            courier.deactivate()
-            expect(courier.isActive).toBe(false)
-            expect(courier.isAvailable).toBe(false)
+    it("reconstitutes", () => {
+        const courier = join()
+        const copy = Courier.reconstitute({
+            id: courier.id,
+            businessId: courier.businessId,
+            telegramId: courier.telegramId,
+            name: courier.name,
+            isActive: false,
+            createdAt: courier.createdAt,
+            updatedAt: courier.updatedAt,
         })
+        expect(copy.isActive).toBe(false)
+        expect(copy.telegramId.value).toBe(5005)
+    })
+})
 
-        it("should activate courier", () => {
-            const courier = createCourier()
-            courier.deactivate()
-            courier.activate()
-            expect(courier.isActive).toBe(true)
-        })
+describe("CourierInvite", () => {
+    it("works once, for two days", () => {
+        const invite = CourierInvite.create({ code: "abc", businessId: "biz-1", now: NOW })
+        expect(invite.expiresAt.getTime() - NOW.getTime()).toBe(COURIER_INVITE_TTL_MS)
+        invite.use(NOW)
+        expect(invite.usedAt).toBe(NOW)
+        expect(() => invite.use(NOW)).toThrow(BusinessRuleViolationError)
     })
 
-    describe("canTakeOrder", () => {
-        it("should return true when active and available", () => {
-            const courier = createCourier()
-            expect(courier.canTakeOrder()).toBe(true)
+    it("expires", () => {
+        const invite = CourierInvite.reconstitute({
+            code: "abc",
+            businessId: "biz-1",
+            createdAt: NOW,
+            expiresAt: NOW,
         })
-
-        it("should return false when not available", () => {
-            const courier = createCourier()
-            courier.goOffline()
-            expect(courier.canTakeOrder()).toBe(false)
-        })
-
-        it("should return false when not active", () => {
-            const courier = createCourier()
-            courier.deactivate()
-            expect(courier.canTakeOrder()).toBe(false)
-        })
+        expect(invite.code).toBe("abc")
+        expect(invite.businessId).toBe("biz-1")
+        expect(invite.createdAt).toBe(NOW)
+        expect(() => invite.use(NOW)).toThrow(/expired/)
     })
 })

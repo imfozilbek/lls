@@ -36,3 +36,7 @@ coverage/
 
 # Claude Code
 .claude/
+
+# Cloudflare
+.wrangler/
+.dev.vars

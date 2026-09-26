@@ -2,6 +2,78 @@
 
 All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 
+## [Unreleased] — new stack (Cloudflare) and white-label stage 1
+
+The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
+deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
+
+### Stack
+- **Removed:** `@lls/api` (NestJS, MongoDB, Redis), `@lls/bot`, `@lls/admin`, `deploy/`, `.gitea/`
+- **Added:** `@lls/worker` — Cloudflare Worker (Hono + zod), D1 database, R2 for photos
+- **Added:** `@lls/app` — one Telegram Mini App (React + Vite + Tailwind) for customers,
+  owners ("Мой магазин") and shop onboarding
+- **Changed:** Bun 1.3, Vitest 4.1, GitHub Actions CI and an idempotent Cloudflare deploy
+
+### @lls/core
+- **Changed:** domain rebuilt for white-label shops: one bot and brand per shop, integer UZS money,
+  working hours in UTC+5 (night shifts supported), shared category taxonomy and units
+- **Changed:** one status table; the owner moves `pending → … → delivered`, the customer can
+  cancel only while `pending`
+- **Added:** use cases for shop onboarding and admin review, catalog, orders, stats
+- **Security:** prices, totals and the customer are always taken from the server, never the client
+- **Removed:** couriers, domain events, analytics charts (stage 3 / unused)
+
+### @lls/worker
+- **Added:** Telegram initData check with the token of the bot that opened the app
+- **Added:** AES-GCM encryption of shop bot tokens
+- **Added:** shop bot webhook (`/start`, contact, owner status buttons) and platform bot webhook
+  (onboarding, approve/reject, automatic webhook and menu button for approved shops)
+- **Added:** notifications: new order → owner card with buttons, status change → customer
+- **Fixed:** Telegram messages were never sent on workerd ("Illegal invocation" on unbound `fetch`)
+- **Fixed:** a failed reply to Telegram no longer returns 500, so Telegram does not resend updates
+- **Added:** `bun run seed:dev` and `bun run init-data:dev` for local end-to-end runs
+
+### @lls/app
+- **Added:** storefront with a two-column menu, categories, Uzbek and Russian texts
+- **Added:** per-shop cart, checkout with Telegram contact, location and landmark, cash on delivery
+- **Added:** order tracking (20 s refresh) and order history with "show more"
+- **Added:** owner section: orders with status buttons, menu with photo upload (resized to WebP),
+  stats for today and 7 days, shop settings (name, logo, color, delivery, hours, location)
+- **Added:** three-step onboarding wizard in the platform bot
+- **Added:** light and dark Telegram themes, pressed and focus states, empty states; 96 KB gzip
+
+### LLS showcase
+- **Added (core):** `searchText` — one spelling for Latin/Cyrillic Uzbek and Russian; showcase search
+  across shops with a marketplace deal; `SetMarketplaceTerms` for platform admins
+- **Added (worker):** `X-Via: marketplace` — a shop opened from the showcase is verified with the LLS
+  bot token and its orders get the `marketplace` channel and commission; `/api/showcase/shops`,
+  `/api/showcase/products`; the LLS bot saves contacts, answers `/market <slug> <percent|off>`,
+  writes showcase customers about status changes; the owner card shows the commission
+- **Added (app):** showcase screen in the LLS bot (search, categories, shops); a tap opens the shop's
+  storefront there; owners see an "LLS" mark on showcase orders and the deal in settings
+- **Changed:** the LLS bot's menu button opens the showcase; onboarding stays a `/start` button
+
+### Three verticals, own couriers, marketplace-ready data
+- **Security (core, worker):** an order is found only inside the shop from `X-Shop`; before, a
+  customer or an owner of two shops could reach an order through the wrong bot
+- **Added (core):** `Courier` and one-time `CourierInvite` (48 h, only a hash is stored);
+  `canActorMove` next to the one status table: owner — every step, courier — only
+  `ready → picked_up → delivered` of their own order, customer — cancel while `pending`
+- **Added (core):** order `channel` (`shop_bot` / `marketplace`) with a commission snapshot on the
+  goods subtotal; always 0 for the shop's own bot. `Business.marketplace` holds the future deal
+- **Added (core):** weight items (quantity in grams, selling step), returnable bottles with a
+  deposit, stop-list until the next Tashkent midnight, feature defaults per business type
+- **Added (worker):** routes for couriers and invites, `/start c_<code>` in the shop bot, courier
+  order card with "Picked up / Delivered", ping when the order is ready; bot words by shop type;
+  admin card in uz/ru; Yandex Maps links
+- **Added (app):** courier screen (`?mode=courier`), couriers in settings (invite, share, remove),
+  assign courier and cancel reason on owner orders, stop-list sheet, weight step and returnable
+  switch in the product editor, feature switches, bottle deposit, delivery radius
+- **Added (app):** "order again" in order history, bottles field in checkout, shop facts
+  (delivery price, minimum, today's hours) in the header; menu vs catalog words by shop type
+- **Removed:** `tailwind-merge`, unused core docs, dead value-object methods and dictionary keys
+- **Changed:** `bun run seed:dev` seeds three demo shops (food, water, grocery) and a courier
+
 ## [0.4.0] - 2026-01-24
 
 ### Production Readiness Release

@@ -1,55 +1,55 @@
-import { Money } from "../value-objects/money.js"
+import { unitScale } from "../enums/unit.js"
+import { requireInteger, requireText } from "../shared/guards.js"
+
+import type { Category } from "../enums/category.js"
+import type { Unit } from "../enums/unit.js"
+import type { Money } from "../value-objects/money.js"
+
+/** Upper bound for any line: 99 × the largest weight step. The product checks its own step. */
+const MAX_BASE_QUANTITY = 1_000_000
 
 export interface OrderItemProps {
-    id: string
     productId: string
-    productName: string
-    quantity: number
+    name: string
+    unit: Unit
+    category: Category
+    /** Price per unit: per piece, or per kilogram for `kg`. */
     unitPrice: Money
+    /** Base units: pieces, or grams for `kg`. */
+    quantity: number
 }
 
+/**
+ * A line of an order. Name, unit, category and price are copied from the product when the order
+ * is placed, so later catalog edits never change a past order (or a future commission report).
+ */
 export class OrderItem {
-    private constructor(private props: OrderItemProps) {}
+    readonly productId: string
+    readonly name: string
+    readonly unit: Unit
+    readonly category: Category
+    readonly unitPrice: Money
+    readonly quantity: number
 
-    static create(props: OrderItemProps): OrderItem {
-        if (props.quantity <= 0) {
-            throw new Error("Quantity must be positive")
-        }
-        return new OrderItem(props)
+    private constructor(props: OrderItemProps) {
+        this.productId = props.productId
+        this.name = props.name
+        this.unit = props.unit
+        this.category = props.category
+        this.unitPrice = props.unitPrice
+        this.quantity = props.quantity
     }
 
-    get id(): string {
-        return this.props.id
+    static create(input: OrderItemProps): OrderItem {
+        return new OrderItem({
+            ...input,
+            name: requireText("name", input.name, 200),
+            quantity: requireInteger("quantity", input.quantity, 1, MAX_BASE_QUANTITY),
+        })
     }
 
-    get productId(): string {
-        return this.props.productId
-    }
-
-    get productName(): string {
-        return this.props.productName
-    }
-
-    get quantity(): number {
-        return this.props.quantity
-    }
-
-    get unitPrice(): Money {
-        return this.props.unitPrice
-    }
-
+    /** 12 000 so'm/kg × 1500 g = 18 000 so'm. Pieces multiply as they are. */
     get total(): Money {
-        return this.props.unitPrice.multiply(this.props.quantity)
-    }
-
-    updateQuantity(quantity: number): void {
-        if (quantity <= 0) {
-            throw new Error("Quantity must be positive")
-        }
-        this.props.quantity = quantity
-    }
-
-    toJSON(): OrderItemProps {
-        return { ...this.props }
+        return this.unitPrice.multiplyRatio(this.quantity, unitScale(this.unit))
     }
 }

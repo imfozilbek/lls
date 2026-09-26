@@ -1,100 +1,89 @@
-import type { AddressDTO, MoneyDTO } from "./common.dto.js"
-import type { OrderItem } from "../../domain/entities/order-item.js"
-import type { Order } from "../../domain/entities/order.js"
+import { toLocationDTO } from "./shop.dto.js"
+
+import type { LocationDTO } from "./shop.dto.js"
+import type { CancelledBy, Order } from "../../domain/entities/order.js"
+import type { Category } from "../../domain/enums/category.js"
+import type { OrderChannel } from "../../domain/enums/order-channel.js"
 import type { OrderStatus } from "../../domain/enums/order-status.js"
+import type { Unit } from "../../domain/enums/unit.js"
 
 export interface OrderItemDTO {
-    id: string
     productId: string
-    productName: string
+    name: string
+    unit: Unit
+    category: Category
+    /** Per piece, or per kilogram for `kg`. */
+    unitPrice: number
+    /** Pieces, or grams for `kg`. */
     quantity: number
-    unitPrice: MoneyDTO
-    total: MoneyDTO
+    total: number
 }
 
 export interface OrderDTO {
     id: string
-    customerId: string
     businessId: string
-    courierId?: string
-    items: OrderItemDTO[]
-    deliveryAddress: AddressDTO
+    customerId: string
+    number: number
+    channel: OrderChannel
     status: OrderStatus
-    total: MoneyDTO
+    nextStatus: OrderStatus | null
+    items: OrderItemDTO[]
+    subtotal: number
+    deliveryFee: number
+    depositTotal: number
+    bottlesReturned: number
+    total: number
+    commissionBps: number
+    commission: number
+    courierId?: string
+    courierName?: string
+    address: string
+    landmark?: string
+    location?: LocationDTO
+    comment?: string
+    customerName: string
+    customerPhone?: string
+    cancelReason?: string
+    cancelledBy?: CancelledBy
     createdAt: string
     updatedAt: string
 }
 
-export interface CreateOrderItemInput {
-    productId: string
-    productName: string
-    quantity: number
-    unitPrice: MoneyDTO
-}
-
-export interface CreateOrderInput {
-    customerId: string
-    businessId: string
-    items: CreateOrderItemInput[]
-    deliveryAddress: AddressDTO
-}
-
-export interface UpdateOrderStatusInput {
-    status: OrderStatus
-}
-
-export interface CancelOrderInput {
-    reason?: string
-}
-
-export interface TakeOrderInput {
-    orderId: string
-    courierId: string
-}
-
-export interface OrderFilter {
-    status?: OrderStatus
-    customerId?: string
-    businessId?: string
-    courierId?: string
-}
-
-function toOrderItemDTO(item: OrderItem): OrderItemDTO {
-    return {
-        id: item.id,
-        productId: item.productId,
-        productName: item.productName,
-        quantity: item.quantity,
-        unitPrice: {
-            amount: item.unitPrice.amount,
-            currency: item.unitPrice.currency,
-        },
-        total: {
-            amount: item.total.amount,
-            currency: item.total.currency,
-        },
-    }
-}
-
 export function toOrderDTO(order: Order): OrderDTO {
-    const address = order.deliveryAddress
     return {
         id: order.id,
-        customerId: order.customerId,
         businessId: order.businessId,
-        courierId: order.courierId,
-        items: order.items.map(toOrderItemDTO),
-        deliveryAddress: {
-            street: address.street,
-            city: address.city,
-            latitude: address.coordinates?.latitude,
-            longitude: address.coordinates?.longitude,
-        },
+        customerId: order.customerId,
+        number: order.number,
+        channel: order.channel,
         status: order.status,
-        total: {
-            amount: order.total.amount,
-            currency: order.total.currency,
-        },
+        nextStatus: order.nextStatus(),
+        items: order.items.map((item) => ({
+            productId: item.productId,
+            name: item.name,
+            unit: item.unit,
+            category: item.category,
+            unitPrice: item.unitPrice.amount,
+            quantity: item.quantity,
+            total: item.total.amount,
+        })),
+        subtotal: order.subtotal.amount,
+        deliveryFee: order.deliveryFee.amount,
+        depositTotal: order.depositTotal.amount,
+        bottlesReturned: order.bottlesReturned,
+        total: order.total.amount,
+        commissionBps: order.commissionBps,
+        commission: order.commission.amount,
+        courierId: order.courierId,
+        courierName: order.courierName,
+        address: order.address,
+        landmark: order.landmark,
+        location: toLocationDTO(order.location),
+        comment: order.comment,
+        customerName: order.customerName,
+        customerPhone: order.customerPhone?.number,
+        cancelReason: order.cancelReason,
+        cancelledBy: order.cancelledBy,
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
     }

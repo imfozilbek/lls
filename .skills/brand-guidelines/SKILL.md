@@ -1,138 +1,72 @@
 ---
 name: brand-guidelines
-description: LLS brand identity - Sky blue theme for local delivery platform
+description: LLS white-label UI rules - the shop's brand leads, Telegram theme carries light/dark, LLS stays in the background
 ---
 
-# LLS (LocalLoopSolutions) Brand Guidelines
+# LLS Brand Guidelines (white-label)
 
-## Brand Identity
+Read this before any UI work in `packages/app`. Product context: `PRODUCT.md`.
 
-**Product:** LLS — Local delivery platform for small businesses
-**Mood:** Fast, reliable, local, friendly, accessible
-**Theme:** Delivery/Logistics with local community focus
+## Who the brand belongs to
 
-## Color Palette
+- **The shop is the hero.** Customers see the shop's name, logo and color. LLS appears only as a
+  small "LLS asosida ishlaydi / Работает на LLS" line at the bottom of the storefront.
+- **LLS's own color** (#0EA5E9, sky blue) is used only where no shop exists yet: onboarding in the
+  platform bot, and as the fallback when a shop has no color.
+- **Three business types** share one design: food, water, grocery. Only words and a few icons
+  change per type (see "Words per business type").
 
-### Primary Colors (Sky Blue - Speed & Trust)
-| Name | HEX | Usage |
-|------|-----|-------|
-| primary-50 | #F0F9FF | Light backgrounds |
-| primary-100 | #E0F2FE | Hover backgrounds |
-| primary-200 | #BAE6FD | Borders |
-| primary-300 | #7DD3FC | Light accents |
-| primary-400 | #38BDF8 | Highlights |
-| primary-500 | #0EA5E9 | **Primary DEFAULT** |
-| primary-600 | #0284C7 | Hover states |
-| primary-700 | #0369A1 | Active states |
-| primary-800 | #075985 | Dark accents |
-| primary-900 | #0C4A6E | Darkest |
+## Color system
 
-### Secondary Colors (Emerald - Success)
-| Name | HEX | Usage |
-|------|-----|-------|
-| secondary-500 | #10B981 | Success states |
-| secondary-600 | #059669 | Delivered status |
+All colors come from three sources. Nothing else is allowed.
 
-### Warning Colors (Amber)
-| Name | HEX | Usage |
-|------|-----|-------|
-| warning-500 | #F59E0B | Pending, in-transit |
-| warning-600 | #D97706 | Warnings |
+| Source | Tokens (Tailwind) | Use |
+|--------|-------------------|-----|
+| Telegram theme | `tg-bg`, `tg-text`, `tg-hint`, `tg-secondary`, `tg-section`, `tg-separator`, `tg-destructive`, `tg-subtitle`, `tg-link` | Backgrounds, text, borders. They switch light/dark for us |
+| Shop brand | `brand` (`--brand-rgb`), `brand-ink` (`--brand-ink-rgb`) | Primary buttons, selected chips, stepper, active status, focus ring |
+| Status hues | `success` #10B981, `warning` #F59E0B, `danger` #EF4444 | Tints (`/10`–`/15`) and icons only, never as text on white |
 
-### Error Colors (Red)
-| Name | HEX | Usage |
-|------|-----|-------|
-| error-500 | #EF4444 | Errors, cancelled |
-| error-600 | #DC2626 | Critical errors |
-
-### Neutral Colors
-| Name | HEX | Usage |
-|------|-----|-------|
-| gray-50 | #F9FAFB | Backgrounds |
-| gray-100 | #F3F4F6 | Cards |
-| gray-200 | #E5E7EB | Borders |
-| gray-500 | #6B7280 | Muted text |
-| gray-700 | #374151 | Secondary text |
-| gray-900 | #111827 | Primary text |
+Rules:
+- Text on the brand color always uses `brand-ink` (white or near-black, chosen by `readableInk()`
+  for WCAG contrast). Never hard-code `text-white` on a shop color.
+- Status badges: tinted background + theme text + colored icon. This keeps AA contrast in both themes.
+- Never hard-code light colors (`bg-white`, `#fff` shimmers). Every surface must work in Telegram dark.
+- Shop color picker offers only swatches that pass contrast with `brand-ink`.
 
 ## Typography
 
-| Element | Font | Fallback |
-|---------|------|----------|
-| All text | System | -apple-system, BlinkMacSystemFont, Segoe UI |
+- System font stack (`-apple-system`, `Segoe UI`, `Roboto`, …): 0 KB, native look in Telegram.
+- Body text 15 px minimum; hints 14 px (`text-sm`) only for secondary lines.
+- Money uses `tabular-nums` and narrow no-break spaces: `78 000 so'm`.
 
-## Order Status Colors
+## Shape and spacing
 
-| Status | Color | HEX |
-|--------|-------|-----|
-| pending | gray | #6B7280 |
-| accepted | primary | #0EA5E9 |
-| preparing | warning | #F59E0B |
-| ready | primary-dark | #0284C7 |
-| picked_up | warning-dark | #D97706 |
-| delivered | success | #10B981 |
-| cancelled | error | #EF4444 |
+| Token | Value | Use |
+|-------|-------|-----|
+| `rounded-tile` | 1.125rem | Product tiles, cards |
+| `rounded-control` | 0.875rem | Inputs, buttons, rows |
+| `rounded-full` | — | Chips, stepper, avatars |
+| Side padding | 16 px (`px-4`) | Every screen |
+| Touch target | ≥ 44 px | Every tappable element |
 
-## Business Type Colors
+## Motion
 
-| Type | Color | Usage |
-|------|-------|-------|
-| Food | #F59E0B | Restaurants, cafes |
-| Construction | #6B7280 | Building materials |
-| Water | #0EA5E9 | Water delivery |
+- CSS only: `rise`, `pop`, `bump`, `fade-in`, `ring`, `shimmer` in `tailwind.config.ts`.
+- Easing `ease-out-quart`, 150–300 ms. Every tappable element has a pressed state (`.tap`) and a
+  visible focus ring. `prefers-reduced-motion` turns motion off.
 
-## Usage Rules
+## Words per business type
 
-1. **Sky blue for brand** — Primary color throughout
-2. **Green for success** — Delivered orders, confirmations
-3. **Amber for in-progress** — Preparing, in-transit states
-4. **Simple, clear UI** — Focus on usability
-5. **Mobile-first** — Telegram Mini App focused
-6. **Fast loading** — Minimal visual complexity
+| Idea | Food | Water / Grocery |
+|------|------|-----------------|
+| Product list | Menyu / Меню | Katalog / Каталог |
+| Status "preparing" | Tayyorlanmoqda / Готовится (chef icon) | Yig'ilmoqda / Собираем (box icon) |
+| Delivered hint | Yoqimli ishtaha! / Приятного аппетита! | Rahmat! / Спасибо за заказ! |
 
-## Button Styles
+Uzbek (Latin) and Russian always ship together; keys must match (`dictionaries.test.ts`).
 
-| Type | Background | Text | Border |
-|------|------------|------|--------|
-| Primary | primary-500 | white | none |
-| Secondary | gray-100 | gray-700 | gray-200 |
-| Success | secondary-500 | white | none |
-| Danger | error-500 | white | none |
-| Ghost | transparent | primary-500 | none |
+## Empty states and icons
 
-## Card Styles
-
-```css
-/* Order card */
-background: white;
-border-radius: 0.75rem;
-border: 1px solid #E5E7EB;
-padding: 1rem;
-
-/* Business card */
-background: white;
-border-radius: 1rem;
-box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-```
-
-## Status Badges
-
-```css
-/* Status badge base */
-padding: 0.25rem 0.75rem;
-border-radius: 9999px;
-font-size: 0.75rem;
-font-weight: 500;
-
-/* Delivered */
-background: #D1FAE5;
-color: #065F46;
-
-/* Pending */
-background: #F3F4F6;
-color: #374151;
-
-/* In transit */
-background: #FEF3C7;
-color: #92400E;
-```
+- Custom line icons (`ui/icons.tsx`), stroke 1.75, `currentColor`.
+- Empty states: one icon in a brand-tinted rounded square, one sentence, one action.
+- No stock illustrations, no emoji in the app UI (emoji are fine in bot messages).

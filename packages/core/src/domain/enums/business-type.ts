@@ -1,5 +1,7 @@
 export enum BusinessType {
     FOOD = "food",
-    CONSTRUCTION = "construction",
     WATER = "water",
+    GROCERY = "grocery",
 }
+
+export const BUSINESS_TYPES: readonly BusinessType[] = Object.values(BusinessType)

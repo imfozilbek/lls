@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html,
+    body {
+        background-color: var(--tg-theme-bg-color, #ffffff);
+        color: var(--tg-theme-text-color, #111827);
+        -webkit-tap-highlight-color: transparent;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+        overscroll-behavior-y: none;
+    }
+
+    body {
+        @apply font-sans text-base;
+    }
+
+    h1,
+    h2,
+    h3 {
+        text-wrap: balance;
+    }
+
+    input,
+    textarea,
+    select {
+        font-size: 16px; /* prevents iOS zoom on focus */
+    }
+
+    :focus-visible {
+        outline: 2px solid rgb(var(--brand-rgb, 14 165 233));
+        outline-offset: 2px;
+    }
+}
+
+@layer components {
+    /* Pressed feedback for every tappable element. */
+    .tap {
+        @apply transition-transform duration-150 ease-out-quart active:scale-[0.97];
+    }
+
+    .field {
+        @apply w-full rounded-control border border-transparent bg-tg-secondary px-4 py-3 text-base text-tg-text outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-tg-hint focus:border-brand focus:shadow-[0_0_0_3px_rgb(var(--brand-rgb,14_165_233)/0.18)];
+    }
+
+    .skeleton {
+        background: linear-gradient(
+            90deg,
+            var(--tg-theme-secondary-bg-color, #f3f4f6) 25%,
+            color-mix(
+                    in srgb,
+                    var(--tg-theme-secondary-bg-color, #f3f4f6) 70%,
+                    var(--tg-theme-bg-color, #ffffff)
+                )
+                50%,
+            var(--tg-theme-secondary-bg-color, #f3f4f6) 75%
+        );
+        background-size: 200% 100%;
+        @apply animate-shimmer rounded-control;
+    }
+
+    .pb-safe {
+        padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 1ms !important;
+    }
+}

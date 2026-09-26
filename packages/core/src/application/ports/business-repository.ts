@@ -1,12 +1,13 @@
-import { Business } from "../../domain/entities/business.js"
-import { BusinessType } from "../../domain/enums/business-type.js"
+import type { Business } from "../../domain/entities/business.js"
 
 export interface BusinessRepository {
     findById(id: string): Promise<Business | null>
-    findByTelegramId(telegramId: number): Promise<Business | null>
-    findAll(): Promise<Business[]>
-    findByType(type: BusinessType): Promise<Business[]>
-    findActive(): Promise<Business[]>
+    findBySlug(slug: string): Promise<Business | null>
+    findByBotId(botId: number): Promise<Business | null>
+    listByOwner(ownerTelegramId: number): Promise<Business[]>
+    /** Active shops with a marketplace deal: the LLS showcase. */
+    listInShowcase(): Promise<Business[]>
+    /** Insert a new shop together with its bot token. The adapter encrypts the token. */
+    insert(business: Business, botToken: string): Promise<void>
     save(business: Business): Promise<void>
-    delete(id: string): Promise<void>
 }

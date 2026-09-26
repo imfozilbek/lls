@@ -1,0 +1,33 @@
+{
+    "name": "@lls/worker",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "bun run core && wrangler dev",
+        "build": "bun run core && tsc && tsc -p scripts && wrangler deploy --dry-run --outdir dist",
+        "deploy": "wrangler deploy",
+        "types": "wrangler types",
+        "seed:dev": "bun run core && bun scripts/seed-dev.ts",
+        "init-data:dev": "bun scripts/sign-init-data.ts",
+        "test": "bun run core && vitest run",
+        "test:watch": "vitest",
+        "core": "bun run --cwd ../core build",
+        "test:coverage": "bun run core && vitest run --coverage"
+    },
+    "dependencies": {
+        "@hono/zod-validator": "^0.9.1",
+        "@lls/core": "*",
+        "hono": "^4.13.9",
+        "zod": "^4.6.5"
+    },
+    "devDependencies": {
+        "@cloudflare/vitest-plugin": "^1.2.8",
+        "@vitest/coverage-istanbul": "^4.1.0",
+        "@vitest/runner": "^4.1.0",
+        "@vitest/snapshot": "^4.1.0",
+        "typescript": "^5.7.2",
+        "vitest": "^4.1.0",
+        "wrangler": "^4.141.0"
+    }
+}
