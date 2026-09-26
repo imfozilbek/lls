@@ -88,6 +88,16 @@ Shu yerda nom, logotip, rang, yetkazish narxi, radius va ish vaqtini ham o'zgart
 - Mijoz to'lovni **naqd, yetkazilganda** qiladi.
 - O'z botingiz orqali sotuvdan LLS komissiya olmaydi.
 
+### 9. LLS vitrinasi (ixtiyoriy)
+
+- LLS botida tumaningiz do'konlari bo'yicha umumiy qidiruv bor. Mijoz mahsulotni topadi va
+  **sizning do'koningizdan** buyurtma beradi.
+- Vitrinaga qo'shilish — LLS bilan alohida kelishuv. Komissiya faqat vitrina orqali kelgan
+  buyurtmadagi tovarlardan olinadi. O'z botingiz orqali sotuv — komissiyasiz.
+- Vitrinadan kelgan buyurtmada **LLS** belgisi va komissiya summasi ko'rinadi. Buyurtma, kuryer
+  va holatlar — odatdagidek.
+- Holatingiz: **Sozlamalar → LLS vitrinasi**.
+
 ---
 
 ## Русский
@@ -169,3 +179,12 @@ Shu yerda nom, logotip, rang, yetkazish narxi, radius va ish vaqtini ham o'zgart
 - Ссылку (`t.me/osh_markaz_bot`) разместите в своих Telegram-группах, Instagram, на наклейке.
 - Клиент платит **наличными при получении**.
 - С продаж через вашего бота LLS комиссию не берёт.
+
+### 9. Витрина LLS (по желанию)
+
+- В боте LLS есть общий поиск по магазинам района. Клиент находит товар и заказывает
+  **в вашем магазине**.
+- Участие в витрине — отдельная договорённость с LLS. Комиссия берётся только с товаров в заказах,
+  пришедших через витрину. Продажи через ваш бот — без комиссии.
+- На заказе из витрины видна метка **LLS** и сумма комиссии. Заказ, доставщик и статусы — как обычно.
+- Ваш статус: **Настройки → Витрина LLS**.

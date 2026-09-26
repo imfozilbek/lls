@@ -11,9 +11,9 @@ Each shop gets its own Telegram bot and brand; the app says "powered by LLS".
 
 | Part | Status | Notes |
 |------|--------|-------|
-| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list; 130 tests |
-| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth, roles owner/courier/customer, bot webhooks; 51 tests |
-| `@lls/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, onboarding; 37 tests; 92 KB gzip |
+| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search; 137 tests |
+| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or LLS bot), roles, bot webhooks, `/market`; 57 tests |
+| `@lls/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, LLS showcase, onboarding; 38 tests; 93 KB gzip |
 | CI | ✅ Done | format, lint, build, test, coverage on every push |
 | Deploy | 🟡 Ready | `deploy.yml` waits for GitHub secrets (`docs/launch-checklist.md`) |
 | Pilot (food, water, grocery) | ⏳ Next | Three friends' shops, each with its own bot and couriers |
@@ -27,8 +27,8 @@ Each shop gets its own Telegram bot and brand; the app says "powered by LLS".
 
 | Stage | What | Revenue | Status |
 |-------|------|---------|--------|
-| **1. Own bot per business** | Storefront + orders + notifications. Each shop delivers with its own couriers | Subscription | 🔨 Now |
-| 2. District marketplace | One Mini App, one cart from several shops, search across shops. Data is ready now: every order stores its channel and commission | Commission on marketplace sales + subscription | Later |
+| **1. Own bot per business + LLS showcase** | Storefront + orders + notifications, own couriers. The LLS bot searches across shops; a tap opens that shop, the order goes to it | Subscription + commission on showcase orders | 🔨 Now |
+| 2. District marketplace | One cart from several shops, district filter | Commission on marketplace sales + subscription | Later |
 | 3. Own delivery | Shared couriers, several pickups per trip | Delivery fee | Later |
 
 Pilot: **food, water and grocery at the same time.** Sales through a shop's own bot never carry
@@ -81,6 +81,14 @@ an LLS commission; only marketplace sales will (stage 2).
 - [x] Grocery: weight items in grams with a selling step, stop-list until midnight (Tashkent)
 - [x] Feature switches per shop; defaults by type; bot and app words by type (menu vs catalog)
 - [x] `bun run seed:dev` seeds three demo shops; end-to-end run of all three passes
+
+### M4c. LLS showcase ✅
+- [x] LLS bot: "Shops and products" button and menu button open the showcase (`?mode=market`)
+- [x] One search across showcase shops: Latin or Cyrillic, any apostrophe, word starts; categories
+- [x] A tap opens the shop inside the LLS bot; orders get the `marketplace` channel and commission
+- [x] Channel fixed by the bot that signed the request; owner/courier screens never open this way
+- [x] LLS bot saves phones (contact) and writes showcase customers about their orders
+- [x] Admin command `/market <slug> <percent|off>`; the owner is told; owner sees the LLS mark
 
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)

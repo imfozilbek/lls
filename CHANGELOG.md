@@ -42,6 +42,17 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Added:** three-step onboarding wizard in the platform bot
 - **Added:** light and dark Telegram themes, pressed and focus states, empty states; 96 KB gzip
 
+### LLS showcase
+- **Added (core):** `searchText` — one spelling for Latin/Cyrillic Uzbek and Russian; showcase search
+  across shops with a marketplace deal; `SetMarketplaceTerms` for platform admins
+- **Added (worker):** `X-Via: marketplace` — a shop opened from the showcase is verified with the LLS
+  bot token and its orders get the `marketplace` channel and commission; `/api/showcase/shops`,
+  `/api/showcase/products`; the LLS bot saves contacts, answers `/market <slug> <percent|off>`,
+  writes showcase customers about status changes; the owner card shows the commission
+- **Added (app):** showcase screen in the LLS bot (search, categories, shops); a tap opens the shop's
+  storefront there; owners see an "LLS" mark on showcase orders and the deal in settings
+- **Changed:** the LLS bot's menu button opens the showcase; onboarding stays a `/start` button
+
 ### Three verticals, own couriers, marketplace-ready data
 - **Security (core, worker):** an order is found only inside the shop from `X-Shop`; before, a
   customer or an owner of two shops could reach an order through the wrong bot
