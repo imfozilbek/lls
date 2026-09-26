@@ -1,0 +1,111 @@
+import { useEffect, useState } from "react"
+
+import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
+import { ApiError, api } from "../lib/api.js"
+import { formatMoney, formatTime } from "../lib/format.js"
+import { haptic } from "../lib/telegram.js"
+import { useRouter } from "../stores/router.js"
+import { ChevronIcon, ReceiptIcon, WifiOffIcon } from "../ui/icons.js"
+import { StatusBadge } from "../ui/order-status.js"
+import { Button, EmptyState, Skeleton } from "../ui/primitives.js"
+import { BottomSpacer } from "../ui/shell.js"
+
+import type { OrderDTO } from "@lls/core"
+
+function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.JSX.Element {
+    const t = useT()
+    const language = useLanguage()
+    const push = useRouter((state) => state.push)
+    const preview = order.items.map((item) => item.name).join(", ")
+    return (
+        <li className="animate-rise" style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}>
+            <button
+                type="button"
+                onClick={(): void => {
+                    haptic.tap()
+                    push({ name: "order", id: order.id })
+                }}
+                className="tap flex w-full items-center gap-3 rounded-tile bg-tg-secondary p-4 text-left"
+            >
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold">
+                            {fill(t.order.title, { n: order.number })}
+                        </span>
+                        <StatusBadge status={order.status} />
+                    </div>
+                    <p className="mt-1 truncate text-sm text-tg-hint">{preview}</p>
+                    <p className="mt-2 flex justify-between text-sm">
+                        <span className="text-tg-hint">
+                            {formatTime(order.createdAt, language)}
+                        </span>
+                        <span className="font-semibold tabular-nums">
+                            {formatMoney(order.total, language)}
+                        </span>
+                    </p>
+                </div>
+                <ChevronIcon size={18} className="shrink-0 text-tg-hint" />
+            </button>
+        </li>
+    )
+}
+
+export function OrdersScreen(): React.JSX.Element {
+    const t = useT()
+    const back = useRouter((state) => state.back)
+    const [orders, setOrders] = useState<OrderDTO[] | null>(null)
+    const [error, setError] = useState<string | null>(null)
+
+    const load = async (): Promise<void> => {
+        setError(null)
+        try {
+            setOrders((await api.myOrders()).data)
+        } catch (caught) {
+            setError(caught instanceof ApiError ? caught.code : "generic")
+        }
+    }
+    useEffect(() => {
+        void load()
+    }, [])
+
+    return (
+        <main className="px-4 pt-4">
+            <h1 className="text-2xl font-bold">{t.order.history}</h1>
+            {error ? (
+                <EmptyState
+                    art={<WifiOffIcon size={44} />}
+                    title={errorText(t, error)}
+                    action={
+                        <Button variant="secondary" onClick={(): void => void load()}>
+                            {t.common.retry}
+                        </Button>
+                    }
+                />
+            ) : orders === null ? (
+                <div className="mt-4 flex flex-col gap-3">
+                    {[0, 1, 2].map((i) => (
+                        <Skeleton key={i} className="h-[104px] rounded-tile" />
+                    ))}
+                </div>
+            ) : orders.length === 0 ? (
+                <EmptyState
+                    art={<ReceiptIcon size={44} />}
+                    title={t.order.historyEmpty}
+                    text={t.order.historyEmptyText}
+                    action={
+                        <Button variant="secondary" onClick={back}>
+                            {t.cart.toMenu}
+                        </Button>
+                    }
+                />
+            ) : (
+                <ul className="mt-4 flex flex-col gap-3">
+                    {orders.map((order, index) => (
+                        <OrderRow key={order.id} order={order} index={index} />
+                    ))}
+                </ul>
+            )}
+            <BottomSpacer />
+        </main>
+    )
+}
