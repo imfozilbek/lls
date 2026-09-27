@@ -131,8 +131,7 @@ export function formatStatusForCustomer(order: OrderDTO, reader: Reader): string
 
 // Callback data (≤ 64 bytes): "a:<orderId>:<status>" advance, "x:<orderId>" cancel.
 export type OrderCallback =
-    | { kind: "advance"; orderId: string; to: OrderStatus }
-    | { kind: "cancel"; orderId: string }
+    { kind: "advance"; orderId: string; to: OrderStatus } | { kind: "cancel"; orderId: string }
 
 const ORDER_STATUS_VALUES = new Set<string>(Object.values(OrderStatus))
 
