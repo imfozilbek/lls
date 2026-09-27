@@ -93,7 +93,11 @@ export const ownerRoutes = new Hono<AppEnv>()
                           orderId,
                           to: status,
                       })
-            inBackground(c.executionCtx, new Notifier(services).orderChanged(shopOf(c), order))
+            inBackground(
+                c.executionCtx,
+                services,
+                new Notifier(services).orderChanged(shopOf(c), order),
+            )
             return c.json(order)
         },
     )
@@ -115,6 +119,7 @@ export const ownerRoutes = new Hono<AppEnv>()
             })
             inBackground(
                 c.executionCtx,
+                services,
                 new Notifier(services).courierAssigned(business, order, previous?.courierId),
             )
             return c.json(order)

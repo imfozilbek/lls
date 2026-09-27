@@ -52,7 +52,11 @@ export const platformRoutes = new Hono<AppEnv>()
                 ownerTelegramId: c.get("auth").user.id,
                 bot: { id: bot.id, username: bot.username, token: botToken },
             })
-            inBackground(c.executionCtx, new Notifier(services).shopRegistered(registered))
+            inBackground(
+                c.executionCtx,
+                services,
+                new Notifier(services).shopRegistered(registered),
+            )
             return c.json(registered, 201)
         },
     )

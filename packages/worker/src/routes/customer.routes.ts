@@ -63,7 +63,7 @@ export const customerRoutes = new Hono<AppEnv>()
             // Fixed by the bot that signed the request: own bot = never commissioned.
             channel: c.get("auth").channel,
         })
-        inBackground(c.executionCtx, new Notifier(services).orderPlaced(business, order))
+        inBackground(c.executionCtx, services, new Notifier(services).orderPlaced(business, order))
         return c.json(order, 201)
     })
 
@@ -97,7 +97,11 @@ export const customerRoutes = new Hono<AppEnv>()
                 orderId: c.req.valid("param").id,
                 reason: c.req.valid("json").reason,
             })
-            inBackground(c.executionCtx, new Notifier(services).orderChanged(shopOf(c), order))
+            inBackground(
+                c.executionCtx,
+                services,
+                new Notifier(services).orderChanged(shopOf(c), order),
+            )
             return c.json(order)
         },
     )

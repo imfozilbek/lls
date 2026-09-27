@@ -69,6 +69,8 @@ export class FakeTelegram implements TelegramGateway {
     failReplies = false
     /** Simulates Telegram refusing setWebhook (network hiccup, revoked token). */
     failWebhooks = false
+    /** Simulates a Telegram outage for messages to these chats. */
+    readonly brokenChats = new Set<number>()
     private nextMessageId = 100
 
     constructor(private readonly bots: Record<string, BotInfo> = {}) {}
@@ -88,6 +90,9 @@ export class FakeTelegram implements TelegramGateway {
     ): Promise<{ messageId: number }> {
         if (this.failReplies) {
             throw new TelegramApiError("sendMessage", "Forbidden: bot was blocked by the user")
+        }
+        if (this.brokenChats.has(chatId)) {
+            throw new TelegramApiError("sendMessage", "Internal Server Error")
         }
         this.sent.push({ token, chatId, html, options })
         return { messageId: this.nextMessageId++ }

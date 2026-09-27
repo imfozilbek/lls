@@ -11,6 +11,7 @@ const TABLES = [
     "courier_invites",
     "couriers",
     "customer_phone_shares",
+    "alert_log",
     "customer_businesses",
     "customers",
     "products",

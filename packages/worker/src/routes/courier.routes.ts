@@ -32,7 +32,11 @@ export const courierRoutes = new Hono<AppEnv>()
                 orderId: c.req.valid("param").id,
                 to: c.req.valid("json").status,
             })
-            inBackground(c.executionCtx, new Notifier(services).orderChanged(business, order))
+            inBackground(
+                c.executionCtx,
+                services,
+                new Notifier(services).orderChanged(business, order),
+            )
             return c.json(order)
         },
     )
