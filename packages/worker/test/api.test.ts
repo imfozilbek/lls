@@ -19,6 +19,8 @@ interface Json {
     [key: string]: unknown
 }
 
+const ascii = (text: string): Uint8Array => new TextEncoder().encode(text)
+
 async function json<T = Json>(response: Response): Promise<T> {
     return (await response.json()) as T
 }
@@ -349,7 +351,8 @@ describe("inside a shop", () => {
 
     it("images: upload, serve with cache headers, replace and delete", async () => {
         const osh = await addProduct("Osh", 35_000)
-        const bytes = new Uint8Array([82, 73, 70, 70, 1, 2, 3, 4])
+        // A real WebP header: "RIFF", size, "WEBP".
+        const bytes = new Uint8Array([...ascii("RIFF"), 4, 0, 0, 0, ...ascii("WEBP"), 1, 2])
         const uploaded = await asOwner()(`/api/owner/products/${osh}/image`, {
             method: "PUT",
             headers: { "Content-Type": "image/webp" },
@@ -362,6 +365,7 @@ describe("inside a shop", () => {
         const served = await client.request(`/img/${imageKey}`)
         expect(served.status).toBe(200)
         expect(served.headers.get("Cache-Control")).toContain("immutable")
+        expect(served.headers.get("X-Content-Type-Options")).toBe("nosniff")
         expect(new Uint8Array(await served.arrayBuffer())).toEqual(bytes)
 
         const wrongType = await asOwner()(`/api/owner/products/${osh}/image`, {
@@ -370,6 +374,21 @@ describe("inside a shop", () => {
             body: bytes,
         })
         expect(wrongType.status).toBe(415)
+
+        // An HTML page named image/webp is refused by its first bytes.
+        const disguised = await asOwner()(`/api/owner/products/${osh}/image`, {
+            method: "PUT",
+            headers: { "Content-Type": "image/webp" },
+            body: ascii("<html><script>alert(1)</script>"),
+        })
+        expect(disguised.status).toBe(415)
+
+        const huge = await asOwner()(`/api/owner/products/${osh}/image`, {
+            method: "PUT",
+            headers: { "Content-Type": "image/webp" },
+            body: new Uint8Array(1_600_000),
+        })
+        expect(huge.status).toBe(413)
 
         const removed = await asOwner()(`/api/owner/products/${osh}/image`, { method: "DELETE" })
         expect(await json(removed)).not.toHaveProperty("imageKey")

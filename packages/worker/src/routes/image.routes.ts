@@ -25,6 +25,8 @@ export const imageRoutes = new Hono<AppEnv>().get("/*", async (c) => {
     object.writeHttpMetadata(headers)
     headers.set("ETag", object.httpEtag)
     headers.set("Cache-Control", IMMUTABLE_CACHE)
+    // Never let a browser guess another type (e.g. HTML) from the bytes.
+    headers.set("X-Content-Type-Options", "nosniff")
     const response = new Response(object.body, { headers })
     c.executionCtx.waitUntil(cache.put(c.req.raw, response.clone()))
     return response
