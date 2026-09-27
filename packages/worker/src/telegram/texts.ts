@@ -62,6 +62,11 @@ const BASE = {
             "Buyruq: /market <slug> <foiz>, masalan /market osh-markaz 5\nO'chirish: /market <slug> off",
         showcaseSet: "✅ {shop}: vitrinada, komissiya {rate}%",
         showcaseOff: "✅ {shop}: vitrinadan olindi",
+        botNotConnected:
+            "⚠️ {shop} tasdiqlandi, lekin bot ulanmadi: {reason}\nQayta urinish: /reconnect {slug}",
+        botConnected: "✅ {shop}: bot ulandi.",
+        reconnectUsage: "Buyruq: /reconnect <slug>, masalan /reconnect osh-markaz",
+        shopNotActive: "{shop} hali tasdiqlanmagan.",
         applicationReceived: "✅ {shop} arizasi qabul qilindi. Tekshiruvdan so'ng xabar beramiz.",
         shopApproved: "🎉 {shop} ishga tushdi! Mijozlaringizga ushbu havolani yuboring:",
         shopRejected: "😔 {shop} arizasi rad etildi. Savollar bo'lsa, bizga yozing.",
@@ -149,6 +154,11 @@ const BASE = {
             "Команда: /market <slug> <процент>, например /market osh-markaz 5\nУбрать: /market <slug> off",
         showcaseSet: "✅ {shop}: в витрине, комиссия {rate}%",
         showcaseOff: "✅ {shop}: убран из витрины",
+        botNotConnected:
+            "⚠️ {shop} одобрен, но бот не подключился: {reason}\nПовторить: /reconnect {slug}",
+        botConnected: "✅ {shop}: бот подключён.",
+        reconnectUsage: "Команда: /reconnect <slug>, например /reconnect osh-markaz",
+        shopNotActive: "{shop} ещё не одобрен.",
         applicationReceived: "✅ Заявка {shop} принята. Сообщим после проверки.",
         shopApproved: "🎉 {shop} запущен! Отправьте клиентам эту ссылку:",
         shopRejected: "😔 Заявка {shop} отклонена. Если есть вопросы, напишите нам.",

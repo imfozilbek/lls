@@ -67,6 +67,8 @@ export class FakeTelegram implements TelegramGateway {
     readonly answered: string[] = []
     /** Simulates a blocked bot or Telegram outage: replies to users fail. */
     failReplies = false
+    /** Simulates Telegram refusing setWebhook (network hiccup, revoked token). */
+    failWebhooks = false
     private nextMessageId = 100
 
     constructor(private readonly bots: Record<string, BotInfo> = {}) {}
@@ -106,6 +108,9 @@ export class FakeTelegram implements TelegramGateway {
         this.answered.push(callbackQueryId)
     }
     async setWebhook(token: string, url: string, secret: string): Promise<void> {
+        if (this.failWebhooks) {
+            throw new TelegramApiError("setWebhook", "Bad Gateway")
+        }
         this.webhooks.push({ token, url, secret })
     }
     async setMenuButton(token: string, _text: string, url: string): Promise<void> {

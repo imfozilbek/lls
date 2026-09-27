@@ -116,6 +116,50 @@ describe("platform bot", () => {
     })
 })
 
+describe("platform bot: a failed connection on approval", () => {
+    let client: TestClient
+
+    const platform = (body: object): Promise<Response> =>
+        client.request("/tg/platform", update(body, env.PLATFORM_WEBHOOK_SECRET))
+
+    beforeEach(() => {
+        client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
+    })
+
+    it("tells the admin, and /reconnect connects the bot later", async () => {
+        const registered = await client.as(OWNER, {})("/api/platform/shops", {
+            method: "POST",
+            json: { botToken: SHOP_BOT_TOKEN, name: "Osh Markaz", type: "food", deliveryFee: 0 },
+        })
+        const shop = (await registered.json()) as { id: string; slug: string }
+
+        client.telegram.failWebhooks = true
+        await platform({
+            callback_query: { id: "cb-1", from: ADMIN, data: `r:${shop.id}:approve` },
+        })
+        const warning = client.telegram.sent.at(-1)
+        expect(warning?.chatId).toBe(ADMIN.id)
+        expect(warning?.html).toContain(`/reconnect ${shop.slug}`)
+
+        // Pressing Approve again cannot help (the shop is active); the command can.
+        client.telegram.failWebhooks = false
+        await platform({
+            message: { from: STRANGER, chat: { id: STRANGER.id }, text: `/reconnect ${shop.slug}` },
+        })
+        expect(client.telegram.webhooks).toHaveLength(0)
+
+        await platform({
+            message: { from: ADMIN, chat: { id: ADMIN.id }, text: `/reconnect ${shop.slug}` },
+        })
+        expect(client.telegram.webhooks).toHaveLength(1)
+        expect(client.telegram.menuButtons[0]?.url).toContain(`shop=${shop.slug}`)
+        expect(
+            client.telegram.sent.some((m) => m.chatId === OWNER.id && m.html.includes("t.me/")),
+        ).toBe(true)
+        expect(client.telegram.sent.at(-1)?.chatId).toBe(ADMIN.id)
+    })
+})
+
 describe("shop bot", () => {
     let client: TestClient
     let slug: string
