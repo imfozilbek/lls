@@ -5,6 +5,7 @@
 # deploys the Worker with its secrets, deploys the Mini App to Pages and connects the platform bot.
 #
 # Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS.
+# Optional: TOKEN_ENC_KEY — a saved copy of the encryption key, used only when the Worker has none.
 set -euo pipefail
 # Temp files (the Worker secrets file) are readable by this user only.
 umask 077
@@ -101,13 +102,39 @@ ensure_workers_subdomain() {
     echo "$WORKER_URL"
 }
 
-# TOKEN_ENC_KEY encrypts shop bot tokens. It is generated ONCE and never replaced:
+# TOKEN_ENC_KEY encrypts shop bot tokens. It is set ONCE and never replaced:
 # a new key would make every stored token unreadable.
 needs_encryption_key() {
     cf_call GET "/workers/scripts/${WORKER}/secrets"
     if [[ "$CF_STATUS" == 404 ]]; then return 0; fi
     [[ "$CF_STATUS" == 200 ]] || fail "Cannot read Worker secrets (HTTP ${CF_STATUS}). Refusing to guess."
     ! jq -e '.result[] | select(.name == "TOKEN_ENC_KEY")' <<<"$CF_BODY" >/dev/null
+}
+
+shop_count() {
+    wrangler d1 execute "$DATABASE" --remote --json \
+        --command "SELECT COUNT(*) AS n FROM businesses" | jq -r '.[0].results[0].n'
+}
+
+# Sets ENC_KEY for a Worker that has none: the saved copy if given, a new one on a fresh
+# database. Stops the deploy when shops exist and no saved copy is given: a new key would
+# silently break every shop bot.
+encryption_key() {
+    if [[ -n "${TOKEN_ENC_KEY:-}" ]]; then
+        [[ "$(printf '%s' "$TOKEN_ENC_KEY" | base64 -d 2>/dev/null | wc -c)" == 32 ]] \
+            || fail "The TOKEN_ENC_KEY secret is not 32 bytes in base64 (openssl rand -base64 32)."
+        echo "using the saved TOKEN_ENC_KEY"
+        ENC_KEY="$TOKEN_ENC_KEY"
+        return
+    fi
+    local shops
+    shops="$(shop_count)"
+    [[ "$shops" =~ ^[0-9]+$ ]] || fail "Cannot count shops in D1. Refusing to guess."
+    if ((shops > 0)); then
+        fail "The Worker lost TOKEN_ENC_KEY, but D1 has ${shops} shop(s) with encrypted bot tokens. Put the saved key into the GitHub secret TOKEN_ENC_KEY and run the deploy again (SECURITY.md, 'Encryption key')."
+    fi
+    echo "generating TOKEN_ENC_KEY (first deploy)"
+    ENC_KEY="$(openssl rand -base64 32)"
 }
 
 deploy_worker() {
@@ -128,11 +155,9 @@ deploy_worker() {
         '{PLATFORM_BOT_TOKEN: $bot, PLATFORM_ADMIN_IDS: $admins, PLATFORM_WEBHOOK_SECRET: $hook}' \
         >"$secrets_file"
     if needs_encryption_key; then
-        echo "generating TOKEN_ENC_KEY (first deploy)"
-        local key
-        key="$(openssl rand -base64 32)"
-        echo "::add-mask::${key}"
-        jq --arg key "$key" '. + {TOKEN_ENC_KEY: $key}' "$secrets_file" >"${secrets_file}.new"
+        encryption_key
+        echo "::add-mask::${ENC_KEY}"
+        jq --arg key "$ENC_KEY" '. + {TOKEN_ENC_KEY: $key}' "$secrets_file" >"${secrets_file}.new"
         mv "${secrets_file}.new" "$secrets_file"
     fi
     wrangler deploy --var "APP_ORIGIN:${APP_ORIGIN}" --secrets-file "$secrets_file"
@@ -164,15 +189,18 @@ connect_platform_bot() {
     echo "webhook and menu button set"
 }
 
+# A new workers.dev subdomain can take a few minutes to go live. The bot is connected only
+# after the Worker answers, so Telegram never gets a dead webhook.
 smoke_test() {
     log "Smoke test"
     local status=""
-    for _ in 1 2 3 4 5 6; do
+    for _ in $(seq 1 30); do
         status="$(curl -s -o /dev/null -w '%{http_code}' "${WORKER_URL}/health" || true)"
         if [[ "$status" == 200 ]]; then break; fi
-        sleep 5
+        sleep 10
     done
-    [[ "$status" == 200 ]] || fail "${WORKER_URL}/health answered ${status}"
+    [[ "$status" == 200 ]] \
+        || fail "${WORKER_URL}/health answered ${status} after 5 minutes. On the very first deploy the address may need more time: run the deploy again in 10 minutes."
     echo "Worker:   ${WORKER_URL}"
     echo "Mini App: ${APP_ORIGIN}"
     {
@@ -192,8 +220,8 @@ main() {
     ensure_workers_subdomain
     deploy_worker
     deploy_app
-    connect_platform_bot
     smoke_test
+    connect_platform_bot
 }
 
 main "$@"
