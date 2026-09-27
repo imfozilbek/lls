@@ -13,13 +13,13 @@
     "dependencies": {
         "@lls/core": "*",
         "clsx": "^2",
-        "react": "^19",
-        "react-dom": "^19",
+        "react": "~19.2.3",
+        "react-dom": "~19.2.3",
         "zustand": "^5"
     },
     "devDependencies": {
-        "@types/react": "^19",
-        "@types/react-dom": "^19",
+        "@types/react": "~19.2.9",
+        "@types/react-dom": "~19.2.3",
         "@vitejs/plugin-react": "^4",
         "autoprefixer": "^10",
         "postcss": "^8",
