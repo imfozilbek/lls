@@ -1,4 +1,11 @@
-import { DomainError, ForbiddenError, Phone, languageFromTelegram } from "@lls/core"
+import {
+    DomainError,
+    ForbiddenError,
+    Language,
+    Phone,
+    languageFromTelegram,
+    toShopOwnerDTO,
+} from "@lls/core"
 import { Hono } from "hono"
 import { z } from "zod"
 
@@ -23,7 +30,7 @@ import { fill, textsFor } from "../telegram/texts.js"
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
 import type { InlineKeyboard } from "../telegram/gateway.js"
-import type { Business, OrderDTO, TelegramUser } from "@lls/core"
+import type { Business, OrderDTO, ShopOwnerDTO, TelegramUser } from "@lls/core"
 
 const SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
 
@@ -128,14 +135,21 @@ async function joinAsCourier(
  * Saves the customer's phone from a shared contact. Only the sender's own contact counts:
  * a forwarded contact must not change anyone's phone. Returns false when nothing was saved.
  */
-async function saveOwnPhone(services: Services, message: ShopMessage): Promise<boolean> {
+async function saveOwnPhone(
+    services: Services,
+    message: ShopMessage,
+    businessId?: string,
+): Promise<boolean> {
     const { from, contact } = message
     if (!from || !contact || contact.user_id !== from.id) {
         return false
     }
-    await services.useCases.updateCustomer.execute({
+    // Delivered by Telegram to this bot's webhook: the phone is real and shared with this shop.
+    await services.useCases.saveContact.execute({
         user: toTelegramUser(from),
         phone: contact.phone_number,
+        businessId,
+        now: services.clock.now(),
     })
     return true
 }
@@ -148,7 +162,7 @@ async function saveContact(
     message: ShopMessage,
 ): Promise<void> {
     const { from, contact } = message
-    if (!from || !contact || !(await saveOwnPhone(services, message))) {
+    if (!from || !contact || !(await saveOwnPhone(services, message, business.id))) {
         return
     }
     const courier = await services.couriers.findByTelegramId(business.id, from.id)
@@ -278,9 +292,9 @@ async function handleReviewCallback(
             businessId: review.businessId,
             decision: review.decision,
         })
-        // Connect the shop bot first: a failed card edit or answer must not skip it.
-        await new Notifier(services).shopReviewed(shop, workerOrigin)
         const texts = textsFor(languageFromTelegram(callback.from.language_code))
+        // Connect the shop bot first: a failed card edit or answer must not skip it.
+        await connectOrWarn(services, shop, workerOrigin, callback.from.id)
         const status = texts.shopStatus[shop.status]
         if (callback.message) {
             await services.telegram.editMessage(
@@ -316,6 +330,78 @@ async function handleSafely(work: () => Promise<void>): Promise<void> {
 
 const MARKET_COMMAND = /^\/market(?:@\w+)?\s+([a-z0-9-]{3,40})\s+(off|\d{1,2}(?:[.,]\d{1,2})?)\s*$/i
 const BPS_PER_PERCENT = 100
+
+/**
+ * Approve: connect the shop bot and tell the owner. If Telegram refuses (network, bad token),
+ * the shop is already active, so the admin gets the reason and `/reconnect <slug>` to retry.
+ */
+async function connectOrWarn(
+    services: Services,
+    shop: ShopOwnerDTO,
+    workerOrigin: string,
+    adminChatId: number,
+): Promise<boolean> {
+    try {
+        await new Notifier(services).shopReviewed(shop, workerOrigin)
+        return true
+    } catch (error) {
+        if (!(error instanceof TelegramApiError)) {
+            throw error
+        }
+        const texts = textsFor(await languageOfChat(services, adminChatId))
+        const warning = fill(texts.botNotConnected, {
+            shop: `<b>${escapeHtml(shop.name)}</b>`,
+            reason: escapeHtml(error.description),
+            slug: shop.slug,
+        })
+        await services.telegram.sendMessage(services.env.PLATFORM_BOT_TOKEN, adminChatId, warning)
+        return false
+    }
+}
+
+async function languageOfChat(services: Services, telegramId: number): Promise<Language> {
+    const customer = await services.customers.findByTelegramId(telegramId)
+    return customer?.language ?? Language.UZ
+}
+
+const RECONNECT_COMMAND = /^\/reconnect(?:@\w+)?\s+([a-z0-9-]{3,40})\s*$/i
+
+/** `/reconnect <slug>` from a platform admin: set the shop bot's webhook and menu again. */
+async function handleReconnectCommand(
+    services: Services,
+    message: ShopMessage,
+    workerOrigin: string,
+): Promise<void> {
+    const from = message.from
+    const token = services.env.PLATFORM_BOT_TOKEN
+    if (!from || !platformAdminIds(services.env).includes(from.id)) {
+        return
+    }
+    const texts = textsFor(languageFromTelegram(from.language_code))
+    const slug = RECONNECT_COMMAND.exec(message.text?.trim() ?? "")?.[1]?.toLowerCase()
+    const business = slug ? await services.businesses.findBySlug(slug) : null
+    if (!business) {
+        await services.telegram.sendMessage(token, message.chat.id, texts.reconnectUsage)
+        return
+    }
+    const name = `<b>${escapeHtml(business.name)}</b>`
+    if (!business.isActive()) {
+        await services.telegram.sendMessage(
+            token,
+            message.chat.id,
+            fill(texts.shopNotActive, { shop: name }),
+        )
+        return
+    }
+    const shop = toShopOwnerDTO(business, services.clock.now())
+    if (await connectOrWarn(services, shop, workerOrigin, message.chat.id)) {
+        await services.telegram.sendMessage(
+            token,
+            message.chat.id,
+            fill(texts.botConnected, { shop: name }),
+        )
+    }
+}
 
 /** `/market <slug> <percent|off>` from a platform admin: sign or end a showcase deal. */
 async function handleMarketCommand(services: Services, message: ShopMessage): Promise<void> {
@@ -358,7 +444,11 @@ async function handleMarketCommand(services: Services, message: ShopMessage): Pr
 }
 
 /** The LLS bot: welcome with the showcase and onboarding buttons, phones, admin commands. */
-async function handlePlatformMessage(services: Services, message: ShopMessage): Promise<void> {
+async function handlePlatformMessage(
+    services: Services,
+    message: ShopMessage,
+    workerOrigin: string,
+): Promise<void> {
     const from = message.from
     if (!from) {
         return
@@ -369,6 +459,10 @@ async function handlePlatformMessage(services: Services, message: ShopMessage): 
         if (await saveOwnPhone(services, message)) {
             await services.telegram.sendMessage(token, message.chat.id, texts.phoneSaved)
         }
+        return
+    }
+    if (message.text?.trim().startsWith("/reconnect")) {
+        await handleReconnectCommand(services, message, workerOrigin)
         return
     }
     if (message.text?.trim().startsWith("/market")) {
@@ -399,7 +493,8 @@ export const webhookRoutes = new Hono<AppEnv>()
         const update = await readUpdate(c.req.raw)
         const message = update?.message
         if (message) {
-            await handleSafely(() => handlePlatformMessage(services, message))
+            const origin = new URL(c.req.url).origin
+            await handleSafely(() => handlePlatformMessage(services, message, origin))
         }
         if (update?.callback_query) {
             const callback = update.callback_query

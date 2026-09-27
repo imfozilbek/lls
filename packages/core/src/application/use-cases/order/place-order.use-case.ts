@@ -6,11 +6,14 @@ import { BusinessRuleViolationError } from "../../../domain/errors/business-rule
 import { ConflictError } from "../../../domain/errors/conflict.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
 import { Location } from "../../../domain/value-objects/location.js"
+import { TRUSTED_SCOPE, shopScope } from "../../dtos/identity-scope.js"
 import { toOrderDTO } from "../../dtos/order.dto.js"
-import { resolveCustomer } from "../customer/customer.use-cases.js"
+import { displayNameOf } from "../../dtos/telegram-user.js"
+import { phoneVisibleIn, resolveCustomer } from "../customer/customer.use-cases.js"
 import { requireBusiness } from "../shared.js"
 
 import type { Product } from "../../../domain/entities/product.js"
+import type { IdentityScope } from "../../dtos/identity-scope.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { LocationDTO } from "../../dtos/shop.dto.js"
 import type { TelegramUser } from "../../dtos/telegram-user.js"
@@ -110,8 +113,13 @@ export class PlaceOrderUseCase {
             throw BusinessRuleViolationError.tooManyItems(MAX_ORDER_LINES)
         }
 
-        const customer = await resolveCustomer(customers, input.user)
-        if (!customer.hasPhone()) {
+        // Through the showcase the LLS bot signed the user; through a shop bot only that shop's
+        // owner did, so the phone must have been sent to this very shop.
+        const channel = input.channel ?? OrderChannel.SHOP_BOT
+        const scope: IdentityScope =
+            channel === OrderChannel.MARKETPLACE ? TRUSTED_SCOPE : shopScope(business.id)
+        const customer = await resolveCustomer(customers, input.user, scope)
+        if (!(await phoneVisibleIn(customers, customer, scope))) {
             throw BusinessRuleViolationError.phoneRequired()
         }
 
@@ -128,7 +136,6 @@ export class PlaceOrderUseCase {
         const subtotal = subtotalOf(items)
         business.assertMinOrder(subtotal)
 
-        const channel = input.channel ?? OrderChannel.SHOP_BOT
         const commissionBps = business.commissionBpsFor(channel)
         const bottlesReturned = business.hasFeature(Feature.BOTTLE_DEPOSIT)
             ? (input.bottlesReturned ?? 0)
@@ -151,11 +158,14 @@ export class PlaceOrderUseCase {
                 landmark: input.landmark,
                 location,
                 comment: input.comment,
-                customerName: customer.name,
+                // The name as signed for this order: a shop-signed name never renames the customer.
+                customerName: displayNameOf(input.user),
                 customerPhone: customer.phone,
             })
             if (await orders.insert(order)) {
                 await customers.linkToBusiness(customer.id, business.id, now)
+                // Ordering through the showcase hands the phone to this shop.
+                await customers.sharePhoneWith(customer.id, business.id, now)
                 return toOrderDTO(order)
             }
         }

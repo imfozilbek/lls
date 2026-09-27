@@ -90,9 +90,16 @@ an LLS commission; only marketplace sales will (stage 2).
 - [x] LLS bot saves phones (contact) and writes showcase customers about their orders
 - [x] Admin command `/market <slug> <percent|off>`; the owner is told; owner sees the LLS mark
 
+### M4d. Pre-launch audit ✅
+- [x] Shop-signed identities count only inside their shop; phones reach a shop only after they were sent to it
+- [x] Pending shops open only for the owner; `/reconnect` when a shop bot fails to connect
+- [x] Rate limits on showcase search and sign-up; upload checks; alerts to admins
+- [x] Deploy keeps the encryption key; waits for the Worker before connecting the bot
+- [x] Backups, restore, frozen migrations documented
+
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)
-- [ ] Owner: Cloudflare account, API token, platform bot, GitHub secrets
+- [ ] Owner: Cloudflare account, API token, platform bot, GitHub secrets (+ saved `TOKEN_ENC_KEY`)
 - [ ] First production deploy
 - [ ] Production check: connect a test shop → order → statuses → notifications
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers

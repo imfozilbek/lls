@@ -21,6 +21,22 @@ export default defineConfig(async () => {
                         PLATFORM_ADMIN_IDS: "9999",
                         APP_ORIGIN: "https://lls-app.pages.dev",
                     },
+                    // Tests sign up and search many times as the same user; the limit itself is
+                    // checked in rate-limit.test.ts with its own tight limiter.
+                    ratelimits: {
+                        SEARCH_LIMITER: {
+                            namespace_id: "1001",
+                            simple: { limit: 1000, period: 60 },
+                        },
+                        SIGNUP_LIMITER: {
+                            namespace_id: "1002",
+                            simple: { limit: 1000, period: 60 },
+                        },
+                        TEST_TIGHT_LIMITER: {
+                            namespace_id: "9001",
+                            simple: { limit: 2, period: 60 },
+                        },
+                    },
                 },
             }),
         ],

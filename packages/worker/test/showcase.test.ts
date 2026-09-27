@@ -9,6 +9,7 @@ import {
     SHOP_BOT_TOKEN,
     STRANGER,
     createActiveShop,
+    sharePhoneWithShops,
     testClient,
 } from "./helpers.js"
 
@@ -182,9 +183,8 @@ describe("LLS showcase", () => {
         })("/api/shop")
         expect(forged.status).toBe(401)
 
-        await env.DB.prepare("UPDATE customers SET phone = '+998901234567'").run()
         await inShop(CUSTOMER)("/api/me")
-        await env.DB.prepare("UPDATE customers SET phone = '+998901234567'").run()
+        await sharePhoneWithShops(CUSTOMER.id)
         const products = await json<{ data: { id: string }[] }>(
             await inShop(CUSTOMER)("/api/shop/products"),
         )

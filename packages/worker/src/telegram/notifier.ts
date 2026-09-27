@@ -1,5 +1,6 @@
 import { Language, OrderChannel, OrderStatus } from "@lls/core"
 
+import { alertAdmins, describeError, isRecipientProblem } from "../alerts.js"
 import { platformAdminIds } from "../env.js"
 
 import {
@@ -306,14 +307,21 @@ export class Notifier {
     }
 }
 
-/** Run a notification after the response; log failures instead of breaking the request. */
+/**
+ * Run a notification after the response; a failure never breaks the request. It is logged, and
+ * the admins hear about it unless the recipient simply blocked the bot.
+ */
 export function inBackground(
     ctx: { waitUntil(promise: Promise<unknown>): void },
+    services: Services,
     task: Promise<void>,
 ): void {
     ctx.waitUntil(
-        task.catch((error: unknown) => {
-            console.error("Telegram notification failed", error)
+        task.catch(async (error: unknown) => {
+            console.error("Telegram notification failed", describeError(error))
+            if (!isRecipientProblem(error)) {
+                await alertAdmins(services, "notification_failed", error)
+            }
         }),
     )
 }

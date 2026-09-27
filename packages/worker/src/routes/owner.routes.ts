@@ -3,7 +3,7 @@ import { EntityNotFoundError, OrderStatus, toShopOwnerDTO } from "@lls/core"
 import { Hono } from "hono"
 
 import { requireOwner, shopOf } from "../auth.js"
-import { deleteImage, storeImage } from "../http/images.js"
+import { deleteImage, readImageBody, storeImage } from "../http/images.js"
 import {
     assignCourierBody,
     idParam,
@@ -41,7 +41,7 @@ export const ownerRoutes = new Hono<AppEnv>()
             c.env.BUCKET,
             `shops/${business.id}/logo`,
             c.req.header("Content-Type"),
-            await c.req.arrayBuffer(),
+            await readImageBody(c.req.raw),
         )
         const shop = await services.useCases.updateShop.execute({
             actorTelegramId: c.get("auth").user.id,
@@ -93,7 +93,11 @@ export const ownerRoutes = new Hono<AppEnv>()
                           orderId,
                           to: status,
                       })
-            inBackground(c.executionCtx, new Notifier(services).orderChanged(shopOf(c), order))
+            inBackground(
+                c.executionCtx,
+                services,
+                new Notifier(services).orderChanged(shopOf(c), order),
+            )
             return c.json(order)
         },
     )
@@ -115,6 +119,7 @@ export const ownerRoutes = new Hono<AppEnv>()
             })
             inBackground(
                 c.executionCtx,
+                services,
                 new Notifier(services).courierAssigned(business, order, previous?.courierId),
             )
             return c.json(order)
@@ -205,7 +210,7 @@ export const ownerRoutes = new Hono<AppEnv>()
             c.env.BUCKET,
             `shops/${business.id}/products`,
             c.req.header("Content-Type"),
-            await c.req.arrayBuffer(),
+            await readImageBody(c.req.raw),
         )
         const product = await useCases.updateProduct.execute({
             actorTelegramId: c.get("auth").user.id,

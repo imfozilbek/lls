@@ -1,5 +1,5 @@
 import type { Services } from "./services.js"
-import type { Business, OrderChannel, TelegramUser } from "@lls/core"
+import type { Business, IdentityScope, OrderChannel, TelegramUser } from "@lls/core"
 
 /** Bindings from wrangler.jsonc plus secrets set with `wrangler secret put`. */
 export interface Bindings extends Env {
@@ -17,6 +17,8 @@ export interface AuthContext {
     business: Business | null
     /** Which bot opened the app: the shop's own bot, or the LLS bot (showcase). */
     channel: OrderChannel
+    /** How far the identity is trusted: a shop-signed one counts only inside that shop. */
+    scope: IdentityScope
     /** The viewer's role in this shop; `customer` outside a shop and in the showcase. */
     role: ViewerRole
 }

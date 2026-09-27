@@ -1,4 +1,8 @@
 -- LLS stage 1 schema. Money: INTEGER UZS. Time: INTEGER unix ms (UTC).
+--
+-- ⛔ After the first production deploy this file is FROZEN. Every schema change goes into a NEW
+-- file (0002_*.sql, ...). Migrations run before the new Worker goes live, so they must be
+-- additive: new tables, new nullable columns or columns with a default, new indexes.
 
 CREATE TABLE businesses (
     id                  TEXT PRIMARY KEY,
@@ -70,6 +74,15 @@ CREATE TABLE customer_businesses (
 );
 CREATE INDEX idx_customer_businesses_business ON customer_businesses (business_id);
 
+-- Which shops a customer sent their phone to (a contact to that shop's bot, or a showcase order).
+-- A shop sees the phone only after this: its owner could sign any user id with the shop bot token.
+CREATE TABLE customer_phone_shares (
+    customer_id  TEXT    NOT NULL REFERENCES customers (id),
+    business_id  TEXT    NOT NULL REFERENCES businesses (id),
+    shared_at    INTEGER NOT NULL,
+    PRIMARY KEY (customer_id, business_id)
+);
+
 CREATE TABLE orders (
     id                TEXT PRIMARY KEY,
     business_id       TEXT    NOT NULL REFERENCES businesses (id),
@@ -140,4 +153,11 @@ CREATE TABLE courier_invites (
     created_at   INTEGER NOT NULL,
     expires_at   INTEGER NOT NULL,
     used_at      INTEGER
+);
+
+-- One row per alert kind: when the admins were last told. Keeps alerts to one per kind per
+-- quiet period, across all Worker instances.
+CREATE TABLE alert_log (
+    kind     TEXT PRIMARY KEY,
+    sent_at  INTEGER NOT NULL
 );

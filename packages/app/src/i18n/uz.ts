@@ -20,6 +20,7 @@ export const uz = {
     },
     errors: {
         NETWORK: "Internet bilan aloqa yo'q. Tarmoqni tekshirib, qayta urinib ko'ring.",
+        TOO_MANY_REQUESTS: "Juda ko'p so'rov. Bir daqiqadan keyin qayta urinib ko'ring.",
         UNAUTHORIZED: "Ilovani Telegram'dagi do'kon botidan oching.",
         FORBIDDEN: "Bu amal siz uchun emas.",
         ENTITY_NOT_FOUND: "Topilmadi. Ro'yxatni yangilang.",

@@ -67,6 +67,10 @@ export class FakeTelegram implements TelegramGateway {
     readonly answered: string[] = []
     /** Simulates a blocked bot or Telegram outage: replies to users fail. */
     failReplies = false
+    /** Simulates Telegram refusing setWebhook (network hiccup, revoked token). */
+    failWebhooks = false
+    /** Simulates a Telegram outage for messages to these chats. */
+    readonly brokenChats = new Set<number>()
     private nextMessageId = 100
 
     constructor(private readonly bots: Record<string, BotInfo> = {}) {}
@@ -87,6 +91,9 @@ export class FakeTelegram implements TelegramGateway {
         if (this.failReplies) {
             throw new TelegramApiError("sendMessage", "Forbidden: bot was blocked by the user")
         }
+        if (this.brokenChats.has(chatId)) {
+            throw new TelegramApiError("sendMessage", "Internal Server Error")
+        }
         this.sent.push({ token, chatId, html, options })
         return { messageId: this.nextMessageId++ }
     }
@@ -106,6 +113,9 @@ export class FakeTelegram implements TelegramGateway {
         this.answered.push(callbackQueryId)
     }
     async setWebhook(token: string, url: string, secret: string): Promise<void> {
+        if (this.failWebhooks) {
+            throw new TelegramApiError("setWebhook", "Bad Gateway")
+        }
         this.webhooks.push({ token, url, secret })
     }
     async setMenuButton(token: string, _text: string, url: string): Promise<void> {
@@ -158,6 +168,22 @@ export function testClient(
             }
         },
     }
+}
+
+/**
+ * Test shortcut for "the customer sent their phone to every shop's bot": sets the phone and
+ * records the share with all shops. Security tests use real contact webhooks instead.
+ */
+export async function sharePhoneWithShops(telegramId: number): Promise<void> {
+    await env.DB.prepare("UPDATE customers SET phone = '+998901234567' WHERE telegram_id = ?")
+        .bind(telegramId)
+        .run()
+    await env.DB.prepare(
+        `INSERT OR IGNORE INTO customer_phone_shares (customer_id, business_id, shared_at)
+         SELECT c.id, b.id, 0 FROM customers c, businesses b WHERE c.telegram_id = ?`,
+    )
+        .bind(telegramId)
+        .run()
 }
 
 /** Registers a shop through the real onboarding API and approves it as admin. */

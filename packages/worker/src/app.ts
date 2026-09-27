@@ -2,6 +2,7 @@ import { systemClock } from "@lls/core"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 
+import { alertAdmins } from "./alerts.js"
 import { INIT_DATA_HEADER, SHOP_HEADER, VIA_HEADER, authenticate } from "./auth.js"
 import { toErrorResponse } from "./http/errors.js"
 import { courierRoutes } from "./routes/courier.routes.js"
@@ -58,6 +59,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         const { status, body } = toErrorResponse(error)
         if (status >= 500) {
             console.error(error)
+            c.executionCtx.waitUntil(alertAdmins(c.get("services"), "server_error", error))
         }
         return c.json(body, status)
     })
