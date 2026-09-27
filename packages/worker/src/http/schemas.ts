@@ -29,7 +29,13 @@ export const pageQuery = z.object({
 export const productsQuery = pageQuery.extend({ category: z.enum(CATEGORIES).optional() })
 
 /** Showcase search: free text (any alphabet) and/or a shared category. */
-export const showcaseQuery = productsQuery.extend({ q: z.string().trim().max(100).optional() })
+/** Deep pages cost D1 reads for nothing: nobody scrolls past 50 pages of search results. */
+const MAX_SHOWCASE_PAGE = 50
+
+export const showcaseQuery = productsQuery.extend({
+    q: z.string().trim().max(100).optional(),
+    page: z.coerce.number().int().positive().max(MAX_SHOWCASE_PAGE).optional(),
+})
 
 export const ownerOrdersQuery = pageQuery.extend({
     filter: z.enum(["active", "done", "all"]).optional(),

@@ -2,6 +2,7 @@ import { zValidator } from "@hono/zod-validator"
 import { Hono } from "hono"
 
 import { ApiError } from "../http/errors.js"
+import { rateLimit } from "../http/rate-limit.js"
 import { onInvalid, showcaseQuery } from "../http/schemas.js"
 
 import type { AppEnv } from "../env.js"
@@ -20,8 +21,15 @@ export const showcaseRoutes = new Hono<AppEnv>()
         return c.json({ data: shops, meta: { page: 1, limit: shops.length, total: shops.length } })
     })
 
-    .get("/products", zValidator("query", showcaseQuery, onInvalid), async (c) => {
-        const { q, ...query } = c.req.valid("query")
-        const page = await c.get("services").useCases.searchShowcase.execute({ ...query, text: q })
-        return c.json(page)
-    })
+    .get(
+        "/products",
+        rateLimit("SEARCH_LIMITER"),
+        zValidator("query", showcaseQuery, onInvalid),
+        async (c) => {
+            const { q, ...query } = c.req.valid("query")
+            const page = await c
+                .get("services")
+                .useCases.searchShowcase.execute({ ...query, text: q })
+            return c.json(page)
+        },
+    )

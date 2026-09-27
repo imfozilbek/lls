@@ -141,16 +141,17 @@ export class D1ProductRepository implements ProductRepository {
         }
         const from = `FROM products p JOIN businesses b ON b.id = p.business_id
             WHERE ${conditions.join(" AND ")}`
-        const [rows, count] = await this.db.batch([
-            this.db
-                .prepare(`SELECT ${JOINED_COLUMNS} ${from} ORDER BY p.name LIMIT ? OFFSET ?`)
-                .bind(...params, page.limit, offsetOf(page)),
-            this.db.prepare(`SELECT COUNT(*) AS total ${from}`).bind(...params),
-        ])
-        const total = (count?.results[0] as { total: number } | undefined)?.total ?? 0
+        // One scan instead of two: the window function counts while the page is read.
+        const { results } = await this.db
+            .prepare(
+                `SELECT ${JOINED_COLUMNS}, COUNT(*) OVER () AS total ${from}
+                 ORDER BY p.name LIMIT ? OFFSET ?`,
+            )
+            .bind(...params, page.limit, offsetOf(page))
+            .all<ProductRow & { total: number }>()
         return {
-            data: ((rows?.results ?? []) as ProductRow[]).map(toProduct),
-            meta: { page: page.page, limit: page.limit, total },
+            data: results.map(toProduct),
+            meta: { page: page.page, limit: page.limit, total: results[0]?.total ?? 0 },
         }
     }
 
