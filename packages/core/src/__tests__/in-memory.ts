@@ -100,6 +100,17 @@ export class InMemoryProducts implements ProductRepository {
 export class InMemoryCustomers implements CustomerRepository {
     readonly items = new Map<string, Customer>()
     readonly links = new Map<string, Date>()
+    readonly phoneShares = new Map<string, Date>()
+
+    async hasSharedPhoneWith(customerId: string, businessId: string): Promise<boolean> {
+        return this.phoneShares.has(`${customerId}:${businessId}`)
+    }
+    async sharePhoneWith(customerId: string, businessId: string, at: Date): Promise<void> {
+        const key = `${customerId}:${businessId}`
+        if (!this.phoneShares.has(key)) {
+            this.phoneShares.set(key, at)
+        }
+    }
 
     async findById(id: string): Promise<Customer | null> {
         return this.items.get(id) ?? null

@@ -70,6 +70,15 @@ CREATE TABLE customer_businesses (
 );
 CREATE INDEX idx_customer_businesses_business ON customer_businesses (business_id);
 
+-- Which shops a customer sent their phone to (a contact to that shop's bot, or a showcase order).
+-- A shop sees the phone only after this: its owner could sign any user id with the shop bot token.
+CREATE TABLE customer_phone_shares (
+    customer_id  TEXT    NOT NULL REFERENCES customers (id),
+    business_id  TEXT    NOT NULL REFERENCES businesses (id),
+    shared_at    INTEGER NOT NULL,
+    PRIMARY KEY (customer_id, business_id)
+);
+
 CREATE TABLE orders (
     id                TEXT PRIMARY KEY,
     business_id       TEXT    NOT NULL REFERENCES businesses (id),

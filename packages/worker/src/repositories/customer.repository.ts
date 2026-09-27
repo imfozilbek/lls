@@ -58,6 +58,26 @@ export class D1CustomerRepository implements CustomerRepository {
             .run()
     }
 
+    async hasSharedPhoneWith(customerId: string, businessId: string): Promise<boolean> {
+        const row = await this.db
+            .prepare(
+                "SELECT 1 AS yes FROM customer_phone_shares WHERE customer_id = ? AND business_id = ?",
+            )
+            .bind(customerId, businessId)
+            .first<{ yes: number }>()
+        return row !== null
+    }
+
+    async sharePhoneWith(customerId: string, businessId: string, at: Date): Promise<void> {
+        await this.db
+            .prepare(
+                `INSERT OR IGNORE INTO customer_phone_shares (customer_id, business_id, shared_at)
+                 VALUES (?, ?, ?)`,
+            )
+            .bind(customerId, businessId, at.getTime())
+            .run()
+    }
+
     async linkToBusiness(customerId: string, businessId: string, at: Date): Promise<void> {
         await this.db
             .prepare(

@@ -8,6 +8,7 @@ import {
     SHOP_BOT_TOKEN,
     STRANGER,
     createActiveShop,
+    sharePhoneWithShops,
     testClient,
 } from "./helpers.js"
 
@@ -66,9 +67,7 @@ describe("shop couriers, verticals and channels", () => {
 
     async function placeOrder(items: object[], extra: object = {}): Promise<Json> {
         await as(CUSTOMER)("/api/me")
-        await env.DB.prepare("UPDATE customers SET phone = '+998901234567' WHERE telegram_id = ?")
-            .bind(CUSTOMER.id)
-            .run()
+        await sharePhoneWithShops(CUSTOMER.id)
         const response = await as(CUSTOMER)("/api/orders", {
             method: "POST",
             json: { items, address: "Navoiy 12", ...extra },

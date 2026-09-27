@@ -9,6 +9,7 @@ import {
 } from "../../application/use-cases/order/order.use-cases.js"
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
 import { GetShopStatsUseCase } from "../../application/use-cases/stats/get-shop-stats.use-case.js"
+import { OrderChannel } from "../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../domain/errors/conflict.error.js"
@@ -70,6 +71,8 @@ describe("order use cases", () => {
         await products.save(makeProduct())
         await products.save(makeProduct({ id: "prod-2", name: "Somsa", price: 8_000 }))
         await customers.save(makeCustomer())
+        // The customer sent their phone to this shop's bot.
+        await customers.sharePhoneWith("cust-1", "biz-1", NOON_MONDAY_UZ)
         placeOrder = new PlaceOrderUseCase({
             businesses,
             products,
@@ -144,6 +147,21 @@ describe("order use cases", () => {
                 placeOrder.execute(input({ user: { id: 4242, firstName: "New" } })),
             ).rejects.toThrow(/phone/)
             expect(orders.items.size).toBe(0)
+        })
+
+        it("needs the phone sent to this shop; the showcase hands it over", async () => {
+            // The phone is known, but it was sent to another shop only. The owner of biz-1 can
+            // sign any user id with their own bot token, so the phone must not reach them.
+            customers.phoneShares.clear()
+            await customers.sharePhoneWith("cust-1", "other-shop", NOON_MONDAY_UZ)
+            await expect(placeOrder.execute(input())).rejects.toThrow(/phone/)
+
+            // Through the showcase the LLS bot signed the user: the order gives this shop the phone.
+            const business = await businesses.findById("biz-1")
+            business?.joinMarketplace(500, NOON_MONDAY_UZ)
+            const order = await placeOrder.execute(input({ channel: OrderChannel.MARKETPLACE }))
+            expect(order.customerPhone).toBe("+998901234567")
+            expect(await customers.hasSharedPhoneWith("cust-1", "biz-1")).toBe(true)
         })
 
         it("respects the shop being paused", async () => {

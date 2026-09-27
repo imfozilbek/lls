@@ -128,14 +128,21 @@ async function joinAsCourier(
  * Saves the customer's phone from a shared contact. Only the sender's own contact counts:
  * a forwarded contact must not change anyone's phone. Returns false when nothing was saved.
  */
-async function saveOwnPhone(services: Services, message: ShopMessage): Promise<boolean> {
+async function saveOwnPhone(
+    services: Services,
+    message: ShopMessage,
+    businessId?: string,
+): Promise<boolean> {
     const { from, contact } = message
     if (!from || !contact || contact.user_id !== from.id) {
         return false
     }
-    await services.useCases.updateCustomer.execute({
+    // Delivered by Telegram to this bot's webhook: the phone is real and shared with this shop.
+    await services.useCases.saveContact.execute({
         user: toTelegramUser(from),
         phone: contact.phone_number,
+        businessId,
+        now: services.clock.now(),
     })
     return true
 }
@@ -148,7 +155,7 @@ async function saveContact(
     message: ShopMessage,
 ): Promise<void> {
     const { from, contact } = message
-    if (!from || !contact || !(await saveOwnPhone(services, message))) {
+    if (!from || !contact || !(await saveOwnPhone(services, message, business.id))) {
         return
     }
     const courier = await services.couriers.findByTelegramId(business.id, from.id)

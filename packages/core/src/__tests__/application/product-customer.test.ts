@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest"
 
+import { TRUSTED_SCOPE, shopScope } from "../../application/dtos/identity-scope.js"
 import { normalizePage } from "../../application/dtos/pagination.js"
 import { displayNameOf } from "../../application/dtos/telegram-user.js"
 import {
     ResolveCustomerUseCase,
+    SaveContactUseCase,
     UpdateCustomerUseCase,
 } from "../../application/use-cases/customer/customer.use-cases.js"
 import {
@@ -174,29 +176,61 @@ describe("customer use cases", () => {
     it("registers once and keeps the name in sync", async () => {
         const customers = new InMemoryCustomers()
         const resolve = new ResolveCustomerUseCase(customers)
-        const first = await resolve.execute(user)
+        const first = await resolve.execute(user, TRUSTED_SCOPE)
         expect(first.name).toBe("Aziz Karimov")
         expect(first.language).toBe(Language.RU)
         expect(first.phone).toBeUndefined()
 
-        const renamed = await resolve.execute({ ...user, lastName: undefined })
+        const renamed = await resolve.execute({ ...user, lastName: undefined }, TRUSTED_SCOPE)
         expect(renamed.id).toBe(first.id)
         expect(renamed.name).toBe("Aziz")
         expect(customers.items.size).toBe(1)
+
+        // A shop-signed identity can be forged by that shop's owner: it never renames.
+        const forged = await resolve.execute({ ...user, firstName: "Hacker" }, shopScope("biz-1"))
+        expect(forged.name).toBe("Aziz")
     })
 
-    it("updates phone and language", async () => {
+    it("saves a phone from a contact and sets the language", async () => {
         const customers = new InMemoryCustomers()
-        const updated = await new UpdateCustomerUseCase(customers).execute({
+        const saved = await new SaveContactUseCase(customers).execute({
             user,
             phone: "998901234567",
+            now: NOON_MONDAY_UZ,
+        })
+        expect(saved.phone).toBe("+998901234567")
+        const updated = await new UpdateCustomerUseCase(customers).execute({
+            user,
+            scope: TRUSTED_SCOPE,
             language: "uz",
         })
-        expect(updated.phone).toBe("+998901234567")
         expect(updated.language).toBe(Language.UZ)
         await expect(
-            new UpdateCustomerUseCase(customers).execute({ user, language: "en" }),
+            new UpdateCustomerUseCase(customers).execute({
+                user,
+                scope: TRUSTED_SCOPE,
+                language: "en",
+            }),
         ).rejects.toThrow(ValidationError)
+    })
+
+    it("shows a phone to a shop only after it was sent to that shop", async () => {
+        const customers = new InMemoryCustomers()
+        const contact = new SaveContactUseCase(customers)
+        const resolve = new ResolveCustomerUseCase(customers)
+        // Shared with the LLS bot and with shop A.
+        await contact.execute({ user, phone: "998901234567", now: NOON_MONDAY_UZ })
+        await contact.execute({
+            user,
+            phone: "998901234567",
+            businessId: "shop-a",
+            now: NOON_MONDAY_UZ,
+        })
+
+        expect((await resolve.execute(user, TRUSTED_SCOPE)).phone).toBe("+998901234567")
+        expect((await resolve.execute(user, shopScope("shop-a"))).phone).toBe("+998901234567")
+        // Shop B's owner can sign this user id with their own bot token: no phone for them.
+        expect((await resolve.execute(user, shopScope("shop-b"))).phone).toBeUndefined()
     })
 
     it("display name falls back to username, then id", () => {

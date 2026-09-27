@@ -106,6 +106,8 @@ describe("shop couriers and vertical features", () => {
         await businesses.save(makeBusiness({ id: "biz-2" }))
         await products.save(makeProduct())
         await customers.save(makeCustomer())
+        // The customer sent their phone to this shop's bot.
+        await customers.sharePhoneWith("cust-1", "biz-1", NOON_MONDAY_UZ)
     })
 
     describe("couriers", () => {

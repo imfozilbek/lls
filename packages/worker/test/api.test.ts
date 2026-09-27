@@ -9,6 +9,7 @@ import {
     SHOP_BOT_TOKEN,
     STRANGER,
     createActiveShop,
+    sharePhoneWithShops,
     testClient,
 } from "./helpers.js"
 
@@ -138,9 +139,7 @@ describe("inside a shop", () => {
 
     async function givePhone(): Promise<void> {
         await asCustomer()("/api/me")
-        await env.DB.prepare("UPDATE customers SET phone = '+998901234567' WHERE telegram_id = ?")
-            .bind(CUSTOMER.id)
-            .run()
+        await sharePhoneWithShops(CUSTOMER.id)
     }
 
     it("initData from another bot is rejected for this shop", async () => {

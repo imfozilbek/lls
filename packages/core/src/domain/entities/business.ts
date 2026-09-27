@@ -186,6 +186,10 @@ export class Business {
         return this.props.ownerTelegramId.value === telegramId
     }
 
+    isPending(): boolean {
+        return this.props.status === BusinessStatus.PENDING
+    }
+
     isActive(): boolean {
         return this.props.status === BusinessStatus.ACTIVE
     }

@@ -10,6 +10,7 @@ const TABLES = [
     "orders",
     "courier_invites",
     "couriers",
+    "customer_phone_shares",
     "customer_businesses",
     "customers",
     "products",

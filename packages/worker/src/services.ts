@@ -20,6 +20,7 @@ import {
     PlaceOrderUseCase,
     RegisterShopUseCase,
     ResolveCustomerUseCase,
+    SaveContactUseCase,
     ReviewShopUseCase,
     SearchShowcaseUseCase,
     SetMarketplaceTermsUseCase,
@@ -56,6 +57,7 @@ export interface UseCases {
     listProducts: ListProductsUseCase
     resolveCustomer: ResolveCustomerUseCase
     updateCustomer: UpdateCustomerUseCase
+    saveContact: SaveContactUseCase
     placeOrder: PlaceOrderUseCase
     getOrder: GetOrderUseCase
     cancelOrder: CancelOrderUseCase
@@ -116,6 +118,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             listProducts: new ListProductsUseCase(businesses, products, clock),
             resolveCustomer: new ResolveCustomerUseCase(customers),
             updateCustomer: new UpdateCustomerUseCase(customers),
+            saveContact: new SaveContactUseCase(customers),
             placeOrder: new PlaceOrderUseCase({ businesses, products, customers, orders, clock }),
             getOrder: new GetOrderUseCase(orderAccess),
             cancelOrder: new CancelOrderUseCase(orderAccess),

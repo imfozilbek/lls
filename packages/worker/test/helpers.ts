@@ -160,6 +160,22 @@ export function testClient(
     }
 }
 
+/**
+ * Test shortcut for "the customer sent their phone to every shop's bot": sets the phone and
+ * records the share with all shops. Security tests use real contact webhooks instead.
+ */
+export async function sharePhoneWithShops(telegramId: number): Promise<void> {
+    await env.DB.prepare("UPDATE customers SET phone = '+998901234567' WHERE telegram_id = ?")
+        .bind(telegramId)
+        .run()
+    await env.DB.prepare(
+        `INSERT OR IGNORE INTO customer_phone_shares (customer_id, business_id, shared_at)
+         SELECT c.id, b.id, 0 FROM customers c, businesses b WHERE c.telegram_id = ?`,
+    )
+        .bind(telegramId)
+        .run()
+}
+
 /** Registers a shop through the real onboarding API and approves it as admin. */
 export async function createActiveShop(client: TestClient): Promise<{ id: string; slug: string }> {
     const owner = client.as(OWNER, {})
