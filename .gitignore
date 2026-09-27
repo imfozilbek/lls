@@ -44,5 +44,9 @@ coverage/
 
 # Cloudflare
 .wrangler/
+# D1 exports hold customer phones: keep them offline, never in git
+backups/
+*.sql.gz
+lls-*.sql
 .dev.vars
 .dev.vars.*

@@ -51,6 +51,26 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   Dependabot, `SECURITY.md`, `CODEOWNERS`
 - **Changed:** the workers.dev subdomain is random instead of derived from the account id
 
+### Pre-launch audit
+- **Security (core, worker):** a shop bot's owner holds its token and could sign any Telegram id.
+  An identity signed by a shop bot now counts only inside that shop: it never renames the global
+  customer, and a customer's phone reaches a shop only after the customer sent it to that shop's
+  bot (or ordered from it through the showcase). New table `customer_phone_shares`
+- **Security (worker):** a pending shop opens only for its owner; a disabled shop for nobody
+- **Security (worker):** rate limits on showcase search (30/min) and shop sign-up (5/min); search
+  pages capped at 50 and counted in one scan
+- **Security (worker):** photo uploads are capped while reading (1.5 MB), must really be JPEG, PNG
+  or WebP, and are served with `X-Content-Type-Options: nosniff`
+- **Added (worker):** if a shop bot fails to connect on approval, the admin is told why;
+  `/reconnect <slug>` in the LLS bot retries
+- **Added (worker):** alerts to platform admins through the LLS bot on server errors and failed
+  notifications, one per kind per 10 minutes, bot tokens masked
+- **Fixed (deploy):** the deploy never makes a new `TOKEN_ENC_KEY` while shops exist; an optional
+  saved key (GitHub secret) restores it. The bot is connected only after the Worker answers
+  (up to 5 minutes for a new workers.dev address)
+- **Docs:** encryption key, backups and restore (`SECURITY.md`); frozen migrations after the first
+  production deploy (`CLAUDE.md`); launch checklist fixes
+
 ### LLS showcase
 - **Added (core):** `searchText` — one spelling for Latin/Cyrillic Uzbek and Russian; showcase search
   across shops with a marketplace deal; `SetMarketplaceTerms` for platform admins

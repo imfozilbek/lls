@@ -216,6 +216,8 @@ wrangler.jsonc        # Bindings: DB (D1), BUCKET (R2), vars; run `wrangler type
 migrations/           # D1 SQL migrations
 ```
 No cron: add `scheduled()` only when a real client needs a timed job.
+Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through the LLS bot
+(`src/alerts.ts`, one per kind per 10 min). "Bot blocked by the user" is not an alert.
 ```
 ```
 
@@ -267,6 +269,15 @@ cancelled  cancelled  cancelled  cancelled  cancelled
 // Multi-statement writes: db.batch([...]) (runs as one transaction)
 // Money: INTEGER (UZS). Timestamps: INTEGER (unix ms), UTC
 ```
+
+**Migrations after the first production deploy (⛔):**
+- `0001_init.sql` and every applied migration are FROZEN. A change = a NEW file `NNNN_<what>.sql`.
+- Migrations run BEFORE the new Worker goes live, so the old Worker must still work on the new
+  schema: only additive changes (new table, nullable column or column with a default, index).
+  Renames and drops go in two releases: stop using it first, remove it in a later migration.
+
+**Backups:** D1 Time Travel (7 days) + a weekly local `wrangler d1 export`. Never export in CI:
+the repository is public. Steps: `SECURITY.md` → "Backups and restore".
 
 **Files:** product photos in R2. Store only the key in D1.
 
