@@ -173,9 +173,14 @@ test("catalog: edit price, take off for today, hide, show again, delete", async 
     const box = await sheet.getByRole("heading", { name: "Убрать из продажи" }).boundingBox()
     const height = page.viewportSize()?.height ?? 0
     expect(box?.y ?? 0).toBeGreaterThan(height / 2)
-    await page.getByRole("button", { name: /Только на сегодня/ }).click()
+    // The switch ignores taps while a save is on its way: wait for each save, as a person would.
+    const saved = (): Promise<unknown> =>
+        page.waitForResponse(
+            (r) => r.url().includes("/owner/products/") && r.request().method() === "PATCH",
+        )
+    await Promise.all([saved(), page.getByRole("button", { name: /Только на сегодня/ }).click()])
     await expect(page.getByText("Сегодня нет")).toBeVisible()
-    await page.getByRole("switch", { name: "В наличии: Manti" }).click()
+    await Promise.all([saved(), page.getByRole("switch", { name: "В наличии: Manti" }).click()])
     await expect(page.getByRole("switch", { name: "В наличии: Manti" })).toHaveAttribute(
         "aria-checked",
         "true",
