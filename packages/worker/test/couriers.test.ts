@@ -189,6 +189,54 @@ describe("shop couriers, verticals and channels", () => {
         expect((await as(COURIER)("/api/owner/orders")).status).toBe(403)
     })
 
+    it("reassigning tells the previous courier, even before their card was stored", async () => {
+        const first = await hireCourier()
+        const second = { id: 5006, first_name: "Bobur", language_code: "ru" }
+        const invite = await json<{ link: string }>(
+            await as(OWNER)("/api/owner/couriers/invites", { method: "POST" }),
+        )
+        await botUpdate({
+            message: {
+                from: second,
+                chat: { id: second.id },
+                text: `/start ${invite.link.split("start=")[1] ?? ""}`,
+            },
+        })
+        const couriers = await json<{ id: string; name: string }[]>(
+            await as(OWNER)("/api/owner/couriers"),
+        )
+        const bobur = couriers.find((c) => c.name === "Bobur")?.id
+        const osh = await addProduct({
+            name: "Osh",
+            price: 35_000,
+            unit: "portion",
+            category: "meals",
+        })
+        const order = await placeOrder([{ productId: osh, quantity: 2 }])
+        await setStatus(order.id, "accepted")
+        await as(OWNER)(`/api/owner/orders/${String(order.id)}/courier`, {
+            method: "PUT",
+            json: { courierId: first },
+        })
+        // As if the first card's id had not been saved yet.
+        await env.DB.prepare("UPDATE orders SET courier_message_id = NULL").run()
+        await as(OWNER)(`/api/owner/orders/${String(order.id)}/courier`, {
+            method: "PUT",
+            json: { courierId: bobur },
+        })
+        expect(
+            client.telegram.sent.some((m) => m.chatId === COURIER.id && m.html.includes("#1")),
+        ).toBe(true)
+        const toBobur = client.telegram.sent.find(
+            (m) => m.chatId === second.id && m.html.includes("#1"),
+        )
+        // Bobur's Telegram is in Russian: so is his order card.
+        expect(toBobur?.html).toContain("Доставка")
+        const removed = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
+        expect(removed?.html).toContain("#1")
+        expect(removed?.html).not.toContain("Navoiy")
+    })
+
     it("the owner removes a courier", async () => {
         const courierId = await hireCourier()
         const removed = await as(OWNER)(`/api/owner/couriers/${courierId}`, { method: "DELETE" })

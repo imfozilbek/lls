@@ -3,6 +3,7 @@ import {
     ForbiddenError,
     Language,
     Phone,
+    TRUSTED_SCOPE,
     languageFromTelegram,
     toShopOwnerDTO,
 } from "@lls/core"
@@ -106,11 +107,14 @@ async function joinAsCourier(
     }
     const texts = textsFor(languageFromTelegram(from.language_code), business.type)
     try {
+        const user = toTelegramUser(from)
         const courier = await services.useCases.joinAsCourier.execute({
             code,
             businessId: business.id,
-            user: toTelegramUser(from),
+            user,
         })
+        // Order cards follow the person's language: remember it now (Telegram signed this update).
+        await services.useCases.resolveCustomer.execute(user, TRUSTED_SCOPE)
         await services.telegram.sendMessage(
             token,
             message.chat.id,

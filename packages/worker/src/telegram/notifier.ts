@@ -89,15 +89,16 @@ export class Notifier {
         const { courier: oldMessage } = await this.services.orders.getMessageIds(order.id)
         if (previousCourierId && previousCourierId !== order.courierId) {
             const previous = await this.services.couriers.findById(previousCourierId)
-            if (previous && oldMessage !== null) {
-                const reader = await this.readerFor(previous.telegramId.value, business)
+            if (previous) {
+                const chatId = previous.telegramId.value
+                const reader = await this.readerFor(chatId, business)
                 const text = fill(textsFor(reader.language).courierRemoved, { n: order.number })
-                await this.services.telegram.editMessage(
-                    token,
-                    previous.telegramId.value,
-                    oldMessage,
-                    text,
-                )
+                // The old card turns into the note; if it was not stored yet, a new message.
+                if (oldMessage === null) {
+                    await this.services.telegram.sendMessage(token, chatId, text)
+                } else {
+                    await this.services.telegram.editMessage(token, chatId, oldMessage, text)
+                }
             }
         }
         await this.refreshCourierCard(token, business, order, null)
@@ -139,12 +140,14 @@ export class Notifier {
             shop.ownerTelegramId,
             fill(textsFor(ownerLanguage).applicationReceived, { shop: `<b>${name}</b>` }),
         )
+        const owner = await this.services.customers.findByTelegramId(shop.ownerTelegramId)
+        const ownerName = escapeHtml(owner?.name ?? String(shop.ownerTelegramId))
         for (const adminId of platformAdminIds(this.services.env)) {
             const t = textsFor(await this.languageOf(adminId))
             const summary = [
-                `${t.newShop}: <b>${name}</b> (${shop.type})`,
+                `${t.newShop}: <b>${name}</b> (${t.shopTypes[shop.type]})`,
                 `@${escapeHtml(shop.botUsername)} · ${shop.slug}`,
-                `${t.ownerLabel}: <a href="tg://user?id=${shop.ownerTelegramId}">${shop.ownerTelegramId}</a>`,
+                `${t.ownerLabel}: <a href="tg://user?id=${shop.ownerTelegramId}">${ownerName}</a>`,
             ].join("\n")
             await this.services.telegram.sendMessage(token, adminId, summary, {
                 keyboard: {

@@ -74,6 +74,11 @@ const BASE = {
         shopApproved: "🎉 {shop} ishga tushdi! Mijozlaringizga ushbu havolani yuboring:",
         shopRejected: "😔 {shop} arizasi rad etildi. Savollar bo'lsa, bizga yozing.",
         newShop: "🏪 Yangi do'kon",
+        shopTypes: {
+            [BusinessType.FOOD]: "ovqat",
+            [BusinessType.WATER]: "suv",
+            [BusinessType.GROCERY]: "oziq-ovqat",
+        } as Record<BusinessType, string>,
         ownerLabel: "Egasi",
         approve: "✅ Tasdiqlash",
         reject: "❌ Rad etish",
@@ -169,6 +174,11 @@ const BASE = {
         shopApproved: "🎉 {shop} запущен! Отправьте клиентам эту ссылку:",
         shopRejected: "😔 Заявка {shop} отклонена. Если есть вопросы, напишите нам.",
         newShop: "🏪 Новый магазин",
+        shopTypes: {
+            [BusinessType.FOOD]: "еда",
+            [BusinessType.WATER]: "вода",
+            [BusinessType.GROCERY]: "продукты",
+        } as Record<BusinessType, string>,
         ownerLabel: "Владелец",
         approve: "✅ Одобрить",
         reject: "❌ Отклонить",

@@ -43,6 +43,16 @@ describe("platform bot", () => {
         expect(response.status).toBe(401)
     })
 
+    it("the owner hears back in the language of their Telegram", async () => {
+        const russian = { ...OWNER, language_code: "ru" }
+        await client.as(russian, {})("/api/platform/shops", {
+            method: "POST",
+            json: { botToken: SHOP_BOT_TOKEN, name: "Osh", type: "food", deliveryFee: 0 },
+        })
+        const toOwner = client.telegram.sent.find((m) => m.chatId === OWNER.id)
+        expect(toOwner?.html).toContain("Заявка")
+    })
+
     it("/start offers to connect a shop through the Mini App", async () => {
         const response = await client.request(
             "/tg/platform",
@@ -69,6 +79,9 @@ describe("platform bot", () => {
         expect(toOwner?.chatId).toBe(OWNER.id)
         expect(toOwner?.html).toContain("Osh &lt;Markaz&gt;")
         expect(toAdmin?.chatId).toBe(ADMIN.id)
+        // The admin sees the owner's name and the kind of shop in words, not raw values.
+        expect(toAdmin?.html).toContain(">Rustam</a>")
+        expect(toAdmin?.html).toMatch(/\((ovqat|еда)\)/)
         const approve = toAdmin?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data
         expect(approve).toBe(`r:${shop.id}:approve`)
 
@@ -221,7 +234,10 @@ describe("shop bot", () => {
                 contact: { phone_number: "998901234567", user_id: CUSTOMER.id },
             },
         })
-        expect(await env.DB.prepare("SELECT * FROM customers").first()).toBeNull()
+        const forwarded = await env.DB.prepare("SELECT phone FROM customers WHERE telegram_id = ?")
+            .bind(CUSTOMER.id)
+            .first()
+        expect(forwarded).toBeNull()
 
         await shopUpdate({
             message: {
@@ -230,7 +246,9 @@ describe("shop bot", () => {
                 contact: { phone_number: "998901234567", user_id: CUSTOMER.id },
             },
         })
-        const row = await env.DB.prepare("SELECT phone FROM customers").first<{ phone: string }>()
+        const row = await env.DB.prepare("SELECT phone FROM customers WHERE telegram_id = ?")
+            .bind(CUSTOMER.id)
+            .first<{ phone: string }>()
         expect(row?.phone).toBe("+998901234567")
         expect(client.telegram.sent.at(-1)?.html).toContain("номер")
     })
@@ -245,7 +263,9 @@ describe("shop bot", () => {
             },
         })
         expect(response.status).toBe(200)
-        const row = await env.DB.prepare("SELECT phone FROM customers").first<{ phone: string }>()
+        const row = await env.DB.prepare("SELECT phone FROM customers WHERE telegram_id = ?")
+            .bind(CUSTOMER.id)
+            .first<{ phone: string }>()
         expect(row?.phone).toBe("+998901234567")
 
         const start = await shopUpdate({
