@@ -186,7 +186,7 @@ test("catalog: edit price, take off for today, hide, show again, delete", async 
         "true",
     )
     await page.getByRole("switch", { name: "В наличии: Manti" }).click()
-    await page.getByRole("button", { name: "Скрыть совсем" }).click()
+    await Promise.all([saved(), page.getByRole("button", { name: "Скрыть совсем" }).click()])
     await expect(page.getByText("Скрыто")).toBeVisible()
 
     const catalog = (await (
@@ -257,7 +257,13 @@ test("settings: logo upload and the accepting switch", async ({ page }) => {
             buffer: pngImage(300, [2, 132, 199]),
         })
     await expect(page.locator("img").first()).toHaveAttribute("src", /\/img\//)
-    await page.getByRole("switch", { name: "Принимать заказы" }).click()
+    // The switch moves at once; the check below needs the save to land first.
+    await Promise.all([
+        page.waitForResponse(
+            (r) => r.url().endsWith("/owner/shop") && r.request().method() === "PATCH",
+        ),
+        page.getByRole("switch", { name: "Принимать заказы" }).click(),
+    ])
     await expect(page.getByRole("switch", { name: "Принимать заказы" })).toHaveAttribute(
         "aria-checked",
         "false",
