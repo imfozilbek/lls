@@ -9,7 +9,7 @@
         "browsers": "playwright install --with-deps chromium"
     },
     "devDependencies": {
-        "@playwright/test": "1.56.1",
+        "@playwright/test": "1.63.0",
         "typescript": "^5.7.2"
     }
 }
