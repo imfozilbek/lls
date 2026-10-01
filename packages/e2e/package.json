@@ -1,0 +1,14 @@
+{
+    "name": "@lls/e2e",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "stand": "bun stand/run.ts",
+        "e2e": "playwright test"
+    },
+    "devDependencies": {
+        "@playwright/test": "1.56.1",
+        "typescript": "^5.7.2"
+    }
+}
