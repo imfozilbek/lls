@@ -191,6 +191,17 @@ describe("customer use cases", () => {
         expect(forged.name).toBe("Aziz")
     })
 
+    it("two first requests at once end with one customer", async () => {
+        const other = new InMemoryCustomers()
+        const theirs = await new ResolveCustomerUseCase(other).execute(user, TRUSTED_SCOPE)
+        const customers = new InMemoryCustomers()
+        // Another request stored the same person between our lookup and our insert.
+        customers.registeredMeanwhile = [...other.items.values()][0] ?? null
+        const mine = await new ResolveCustomerUseCase(customers).execute(user, TRUSTED_SCOPE)
+        expect(mine.id).toBe(theirs.id)
+        expect(customers.items.size).toBe(1)
+    })
+
     it("saves a phone from a contact and sets the language", async () => {
         const customers = new InMemoryCustomers()
         const saved = await new SaveContactUseCase(customers).execute({

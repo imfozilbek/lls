@@ -35,8 +35,7 @@ export async function resolveCustomer(
         name,
         language: languageFromTelegram(user.languageCode),
     })
-    await customers.save(customer)
-    return customer
+    return customers.register(customer)
 }
 
 /** The phone is shown to a shop only after the customer sent it to that shop. */

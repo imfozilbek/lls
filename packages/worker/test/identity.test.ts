@@ -125,3 +125,22 @@ describe("a shop owner cannot borrow other shops' customers", () => {
         ).toBe(200)
     })
 })
+
+describe("the first visit", () => {
+    it("several first requests at once register the person once, without errors", async () => {
+        const client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
+        const { slug } = await createActiveShop(client)
+        const newcomer = { id: 7007, first_name: "Kamola", language_code: "uz" }
+        const as = client.as(newcomer, { botToken: SHOP_BOT_TOKEN, shop: slug })
+        const responses = await Promise.all([as("/api/me"), as("/api/me"), as("/api/me")])
+        expect(responses.map((r) => r.status)).toEqual([200, 200, 200])
+        const ids = await Promise.all(responses.map((r) => json<{ id: string }>(r)))
+        expect(new Set(ids.map((c) => c.id)).size).toBe(1)
+        const rows = await env.DB.prepare(
+            "SELECT COUNT(*) AS n FROM customers WHERE telegram_id = ?",
+        )
+            .bind(newcomer.id)
+            .first<{ n: number }>()
+        expect(rows?.n).toBe(1)
+    })
+})

@@ -4,6 +4,11 @@ export interface CustomerRepository {
     findById(id: string): Promise<Customer | null>
     findByTelegramId(telegramId: number): Promise<Customer | null>
     save(customer: Customer): Promise<void>
+    /**
+     * Stores a new customer unless one with this Telegram id already exists, and returns the
+     * stored one. Two first requests of the same person at once end with one customer.
+     */
+    register(customer: Customer): Promise<Customer>
     /** The customer sent their phone to this shop (its bot, or an order through the showcase). */
     hasSharedPhoneWith(customerId: string, businessId: string): Promise<boolean>
     /** Idempotent: keeps the first date. */
