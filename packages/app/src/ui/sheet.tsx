@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { createPortal } from "react-dom"
 
 import { useBackButton } from "../lib/main-button.js"
 
@@ -7,6 +8,8 @@ import type { ReactNode } from "react"
 /**
  * A bottom sheet for one small choice (a courier, a reason, "today or for good").
  * Closes by tapping outside, by Telegram's back button or by Escape.
+ * Rendered into <body>: inside an animated list row, `position: fixed` would follow the row's
+ * transform instead of the screen.
  */
 export function Sheet({
     title,
@@ -27,7 +30,7 @@ export function Sheet({
         window.addEventListener("keydown", onKey)
         return (): void => window.removeEventListener("keydown", onKey)
     }, [onClose])
-    return (
+    return createPortal(
         <div className="fixed inset-0 z-sheet flex flex-col justify-end" role="dialog" aria-modal>
             <button
                 type="button"
@@ -42,11 +45,11 @@ export function Sheet({
                     {children}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     )
 }
 
-/** A big full-width choice inside a sheet. */
 export function SheetOption({
     label,
     hint,
