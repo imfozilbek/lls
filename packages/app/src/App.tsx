@@ -15,7 +15,7 @@ import { useCart } from "./stores/cart.js"
 import { useCurrentRoute, useRouter } from "./stores/router.js"
 import { useSession } from "./stores/session.js"
 import { toast } from "./stores/toast.js"
-import { BotIcon, WifiOffIcon } from "./ui/icons.js"
+import { BotIcon, StoreIcon, WifiOffIcon } from "./ui/icons.js"
 import { Button, EmptyState, Skeleton } from "./ui/primitives.js"
 import { BottomBar, ToastHost } from "./ui/shell.js"
 
@@ -178,6 +178,16 @@ function ShopApp({
 
     if (state.kind === "loading") {
         return <MenuSkeleton />
+    }
+    if (state.kind === "error" && state.code === "ENTITY_NOT_FOUND") {
+        // A wrong link, or a shop that is not approved yet: retrying will not help.
+        return (
+            <EmptyState
+                art={<StoreIcon size={44} />}
+                title={t.shop.notFoundTitle}
+                text={t.shop.notFoundText}
+            />
+        )
     }
     if (state.kind === "error") {
         return (

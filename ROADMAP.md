@@ -11,10 +11,11 @@ Each shop gets its own Telegram bot and brand; the app says "powered by LLS".
 
 | Part | Status | Notes |
 |------|--------|-------|
-| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search; 137 tests |
-| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or LLS bot), roles, bot webhooks, `/market`; 57 tests |
+| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search; 140 tests |
+| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or LLS bot), roles, bot webhooks, `/market`, `/reconnect`, alerts; 70 tests |
 | `@lls/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, LLS showcase, onboarding; 38 tests; 93 KB gzip |
-| CI | ✅ Done | format, lint, build, test, coverage on every push |
+| CI | ✅ Done | format, lint, build, test, coverage, 67 e2e scenarios on every push |
+| Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
 | Deploy | 🟡 Ready | Deploy job in `ci.yml` waits for GitHub secrets (`docs/launch-checklist.md`); public-repo hardening in `SECURITY.md` |
 | Pilot (food, water, grocery) | ⏳ Next | Three friends' shops, each with its own bot and couriers |
 
@@ -96,6 +97,13 @@ an LLS commission; only marketplace sales will (stage 2).
 - [x] Rate limits on showcase search and sign-up; upload checks; alerts to admins
 - [x] Deploy keeps the encryption key; waits for the Worker before connecting the bot
 - [x] Backups, restore, frozen migrations documented
+
+### M4e. Local stand and end-to-end checks ✅
+- [x] `bun run stand`: local D1, Worker, Mini App, fake Telegram Bot API
+- [x] 67 browser scenarios for every role and screen, light and dark, 360 px (`docs/e2e.md`)
+- [x] `e2e` job in CI; the deploy waits for it
+- [x] Fixed what the run found: bottom sheets, first visit race, courier notices and language,
+      admin card, "shop not found"
 
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)

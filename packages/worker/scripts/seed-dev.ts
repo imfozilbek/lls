@@ -4,6 +4,8 @@
  * Creates `.dev.vars` on the first run.
  *
  *   bun run seed:dev
+ *
+ * `LLS_PERSIST_TO=<dir>` keeps this data in a separate local state (the e2e stand uses it).
  */
 import { execFileSync } from "node:child_process"
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
@@ -151,6 +153,8 @@ async function seedSql(tokenKey: string): Promise<string> {
         "DELETE FROM orders;",
         "DELETE FROM courier_invites;",
         "DELETE FROM couriers;",
+        "DELETE FROM customer_phone_shares;",
+        "DELETE FROM alert_log;",
         "DELETE FROM customer_businesses;",
         "DELETE FROM customers;",
         "DELETE FROM products;",
@@ -168,9 +172,11 @@ async function main(): Promise<void> {
     const file = join(mkdtempSync(join(tmpdir(), "lls-seed-")), "seed.sql")
     writeFileSync(file, await seedSql(key))
     const wrangler = ["wrangler", "d1"]
+    const persist = process.env["LLS_PERSIST_TO"]
+    const local = persist ? ["--local", "--persist-to", persist] : ["--local"]
     const cwd = { cwd: ROOT, stdio: "inherit" } as const
-    execFileSync("bunx", [...wrangler, "migrations", "apply", "lls", "--local"], cwd)
-    execFileSync("bunx", [...wrangler, "execute", "lls", "--local", `--file=${file}`], cwd)
+    execFileSync("bunx", [...wrangler, "migrations", "apply", "lls", ...local], cwd)
+    execFileSync("bunx", [...wrangler, "execute", "lls", ...local, `--file=${file}`], cwd)
     for (const shop of DEV_SHOPS) {
         console.warn(`Seeded ${shop.type} shop: open the app with ?shop=${shop.slug}`)
     }

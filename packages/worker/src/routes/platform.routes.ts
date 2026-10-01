@@ -45,11 +45,14 @@ export const platformRoutes = new Hono<AppEnv>()
         zValidator("json", registerShopBody, onInvalid),
         async (c) => {
             const services = c.get("services")
+            const auth = c.get("auth")
             const { botToken, ...shop } = c.req.valid("json")
             const bot = await verifyBot(services.telegram, botToken)
+            // The LLS bot signed this: remember the owner's name and language for the bots.
+            await services.useCases.resolveCustomer.execute(auth.user, auth.scope)
             const registered = await services.useCases.registerShop.execute({
                 ...shop,
-                ownerTelegramId: c.get("auth").user.id,
+                ownerTelegramId: auth.user.id,
                 bot: { id: bot.id, username: bot.username, token: botToken },
             })
             inBackground(

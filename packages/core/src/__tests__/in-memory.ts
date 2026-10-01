@@ -121,6 +121,20 @@ export class InMemoryCustomers implements CustomerRepository {
     async save(customer: Customer): Promise<void> {
         this.items.set(customer.id, customer)
     }
+    /** Simulates another request that registered the same person a moment earlier. */
+    registeredMeanwhile: Customer | null = null
+    async register(customer: Customer): Promise<Customer> {
+        if (this.registeredMeanwhile) {
+            this.items.set(this.registeredMeanwhile.id, this.registeredMeanwhile)
+            this.registeredMeanwhile = null
+        }
+        const existing = await this.findByTelegramId(customer.telegramId.value)
+        if (existing) {
+            return existing
+        }
+        this.items.set(customer.id, customer)
+        return customer
+    }
     async linkToBusiness(customerId: string, businessId: string, at: Date): Promise<void> {
         const key = `${customerId}:${businessId}`
         if (!this.links.has(key)) {

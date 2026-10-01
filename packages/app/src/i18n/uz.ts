@@ -65,6 +65,8 @@ export const uz = {
         myOrders: "Buyurtmalarim",
         manage: "Mening do'konim",
         deliveries: "Yetkazishlarim",
+        notFoundTitle: "Do'kon topilmadi",
+        notFoundText: "Havolani tekshiring yoki do'konni uning Telegram botidan oching.",
     },
     categories: {
         meals: "Taomlar",

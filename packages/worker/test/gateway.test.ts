@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { HttpTelegramGateway, TelegramApiError, escapeHtml } from "../src/telegram/gateway.js"
+import {
+    HttpTelegramGateway,
+    TELEGRAM_API_BASE,
+    TelegramApiError,
+    escapeHtml,
+    telegramApiBase,
+} from "../src/telegram/gateway.js"
 
 interface Call {
     url: string
@@ -95,5 +101,30 @@ describe("HttpTelegramGateway", () => {
 
     it("escapes HTML", () => {
         expect(escapeHtml("<a & b>")).toBe("&lt;a &amp; b&gt;")
+    })
+})
+
+describe("telegramApiBase", () => {
+    it("lets a local stand use a fake Bot API on localhost only", () => {
+        expect(telegramApiBase(undefined)).toBe(TELEGRAM_API_BASE)
+        expect(telegramApiBase("http://localhost:8081")).toBe("http://localhost:8081")
+        expect(telegramApiBase("http://127.0.0.1:8081/x")).toBe("http://127.0.0.1:8081")
+        // Anything else could carry bot tokens away: it is ignored.
+        expect(telegramApiBase("https://evil.example")).toBe(TELEGRAM_API_BASE)
+        expect(telegramApiBase("http://localhost.evil.example")).toBe(TELEGRAM_API_BASE)
+        expect(telegramApiBase("https://localhost:8081")).toBe(TELEGRAM_API_BASE)
+        expect(telegramApiBase("not a url")).toBe(TELEGRAM_API_BASE)
+    })
+
+    it("sends calls to the chosen base", async () => {
+        const fetcher = vi.fn((_input: RequestInfo | URL, _init?: RequestInit) =>
+            Promise.resolve(new Response(JSON.stringify({ ok: true, result: { message_id: 1 } }))),
+        )
+        await new HttpTelegramGateway(fetcher as typeof fetch, "http://localhost:8081").sendMessage(
+            "7:t",
+            1,
+            "x",
+        )
+        expect(fetcher.mock.calls[0]?.[0]).toBe("http://localhost:8081/bot7:t/sendMessage")
     })
 })

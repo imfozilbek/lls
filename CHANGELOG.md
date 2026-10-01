@@ -51,6 +51,25 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   Dependabot, `SECURITY.md`, `CODEOWNERS`
 - **Changed:** the workers.dev subdomain is random instead of derived from the account id
 
+### Local stand and end-to-end checks
+- **Added (e2e):** `bun run stand` — local D1 with three demo shops, `wrangler dev`, the Mini App and
+  a fake Telegram Bot API; `bun run e2e` — 67 Playwright scenarios for every role (customer,
+  showcase customer, owner, courier, new owner, admin, attacker) and every main screen at 360 px in
+  light and dark themes. Runs in CI as the `e2e` job; the deploy waits for it
+- **Added (worker):** `TELEGRAM_API_BASE` for the local stand only; any address except
+  `http://localhost` / `127.0.0.1` is ignored
+- **Fixed (app):** bottom sheets (stop-list, courier, cancel reason) opened inside the list row
+  under the tabs, so an option could not be tapped; they now open over the screen
+- **Fixed (core, worker):** the first visit of a new customer could fail with "something went
+  wrong": parallel first requests both tried to create the customer
+- **Fixed (worker):** after a quick reassignment the previous courier was not told; a courier who
+  joined by invite got order cards in Uzbek whatever their Telegram language
+- **Fixed (worker):** the admin's application card showed the raw shop type and the owner's id
+  instead of the name; the new owner was answered in Uzbek whatever their Telegram language
+- **Fixed (app):** a wrong or not yet approved shop link says "shop not found" instead of
+  "not found, refresh the list" with a useless retry
+- **Fixed (seed):** `seed:dev` failed on the new tables (`customer_phone_shares`, `alert_log`)
+
 ### Pre-launch audit
 - **Security (core, worker):** a shop bot's owner holds its token and could sign any Telegram id.
   An identity signed by a shop bot now counts only inside that shop: it never renames the global

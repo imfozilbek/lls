@@ -9,6 +9,8 @@ export interface Bindings extends Env {
     PLATFORM_WEBHOOK_SECRET: string
     /** Comma-separated Telegram ids of platform admins. */
     PLATFORM_ADMIN_IDS: string
+    /** Local stand only: a fake Bot API on localhost. Never set in production. */
+    TELEGRAM_API_BASE?: string
 }
 
 export interface AuthContext {

@@ -64,6 +64,8 @@ export const ru: Dictionary = {
         myOrders: "Мои заказы",
         manage: "Мой магазин",
         deliveries: "Мои доставки",
+        notFoundTitle: "Магазин не найден",
+        notFoundText: "Проверьте ссылку или откройте магазин из его бота в Telegram.",
     },
     categories: {
         meals: "Блюда",

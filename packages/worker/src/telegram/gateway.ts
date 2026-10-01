@@ -1,4 +1,23 @@
-const API_BASE = "https://api.telegram.org"
+export const TELEGRAM_API_BASE = "https://api.telegram.org"
+/** Hosts a local stand may point the Bot API at; anything else falls back to Telegram. */
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1"])
+
+/**
+ * The Bot API address. A local stand sets `TELEGRAM_API_BASE` to a fake Telegram on localhost;
+ * any other value is ignored, so a mistaken or hostile setting can never send bot tokens away.
+ */
+export function telegramApiBase(configured: string | undefined): string {
+    if (!configured) {
+        return TELEGRAM_API_BASE
+    }
+    try {
+        const url = new URL(configured)
+        const local = url.protocol === "http:" && LOCAL_HOSTS.has(url.hostname)
+        return local ? url.origin : TELEGRAM_API_BASE
+    } catch {
+        return TELEGRAM_API_BASE
+    }
+}
 
 export interface InlineButton {
     text: string
@@ -68,6 +87,7 @@ export class HttpTelegramGateway implements TelegramGateway {
     constructor(
         private readonly fetcher: typeof fetch = (input, init): Promise<Response> =>
             fetch(input, init),
+        private readonly apiBase: string = TELEGRAM_API_BASE,
     ) {}
 
     async getMe(token: string): Promise<BotInfo> {
@@ -132,7 +152,7 @@ export class HttpTelegramGateway implements TelegramGateway {
     }
 
     private async call<T>(token: string, method: string, body: object): Promise<T> {
-        const response = await this.fetcher(`${API_BASE}/bot${token}/${method}`, {
+        const response = await this.fetcher(`${this.apiBase}/bot${token}/${method}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
