@@ -5,7 +5,8 @@
     "type": "module",
     "scripts": {
         "stand": "bun stand/run.ts",
-        "e2e": "playwright test"
+        "e2e": "playwright test",
+        "browsers": "playwright install --with-deps chromium"
     },
     "devDependencies": {
         "@playwright/test": "1.56.1",
