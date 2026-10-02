@@ -15,7 +15,7 @@ import { fill, textsFor } from "./texts.js"
 
 import type { InlineButton, InlineKeyboard } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
-import type { BusinessType, Language, OrderDTO, OrderItemDTO } from "@lls/core"
+import type { BusinessType, Language, NetworkOrderDTO, OrderDTO, OrderItemDTO } from "@lls/core"
 
 /** Who reads a message: their language and the kind of shop the order is from. */
 export interface Reader {
@@ -24,6 +24,7 @@ export interface Reader {
 }
 
 const GRAMS_PER_KG = 1000
+const METERS_PER_KM = 1000
 
 /** 70000 → "70 000 so'm". */
 export function formatMoney(amount: number, language: Language): string {
@@ -116,7 +117,11 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
         lines.push(fill(t.bottlesBack, { n: order.bottlesReturned }))
     }
     lines.push("", ...addressLines(order, t))
-    if (order.courierName) {
+    if (order.waitingForNetwork) {
+        lines.push(t.networkSearching)
+    } else if (order.courierName && order.viaNetwork) {
+        lines.push(fill(t.networkCourier, { name: escapeHtml(order.courierName) }))
+    } else if (order.courierName) {
         lines.push(`🚚 ${t.courier}: ${escapeHtml(order.courierName)}`)
     }
     lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
@@ -288,4 +293,61 @@ export function parseCourierReviewCallback(
 export function parseCourierInvite(text: string | undefined): string | null {
     const match = /^\/start\s+c_([A-Za-z0-9_-]{8,40})\s*$/.exec(text?.trim() ?? "")
     return match?.[1] ?? null
+}
+
+/**
+ * «Новый заказ рядом» for a network courier: the shop, what to take, how far. Nothing about the
+ * customer until someone presses «Беру».
+ */
+export function formatNetworkOffer(offer: NetworkOrderDTO, language: Language): string {
+    const t = textsFor(language)
+    const shop = offer.shopAddress
+        ? `🏪 <b>${escapeHtml(offer.shopName)}</b>, ${escapeHtml(offer.shopAddress)}`
+        : `🏪 <b>${escapeHtml(offer.shopName)}</b>`
+    const lines = [`<b>${t.networkNew}</b> · #${offer.number}`, shop]
+    lines.push(fill(t.networkItems, { n: offer.itemsCount }))
+    lines.push(
+        offer.collect > 0
+            ? fill(t.collect, { sum: `<b>${formatMoney(offer.collect, language)}</b>` })
+            : t.nothingToCollect,
+    )
+    if (offer.bottlesReturned > 0) {
+        lines.push(fill(t.bottlesToCollect, { n: offer.bottlesReturned }))
+    }
+    if (offer.distanceMeters !== undefined) {
+        const km = (offer.distanceMeters / METERS_PER_KM).toFixed(1).replace(".", ",")
+        lines.push(fill(t.networkDistance, { km }))
+    }
+    return lines.join("\n")
+}
+
+/** «Беру» under a network offer: "n:<orderId>". */
+export function networkOfferKeyboard(orderId: string, t: BotTexts): InlineKeyboard {
+    return { inline_keyboard: [[{ text: t.takeOrder, callback_data: `n:${orderId}` }]] }
+}
+
+/** The one-time offer to join the district network: "net:join" / "net:skip". */
+export function networkInviteKeyboard(t: BotTexts): InlineKeyboard {
+    return {
+        inline_keyboard: [
+            [
+                { text: t.joinNetwork, callback_data: "net:join" },
+                { text: t.skipNetwork, callback_data: "net:skip" },
+            ],
+        ],
+    }
+}
+
+export type NetworkCallback =
+    { kind: "claim"; orderId: string } | { kind: "join" } | { kind: "skip" }
+
+export function parseNetworkCallback(data: string): NetworkCallback | null {
+    const [kind, value] = data.split(":")
+    if (kind === "n" && value) {
+        return { kind: "claim", orderId: value }
+    }
+    if (kind === "net" && (value === "join" || value === "skip")) {
+        return { kind: value }
+    }
+    return null
 }

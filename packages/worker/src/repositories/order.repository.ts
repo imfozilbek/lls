@@ -1,6 +1,7 @@
 import {
     ACTIVE_ORDER_STATUSES,
     CATEGORIES,
+    DELIVERY_FEE_RECIPIENTS,
     Location,
     Money,
     ORDER_CHANNELS,
@@ -22,6 +23,7 @@ import type {
     CancelledBy,
     CourierAmount,
     MoneyTotals,
+    NetworkShare,
     OrderRepository,
     Page,
     PageRequest,
@@ -59,6 +61,9 @@ interface OrderRow {
     delivered_at: number | null
     created_at: number
     updated_at: number
+    network_requested_at: number | null
+    network_alerted_at: number | null
+    delivery_fee_to: string
 }
 
 interface ItemRow {
@@ -79,7 +84,11 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     deposit_total, bottles_returned, total, commission_bps, commission, courier_id, courier_name,
     address, landmark, latitude, longitude, comment, customer_name, customer_phone,
     cancel_reason, cancelled_by, payment_method, payment_status, paid_at, cash_courier_id,
-    delivered_at, created_at, updated_at`
+    delivered_at, created_at, updated_at, network_requested_at, network_alerted_at,
+    delivery_fee_to`
+
+/** A courier can still take the order: from accepted until pickup. */
+const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
 
 const ITEM_COLUMNS = "order_id, line, product_id, name, unit, category, unit_price, quantity"
 
@@ -152,9 +161,24 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
             cashCourierId: optional(row.cash_courier_id),
         }),
         deliveredAt: row.delivered_at === null ? undefined : new Date(row.delivered_at),
+        networkRequestedAt: dateOrUndefined(row.network_requested_at),
+        networkAlertedAt: dateOrUndefined(row.network_alerted_at),
+        deliveryFeeTo: oneOf(row.delivery_fee_to, DELIVERY_FEE_RECIPIENTS, "delivery_fee_to"),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
+}
+
+function dateOrUndefined(value: number | null): Date | undefined {
+    return value === null ? undefined : new Date(value)
+}
+
+function networkValues(order: Order): (string | number | null)[] {
+    return [
+        order.networkRequestedAt?.getTime() ?? null,
+        order.networkAlertedAt?.getTime() ?? null,
+        order.deliveryFeeTo,
+    ]
 }
 
 function orderValues(order: Order): (string | number | null)[] {
@@ -186,6 +210,7 @@ function orderValues(order: Order): (string | number | null)[] {
         ...paymentValues(order),
         order.createdAt.getTime(),
         order.updatedAt.getTime(),
+        ...networkValues(order),
     ]
 }
 
@@ -263,7 +288,8 @@ export class D1OrderRepository implements OrderRepository {
             .prepare(
                 `UPDATE orders SET status = ?, courier_id = ?, courier_name = ?, cancel_reason = ?,
                     cancelled_by = ?, payment_method = ?, payment_status = ?, paid_at = ?,
-                    cash_courier_id = ?, delivered_at = ?, updated_at = ?
+                    cash_courier_id = ?, delivered_at = ?, updated_at = ?,
+                    network_requested_at = ?, network_alerted_at = ?, delivery_fee_to = ?
                  WHERE id = ?`,
             )
             .bind(
@@ -274,9 +300,61 @@ export class D1OrderRepository implements OrderRepository {
                 order.cancelledBy ?? null,
                 ...paymentValues(order),
                 order.updatedAt.getTime(),
+                ...networkValues(order),
                 order.id,
             )
             .run()
+    }
+
+    /** One statement with the condition: of two «Беру» at the same moment, one changes a row. */
+    async claimForNetwork(order: Order): Promise<boolean> {
+        const result = await this.db
+            .prepare(
+                `UPDATE orders SET courier_id = ?, courier_name = ?, delivery_fee_to = ?,
+                    updated_at = ?
+                 WHERE id = ? AND courier_id IS NULL AND network_requested_at IS NOT NULL
+                    AND status IN (${placeholders(TAKEABLE.length)})`,
+            )
+            .bind(
+                order.courierId ?? null,
+                order.courierName ?? null,
+                order.deliveryFeeTo,
+                order.updatedAt.getTime(),
+                order.id,
+                ...TAKEABLE,
+            )
+            .run()
+        return result.meta.changes === 1
+    }
+
+    async listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]> {
+        if (districtIds.length === 0) {
+            return []
+        }
+        return this.list(
+            `network_requested_at IS NOT NULL AND courier_id IS NULL
+                AND status IN (${placeholders(TAKEABLE.length)})
+                AND business_id IN (SELECT id FROM businesses
+                    WHERE district_id IN (${placeholders(districtIds.length)}))`,
+            [...TAKEABLE, ...districtIds],
+            "network_requested_at ASC",
+            limit,
+        )
+    }
+
+    async networkShare(districtId: string, from: Date, to: Date): Promise<NetworkShare> {
+        const row = await this.db
+            .prepare(
+                `SELECT COUNT(*) AS delivered,
+                    COALESCE(SUM(network_requested_at IS NOT NULL AND courier_id IS NOT NULL), 0)
+                        AS viaNetwork
+                 FROM orders
+                 WHERE status = 'delivered' AND delivered_at >= ? AND delivered_at < ?
+                    AND business_id IN (SELECT id FROM businesses WHERE district_id = ?)`,
+            )
+            .bind(from.getTime(), to.getTime(), districtId)
+            .first<NetworkShare>()
+        return { delivered: row?.delivered ?? 0, viaNetwork: row?.viaNetwork ?? 0 }
     }
 
     async listByBusiness(

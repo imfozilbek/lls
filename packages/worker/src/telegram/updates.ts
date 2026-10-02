@@ -1,4 +1,4 @@
-import { DomainError, ForbiddenError } from "@lls/core"
+import { BusinessRuleViolationError, DomainError, ForbiddenError } from "@lls/core"
 import { z } from "zod"
 
 import { TelegramApiError } from "./gateway.js"
@@ -71,6 +71,9 @@ export function openButton(label: string, url: string): InlineKeyboard {
 export function callbackErrorText(error: unknown, texts: BotTexts): string {
     if (error instanceof ForbiddenError) {
         return texts.callbackForbidden
+    }
+    if (error instanceof BusinessRuleViolationError && error.rule === "NETWORK_ORDER_TAKEN") {
+        return texts.callbackTaken
     }
     if (error instanceof DomainError) {
         return texts.callbackOutdated

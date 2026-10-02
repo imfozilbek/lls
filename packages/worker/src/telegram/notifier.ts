@@ -1,4 +1,11 @@
-import { Language, OrderChannel, OrderStatus, PaymentMethod, PaymentStatus } from "@lls/core"
+import {
+    Language,
+    OrderChannel,
+    OrderStatus,
+    PaymentMethod,
+    PaymentStatus,
+    toNetworkOrderDTO,
+} from "@lls/core"
 
 import { alertAdmins, describeError, isRecipientProblem } from "../alerts.js"
 import { platformAdminIds } from "../env.js"
@@ -6,11 +13,14 @@ import { platformAdminIds } from "../env.js"
 import {
     courierKeyboard,
     courierReviewKeyboard,
+    formatNetworkOffer,
     formatNewOrderForOwner,
     formatOrderForCourier,
     formatOrderForOwner,
     formatRate,
     formatStatusForCustomer,
+    networkInviteKeyboard,
+    networkOfferKeyboard,
     orderKeyboard,
 } from "./format.js"
 import { escapeHtml } from "./gateway.js"
@@ -20,7 +30,15 @@ import type { Reader } from "./format.js"
 import type { InlineKeyboard, OutgoingFile } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
 import type { Services } from "../services.js"
-import type { Business, CourierDTO, OrderDTO, ShopOwnerDTO } from "@lls/core"
+import type {
+    Business,
+    CourierDTO,
+    NetworkClaim,
+    NetworkRequest,
+    OrderDTO,
+    OverdueNetworkOrder,
+    ShopOwnerDTO,
+} from "@lls/core"
 
 /** Mini App URL for a shop: the shop bot's menu button and /start button open this. */
 export function shopAppUrl(appOrigin: string, slug: string): string {
@@ -72,6 +90,9 @@ export class Notifier {
             keyboard: orderKeyboard(order, owner),
         })
         await this.refreshCourierCard(business, order, messages.courier)
+        if (order.status === OrderStatus.CANCELLED) {
+            await this.closeNetworkOffers(business, order)
+        }
 
         if (order.status === OrderStatus.CANCELLED && order.cancelledBy === "customer") {
             const text = `${textsFor(owner.language).cancelledByCustomer}: #${order.number}`
@@ -109,6 +130,150 @@ export class Notifier {
         }
         await this.refreshCourierCard(business, order, null)
         await this.orderChangedForOwner(token, business, order)
+        // The shop's own courier took it: the network's offers are no longer open.
+        await this.closeNetworkOffers(business, order)
+    }
+
+    /** Only the owner's card changed (the order went to the network by hand). */
+    async ownerCardChanged(business: Business, order: OrderDTO): Promise<void> {
+        await this.orderChangedForOwner(await this.shopToken(business.id), business, order)
+    }
+
+    /**
+     * The shop asked the district network: «Новый заказ рядом» to its free network couriers,
+     * and the owner learns that the network is looking. The owner's card is refreshed by the
+     * caller (it may already show it).
+     */
+    async networkRequested(request: NetworkRequest): Promise<void> {
+        const { business, order, district } = request
+        const token = await this.shopToken(business.id)
+        const ownerId = business.ownerTelegramId.value
+        const t = textsFor(await this.languageOf(ownerId), business.type)
+        await this.services.telegram.sendMessage(
+            token,
+            ownerId,
+            fill(t.networkRequestedOwner, { n: order.number }),
+        )
+        const people = await this.services.useCases.freeNetworkCouriers.execute({
+            districtId: district.id,
+        })
+        await this.offerToNetwork(business, order.id, people)
+    }
+
+    /** Offers waiting orders to someone who just went on shift or joined the network. */
+    async offerWaitingOrders(telegramId: number): Promise<void> {
+        const waiting = await this.services.useCases.listNetworkOrders.execute({ telegramId })
+        for (const offer of waiting) {
+            const business = await this.services.businesses.findById(offer.businessId)
+            if (business) {
+                await this.offerToNetwork(business, offer.id, [telegramId])
+            }
+        }
+    }
+
+    /** «Новый заказ рядом» with «Беру»; nobody gets the same order twice. */
+    private async offerToNetwork(
+        business: Business,
+        orderId: string,
+        people: readonly number[],
+    ): Promise<void> {
+        const order = await this.services.orders.findById(orderId)
+        if (!order?.isWaitingForNetwork()) {
+            return
+        }
+        const told = await this.services.networkOffers.recipients(orderId)
+        const offer = toNetworkOrderDTO(order, business)
+        for (const telegramId of people.filter((id) => !told.has(id))) {
+            const language = await this.languageOf(telegramId)
+            const { messageId } = await this.services.telegram.sendMessage(
+                this.services.env.COURIER_BOT_TOKEN,
+                telegramId,
+                formatNetworkOffer(offer, language),
+                { keyboard: networkOfferKeyboard(orderId, textsFor(language)) },
+            )
+            await this.services.networkOffers.save(
+                orderId,
+                { telegramId, messageId },
+                this.services.clock.now(),
+            )
+        }
+    }
+
+    /**
+     * Someone pressed «Беру» first: their offer says the order is theirs and the full card
+     * follows; everyone else's offer says it is taken; the owner learns who brings it.
+     */
+    async networkClaimed(claim: NetworkClaim): Promise<void> {
+        const { business, order } = claim
+        await this.closeNetworkOffers(business, order, claim.courierTelegramId)
+        await this.refreshCourierCard(business, order, null)
+        const token = await this.shopToken(business.id)
+        const ownerId = business.ownerTelegramId.value
+        const t = textsFor(await this.languageOf(ownerId), business.type)
+        await this.orderChangedForOwner(token, business, order)
+        await this.services.telegram.sendMessage(
+            token,
+            ownerId,
+            fill(t.networkClaimedOwner, {
+                n: order.number,
+                name: escapeHtml(order.courierName ?? ""),
+            }),
+        )
+    }
+
+    /** Edits the open offers of an order once, then forgets them. */
+    private async closeNetworkOffers(
+        business: Business,
+        order: OrderDTO,
+        winner?: number,
+    ): Promise<void> {
+        const offers = await this.services.networkOffers.list(order.id)
+        if (offers.length === 0) {
+            return
+        }
+        await this.services.networkOffers.clear(order.id)
+        const shop = escapeHtml(business.name)
+        for (const offer of offers) {
+            const t = textsFor(await this.languageOf(offer.telegramId))
+            const text = fill(offer.telegramId === winner ? t.networkYours : t.networkTaken, {
+                n: order.number,
+                shop,
+            })
+            await this.services.telegram.editMessage(
+                this.services.env.COURIER_BOT_TOKEN,
+                offer.telegramId,
+                offer.messageId,
+                text,
+            )
+        }
+    }
+
+    /** Nobody took these network orders in time: each shop and the admins hear it once. */
+    async networkOverdue(late: readonly OverdueNetworkOrder[]): Promise<void> {
+        for (const { order, business, district } of late) {
+            const token = await this.shopToken(business.id)
+            const ownerId = business.ownerTelegramId.value
+            const minutes = district.waitMinutes
+            const t = textsFor(await this.languageOf(ownerId), business.type)
+            await this.services.telegram.sendMessage(
+                token,
+                ownerId,
+                fill(t.networkOverdueOwner, { n: order.number, min: minutes }),
+            )
+            for (const adminId of platformAdminIds(this.services.env)) {
+                const admin = textsFor(await this.languageOf(adminId))
+                await this.services.telegram.sendMessage(
+                    this.services.env.PLATFORM_BOT_TOKEN,
+                    adminId,
+                    fill(admin.networkOverdueAdmin, {
+                        shop: escapeHtml(business.name),
+                        n: order.number,
+                        min: minutes,
+                        district: escapeHtml(district.name),
+                    }),
+                )
+            }
+        }
     }
 
     /**
@@ -180,6 +345,14 @@ export class Notifier {
                   }
                 : {},
         )
+        if (approved && (await this.services.useCases.offerNetwork.execute({ telegramId }))) {
+            await this.services.telegram.sendMessage(
+                this.services.env.COURIER_BOT_TOKEN,
+                telegramId,
+                t.networkInvite,
+                { keyboard: networkInviteKeyboard(t) },
+            )
+        }
     }
 
     /** The owner removed a courier: they stay a courier of their other shops. */

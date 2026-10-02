@@ -63,6 +63,13 @@ export interface BusinessProps {
     marketplace?: MarketplaceTerms
     /** The card customers transfer to; without it a shop takes cash only. */
     payoutCard?: PayoutCard
+    /** The delivery-network district the shop's location falls in. */
+    districtId?: string
+    /**
+     * When its own couriers are busy, orders go to the district's network couriers.
+     * On unless the owner switched it off.
+     */
+    networkDelivery?: boolean
     createdAt: Date
     updatedAt: Date
 }
@@ -168,6 +175,12 @@ export class Business {
     }
     get features(): Feature[] {
         return [...this.props.features]
+    }
+    get districtId(): string | undefined {
+        return this.props.districtId
+    }
+    get networkDelivery(): boolean {
+        return this.props.networkDelivery ?? true
     }
     get acceptingOrders(): boolean {
         return this.props.acceptingOrders
@@ -293,6 +306,17 @@ export class Business {
 
     setWorkingHours(hours: WorkingHours): void {
         this.props.workingHours = hours
+        this.touch()
+    }
+
+    /** Recomputed when the shop moves or a district changes. */
+    setDistrict(districtId: string | undefined): void {
+        this.props.districtId = districtId
+        this.touch()
+    }
+
+    setNetworkDelivery(on: boolean): void {
+        this.props.networkDelivery = on
         this.touch()
     }
 

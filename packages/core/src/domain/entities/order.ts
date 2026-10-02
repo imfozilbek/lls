@@ -1,3 +1,4 @@
+import { DeliveryFeeRecipient, NETWORK_DELIVERY_FEE_RECIPIENT } from "../enums/delivery-fee.js"
 import {
     OrderStatus,
     canActorMove,
@@ -14,7 +15,7 @@ import { optionalText, requireInteger, requireText } from "../shared/guards.js"
 import { Money } from "../value-objects/money.js"
 import { Payment } from "../value-objects/payment.js"
 
-import type { Courier } from "./courier.js"
+import type { Courier, NetworkUnavailableReason } from "./courier.js"
 import type { OrderItem } from "./order-item.js"
 import type { OrderChannel } from "../enums/order-channel.js"
 import type { Location } from "../value-objects/location.js"
@@ -70,6 +71,12 @@ export interface OrderProps {
     cancelledBy?: CancelledBy
     payment: Payment
     deliveredAt?: Date
+    /** The shop handed the order to the district network; set until its own courier takes it. */
+    networkRequestedAt?: Date
+    /** The shop and admins were told nobody took it in time (told once). */
+    networkAlertedAt?: Date
+    /** Who gets the delivery fee: a snapshot, fixed when a courier takes the order. */
+    deliveryFeeTo?: DeliveryFeeRecipient
     createdAt: Date
     updatedAt: Date
 }
@@ -227,6 +234,29 @@ export class Order {
     get deliveredAt(): Date | undefined {
         return this.props.deliveredAt
     }
+    get networkRequestedAt(): Date | undefined {
+        return this.props.networkRequestedAt
+    }
+    get networkAlertedAt(): Date | undefined {
+        return this.props.networkAlertedAt
+    }
+    get deliveryFeeTo(): DeliveryFeeRecipient {
+        return this.props.deliveryFeeTo ?? DeliveryFeeRecipient.BUSINESS
+    }
+
+    /** Waiting for a district network courier to press «Беру». */
+    isWaitingForNetwork(): boolean {
+        return (
+            this.props.networkRequestedAt !== undefined &&
+            this.props.courierId === undefined &&
+            ASSIGNABLE.includes(this.props.status)
+        )
+    }
+
+    /** Delivered (or being delivered) by a courier who took it from the district network. */
+    isViaNetwork(): boolean {
+        return this.props.networkRequestedAt !== undefined && this.props.courierId !== undefined
+    }
     get createdAt(): Date {
         return this.props.createdAt
     }
@@ -323,7 +353,43 @@ export class Order {
         }
         this.props.courierId = courier.id
         this.props.courierName = courier.name
+        // The shop's own courier takes it: the network no longer needs to.
+        this.props.networkRequestedAt = undefined
+        this.props.networkAlertedAt = undefined
+        this.props.deliveryFeeTo = DeliveryFeeRecipient.BUSINESS
         this.touch()
+    }
+
+    /** No courier of its own is free: the free network couriers of the district may take it. */
+    requestNetwork(now: Date): void {
+        if (!ASSIGNABLE.includes(this.props.status) || this.props.courierId !== undefined) {
+            throw BusinessRuleViolationError.orderNotAssignable(this.props.id, this.props.status)
+        }
+        this.props.networkRequestedAt ??= now
+        this.touch()
+    }
+
+    /**
+     * A district network courier pressed «Беру». The first one wins: the repository saves it only
+     * if nobody took the order in between.
+     */
+    claimByNetwork(link: Courier, now: Date, busy: boolean): void {
+        if (!this.isWaitingForNetwork() || link.businessId !== this.props.businessId) {
+            throw BusinessRuleViolationError.networkOrderTaken(this.props.id)
+        }
+        const reason = networkUnavailableReason(link, now, busy)
+        if (reason !== null) {
+            throw BusinessRuleViolationError.courierNotAvailable(link.id, reason)
+        }
+        this.props.courierId = link.id
+        this.props.courierName = link.name
+        this.props.deliveryFeeTo = NETWORK_DELIVERY_FEE_RECIPIENT
+        this.touch()
+    }
+
+    /** Nobody took it in time: the shop and admins were told. */
+    markNetworkAlerted(now: Date): void {
+        this.props.networkAlertedAt = now
     }
 
     /** A customer may cancel only while the order is pending. The owner may cancel any active order. */
@@ -354,4 +420,22 @@ export class Order {
     private touch(): void {
         this.props.updatedAt = new Date()
     }
+}
+
+/** Why this person cannot take a network order of the link's shop now, or null. */
+export function networkUnavailableReason(
+    link: Courier,
+    now: Date,
+    busy: boolean,
+): NetworkUnavailableReason | null {
+    if (!link.isActive && !link.isNetwork) {
+        return "not_approved"
+    }
+    if (!link.profile.inNetwork) {
+        return "not_in_network"
+    }
+    if (!link.profile.isOnShift(now)) {
+        return "not_on_shift"
+    }
+    return busy ? "busy" : null
 }

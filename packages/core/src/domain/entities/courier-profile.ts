@@ -15,6 +15,10 @@ export interface CourierProfileProps {
     vehicle?: string
     /** On shift until this moment: the end of the local day the shift started. */
     shiftUntil?: Date
+    /** Delivers for other shops of the district too. Only the courier sets it. */
+    inNetwork?: boolean
+    /** When the courier bot offered the district network (offered once). */
+    networkOfferedAt?: Date
     createdAt: Date
     updatedAt: Date
 }
@@ -54,6 +58,12 @@ export class CourierProfile {
     get shiftUntil(): Date | undefined {
         return this.props.shiftUntil
     }
+    get inNetwork(): boolean {
+        return this.props.inNetwork ?? false
+    }
+    get networkOfferedAt(): Date | undefined {
+        return this.props.networkOfferedAt
+    }
     get createdAt(): Date {
         return this.props.createdAt
     }
@@ -80,6 +90,23 @@ export class CourierProfile {
     endShift(now: Date): void {
         this.props.shiftUntil = undefined
         this.props.updatedAt = now
+    }
+
+    /** The courier's own choice: deliver for other shops of the district, or stop. */
+    setInNetwork(inNetwork: boolean, now: Date): void {
+        this.props.inNetwork = inNetwork
+        this.props.networkOfferedAt ??= now
+        this.props.updatedAt = now
+    }
+
+    /** True the first time: the courier bot offers the network only once. */
+    offerNetwork(now: Date): boolean {
+        if (this.props.networkOfferedAt) {
+            return false
+        }
+        this.props.networkOfferedAt = now
+        this.props.updatedAt = now
+        return true
     }
 
     isOnShift(now: Date): boolean {

@@ -1,12 +1,14 @@
 import { DomainError, Phone, TRUSTED_SCOPE, languageFromTelegram } from "@lls/core"
 
-import { parseCourierInvite, parseOrderCallback } from "../telegram/format.js"
+import { notifyNetworkClaim } from "../network-flow.js"
+import { parseCourierInvite, parseNetworkCallback, parseOrderCallback } from "../telegram/format.js"
 import { escapeHtml } from "../telegram/gateway.js"
 import { Notifier, courierAppUrl } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 import { callbackErrorText, isStart, openButton, toTelegramUser } from "../telegram/updates.js"
 
 import type { Services } from "../services.js"
+import type { NetworkCallback } from "../telegram/format.js"
 import type { BotTexts } from "../telegram/texts.js"
 import type { Callback, IncomingMessage } from "../telegram/updates.js"
 import type { Language } from "@lls/core"
@@ -138,6 +140,11 @@ export async function handleCourierBotCallback(
 ): Promise<void> {
     const token = services.env.COURIER_BOT_TOKEN
     const t = textsFor(await languageOf(services, callback.from.id, callback.from.language_code))
+    const network = parseNetworkCallback(callback.data ?? "")
+    if (network) {
+        await handleNetworkCallback(services, callback, network, t)
+        return
+    }
     const action = parseOrderCallback(callback.data ?? "")
     if (action?.kind !== "advance") {
         await services.telegram.answerCallback(token, callback.id)
@@ -156,6 +163,50 @@ export async function handleCourierBotCallback(
             await new Notifier(services).orderChanged(business, order)
         }
         await services.telegram.answerCallback(token, callback.id, t.callbackDone)
+    } catch (error) {
+        await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, t))
+    }
+}
+
+/** «Беру» on a network offer, or the answer to the one-time network invite. */
+async function handleNetworkCallback(
+    services: Services,
+    callback: Callback,
+    action: NetworkCallback,
+    t: BotTexts,
+): Promise<void> {
+    const token = services.env.COURIER_BOT_TOKEN
+    const telegramId = callback.from.id
+    try {
+        if (action.kind === "claim") {
+            const claim = await services.useCases.claimNetworkOrder.execute({
+                telegramId,
+                orderId: action.orderId,
+            })
+            await notifyNetworkClaim(services, claim)
+            await services.telegram.answerCallback(token, callback.id, t.callbackDone)
+            return
+        }
+        const inNetwork = action.kind === "join"
+        const profile = await services.useCases.setNetworkMembership.execute({
+            telegramId,
+            inNetwork,
+        })
+        if (callback.message) {
+            await services.telegram.editMessage(
+                token,
+                callback.message.chat.id,
+                callback.message.message_id,
+                inNetwork ? t.networkJoined : t.networkSkipped,
+                {
+                    keyboard: openButton(t.myDeliveries, courierAppUrl(services.env.APP_ORIGIN)),
+                },
+            )
+        }
+        if (profile.inNetwork && profile.onShift) {
+            await new Notifier(services).offerWaitingOrders(telegramId)
+        }
+        await services.telegram.answerCallback(token, callback.id)
     } catch (error) {
         await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, t))
     }

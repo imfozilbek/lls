@@ -107,6 +107,37 @@ const BASE = {
             "✅ {shop} sizni kuryer sifatida tasdiqladi. Smenaga chiqing — buyurtmalar shu yerga keladi.",
         courierDeclined: "😔 {shop} sizni kuryer sifatida tasdiqlamadi.",
         courierRemovedFromShop: "↩️ {shop} sizni kuryerlar ro'yxatidan chiqardi.",
+        networkSearching: "🔎 Tuman tarmog'idan kuryer qidirilmoqda",
+        networkCourier: "🚚 Tuman tarmog'i kuryeri: {name}",
+        networkNew: "🛵 Yaqinda yangi buyurtma",
+        networkItems: "📦 Pozitsiyalar: {n}",
+        networkDistance: "📍 Mijozgacha ≈ {km} km",
+        takeOrder: "🙋 Olaman",
+        networkTaken: "✅ {shop}: #{n} buyurtmani boshqa kuryer oldi.",
+        networkYours: "🎉 {shop}: #{n} buyurtma sizniki — karta pastda.",
+        networkRequestedOwner:
+            "🔎 Bo'sh kuryeringiz yo'q: #{n} buyurtma tuman tarmog'iga berildi. Kim olsa, xabar beramiz.",
+        networkClaimedOwner: "🚚 #{n} buyurtmani tuman tarmog'i kuryeri olib boradi: {name}",
+        networkOverdueOwner:
+            "⏰ #{n} buyurtma {min} daqiqadan beri tarmoq kuryerini kutmoqda. O'z kuryeringizni tayinlang yoki o'zingiz olib boring.",
+        networkOverdueAdmin: "⏰ {shop}: #{n} buyurtma {min} daqiqa kuryersiz ({district}).",
+        networkInvite:
+            "🤝 Tumanning boshqa do'konlari uchun ham yetkazasizmi? Buyurtma shu yerga keladi — qulay bo'lsagina olasiz.",
+        joinNetwork: "✅ Ha, tuman uchun",
+        skipNetwork: "Hozir emas",
+        networkJoined:
+            "✅ Siz tuman tarmog'idasiz. Smenaga chiqing — yaqindagi buyurtmalar shu yerga keladi.",
+        networkSkipped: "Yaxshi. «Yetkazishlarim»da yoqish mumkin.",
+        callbackTaken: "Bu buyurtmani allaqachon olishdi",
+        districtUsage:
+            "Format: /district <nom> <kenglik>,<uzunlik> <km> yoki /district <nom> wait <daqiqa>",
+        districtSaved:
+            "📍 {name} tumani: radius {km} km, kutish {min} daqiqa. Ichidagi do'konlar: {shops}.",
+        networkReportTitle: "📊 Tuman tarmog'i, 7 kun",
+        networkReportLine:
+            "<b>{name}</b> ({km} km): bo'sh kuryerlar {free}, kutayotgan buyurtmalar {waiting}; yetkazildi {delivered}, shundan tarmoq {network}",
+        networkNoDistricts:
+            "Hali tumanlar yo'q. Qo'shish: /district <nom> <kenglik>,<uzunlik> <km>",
         inviteInvalid: "😔 Bu taklif havolasi ishlamaydi. Do'kon egasidan yangisini so'rang.",
         myDeliveries: "🚚 Yetkazishlarim",
         courierCard: "🚚 Yetkazib berish",
@@ -263,6 +294,36 @@ const BASE = {
             "✅ {shop} подтвердил вас как доставщика. Выйдите на смену — заказы будут приходить сюда.",
         courierDeclined: "😔 {shop} не подтвердил вас как доставщика.",
         courierRemovedFromShop: "↩️ {shop} убрал вас из своих доставщиков.",
+        networkSearching: "🔎 Ищем доставщика сети района",
+        networkCourier: "🚚 Доставщик сети района: {name}",
+        networkNew: "🛵 Новый заказ рядом",
+        networkItems: "📦 Позиций: {n}",
+        networkDistance: "📍 До клиента ≈ {km} км",
+        takeOrder: "🙋 Беру",
+        networkTaken: "✅ {shop}: заказ #{n} уже взял другой доставщик.",
+        networkYours: "🎉 {shop}: заказ #{n} ваш — карточка ниже.",
+        networkRequestedOwner:
+            "🔎 Свободного доставщика у вас нет: заказ #{n} отдан сети района. Напишем, кто возьмёт.",
+        networkClaimedOwner: "🚚 Заказ #{n} везёт доставщик сети района: {name}",
+        networkOverdueOwner:
+            "⏰ Заказ #{n} уже {min} мин ждёт доставщика сети. Назначьте своего или отвезите сами.",
+        networkOverdueAdmin: "⏰ {shop}: заказ #{n} {min} мин без доставщика ({district}).",
+        networkInvite:
+            "🤝 Хотите возить и для других точек района? Заказ придёт сюда — берёте, только если удобно.",
+        joinNetwork: "✅ Да, для района",
+        skipNetwork: "Не сейчас",
+        networkJoined: "✅ Вы в сети района. Выйдите на смену — заказы рядом будут приходить сюда.",
+        networkSkipped: "Хорошо. Включить можно в «Мои доставки».",
+        callbackTaken: "Этот заказ уже взяли",
+        districtUsage:
+            "Формат: /district <название> <широта>,<долгота> <км> или /district <название> wait <минут>",
+        districtSaved:
+            "📍 Район {name}: радиус {km} км, ожидание {min} мин. Точек внутри: {shops}.",
+        networkReportTitle: "📊 Сеть района за 7 дней",
+        networkReportLine:
+            "<b>{name}</b> ({km} км): свободных доставщиков {free}, ждут {waiting}; доставлено {delivered}, из них сетью {network}",
+        networkNoDistricts:
+            "Районов пока нет. Добавить: /district <название> <широта>,<долгота> <км>",
         inviteInvalid: "😔 Эта ссылка-приглашение не работает. Попросите у владельца новую.",
         myDeliveries: "🚚 Мои доставки",
         courierCard: "🚚 Доставка",

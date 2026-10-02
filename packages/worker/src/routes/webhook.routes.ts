@@ -9,6 +9,7 @@ import { Hono } from "hono"
 
 import { timingSafeEqual } from "../crypto.js"
 import { platformAdminIds } from "../env.js"
+import { networkAfterStep, notifyOwnerStep } from "../network-flow.js"
 import {
     formatRate,
     parseCourierReviewCallback,
@@ -29,6 +30,7 @@ import {
 } from "../telegram/updates.js"
 
 import { handleCourierBotCallback, handleCourierBotMessage } from "./courier-bot.js"
+import { handleDistrictCommand, handleNetworkCommand } from "./district-commands.js"
 
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
@@ -131,8 +133,9 @@ async function handleOrderCallback(
         await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, texts))
         return
     }
+    const step = await networkAfterStep(services, order)
     // Notify first: if answering the button fails, the owner card and the customer still update.
-    await new Notifier(services).orderChanged(business, order)
+    await notifyOwnerStep(services, business, step.order, step.request)
     await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
 }
 
@@ -364,6 +367,14 @@ async function handlePlatformMessage(
     }
     if (message.text?.trim().startsWith("/market")) {
         await handleMarketCommand(services, message)
+        return
+    }
+    if (message.text?.trim().startsWith("/district")) {
+        await handleDistrictCommand(services, message)
+        return
+    }
+    if (/^\/network(?:@\w+)?\s*$/.test(message.text?.trim() ?? "")) {
+        await handleNetworkCommand(services, message)
         return
     }
     if (isStart(message.text)) {

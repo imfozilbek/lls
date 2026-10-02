@@ -6,9 +6,11 @@ import {
     courierOrderBody,
     courierProfileBody,
     idParam,
+    networkMembershipBody,
     onInvalid,
     shiftBody,
 } from "../http/schemas.js"
+import { notifyNetworkClaim } from "../network-flow.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
 
 import type { AppEnv } from "../env.js"
@@ -29,11 +31,60 @@ export const courierRoutes = new Hono<AppEnv>()
 
     /** "Я на смене" for today, or the end of the shift. */
     .put("/shift", zValidator("json", shiftBody, onInvalid), async (c) => {
-        const profile = await c.get("services").useCases.setShift.execute({
-            telegramId: c.get("auth").user.id,
+        const services = c.get("services")
+        const telegramId = c.get("auth").user.id
+        const profile = await services.useCases.setShift.execute({
+            telegramId,
             onShift: c.req.valid("json").onShift,
         })
+        if (profile.onShift && profile.inNetwork) {
+            // Network orders already waiting nearby reach the chat too.
+            inBackground(
+                c.executionCtx,
+                services,
+                new Notifier(services).offerWaitingOrders(telegramId),
+            )
+        }
         return c.json(profile)
+    })
+
+    /** «Беру заказы района»: the courier's own consent to the district network. */
+    .put("/network", zValidator("json", networkMembershipBody, onInvalid), async (c) => {
+        const services = c.get("services")
+        const telegramId = c.get("auth").user.id
+        const profile = await services.useCases.setNetworkMembership.execute({
+            telegramId,
+            inNetwork: c.req.valid("json").inNetwork,
+        })
+        if (profile.onShift && profile.inNetwork) {
+            inBackground(
+                c.executionCtx,
+                services,
+                new Notifier(services).offerWaitingOrders(telegramId),
+            )
+        }
+        return c.json(profile)
+    })
+
+    .get("/network/orders", async (c) => {
+        const orders = await c.get("services").useCases.listNetworkOrders.execute({
+            telegramId: c.get("auth").user.id,
+        })
+        return c.json({
+            data: orders,
+            meta: { page: 1, limit: orders.length, total: orders.length },
+        })
+    })
+
+    /** «Беру»: the first network courier gets the order; the others hear it is taken. */
+    .post("/network/orders/:id/claim", zValidator("param", idParam, onInvalid), async (c) => {
+        const services = c.get("services")
+        const claim = await services.useCases.claimNetworkOrder.execute({
+            telegramId: c.get("auth").user.id,
+            orderId: c.req.valid("param").id,
+        })
+        inBackground(c.executionCtx, services, notifyNetworkClaim(services, claim))
+        return c.json(claim.order)
     })
 
     .patch("/profile", zValidator("json", courierProfileBody, onInvalid), async (c) => {

@@ -16,7 +16,14 @@ import { searchText } from "@lls/core"
 
 import { encryptSecret } from "../src/crypto.js"
 
-import { DEV_ADMIN_ID, DEV_COURIER, DEV_COURIER_BOT, DEV_SHOPS } from "./dev-fixtures.js"
+import {
+    DEV_ADMIN_ID,
+    DEV_COURIER,
+    DEV_COURIER_BOT,
+    DEV_DISTRICT,
+    DEV_NETWORK_COURIERS,
+    DEV_SHOPS,
+} from "./dev-fixtures.js"
 
 import type { DevShop } from "./dev-fixtures.js"
 
@@ -147,13 +154,15 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
     )
     return [
         `INSERT INTO businesses (id, slug, name, type, owner_telegram_id, status, bot_id,
-            bot_username, bot_token_enc, webhook_secret, brand_color, address, delivery_fee,
+            bot_username, bot_token_enc, webhook_secret, brand_color, address, latitude, longitude,
+            district_id, delivery_fee,
             free_delivery_from, min_order, features, bottle_deposit, marketplace_commission_bps,
             marketplace_joined_at, payout_card_number, payout_card_holder, created_at, updated_at)
          VALUES (${quote(shop.id)}, ${quote(shop.slug)}, ${quote(shop.name)}, ${quote(shop.type)},
             ${shop.owner.id}, 'active', ${shop.bot.id}, ${quote(shop.bot.username)},
             ${quote(tokenEnc)}, ${quote(shop.bot.webhookSecret)}, ${quote(shop.brandColor)},
-            'Guliston, Mustaqillik 12', 10000, 150000, ${MIN_ORDER[shop.type] ?? "NULL"},
+            'Guliston, Mustaqillik 12', ${shop.location.latitude}, ${shop.location.longitude},
+            ${quote(DEV_DISTRICT.id)}, 10000, 150000, ${MIN_ORDER[shop.type] ?? "NULL"},
             ${quote(JSON.stringify(FEATURES[shop.type]))}, ${deposit},
             ${SHOWCASE_BPS[shop.type] ?? "NULL"}, ${SHOWCASE_BPS[shop.type] === null ? "NULL" : now},
             ${card ? quote(card[0]) : "NULL"}, ${card ? quote(card[1]) : "NULL"}, ${now}, ${now});`,
@@ -173,7 +182,20 @@ async function seedSql(tokenKey: string): Promise<string> {
     const courierProfile = `INSERT INTO courier_profiles (telegram_id, name, phone, shift_until,
         created_at, updated_at) VALUES (${DEV_COURIER.id}, ${quote(DEV_COURIER.first_name)},
         '+998901112233', ${now + DAY_MS}, ${now}, ${now});`
+    const district = `INSERT INTO districts (id, name, name_key, latitude, longitude, radius_m,
+        created_at, updated_at) VALUES (${quote(DEV_DISTRICT.id)}, ${quote(DEV_DISTRICT.name)},
+        ${quote(DEV_DISTRICT.name.toLowerCase())}, ${DEV_DISTRICT.latitude}, ${DEV_DISTRICT.longitude},
+        ${DEV_DISTRICT.radiusMeters}, ${now}, ${now});`
+    const network = DEV_NETWORK_COURIERS.flatMap((c) => [
+        `INSERT INTO courier_profiles (telegram_id, name, phone, shift_until, in_network,
+            network_offered_at, created_at, updated_at) VALUES (${c.id}, ${quote(c.first_name)},
+            '+99890555${String(c.id).slice(-4)}', ${now + DAY_MS}, 1, ${now}, ${now}, ${now});`,
+        `INSERT INTO couriers (id, business_id, telegram_id, name, phone, is_active, status,
+            created_at, updated_at) VALUES (${quote(`${c.shop}-network-${c.id}`)}, ${quote(c.shop)},
+            ${c.id}, ${quote(c.first_name)}, NULL, 1, 'active', ${now}, ${now});`,
+    ])
     return [
+        "DELETE FROM network_offers;",
         "DELETE FROM order_items;",
         "DELETE FROM cash_handovers;",
         "DELETE FROM orders;",
@@ -186,8 +208,11 @@ async function seedSql(tokenKey: string): Promise<string> {
         "DELETE FROM customers;",
         "DELETE FROM products;",
         "DELETE FROM businesses;",
+        "DELETE FROM districts;",
+        district,
         ...shops.flat(),
         courierProfile,
+        ...network,
     ].join("\n")
 }
 

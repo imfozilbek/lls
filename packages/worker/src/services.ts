@@ -36,6 +36,16 @@ import {
     UpdateCustomerUseCase,
     UpdateProductUseCase,
     UpdateShopUseCase,
+    AutoRequestNetworkUseCase,
+    ClaimNetworkOrderUseCase,
+    FreeNetworkCouriersUseCase,
+    ListNetworkOrdersUseCase,
+    NetworkStatsUseCase,
+    OfferNetworkUseCase,
+    OverdueNetworkOrdersUseCase,
+    RequestNetworkCourierUseCase,
+    SetDistrictUseCase,
+    SetNetworkMembershipUseCase,
 } from "@lls/core"
 
 import { platformAdminIds } from "./env.js"
@@ -43,6 +53,8 @@ import { D1BusinessRepository } from "./repositories/business.repository.js"
 import { D1CashHandoverRepository } from "./repositories/cash-handover.repository.js"
 import { D1CourierRepository } from "./repositories/courier.repository.js"
 import { D1CustomerRepository } from "./repositories/customer.repository.js"
+import { D1DistrictRepository } from "./repositories/district.repository.js"
+import { D1NetworkOfferRepository } from "./repositories/network-offer.repository.js"
 import { D1OrderRepository } from "./repositories/order.repository.js"
 import { D1ProductRepository } from "./repositories/product.repository.js"
 
@@ -93,6 +105,16 @@ export interface UseCases {
     listShowcaseShops: ListShowcaseShopsUseCase
     searchShowcase: SearchShowcaseUseCase
     setMarketplaceTerms: SetMarketplaceTermsUseCase
+    setDistrict: SetDistrictUseCase
+    setNetworkMembership: SetNetworkMembershipUseCase
+    offerNetwork: OfferNetworkUseCase
+    requestNetworkCourier: RequestNetworkCourierUseCase
+    autoRequestNetwork: AutoRequestNetworkUseCase
+    listNetworkOrders: ListNetworkOrdersUseCase
+    claimNetworkOrder: ClaimNetworkOrderUseCase
+    overdueNetworkOrders: OverdueNetworkOrdersUseCase
+    networkStats: NetworkStatsUseCase
+    freeNetworkCouriers: FreeNetworkCouriersUseCase
 }
 
 export interface Services extends ServiceDeps {
@@ -102,6 +124,8 @@ export interface Services extends ServiceDeps {
     customers: D1CustomerRepository
     orders: D1OrderRepository
     couriers: D1CourierRepository
+    districts: D1DistrictRepository
+    networkOffers: D1NetworkOfferRepository
     useCases: UseCases
 }
 
@@ -112,10 +136,13 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const customers = new D1CustomerRepository(env.DB)
     const orders = new D1OrderRepository(env.DB)
     const couriers = new D1CourierRepository(env.DB)
+    const districts = new D1DistrictRepository(env.DB)
     const { clock, telegram } = deps
+    const admins = platformAdminIds(env)
     const orderAccess = { businesses, customers, couriers, orders }
     const courierAccess = { businesses, couriers, orders, clock }
-    const money = { ...courierAccess, handovers: new D1CashHandoverRepository(env.DB) }
+    const network = { ...courierAccess, districts }
+    const money = { ...network, handovers: new D1CashHandoverRepository(env.DB) }
 
     return {
         env,
@@ -126,12 +153,14 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         customers,
         orders,
         couriers,
+        districts,
+        networkOffers: new D1NetworkOfferRepository(env.DB),
         useCases: {
             registerShop: new RegisterShopUseCase(businesses, clock),
-            reviewShop: new ReviewShopUseCase(businesses, platformAdminIds(env), clock),
+            reviewShop: new ReviewShopUseCase(businesses, admins, clock),
             getShopBySlug: new GetShopBySlugUseCase(businesses, clock),
             listMyShops: new ListMyShopsUseCase(businesses, clock),
-            updateShop: new UpdateShopUseCase(businesses, clock),
+            updateShop: new UpdateShopUseCase(businesses, clock, districts),
             createProduct: new CreateProductUseCase(businesses, products),
             updateProduct: new UpdateProductUseCase(businesses, products, clock),
             deleteProduct: new DeleteProductUseCase(businesses, products),
@@ -163,11 +192,17 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             courierAdvanceOrder: new CourierAdvanceOrderUseCase(orderAccess),
             listShowcaseShops: new ListShowcaseShopsUseCase(businesses, clock),
             searchShowcase: new SearchShowcaseUseCase(businesses, products, clock),
-            setMarketplaceTerms: new SetMarketplaceTermsUseCase(
-                businesses,
-                platformAdminIds(env),
-                clock,
-            ),
+            setMarketplaceTerms: new SetMarketplaceTermsUseCase(businesses, admins, clock),
+            setDistrict: new SetDistrictUseCase(network, admins),
+            setNetworkMembership: new SetNetworkMembershipUseCase(network),
+            offerNetwork: new OfferNetworkUseCase(network),
+            requestNetworkCourier: new RequestNetworkCourierUseCase(network),
+            autoRequestNetwork: new AutoRequestNetworkUseCase(network),
+            listNetworkOrders: new ListNetworkOrdersUseCase(network),
+            claimNetworkOrder: new ClaimNetworkOrderUseCase(network),
+            overdueNetworkOrders: new OverdueNetworkOrdersUseCase(network),
+            networkStats: new NetworkStatsUseCase(network, admins),
+            freeNetworkCouriers: new FreeNetworkCouriersUseCase(network),
         },
     }
 }

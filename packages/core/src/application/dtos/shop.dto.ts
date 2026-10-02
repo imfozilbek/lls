@@ -49,6 +49,10 @@ export interface ShopOwnerDTO extends ShopPublicDTO {
     deliveryRadiusMeters?: number
     /** The shop's marketplace deal with LLS, if signed. */
     marketplace?: { commissionBps: number; joinedAt: string }
+    /** When its own couriers are busy, orders go to the district network. */
+    networkDelivery: boolean
+    /** The shop's location is inside a district of the delivery network. */
+    inDistrict: boolean
     createdAt: string
 }
 
@@ -100,6 +104,8 @@ export function toShopOwnerDTO(business: Business, now: Date): ShopOwnerDTO {
             commissionBps: business.marketplace.commissionBps,
             joinedAt: business.marketplace.joinedAt.toISOString(),
         },
+        networkDelivery: business.networkDelivery,
+        inDistrict: business.districtId !== undefined,
         createdAt: business.createdAt.toISOString(),
     }
 }

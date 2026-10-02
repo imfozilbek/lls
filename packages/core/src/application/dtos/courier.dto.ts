@@ -42,6 +42,8 @@ export interface CourierProfileDTO {
     phone?: string
     vehicle?: string
     onShift: boolean
+    /** Takes orders of other shops of the district. */
+    inNetwork: boolean
 }
 
 export function toCourierProfileDTO(profile: CourierProfile, now: Date): CourierProfileDTO {
@@ -50,6 +52,7 @@ export function toCourierProfileDTO(profile: CourierProfile, now: Date): Courier
         phone: profile.phone?.number,
         vehicle: profile.vehicle,
         onShift: profile.isOnShift(now),
+        inNetwork: profile.inNetwork,
     }
 }
 
@@ -69,9 +72,30 @@ export interface CourierOrderDTO extends OrderDTO {
     shopName: string
 }
 
+/**
+ * A district network order before anyone took it: what a courier needs to decide, and nothing
+ * about the customer (no address, no phone, no name).
+ */
+export interface NetworkOrderDTO {
+    id: string
+    businessId: string
+    shopName: string
+    shopAddress?: string
+    number: number
+    /** Cash to take at the door: 0 when it is paid or paid by transfer. */
+    collect: number
+    itemsCount: number
+    bottlesReturned: number
+    /** Shop → customer, straight line, when both locations are known. */
+    distanceMeters?: number
+    requestedAt: string
+}
+
 /** Everything on the courier's screen, across all their shops. */
 export interface CourierHomeDTO {
     profile: CourierProfileDTO
     shops: CourierShopDTO[]
     orders: CourierOrderDTO[]
+    /** Network orders of the courier's districts waiting for «Беру» (empty when not in network). */
+    network: NetworkOrderDTO[]
 }

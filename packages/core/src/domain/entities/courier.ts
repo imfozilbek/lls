@@ -16,6 +16,9 @@ export const COURIER_INVITE_TTL_MS = 48 * 60 * 60 * 1000
 /** Why a courier cannot take an order right now: the owner sees it next to the name. */
 export type CourierUnavailableReason = "not_approved" | "day_off" | "off_today" | "not_on_shift"
 
+/** Why a courier cannot take a district network order now. */
+export type NetworkUnavailableReason = "not_approved" | "not_in_network" | "not_on_shift" | "busy"
+
 export interface CourierProps {
     id: string
     businessId: string
@@ -36,6 +39,24 @@ export interface CourierProps {
  */
 export class Courier {
     private constructor(private props: CourierProps) {}
+
+    /** A network courier took an order of a shop they do not work for: the link holds it. */
+    static forNetwork(input: {
+        id: string
+        businessId: string
+        profile: CourierProfile
+        now: Date
+    }): Courier {
+        return new Courier({
+            id: input.id,
+            businessId: input.businessId,
+            profile: input.profile,
+            status: CourierStatus.NETWORK,
+            workDays: [...WEEKDAYS],
+            createdAt: input.now,
+            updatedAt: input.now,
+        })
+    }
 
     /** The person accepted the shop's invite; the owner still has to approve. */
     static join(input: {
@@ -86,6 +107,10 @@ export class Courier {
     get isPending(): boolean {
         return this.props.status === CourierStatus.PENDING
     }
+    /** Took this shop's orders from the district network; not the shop's own courier. */
+    get isNetwork(): boolean {
+        return this.props.status === CourierStatus.NETWORK
+    }
     get workDays(): readonly Weekday[] {
         return this.props.workDays
     }
@@ -102,6 +127,11 @@ export class Courier {
     /** An approved courier of this shop: may see its orders and hold its cash. */
     worksFor(businessId: string): boolean {
         return this.isActive && this.props.businessId === businessId
+    }
+
+    /** May move this shop's orders assigned to them: its own courier, or a network one. */
+    deliversFor(businessId: string): boolean {
+        return (this.isActive || this.isNetwork) && this.props.businessId === businessId
     }
 
     /** A new invite of the same shop: a removed courier asks again; an active one stays. */

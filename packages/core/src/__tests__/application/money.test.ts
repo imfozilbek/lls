@@ -38,6 +38,7 @@ import {
     InMemoryBusinesses,
     InMemoryCouriers,
     InMemoryCustomers,
+    InMemoryDistricts,
     InMemoryHandovers,
     InMemoryOrders,
     InMemoryProducts,
@@ -65,8 +66,9 @@ describe("money: payments, courier cash, report", () => {
         couriers: InMemoryCouriers
         orders: InMemoryOrders
         handovers: InMemoryHandovers
+        districts: InMemoryDistricts
         clock: typeof clock
-    } => ({ businesses, couriers, orders, handovers, clock })
+    } => ({ businesses, couriers, orders, handovers, districts: new InMemoryDistricts(), clock })
     const access = (): {
         businesses: InMemoryBusinesses
         customers: InMemoryCustomers

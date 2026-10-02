@@ -47,7 +47,7 @@ async function participantOf(
         return { role: "owner" }
     }
     const courier = await deps.couriers.findByTelegramId(order.businessId, telegramId)
-    if (courier?.worksFor(order.businessId) && order.isAssignedTo(courier.id)) {
+    if (courier?.deliversFor(order.businessId) && order.isAssignedTo(courier.id)) {
         return { role: "courier", courierId: courier.id }
     }
     const customer = await deps.customers.findByTelegramId(telegramId)

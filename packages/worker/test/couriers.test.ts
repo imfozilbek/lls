@@ -154,11 +154,17 @@ describe("shop couriers, verticals and channels", () => {
             },
         })
         expect(client.telegram.edited.at(-1)?.html).toContain("Jasur")
-        const approved = client.telegram.sent.at(-1)
+        const [approved, invite] = client.telegram.sent.slice(-2)
         expect(approved).toMatchObject({ chatId: COURIER.id, token: env.COURIER_BOT_TOKEN })
         expect(approved?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
             "https://lls-app.pages.dev/?mode=courier",
         )
+        // Once, right after the first approval: the district network is offered.
+        expect(invite).toMatchObject({ chatId: COURIER.id, token: env.COURIER_BOT_TOKEN })
+        expect(invite?.options?.keyboard?.inline_keyboard[0]?.map((b) => b.callback_data)).toEqual([
+            "net:join",
+            "net:skip",
+        ])
         const [courier] = await json<{ status: string; phone?: string }[]>(
             await as(OWNER)("/api/owner/couriers"),
         )
