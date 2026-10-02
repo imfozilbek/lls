@@ -41,9 +41,21 @@ Mijozlar sizning botingizni, nomingizni va rangingizni ko'radi.
 
 1. **Mening do'konim → Sozlamalar → Kuryerlar → Kuryerni taklif qilish.**
 2. **Telegram'da yuborish** ni bosing va kuryeringizni tanlang (yoki havolani nusxa oling).
-3. Kuryer havolani ochib **Start** ni bosadi — u sizning kuryeringiz bo'ladi. Bot sizga xabar beradi.
+3. Kuryer havolani ochadi — u **LLS kuryer botida** ochiladi. **Start** ni bosib, telefon raqamini
+   yuboradi.
+4. Bot sizga yozadi: «… kuryer bo'lish taklifini qabul qildi». **✅ Tasdiqlash** ni bosing
+   (yoki ilovada **Kuryerlar → Tasdiqlashni kutmoqda → Tasdiqlash**).
 
 Havola 48 soat va faqat bir marta ishlaydi. Har bir kuryerga yangi havola yarating.
+
+**Kuryerning ish kunlari.** Ro'yxatda har bir kuryer ostida **Du … Ya** tugmalari bor: dam olish
+kunini bosib o'chiring. **Bugun ishlamaydi** — faqat bugunga o'chiradi, ertaga o'zi qaytadi.
+Kuryer ishga chiqqanda o'zi **Smenada** ni yoqadi; ro'yxatda yashil nuqta ko'rinadi.
+Buyurtmani faqat bugun ishlaydigan va smenadagi kuryerga berish mumkin.
+
+Bitta kuryer bir nechta do'konga ishlashi mumkin. Siz faqat o'z do'koningiz buyurtmalari va
+pulini ko'rasiz.
+
 Kuryerni o'chirish: ro'yxatdagi 🗑 tugmasi.
 
 ### 4. Buyurtmani qabul qilish va yetkazish
@@ -55,7 +67,8 @@ Xabar ostidagi tugmani bosing. Har bir bosishda mijozga xabar boradi.
 
 Keyin ilovada **Mening do'konim → Buyurtmalar → Kuryer tayinlash** ni bosing va kuryerni tanlang.
 
-- Kuryerga bot orqali buyurtma kartasi keladi: manzil, xarita, mijoz telefoni, **mijozdan olinadigan summa**.
+- Kuryerga LLS kuryer botidan buyurtma kartasi keladi (sarlavhada do'kon nomi): manzil, xarita,
+  mijoz telefoni, **mijozdan olinadigan summa**.
 - Buyurtma tayyor bo'lganda kuryer **🚚 Oldim** ni bosadi. Eshik oldida mijoz qanday to'laganini
   tanlaydi: **🏁 💵 Naqd pul**, **🏁 💳 Kartaga o'tkazma** yoki **🏁 🕓 Keyinroq to'laydi** (qarz).
 - Mijoz kuryer ismini ko'radi: «Buyurtmangizni Jasur olib kelmoqda».
@@ -160,9 +173,20 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 
 1. **Мой магазин → Настройки → Доставщики → Пригласить доставщика.**
 2. Нажмите **Отправить в Telegram** и выберите доставщика (или скопируйте ссылку).
-3. Доставщик открывает ссылку и нажимает **Start** — он ваш доставщик. Бот вам сообщит.
+3. Доставщик открывает ссылку — она откроется в **боте доставщиков LLS**. Он нажимает **Start**
+   и отправляет свой номер.
+4. Бот пишет вам: «… принял приглашение стать доставщиком». Нажмите **✅ Подтвердить**
+   (или в приложении **Доставщики → Ждут подтверждения → Подтвердить**).
 
 Ссылка работает 48 часов и только один раз. Для каждого доставщика — новая ссылка.
+
+**Дни работы доставщика.** У каждого доставщика в списке кнопки **Пн … Вс**: нажмите выходной
+день, чтобы выключить его. **Сегодня не работает** выключает только на сегодня, завтра он снова
+в работе. Выйдя на работу, доставщик сам включает **На смене**; в списке видна зелёная точка.
+Заказ можно дать только тому, кто сегодня работает и на смене.
+
+Один доставщик может возить для нескольких точек. Вы видите только заказы и деньги своей точки.
+
 Убрать доставщика: кнопка 🗑 в списке.
 
 ### 4. Принять и доставить заказ
@@ -174,7 +198,8 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 
 Затем в приложении **Мой магазин → Заказы → Назначить доставщика** и выберите его.
 
-- Доставщику бот присылает карточку: адрес, карта, телефон клиента, **сколько взять с клиента**.
+- Доставщику бот доставщиков LLS присылает карточку (в заголовке — название точки): адрес, карта,
+  телефон клиента, **сколько взять с клиента**.
 - Когда заказ готов, доставщик нажимает **🚚 Забрал**. У двери он выбирает, как заплатил клиент:
   **🏁 💵 Наличными**, **🏁 💳 Переводом на карту** или **🏁 🕓 Заплатит позже** (долг).
 - Клиент видит имя доставщика: «Заказ везёт Жасур».
@@ -242,3 +267,23 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
   Google Таблицах).
 
 Доставщик видит у себя **На руках: X сум**.
+
+---
+
+## Kuryer uchun eslatma / Памятка доставщику
+
+**O'zbekcha**
+1. Do'kondan olingan havolani oching → **LLS kuryer boti** → **Start** → **📱 Raqamni yuborish**.
+2. Do'kon tasdiqlashini kuting: bot yozadi.
+3. Ishga chiqqanda **🚚 Yetkazishlarim** → **Smenadaman** ni yoqing. Smena yarim tunda tugaydi.
+4. Buyurtma kartasi botga keladi. Tayyor bo'lganda **🚚 Oldim**, eshik oldida —
+   **🏁 Yetkazdim** va mijoz qanday to'laganini tanlang.
+5. Ekranda har bir do'kon puli alohida: **Qo'lingizda: X so'm**. Pulni o'sha do'konga topshiring.
+
+**Русский**
+1. Откройте ссылку от точки → **бот доставщиков LLS** → **Start** → **📱 Отправить номер**.
+2. Дождитесь подтверждения точки: бот напишет.
+3. Вышли на работу — **🚚 Мои доставки** → включите **Я на смене**. Смена заканчивается в полночь.
+4. Карточка заказа приходит в бот. Когда заказ готов — **🚚 Забрал**, у двери — **🏁 Доставил** и
+   как заплатил клиент.
+5. На экране деньги каждой точки отдельно: **На руках: X сум**. Сдавайте их именно этой точке.
