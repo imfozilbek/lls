@@ -34,6 +34,8 @@ export const uz = {
         ORDER_CANNOT_BE_CANCELLED: "Do'kon buyurtmani allaqachon qabul qildi.",
         ORDER_NOT_ASSIGNABLE: "Yo'lga chiqqan buyurtmaga kuryer tayinlab bo'lmaydi.",
         COURIER_NOT_AVAILABLE: "Bu kuryer hozir buyurtma ola olmaydi.",
+        NETWORK_ORDER_TAKEN: "Bu buyurtmani boshqa kuryer allaqachon oldi.",
+        NO_DISTRICT: "Do'koningiz hali LLS tarmog'i tumanlaridan tashqarida.",
         INVITE_USED: "Bu taklif havolasi allaqachon ishlatilgan.",
         INVITE_EXPIRED: "Taklif havolasi eskirgan. Yangisini yarating.",
         INVALID_BOT_TOKEN: "Token noto'g'ri. BotFather'dan to'liq nusxa oling.",
@@ -222,6 +224,10 @@ export const uz = {
         assign: "Kuryer tayinlash",
         reassign: "Boshqa kuryer",
         noCouriers: "Hali kuryer yo'q. Sozlamalarda taklif qiling.",
+        toNetwork: "Tuman tarmog'i kuryeri",
+        toNetworkHint: "Tumanning birinchi bo'sh kuryeri oladi",
+        networkSearching: "Tuman tarmog'idan kuryer qidirilmoqda…",
+        viaNetwork: "tuman tarmog'i",
         bottlesBack: "Bo'sh idish qaytaradi: {n} ta",
         addProduct: "Mahsulot qo'shish",
         menuEmpty: "Katalog bo'sh",
@@ -308,6 +314,12 @@ export const uz = {
             location: "Do'kon joylashuvi",
             setLocation: "Joylashuvni yangilash",
             couriers: "Kuryerlar",
+            networkTitle: "Tuman tarmog'i",
+            networkSwitch: "Kuryerlarim band bo'lsa — tuman tarmog'iga berish",
+            networkHint:
+                "Buyurtmani tumanning bo'sh kuryeri oladi: u mijoz manzilini ko'radi va buyurtma pulini sizga topshiradi.",
+            notInDistrict:
+                "Do'koningiz hali LLS tarmog'i tumanlaridan tashqarida: do'kon joylashuvini kiriting.",
             couriersHint:
                 "Kuryer LLS kuryer botida ishlaydi: buyurtmani oladi va «Oldim», «Yetkazdim» tugmalarini bosadi.",
             pendingTitle: "Tasdiqlashni kutmoqda",
@@ -376,6 +388,15 @@ export const uz = {
         vehicle: "Transport",
         vehiclePlaceholder: "Masalan: Damas",
         notCourierTitle: "Siz hali kuryer emassiz",
+        network: "Tuman buyurtmalarini olaman",
+        networkHint:
+            "Yuboradigan odami yo'q tuman do'konlari buyurtmalari. Qulay bo'lsagina olasiz.",
+        nearby: "Yaqindagi buyurtmalar",
+        nearbyEmpty: "Yaqinda hozircha buyurtma yo'q",
+        take: "Olaman",
+        items: "Pozitsiyalar: {n}",
+        distance: "mijozgacha ≈ {km} km",
+        networkShop: "tuman tarmog'i",
         notCourierText:
             "Do'kon egasidan taklif havolasini so'rang. Havolani ochgan bo'lsangiz, tasdiqlashni kuting — bot yozadi.",
     },

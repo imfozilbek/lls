@@ -24,7 +24,7 @@ import {
 } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
-import { CouriersSection } from "./CouriersSection.js"
+import { CouriersSection, NetworkSection } from "./CouriersSection.js"
 import { HoursEditor } from "./HoursEditor.js"
 import { PosterSection } from "./PosterSection.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
@@ -605,6 +605,7 @@ export function SettingsTab(): React.JSX.Element {
             <AcceptingCard shop={shop} onSaved={setShop} />
             <SettingsForm shop={shop} onSaved={setShop} />
             <CouriersSection shopName={shop.name} />
+            <NetworkSection shop={shop} onSaved={setShop} />
             <Section title={t.owner.settings.link}>
                 <ShopLink shop={shop} />
             </Section>

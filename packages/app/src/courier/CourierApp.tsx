@@ -1,4 +1,4 @@
-import { OrderStatus, PaidWith, PaymentMethod, PaymentStatus } from "@lls/core"
+import { CourierStatus, OrderStatus, PaidWith, PaymentMethod, PaymentStatus } from "@lls/core"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -24,9 +24,16 @@ import {
 import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
 
-import type { CourierHomeDTO, CourierOrderDTO, CourierShopDTO, OrderDTO } from "@lls/core"
+import type {
+    CourierHomeDTO,
+    CourierOrderDTO,
+    CourierShopDTO,
+    NetworkOrderDTO,
+    OrderDTO,
+} from "@lls/core"
 
 const POLL_MS = 20_000
+const METERS_PER_KM = 1000
 
 /** The one step a courier makes next, if any. */
 function courierStep(status: OrderStatus): "picked_up" | "delivered" | null {
@@ -295,6 +302,152 @@ function ShiftCard({
 }
 
 /** One shop the courier works for: today or a day off, and that shop's cash on their hands. */
+/** «Беру заказы района»: the courier's own consent to the district network. */
+function NetworkCard({
+    home,
+    onChange,
+}: {
+    home: CourierHomeDTO
+    onChange(home: CourierHomeDTO): void
+}): React.JSX.Element {
+    const t = useT()
+    const toggle = async (inNetwork: boolean): Promise<void> => {
+        try {
+            const profile = await api.courier.network(inNetwork)
+            onChange({ ...home, profile, network: inNetwork ? home.network : [] })
+            haptic.success()
+        } catch (caught) {
+            haptic.error()
+            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+        }
+    }
+    return (
+        <div className="flex items-center gap-3 rounded-tile bg-tg-secondary p-4">
+            <span className="flex-1">
+                <span className="block font-semibold">{t.courier.network}</span>
+                <span className="text-sm text-tg-hint">{t.courier.networkHint}</span>
+            </span>
+            <Switch
+                checked={home.profile.inNetwork}
+                onChange={(next): void => void toggle(next)}
+                label={t.courier.network}
+            />
+        </div>
+    )
+}
+
+/** One network order nearby: the shop, what to take, how far; nothing about the customer. */
+function NearbyCard({
+    offer,
+    onTaken,
+    onStale,
+}: {
+    offer: NetworkOrderDTO
+    onTaken(): void
+    onStale(): void
+}): React.JSX.Element {
+    const t = useT()
+    const language = useLanguage()
+    const [busy, setBusy] = useState(false)
+    const take = async (): Promise<void> => {
+        setBusy(true)
+        try {
+            await api.courier.claim(offer.id)
+            haptic.success()
+            onTaken()
+        } catch (caught) {
+            haptic.error()
+            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+            onStale()
+        } finally {
+            setBusy(false)
+        }
+    }
+    return (
+        <li className="flex animate-rise flex-col gap-3 rounded-tile border border-brand/30 bg-brand/5 p-4">
+            <div className="flex items-start justify-between gap-3">
+                <span className="min-w-0">
+                    <span className="flex items-center gap-1.5 font-semibold">
+                        <StoreIcon size={16} className="shrink-0 text-brand" />
+                        <span className="truncate">{offer.shopName}</span>
+                    </span>
+                    {offer.shopAddress ? (
+                        <span className="block truncate text-sm text-tg-hint">
+                            {offer.shopAddress}
+                        </span>
+                    ) : null}
+                </span>
+                <span className="shrink-0 text-lg font-bold">#{offer.number}</span>
+            </div>
+            <p className="flex flex-wrap gap-x-3 text-sm text-tg-subtitle">
+                <span>{fill(t.courier.items, { n: offer.itemsCount })}</span>
+                {offer.distanceMeters === undefined ? null : (
+                    <span>
+                        {fill(t.courier.distance, {
+                            km: (offer.distanceMeters / METERS_PER_KM).toFixed(1).replace(".", ","),
+                        })}
+                    </span>
+                )}
+                {offer.bottlesReturned > 0 ? (
+                    <span>{fill(t.courier.bottles, { n: offer.bottlesReturned })}</span>
+                ) : null}
+            </p>
+            <div className="flex items-center justify-between gap-3">
+                <span className="font-semibold tabular-nums">
+                    {offer.collect > 0
+                        ? `${t.courier.collect}: ${formatMoney(offer.collect, language)}`
+                        : t.courier.nothingToCollect}
+                </span>
+                <Button
+                    loading={busy}
+                    className="shrink-0"
+                    icon={<ScooterIcon size={18} />}
+                    onClick={(): void => void take()}
+                >
+                    {t.courier.take}
+                </Button>
+            </div>
+        </li>
+    )
+}
+
+function Nearby({
+    home,
+    reload,
+}: {
+    home: CourierHomeDTO
+    reload(): Promise<void>
+}): React.JSX.Element | null {
+    const t = useT()
+    if (!home.profile.inNetwork) {
+        return null
+    }
+    return (
+        <section className="flex flex-col gap-2">
+            <h2 className="px-1 text-sm font-semibold text-tg-subtitle">
+                {t.courier.nearby}
+                {home.network.length > 0 ? ` · ${home.network.length}` : ""}
+            </h2>
+            {home.network.length === 0 ? (
+                <p className="rounded-tile bg-tg-secondary px-4 py-3 text-sm text-tg-hint">
+                    {t.courier.nearbyEmpty}
+                </p>
+            ) : (
+                <ul className="flex flex-col gap-3">
+                    {home.network.map((offer) => (
+                        <NearbyCard
+                            key={offer.id}
+                            offer={offer}
+                            onTaken={(): void => void reload()}
+                            onStale={(): void => void reload()}
+                        />
+                    ))}
+                </ul>
+            )}
+        </section>
+    )
+}
+
 function ShopRow({ shop }: { shop: CourierShopDTO }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -309,7 +462,9 @@ function ShopRow({ shop }: { shop: CourierShopDTO }): React.JSX.Element {
             </span>
             <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{shop.shopName}</span>
-                {shop.worksToday ? null : (
+                {shop.status === CourierStatus.NETWORK ? (
+                    <span className="block text-sm text-tg-hint">{t.courier.networkShop}</span>
+                ) : shop.worksToday ? null : (
                     <span className="block text-sm text-tg-hint">{t.courier.dayOff}</span>
                 )}
             </span>
@@ -458,7 +613,11 @@ export function CourierApp(): React.JSX.Element {
             ) : (
                 <>
                     <ShiftCard home={home} onChange={setHome} />
+                    {/* Nothing to deliver yet: orders nearby come before the empty state. */}
+                    {home.orders.some(isActive) ? null : <Nearby home={home} reload={reload} />}
                     <Deliveries home={home} replace={replace} reload={reload} />
+                    {home.orders.some(isActive) ? <Nearby home={home} reload={reload} /> : null}
+                    <NetworkCard home={home} onChange={setHome} />
                     <section className="flex flex-col gap-2">
                         <h2 className="px-1 text-sm font-semibold text-tg-subtitle">
                             {t.courier.shops}
