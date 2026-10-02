@@ -81,7 +81,10 @@ test("ready → «Забрал» in the chat → «Доставил» in the app
     await expect(page.getByText(/100\s000/).first()).toBeVisible()
     const before = await lastSeq()
     await page.getByRole("button", { name: "Доставил" }).click()
+    await page.getByRole("dialog").getByRole("button", { name: "Наличными" }).click()
     await expect(page.getByText(/Доставлено сегодня · 1/)).toBeVisible()
+    // The cash taken at the door is now on the courier's hands.
+    await expect(page.getByText(/На руках: 100\s000/)).toBeVisible()
     await waitForMessage(PEOPLE.customer.id, "доставлен", before)
 })
 

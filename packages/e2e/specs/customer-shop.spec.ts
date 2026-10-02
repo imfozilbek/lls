@@ -106,7 +106,11 @@ test.describe("customer of a food shop: order and status", () => {
         await page.getByRole("button", { name: "Отправить геолокацию" }).click()
         await expect(page.getByText("Геолокация добавлена")).toBeVisible()
         await page.getByLabel("Комментарий").fill("3 этаж")
-        await expect(page.getByText("Оплата: наличными при получении")).toBeVisible()
+        // Cash is the default; the transfer option needs the shop's card (covered in money.spec).
+        await expect(page.getByRole("radio", { name: /Наличными/ })).toHaveAttribute(
+            "aria-checked",
+            "true",
+        )
 
         const since = await lastSeq()
         await bottomButton(page).click()
@@ -178,7 +182,7 @@ test.describe("customer of a food shop: cancel, history, language", () => {
             const response = await apiAs(PEOPLE.foodOwner, `/owner/orders/${first?.id ?? ""}`, {
                 shop: FOOD,
                 method: "PATCH",
-                json: { status },
+                json: status === "delivered" ? { status, paidWith: "cash" } : { status },
             })
             expect(response.status).toBe(200)
         }
