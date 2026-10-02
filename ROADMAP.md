@@ -33,14 +33,17 @@ marketplace on top of both.
 
 | Stage | What | Revenue | Status |
 |-------|------|---------|--------|
-| **1. Online point + district delivery** | **Online point:** storefront, orders, money, own couriers, LLS showcase. **District delivery** (standalone from the first versions): LLS courier bot, a courier for several points, points without couriers served by the network | Subscription + commission on showcase orders. Delivery: **not decided** (owner decides) | 🔨 Now |
+| **1. Online point + district delivery** | **Online point:** storefront, orders, money, own couriers, LLS showcase. **District delivery** (standalone from the first versions): LLS courier bot, a courier for several points, points without couriers served by the network | Service fee on every order (paid by the customer) + subscription + commission on showcase orders. Delivery: **not decided** (owner decides) | 🔨 Now |
 | 2. District marketplace | One cart from several shops, district filter | Commission on marketplace sales + subscription | Later |
 | 3. Delivery at scale | Several pickups per trip, routes | Delivery fee + volume terms | Later |
 
 **District metrics:** points online, active couriers, share of orders delivered by network couriers.
 
-Pilot: **food, water and grocery at the same time.** Sales through a shop's own bot never carry
-an LLS commission; only marketplace sales will (stage 2).
+**Financial model:** LLS earns on volume. A small service fee, paid by the customer, on every
+order through LLS: revenue ≈ turnover through LLS × average fee rate. The shop's prices never
+change. Showcase orders also carry the showcase commission (paid by the shop).
+
+Pilot: **food, water and grocery at the same time.**
 
 ---
 
@@ -142,6 +145,13 @@ an LLS commission; only marketplace sales will (stage 2).
 ### M7. Online point in an hour ⏳
 - [ ] Pickup: order ahead, collect without a queue
 - [ ] We fill the catalog for the point (import from Excel or photos — when a point asks)
+
+### M8. Service fee ⏳
+- [ ] Decide (owner): the fee base (goods, or goods + delivery; deposits never count) and the pilots' rate
+- [ ] Rate per business: `/fee <slug> <percent>` in the LLS bot (0 allowed)
+- [ ] "Сервис" line in the cart, checkout, order screen and bot messages; snapshot in every order
+- [ ] The fee in «Деньги» and the CSV
+- [ ] Monthly per-shop report "to pay LLS" (fees + showcase commission); admin report for all shops
 
 ---
 

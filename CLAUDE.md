@@ -45,7 +45,7 @@ LLS is the platform brand. Customers see the **shop's brand**; the app shows a s
 
 | Stage | What | Revenue |
 |-------|------|---------|
-| **1. Online point + district delivery (NOW)** | **Online point:** the pilot shops' whole process: found → order → delivery → **paid**, and the owner sees where the money is. **LLS showcase**: search across shops in the LLS bot, the order goes to one shop. **District delivery** (standalone from the first versions): the LLS courier bot; a courier works for several points; points without couriers are served by the district network | Subscription + commission on showcase orders. Delivery revenue: **not decided** (the owner decides) |
+| **1. Online point + district delivery (NOW)** | **Online point:** the pilot shops' whole process: found → order → delivery → **paid**, and the owner sees where the money is. **LLS showcase**: search across shops in the LLS bot, the order goes to one shop. **District delivery** (standalone from the first versions): the LLS courier bot; a courier works for several points; points without couriers are served by the district network | Service fee on every order (paid by the customer) + subscription + commission on showcase orders. Delivery revenue: **not decided** (the owner decides) |
 | 2. District marketplace | One cart from several shops, district filter | Commission on marketplace sales only |
 | 3. Delivery at scale | Several pickups per trip, routes | Delivery fee + volume terms |
 
@@ -53,9 +53,22 @@ LLS is the platform brand. Customers see the **shop's brand**; the app shows a s
 Zoir (20 l water production and delivery). Each business has its own bot. The first launch must
 cover each one's whole process; what exactly comes from the meeting with them.
 
-**Money rule of the platform:** LLS takes a commission **only** on sales made through the LLS
-marketplace channel. Sales through a shop's own bot are the shop's business (a separate
-subscription deal); the system never takes a cut there.
+**Money rules of the platform** (LLS earns on volume):
+- **LLS service fee (plan — not in code yet):** a small percentage on **every** order through LLS,
+  in any channel (shop bot, showcase, district delivery). The **customer** pays it as a separate
+  "Сервис" line in the cart, the order and the messages. The shop's prices never change: the shop
+  gets its price in full.
+- The rate is set per business by a platform admin, like `/market`: `/fee <slug> <percent>`.
+  Zero is allowed (pilots).
+- Every order stores a **service fee snapshot** (rate + amount, integer UZS), fixed when the
+  order is placed; 0 when the rate is 0. Computed only on the server.
+- No payment gateways: the shop receives the fee with the order (cash or transfer) and pays LLS
+  the month's fees by a monthly per-shop report.
+- Not decided (the owner decides, never invent): the fee base (goods, or goods + delivery; bottle
+  deposits never count), and the pilots' rate.
+- **Showcase commission** stays separate: a share of the goods that the shop pays on showcase
+  orders only (0 for `shop_bot`).
+- Subscription for the shop's own bot: a separate deal.
 
 **District delivery (stage 1, plan — not in code yet):**
 - One LLS courier bot for all couriers. One courier profile per `telegram_id` (name, phone,
@@ -95,6 +108,8 @@ subscription deal); the system never takes a cut there.
   - geo: business location + delivery zone, customer location
   - every order stores its **channel** (`shop_bot` | `marketplace`) and a **commission snapshot**
     (rate + amount, integer UZS, 0 for `shop_bot`), fixed when the order is placed
+  - every order stores a **service fee snapshot** (rate + amount, integer UZS) — plan, see
+    "Money rules"
   - couriers: today one row per business (`business_id`); district delivery moves them to one
     global courier per `telegram_id` + courier↔business links, without breaking existing data
 
@@ -264,13 +279,13 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through t
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout card (number, holder) or none |
+| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout card (number, holder) or none, service fee rate (bps; plan) |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at — whose customer this is |
 | Courier | id, business_id, telegram_id, name, phone, is_active — the shop's own delivery person (today) |
 | Courier (district delivery, plan) | global profile per telegram_id (name, phone, vehicle, in_network) + CourierBusiness (courier_id, business_id, status, working days) |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method cash/card_transfer, status unpaid/awaiting/paid/refund_due/refunded, paid_at, cash courier), delivered_at |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method cash/card_transfer, status unpaid/awaiting/paid/refund_due/refunded, paid_at, cash courier), delivered_at, service fee (rate + amount; plan) |
 | CashHandover | id, business_id, courier_id, amount, at — cash a courier gave to the owner |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
@@ -410,7 +425,7 @@ document.innerHTML = x                 // XSS
 - Validate all inputs with zod (especially Telegram data)
 - Never log passwords/tokens/secrets
 - Verify Telegram initData on every request
-- Prices, totals and `customerId` are computed on the server. Never trust them from the client
+- Prices, totals, the service fee and `customerId` are computed on the server. Never trust them from the client
 - Check ownership on every route (owner edits only own shop, customer sees only own orders)
 - Frontend NEVER talks to D1/R2 directly. Only through the Worker
 - CORS: allow only `APP_ORIGIN` (the Pages address)
@@ -667,6 +682,7 @@ Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 - [ ] Water: empty bottles + deposit; reorder
 - [ ] Grocery: weight items (kg steps); stop-list for today
 - [ ] Each order stores channel + commission (0 for own bot)
+- [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow
 - [ ] Uzbek + Russian texts
 - [ ] Empty states handling

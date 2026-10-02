@@ -31,8 +31,8 @@ shops (food, water, grocery), owners stop taking orders by phone, and customers 
 
 The LLS bot is the showcase of the district: one search across the products of every shop that
 signed a marketplace deal. A tap opens that shop's storefront inside the LLS bot; the order goes
-to that one shop. LLS earns a commission only on these showcase orders; a shop's own bot stays the
-shop's. Later the showcase grows into a marketplace with one cart from several shops.
+to that one shop. LLS earns on volume: a small service fee that the customer pays on every order
+(a separate line; the shop's prices never change), plus a commission on showcase orders. Later the showcase grows into a marketplace with one cart from several shops.
 
 ## Brand Personality
 
