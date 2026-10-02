@@ -3,18 +3,22 @@ import type { Config } from "tailwindcss"
 type ColorFn = (options: { opacityValue?: string }) => string
 
 /**
- * Telegram theme colors are hex values. Solid classes use the variable directly; opacity
- * modifiers (`bg-tg-hint/15`) go through color-mix. Without this Tailwind silently drops them.
+ * Surface colors are hex values in CSS variables (`src/index.css`). Solid classes use the
+ * variable directly; opacity modifiers (`bg-tg-hint/15`) go through color-mix. Without this
+ * Tailwind silently drops them.
  */
-function tgColor(variable: string, fallback: string): ColorFn {
-    const color = `var(${variable}, ${fallback})`
+function uiColor(variable: string): ColorFn {
+    const color = `var(${variable})`
     return ({ opacityValue }) =>
         opacityValue === undefined || opacityValue === "1"
             ? color
             : `color-mix(in srgb, ${color} calc(${opacityValue} * 100%), transparent)`
 }
 
-/** Telegram theme variables carry light/dark; the shop's brand color is `--brand-rgb`. */
+/**
+ * The Mini App is always light (owner's decision): the `tg-*` surface colors are our own light
+ * palette, never Telegram's theme. The shop's brand color is `--brand-rgb`.
+ */
 const config: Config = {
     content: ["./index.html", "./src/**/*.{ts,tsx}"],
     // Opacity comes from `/NN` modifiers only, so solid theme colors stay plain `var()`.
@@ -30,15 +34,15 @@ const config: Config = {
         extend: {
             colors: {
                 tg: {
-                    bg: tgColor("--tg-theme-bg-color", "#ffffff"),
-                    text: tgColor("--tg-theme-text-color", "#111827"),
-                    hint: tgColor("--tg-theme-hint-color", "#6b7280"),
-                    link: tgColor("--tg-theme-link-color", "#0284c7"),
-                    secondary: tgColor("--tg-theme-secondary-bg-color", "#f3f4f6"),
-                    section: tgColor("--tg-theme-section-bg-color", "#ffffff"),
-                    separator: tgColor("--tg-theme-section-separator-color", "#e5e7eb"),
-                    destructive: tgColor("--tg-theme-destructive-text-color", "#dc2626"),
-                    subtitle: tgColor("--tg-theme-subtitle-text-color", "#6b7280"),
+                    bg: uiColor("--ui-bg"),
+                    text: uiColor("--ui-text"),
+                    hint: uiColor("--ui-hint"),
+                    link: uiColor("--ui-link"),
+                    secondary: uiColor("--ui-secondary"),
+                    section: uiColor("--ui-section"),
+                    separator: uiColor("--ui-separator"),
+                    destructive: uiColor("--ui-destructive"),
+                    subtitle: uiColor("--ui-subtitle"),
                 },
                 brand: {
                     DEFAULT: "rgb(var(--brand-rgb, 14 165 233) / <alpha-value>)",

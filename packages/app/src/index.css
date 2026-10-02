@@ -3,10 +3,27 @@
 @tailwind utilities;
 
 @layer base {
+    /*
+     * Always light (owner's decision): one palette, whatever theme Telegram uses. The names
+     * match Telegram's (`tg-*` in Tailwind), so a dark palette stays one more block here.
+     */
+    :root {
+        color-scheme: light;
+        --ui-bg: #ffffff;
+        --ui-text: #111827;
+        --ui-hint: #6b7280;
+        --ui-link: #0284c7;
+        --ui-secondary: #f3f4f6;
+        --ui-section: #ffffff;
+        --ui-separator: #e5e7eb;
+        --ui-destructive: #dc2626;
+        --ui-subtitle: #6b7280;
+    }
+
     html,
     body {
-        background-color: var(--tg-theme-bg-color, #ffffff);
-        color: var(--tg-theme-text-color, #111827);
+        background-color: var(--ui-bg);
+        color: var(--ui-text);
         -webkit-tap-highlight-color: transparent;
         -webkit-font-smoothing: antialiased;
         text-rendering: optimizeLegibility;
@@ -48,14 +65,9 @@
     .skeleton {
         background: linear-gradient(
             90deg,
-            var(--tg-theme-secondary-bg-color, #f3f4f6) 25%,
-            color-mix(
-                    in srgb,
-                    var(--tg-theme-secondary-bg-color, #f3f4f6) 70%,
-                    var(--tg-theme-bg-color, #ffffff)
-                )
-                50%,
-            var(--tg-theme-secondary-bg-color, #f3f4f6) 75%
+            var(--ui-secondary) 25%,
+            color-mix(in srgb, var(--ui-secondary) 70%, var(--ui-bg)) 50%,
+            var(--ui-secondary) 75%
         );
         background-size: 200% 100%;
         @apply animate-shimmer rounded-control;
