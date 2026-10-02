@@ -11,6 +11,7 @@ marketplace on top of both.
 > Rules, stack and architecture: `CLAUDE.md`. Product context for design: `PRODUCT.md`.
 > Technical debt: `TODO.md`. Owner's launch steps: `docs/launch-checklist.md`.
 > Questions for the pilots' meeting: `docs/pilot-meeting.md`.
+> The path to the full vision, goal by goal: `docs/goals/README.md` («Дай, друг, дай следующую цель»).
 
 ## Current status: stage 1 — money, hours per day and QR poster done; waiting for Cloudflare accounts and the pilots' meeting
 

@@ -202,6 +202,16 @@ cover each one's whole process; what exactly comes from the meeting with them.
 | 3 | Sort by progress (completed first, least ready last) |
 | 4 | Bottom: show blocking/lagging task |
 
+### "Дай, друг, дай следующую цель" (next goal)
+The path to the full product vision is split into goals in `docs/goals/` (index: `README.md`).
+| Step | Action |
+|------|--------|
+| 1 | Open `docs/goals/README.md`; take the first goal from the top that is not ✅ and whose dependencies are ✅ |
+| 2 | If it waits for the owner (keys, a decision, a meeting): say exactly what is needed and offer the next goal that does not |
+| 3 | Show the goal briefly: why, what will be done, what is needed from the owner |
+| 4 | Work by these rules: plan mode → approval → atomic commits with gates → PR watched until merged |
+| 5 | Mark ✅ only when the whole Definition of done is met; update the goal and the index in the same PR |
+
 ### "end-work"
 | Step | Action |
 |------|--------|
