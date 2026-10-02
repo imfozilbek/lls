@@ -367,6 +367,7 @@ describe("inside a shop", () => {
         expect(served.status).toBe(200)
         expect(served.headers.get("Cache-Control")).toContain("immutable")
         expect(served.headers.get("X-Content-Type-Options")).toBe("nosniff")
+        expect(served.headers.get("Access-Control-Allow-Origin")).toBe("*")
         expect(new Uint8Array(await served.arrayBuffer())).toEqual(bytes)
 
         const wrongType = await asOwner()(`/api/owner/products/${osh}/image`, {

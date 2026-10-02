@@ -26,6 +26,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 import { CouriersSection } from "./CouriersSection.js"
 import { HoursEditor } from "./HoursEditor.js"
+import { PosterSection } from "./PosterSection.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 
 import type { Hours } from "./hours.js"
@@ -607,6 +608,7 @@ export function SettingsTab(): React.JSX.Element {
             <Section title={t.owner.settings.link}>
                 <ShopLink shop={shop} />
             </Section>
+            <PosterSection shop={shop} />
             <Section title={t.owner.settings.showcase}>
                 <p className="rounded-tile bg-tg-secondary p-4 text-sm text-tg-subtitle">
                     {shop.marketplace
