@@ -26,8 +26,11 @@ interface Order {
     number: number
     total: number
     status: string
-    payment: { method: string; status: string }
+    payment: { method: string; status: string; card?: { number: string; holder: string } }
 }
+
+// A second card of the shop: a valid Luhn number, not a real card. secret-scan: fake
+const SECOND_CARD = { number: "5614 6812 3456 7893", holder: "Malika Karimova" }
 
 async function json<T = Json>(response: Response): Promise<T> {
     return (await response.json()) as T
@@ -80,28 +83,73 @@ describe("money: transfer before the shop starts, report, files", () => {
         await sharePhoneWithShops(CUSTOMER.id)
     })
 
-    it("no card, no orders; the card shows in the shop, a typo is refused", async () => {
+    interface Cards {
+        paymentCardId?: string
+        cards: { id: string; number: string; holder: string }[]
+    }
+
+    const cards = (path = "", init?: RequestInit & { json?: unknown }): Promise<Response> =>
+        as(OWNER)(`/api/owner/shop/cards${path}`, init)
+
+    it("no payment card, no orders; the card shows in the shop", async () => {
         const shop = await json<{ payoutCard?: Json; hasPayoutCard: boolean }>(
             await as(CUSTOMER)("/api/shop"),
         )
         expect(shop.payoutCard).toEqual({ number: "4111111111111111", holder: "Rustam Karimov" })
         expect(shop.hasPayoutCard).toBe(true)
 
-        const typo = await as(OWNER)("/api/owner/shop", {
-            method: "PATCH",
-            json: { payoutCard: { number: "4111 1111 1111 1112", holder: "R" } },
-        })
-        expect(typo.status).toBe(400)
-
-        await as(OWNER)("/api/owner/shop", { method: "PATCH", json: { payoutCard: null } })
+        // A shop that never added a card (as before cards were required).
+        await env.DB.prepare(
+            `UPDATE businesses SET payout_card_number = NULL, payout_card_holder = NULL,
+                payment_card_id = NULL`,
+        ).run()
         const closed = await json<{ hasPayoutCard: boolean }>(await as(CUSTOMER)("/api/shop"))
         expect(closed.hasPayoutCard).toBe(false)
         const refused = await place()
         expect(refused.status).toBe(422)
         expect(await json(refused)).toMatchObject({ error: { code: "NO_PAYOUT_CARD" } })
+    })
 
-        await as(OWNER)("/api/owner/shop", { method: "PATCH", json: { payoutCard: CARD } })
-        expect((await place()).status).toBe(201)
+    it("many cards: add, choose the payment card, remove; orders keep their card", async () => {
+        let list = await json<Cards>(await cards())
+        expect(list.cards).toHaveLength(1)
+        expect(list.paymentCardId).toBe(list.cards[0]?.id)
+        const first = list.cards[0]?.id ?? ""
+
+        const typo = await cards("", {
+            method: "POST",
+            json: { number: "4111 1111 1111 1112", holder: "R" },
+        })
+        expect(typo.status).toBe(400)
+        const added = await cards("", { method: "POST", json: SECOND_CARD })
+        expect(added.status).toBe(201)
+        list = await json<Cards>(added)
+        const second = list.cards[1]?.id ?? ""
+        expect(list.paymentCardId).toBe(first)
+        const twice = await cards("", { method: "POST", json: SECOND_CARD })
+        expect(await json(twice)).toMatchObject({ error: { code: "CARD_EXISTS" } })
+
+        const before = await json<Order>(await place())
+        expect(before.payment.card).toEqual({ number: "4111111111111111", holder: CARD.holder })
+
+        list = await json<Cards>(await cards(`/${second}/payment`, { method: "PUT" }))
+        expect(list.paymentCardId).toBe(second)
+        const shop = await json<{ payoutCard?: Json }>(await as(CUSTOMER)("/api/shop"))
+        expect(shop.payoutCard).toEqual({ number: "5614681234567893", holder: "Malika Karimova" })
+        const after = await json<Order>(await place())
+        const toPay = client.telegram.sent.filter((m) => m.chatId === CUSTOMER.id).at(-1)
+        expect(toPay?.html).toContain("5614 6812 3456 7893")
+        expect(after.payment.card?.number).toBe("5614681234567893")
+        const old = await json<Order>(await as(CUSTOMER)(`/api/orders/${before.id}`))
+        expect(old.payment.card?.number).toBe("4111111111111111")
+
+        const inUse = await cards(`/${second}`, { method: "DELETE" })
+        expect(await json(inUse)).toMatchObject({ error: { code: "PAYMENT_CARD_IN_USE" } })
+        expect((await cards(`/${first}`, { method: "DELETE" })).status).toBe(204)
+        list = await json<Cards>(await cards())
+        expect(list.cards.map((c) => c.id)).toEqual([second])
+        // Only the owner sees and changes the cards.
+        expect((await as(CUSTOMER)("/api/owner/shop/cards")).status).toBe(403)
     })
 
     it("«Я перевёл» pings the owner once; «Деньги пришли — принять» starts the shop", async () => {

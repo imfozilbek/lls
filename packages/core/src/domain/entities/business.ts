@@ -61,8 +61,12 @@ export interface BusinessProps {
     bottleDeposit: Money
     /** Undefined: the shop sells only through its own bot. */
     marketplace?: MarketplaceTerms
-    /** The card customers transfer to; without it a shop takes no orders. */
+    /**
+     * The payment card: the one of the shop's cards customers are shown and transfer to.
+     * Without it a shop takes no orders. The full list lives in `PayoutCardBook`.
+     */
     payoutCard?: PayoutCard
+    paymentCardId?: string
     /** The delivery-network district the shop's location falls in. */
     districtId?: string
     /**
@@ -190,6 +194,9 @@ export class Business {
     }
     get payoutCard(): PayoutCard | undefined {
         return this.props.payoutCard
+    }
+    get paymentCardId(): string | undefined {
+        return this.props.paymentCardId
     }
     /** Customers pay only by transfer: without the card the shop takes no orders. */
     acceptsCardTransfers(): boolean {
@@ -337,9 +344,10 @@ export class Business {
         this.touch()
     }
 
-    /** `null` removes the card: the shop takes no orders until it adds one. */
-    setPayoutCard(card: PayoutCard | null): void {
-        this.props.payoutCard = card ?? undefined
+    /** Customers are shown this card from now on. Goes through `PayoutCardBook`. */
+    usePaymentCard(id: string, card: PayoutCard): void {
+        this.props.paymentCardId = id
+        this.props.payoutCard = card
         this.touch()
     }
 

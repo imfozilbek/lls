@@ -12,6 +12,7 @@ import {
     PAYMENT_METHODS,
     PAYMENT_STATUSES,
     Payment,
+    PayoutCard,
     Phone,
     UNITS,
     offsetOf,
@@ -63,6 +64,8 @@ interface OrderRow {
     network_requested_at: number | null
     network_alerted_at: number | null
     delivery_fee_to: string
+    payment_card_number: string | null
+    payment_card_holder: string | null
 }
 
 interface ItemRow {
@@ -84,7 +87,7 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     address, landmark, latitude, longitude, comment, customer_name, customer_phone,
     cancel_reason, cancelled_by, payment_method, payment_status, paid_at, cash_courier_id,
     delivered_at, created_at, updated_at, network_requested_at, network_alerted_at,
-    delivery_fee_to`
+    delivery_fee_to, payment_card_number, payment_card_holder`
 
 /** A courier can still take the order: from accepted until pickup. */
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
@@ -155,6 +158,10 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
             status: oneOf(row.payment_status, PAYMENT_STATUSES, "payment status"),
             paidAt: row.paid_at === null ? undefined : new Date(row.paid_at),
             cashCourierId: optional(row.cash_courier_id),
+            card:
+                row.payment_card_number === null || row.payment_card_holder === null
+                    ? undefined
+                    : PayoutCard.create(row.payment_card_number, row.payment_card_holder),
         }),
         deliveredAt: row.delivered_at === null ? undefined : new Date(row.delivered_at),
         networkRequestedAt: dateOrUndefined(row.network_requested_at),
@@ -207,7 +214,14 @@ function orderValues(order: Order): (string | number | null)[] {
         order.createdAt.getTime(),
         order.updatedAt.getTime(),
         ...networkValues(order),
+        ...cardValues(order),
     ]
+}
+
+/** Written once: the card the customer was shown never changes with the order. */
+function cardValues(order: Order): (string | null)[] {
+    const { card } = order.payment
+    return [card?.number ?? null, card?.holder ?? null]
 }
 
 function paymentValues(order: Order): (string | number | null)[] {

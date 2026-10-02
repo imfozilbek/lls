@@ -26,6 +26,10 @@ import {
     ListShopOrdersUseCase,
     ListShowcaseShopsUseCase,
     MarkTransferSentUseCase,
+    AddPayoutCardUseCase,
+    ChoosePaymentCardUseCase,
+    ListPayoutCardsUseCase,
+    RemovePayoutCardUseCase,
     PlaceOrderUseCase,
     RegisterShopUseCase,
     ResolveCustomerUseCase,
@@ -55,6 +59,7 @@ import { D1CustomerRepository } from "./repositories/customer.repository.js"
 import { D1DistrictRepository } from "./repositories/district.repository.js"
 import { D1NetworkOfferRepository } from "./repositories/network-offer.repository.js"
 import { D1OrderRepository } from "./repositories/order.repository.js"
+import { D1PayoutCardRepository } from "./repositories/payout-card.repository.js"
 import { D1ProductRepository } from "./repositories/product.repository.js"
 
 import type { Bindings } from "./env.js"
@@ -68,6 +73,10 @@ export interface ServiceDeps {
 
 export interface UseCases {
     registerShop: RegisterShopUseCase
+    listPayoutCards: ListPayoutCardsUseCase
+    addPayoutCard: AddPayoutCardUseCase
+    choosePaymentCard: ChoosePaymentCardUseCase
+    removePayoutCard: RemovePayoutCardUseCase
     reviewShop: ReviewShopUseCase
     getShopBySlug: GetShopBySlugUseCase
     listMyShops: ListMyShopsUseCase
@@ -136,11 +145,13 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const orders = new D1OrderRepository(env.DB)
     const couriers = new D1CourierRepository(env.DB)
     const districts = new D1DistrictRepository(env.DB)
+    const cards = new D1PayoutCardRepository(env.DB)
     const { clock, telegram } = deps
     const admins = platformAdminIds(env)
     const orderAccess = { businesses, customers, couriers, orders }
     const courierAccess = { businesses, couriers, orders, clock }
     const network = { ...courierAccess, districts }
+    const cardBook = { businesses, cards, clock }
 
     return {
         env,
@@ -154,7 +165,11 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         districts,
         networkOffers: new D1NetworkOfferRepository(env.DB),
         useCases: {
-            registerShop: new RegisterShopUseCase(businesses, clock),
+            registerShop: new RegisterShopUseCase(businesses, clock, cards),
+            listPayoutCards: new ListPayoutCardsUseCase(cardBook),
+            addPayoutCard: new AddPayoutCardUseCase(cardBook),
+            choosePaymentCard: new ChoosePaymentCardUseCase(cardBook),
+            removePayoutCard: new RemovePayoutCardUseCase(cardBook),
             reviewShop: new ReviewShopUseCase(businesses, admins, clock),
             getShopBySlug: new GetShopBySlugUseCase(businesses, clock),
             listMyShops: new ListMyShopsUseCase(businesses, clock),

@@ -155,6 +155,27 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    static payoutCardLimit(max: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "PAYOUT_CARD_LIMIT",
+            `A shop keeps at most ${max} cards`,
+            { max },
+        )
+    }
+
+    static cardExists(): BusinessRuleViolationError {
+        return new BusinessRuleViolationError("CARD_EXISTS", "This card is already added")
+    }
+
+    /** Customers are shown this card: choose another one before removing it. */
+    static paymentCardInUse(cardId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "PAYMENT_CARD_IN_USE",
+            "Customers pay to this card; choose another payment card first",
+            { cardId },
+        )
+    }
+
     static paymentNotConfirmable(status: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "PAYMENT_NOT_CONFIRMABLE",

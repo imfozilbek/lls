@@ -9,6 +9,7 @@ import type {
     CustomerDTO,
     OrderDTO,
     Page,
+    PayoutCardsDTO,
     ProductDTO,
     ShopOwnerDTO,
     MoneyPeriod,
@@ -148,7 +149,6 @@ export type ShopPatch = Partial<{
     networkDelivery: boolean
     features: string[]
     bottleDeposit: number
-    payoutCard: { number: string; holder: string } | null
 }>
 
 export interface ProductInput {
@@ -207,6 +207,13 @@ export const api = {
         /** The bot sends the period's orders to the owner's chat as a CSV file. */
         exportMoney: (period: MoneyPeriod): Promise<{ sent: number }> =>
             request("POST", `/api/owner/money/export${query({ period })}`),
+        /** The shop's cards and the one customers are shown. */
+        cards: (): Promise<PayoutCardsDTO> => request("GET", "/api/owner/shop/cards"),
+        addCard: (card: { number: string; holder: string }): Promise<PayoutCardsDTO> =>
+            request("POST", "/api/owner/shop/cards", card),
+        choosePaymentCard: (id: string): Promise<PayoutCardsDTO> =>
+            request("PUT", `/api/owner/shop/cards/${id}/payment`),
+        removeCard: (id: string): Promise<void> => request("DELETE", `/api/owner/shop/cards/${id}`),
         /** «Деньги пришли — принять»: paid, and a new order is accepted in the same tap. */
         confirmPayment: (orderId: string): Promise<OrderDTO> =>
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "paid" }),

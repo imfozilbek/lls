@@ -131,7 +131,8 @@ const timeRange = z.object({
     close: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
 })
 
-const payoutCardSchema = z.object({
+/** One of the shop's cards for customers' transfers. */
+export const payoutCardBody = z.object({
     number: z.string().trim().min(16).max(25),
     holder: text(60),
 })
@@ -157,7 +158,6 @@ export const shopPatchBody = z.object({
     networkDelivery: z.boolean().optional(),
     features: z.array(z.enum(FEATURES)).max(10).optional(),
     bottleDeposit: z.number().int().min(0).max(1_000_000).optional(),
-    payoutCard: payoutCardSchema.nullable().optional(),
 })
 
 export const registerShopBody = z.object({
@@ -170,7 +170,7 @@ export const registerShopBody = z.object({
     freeDeliveryFrom: money.optional(),
     minOrder: money.optional(),
     /** Customers pay only by transfer: no card, no orders. */
-    payoutCard: payoutCardSchema,
+    payoutCard: payoutCardBody,
 })
 
 interface ValidationResult {

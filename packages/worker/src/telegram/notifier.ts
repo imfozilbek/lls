@@ -78,7 +78,8 @@ export class Notifier {
      * Sent on its own: a failed owner card never keeps the customer from paying.
      */
     async askForTransfer(business: Business, order: OrderDTO): Promise<void> {
-        const card = business.payoutCard
+        // The card this order was shown: the owner may have switched the payment card since.
+        const card = order.payment.card
         if (!card) {
             return
         }
@@ -87,7 +88,7 @@ export class Notifier {
             fill(t.payByTransfer, {
                 n: order.number,
                 sum: `<b>${formatMoney(order.total, language)}</b>`,
-                card: card.formatted(),
+                card: card.number.replace(/(\d{4})(?=\d)/g, "$1 "),
                 holder: escapeHtml(card.holder),
             }),
         )

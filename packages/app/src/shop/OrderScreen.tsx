@@ -35,7 +35,9 @@ function Payment({
     onChange(order: OrderDTO): void
 }): React.JSX.Element {
     const t = useT()
-    const card = useSession((state) => state.shop?.payoutCard)
+    // The card this order was shown: the owner may have switched the payment card since.
+    const shopCard = useSession((state) => state.shop?.payoutCard)
+    const card = order.payment.card ?? shopCard
     const [sending, setSending] = useState(false)
     const open = order.status !== OrderStatus.CANCELLED
     const unpaid = open && order.payment.status === PaymentStatus.UNPAID

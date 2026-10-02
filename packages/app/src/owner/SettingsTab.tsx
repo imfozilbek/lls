@@ -11,7 +11,6 @@ import { useMainAction } from "../lib/main-button.js"
 import { getLocation, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { PayoutCardFields, payoutCardIsValid } from "../ui/card-fields.js"
 import { CheckIcon, CopyIcon, PinIcon, WifiOffIcon } from "../ui/icons.js"
 import {
     Button,
@@ -27,6 +26,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 import { CouriersSection, NetworkSection } from "./CouriersSection.js"
 import { HoursEditor } from "./HoursEditor.js"
+import { PaymentCardsSection } from "./PaymentCardsSection.js"
 import { PosterSection } from "./PosterSection.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 
@@ -47,19 +47,11 @@ interface Form {
     hours: Hours
     features: Feature[]
     bottleDeposit: number | null
-    /** Digits only while typing. Empty only for a shop that never added its card. */
-    cardNumber: string
-    cardHolder: string
 }
 
 const METERS_PER_KM = 1000
 const BPS_PER_PERCENT = 100
 const MAX_RADIUS_KM = 100
-
-/** The card is required; only a shop that never added one may still save other settings. */
-function cardIsValid(form: Form): boolean {
-    return form.cardNumber === "" || payoutCardIsValid(form.cardNumber, form.cardHolder)
-}
 
 function formOf(shop: ShopOwnerDTO): Form {
     return {
@@ -76,8 +68,6 @@ function formOf(shop: ShopOwnerDTO): Form {
         hours: hoursOf(shop.workingHours),
         features: [...shop.features],
         bottleDeposit: shop.bottleDeposit || null,
-        cardNumber: shop.payoutCard?.number ?? "",
-        cardHolder: shop.payoutCard?.holder ?? "",
     }
 }
 
@@ -97,10 +87,6 @@ function patchOf(form: Form): ShopPatch {
         // Canonical order, so ticking a box off and on again leaves the form clean.
         features: FEATURES.filter((f) => form.features.includes(f)),
         bottleDeposit: form.bottleDeposit ?? 0,
-        // Never removed from here: without a card the shop takes no orders.
-        payoutCard: form.cardNumber
-            ? { number: form.cardNumber, holder: form.cardHolder.trim() }
-            : undefined,
     }
 }
 
@@ -387,32 +373,6 @@ function LocationFields({
     )
 }
 
-/** Customers transfer to this card before the shop starts. Without it no orders come in. */
-function CardFields({
-    form,
-    patch,
-}: {
-    form: Form
-    patch(change: Partial<Form>): void
-}): React.JSX.Element {
-    const s = useT().owner.settings
-    return (
-        <Section title={s.payoutCard}>
-            <PayoutCardFields
-                number={form.cardNumber}
-                holder={form.cardHolder}
-                hint={s.cardHint}
-                onChange={(change): void =>
-                    patch({
-                        ...(change.number === undefined ? {} : { cardNumber: change.number }),
-                        ...(change.holder === undefined ? {} : { cardHolder: change.holder }),
-                    })
-                }
-            />
-        </Section>
-    )
-}
-
 /** Vertical features the owner switches on or off; the bottle deposit lives with its switch. */
 function FeatureFields({
     form,
@@ -466,7 +426,7 @@ function SettingsForm({
     const [saving, setSaving] = useState(false)
     const patch = (change: Partial<Form>): void => setForm((f) => ({ ...f, ...change }))
     const dirty = JSON.stringify(patchOf(form)) !== JSON.stringify(patchOf(formOf(shop)))
-    const valid = form.name.trim().length > 0 && hasOpenDay(form.hours) && cardIsValid(form)
+    const valid = form.name.trim().length > 0 && hasOpenDay(form.hours)
 
     const save = async (): Promise<void> => {
         setSaving(true)
@@ -518,7 +478,6 @@ function SettingsForm({
                 <HoursEditor hours={form.hours} onChange={(hours): void => patch({ hours })} />
             </Section>
             <LocationFields form={form} patch={patch} />
-            <CardFields form={form} patch={patch} />
             <FeatureFields form={form} patch={patch} />
         </>
     )
@@ -552,6 +511,7 @@ export function SettingsTab(): React.JSX.Element {
         <div className="flex flex-col gap-6 px-4 pt-2">
             <AcceptingCard shop={shop} onSaved={setShop} />
             <SettingsForm shop={shop} onSaved={setShop} />
+            <PaymentCardsSection onSaved={setShop} />
             <CouriersSection shopName={shop.name} />
             <NetworkSection shop={shop} onSaved={setShop} />
             <Section title={t.owner.settings.link}>

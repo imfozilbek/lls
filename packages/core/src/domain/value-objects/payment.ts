@@ -1,10 +1,17 @@
 import { PaymentMethod, PaymentStatus } from "../enums/payment.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 
+import type { PayoutCard } from "./payout-card.js"
+
 export interface PaymentProps {
     method: PaymentMethod
     status: PaymentStatus
     paidAt?: Date
+    /**
+     * The shop's card the customer was shown when placing the order. The owner may switch the
+     * payment card later; this order still points to the card the money went to.
+     */
+    card?: PayoutCard
     /**
      * History only: orders paid in cash before payments became transfer-only. New orders never
      * set it.
@@ -19,9 +26,13 @@ export interface PaymentProps {
 export class Payment {
     private constructor(private readonly props: PaymentProps) {}
 
-    /** At checkout: the customer will transfer to the shop's card; nothing has arrived yet. */
-    static start(): Payment {
-        return new Payment({ method: PaymentMethod.CARD_TRANSFER, status: PaymentStatus.UNPAID })
+    /** At checkout: the customer will transfer to this card of the shop; nothing has arrived yet. */
+    static start(card?: PayoutCard): Payment {
+        return new Payment({
+            method: PaymentMethod.CARD_TRANSFER,
+            status: PaymentStatus.UNPAID,
+            card,
+        })
     }
 
     static reconstitute(props: PaymentProps): Payment {
@@ -36,6 +47,9 @@ export class Payment {
     }
     get paidAt(): Date | undefined {
         return this.props.paidAt
+    }
+    get card(): PayoutCard | undefined {
+        return this.props.card
     }
     get cashCourierId(): string | undefined {
         return this.props.cashCourierId
@@ -65,6 +79,7 @@ export class Payment {
             method: PaymentMethod.CARD_TRANSFER,
             status: orderCancelled ? PaymentStatus.REFUND_DUE : PaymentStatus.PAID,
             paidAt: at,
+            card: this.props.card,
         })
     }
 

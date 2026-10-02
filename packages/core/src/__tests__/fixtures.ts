@@ -20,6 +20,7 @@ export const STRANGER_TG = 3003
 
 /** The shop's card for transfers in tests (a valid Luhn number). secret-scan: fake */
 export const TEST_CARD = { number: "4111111111111111", holder: "Rustam Karimov" }
+export const TEST_CARD_ID = "card-1"
 
 /** An active shop with a card: it takes orders. `card: false` — a shop that has not added one. */
 export function makeBusiness(
@@ -38,7 +39,7 @@ export function makeBusiness(
         business.approve()
     }
     if (overrides.card ?? true) {
-        business.setPayoutCard(PayoutCard.create(TEST_CARD.number, TEST_CARD.holder))
+        business.usePaymentCard(TEST_CARD_ID, PayoutCard.create(TEST_CARD.number, TEST_CARD.holder))
     }
     return business
 }

@@ -52,6 +52,13 @@ describe("Payment", () => {
         expect(Payment.start().markSent().confirm(AT, true).status).toBe(PaymentStatus.REFUND_DUE)
     })
 
+    it("keeps the card the customer was shown through every step", () => {
+        const card = PayoutCard.create("4111111111111111", "Rustam Karimov")
+        const paid = Payment.start(card).markSent().confirm(AT, false)
+        expect(paid.card).toBe(card)
+        expect(paid.onCancel().refund().card).toBe(card)
+    })
+
     it("old cash rows still read", () => {
         const old = Payment.reconstitute({
             method: PaymentMethod.CASH,

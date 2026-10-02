@@ -30,6 +30,10 @@ export class EntityNotFoundError extends DomainError {
         return new EntityNotFoundError("CourierInvite", "code")
     }
 
+    static payoutCard(id: string): EntityNotFoundError {
+        return new EntityNotFoundError("PayoutCard", id)
+    }
+
     static order(id: string): EntityNotFoundError {
         return new EntityNotFoundError("Order", id)
     }

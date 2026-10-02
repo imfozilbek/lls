@@ -9,6 +9,7 @@ import type { Clock } from "../application/ports/clock.js"
 import type { CourierRepository } from "../application/ports/courier-repository.js"
 import type { CustomerRepository } from "../application/ports/customer-repository.js"
 import type { DistrictRepository } from "../application/ports/district-repository.js"
+import type { PayoutCardRepository } from "../application/ports/payout-card-repository.js"
 import type { MoneyTotals, OrderRepository } from "../application/ports/order-repository.js"
 import type {
     ProductListQuery,
@@ -21,6 +22,7 @@ import type { CourierProfile } from "../domain/entities/courier-profile.js"
 import type { Customer } from "../domain/entities/customer.js"
 import type { District } from "../domain/entities/district.js"
 import type { Order } from "../domain/entities/order.js"
+import type { SavedPayoutCard } from "../domain/entities/payout-card-book.js"
 import type { Product } from "../domain/entities/product.js"
 
 function paginate<T>(items: T[], request: PageRequest): Page<T> {
@@ -28,6 +30,21 @@ function paginate<T>(items: T[], request: PageRequest): Page<T> {
     return {
         data: items.slice(start, start + request.limit),
         meta: { page: request.page, limit: request.limit, total: items.length },
+    }
+}
+
+export class InMemoryPayoutCards implements PayoutCardRepository {
+    readonly items = new Map<string, SavedPayoutCard[]>()
+
+    async listByBusiness(businessId: string): Promise<SavedPayoutCard[]> {
+        return [...(this.items.get(businessId) ?? [])]
+    }
+    async insert(businessId: string, card: SavedPayoutCard): Promise<void> {
+        this.items.set(businessId, [...(this.items.get(businessId) ?? []), card])
+    }
+    async delete(businessId: string, id: string): Promise<void> {
+        const left = (this.items.get(businessId) ?? []).filter((card) => card.id !== id)
+        this.items.set(businessId, left)
     }
 }
 

@@ -157,7 +157,8 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
             bot_username, bot_token_enc, webhook_secret, brand_color, address, latitude, longitude,
             district_id, delivery_fee,
             free_delivery_from, min_order, features, bottle_deposit, marketplace_commission_bps,
-            marketplace_joined_at, payout_card_number, payout_card_holder, created_at, updated_at)
+            marketplace_joined_at, payout_card_number, payout_card_holder, payment_card_id,
+            created_at, updated_at)
          VALUES (${quote(shop.id)}, ${quote(shop.slug)}, ${quote(shop.name)}, ${quote(shop.type)},
             ${shop.owner.id}, 'active', ${shop.bot.id}, ${quote(shop.bot.username)},
             ${quote(tokenEnc)}, ${quote(shop.bot.webhookSecret)}, ${quote(shop.brandColor)},
@@ -165,7 +166,15 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
             ${quote(DEV_DISTRICT.id)}, 10000, 150000, ${MIN_ORDER[shop.type] ?? "NULL"},
             ${quote(JSON.stringify(FEATURES[shop.type]))}, ${deposit},
             ${SHOWCASE_BPS[shop.type] ?? "NULL"}, ${SHOWCASE_BPS[shop.type] === null ? "NULL" : now},
-            ${card ? quote(card[0]) : "NULL"}, ${card ? quote(card[1]) : "NULL"}, ${now}, ${now});`,
+            ${card ? quote(card[0]) : "NULL"}, ${card ? quote(card[1]) : "NULL"},
+            ${card ? quote(`${shop.id}-card`) : "NULL"}, ${now}, ${now});`,
+        ...(card
+            ? [
+                  `INSERT INTO payout_cards (id, business_id, number, holder, created_at)
+                   VALUES (${quote(`${shop.id}-card`)}, ${quote(shop.id)}, ${quote(card[0])},
+                   ${quote(card[1])}, ${now});`,
+              ]
+            : []),
         `INSERT INTO products (id, business_id, name, price, unit, step, returnable, category,
             search_text, position, created_at, updated_at) VALUES ${products.join(",\n")};`,
         `INSERT INTO couriers (id, business_id, telegram_id, name, phone, is_active, status,
@@ -207,6 +216,7 @@ async function seedSql(tokenKey: string): Promise<string> {
         "DELETE FROM customer_businesses;",
         "DELETE FROM customers;",
         "DELETE FROM products;",
+        "DELETE FROM payout_cards;",
         "DELETE FROM businesses;",
         "DELETE FROM districts;",
         district,

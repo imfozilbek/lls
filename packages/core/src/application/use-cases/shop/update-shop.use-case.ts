@@ -3,7 +3,6 @@ import { requireOneOf } from "../../../domain/shared/guards.js"
 import { BrandColor } from "../../../domain/value-objects/brand-color.js"
 import { Location } from "../../../domain/value-objects/location.js"
 import { Money } from "../../../domain/value-objects/money.js"
-import { PayoutCard } from "../../../domain/value-objects/payout-card.js"
 import { WorkingHours } from "../../../domain/value-objects/working-hours.js"
 import { toShopOwnerDTO } from "../../dtos/shop.dto.js"
 import { districtIdFor } from "../network/network.use-cases.js"
@@ -35,8 +34,6 @@ export interface ShopSettingsPatch {
     features?: string[]
     /** Deposit per kept returnable bottle, UZS (0 = only count bottles). */
     bottleDeposit?: number
-    /** The card for customers' transfers; `null` removes it and the shop stops taking orders. */
-    payoutCard?: { number: string; holder: string } | null
     /** When its own couriers are busy, orders go to the district network. */
     networkDelivery?: boolean
 }
@@ -94,10 +91,6 @@ function applyPatch(business: Business, patch: ShopSettingsPatch): void {
     }
     if (patch.bottleDeposit !== undefined) {
         business.setBottleDeposit(Money.of(patch.bottleDeposit))
-    }
-    if (patch.payoutCard !== undefined) {
-        const card = patch.payoutCard
-        business.setPayoutCard(card && PayoutCard.create(card.number, card.holder))
     }
 }
 

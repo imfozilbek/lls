@@ -1,4 +1,5 @@
 import type { Business } from "../../domain/entities/business.js"
+import type { PayoutCardBook } from "../../domain/entities/payout-card-book.js"
 import type { BusinessStatus } from "../../domain/enums/business-status.js"
 import type { BusinessType } from "../../domain/enums/business-type.js"
 import type { Feature } from "../../domain/enums/feature.js"
@@ -110,5 +111,26 @@ export function toShopOwnerDTO(business: Business, now: Date): ShopOwnerDTO {
         networkDelivery: business.networkDelivery,
         inDistrict: business.districtId !== undefined,
         createdAt: business.createdAt.toISOString(),
+    }
+}
+
+/** The owner's cards: all of them, and which one customers are shown. */
+export interface PayoutCardsDTO {
+    paymentCardId?: string
+    cards: SavedPayoutCardDTO[]
+}
+
+export interface SavedPayoutCardDTO extends PayoutCardDTO {
+    id: string
+}
+
+export function toPayoutCardsDTO(book: PayoutCardBook, business: Business): PayoutCardsDTO {
+    return {
+        paymentCardId: business.paymentCardId,
+        cards: book.list().map((saved) => ({
+            id: saved.id,
+            number: saved.card.number,
+            holder: saved.card.holder,
+        })),
     }
 }

@@ -161,6 +161,7 @@ export class PlaceOrderUseCase {
                 // The name as signed for this order: a shop-signed name never renames the customer.
                 customerName: displayNameOf(input.user),
                 customerPhone: customer.phone,
+                paymentCard: business.payoutCard,
             })
             if (await orders.insert(order)) {
                 await customers.linkToBusiness(customer.id, business.id, now)

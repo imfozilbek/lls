@@ -45,6 +45,7 @@ interface BusinessRow {
     marketplace_joined_at: number | null
     payout_card_number: string | null
     payout_card_holder: string | null
+    payment_card_id: string | null
     district_id: string | null
     network_delivery: number
     created_at: number
@@ -55,7 +56,7 @@ const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_us
     logo_key, address, latitude, longitude, delivery_fee, free_delivery_from, min_order,
     delivery_radius_m, working_hours, features, accepting_orders, bottle_deposit,
     marketplace_commission_bps, marketplace_joined_at, payout_card_number, payout_card_holder,
-    district_id, network_delivery, created_at, updated_at`
+    district_id, network_delivery, payment_card_id, created_at, updated_at`
 
 export interface BotCredentials {
     botId: number
@@ -105,6 +106,7 @@ function toBusiness(row: BusinessRow): Business {
             row.payout_card_number === null || row.payout_card_holder === null
                 ? undefined
                 : PayoutCard.create(row.payout_card_number, row.payout_card_holder),
+        paymentCardId: optional(row.payment_card_id),
         districtId: optional(row.district_id),
         networkDelivery: bool(row.network_delivery),
         createdAt: new Date(row.created_at),
@@ -144,6 +146,7 @@ function mutableValues(b: Business): (string | number | null)[] {
         b.payoutCard?.holder ?? null,
         b.districtId ?? null,
         flag(b.networkDelivery),
+        b.paymentCardId ?? null,
         b.updatedAt.getTime(),
     ]
 }
@@ -202,11 +205,11 @@ export class D1BusinessRepository implements BusinessRepository {
                     longitude, delivery_fee, free_delivery_from, min_order, delivery_radius_m,
                     working_hours, features, accepting_orders, bottle_deposit,
                     marketplace_commission_bps, marketplace_joined_at, payout_card_number,
-                    payout_card_holder, district_id, network_delivery, updated_at, id, slug, type,
-                    owner_telegram_id, bot_id, bot_username, bot_token_enc, webhook_secret,
-                    created_at)
+                    payout_card_holder, district_id, network_delivery, payment_card_id, updated_at,
+                    id, slug, type, owner_telegram_id, bot_id, bot_username, bot_token_enc,
+                    webhook_secret, created_at)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?, ?)`,
+                    ?, ?, ?, ?, ?, ?, ?, ?)`,
             )
             .bind(
                 ...mutableValues(business),
@@ -232,7 +235,7 @@ export class D1BusinessRepository implements BusinessRepository {
                     working_hours = ?, features = ?, accepting_orders = ?, bottle_deposit = ?,
                     marketplace_commission_bps = ?, marketplace_joined_at = ?,
                     payout_card_number = ?, payout_card_holder = ?, district_id = ?,
-                    network_delivery = ?, updated_at = ?
+                    network_delivery = ?, payment_card_id = ?, updated_at = ?
                  WHERE id = ?`,
             )
             .bind(...mutableValues(business), business.id)

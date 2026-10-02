@@ -18,6 +18,7 @@ import type { Courier, NetworkUnavailableReason } from "./courier.js"
 import type { OrderItem } from "./order-item.js"
 import type { OrderChannel } from "../enums/order-channel.js"
 import type { Location } from "../value-objects/location.js"
+import type { PayoutCard } from "../value-objects/payout-card.js"
 import type { Phone } from "../value-objects/phone.js"
 
 export const MAX_ORDER_LINES = 50
@@ -97,6 +98,8 @@ export interface PlaceOrderProps {
     comment?: string
     customerName: string
     customerPhone?: Phone
+    /** The shop's payment card shown to the customer: kept with the order. */
+    paymentCard?: PayoutCard
 }
 
 export function subtotalOf(items: readonly OrderItem[]): Money {
@@ -143,7 +146,7 @@ export class Order {
             comment: optionalText("comment", input.comment, COMMENT_MAX),
             customerName: input.customerName,
             customerPhone: input.customerPhone,
-            payment: Payment.start(),
+            payment: Payment.start(input.paymentCard),
             createdAt: now,
             updatedAt: now,
         })
