@@ -7,6 +7,24 @@ All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Many cards, Uzbek only, light only (owner's decisions)
+- **Added (core):** `PayoutCardBook`: a shop keeps up to 20 cards, chooses the payment card
+  customers are shown, switches it any time; the payment card is never removed (`CARD_EXISTS`,
+  `PAYOUT_CARD_LIMIT`, `PAYMENT_CARD_IN_USE`). Every order keeps the card it was shown
+  (`Payment.card`). Registration adds the first card.
+- **Added (worker):** migration `0005_payout_cards.sql` (additive, moves today's card into the
+  list); `GET/POST /api/owner/shop/cards`, `PUT …/:id/payment`, `DELETE …/:id`; the message to
+  the customer names the card of the order. `PATCH /api/owner/shop` no longer takes a card.
+- **Added (app):** «Kartalar» in settings: the list, «To'lov uchun», «Shu kartaga to'lansin»,
+  add, delete; the order screen shows the order's card.
+- **Changed:** Uzbek (Latin) only in the app, the bots, the CSV and the QR poster; the language
+  switch hides itself while there is one language; old `ru` rows and Russian Telegram read as
+  Uzbek. The owner guide and the courier memo are Uzbek only.
+- **Changed (app):** always light: our own light palette instead of Telegram's theme; Telegram's
+  header, background and bottom bar are painted white.
+- **Changed (e2e):** Uzbek texts everywhere; many cards; a dark Telegram still shows the light
+  app; light screenshots only.
+
 ### Transfer only, before cooking (owner's decision)
 - **Changed (core):** customers pay only by transfer to the shop's card: every order starts
   unpaid; «Я перевёл» marks it sent; the owner's «Деньги пришли — принять» confirms the money and

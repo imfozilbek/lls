@@ -1,6 +1,6 @@
 ---
 name: brand-guidelines
-description: LLS white-label UI rules - the shop's brand leads, Telegram theme carries light/dark, LLS stays in the background
+description: LLS white-label UI rules - the shop's brand leads, the app is always light and speaks Uzbek, LLS stays in the background
 ---
 
 # LLS Brand Guidelines (white-label)
@@ -22,15 +22,16 @@ All colors come from three sources. Nothing else is allowed.
 
 | Source | Tokens (Tailwind) | Use |
 |--------|-------------------|-----|
-| Telegram theme | `tg-bg`, `tg-text`, `tg-hint`, `tg-secondary`, `tg-section`, `tg-separator`, `tg-destructive`, `tg-subtitle`, `tg-link` | Backgrounds, text, borders. They switch light/dark for us |
+| Light palette | `tg-bg`, `tg-text`, `tg-hint`, `tg-secondary`, `tg-section`, `tg-separator`, `tg-destructive`, `tg-subtitle`, `tg-link` (values: `--ui-*` in `src/index.css`) | Backgrounds, text, borders. Always light: Telegram's dark theme is ignored |
 | Shop brand | `brand` (`--brand-rgb`), `brand-ink` (`--brand-ink-rgb`) | Primary buttons, selected chips, stepper, active status, focus ring |
 | Status hues | `success` #10B981, `warning` #F59E0B, `danger` #EF4444 | Tints (`/10`–`/15`) and icons only, never as text on white |
 
 Rules:
 - Text on the brand color always uses `brand-ink` (white or near-black, chosen by `readableInk()`
   for WCAG contrast). Never hard-code `text-white` on a shop color.
-- Status badges: tinted background + theme text + colored icon. This keeps AA contrast in both themes.
-- Never hard-code light colors (`bg-white`, `#fff` shimmers). Every surface must work in Telegram dark.
+- Status badges: tinted background + palette text + colored icon. This keeps AA contrast.
+- **Always light** (owner's decision). Use the palette tokens, never raw `bg-white` or hex in
+  components: the palette stays in one place (`--ui-*`), so a dark palette would be one more block.
 - Shop color picker offers only swatches that pass contrast with `brand-ink`.
 
 ## Typography
@@ -59,11 +60,12 @@ Rules:
 
 | Idea | Food | Water / Grocery |
 |------|------|-----------------|
-| Product list | Menyu / Меню | Katalog / Каталог |
-| Status "preparing" | Tayyorlanmoqda / Готовится (chef icon) | Yig'ilmoqda / Собираем (box icon) |
-| Delivered hint | Yoqimli ishtaha! / Приятного аппетита! | Rahmat! / Спасибо за заказ! |
+| Product list | Menyu | Katalog |
+| Status "preparing" | Tayyorlanmoqda (chef icon) | Yig'ilmoqda (box icon) |
+| Delivered hint | Yoqimli ishtaha! | Rahmat! |
 
-Uzbek (Latin) and Russian always ship together; keys must match (`dictionaries.test.ts`).
+Uzbek (Latin) only (owner's decision): no Cyrillic in any dictionary (`dictionaries.test.ts`).
+Another language would be one more dictionary with the same keys.
 
 ## Empty states and icons
 

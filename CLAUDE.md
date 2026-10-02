@@ -60,8 +60,12 @@ cover each one's whole process; what exactly comes from the meeting with them.
   «Я перевёл» → the owner sees the money and presses «Деньги пришли — принять» (paid and
   accepted in one tap). An order is never accepted unpaid (`PAYMENT_REQUIRED`). No cash: couriers
   carry no money, there is no courier cash, no handovers, no debts.
-- **No card, no orders.** The card is a required onboarding step; a shop without it shows
-  «Скоро начнёт принимать заказы» and refuses orders (`NO_PAYOUT_CARD`).
+- **Many cards, one shown.** A shop keeps as many cards as it needs (up to 20) and chooses the
+  **payment card** customers are shown; it switches it at any moment (owner's decision). Every
+  order keeps the card it was shown (`payment_card_*` snapshot). The payment card is never
+  removed.
+- **No card, no orders.** The first card is a required onboarding step; a shop without one
+  shows «Tez orada buyurtma qabul qila boshlaydi» and refuses orders (`NO_PAYOUT_CARD`).
 - **LLS service fee (plan — not in code yet):** a small percentage on **every** order through LLS,
   in any channel (shop bot, showcase, district delivery). The **customer** pays it as a separate
   "Сервис" line in the cart, the order and the messages. The shop's prices never change: the shop
@@ -288,7 +292,7 @@ src/
 ├── http/             # Error mapping, zod schemas, image upload
 ├── routes/           # customer, owner, courier, platform, image, webhook
 ├── repositories/     # D1 implementations of @lls/core ports
-└── telegram/         # Bot API gateway, texts (uz/ru, per business type), notifier
+└── telegram/         # Bot API gateway, texts (Uzbek, per business type), notifier
 scripts/              # Local dev only: seed-dev.ts, sign-init-data.ts
 wrangler.jsonc        # Bindings: DB (D1), BUCKET (R2), vars; run `wrangler types` after changes
 migrations/           # D1 SQL migrations
@@ -312,14 +316,14 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through t
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout card (number, holder; required to take orders), service fee rate (bps; plan), district_id, network_delivery (on by default) |
+| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required to take orders), service fee rate (bps; plan), district_id, network_delivery (on by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at — whose customer this is |
 | District | id, name, center (lat, lng), radius, wait_minutes — a circle of the delivery network |
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at — the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until — the person's link to one shop (`network`: took a network order of it) |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer — `cash` only in old rows; status unpaid/awaiting/paid/refund_due/refunded, paid_at; cash courier — history only), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer — `cash` only in old rows; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown — snapshot; cash courier — history only), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), no code uses it since payments became transfer-only |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
@@ -437,7 +441,10 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   (shop bot or LLS bot) → save it only if `contact.user_id === from.id`.
 
 **Regional UX (required):**
-- Languages: Uzbek (Latin) + Russian. Simple dictionary, no heavy i18n library
+- Language: **Uzbek (Latin) only** (owner's decision, October 2026): no Russian anywhere in the
+  product (app, bots, owner and courier guides). The dictionary mechanism stays (`Language`, one
+  dictionary per language, no heavy i18n library): another language is one more dictionary.
+  Telegram's `language_code` and old `ru` rows read as Uzbek.
 - Address: Telegram location + "ориентир" (landmark) field
 - Phone: Telegram "share contact" button, never typed by hand
 - Payment: only a transfer to the shop's card, shown at checkout with a copy button and the sum;
@@ -567,15 +574,16 @@ console.log            // Use logger
 **UI Stack:**
 | Task | Stack |
 |------|-------|
-| Mini App (customer + owner) | React + Vite + Tailwind, Telegram theme variables + brand tokens |
+| Mini App (customer + owner) | React + Vite + Tailwind, the light palette + brand tokens. **Always light** (owner's decision): Telegram's dark theme is ignored; its header, background and bottom bar are painted white |
 | Font | System font (per brand guidelines): 0 KB, native look in Telegram |
 | Animations | CSS transitions/keyframes with custom easing and timing. Motion library only where CSS is not enough |
 | Owner section ("Мой магазин") | Same Mini App, lazy-loaded chunk (customers never download it) |
 
 **⛔ FORBIDDEN:**
-- Arbitrary colors — only brand palette and Telegram theme variables
+- Arbitrary colors — only the brand palette and the light palette
 - Interactive elements without pressed (`active`) and focus states
-- Hardcoded light colors that break Telegram dark theme
+- Colors outside the light palette (`--ui-*` in `packages/app/src/index.css`, shown as `tg-*`
+  classes)
 
 **REQUIRED:**
 - Micro-interactions on all interactive elements
@@ -731,7 +739,8 @@ Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 - [ ] Each order stores channel + commission (0 for own bot)
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow
-- [ ] Uzbek + Russian texts
+- [ ] Uzbek texts only (no Cyrillic in any dictionary); light app in a dark Telegram
+- [ ] Many cards: add, switch the payment card, old orders keep their card
 - [ ] Empty states handling
 
 ## Release Checklist

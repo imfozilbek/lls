@@ -17,10 +17,10 @@ marketplace on top of both.
 
 | Part | Status | Notes |
 |------|--------|-------|
-| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search, district network, transfer-only payments; 188 tests |
-| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or LLS bot), roles, bot webhooks, `/market`, `/reconnect`, `/district`, alerts, money routes («Я перевёл», «Деньги пришли — принять»), CSV and poster files; 86 tests |
-| `@lls/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, LLS showcase, onboarding, «Деньги», QR poster; 42 tests; 91 KB gzip JS |
-| CI | ✅ Done | format, lint, build, test, coverage, 75 e2e scenarios on every push |
+| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search, district network, transfer-only payments, many cards; 195 tests |
+| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or LLS bot), roles, bot webhooks, `/market`, `/reconnect`, `/district`, alerts, money routes («O'tkazdim», «Pul keldi — qabul qilish»), cards, CSV and poster files; Uzbek texts; 87 tests |
+| `@lls/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, LLS showcase, onboarding, «Pul», cards, QR poster; Uzbek, light only; 43 tests; 86 KB gzip JS |
+| CI | ✅ Done | format, lint, build, test, coverage, 84 e2e scenarios on every push |
 | Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
 | Deploy | 🟡 Ready | Deploy job in `ci.yml` waits for GitHub secrets (`docs/launch-checklist.md`); public-repo hardening in `SECURITY.md` |
 | Pilot (food, water, grocery) | ⏳ Next | Three friends' shops, each with its own bot and couriers |
@@ -87,12 +87,12 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Webhooks answer 200 even when a reply fails (no endless Telegram retries)
 
 ### M4. Mini App ✅
-- [x] Storefront: two-column menu, categories, uz/ru switch, brand color and logo
+- [x] Storefront: two-column menu, categories, brand color and logo (Uzbek only since M4h)
 - [x] Cart per shop, checkout with Telegram contact, location and landmark
 - [x] Order tracking and history
 - [x] "Мой магазин": orders with status buttons, menu with photos, stats, settings
 - [x] Onboarding wizard in the platform bot
-- [x] Light and dark Telegram themes; bundle within 100 KB gzip
+- [x] ~~Light and dark Telegram themes~~ light only since M4h; bundle within 100 KB gzip
 - [x] Local end-to-end run on the real Worker (`bun run seed:dev`)
 
 ### M4b. Three verticals and own couriers ✅
@@ -122,7 +122,7 @@ Pilot: **food, water and grocery at the same time.**
 
 ### M4e. Local stand and end-to-end checks ✅
 - [x] `bun run stand`: local D1, Worker, Mini App, fake Telegram Bot API
-- [x] 67 browser scenarios (75 with money) for every role and screen, light and dark, 360 px (`docs/e2e.md`)
+- [x] 67 browser scenarios (75 with money) for every role and screen, 360 px (`docs/e2e.md`)
 - [x] `e2e` job in CI; the deploy waits for it
 - [x] Fixed what the run found: bottom sheets, first visit race, courier notices and language,
       admin card, "shop not found"
@@ -143,6 +143,13 @@ Pilot: **food, water and grocery at the same time.**
 - [x] The card is a required onboarding step; a shop without it takes no orders («Скоро начнёт
       принимать заказы», a banner in "Мой магазин")
 - [x] Cancelled after the money came: owed back until «Вернул»
+
+### M4h. Many cards, Uzbek only, light only ✅ (owner's decisions, October 2026)
+- [x] A shop keeps up to 20 cards and chooses the payment card customers see; switches it any
+      time; every order keeps the card it was shown; the payment card is never removed
+- [x] Uzbek (Latin) only in the app, the bots and the owner and courier guides; the dictionary
+      mechanism stays for another language
+- [x] The Mini App is always light; Telegram's frame is painted white
 
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)

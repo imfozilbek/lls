@@ -9,7 +9,7 @@ product
 - **Customers** in small towns and districts of Uzbekistan, mostly young people, ordering food,
   drinking water (19 l bottles) or groceries from a shop they already know. They open the shop's own Telegram
   bot on a phone, often on slow mobile internet, and want to order in about three taps.
-  They speak Uzbek (Latin) or Russian.
+  The product speaks Uzbek (Latin) only (owner's decision).
 - **Shop owners**: small local businesses (a café, a water producer, a grocery store). They manage
   orders from the Telegram chat between other work, edit the catalog in "Мой магазин" on the
   phone and hand orders to their own couriers. They are not tech people.
@@ -51,15 +51,15 @@ corporation. Short, plain sentences. Big touch targets, very little text, friend
 1. **The shop is the hero.** Its name, color and products come first; LLS stays a quiet footer.
 2. **One obvious next step.** Every screen has one primary action, placed where the thumb is
    (Telegram MainButton).
-3. **Native to Telegram.** Follow the user's Telegram theme (light and dark) and system font, so it
-   feels like part of the chat, not a website.
+3. **Native to Telegram.** Always light (owner's decision), Telegram's frame painted to match, and
+   the system font, so it feels like part of the chat, not a website.
 4. **Light and fast.** Works on slow 3G: small bundle, skeletons instead of spinners, images only
    where they help choose.
-5. **Plain words, two languages.** Uzbek and Russian with equal care; no jargon, no English.
+5. **Plain words, one language.** Uzbek (Latin), written with care; no jargon, no English.
 
 ## Accessibility & Inclusion
 
-- WCAG 2.2 AA contrast in both Telegram light and dark themes.
+- WCAG 2.2 AA contrast on the light palette.
 - Touch targets at least 44×44 px; body text at least 15 px.
 - Respect `prefers-reduced-motion`.
 - Status is never shown by color alone (icon + text).
