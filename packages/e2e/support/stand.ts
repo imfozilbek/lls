@@ -21,6 +21,9 @@ export const PEOPLE = {
     groceryOwner: { id: 1003, first_name: "Nodira", language_code: "ru" },
     courier: { id: 3003, first_name: "Jasur", language_code: "ru" },
     newCourier: { id: 3004, first_name: "Bobur", language_code: "ru" },
+    /** District network couriers from the seed: Otabek (water shop), Sherzod (grocery). */
+    networkCourier: { id: 3005, first_name: "Otabek", language_code: "ru" },
+    networkCourier2: { id: 3006, first_name: "Sherzod", language_code: "ru" },
     newOwner: { id: 4004, first_name: "Sardor", language_code: "ru" },
     admin: { id: 9999, first_name: "Admin", language_code: "ru" },
 } satisfies Record<string, TgUser>
@@ -38,6 +41,8 @@ export async function resetStand(): Promise<void> {
         [PEOPLE.waterOwner, WATER],
         [PEOPLE.groceryOwner, GROCERY],
         [PEOPLE.courier, FOOD],
+        [PEOPLE.networkCourier, FOOD],
+        [PEOPLE.networkCourier2, FOOD],
     ]
     for (const [user, shop] of staff) {
         const response = await apiAs(user, "/me", {
