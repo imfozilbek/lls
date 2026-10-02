@@ -56,10 +56,11 @@ Xabar ostidagi tugmani bosing. Har bir bosishda mijozga xabar boradi.
 Keyin ilovada **Mening do'konim → Buyurtmalar → Kuryer tayinlash** ni bosing va kuryerni tanlang.
 
 - Kuryerga bot orqali buyurtma kartasi keladi: manzil, xarita, mijoz telefoni, **mijozdan olinadigan summa**.
-- Buyurtma tayyor bo'lganda kuryer **🚚 Oldim**, keyin **🏁 Yetkazdim** ni bosadi.
+- Buyurtma tayyor bo'lganda kuryer **🚚 Oldim** ni bosadi. Eshik oldida mijoz qanday to'laganini
+  tanlaydi: **🏁 💵 Naqd pul**, **🏁 💳 Kartaga o'tkazma** yoki **🏁 🕓 Keyinroq to'laydi** (qarz).
 - Mijoz kuryer ismini ko'radi: «Buyurtmangizni Jasur olib kelmoqda».
 
-Kuryer yo'q bo'lsa, hammasini o'zingiz bosasiz: **🚚 Jo'natish → 🏁 Yetkazildi**.
+Kuryer yo'q bo'lsa, hammasini o'zingiz bosasiz: **🚚 Jo'natish → 🏁 Yetkazildi** (to'lov usuli bilan).
 Bekor qilish: **❌ Bekor qilish** (ilovada sababini yozish mumkin).
 
 ### 5. Suv do'koni uchun
@@ -80,12 +81,17 @@ Bekor qilish: **❌ Bekor qilish** (ilovada sababini yozish mumkin).
 ### 7. Vaqtincha buyurtma olmaslik
 
 **Mening do'konim → Sozlamalar → Buyurtma qabul qilish** — o'chiring. Keyin yana yoqing.
-Shu yerda nom, logotip, rang, yetkazish narxi, radius va ish vaqtini ham o'zgartirasiz.
+Shu yerda nom, logotip, rang, yetkazish narxi va radiusni ham o'zgartirasiz.
+
+**Ish vaqti** har kun uchun alohida: kunning tugmasi — ishlaymiz yoki dam olish, yonida soat.
+**Hamma kunlarga dushanbadagidek** — dushanba vaqtini barcha kunlarga ko'chiradi.
 
 ### 8. Mijozlarni jalb qilish
 
 - Havolani (`t.me/osh_markaz_bot`) Telegram guruhlaringizga, Instagram'ga, stikerga yozing.
-- Mijoz to'lovni **naqd, yetkazilganda** qiladi.
+- **Sozlamalar → Chop etish uchun QR-kod**: bot sizga do'kon nomi, logotipi va QR-kodli plakatni
+  PNG fayl qilib yuboradi. Chop etib peshtaxtaga, eshikka yopishtiring yoki Instagram'ga joylang.
+- Mijoz **naqd** yoki **kartaga o'tkazma** bilan to'laydi (10-bo'limga qarang).
 - O'z botingiz orqali sotuvdan LLS komissiya olmaydi.
 
 ### 9. LLS vitrinasi (ixtiyoriy)
@@ -97,6 +103,27 @@ Shu yerda nom, logotip, rang, yetkazish narxi, radius va ish vaqtini ham o'zgart
 - Vitrinadan kelgan buyurtmada **LLS** belgisi va komissiya summasi ko'rinadi. Buyurtma, kuryer
   va holatlar — odatdagidek.
 - Holatingiz: **Sozlamalar → LLS vitrinasi**.
+
+
+### 10. Pul
+
+**To'lov.** Mijoz buyurtmada **Naqd pul** yoki **Kartaga o'tkazma** ni tanlaydi. O'tkazma uchun
+**Sozlamalar → O'tkazmalar uchun karta** da karta raqami (16 raqam) va egasining ismini yozing.
+Karta bo'lmasa, mijozga faqat naqd ko'rinadi. Click/Payme yo'q — pul to'g'ridan-to'g'ri sizga.
+
+**Mening do'konim → Pul** (bugun, 7 kun, shu oy):
+- **Tushum**: tovarlar va yetkazish alohida, naqd va o'tkazma alohida. Idish garovi — alohida,
+  tushum emas. Vitrina buyurtmalaridan LLS komissiyasi.
+- **O'tkazmani tasdiqlang** — pul kartaga kelgach **Pul keldi** ni bosing. Mijozga xabar boradi.
+- **To'lanmagan** — yetkazilgan, lekin to'lanmagan (masalan, ofis keyin to'laydi). To'laganda
+  **Naqd to'ladi** yoki **O'tkazma qildi**.
+- **Kuryerlardagi naqd pul** — har bir kuryer qo'lidagi pul. Pulni olganingizda **Pulni oldim**
+  (summani kamroq yozish mumkin).
+- **Mijozlarga qaytarish** — to'langan, keyin bekor qilingan buyurtma. Qaytarganda **Qaytardim**.
+- **Excel uchun hisobot** — bot sizga davr buyurtmalarini CSV fayl qilib yuboradi
+  (Excel va Google Sheets'da ochiladi).
+
+Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 
 ---
 
@@ -148,10 +175,11 @@ Shu yerda nom, logotip, rang, yetkazish narxi, radius va ish vaqtini ham o'zgart
 Затем в приложении **Мой магазин → Заказы → Назначить доставщика** и выберите его.
 
 - Доставщику бот присылает карточку: адрес, карта, телефон клиента, **сколько взять с клиента**.
-- Когда заказ готов, доставщик нажимает **🚚 Забрал**, потом **🏁 Доставил**.
+- Когда заказ готов, доставщик нажимает **🚚 Забрал**. У двери он выбирает, как заплатил клиент:
+  **🏁 💵 Наличными**, **🏁 💳 Переводом на карту** или **🏁 🕓 Заплатит позже** (долг).
 - Клиент видит имя доставщика: «Заказ везёт Жасур».
 
-Нет доставщика — нажимайте всё сами: **🚚 Отправить → 🏁 Доставлен**.
+Нет доставщика — нажимайте всё сами: **🚚 Отправить → 🏁 Доставлен** (с выбором оплаты).
 Отменить: **❌ Отменить** (в приложении можно написать причину).
 
 ### 5. Для магазина воды
@@ -172,12 +200,17 @@ Shu yerda nom, logotip, rang, yetkazish narxi, radius va ish vaqtini ham o'zgart
 ### 7. Временно не принимать заказы
 
 **Мой магазин → Настройки → Принимать заказы** — выключите. Потом включите снова.
-Там же меняются название, логотип, цвет, стоимость доставки, радиус и часы работы.
+Там же меняются название, логотип, цвет, стоимость доставки и радиус.
+
+**Часы работы** — свои для каждого дня: переключатель дня (работаем или выходной) и время рядом.
+**Как в понедельник для всех дней** копирует время понедельника на всю неделю.
 
 ### 8. Привлечь клиентов
 
 - Ссылку (`t.me/osh_markaz_bot`) разместите в своих Telegram-группах, Instagram, на наклейке.
-- Клиент платит **наличными при получении**.
+- **Настройки → QR-код для печати**: бот пришлёт вам плакат с названием, логотипом и QR-кодом
+  файлом PNG. Распечатайте на кассу и дверь или выложите в Instagram.
+- Клиент платит **наличными** или **переводом на карту** (см. раздел 10).
 - С продаж через вашего бота LLS комиссию не берёт.
 
 ### 9. Витрина LLS (по желанию)
@@ -188,3 +221,24 @@ Shu yerda nom, logotip, rang, yetkazish narxi, radius va ish vaqtini ham o'zgart
   пришедших через витрину. Продажи через ваш бот — без комиссии.
 - На заказе из витрины видна метка **LLS** и сумма комиссии. Заказ, доставщик и статусы — как обычно.
 - Ваш статус: **Настройки → Витрина LLS**.
+
+### 10. Деньги
+
+**Оплата.** Клиент при заказе выбирает **Наличными** или **Переводом на карту**. Для перевода
+в **Настройки → Карта для переводов** впишите номер карты (16 цифр) и имя владельца. Без карты
+клиент видит только «Наличными». Click/Payme нет — деньги идут напрямую вам.
+
+**Мой магазин → Деньги** (сегодня, 7 дней, этот месяц):
+- **Выручка**: товары и доставка отдельно, наличные и переводы отдельно. Залог за бутыли —
+  отдельно, это не выручка. Комиссия LLS по заказам из витрины.
+- **Подтвердите переводы** — когда деньги пришли на карту, нажмите **Деньги пришли**. Клиенту
+  придёт сообщение.
+- **Не оплачено** — доставлено, но не оплачено (например, офис заплатит позже). Когда заплатили —
+  **Оплатил наличными** или **Оплатил переводом**.
+- **Наличные у доставщиков** — сколько денег на руках у каждого. Забрали — **Принял деньги**
+  (можно вписать меньше).
+- **Вернуть клиентам** — оплаченный, а потом отменённый заказ. Вернули — **Вернул**.
+- **Отчёт для Excel** — бот пришлёт вам заказы за период файлом CSV (открывается в Excel и
+  Google Таблицах).
+
+Доставщик видит у себя **На руках: X сум**.
