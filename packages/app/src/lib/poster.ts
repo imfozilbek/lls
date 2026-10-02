@@ -23,8 +23,8 @@ export interface PosterInput {
     brandColor: string
     /** Full URL of the shop's logo, if it has one. */
     logoUrl: string | null
-    /** "Telegram orqali buyurtma bering" and "Заказывайте в Telegram": both, whatever the app language. */
-    lines: readonly [string, string]
+    /** "Telegram orqali buyurtma bering": the product speaks Uzbek only. */
+    line: string
 }
 
 /** The link the poster's QR opens: the shop's bot, where the menu button starts the shop. */
@@ -145,14 +145,10 @@ function drawFooter(ctx: CanvasRenderingContext2D, input: PosterInput, top: numb
     ctx.textAlign = "center"
     ctx.textBaseline = "alphabetic"
     ctx.fillStyle = INK
-    fitFont(ctx, input.lines[0], 800, 54, 32)
-    ctx.fillText(input.lines[0], WIDTH / 2, top)
-    ctx.fillStyle = MUTED
-    fitFont(ctx, input.lines[1], 600, 42, 28)
-    ctx.fillText(input.lines[1], WIDTH / 2, top + 60)
-    ctx.fillStyle = INK
+    fitFont(ctx, input.line, 800, 54, 32)
+    ctx.fillText(input.line, WIDTH / 2, top + 30)
     ctx.font = `600 34px ${FONT}`
-    ctx.fillText(`t.me/${input.botUsername}`, WIDTH / 2, top + 130)
+    ctx.fillText(`t.me/${input.botUsername}`, WIDTH / 2, top + 110)
     ctx.fillStyle = MUTED
     ctx.font = `500 24px ${FONT}`
     ctx.fillText("powered by LLS", WIDTH / 2, HEIGHT - 40)

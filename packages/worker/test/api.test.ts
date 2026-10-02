@@ -208,13 +208,16 @@ describe("inside a shop", () => {
         expect((await asOwner()("/api/platform/shops")).status).toBe(400)
     })
 
-    it("customer profile: name from Telegram, language switch", async () => {
+    it("customer profile: name from Telegram, Uzbek only", async () => {
+        // The customer's Telegram is in Russian; the product speaks Uzbek only.
         const me = await json(await asCustomer()("/api/me"))
-        expect(me).toMatchObject({ name: "Aziz Karimov", language: "ru" })
+        expect(me).toMatchObject({ name: "Aziz Karimov", language: "uz" })
         const updated = await json(
             await asCustomer()("/api/me", { method: "PATCH", json: { language: "uz" } }),
         )
         expect(updated).toMatchObject({ language: "uz" })
+        const russian = await asCustomer()("/api/me", { method: "PATCH", json: { language: "ru" } })
+        expect(russian.status).toBe(400)
     })
 
     it("order flow: server prices, numbering, statuses, access control", async () => {

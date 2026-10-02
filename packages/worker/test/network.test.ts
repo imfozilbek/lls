@@ -185,7 +185,7 @@ describe("district network", () => {
         expect(
             client.telegram.sent.some(
                 (m) =>
-                    (m.chatId === OWNER.id && m.html.includes("сети района")) ||
+                    (m.chatId === OWNER.id && m.html.includes("tuman tarmog'iga")) ||
                     m.html.includes("tarmog"),
             ),
         ).toBe(true)
@@ -218,8 +218,10 @@ describe("district network", () => {
         const other = winner === BOBUR ? OTABEK : BOBUR
 
         const edits = client.telegram.edited.filter((m) => m.token === env.COURIER_BOT_TOKEN)
-        expect(edits.filter((m) => m.chatId === winner.id).at(-1)?.html).toContain("ваш")
-        expect(edits.filter((m) => m.chatId === other.id).at(-1)?.html).toContain("уже взял")
+        expect(edits.filter((m) => m.chatId === winner.id).at(-1)?.html).toContain("sizniki")
+        expect(edits.filter((m) => m.chatId === other.id).at(-1)?.html).toContain(
+            "boshqa kuryer oldi",
+        )
         const card = client.telegram.sent.filter((m) => m.chatId === winner.id).at(-1)
         expect(card?.html).toContain("Navoiy 12")
         expect(
@@ -294,7 +296,7 @@ describe("district network", () => {
             json: { courierId: own },
         })
         expect(client.telegram.edited.filter((m) => m.chatId === BOBUR.id).at(-1)?.html).toContain(
-            "уже взял",
+            "boshqa kuryer oldi",
         )
         expect(
             (

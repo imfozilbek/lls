@@ -2,7 +2,10 @@ import { BusinessType, Language, OrderStatus } from "@lls/core"
 
 type StatusTexts = Partial<Record<OrderStatus, string>>
 
-/** Bot message texts. Keep Uzbek (Latin) and Russian in sync. */
+/**
+ * Bot message texts: Uzbek (Latin) only (owner's decision). Another language is one more
+ * dictionary here, keyed by `Language`.
+ */
 const BASE = {
     [Language.UZ]: {
         currency: "so'm",
@@ -191,185 +194,6 @@ const BASE = {
         posterCaption: "🖨 {shop} uchun QR-kod. Chop eting yoki Instagramga joylang.",
         courierRemoved: "↩️ {shop}: #{n} buyurtma boshqa kuryerga berildi.",
     },
-    [Language.RU]: {
-        currency: "сум",
-        newOrder: "🆕 Новый заказ",
-        order: "Заказ",
-        delivery: "Доставка",
-        deposit: "Залог за бутыли",
-        free: "бесплатно",
-        total: "Итого",
-        landmark: "ориентир",
-        map: "Открыть на карте",
-        status: "Статус",
-        courier: "Доставщик",
-        bottlesBack: "Вернёт пустых бутылей: {n}",
-        cancelledByCustomer: "❌ Клиент отменил заказ",
-        cancel: "❌ Отменить",
-        reason: "Причина",
-        kg: "кг",
-        statusNames: {
-            [OrderStatus.PENDING]: "🆕 Новый",
-            [OrderStatus.ACCEPTED]: "✅ Принят",
-            [OrderStatus.PREPARING]: "📦 Собираем",
-            [OrderStatus.READY]: "📦 Готов",
-            [OrderStatus.PICKED_UP]: "🚚 В пути",
-            [OrderStatus.DELIVERED]: "🏁 Доставлен",
-            [OrderStatus.CANCELLED]: "❌ Отменён",
-        } as Record<OrderStatus, string>,
-        actions: {
-            [OrderStatus.ACCEPTED]: "✅ Принять",
-            [OrderStatus.PREPARING]: "📦 Собрать",
-            [OrderStatus.READY]: "📦 Готово",
-            [OrderStatus.PICKED_UP]: "🚚 Отправить",
-            [OrderStatus.DELIVERED]: "🏁 Доставлен",
-        } as StatusTexts,
-        customerStatus: {
-            [OrderStatus.ACCEPTED]: "✅ Оплата получена, заказ #{n} принят.",
-            [OrderStatus.PREPARING]: "📦 Собираем заказ #{n}.",
-            [OrderStatus.READY]: "📦 Заказ #{n} готов.",
-            [OrderStatus.PICKED_UP]: "🚚 Заказ #{n} в пути. Скоро будет у вас!",
-            [OrderStatus.DELIVERED]: "🏁 Заказ #{n} доставлен. Спасибо!",
-            [OrderStatus.CANCELLED]: "❌ Заказ #{n} отменён.",
-        } as StatusTexts,
-        courierOnTheWay: "🚚 Заказ #{n} везёт {courier}.",
-        shopWelcome: "Здравствуйте! Откройте каталог {shop} и закажите в пару нажатий.",
-        openMenu: "🛒 Открыть каталог",
-        phoneSaved: "✅ Ваш номер сохранён.",
-        platformWelcome:
-            "LLS — магазины вашего района в одном месте. Найдите товар и закажите в магазине.\n\nВы владелец магазина? Подключите свой бот для заказов.",
-        connectShop: "🏪 Подключить магазин",
-        openShowcase: "🔍 Магазины и товары",
-        showcaseOrder: "🛍 Из витрины LLS · комиссия {rate}%: {sum}",
-        showcaseJoined:
-            "🛍 {shop} теперь в витрине LLS. Клиенты найдут вас в боте LLS.\nКомиссия: {rate}% от товаров, проданных через витрину. С продаж через ваш бот комиссии нет.",
-        showcaseLeft: "{shop} убран из витрины LLS.",
-        showcaseUsage:
-            "Команда: /market <slug> <процент>, например /market osh-markaz 5\nУбрать: /market <slug> off",
-        showcaseSet: "✅ {shop}: в витрине, комиссия {rate}%",
-        showcaseOff: "✅ {shop}: убран из витрины",
-        botNotConnected:
-            "⚠️ {shop} одобрен, но бот не подключился: {reason}\nПовторить: /reconnect {slug}",
-        botConnected: "✅ {shop}: бот подключён.",
-        reconnectUsage: "Команда: /reconnect <slug>, например /reconnect osh-markaz",
-        shopNotActive: "{shop} ещё не одобрен.",
-        alertServerError: "🚨 Ошибка на сервере LLS",
-        alertNotificationFailed: "🚨 LLS: сообщение не отправлено",
-        alertQuiet: "Следующее оповещение этого вида не раньше чем через {minutes} мин.",
-        applicationReceived: "✅ Заявка {shop} принята. Сообщим после проверки.",
-        shopApproved: "🎉 {shop} запущен! Отправьте клиентам эту ссылку:",
-        shopRejected: "😔 Заявка {shop} отклонена. Если есть вопросы, напишите нам.",
-        newShop: "🏪 Новый магазин",
-        shopTypes: {
-            [BusinessType.FOOD]: "еда",
-            [BusinessType.WATER]: "вода",
-            [BusinessType.GROCERY]: "продукты",
-        } as Record<BusinessType, string>,
-        ownerLabel: "Владелец",
-        approve: "✅ Одобрить",
-        reject: "❌ Отклонить",
-        shopStatus: { active: "✅ Одобрен", disabled: "❌ Отклонён", pending: "⏳ Ждёт проверки" },
-        callbackDone: "Готово",
-        callbackOutdated: "Статус уже изменился",
-        callbackForbidden: "Это действие не для вас",
-        courierBotWelcome:
-            "👋 Это бот доставщиков LLS: сюда приходят заказы магазинов. Чтобы начать, попросите у владельца магазина ссылку-приглашение.",
-        courierBotHome: "🚚 Вы доставщик: {shops}. Выйдите на смену — заказы будут приходить сюда.",
-        courierPending: "⏳ Ждём, пока владелец {shop} вас подтвердит. Напишем сюда.",
-        courierAskPhone: "📱 Отправьте номер телефона, чтобы магазин мог вам позвонить.",
-        sharePhone: "📱 Отправить номер",
-        courierJoinedOwner: "🚚 {name} принял приглашение стать доставщиком. Подтвердить?",
-        approveCourier: "✅ Подтвердить",
-        declineCourier: "❌ Отклонить",
-        courierApprovedOwner: "✅ {name} теперь ваш доставщик.",
-        courierDeclinedOwner: "❌ {name}: отклонён.",
-        courierApproved:
-            "✅ {shop} подтвердил вас как доставщика. Выйдите на смену — заказы будут приходить сюда.",
-        courierDeclined: "😔 {shop} не подтвердил вас как доставщика.",
-        courierRemovedFromShop: "↩️ {shop} убрал вас из своих доставщиков.",
-        networkSearching: "🔎 Ищем доставщика сети района",
-        networkCourier: "🚚 Доставщик сети района: {name}",
-        networkNew: "🛵 Новый заказ рядом",
-        networkItems: "📦 Позиций: {n}",
-        networkDistance: "📍 До клиента ≈ {km} км",
-        takeOrder: "🙋 Беру",
-        networkTaken: "✅ {shop}: заказ #{n} уже взял другой доставщик.",
-        networkYours: "🎉 {shop}: заказ #{n} ваш — карточка ниже.",
-        networkRequestedOwner:
-            "🔎 Свободного доставщика у вас нет: заказ #{n} отдан сети района. Напишем, кто возьмёт.",
-        networkClaimedOwner: "🚚 Заказ #{n} везёт доставщик сети района: {name}",
-        networkOverdueOwner:
-            "⏰ Заказ #{n} уже {min} мин ждёт доставщика сети. Назначьте своего или отвезите сами.",
-        networkOverdueAdmin: "⏰ {shop}: заказ #{n} {min} мин без доставщика ({district}).",
-        networkInvite:
-            "🤝 Хотите возить и для других точек района? Заказ придёт сюда — берёте, только если удобно.",
-        joinNetwork: "✅ Да, для района",
-        skipNetwork: "Не сейчас",
-        networkJoined: "✅ Вы в сети района. Выйдите на смену — заказы рядом будут приходить сюда.",
-        networkSkipped: "Хорошо. Включить можно в «Мои доставки».",
-        callbackTaken: "Этот заказ уже взяли",
-        districtUsage:
-            "Формат: /district <название> <широта>,<долгота> <км> или /district <название> wait <минут>",
-        districtSaved:
-            "📍 Район {name}: радиус {km} км, ожидание {min} мин. Точек внутри: {shops}.",
-        networkReportTitle: "📊 Сеть района за 7 дней",
-        networkReportLine:
-            "<b>{name}</b> ({km} км): свободных доставщиков {free}, ждут {waiting}; доставлено {delivered}, из них сетью {network}",
-        networkNoDistricts:
-            "Районов пока нет. Добавить: /district <название> <широта>,<долгота> <км>",
-        inviteInvalid: "😔 Эта ссылка-приглашение не работает. Попросите у владельца новую.",
-        myDeliveries: "🚚 Мои доставки",
-        courierCard: "🚚 Доставка",
-        bottlesToCollect: "🔁 Забрать пустых бутылей: {n}",
-        courierActions: {
-            [OrderStatus.PICKED_UP]: "🚚 Забрал",
-            [OrderStatus.DELIVERED]: "🏁 Доставил",
-        } as StatusTexts,
-        courierWait: "⏳ Сообщим, когда заказ будет готов.",
-        courierReady: "📦 {shop}: заказ #{n} готов — можно забирать.",
-        payment: {
-            unpaid: "💳 Ждём перевод на карту",
-            sent: "💳 Клиент говорит, что перевёл — проверьте карту",
-            paid: "✅ Оплачено переводом",
-            refundDue: "↩️ Нужно вернуть клиенту",
-            refunded: "↩️ Возвращено",
-        },
-        paidAccept: "💳 Деньги пришли — принять",
-        nothingToCollect: "✅ Оплачено заранее — денег с клиента не брать",
-        transferSentOwner: "💳 Клиент перевёл {sum} за заказ #{n}. Проверьте карту.",
-        payByTransfer:
-            "🧾 Заказ #{n} оформлен.\nПереведите {sum} на карту:\n<code>{card}</code> ({holder})\nПотом нажмите «Я перевёл» в приложении — магазин начнёт, как только деньги придут.",
-        reportCaption: "📊 {shop}: заказы, {from} — {to}",
-        csv: {
-            headers: [
-                "Номер",
-                "Дата",
-                "Статус",
-                "Клиент",
-                "Телефон",
-                "Адрес",
-                "Товары",
-                "Доставка",
-                "Залог",
-                "Итого",
-                "Оплата",
-                "Оплачено",
-                "Доставщик",
-                "Канал",
-                "Комиссия LLS",
-            ],
-            payment: {
-                unpaid: "не оплачено",
-                awaiting: "ждём",
-                paid: "оплачено",
-                refund_due: "вернуть",
-                refunded: "возвращено",
-            },
-            channel: { shop_bot: "бот магазина", marketplace: "витрина LLS" },
-        },
-        posterCaption: "🖨 QR-код {shop}. Распечатайте или выложите в Instagram.",
-        courierRemoved: "↩️ {shop}: заказ #{n} передан другому доставщику.",
-    },
 }
 
 export type BotTexts = (typeof BASE)[Language]
@@ -387,17 +211,6 @@ const FOOD: Record<Language, Partial<BotTexts>> = {
         shopWelcome:
             "Assalomu alaykum! {shop} menyusini oching va bir necha bosishda buyurtma bering.",
         openMenu: "🍽 Menyuni ochish",
-    },
-    [Language.RU]: {
-        statusNames: { ...BASE.ru.statusNames, [OrderStatus.PREPARING]: "👨‍🍳 Готовится" },
-        actions: { ...BASE.ru.actions, [OrderStatus.PREPARING]: "👨‍🍳 Начать готовить" },
-        customerStatus: {
-            ...BASE.ru.customerStatus,
-            [OrderStatus.PREPARING]: "👨‍🍳 Заказ #{n} готовится.",
-            [OrderStatus.DELIVERED]: "🏁 Заказ #{n} доставлен. Приятного аппетита!",
-        },
-        shopWelcome: "Здравствуйте! Откройте меню {shop} и закажите в пару нажатий.",
-        openMenu: "🍽 Открыть меню",
     },
 }
 

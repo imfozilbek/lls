@@ -177,7 +177,7 @@ describe("money: transfer before the shop starts, report, files", () => {
         const accepted = await json<Order>(await payment(order.id, "paid"))
         expect(accepted).toMatchObject({ status: "accepted", payment: { status: "paid" } })
         expect(client.telegram.sent.at(-1)).toMatchObject({ chatId: CUSTOMER.id })
-        expect(client.telegram.sent.at(-1)?.html).toContain("Оплата получена")
+        expect(client.telegram.sent.at(-1)?.html).toContain("To'lov keldi")
         expect((await money()).awaiting).toEqual([])
         // Pressed again: nothing left to confirm.
         expect((await payment(order.id, "paid")).status).toBe(422)
@@ -199,7 +199,7 @@ describe("money: transfer before the shop starts, report, files", () => {
         const card = client.telegram.edited.filter((m) => m.chatId === COURIER.id).at(-1)
         const buttons = card?.options?.keyboard?.inline_keyboard.flat() ?? []
         expect(buttons.map((b) => b.callback_data)).toEqual([`a:${order.id}:delivered`])
-        expect(card?.html).toContain("денег с клиента не брать")
+        expect(card?.html).toContain("mijozdan pul olmang")
 
         await client.courierBot({
             callback_query: { id: "cb-1", from: COURIER, data: `a:${order.id}:delivered` },

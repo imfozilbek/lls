@@ -3,19 +3,21 @@ import { create } from "zustand"
 
 import { useSession } from "../stores/session.js"
 
-import { FOOD_RU, FOOD_UZ } from "./food.js"
-import { ru } from "./ru.js"
+import { FOOD_UZ } from "./food.js"
 import { uz } from "./uz.js"
 
 import type { Dictionary } from "./uz.js"
 
 export type { Dictionary }
 
-const DICTIONARIES: Record<Language, Dictionary> = { uz, ru }
+/**
+ * Uzbek (Latin) only (owner's decision). Another language is one more dictionary with the same
+ * keys, added here and to `Language`.
+ */
+const DICTIONARIES: Record<Language, Dictionary> = { uz }
 /** Same keys, food words: "Menyu", "Tayyorlanmoqda", "Yoqimli ishtaha!". */
 const FOOD_DICTIONARIES: Record<Language, Dictionary> = {
     uz: { ...uz, ...FOOD_UZ(uz) } as Dictionary,
-    ru: { ...ru, ...FOOD_RU(ru) } as Dictionary,
 }
 
 interface LanguageState {

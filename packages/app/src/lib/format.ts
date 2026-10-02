@@ -1,6 +1,6 @@
 import type { Language } from "@lls/core"
 
-const CURRENCY: Record<Language, string> = { uz: "so'm", ru: "сум" }
+const CURRENCY: Record<Language, string> = { uz: "so'm" }
 
 export function currencyOf(language: Language): string {
     return CURRENCY[language]
@@ -14,7 +14,6 @@ export function formatMoney(amount: number, language: Language): string {
 
 const MONTHS: Record<Language, readonly string[]> = {
     uz: ["yan", "fev", "mar", "apr", "may", "iyn", "iyl", "avg", "sen", "okt", "noy", "dek"],
-    ru: ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"],
 }
 
 const UZ_OFFSET_MS = 5 * 60 * 60 * 1000

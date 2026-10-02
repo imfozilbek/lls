@@ -44,7 +44,7 @@ describe("platform bot", () => {
         expect(response.status).toBe(401)
     })
 
-    it("the owner hears back in the language of their Telegram", async () => {
+    it("the owner hears back in Uzbek, whatever language their Telegram uses", async () => {
         const russian = { ...OWNER, language_code: "ru" }
         await client.as(russian, {})("/api/platform/shops", {
             method: "POST",
@@ -57,7 +57,7 @@ describe("platform bot", () => {
             },
         })
         const toOwner = client.telegram.sent.find((m) => m.chatId === OWNER.id)
-        expect(toOwner?.html).toContain("Заявка")
+        expect(toOwner?.html).toContain("arizasi qabul qilindi")
     })
 
     it("/start offers to connect a shop through the Mini App", async () => {
@@ -94,7 +94,7 @@ describe("platform bot", () => {
         expect(toAdmin?.chatId).toBe(ADMIN.id)
         // The admin sees the owner's name and the kind of shop in words, not raw values.
         expect(toAdmin?.html).toContain(">Rustam</a>")
-        expect(toAdmin?.html).toMatch(/\((ovqat|еда)\)/)
+        expect(toAdmin?.html).toContain("(ovqat)")
         const approve = toAdmin?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data
         expect(approve).toBe(`r:${shop.id}:approve`)
 
@@ -239,7 +239,7 @@ describe("shop bot", () => {
         const [welcome] = client.telegram.sent
         expect(welcome?.token).toBe(SHOP_BOT_TOKEN)
         expect(welcome?.html).toContain("Osh Markaz")
-        expect(welcome?.html).toContain("Здравствуйте")
+        expect(welcome?.html).toContain("Assalomu alaykum")
         expect(welcome?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
             `https://lls-app.pages.dev/?shop=${slug}`,
         )
@@ -269,7 +269,7 @@ describe("shop bot", () => {
             .bind(CUSTOMER.id)
             .first<{ phone: string }>()
         expect(row?.phone).toBe("+998901234567")
-        expect(client.telegram.sent.at(-1)?.html).toContain("номер")
+        expect(client.telegram.sent.at(-1)?.html).toContain("raqamingiz saqlandi")
     })
 
     it("answers 200 even when the reply to the user fails, so Telegram does not resend", async () => {
@@ -328,7 +328,7 @@ describe("shop bot", () => {
         const toCustomer = client.telegram.sent.at(-1)
         expect(toCustomer?.chatId).toBe(CUSTOMER.id)
         expect(toCustomer?.html).toContain(`#${order.number}`)
-        expect(toCustomer?.html).toContain("Оплата получена")
+        expect(toCustomer?.html).toContain("To'lov keldi")
 
         // A stale button does not move the order again
         await shopUpdate({ callback_query: { id: "cb-2", from: OWNER, data: `p:${order.id}` } })

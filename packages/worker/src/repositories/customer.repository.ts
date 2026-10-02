@@ -1,6 +1,4 @@
-import { Customer, LANGUAGES, Phone, TelegramId } from "@lls/core"
-
-import { oneOf } from "./rows.js"
+import { Customer, Phone, TelegramId, toLanguage } from "@lls/core"
 
 import type { CustomerRepository } from "@lls/core"
 
@@ -22,7 +20,8 @@ function toCustomer(row: CustomerRow): Customer {
         telegramId: TelegramId.create(row.telegram_id),
         name: row.name,
         phone: row.phone === null ? undefined : Phone.create(row.phone),
-        language: oneOf(row.language, LANGUAGES, "language"),
+        // Old rows may say "ru": they read as the product language.
+        language: toLanguage(row.language),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })

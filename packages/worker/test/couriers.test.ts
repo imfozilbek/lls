@@ -390,8 +390,8 @@ describe("shop couriers, verticals and channels", () => {
         const toBobur = client.telegram.sent.find(
             (m) => m.chatId === second.id && m.html.includes("#1"),
         )
-        // Bobur's Telegram is in Russian: so is his order card.
-        expect(toBobur?.html).toContain("Доставка")
+        // Bobur's Telegram is in Russian; the product speaks Uzbek only.
+        expect(toBobur?.html).toContain("Yetkazib berish")
         const removed = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
         expect(removed?.token).toBe(env.COURIER_BOT_TOKEN)
         expect(removed?.html).toContain("#1")
@@ -505,6 +505,6 @@ describe("shop couriers, verticals and channels", () => {
         const second = await placeOrder([{ productId: osh, quantity: 2 }])
         await setStatus(second.id, "accepted")
         await setStatus(second.id, "preparing")
-        expect(client.telegram.sent.at(-1)?.html).toContain("Собираем")
+        expect(client.telegram.sent.at(-1)?.html).toContain("yig'ilmoqda")
     })
 })
