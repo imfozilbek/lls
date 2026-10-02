@@ -8,6 +8,7 @@ import { join } from "node:path"
 import {
     DEV_ADMIN_ID,
     DEV_COURIER,
+    DEV_COURIER_BOT,
     DEV_CUSTOMER,
     DEV_SHOPS,
 } from "../../worker/scripts/dev-fixtures.js"
@@ -53,6 +54,18 @@ export function platformBot(): { token: string; secret: string; adminId: number 
         token: vars["PLATFORM_BOT_TOKEN"] ?? "",
         secret: vars["PLATFORM_WEBHOOK_SECRET"] ?? "",
         adminId: DEV_ADMIN_ID,
+    }
+}
+
+/** The LLS courier bot: one bot for every courier of every shop. */
+export function courierBot(): { id: number; username: string; token: string; secret: string } {
+    const vars = devVars()
+    const token = vars["COURIER_BOT_TOKEN"] ?? DEV_COURIER_BOT.token
+    return {
+        id: Number(token.split(":")[0]),
+        username: DEV_COURIER_BOT.username,
+        token,
+        secret: vars["COURIER_WEBHOOK_SECRET"] ?? DEV_COURIER_BOT.webhookSecret,
     }
 }
 

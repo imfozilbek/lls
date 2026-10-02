@@ -4,7 +4,13 @@
  */
 import { expect } from "@playwright/test"
 
-import { FAKE_TELEGRAM_URL, WORKER_URL, platformBot, shopBySlug } from "../stand/config.js"
+import {
+    FAKE_TELEGRAM_URL,
+    WORKER_URL,
+    courierBot,
+    platformBot,
+    shopBySlug,
+} from "../stand/config.js"
 
 import type { BotCall } from "../stand/fake-telegram.js"
 
@@ -122,11 +128,12 @@ async function postUpdate(path: string, secret: string, update: object): Promise
     })
 }
 
-/** A chat with one bot: the shop's own bot or the LLS bot. */
+/** A chat with one bot: the shop's own bot, the LLS bot or the LLS courier bot. */
 export interface Chat {
     send(from: TgUser, text: string): Promise<Response>
     shareContact(from: TgUser, phone: string, userId?: number): Promise<Response>
-    press(from: TgUser, data: string): Promise<Response>
+    /** A button under a message; with `messageId` the bot may edit that message in place. */
+    press(from: TgUser, data: string, messageId?: number): Promise<Response>
 }
 
 function chat(path: string, secret: string): Chat {
@@ -149,13 +156,22 @@ function chat(path: string, secret: string): Chat {
                     contact: { phone_number: phone, first_name: from.first_name, user_id: userId },
                 }),
             ),
-        press: (from, data) =>
+        press: (from, data, messageId) =>
             postUpdate(path, secret, {
                 callback_query: {
                     id: `cb-${updateId}`,
                     from: { ...from, is_bot: false },
                     chat_instance: "1",
                     data,
+                    ...(messageId === undefined
+                        ? {}
+                        : {
+                              message: {
+                                  message_id: messageId,
+                                  date: Math.floor(Date.now() / 1000),
+                                  chat: { id: from.id, type: "private" },
+                              },
+                          }),
                 },
             }),
     }
@@ -168,6 +184,11 @@ export function shopChat(slug: string): Chat {
 
 export function llsChat(): Chat {
     return chat("/tg/platform", platformBot().secret)
+}
+
+/** The LLS courier bot: invites, the phone, order cards and their buttons. */
+export function courierChat(): Chat {
+    return chat("/tg/courier", courierBot().secret)
 }
 
 /** A chat with a freshly approved shop bot: its secret lives only in D1. */

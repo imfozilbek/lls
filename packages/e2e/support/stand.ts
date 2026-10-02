@@ -1,5 +1,5 @@
 /** Test data and direct API access for the stand. */
-import { WORKER_URL, platformBot, shopBySlug } from "../stand/config.js"
+import { WORKER_URL, courierBot, platformBot, shopBySlug } from "../stand/config.js"
 import { seed } from "../stand/seed.js"
 
 import { resetTelegram, shopChat } from "./telegram.js"
@@ -51,19 +51,33 @@ export async function resetStand(): Promise<void> {
     }
 }
 
-/** Calls the Worker API as `user` inside the app opened from a shop bot (or the LLS bot). */
+export interface ApiOptions {
+    shop?: string
+    via?: "marketplace"
+    /** Inside the app opened from the LLS courier bot (no shop). */
+    courierBot?: boolean
+    method?: string
+    json?: unknown
+}
+
+/**
+ * Calls the Worker API as `user` inside the app opened from a shop bot, the LLS bot or the
+ * LLS courier bot.
+ */
 export async function apiAs(
     user: TgUser,
     path: string,
-    options: { shop?: string; via?: "marketplace"; method?: string; json?: unknown } = {},
+    options: ApiOptions = {},
 ): Promise<Response> {
     const shop = options.shop && !options.via ? shopBySlug(options.shop) : null
-    const token = shop?.bot.token ?? platformBot().token
+    const token = options.courierBot ? courierBot().token : (shop?.bot.token ?? platformBot().token)
     const headers: Record<string, string> = {
         "X-Telegram-Init-Data": signInitData(user, token),
         Origin: "http://localhost:5173",
     }
-    if (options.shop) {
+    if (options.courierBot) {
+        headers["X-Bot"] = "courier"
+    } else if (options.shop) {
         headers["X-Shop"] = options.shop
     }
     if (options.via) {

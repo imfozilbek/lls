@@ -72,13 +72,9 @@ for (const theme of ["light", "dark"] as const) {
     })
 
     test(`courier, showcase and onboarding, ${theme}`, async ({ page }) => {
-        await openApp(page, {
-            user: PEOPLE.courier,
-            shop: FOOD,
-            query: `?shop=${FOOD}&mode=courier`,
-            theme,
-        })
+        await openApp(page, { user: PEOPLE.courier, courierBot: true, theme })
         await expect(page.getByRole("heading", { name: "Мои доставки" })).toBeVisible()
+        await expect(page.getByText("Мои магазины")).toBeVisible()
         await snap(page, "20-courier", theme)
         await openApp(page, { user: PEOPLE.customer, query: "?mode=market", theme })
         await expect(page.getByText("Магазины · 2")).toBeVisible()
