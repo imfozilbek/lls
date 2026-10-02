@@ -1,4 +1,5 @@
 import {
+    ACTIVE_ORDER_STATUSES,
     COURIER_STATUSES,
     Courier,
     CourierInvite,
@@ -21,6 +22,8 @@ interface ProfileRow {
     phone: string | null
     vehicle: string | null
     shift_until: number | null
+    in_network: number
+    network_offered_at: number | null
     profile_created_at: number
     profile_updated_at: number
 }
@@ -43,7 +46,11 @@ interface InviteRow {
 }
 
 const PROFILE_COLUMNS = `p.telegram_id, p.name, p.phone, p.vehicle, p.shift_until,
+    p.in_network, p.network_offered_at,
     p.created_at AS profile_created_at, p.updated_at AS profile_updated_at`
+
+/** Orders a courier still carries: a network courier takes one at a time. */
+const CARRYING = ACTIVE_ORDER_STATUSES.map((status) => `'${status}'`).join(", ")
 
 /** A shop link with the person's profile: the name and phone live in the profile. */
 const SELECT_COURIER = `SELECT c.id, c.business_id, c.status, c.work_days, c.off_until,
@@ -57,6 +64,9 @@ function toProfile(row: ProfileRow): CourierProfile {
         phone: row.phone === null ? undefined : Phone.create(row.phone),
         vehicle: optional(row.vehicle),
         shiftUntil: row.shift_until === null ? undefined : new Date(row.shift_until),
+        inNetwork: row.in_network === 1,
+        networkOfferedAt:
+            row.network_offered_at === null ? undefined : new Date(row.network_offered_at),
         createdAt: new Date(row.profile_created_at),
         updatedAt: new Date(row.profile_updated_at),
     })
@@ -104,10 +114,10 @@ export class D1CourierRepository implements CourierRepository {
     async listByBusiness(businessId: string): Promise<Courier[]> {
         const { results } = await this.db
             .prepare(
-                `${SELECT_COURIER} WHERE c.business_id = ? AND c.status != ?
+                `${SELECT_COURIER} WHERE c.business_id = ? AND c.status IN (?, ?)
                  ORDER BY c.created_at`,
             )
-            .bind(businessId, CourierStatus.REMOVED)
+            .bind(businessId, CourierStatus.PENDING, CourierStatus.ACTIVE)
             .all<CourierRow>()
         return results.map(toCourier)
     }
@@ -166,10 +176,13 @@ export class D1CourierRepository implements CourierRepository {
             this.db
                 .prepare(
                     `INSERT INTO courier_profiles (telegram_id, name, phone, vehicle, shift_until,
-                        created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        in_network, network_offered_at, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                      ON CONFLICT (telegram_id) DO UPDATE SET name = excluded.name,
                         phone = excluded.phone, vehicle = excluded.vehicle,
-                        shift_until = excluded.shift_until, updated_at = excluded.updated_at`,
+                        shift_until = excluded.shift_until, in_network = excluded.in_network,
+                        network_offered_at = excluded.network_offered_at,
+                        updated_at = excluded.updated_at`,
                 )
                 .bind(
                     id,
@@ -177,6 +190,8 @@ export class D1CourierRepository implements CourierRepository {
                     phone,
                     profile.vehicle ?? null,
                     profile.shiftUntil?.getTime() ?? null,
+                    flag(profile.inNetwork),
+                    profile.networkOfferedAt?.getTime() ?? null,
                     profile.createdAt.getTime(),
                     profile.updatedAt.getTime(),
                 ),
@@ -185,6 +200,29 @@ export class D1CourierRepository implements CourierRepository {
                 .prepare("UPDATE couriers SET name = ?, phone = ? WHERE telegram_id = ?")
                 .bind(profile.name, phone, id),
         ])
+    }
+
+    async listFreeNetworkCouriers(
+        districtId: string,
+        now: Date,
+        limit: number,
+    ): Promise<CourierProfile[]> {
+        const { results } = await this.db
+            .prepare(
+                `SELECT ${PROFILE_COLUMNS} FROM courier_profiles p
+                 WHERE p.in_network = 1 AND p.shift_until > ?
+                   AND EXISTS (
+                       SELECT 1 FROM couriers c JOIN businesses b ON b.id = c.business_id
+                       WHERE c.telegram_id = p.telegram_id AND c.status = ? AND b.district_id = ?)
+                   AND NOT EXISTS (
+                       SELECT 1 FROM couriers c JOIN orders o ON o.courier_id = c.id
+                       WHERE c.telegram_id = p.telegram_id AND o.network_requested_at IS NOT NULL
+                         AND o.status IN (${CARRYING}))
+                 ORDER BY p.created_at LIMIT ?`,
+            )
+            .bind(now.getTime(), CourierStatus.ACTIVE, districtId, limit)
+            .all<ProfileRow>()
+        return results.map(toProfile)
     }
 
     async saveInvite(invite: CourierInvite): Promise<void> {

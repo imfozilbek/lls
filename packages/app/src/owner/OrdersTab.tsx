@@ -70,10 +70,14 @@ function CourierSheet({
         loadCouriers().catch(() => undefined)
     }, [loadCouriers])
 
-    const assign = async (courierId: string): Promise<void> => {
+    const assign = async (courierId: string | "network"): Promise<void> => {
         onClose()
         try {
-            onChange(await api.owner.assignCourier(order.id, courierId))
+            onChange(
+                courierId === "network"
+                    ? await api.owner.toNetwork(order.id)
+                    : await api.owner.assignCourier(order.id, courierId),
+            )
             haptic.success()
         } catch (caught) {
             failToast(t, caught)
@@ -100,6 +104,13 @@ function CourierSheet({
                     onClick={(): void => void assign(courier.id)}
                 />
             ))}
+            {order.waitingForNetwork || order.courierId ? null : (
+                <SheetOption
+                    label={t.owner.toNetwork}
+                    hint={t.owner.toNetworkHint}
+                    onClick={(): void => void assign("network")}
+                />
+            )}
         </Sheet>
     )
 }
@@ -252,6 +263,33 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
     )
 }
 
+/** Who brings it: the shop's courier, a network courier, or the network is still looking. */
+function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
+    const t = useT()
+    if (order.waitingForNetwork) {
+        return (
+            <p className="flex items-center gap-2 px-1 font-medium text-tg-subtitle">
+                <ScooterIcon size={18} className="animate-pulse text-brand" />
+                {t.owner.networkSearching}
+            </p>
+        )
+    }
+    if (!order.courierName) {
+        return null
+    }
+    return (
+        <p className="flex flex-wrap items-center gap-2 px-1 font-medium">
+            <ScooterIcon size={18} className="text-brand" />
+            {t.owner.courier}: {order.courierName}
+            {order.viaNetwork ? (
+                <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs font-semibold">
+                    {t.owner.viaNetwork}
+                </span>
+            ) : null}
+        </p>
+    )
+}
+
 function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -296,12 +334,7 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
             ) : null}
             <div className="mt-3 flex flex-col gap-2 text-sm">
                 <AddressBlock order={order} />
-                {order.courierName ? (
-                    <p className="flex items-center gap-2 px-1 font-medium">
-                        <ScooterIcon size={18} className="text-brand" />
-                        {t.owner.courier}: {order.courierName}
-                    </p>
-                ) : null}
+                <CourierLine order={order} />
                 <ContactLinks order={order} />
             </div>
             <OrderActions order={order} onChange={onChange} onStale={onStale} />

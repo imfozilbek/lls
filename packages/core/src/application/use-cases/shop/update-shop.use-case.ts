@@ -6,6 +6,7 @@ import { Money } from "../../../domain/value-objects/money.js"
 import { PayoutCard } from "../../../domain/value-objects/payout-card.js"
 import { WorkingHours } from "../../../domain/value-objects/working-hours.js"
 import { toShopOwnerDTO } from "../../dtos/shop.dto.js"
+import { districtIdFor } from "../network/network.use-cases.js"
 import { requireOwnedBusiness } from "../shared.js"
 
 import type { Business, ProfilePatch } from "../../../domain/entities/business.js"
@@ -13,6 +14,7 @@ import type { WeeklySchedule } from "../../../domain/value-objects/working-hours
 import type { LocationDTO, ShopOwnerDTO } from "../../dtos/shop.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
+import type { DistrictRepository } from "../../ports/district-repository.js"
 
 export interface ShopSettingsPatch {
     name?: string
@@ -35,6 +37,8 @@ export interface ShopSettingsPatch {
     bottleDeposit?: number
     /** The card for customers' transfers; `null` = cash only. */
     payoutCard?: { number: string; holder: string } | null
+    /** When its own couriers are busy, orders go to the district network. */
+    networkDelivery?: boolean
 }
 
 export interface UpdateShopInput {
@@ -47,6 +51,8 @@ export class UpdateShopUseCase {
     constructor(
         private readonly businesses: BusinessRepository,
         private readonly clock: Clock,
+        /** Without it, a moved shop keeps its district (tests that do not need districts). */
+        private readonly districts?: DistrictRepository,
     ) {}
 
     async execute(input: UpdateShopInput): Promise<ShopOwnerDTO> {
@@ -56,6 +62,9 @@ export class UpdateShopUseCase {
             input.actorTelegramId,
         )
         applyPatch(business, input.patch)
+        if (input.patch.location !== undefined && this.districts) {
+            business.setDistrict(await districtIdFor(this.districts, business.location))
+        }
         await this.businesses.save(business)
         return toShopOwnerDTO(business, this.clock.now())
     }
@@ -76,6 +85,9 @@ function applyPatch(business: Business, patch: ShopSettingsPatch): void {
     }
     if (patch.acceptingOrders !== undefined) {
         business.setAcceptingOrders(patch.acceptingOrders)
+    }
+    if (patch.networkDelivery !== undefined) {
+        business.setNetworkDelivery(patch.networkDelivery)
     }
     if (patch.features !== undefined) {
         business.setFeatures(patch.features.map((f) => requireOneOf("features", f, FEATURES)))

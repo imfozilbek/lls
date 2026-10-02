@@ -149,6 +149,7 @@ export type ShopPatch = Partial<{
     }
     workingHours: Record<string, { open: string; close: string }> | null
     acceptingOrders: boolean
+    networkDelivery: boolean
     features: string[]
     bottleDeposit: number
     payoutCard: { number: string; holder: string } | null
@@ -245,6 +246,9 @@ export const api = {
             request("DELETE", `/api/owner/couriers/${id}`),
         assignCourier: (orderId: string, courierId: string): Promise<OrderDTO> =>
             request("PUT", `/api/owner/orders/${orderId}/courier`, { courierId }),
+        /** «Доставщик сети района»: the first free courier of the district takes it. */
+        toNetwork: (orderId: string): Promise<OrderDTO> =>
+            request("PUT", `/api/owner/orders/${orderId}/network`),
         reviewCourier: (id: string, approve: boolean): Promise<CourierDTO> =>
             request("POST", `/api/owner/couriers/${id}/review`, { approve }),
         setCourierSchedule: (
@@ -265,6 +269,11 @@ export const api = {
             request("PUT", "/api/courier/shift", { onShift }),
         profile: (vehicle: string | null): Promise<CourierProfileDTO> =>
             request("PATCH", "/api/courier/profile", { vehicle }),
+        network: (inNetwork: boolean): Promise<CourierProfileDTO> =>
+            request("PUT", "/api/courier/network", { inNetwork }),
+        /** «Беру»: the order is theirs, or NETWORK_ORDER_TAKEN when someone was faster. */
+        claim: (orderId: string): Promise<OrderDTO> =>
+            request("POST", `/api/courier/network/orders/${orderId}/claim`),
     },
 
     showcase: {

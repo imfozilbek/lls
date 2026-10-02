@@ -112,6 +112,8 @@ export const courierReviewBody = z.object({ approve: z.boolean() })
 
 export const shiftBody = z.object({ onShift: z.boolean() })
 
+export const networkMembershipBody = z.object({ inNetwork: z.boolean() })
+
 export const courierProfileBody = z.object({
     vehicle: z.string().trim().max(40).nullable(),
 })
@@ -155,6 +157,7 @@ export const shopPatchBody = z.object({
         .optional(),
     workingHours: z.partialRecord(z.enum(WEEKDAYS), timeRange).nullable().optional(),
     acceptingOrders: z.boolean().optional(),
+    networkDelivery: z.boolean().optional(),
     features: z.array(z.enum(FEATURES)).max(10).optional(),
     bottleDeposit: z.number().int().min(0).max(1_000_000).optional(),
     payoutCard: z

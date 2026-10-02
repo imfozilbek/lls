@@ -81,10 +81,21 @@ cover each one's whole process; what exactly comes from the meeting with them.
   An order goes only to a courier who is approved, works today and is on shift.
 - **Done:** a courier's cash is counted per business; a business never sees its courier's other
   businesses or their money.
-- **Plan:** every courier a business connects is **offered** to deliver for other points of the
-  district too (`in_network`, the courier's own consent).
-- **Plan:** an order of a point without its own courier on shift is shown to the free network
-  couriers of the district; the first who accepts takes it. Goods money goes back to that point.
+- **Done (goal 06):** every courier a business approves is **offered** once to deliver for other
+  points of the district too (`in_network`, only the courier's own consent).
+- **Done:** a district is a circle (center + radius) the platform admin sets in the LLS bot:
+  `/district <name> <lat>,<lng> <km>`, `/district <name> wait <min>`; `/network` shows it.
+  A shop belongs to the district its location falls in.
+- **Done:** when the shop accepts an order and none of its own couriers can take it now, the
+  order goes to the free network couriers of the district (in the network, on shift, carrying no
+  other network order): «Новый заказ рядом» without the customer, «Беру»; the first press wins
+  (one conditional UPDATE). The shop switch «Если мои заняты — отдавать сети района» is **on by
+  default** (owner's decision); the owner may also hand an order over by hand. Goods money goes
+  back to that point (cash counted per point). Nobody took it in `wait` minutes (default 10):
+  the shop and the admins hear it once (no cron: checked on every network event and `/network`).
+- **Temporary rule (owner decides later, goal 02):** the delivery fee of a network order stays
+  with the shop and LLS takes no share. It is a snapshot in the order (`delivery_fee_to`), set in
+  one place (`NETWORK_DELIVERY_FEE_RECIPIENT`).
 
 **⛔ RULES:**
 - Build ONLY stage 1 now: the online point and district delivery. Money is in: payment method
@@ -97,7 +108,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - Still forbidden: shared cart, algorithmic order dispatch (couriers accept orders themselves),
   routing, settlements or payouts between businesses through LLS.
 - Not decided (ask the owner, never invent): who gets the delivery fee when a network courier
-  delivers, and whether LLS takes a share of it.
+  delivers, and whether LLS takes a share of it. Until then: the shop keeps it (temporary rule).
 - Only shops with a marketplace deal (`business.marketplace`) appear in the showcase. A platform
   admin sets the deal in the LLS bot: `/market <slug> <percent>` or `/market <slug> off`.
 - One universal core for all business types. Vertical specifics = feature toggles per business:
@@ -292,13 +303,14 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through t
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout card (number, holder) or none, service fee rate (bps; plan) |
+| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout card (number, holder) or none, service fee rate (bps; plan), district_id, network_delivery (on by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at — whose customer this is |
-| CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until — the person; in_network (plan) |
-| Courier | id, business_id, telegram_id, status (pending/active/removed), work_days, off_until — the person's link to one shop |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method cash/card_transfer, status unpaid/awaiting/paid/refund_due/refunded, paid_at, cash courier), delivered_at, service fee (rate + amount; plan) |
+| District | id, name, center (lat, lng), radius, wait_minutes — a circle of the delivery network |
+| CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at — the person |
+| Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until — the person's link to one shop (`network`: took a network order of it) |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method cash/card_transfer, status unpaid/awaiting/paid/refund_due/refunded, paid_at, cash courier), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
 | CashHandover | id, business_id, courier_id, amount, at — cash a courier gave to the owner |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
@@ -424,8 +436,8 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 - Owner: New order message → Accept → Next status → assign courier; catalog and couriers in "Мой магазин"
 - Courier: Invite link → LLS courier bot → phone → approved → "on shift" → assigned order card →
   Picked up → Delivered
-- Network courier (plan): invite from a point → accept in the LLS courier bot → agree to the
-  district network → "on shift" → accept an order of any point → Picked up → Delivered
+- Network courier: approved by a point → «Да, для района» in the LLS courier bot → "on shift" →
+  «Новый заказ рядом» → «Беру» → full card → Picked up → Delivered → hands the cash to that point
 
 ## Security (MANDATORY)
 

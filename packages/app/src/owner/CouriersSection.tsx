@@ -12,7 +12,7 @@ import { Button, Section, Skeleton, Switch } from "../ui/primitives.js"
 import { useOwner } from "./store.js"
 
 import type { CourierInvite } from "../lib/api.js"
-import type { CourierDTO, Weekday } from "@lls/core"
+import type { CourierDTO, ShopOwnerDTO, Weekday } from "@lls/core"
 
 function failToast(t: ReturnType<typeof useT>, caught: unknown): void {
     haptic.error()
@@ -288,6 +288,48 @@ function useCourierActions(): CourierActions {
     }
 
     return { review, schedule, remove }
+}
+
+/** «Если мои заняты — отдавать сети района»: on by default; the owner may switch it off. */
+export function NetworkSection({
+    shop,
+    onSaved,
+}: {
+    shop: ShopOwnerDTO
+    onSaved(shop: ShopOwnerDTO): void
+}): React.JSX.Element {
+    const t = useT()
+    const s = t.owner.settings
+    const [value, setValue] = useState(shop.networkDelivery)
+    const change = async (next: boolean): Promise<void> => {
+        setValue(next)
+        try {
+            onSaved(await api.owner.updateShop({ networkDelivery: next }))
+        } catch (caught) {
+            setValue(!next)
+            failToast(t, caught)
+        }
+    }
+    return (
+        <Section title={s.networkTitle}>
+            <div className="flex flex-col gap-2 rounded-tile bg-tg-secondary p-4">
+                <label className="flex items-center gap-3">
+                    <span className="flex-1">
+                        <span className="block font-semibold">{s.networkSwitch}</span>
+                        <span className="text-sm text-tg-hint">{s.networkHint}</span>
+                    </span>
+                    <Switch
+                        checked={value}
+                        onChange={(next): void => void change(next)}
+                        label={s.networkSwitch}
+                    />
+                </label>
+                {shop.inDistrict ? null : (
+                    <p className="text-sm font-medium text-warning">{s.notInDistrict}</p>
+                )}
+            </div>
+        </Section>
+    )
 }
 
 /** The shop's couriers: invite by link, approve who joined, set their days, remove. */

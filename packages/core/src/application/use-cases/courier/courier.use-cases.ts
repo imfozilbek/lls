@@ -9,6 +9,7 @@ import { toCourierDTO, toCourierProfileDTO } from "../../dtos/courier.dto.js"
 import { toOrderDTO } from "../../dtos/order.dto.js"
 import { displayNameOf } from "../../dtos/telegram-user.js"
 import { cashOnHandByCourier } from "../money/money.use-cases.js"
+import { ListNetworkOrdersUseCase } from "../network/network.use-cases.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
 import type { Business } from "../../../domain/entities/business.js"
@@ -25,6 +26,7 @@ import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { CashHandoverRepository } from "../../ports/cash-handover-repository.js"
 import type { Clock } from "../../ports/clock.js"
 import type { CourierRepository } from "../../ports/courier-repository.js"
+import type { DistrictRepository } from "../../ports/district-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
 
 /** 12 random bytes → 16 url-safe characters: fits Telegram's `start` payload (max 64). */
@@ -47,6 +49,7 @@ export interface CourierDeps {
 
 export interface CourierHomeDeps extends CourierDeps {
     handovers: CashHandoverRepository
+    districts: DistrictRepository
 }
 
 /** The approved courier link of this person in this shop, or a 403. */
@@ -84,7 +87,8 @@ async function requireCourierProfile(
         couriers.findProfile(telegramId),
         couriers.listByPerson(telegramId),
     ])
-    if (!profile || !links.some((link) => link.isActive)) {
+    // A network link counts too: the person may still owe that shop its cash.
+    if (!profile || !links.some((link) => link.isActive || link.isNetwork)) {
         throw ForbiddenError.notACourier()
     }
     return profile
@@ -299,14 +303,17 @@ export class GetCourierHomeUseCase {
 
     /**
      * The courier's screen across all their shops: on the road plus finished today, each order
-     * with its shop's name, and the cash of each shop they hold.
+     * with its shop's name, the cash of each shop they hold, and network orders waiting nearby.
+     * Shops they delivered for through the network are listed while they owe them cash.
      */
     async execute(input: { telegramId: number }): Promise<CourierHomeDTO> {
         const { couriers, businesses, orders } = this.deps
         const profile = await requireCourierProfile(couriers, input.telegramId)
         const now = this.deps.clock.now()
         const since = startOfLocalDay(now)
-        const links = (await couriers.listByPerson(input.telegramId)).filter((l) => l.isActive)
+        const links = (await couriers.listByPerson(input.telegramId)).filter(
+            (l) => l.isActive || l.isNetwork,
+        )
         const perShop = await Promise.all(
             links.map(async (link) => {
                 const [business, list, cash] = await Promise.all([
@@ -327,15 +334,18 @@ export class GetCourierHomeUseCase {
                     ...toOrderDTO(o),
                     shopName,
                 }))
-                return { shop, shopOrders }
+                return { shop, shopOrders, network: link.isNetwork }
             }),
         )
         return {
             profile: toCourierProfileDTO(profile, now),
-            shops: perShop.map((p) => p.shop),
+            shops: perShop
+                .filter((p) => !p.network || p.shop.onHand > 0 || p.shopOrders.length > 0)
+                .map((p) => p.shop),
             orders: perShop
                 .flatMap((p) => p.shopOrders)
                 .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+            network: await new ListNetworkOrdersUseCase(this.deps).execute(input),
         }
     }
 }

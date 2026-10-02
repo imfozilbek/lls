@@ -12,6 +12,7 @@ import type {
 import type { Clock } from "../application/ports/clock.js"
 import type { CourierRepository } from "../application/ports/courier-repository.js"
 import type { CustomerRepository } from "../application/ports/customer-repository.js"
+import type { DistrictRepository } from "../application/ports/district-repository.js"
 import type { MoneyTotals, OrderRepository } from "../application/ports/order-repository.js"
 import type {
     ProductListQuery,
@@ -23,6 +24,7 @@ import type { CashHandover } from "../domain/entities/cash-handover.js"
 import type { Courier, CourierInvite } from "../domain/entities/courier.js"
 import type { CourierProfile } from "../domain/entities/courier-profile.js"
 import type { Customer } from "../domain/entities/customer.js"
+import type { District } from "../domain/entities/district.js"
 import type { Order } from "../domain/entities/order.js"
 import type { Product } from "../domain/entities/product.js"
 
@@ -52,6 +54,9 @@ export class InMemoryBusinesses implements BusinessRepository {
     }
     async listInShowcase(): Promise<Business[]> {
         return [...this.items.values()].filter((b) => b.isInShowcase())
+    }
+    async listWithLocation(): Promise<Business[]> {
+        return [...this.items.values()].filter((b) => b.location !== undefined)
     }
     async insert(business: Business, botToken: string): Promise<void> {
         this.items.set(business.id, business)
@@ -154,6 +159,15 @@ export class InMemoryOrders implements OrderRepository {
     readonly items = new Map<string, Order>()
     /** Simulate a concurrent insert taking the next number this many times. */
     collisions = 0
+    /** Simulate another courier pressing «Беру» first this many times. */
+    claimRaces = 0
+
+    /** Districts live on the shops: network queries look them up here. */
+    constructor(private readonly businesses?: InMemoryBusinesses) {}
+
+    private districtOf(order: Order): string | undefined {
+        return this.businesses?.items.get(order.businessId)?.districtId
+    }
 
     async findById(id: string): Promise<Order | null> {
         return this.items.get(id) ?? null
@@ -257,6 +271,47 @@ export class InMemoryOrders implements OrderRepository {
         }
         return [...totals].map(([courierId, amount]) => ({ courierId, amount }))
     }
+    async claimForNetwork(order: Order): Promise<boolean> {
+        if (this.claimRaces > 0) {
+            this.claimRaces--
+            return false
+        }
+        const stored = this.items.get(order.id)
+        if (stored && stored !== order && !stored.isWaitingForNetwork()) {
+            return false
+        }
+        this.items.set(order.id, order)
+        return true
+    }
+    async listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]> {
+        return [...this.items.values()]
+            .filter(
+                (o) => o.isWaitingForNetwork() && districtIds.includes(this.districtOf(o) ?? ""),
+            )
+            .sort(
+                (a, b) =>
+                    (a.networkRequestedAt?.getTime() ?? 0) - (b.networkRequestedAt?.getTime() ?? 0),
+            )
+            .slice(0, limit)
+    }
+    async networkShare(
+        districtId: string,
+        from: Date,
+        to: Date,
+    ): Promise<{ delivered: number; viaNetwork: number }> {
+        const delivered = [...this.items.values()].filter(
+            (o) =>
+                this.districtOf(o) === districtId &&
+                o.status === OrderStatus.DELIVERED &&
+                o.deliveredAt !== undefined &&
+                o.deliveredAt >= from &&
+                o.deliveredAt < to,
+        )
+        return {
+            delivered: delivered.length,
+            viaNetwork: delivered.filter((o) => o.isViaNetwork()).length,
+        }
+    }
     async listCreatedBetween(
         businessId: string,
         from: Date,
@@ -294,6 +349,12 @@ export class InMemoryCouriers implements CourierRepository {
     readonly profiles = new Map<number, CourierProfile>()
     readonly invites = new Map<string, CourierInvite>()
 
+    /** Network queries need the shops' districts and the orders people carry. */
+    constructor(
+        private readonly businesses?: InMemoryBusinesses,
+        private readonly orders?: InMemoryOrders,
+    ) {}
+
     async findById(id: string): Promise<Courier | null> {
         return this.items.get(id) ?? null
     }
@@ -306,7 +367,9 @@ export class InMemoryCouriers implements CourierRepository {
     }
     async listByBusiness(businessId: string): Promise<Courier[]> {
         return [...this.items.values()].filter(
-            (c) => c.businessId === businessId && c.status !== CourierStatus.REMOVED,
+            (c) =>
+                c.businessId === businessId &&
+                (c.status === CourierStatus.PENDING || c.status === CourierStatus.ACTIVE),
         )
     }
     async listByPerson(telegramId: number): Promise<Courier[]> {
@@ -322,10 +385,51 @@ export class InMemoryCouriers implements CourierRepository {
     async saveProfile(profile: CourierProfile): Promise<void> {
         this.profiles.set(profile.telegramId.value, profile)
     }
+    async listFreeNetworkCouriers(
+        districtId: string,
+        now: Date,
+        limit: number,
+    ): Promise<CourierProfile[]> {
+        const links = [...this.items.values()]
+        const inDistrict = (c: Courier): boolean =>
+            c.isActive && this.businesses?.items.get(c.businessId)?.districtId === districtId
+        const busy = (telegramId: number): boolean =>
+            [...(this.orders?.items.values() ?? [])].some(
+                (o) =>
+                    o.isViaNetwork() &&
+                    ACTIVE_ORDER_STATUSES.includes(o.status) &&
+                    links.some((c) => c.id === o.courierId && c.telegramId.value === telegramId),
+            )
+        return [...this.profiles.values()]
+            .filter((p) => p.inNetwork && p.isOnShift(now))
+            .filter((p) =>
+                links.some((c) => c.telegramId.value === p.telegramId.value && inDistrict(c)),
+            )
+            .filter((p) => !busy(p.telegramId.value))
+            .slice(0, limit)
+    }
     async saveInvite(invite: CourierInvite): Promise<void> {
         this.invites.set(invite.code, invite)
     }
     async findInvite(code: string): Promise<CourierInvite | null> {
         return this.invites.get(code) ?? null
+    }
+}
+
+export class InMemoryDistricts implements DistrictRepository {
+    readonly items = new Map<string, District>()
+
+    async findById(id: string): Promise<District | null> {
+        return this.items.get(id) ?? null
+    }
+    async findByName(name: string): Promise<District | null> {
+        const wanted = name.toLowerCase()
+        return [...this.items.values()].find((d) => d.name.toLowerCase() === wanted) ?? null
+    }
+    async list(): Promise<District[]> {
+        return [...this.items.values()]
+    }
+    async save(district: District): Promise<void> {
+        this.items.set(district.id, district)
     }
 }

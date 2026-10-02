@@ -6,6 +6,7 @@ await applyD1Migrations(env.DB, env.TEST_MIGRATIONS)
 
 /** Children first, because D1 enforces foreign keys. */
 const TABLES = [
+    "network_offers",
     "order_items",
     "cash_handovers",
     "orders",
@@ -18,6 +19,7 @@ const TABLES = [
     "customers",
     "products",
     "businesses",
+    "districts",
 ]
 
 beforeEach(async () => {

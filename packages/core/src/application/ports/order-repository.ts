@@ -31,6 +31,20 @@ export interface OrderRepository {
     cashCollectedByCourier(businessId: string): Promise<CourierAmount[]>
     /** Orders created in [from, to), oldest first: the owner's export. */
     listCreatedBetween(businessId: string, from: Date, to: Date, limit: number): Promise<Order[]>
+    /**
+     * Saves a network courier's «Беру» only if nobody took the order in between (still no
+     * courier, still asked of the network, still before pickup). False: someone was faster.
+     */
+    claimForNetwork(order: Order): Promise<boolean>
+    /** Orders of shops in these districts waiting for a network courier, oldest first. */
+    listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]>
+    /** Delivered orders of a district in [from, to): all, and those a network courier took. */
+    networkShare(districtId: string, from: Date, to: Date): Promise<NetworkShare>
+}
+
+export interface NetworkShare {
+    delivered: number
+    viaNetwork: number
 }
 
 /** Sums for a period, UZS. Money counts delivered orders by delivery time. */

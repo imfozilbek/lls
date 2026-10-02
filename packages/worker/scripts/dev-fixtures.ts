@@ -1,6 +1,8 @@
 /** Fixed data for local runs. Never used in production: the bot tokens are fake. */
 export interface DevShop {
     id: string
+    /** Inside the demo district around Gulistan. */
+    location: { latitude: number; longitude: number }
     slug: string
     name: string
     type: "food" | "water" | "grocery"
@@ -13,6 +15,7 @@ export interface DevShop {
 export const DEV_SHOPS: readonly DevShop[] = [
     {
         id: "dev-food",
+        location: { latitude: 40.492, longitude: 68.781 },
         slug: "osh-markaz-dev",
         name: "Osh Markaz",
         type: "food",
@@ -27,6 +30,7 @@ export const DEV_SHOPS: readonly DevShop[] = [
     },
     {
         id: "dev-water",
+        location: { latitude: 40.485, longitude: 68.79 },
         slug: "toza-suv-dev",
         name: "Toza Suv",
         type: "water",
@@ -41,6 +45,7 @@ export const DEV_SHOPS: readonly DevShop[] = [
     },
     {
         id: "dev-grocery",
+        location: { latitude: 40.496, longitude: 68.775 },
         slug: "baraka-market-dev",
         name: "Baraka Market",
         type: "grocery",
@@ -65,6 +70,24 @@ export const DEV_COURIER_BOT = {
 
 /** One courier who works for all three shops: a person may deliver for several. */
 export const DEV_COURIER = { id: 3003, first_name: "Jasur", language_code: "uz" }
+/** The demo district of the delivery network: 30 km around Gulistan. */
+export const DEV_DISTRICT = {
+    id: "dev-district-guliston",
+    name: "Guliston",
+    latitude: 40.4897,
+    longitude: 68.7842,
+    radiusMeters: 30_000,
+}
+
+/**
+ * District network couriers: each approved by one shop and in the network, on shift. Jasur, the
+ * shops' own courier, is not in the network.
+ */
+export const DEV_NETWORK_COURIERS = [
+    { id: 3005, first_name: "Otabek", language_code: "ru", shop: "dev-water" },
+    { id: 3006, first_name: "Sherzod", language_code: "ru", shop: "dev-grocery" },
+] as const
+
 export const DEV_CUSTOMER = { id: 2002, first_name: "Aziz", language_code: "uz" }
 export const DEV_ADMIN_ID = 9999
 

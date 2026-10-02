@@ -3,6 +3,7 @@ import { toLocationDTO } from "./shop.dto.js"
 import type { LocationDTO } from "./shop.dto.js"
 import type { CancelledBy, Order } from "../../domain/entities/order.js"
 import type { Category } from "../../domain/enums/category.js"
+import type { DeliveryFeeRecipient } from "../../domain/enums/delivery-fee.js"
 import type { OrderChannel } from "../../domain/enums/order-channel.js"
 import type { OrderStatus } from "../../domain/enums/order-status.js"
 import type { PaymentMethod, PaymentStatus } from "../../domain/enums/payment.js"
@@ -38,6 +39,11 @@ export interface OrderDTO {
     commission: number
     courierId?: string
     courierName?: string
+    /** Waiting for a district network courier to take it. */
+    waitingForNetwork: boolean
+    /** Taken by a district network courier. */
+    viaNetwork: boolean
+    deliveryFeeTo: DeliveryFeeRecipient
     address: string
     landmark?: string
     location?: LocationDTO
@@ -87,6 +93,9 @@ export function toOrderDTO(order: Order): OrderDTO {
         commission: order.commission.amount,
         courierId: order.courierId,
         courierName: order.courierName,
+        waitingForNetwork: order.isWaitingForNetwork(),
+        viaNetwork: order.isViaNetwork(),
+        deliveryFeeTo: order.deliveryFeeTo,
         address: order.address,
         landmark: order.landmark,
         location: toLocationDTO(order.location),

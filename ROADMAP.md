@@ -143,16 +143,18 @@ Pilot: **food, water and grocery at the same time.**
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
 
-### M6. District delivery 🔨 (stage 1; part 1 — the courier bot — is goal 05)
+### M6. District delivery 🔨 (stage 1; goal 05 — the courier bot, goal 06 — the network)
 - [x] LLS courier bot; one courier profile per person (name, phone, vehicle)
 - [x] Invite from "Мой магазин" → accept in the courier bot → the business approves
 - [x] The business switches a courier on or off by day; the courier marks "on shift"
-- [ ] Every connected courier is offered to join the district network
-- [ ] An order of a point without its own courier on shift goes to free network couriers; the
+- [x] Every connected courier is offered to join the district network
+- [x] An order of a point without its own courier on shift goes to free network couriers; the
       first who accepts takes it; goods money goes back to that point
+- [x] Districts set by the admin (`/district`), `/network` report, "nobody took it" alerts
 - [x] Orders from several points in one place; cash on hand counted per point
 - [x] Today's shop couriers move to the new model without losing data
 - [ ] Decide (owner): who gets the delivery fee for a network delivery, and LLS's share
+      (temporary rule in code: the shop keeps it, LLS takes none)
 
 ### M7. Online point in an hour ⏳
 - [ ] Pickup: order ahead, collect without a queue

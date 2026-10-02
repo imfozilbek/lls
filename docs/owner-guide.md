@@ -58,6 +58,15 @@ pulini ko'rasiz.
 
 Kuryerni o'chirish: ro'yxatdagi 🗑 tugmasi.
 
+**Tuman tarmog'i.** O'z kuryeringiz bo'sh bo'lmasa (yo'q, dam olishda yoki smenada emas),
+**Qabul qilish** dan keyin buyurtma tumanning bo'sh kuryerlariga yuboriladi. Birinchi bo'lib
+**🙋 Olaman** ni bosgan kuryer oladi, bot sizga uning ismini yozadi. U mijoz manzilini faqat
+buyurtmani olgandan keyin ko'radi va buyurtma pulini **sizga** topshiradi (bu **Pul → Kuryerlardagi
+naqd pul** da ko'rinadi). Yetkazish narxi hozircha sizda qoladi.
+- O'chirish: **Sozlamalar → Tuman tarmog'i → Kuryerlarim band bo'lsa — tuman tarmog'iga berish**.
+- Qo'lda berish: buyurtmada **Kuryer tayinlash → Tuman tarmog'i kuryeri**.
+- 10 daqiqada hech kim olmasa, bot sizga yozadi: o'z kuryeringizni tayinlang yoki o'zingiz olib boring.
+
 ### 4. Buyurtmani qabul qilish va yetkazish
 
 Yangi buyurtma kelganda bot sizga xabar yuboradi: tarkibi, summasi, manzili, mo'ljal va telefon.
@@ -189,6 +198,15 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 
 Убрать доставщика: кнопка 🗑 в списке.
 
+**Сеть района.** Если вашего доставщика сейчас нет (нет вовсе, выходной или не на смене), после
+**Принять** заказ уходит свободным доставщикам района. Берёт тот, кто первым нажал **🙋 Беру**,
+бот пишет вам его имя. Адрес клиента он видит только после того, как взял заказ, а деньги за
+заказ отдаёт **вам** (видно в **Деньги → Наличные у доставщиков**). Плата за доставку пока
+остаётся у вас.
+- Выключить: **Настройки → Сеть района → Если мои заняты — отдавать сети района**.
+- Отдать вручную: в заказе **Назначить доставщика → Доставщик сети района**.
+- Если за 10 минут никто не взял, бот напишет: назначьте своего доставщика или отвезите сами.
+
 ### 4. Принять и доставить заказ
 
 Когда приходит заказ, бот пишет вам: состав, сумма, адрес, ориентир и телефон.
@@ -279,6 +297,10 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 4. Buyurtma kartasi botga keladi. Tayyor bo'lganda **🚚 Oldim**, eshik oldida —
    **🏁 Yetkazdim** va mijoz qanday to'laganini tanlang.
 5. Ekranda har bir do'kon puli alohida: **Qo'lingizda: X so'm**. Pulni o'sha do'konga topshiring.
+6. **Tuman tarmog'i** (xohishga ko'ra): botda **✅ Ha, tuman uchun** yoki ilovada **Tuman
+   buyurtmalarini olaman**. Smenada bo'lsangiz, yaqindagi buyurtmalar keladi: **🙋 Olaman** —
+   birinchi bosgan oladi. Bir vaqtda bitta tarmoq buyurtmasi. Pulni shu buyurtma do'koniga
+   topshirasiz.
 
 **Русский**
 1. Откройте ссылку от точки → **бот доставщиков LLS** → **Start** → **📱 Отправить номер**.
@@ -287,3 +309,6 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 4. Карточка заказа приходит в бот. Когда заказ готов — **🚚 Забрал**, у двери — **🏁 Доставил** и
    как заплатил клиент.
 5. На экране деньги каждой точки отдельно: **На руках: X сум**. Сдавайте их именно этой точке.
+6. **Сеть района** (по желанию): в боте **✅ Да, для района** или в приложении **Беру заказы
+   района**. На смене вам приходят заказы рядом: **🙋 Беру** — берёт тот, кто нажал первым.
+   Одновременно один заказ сети. Деньги отдаёте той точке, чей это заказ.

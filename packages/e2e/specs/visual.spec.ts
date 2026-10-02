@@ -4,7 +4,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, WATER, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
@@ -86,5 +86,29 @@ for (const theme of ["light", "dark"] as const) {
         await snap(page, "23-onboarding", theme)
         await bottomButton(page).click()
         await snap(page, "24-onboarding-step1", theme)
+    })
+
+    test(`district network, ${theme}`, async ({ page }) => {
+        // Jasur is off today: the accepted order goes to the district network.
+        await apiAs(PEOPLE.foodOwner, "/owner/couriers/dev-food-courier", {
+            shop: FOOD,
+            method: "PATCH",
+            json: { offToday: true },
+        })
+        const order = await placeOrder(PEOPLE.customer, FOOD, [
+            { productId: "dev-food-p1", quantity: 2 },
+        ])
+        await apiAs(PEOPLE.foodOwner, `/owner/orders/${order.id}`, {
+            shop: FOOD,
+            method: "PATCH",
+            json: { status: "accepted" },
+        })
+        await openApp(page, { user: PEOPLE.networkCourier, courierBot: true, theme })
+        await expect(page.getByRole("button", { name: "Беру" }).first()).toBeVisible()
+        await snap(page, "25-courier-nearby", theme)
+        await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD, theme })
+        await page.getByRole("button", { name: "Мой магазин" }).click()
+        await expect(page.getByText("Ищем доставщика сети района").first()).toBeVisible()
+        await snap(page, "26-owner-network-order", theme)
     })
 }

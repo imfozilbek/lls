@@ -17,6 +17,7 @@ import {
     shopPatchBody,
     onInvalid,
 } from "../http/schemas.js"
+import { networkAfterStep, notifyOwnerStep, reportOverdueNetworkOrders } from "../network-flow.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
 
 import type { AppEnv } from "../env.js"
@@ -88,14 +89,36 @@ export const ownerRoutes = new Hono<AppEnv>()
                           to: status,
                           paidWith,
                       })
+            const step = await networkAfterStep(services, order)
             inBackground(
                 c.executionCtx,
                 services,
-                new Notifier(services).orderChanged(shopOf(c), order),
+                notifyOwnerStep(services, shopOf(c), step.order, step.request),
             )
-            return c.json(order)
+            return c.json(step.order)
         },
     )
+
+    /** «Отдать сети района»: the owner hands the order to the district network by hand. */
+    .put("/orders/:id/network", zValidator("param", idParam, onInvalid), async (c) => {
+        const services = c.get("services")
+        const business = shopOf(c)
+        const request = await services.useCases.requestNetworkCourier.execute({
+            actorTelegramId: c.get("auth").user.id,
+            businessId: business.id,
+            orderId: c.req.valid("param").id,
+        })
+        const notifier = new Notifier(services)
+        inBackground(
+            c.executionCtx,
+            services,
+            notifier
+                .ownerCardChanged(business, request.order)
+                .then(() => notifier.networkRequested(request))
+                .then(() => reportOverdueNetworkOrders(services)),
+        )
+        return c.json(request.order)
+    })
 
     .put(
         "/orders/:id/courier",

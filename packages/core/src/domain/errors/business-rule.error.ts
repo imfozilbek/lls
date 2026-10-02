@@ -111,6 +111,24 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    /** Another network courier pressed «Беру» first, or the shop took the order back. */
+    static networkOrderTaken(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NETWORK_ORDER_TAKEN",
+            "This order was already taken",
+            { orderId },
+        )
+    }
+
+    /** The shop's location is in no district of the delivery network. */
+    static noDistrict(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NO_DISTRICT",
+            "The shop is outside every district of the delivery network",
+            { businessId },
+        )
+    }
+
     static notInMarketplace(businessId: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "NOT_IN_MARKETPLACE",

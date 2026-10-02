@@ -6,7 +6,7 @@ export interface CourierRepository {
     findById(id: string): Promise<Courier | null>
     /** The link of this person to this shop (any status). */
     findByTelegramId(businessId: string, telegramId: number): Promise<Courier | null>
-    /** The shop's couriers waiting for approval or approved, oldest first. */
+    /** The shop's own couriers, waiting for approval or approved, oldest first (no network links). */
     listByBusiness(businessId: string): Promise<Courier[]>
     /** Every shop link of one person (any status), oldest first. */
     listByPerson(telegramId: number): Promise<Courier[]>
@@ -14,6 +14,11 @@ export interface CourierRepository {
     save(courier: Courier): Promise<void>
     findProfile(telegramId: number): Promise<CourierProfile | null>
     saveProfile(profile: CourierProfile): Promise<void>
+    /**
+     * People who may take a network order of this district now: in the network, on shift,
+     * approved by a shop of the district, and not carrying another network order. Oldest first.
+     */
+    listFreeNetworkCouriers(districtId: string, now: Date, limit: number): Promise<CourierProfile[]>
     saveInvite(invite: CourierInvite): Promise<void>
     findInvite(code: string): Promise<CourierInvite | null>
 }

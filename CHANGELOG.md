@@ -7,6 +7,22 @@ All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### District network (goal 06)
+- **Added (core):** `District` (center + radius, waiting time); a shop's district from its
+  location; network delivery per shop, on by default; the courier's own network consent; a link
+  status `network`; network orders: requested after «Принять» when no own courier is free (or by
+  hand), «Беру» — the first wins, one network order at a time, cash goes back to the shop;
+  "nobody took it" after 10 minutes; the network's share for the admin. The delivery fee of a
+  network order is a snapshot (`deliveryFeeTo`), temporarily the shop's.
+- **Added (worker):** migration `0004_district_network.sql` (additive); «Новый заказ рядом»
+  with «Беру» in the courier bot, «Уже взяли» for the others, the network offer after the first
+  approval; `/district` and `/network` in the LLS bot; `PUT /api/owner/orders/:id/network`,
+  `PUT /api/courier/network`, `GET /api/courier/network/orders`, `POST …/:id/claim`
+- **Added (app):** «Беру заказы района» and «Заказы рядом» for couriers; «Сеть района» switch,
+  «Доставщик сети района» and the order's network status for owners
+- **Added (e2e):** the network spec: two couriers race, cash back to the shop, the switch,
+  leaving the network, the 10-minute alert; demo district and two network couriers in the seed
+
 ### LLS courier bot (goal 05)
 - **Added (core):** `CourierProfile` — one per person (name, phone, vehicle, shift until
   midnight); a `Courier` is now the person's link to one shop with status pending / active /
