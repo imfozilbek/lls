@@ -55,6 +55,14 @@ export const DEV_SHOPS: readonly DevShop[] = [
     },
 ]
 
+/** The LLS courier bot of the local stand. Fake token: never a real bot. */
+export const DEV_COURIER_BOT = {
+    id: 100200998,
+    username: "lls_kuryer_dev_bot",
+    token: "100200998:DEV-courier-token-not-a-real-bot-x",
+    webhookSecret: "dev-courier-secret",
+}
+
 /** One courier who works for all three shops: a person may deliver for several. */
 export const DEV_COURIER = { id: 3003, first_name: "Jasur", language_code: "uz" }
 export const DEV_CUSTOMER = { id: 2002, first_name: "Aziz", language_code: "uz" }

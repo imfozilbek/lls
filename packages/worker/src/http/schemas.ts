@@ -98,6 +98,24 @@ export const productPatchBody = productBody.partial().extend({
 
 export const assignCourierBody = z.object({ courierId: z.string().min(1).max(64) })
 
+/** The owner's week for a courier and "сегодня не работает"; at least one of them. */
+export const courierSchedulePatch = z
+    .object({
+        workDays: z.array(z.enum(WEEKDAYS)).min(1).max(WEEKDAYS.length).optional(),
+        offToday: z.boolean().optional(),
+    })
+    .refine((patch) => patch.workDays !== undefined || patch.offToday !== undefined, {
+        message: "Nothing to change",
+    })
+
+export const courierReviewBody = z.object({ approve: z.boolean() })
+
+export const shiftBody = z.object({ onShift: z.boolean() })
+
+export const courierProfileBody = z.object({
+    vehicle: z.string().trim().max(40).nullable(),
+})
+
 /** A courier moves only the delivery part. */
 export const courierOrderBody = z.object({
     status: z.enum([OrderStatus.PICKED_UP, OrderStatus.DELIVERED]),

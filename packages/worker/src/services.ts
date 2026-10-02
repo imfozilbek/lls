@@ -10,12 +10,16 @@ import {
     GetShopBySlugUseCase,
     ConfirmPaymentUseCase,
     ExportOrdersUseCase,
-    GetCourierCashUseCase,
+    GetCourierHomeUseCase,
     GetMoneyReportUseCase,
     MarkRefundedUseCase,
     RecordCashHandoverUseCase,
     JoinAsCourierUseCase,
-    ListCourierOrdersUseCase,
+    ReviewCourierUseCase,
+    SetCourierScheduleUseCase,
+    SetShiftUseCase,
+    UpdateCourierProfileUseCase,
+    CourierAdvanceOrderUseCase,
     ListCouriersUseCase,
     ListMyOrdersUseCase,
     ListMyShopsUseCase,
@@ -75,13 +79,17 @@ export interface UseCases {
     markRefunded: MarkRefundedUseCase
     recordHandover: RecordCashHandoverUseCase
     exportOrders: ExportOrdersUseCase
-    courierCash: GetCourierCashUseCase
     createCourierInvite: CreateCourierInviteUseCase
     joinAsCourier: JoinAsCourierUseCase
     listCouriers: ListCouriersUseCase
     deactivateCourier: DeactivateCourierUseCase
     assignCourier: AssignCourierUseCase
-    listCourierOrders: ListCourierOrdersUseCase
+    reviewCourier: ReviewCourierUseCase
+    setCourierSchedule: SetCourierScheduleUseCase
+    setShift: SetShiftUseCase
+    updateCourierProfile: UpdateCourierProfileUseCase
+    courierHome: GetCourierHomeUseCase
+    courierAdvanceOrder: CourierAdvanceOrderUseCase
     listShowcaseShops: ListShowcaseShopsUseCase
     searchShowcase: SearchShowcaseUseCase
     setMarketplaceTerms: SetMarketplaceTermsUseCase
@@ -142,13 +150,17 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             markRefunded: new MarkRefundedUseCase(money),
             recordHandover: new RecordCashHandoverUseCase(money),
             exportOrders: new ExportOrdersUseCase(money),
-            courierCash: new GetCourierCashUseCase(money),
             createCourierInvite: new CreateCourierInviteUseCase(courierAccess),
             joinAsCourier: new JoinAsCourierUseCase(courierAccess),
             listCouriers: new ListCouriersUseCase(courierAccess),
             deactivateCourier: new DeactivateCourierUseCase(courierAccess),
             assignCourier: new AssignCourierUseCase(courierAccess),
-            listCourierOrders: new ListCourierOrdersUseCase(courierAccess),
+            reviewCourier: new ReviewCourierUseCase(courierAccess),
+            setCourierSchedule: new SetCourierScheduleUseCase(courierAccess),
+            setShift: new SetShiftUseCase(courierAccess),
+            updateCourierProfile: new UpdateCourierProfileUseCase(courierAccess),
+            courierHome: new GetCourierHomeUseCase(money),
+            courierAdvanceOrder: new CourierAdvanceOrderUseCase(orderAccess),
             listShowcaseShops: new ListShowcaseShopsUseCase(businesses, clock),
             searchShowcase: new SearchShowcaseUseCase(businesses, products, clock),
             setMarketplaceTerms: new SetMarketplaceTermsUseCase(

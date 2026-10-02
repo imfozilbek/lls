@@ -7,6 +7,7 @@ import {
     SHOP_BOT,
     SHOP_BOT_TOKEN,
     createActiveShop,
+    hireCourier,
     sharePhoneWithShops,
     testClient,
 } from "./helpers.js"
@@ -42,20 +43,6 @@ describe("money: payments, courier cash, report, files", () => {
     const as = (user: object): ReturnType<TestClient["as"]> =>
         client.as(user, { botToken: SHOP_BOT_TOKEN, shop: slug })
 
-    async function botUpdate(body: object): Promise<void> {
-        const row = await env.DB.prepare("SELECT webhook_secret FROM businesses").first<{
-            webhook_secret: string
-        }>()
-        await client.request(`/tg/${SHOP_BOT.id}`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                [SECRET_HEADER]: row?.webhook_secret ?? "",
-            },
-            body: JSON.stringify(body),
-        })
-    }
-
     async function place(paymentMethod?: string): Promise<Response> {
         return as(CUSTOMER)("/api/orders", {
             method: "POST",
@@ -75,11 +62,14 @@ describe("money: payments, courier cash, report, files", () => {
         })
         await setStatus(order.id, "preparing")
         await setStatus(order.id, "ready")
-        await as(COURIER)(`/api/courier/orders/${order.id}`, {
+        await courierApp(`/api/courier/orders/${order.id}`, {
             method: "PATCH",
             json: { status: "picked_up" },
         })
     }
+
+    const courierApp = (path: string, init?: RequestInit & { json?: unknown }): Promise<Response> =>
+        client.as(COURIER, { courierBot: true })(path, init)
 
     const money = async (): Promise<{
         totals: Json
@@ -97,18 +87,7 @@ describe("money: payments, courier cash, report, files", () => {
             json: { name: "Osh", price: 35_000, unit: "portion", category: "meals" },
         })
         productId = (await json<{ id: string }>(product)).id
-        const invite = await json<{ link: string }>(
-            await as(OWNER)("/api/owner/couriers/invites", { method: "POST" }),
-        )
-        await botUpdate({
-            message: {
-                from: COURIER,
-                chat: { id: COURIER.id },
-                text: `/start ${invite.link.split("start=")[1] ?? ""}`,
-            },
-        })
-        courierId =
-            (await json<{ id: string }[]>(await as(OWNER)("/api/owner/couriers")))[0]?.id ?? ""
+        courierId = await hireCourier(client, { slug }, COURIER)
         await as(CUSTOMER)("/api/me")
         await sharePhoneWithShops(CUSTOMER.id)
     })
@@ -148,17 +127,19 @@ describe("money: payments, courier cash, report, files", () => {
         expect(card?.html).toContain("Взять с клиента")
 
         // Without saying how the customer paid, "delivered" is refused.
-        const blind = await as(COURIER)(`/api/courier/orders/${order.id}`, {
+        const blind = await courierApp(`/api/courier/orders/${order.id}`, {
             method: "PATCH",
             json: { status: "delivered" },
         })
         expect(blind.status).toBe(400)
 
-        await botUpdate({
+        await client.courierBot({
             callback_query: { id: "cb-1", from: COURIER, data: `a:${order.id}:delivered:cash` },
         })
-        const cash = await json<{ onHand: number }>(await as(COURIER)("/api/courier/cash"))
-        expect(cash.onHand).toBe(80_000)
+        const home = await json<{ shops: { onHand: number }[] }>(
+            await courierApp("/api/courier/home"),
+        )
+        expect(home.shops[0]?.onHand).toBe(80_000)
         let report = await money()
         expect(report.totals).toMatchObject({ delivered: 1, paidCash: 80_000, goods: 70_000 })
         expect(report.couriers).toMatchObject([{ courierId, onHand: 80_000 }])
@@ -180,7 +161,7 @@ describe("money: payments, courier cash, report, files", () => {
     it("a transfer at the door is confirmed by the owner; the customer hears it", async () => {
         const order = await json<Order>(await place())
         await atTheDoor(order)
-        await as(COURIER)(`/api/courier/orders/${order.id}`, {
+        await courierApp(`/api/courier/orders/${order.id}`, {
             method: "PATCH",
             json: { status: "delivered", paidWith: "card_transfer" },
         })
@@ -272,7 +253,7 @@ describe("money: payments, courier cash, report, files", () => {
     it("only the owner sees the shop's money", async () => {
         expect((await as(CUSTOMER)("/api/owner/money")).status).toBe(403)
         expect((await as(COURIER)("/api/owner/money")).status).toBe(403)
-        expect((await as(CUSTOMER)("/api/courier/cash")).status).toBe(403)
+        expect((await as(CUSTOMER)("/api/courier/home")).status).toBe(403)
         expect((await as(OWNER)("/api/owner/money?period=year")).status).toBe(400)
     })
 })

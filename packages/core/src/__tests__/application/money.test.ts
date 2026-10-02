@@ -3,12 +3,14 @@ import { beforeEach, describe, expect, it } from "vitest"
 import {
     AssignCourierUseCase,
     CreateCourierInviteUseCase,
+    GetCourierHomeUseCase,
     JoinAsCourierUseCase,
+    ReviewCourierUseCase,
+    SetShiftUseCase,
 } from "../../application/use-cases/courier/courier.use-cases.js"
 import {
     ConfirmPaymentUseCase,
     ExportOrdersUseCase,
-    GetCourierCashUseCase,
     GetMoneyReportUseCase,
     MarkRefundedUseCase,
     RecordCashHandoverUseCase,
@@ -124,10 +126,16 @@ describe("money: payments, courier cash, report", () => {
         courierId = (
             await new JoinAsCourierUseCase(deps).execute({
                 code: invite.code,
-                businessId: "biz-1",
                 user: { id: COURIER_TG, firstName: "Jasur" },
             })
-        ).id
+        ).courier.id
+        await new ReviewCourierUseCase(deps).execute({
+            actorTelegramId: OWNER_TG,
+            businessId: "biz-1",
+            courierId,
+            approve: true,
+        })
+        await new SetShiftUseCase(deps).execute({ telegramId: COURIER_TG, onShift: true })
     })
 
     it("a transfer needs the shop's card", async () => {
@@ -168,10 +176,10 @@ describe("money: payments, courier cash, report", () => {
         expect(today.couriers).toEqual([
             { courierId, name: "Jasur", onHand: 80_000, isActive: true },
         ])
-        const cash = new GetCourierCashUseCase(money())
-        expect(await cash.execute({ telegramId: COURIER_TG, businessId: "biz-1" })).toEqual({
-            onHand: 80_000,
-        })
+        const home = new GetCourierHomeUseCase(money())
+        const onHand = async (): Promise<number | undefined> =>
+            (await home.execute({ telegramId: COURIER_TG })).shops[0]?.onHand
+        expect(await onHand()).toBe(80_000)
 
         const hand = new RecordCashHandoverUseCase(money())
         await expect(
@@ -196,9 +204,7 @@ describe("money: payments, courier cash, report", () => {
             courierId,
             amount: 50_000,
         })
-        expect(await cash.execute({ telegramId: COURIER_TG, businessId: "biz-1" })).toEqual({
-            onHand: 30_000,
-        })
+        expect(await onHand()).toBe(30_000)
         await hand.execute({
             actorTelegramId: OWNER_TG,
             businessId: "biz-1",
@@ -282,10 +288,7 @@ describe("money: payments, courier cash, report", () => {
         })
         expect(exported.orders).toHaveLength(1)
         await expect(
-            new GetCourierCashUseCase(money()).execute({
-                telegramId: STRANGER_TG,
-                businessId: "biz-1",
-            }),
+            new GetCourierHomeUseCase(money()).execute({ telegramId: STRANGER_TG }),
         ).rejects.toThrow(ForbiddenError)
     })
 

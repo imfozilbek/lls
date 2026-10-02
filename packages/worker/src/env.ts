@@ -7,6 +7,9 @@ export interface Bindings extends Env {
     TOKEN_ENC_KEY: string
     PLATFORM_BOT_TOKEN: string
     PLATFORM_WEBHOOK_SECRET: string
+    /** The LLS courier bot: one bot for every courier of every shop. */
+    COURIER_BOT_TOKEN: string
+    COURIER_WEBHOOK_SECRET: string
     /** Comma-separated Telegram ids of platform admins. */
     PLATFORM_ADMIN_IDS: string
     /** Local stand only: a fake Bot API on localhost. Never set in production. */
@@ -21,7 +24,10 @@ export interface AuthContext {
     channel: OrderChannel
     /** How far the identity is trusted: a shop-signed one counts only inside that shop. */
     scope: IdentityScope
-    /** The viewer's role in this shop; `customer` outside a shop and in the showcase. */
+    /**
+     * The viewer's role: `owner` or `customer` in a shop; `courier` when the LLS courier bot
+     * opened the app (no shop: a courier works for several); `customer` in the showcase.
+     */
     role: ViewerRole
 }
 

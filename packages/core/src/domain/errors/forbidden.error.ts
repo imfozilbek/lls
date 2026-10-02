@@ -15,6 +15,10 @@ export class ForbiddenError extends DomainError {
         return new ForbiddenError("Only a courier of this shop can do this", { businessId })
     }
 
+    static notACourier(): ForbiddenError {
+        return new ForbiddenError("Only a courier can do this")
+    }
+
     static notAssignedCourier(orderId: string): ForbiddenError {
         return new ForbiddenError("This order is assigned to another courier", { orderId })
     }

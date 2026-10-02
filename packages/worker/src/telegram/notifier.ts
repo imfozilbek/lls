@@ -5,6 +5,7 @@ import { platformAdminIds } from "../env.js"
 
 import {
     courierKeyboard,
+    courierReviewKeyboard,
     formatNewOrderForOwner,
     formatOrderForCourier,
     formatOrderForOwner,
@@ -19,16 +20,16 @@ import type { Reader } from "./format.js"
 import type { InlineKeyboard, OutgoingFile } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
 import type { Services } from "../services.js"
-import type { Business, OrderDTO, ShopOwnerDTO } from "@lls/core"
+import type { Business, CourierDTO, OrderDTO, ShopOwnerDTO } from "@lls/core"
 
 /** Mini App URL for a shop: the shop bot's menu button and /start button open this. */
 export function shopAppUrl(appOrigin: string, slug: string): string {
     return `${appOrigin}/?shop=${encodeURIComponent(slug)}`
 }
 
-/** The courier's screen inside the same Mini App. */
-export function courierAppUrl(appOrigin: string, slug: string): string {
-    return `${shopAppUrl(appOrigin, slug)}&mode=courier`
+/** The courier's screen across all their shops, opened from the LLS courier bot. */
+export function courierAppUrl(appOrigin: string): string {
+    return `${appOrigin}/?mode=courier`
 }
 
 export function onboardingAppUrl(appOrigin: string): string {
@@ -70,7 +71,7 @@ export class Notifier {
             text: formatOrderForOwner(order, owner),
             keyboard: orderKeyboard(order, owner),
         })
-        await this.refreshCourierCard(token, business, order, messages.courier)
+        await this.refreshCourierCard(business, order, messages.courier)
 
         if (order.status === OrderStatus.CANCELLED && order.cancelledBy === "customer") {
             const text = `${textsFor(owner.language).cancelledByCustomer}: #${order.number}`
@@ -87,22 +88,26 @@ export class Notifier {
         previousCourierId: string | undefined,
     ): Promise<void> {
         const token = await this.shopToken(business.id)
+        const courierBot = this.services.env.COURIER_BOT_TOKEN
         const { courier: oldMessage } = await this.services.orders.getMessageIds(order.id)
         if (previousCourierId && previousCourierId !== order.courierId) {
             const previous = await this.services.couriers.findById(previousCourierId)
             if (previous) {
                 const chatId = previous.telegramId.value
                 const reader = await this.readerFor(chatId, business)
-                const text = fill(textsFor(reader.language).courierRemoved, { n: order.number })
+                const text = fill(textsFor(reader.language).courierRemoved, {
+                    n: order.number,
+                    shop: escapeHtml(business.name),
+                })
                 // The old card turns into the note; if it was not stored yet, a new message.
                 if (oldMessage === null) {
-                    await this.services.telegram.sendMessage(token, chatId, text)
+                    await this.services.telegram.sendMessage(courierBot, chatId, text)
                 } else {
-                    await this.services.telegram.editMessage(token, chatId, oldMessage, text)
+                    await this.services.telegram.editMessage(courierBot, chatId, oldMessage, text)
                 }
             }
         }
-        await this.refreshCourierCard(token, business, order, null)
+        await this.refreshCourierCard(business, order, null)
         await this.orderChangedForOwner(token, business, order)
     }
 
@@ -114,7 +119,7 @@ export class Notifier {
         const token = await this.shopToken(business.id)
         const messages = await this.services.orders.getMessageIds(order.id)
         await this.orderChangedForOwner(token, business, order)
-        await this.refreshCourierCard(token, business, order, messages.courier)
+        await this.refreshCourierCard(business, order, messages.courier)
         const received =
             order.payment.status === PaymentStatus.PAID &&
             order.payment.method === PaymentMethod.CARD_TRANSFER
@@ -136,13 +141,55 @@ export class Notifier {
         )
     }
 
-    /** Tells the owner a new courier joined through their invite link. */
-    async courierJoined(business: Business, courierName: string): Promise<void> {
+    /** Someone accepted the shop's invite: the owner approves or declines, in the shop bot. */
+    async courierJoined(business: Business, courier: CourierDTO): Promise<void> {
         const token = await this.shopToken(business.id)
         const ownerId = business.ownerTelegramId.value
-        const { language } = await this.readerFor(ownerId, business)
-        const text = fill(textsFor(language).courierJoinedOwner, { name: escapeHtml(courierName) })
-        await this.services.telegram.sendMessage(token, ownerId, text)
+        const t = textsFor(await this.languageOf(ownerId), business.type)
+        const text = fill(t.courierJoinedOwner, { name: escapeHtml(courier.name) })
+        await this.services.telegram.sendMessage(token, ownerId, text, {
+            keyboard: courierReviewKeyboard(courier.id, t),
+        })
+    }
+
+    /** The owner approved or declined: the courier hears it in the LLS courier bot. */
+    async courierReviewed(
+        business: Business,
+        courier: CourierDTO,
+        telegramId: number,
+    ): Promise<void> {
+        const t = textsFor(await this.languageOf(telegramId), business.type)
+        const shop = `<b>${escapeHtml(business.name)}</b>`
+        const approved = courier.isActive
+        await this.services.telegram.sendMessage(
+            this.services.env.COURIER_BOT_TOKEN,
+            telegramId,
+            fill(approved ? t.courierApproved : t.courierDeclined, { shop }),
+            approved
+                ? {
+                      keyboard: {
+                          inline_keyboard: [
+                              [
+                                  {
+                                      text: t.myDeliveries,
+                                      web_app: { url: courierAppUrl(this.services.env.APP_ORIGIN) },
+                                  },
+                              ],
+                          ],
+                      },
+                  }
+                : {},
+        )
+    }
+
+    /** The owner removed a courier: they stay a courier of their other shops. */
+    async courierRemovedFromShop(business: Business, telegramId: number): Promise<void> {
+        const t = textsFor(await this.languageOf(telegramId), business.type)
+        await this.services.telegram.sendMessage(
+            this.services.env.COURIER_BOT_TOKEN,
+            telegramId,
+            fill(t.courierRemovedFromShop, { shop: `<b>${escapeHtml(business.name)}</b>` }),
+        )
     }
 
     /** Tells the owner (in the LLS bot, where they applied) that the showcase deal changed. */
@@ -244,13 +291,16 @@ export class Notifier {
         })
     }
 
-    /** Sends or edits the courier's card. A card edit makes no sound, so "ready" also pings. */
+    /**
+     * Sends or edits the courier's card in the LLS courier bot. A card edit makes no sound, so
+     * "ready" also pings.
+     */
     private async refreshCourierCard(
-        token: string,
         business: Business,
         order: OrderDTO,
         messageId: number | null,
     ): Promise<void> {
+        const token = this.services.env.COURIER_BOT_TOKEN
         if (!order.courierId) {
             return
         }
@@ -261,14 +311,17 @@ export class Notifier {
         const chatId = courier.telegramId.value
         const reader = await this.readerFor(chatId, business)
         const sent = await this.upsertCard(token, chatId, messageId, {
-            text: formatOrderForCourier(order, reader),
+            text: formatOrderForCourier(order, reader, business.name),
             keyboard: courierKeyboard(order, reader),
         })
         if (sent !== null) {
             await this.services.orders.setMessageId(order.id, "courier", sent)
         }
         if (messageId !== null && order.status === OrderStatus.READY) {
-            const ping = fill(textsFor(reader.language).courierReady, { n: order.number })
+            const ping = fill(textsFor(reader.language).courierReady, {
+                n: order.number,
+                shop: escapeHtml(business.name),
+            })
             await this.services.telegram.sendMessage(token, chatId, ping)
         }
     }

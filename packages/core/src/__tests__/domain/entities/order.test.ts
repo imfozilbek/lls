@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 
-import { Courier } from "../../../domain/entities/courier.js"
 import { MAX_ORDER_LINES, Order } from "../../../domain/entities/order.js"
 import { OrderItem } from "../../../domain/entities/order-item.js"
 import { OrderChannel } from "../../../domain/enums/order-channel.js"
@@ -13,9 +12,12 @@ import { InvalidOrderTransitionError } from "../../../domain/errors/invalid-tran
 import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { Money } from "../../../domain/value-objects/money.js"
 import { Payment } from "../../../domain/value-objects/payment.js"
-import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
+import { makeCourier } from "../../fixtures.js"
 
+import type { Courier } from "../../../domain/entities/courier.js"
 import type { PlaceOrderProps } from "../../../domain/entities/order.js"
+
+const NOW = new Date()
 
 function item(quantity = 2, price = 35_000, unit: Unit = Unit.PORTION): OrderItem {
     return OrderItem.create({
@@ -46,13 +48,7 @@ function placeOrder(items: OrderItem[] = [item()], extra: Partial<PlaceOrderProp
 }
 
 function courier(businessId = "biz-1", id = "courier-1"): Courier {
-    return Courier.join({
-        id,
-        businessId,
-        telegramId: TelegramId.create(5005),
-        name: "Jasur",
-        now: new Date(),
-    })
+    return makeCourier({ id, businessId, now: NOW })
 }
 
 function readyOrder(): Order {
@@ -197,27 +193,30 @@ describe("Order", () => {
 describe("Order and couriers", () => {
     it("the owner assigns a courier of the shop between accepted and ready", () => {
         const order = placeOrder()
-        expect(() => order.assignCourier(courier())).toThrow(BusinessRuleViolationError)
+        expect(() => order.assignCourier(courier(), NOW)).toThrow(BusinessRuleViolationError)
         order.advanceTo(OrderStatus.ACCEPTED)
-        order.assignCourier(courier())
+        order.assignCourier(courier(), NOW)
         expect(order.courierName).toBe("Jasur")
-        order.assignCourier(courier("biz-1", "courier-2"))
+        order.assignCourier(courier("biz-1", "courier-2"), NOW)
         expect(order.isAssignedTo("courier-2")).toBe(true)
     })
 
     it("rejects couriers of another shop or who left", () => {
         const order = readyOrder()
-        expect(() => order.assignCourier(courier("biz-2"))).toThrow(BusinessRuleViolationError)
+        expect(() => order.assignCourier(courier("biz-2"), NOW)).toThrow(BusinessRuleViolationError)
         const gone = courier()
-        gone.deactivate(new Date())
-        expect(() => order.assignCourier(gone)).toThrow(BusinessRuleViolationError)
+        gone.deactivate(NOW)
+        expect(() => order.assignCourier(gone, NOW)).toThrow(BusinessRuleViolationError)
+        const offShift = courier()
+        offShift.profile.endShift(NOW)
+        expect(() => order.assignCourier(offShift, NOW)).toThrow(/cannot take an order/)
     })
 
     it("no reassignment once the order is on the road", () => {
         const order = readyOrder()
-        order.assignCourier(courier())
+        order.assignCourier(courier(), NOW)
         order.advanceTo(OrderStatus.PICKED_UP, { role: "courier", courierId: "courier-1" })
-        expect(() => order.assignCourier(courier("biz-1", "courier-2"))).toThrow(
+        expect(() => order.assignCourier(courier("biz-1", "courier-2"), NOW)).toThrow(
             BusinessRuleViolationError,
         )
     })
@@ -225,7 +224,7 @@ describe("Order and couriers", () => {
     it("the assigned courier moves only the delivery part", () => {
         const order = placeOrder()
         order.advanceTo(OrderStatus.ACCEPTED)
-        order.assignCourier(courier())
+        order.assignCourier(courier(), NOW)
         const me = { role: "courier", courierId: "courier-1" } as const
         expect(() => order.advanceTo(OrderStatus.PREPARING, me)).toThrow(ForbiddenError)
         order.advanceTo(OrderStatus.PREPARING)
@@ -239,7 +238,7 @@ describe("Order and couriers", () => {
 
     it("another courier cannot touch the order", () => {
         const order = readyOrder()
-        order.assignCourier(courier())
+        order.assignCourier(courier(), NOW)
         expect(() =>
             order.advanceTo(OrderStatus.PICKED_UP, { role: "courier", courierId: "courier-2" }),
         ).toThrow(ForbiddenError)

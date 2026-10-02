@@ -1,17 +1,28 @@
+import { CourierProfile } from "../../../domain/entities/courier-profile.js"
 import { Courier, CourierInvite } from "../../../domain/entities/courier.js"
+import { CourierStatus } from "../../../domain/enums/courier-status.js"
 import { ForbiddenError } from "../../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
 import { startOfLocalDay } from "../../../domain/shared/time.js"
 import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
-import { toCourierDTO } from "../../dtos/courier.dto.js"
+import { toCourierDTO, toCourierProfileDTO } from "../../dtos/courier.dto.js"
 import { toOrderDTO } from "../../dtos/order.dto.js"
 import { displayNameOf } from "../../dtos/telegram-user.js"
+import { cashOnHandByCourier } from "../money/money.use-cases.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
-import type { CourierDTO } from "../../dtos/courier.dto.js"
+import type { Business } from "../../../domain/entities/business.js"
+import type {
+    CourierDTO,
+    CourierHomeDTO,
+    CourierOrderDTO,
+    CourierProfileDTO,
+    CourierShopDTO,
+} from "../../dtos/courier.dto.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { TelegramUser } from "../../dtos/telegram-user.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
+import type { CashHandoverRepository } from "../../ports/cash-handover-repository.js"
 import type { Clock } from "../../ports/clock.js"
 import type { CourierRepository } from "../../ports/courier-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
@@ -34,7 +45,11 @@ export interface CourierDeps {
     clock: Clock
 }
 
-/** The active courier record of this person in this shop, or a 403. */
+export interface CourierHomeDeps extends CourierDeps {
+    handovers: CashHandoverRepository
+}
+
+/** The approved courier link of this person in this shop, or a 403. */
 export async function requireCourier(
     couriers: CourierRepository,
     businessId: string,
@@ -47,10 +62,38 @@ export async function requireCourier(
     return courier
 }
 
+/** A courier link of this shop, for its owner. */
+async function requireShopCourier(
+    deps: CourierDeps,
+    input: { actorTelegramId: number; businessId: string; courierId: string },
+): Promise<Courier> {
+    await requireOwnedBusiness(deps.businesses, input.businessId, input.actorTelegramId)
+    const courier = await deps.couriers.findById(input.courierId)
+    if (!courier || courier.businessId !== input.businessId) {
+        throw EntityNotFoundError.courier(input.courierId)
+    }
+    return courier
+}
+
+/** The profile of someone approved by at least one shop: only couriers have a courier screen. */
+async function requireCourierProfile(
+    couriers: CourierRepository,
+    telegramId: number,
+): Promise<CourierProfile> {
+    const [profile, links] = await Promise.all([
+        couriers.findProfile(telegramId),
+        couriers.listByPerson(telegramId),
+    ])
+    if (!profile || !links.some((link) => link.isActive)) {
+        throw ForbiddenError.notACourier()
+    }
+    return profile
+}
+
 export class CreateCourierInviteUseCase {
     constructor(private readonly deps: CourierDeps) {}
 
-    /** Returns the code for `t.me/<shop_bot>?start=c_<code>` and when it stops working. */
+    /** Returns the code for `t.me/<courier_bot>?start=c_<code>` and when it stops working. */
     async execute(input: {
         actorTelegramId: number
         businessId: string
@@ -66,67 +109,135 @@ export class CreateCourierInviteUseCase {
     }
 }
 
+export interface JoinedCourier {
+    courier: CourierDTO
+    business: Business
+    /** The courier bot asks for the phone once: a shop calls its courier. */
+    needsPhone: boolean
+}
+
 export class JoinAsCourierUseCase {
     constructor(private readonly deps: CourierDeps) {}
 
-    /** Whoever opens the invite link in the shop bot becomes (again) a courier of that shop. */
-    async execute(input: {
-        code: string
-        businessId: string
-        user: TelegramUser
-    }): Promise<CourierDTO> {
+    /**
+     * Whoever opens the invite in the LLS courier bot asks to become a courier of that shop.
+     * One profile per person; the shop's owner approves the new link.
+     */
+    async execute(input: { code: string; user: TelegramUser }): Promise<JoinedCourier> {
         const { couriers, clock } = this.deps
         const invite = await couriers.findInvite(input.code)
-        // An invite of another shop's bot is treated as unknown: codes never cross shops.
-        if (!invite || invite.businessId !== input.businessId) {
+        if (!invite) {
             throw EntityNotFoundError.invite()
         }
+        const business = await requireBusiness(this.deps.businesses, invite.businessId)
         const now = clock.now()
         invite.use(now)
-        const name = displayNameOf(input.user)
-        const existing = await couriers.findByTelegramId(input.businessId, input.user.id)
-        const courier =
-            existing ??
-            Courier.join({
-                id: crypto.randomUUID(),
-                businessId: input.businessId,
+        const profile =
+            (await couriers.findProfile(input.user.id)) ??
+            CourierProfile.create({
                 telegramId: TelegramId.create(input.user.id),
-                name,
+                name: displayNameOf(input.user),
                 now,
             })
-        if (existing) {
-            existing.rejoin(name, now)
-        }
+        const existing = await couriers.findByTelegramId(business.id, input.user.id)
+        const courier =
+            existing ??
+            Courier.join({ id: crypto.randomUUID(), businessId: business.id, profile, now })
+        existing?.rejoin(now)
         await couriers.saveInvite(invite)
+        await couriers.saveProfile(profile)
         await couriers.save(courier)
-        return toCourierDTO(courier)
+        return {
+            courier: toCourierDTO(courier, now),
+            business,
+            needsPhone: profile.phone === undefined,
+        }
     }
 }
 
 export class ListCouriersUseCase {
     constructor(private readonly deps: CourierDeps) {}
 
+    /** The shop's couriers: waiting for approval first, then approved. */
     async execute(input: { actorTelegramId: number; businessId: string }): Promise<CourierDTO[]> {
         await requireOwnedBusiness(this.deps.businesses, input.businessId, input.actorTelegramId)
-        return (await this.deps.couriers.listActive(input.businessId)).map(toCourierDTO)
+        const now = this.deps.clock.now()
+        const couriers = await this.deps.couriers.listByBusiness(input.businessId)
+        return couriers
+            .map((courier) => toCourierDTO(courier, now))
+            .sort(
+                (a, b) =>
+                    Number(a.status !== CourierStatus.PENDING) -
+                    Number(b.status !== CourierStatus.PENDING),
+            )
+    }
+}
+
+export interface CourierChange {
+    courier: CourierDTO
+    /** Whom to tell in the courier bot. */
+    telegramId: number
+}
+
+export class ReviewCourierUseCase {
+    constructor(private readonly deps: CourierDeps) {}
+
+    /** The owner approves (or declines) someone who accepted the shop's invite. */
+    async execute(input: {
+        actorTelegramId: number
+        businessId: string
+        courierId: string
+        approve: boolean
+    }): Promise<CourierChange> {
+        const courier = await requireShopCourier(this.deps, input)
+        const now = this.deps.clock.now()
+        if (input.approve) {
+            courier.approve(now)
+        } else {
+            courier.decline(now)
+        }
+        await this.deps.couriers.save(courier)
+        return { courier: toCourierDTO(courier, now), telegramId: courier.telegramId.value }
+    }
+}
+
+export class SetCourierScheduleUseCase {
+    constructor(private readonly deps: CourierDeps) {}
+
+    /** The owner's week for a courier, and "сегодня не работает". */
+    async execute(input: {
+        actorTelegramId: number
+        businessId: string
+        courierId: string
+        workDays?: string[]
+        offToday?: boolean
+    }): Promise<CourierDTO> {
+        const courier = await requireShopCourier(this.deps, input)
+        const now = this.deps.clock.now()
+        if (input.workDays !== undefined) {
+            courier.setWorkDays(input.workDays, now)
+        }
+        if (input.offToday !== undefined) {
+            courier.setOffToday(input.offToday, now)
+        }
+        await this.deps.couriers.save(courier)
+        return toCourierDTO(courier, now)
     }
 }
 
 export class DeactivateCourierUseCase {
     constructor(private readonly deps: CourierDeps) {}
 
+    /** Returns whom to tell: the person stays a courier of their other shops. */
     async execute(input: {
         actorTelegramId: number
         businessId: string
         courierId: string
-    }): Promise<void> {
-        await requireOwnedBusiness(this.deps.businesses, input.businessId, input.actorTelegramId)
-        const courier = await this.deps.couriers.findById(input.courierId)
-        if (!courier || courier.businessId !== input.businessId) {
-            throw EntityNotFoundError.courier(input.courierId)
-        }
+    }): Promise<{ telegramId: number }> {
+        const courier = await requireShopCourier(this.deps, input)
         courier.deactivate(this.deps.clock.now())
         await this.deps.couriers.save(courier)
+        return { telegramId: courier.telegramId.value }
     }
 }
 
@@ -139,30 +250,92 @@ export class AssignCourierUseCase {
         orderId: string
         courierId: string
     }): Promise<OrderDTO> {
-        const { businesses, couriers, orders } = this.deps
-        await requireOwnedBusiness(businesses, input.businessId, input.actorTelegramId)
+        const { orders } = this.deps
+        const courier = await requireShopCourier(this.deps, input)
         const order = await orders.findById(input.orderId)
         if (!order || order.businessId !== input.businessId) {
             throw EntityNotFoundError.order(input.orderId)
         }
-        const courier = await couriers.findById(input.courierId)
-        if (!courier || courier.businessId !== input.businessId) {
-            throw EntityNotFoundError.courier(input.courierId)
-        }
-        order.assignCourier(courier)
+        order.assignCourier(courier, this.deps.clock.now())
         await orders.save(order)
         return toOrderDTO(order)
     }
 }
 
-export class ListCourierOrdersUseCase {
+export class SetShiftUseCase {
     constructor(private readonly deps: CourierDeps) {}
 
-    /** The courier's screen: everything still on the road, plus what they finished today. */
-    async execute(input: { telegramId: number; businessId: string }): Promise<OrderDTO[]> {
-        await requireBusiness(this.deps.businesses, input.businessId)
-        const courier = await requireCourier(this.deps.couriers, input.businessId, input.telegramId)
-        const since = startOfLocalDay(this.deps.clock.now())
-        return (await this.deps.orders.listByCourier(courier.id, since)).map(toOrderDTO)
+    /** "Я на смене" for today, or the end of the shift. */
+    async execute(input: { telegramId: number; onShift: boolean }): Promise<CourierProfileDTO> {
+        const profile = await requireCourierProfile(this.deps.couriers, input.telegramId)
+        const now = this.deps.clock.now()
+        if (input.onShift) {
+            profile.startShift(now)
+        } else {
+            profile.endShift(now)
+        }
+        await this.deps.couriers.saveProfile(profile)
+        return toCourierProfileDTO(profile, now)
+    }
+}
+
+export class UpdateCourierProfileUseCase {
+    constructor(private readonly deps: CourierDeps) {}
+
+    async execute(input: {
+        telegramId: number
+        vehicle: string | null
+    }): Promise<CourierProfileDTO> {
+        const profile = await requireCourierProfile(this.deps.couriers, input.telegramId)
+        const now = this.deps.clock.now()
+        profile.setVehicle(input.vehicle, now)
+        await this.deps.couriers.saveProfile(profile)
+        return toCourierProfileDTO(profile, now)
+    }
+}
+
+export class GetCourierHomeUseCase {
+    constructor(private readonly deps: CourierHomeDeps) {}
+
+    /**
+     * The courier's screen across all their shops: on the road plus finished today, each order
+     * with its shop's name, and the cash of each shop they hold.
+     */
+    async execute(input: { telegramId: number }): Promise<CourierHomeDTO> {
+        const { couriers, businesses, orders } = this.deps
+        const profile = await requireCourierProfile(couriers, input.telegramId)
+        const now = this.deps.clock.now()
+        const since = startOfLocalDay(now)
+        const links = (await couriers.listByPerson(input.telegramId)).filter((l) => l.isActive)
+        const perShop = await Promise.all(
+            links.map(async (link) => {
+                const [business, list, cash] = await Promise.all([
+                    businesses.findById(link.businessId),
+                    orders.listByCourier(link.id, since),
+                    cashOnHandByCourier(this.deps, link.businessId),
+                ])
+                const shopName = business?.name ?? "—"
+                const shop: CourierShopDTO = {
+                    businessId: link.businessId,
+                    shopName,
+                    status: link.status,
+                    workDays: [...link.workDays],
+                    worksToday: link.worksToday(now),
+                    onHand: Math.max(0, cash.get(link.id) ?? 0),
+                }
+                const shopOrders: CourierOrderDTO[] = list.map((o) => ({
+                    ...toOrderDTO(o),
+                    shopName,
+                }))
+                return { shop, shopOrders }
+            }),
+        )
+        return {
+            profile: toCourierProfileDTO(profile, now),
+            shops: perShop.map((p) => p.shop),
+            orders: perShop
+                .flatMap((p) => p.shopOrders)
+                .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+        }
     }
 }
