@@ -106,11 +106,8 @@ test.describe("customer of a food shop: order and status", () => {
         await page.getByRole("button", { name: "Отправить геолокацию" }).click()
         await expect(page.getByText("Геолокация добавлена")).toBeVisible()
         await page.getByLabel("Комментарий").fill("3 этаж")
-        // Cash is the default; the transfer option needs the shop's card (covered in money.spec).
-        await expect(page.getByRole("radio", { name: /Наличными/ })).toHaveAttribute(
-            "aria-checked",
-            "true",
-        )
+        // Only a transfer to the shop's card (the whole path is covered in money.spec).
+        await expect(page.getByRole("heading", { name: "Оплата переводом" })).toBeVisible()
 
         const since = await lastSeq()
         await bottomButton(page).click()
@@ -129,24 +126,22 @@ test.describe("customer of a food shop: order and status", () => {
         expect(card.text).toContain("3 этаж")
         expect(card.text).toContain("+998 90 123 45 67")
         expect(card.buttons.map((b) => b.callback_data)).toEqual(
-            expect.arrayContaining([
-                expect.stringMatching(/^a:.+:accepted$/),
-                expect.stringMatching(/^x:/),
-            ]),
+            expect.arrayContaining([expect.stringMatching(/^p:/), expect.stringMatching(/^x:/)]),
         )
         // "To menu" after placing.
         await bottomButton(page).click()
         await expect(page.getByRole("heading", { name: "Osh Markaz" })).toBeVisible()
     })
 
-    test("the owner accepts in the chat; the customer sees it and can no longer cancel", async ({
+    test("the money came, the owner accepts in the chat; the customer can no longer cancel", async ({
         page,
     }) => {
         const card = (await messagesTo(PEOPLE.foodOwner.id)).find((m) => m.text.includes("#1"))
-        const accept = card?.buttons.find((b) => b.callback_data?.endsWith(":accepted"))
+        const accept = card?.buttons.find((b) => b.callback_data?.startsWith("p:"))
+        expect(accept?.text).toBe("💳 Деньги пришли — принять")
         const since = await lastSeq()
         await shopChat(FOOD).press(PEOPLE.foodOwner, accept?.callback_data ?? "")
-        await waitForMessage(PEOPLE.customer.id, "Заказ #1 принят", since)
+        await waitForMessage(PEOPLE.customer.id, "Оплата получена, заказ #1 принят", since)
 
         await openApp(page, { user: PEOPLE.customer, shop: FOOD })
         await page.getByRole("button", { name: "Мои заказы" }).click()
@@ -182,7 +177,7 @@ test.describe("customer of a food shop: cancel, history, language", () => {
             const response = await apiAs(PEOPLE.foodOwner, `/owner/orders/${first?.id ?? ""}`, {
                 shop: FOOD,
                 method: "PATCH",
-                json: status === "delivered" ? { status, paidWith: "cash" } : { status },
+                json: { status },
             })
             expect(response.status).toBe(200)
         }

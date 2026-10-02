@@ -1,12 +1,21 @@
 /**
- * Money: cash or a transfer to the shop's card, what the courier holds, debts, refunds,
- * the «Деньги» tab, the CSV report and the QR poster in the owner's chat, hours per day.
+ * Money: customers pay only by transfer to the shop's card, before the shop starts. «Я перевёл»,
+ * «Деньги пришли — принять», one «Доставил», refunds, a shop without a card, the «Деньги» tab,
+ * the CSV report and the QR poster in the owner's chat, hours per day.
  */
 import { expect, test } from "@playwright/test"
 import jsQR from "jsqr"
 import { PNG } from "pngjs"
 
-import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import {
+    FOOD,
+    GROCERY,
+    PEOPLE,
+    apiAs,
+    payAndAccept,
+    placeOrder,
+    resetStand,
+} from "../support/stand.js"
 import {
     callsOf,
     courierChat,
@@ -18,7 +27,6 @@ import {
 import { bottomButton, openApp } from "../support/webapp.js"
 
 import type { RecordedFile } from "../stand/fake-telegram.js"
-import type { PlacedOrder } from "../support/stand.js"
 import type { Page } from "@playwright/test"
 
 const COURIER_ID = "dev-food-courier"
@@ -28,9 +36,7 @@ const P1 = "dev-food-p1"
 interface MoneyReport {
     totals: Record<string, number>
     awaiting: { id: string }[]
-    debts: { id: string }[]
     refunds: { id: string }[]
-    couriers: { courierId: string; onHand: number }[]
 }
 
 async function owner(path: string, json?: object, method = "PATCH"): Promise<Response> {
@@ -43,30 +49,13 @@ async function report(): Promise<MoneyReport> {
     ).json()) as MoneyReport
 }
 
-/** Accepted, given to the courier, cooked, picked up: the courier is at the door. */
-async function atTheDoor(order: PlacedOrder): Promise<void> {
-    for (const status of ["accepted", "preparing", "ready"]) {
-        expect((await owner(`/owner/orders/${order.id}`, { status })).status).toBe(200)
-        if (status === "accepted") {
-            const assign = await owner(
-                `/owner/orders/${order.id}/courier`,
-                { courierId: COURIER_ID },
-                "PUT",
-            )
-            expect(assign.status).toBe(200)
-        }
-    }
-    const picked = await apiAs(PEOPLE.courier, `/courier/orders/${order.id}`, {
-        courierBot: true,
-        method: "PATCH",
-        json: { status: "picked_up" },
-    })
-    expect(picked.status).toBe(200)
+async function openOwner(page: Page, shop = FOOD, user = PEOPLE.foodOwner): Promise<void> {
+    await openApp(page, { user, shop })
+    await page.getByRole("button", { name: "Мой магазин" }).click()
 }
 
 async function openMoney(page: Page): Promise<void> {
-    await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
-    await page.getByRole("button", { name: "Мой магазин" }).click()
+    await openOwner(page)
     await page.getByRole("tab", { name: "Деньги" }).click()
     await expect(page.getByText("Выручка").first()).toBeVisible()
 }
@@ -83,7 +72,7 @@ async function documentsTo(chatId: number, since: number): Promise<RecordedFile[
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
-test("transfer: the customer sees the card, the owner confirms, the customer is told", async ({
+test("checkout shows the card; «Я перевёл»; the owner «Деньги пришли — принять»", async ({
     page,
     context,
 }) => {
@@ -95,7 +84,9 @@ test("transfer: the customer sees the card, the owner confirms, the customer is 
     await bottomButton(page).click()
     await page.getByRole("textbox", { name: "Адрес" }).fill("Mustaqillik 5")
 
-    await page.getByRole("radio", { name: /Переводом на карту/ }).click()
+    // No choice to make: only a transfer to the shop's card.
+    await expect(page.getByRole("radio")).toHaveCount(0)
+    await expect(page.getByRole("heading", { name: "Оплата переводом" })).toBeVisible()
     await expect(page.getByText(CARD)).toBeVisible()
     await expect(page.getByText("RUSTAM KARIMOV")).toBeVisible()
     await page.getByRole("button", { name: "Скопировать номер" }).click()
@@ -103,144 +94,121 @@ test("transfer: the customer sees the card, the owner confirms, the customer is 
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("8600123456789012")
     await expect(page.getByText(/Переведите 55\s000/)).toBeVisible()
 
+    const placed = await lastSeq()
     await bottomButton(page).click()
     await expect(page.getByRole("heading", { name: "Заказ отправлен!" })).toBeVisible()
     await expect(page.getByText("Ждём перевод")).toBeVisible()
-    // The card stays at hand on the order screen until the transfer is confirmed.
+    // The card stays at hand on the order screen, and the bot sends it too.
     await expect(page.getByText(CARD)).toBeVisible()
+    const toPay = await waitForMessage(PEOPLE.customer.id, "Переведите", placed)
+    expect(toPay.text).toContain(CARD)
+    expect(toPay.text).toMatch(/55\s000/)
+    const card = await waitForMessage(PEOPLE.foodOwner.id, "Ждём перевод на карту", placed)
+    expect(card.buttons.map((b) => b.text)).toEqual(["💳 Деньги пришли — принять", "❌ Отменить"])
 
-    const awaiting = await report()
-    expect(awaiting.awaiting).toHaveLength(1)
-    const since = await lastSeq()
+    const sent = await lastSeq()
+    await page.getByRole("button", { name: "Я перевёл" }).click()
+    await expect(page.getByText("Магазин проверяет перевод").first()).toBeVisible()
+    await expect(page.getByRole("button", { name: "Я перевёл" })).toBeHidden()
+    await waitForMessage(PEOPLE.foodOwner.id, /Клиент перевёл <b>55\s000/, sent)
+
+    expect((await report()).awaiting).toHaveLength(1)
+    const accepted = await lastSeq()
     await openMoney(page)
-    const confirm = block(page, "Подтвердите переводы")
-    await expect(confirm).toContainText(/55\s000/)
-    await confirm.getByRole("button", { name: "Деньги пришли" }).click()
-    await expect(confirm).toBeHidden()
-    await waitForMessage(PEOPLE.customer.id, "получена", since)
-    expect((await report()).totals["awaiting"]).toBe(0)
+    const check = block(page, "Клиенты перевели — проверьте карту")
+    await expect(check).toContainText(/55\s000/)
+    await check.getByRole("button", { name: "Деньги пришли — принять" }).click()
+    await expect(check).toBeHidden()
+    await waitForMessage(PEOPLE.customer.id, "Оплата получена", accepted)
+    expect((await report()).awaiting).toEqual([])
 })
 
-test("cash at the door: on the courier's hands until the owner takes it", async ({ page }) => {
-    const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 2 }])
-    await atTheDoor(order)
-    await openApp(page, { user: PEOPLE.courier, courierBot: true })
-    await expect(page.getByText(/Взять с клиента/)).toBeVisible()
-    await page.getByRole("button", { name: "Доставил" }).click()
-    await page.getByRole("dialog").getByRole("button", { name: "Наличными" }).click()
-    await expect(page.getByText(/На руках: 100\s000/)).toBeVisible()
-
-    await openMoney(page)
-    const couriers = block(page, "Наличные у доставщиков")
-    await expect(couriers).toContainText("Jasur")
-    await couriers.getByRole("button", { name: "Принял деньги" }).click()
-    const sheet = page.getByRole("dialog")
-    await sheet.getByRole("textbox").fill("60000")
-    await sheet.getByRole("button", { name: "Принял деньги" }).click()
-    await expect(couriers).toContainText(/40\s000/)
-    // More than the courier holds is refused before it reaches the Worker.
-    await couriers.getByRole("button", { name: "Принял деньги" }).click()
-    await sheet.getByRole("textbox").fill("50000")
-    await expect(sheet.getByRole("button", { name: "Принял деньги" })).toBeDisabled()
-    await sheet.getByRole("textbox").fill("40000")
-    await sheet.getByRole("button", { name: "Принял деньги" }).click()
-    await expect(couriers).toBeHidden()
-
-    await openApp(page, { user: PEOPLE.courier, courierBot: true })
-    await expect(page.getByRole("heading", { name: "Мои доставки" })).toBeVisible()
-    await expect(page.getByText(/На руках/)).toBeHidden()
-})
-
-test("the bot card: three «Доставил» buttons; a transfer at the door waits for the owner", async () => {
-    const since = await lastSeq()
+test("not paid, not started: «Принять» is refused; the order card accepts with the money", async ({
+    page,
+}) => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
-    await atTheDoor(order)
-    // The courier's card is edited in place when the order is picked up.
+    const early = await owner(`/owner/orders/${order.id}`, { status: "accepted" })
+    expect(early.status).toBe(422)
+    expect(await early.json()).toMatchObject({ error: { code: "PAYMENT_REQUIRED" } })
+
+    await openOwner(page)
+    const card = page
+        .locator("li")
+        .filter({ has: page.getByText(`Заказ #${order.number}`, { exact: true }) })
+    await expect(card).toContainText("Ждём перевод")
+    await expect(card.getByRole("button", { name: "Принять", exact: true })).toHaveCount(0)
+    await card.getByRole("button", { name: "Деньги пришли — принять" }).click()
+    await expect(card).toContainText("Оплачено")
+    await expect(card.getByRole("button", { name: "Начать готовить" })).toBeVisible()
+})
+
+test("from the bot: «Деньги пришли — принять», then one «Доставил» for the courier", async () => {
+    const since = await lastSeq()
+    const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 2 }])
+    const card = await waitForMessage(PEOPLE.foodOwner.id, `#${order.number}`, since)
+    const paid = card.buttons.find((b) => b.callback_data === `p:${order.id}`)
+    expect(paid?.text).toBe("💳 Деньги пришли — принять")
+    await shopChat(FOOD).press(PEOPLE.foodOwner, paid?.callback_data ?? "", card.seq)
+    await expect
+        .poll(async () => {
+            const read = await apiAs(PEOPLE.customer, `/orders/${order.id}`, { shop: FOOD })
+            return ((await read.json()) as { status: string }).status
+        })
+        .toBe("accepted")
+
+    expect(
+        (await owner(`/owner/orders/${order.id}/courier`, { courierId: COURIER_ID }, "PUT")).status,
+    ).toBe(200)
+    for (const status of ["preparing", "ready"]) {
+        expect((await owner(`/owner/orders/${order.id}`, { status })).status).toBe(200)
+    }
+    const picked = await apiAs(PEOPLE.courier, `/courier/orders/${order.id}`, {
+        courierBot: true,
+        method: "PATCH",
+        json: { status: "picked_up" },
+    })
+    expect(picked.status).toBe(200)
     let delivered: { callback_data?: string }[] = []
     await expect
         .poll(async () => {
-            const card = (await messagesTo(PEOPLE.courier.id, since))
+            const courierCard = (await messagesTo(PEOPLE.courier.id, since))
                 // The "ready" ping may land after the edit: read the card itself.
                 .filter((m) => m.method === "editMessageText")
                 .filter((m) => m.text.includes(`#${order.number}`))
                 .at(-1)
-            delivered = card?.buttons.filter((b) => b.callback_data?.includes(":delivered")) ?? []
-            return delivered.length
+            delivered =
+                courierCard?.buttons.filter((b) => b.callback_data?.includes(":delivered")) ?? []
+            return delivered.map((b) => b.callback_data)
         })
-        .toBe(3)
-    expect(delivered.map((b) => b.callback_data?.split(":").at(-1))).toEqual([
-        "cash",
-        "card_transfer",
-        "later",
-    ])
-    const transfer = delivered.find((b) => b.callback_data?.endsWith(":card_transfer"))
-    await courierChat().press(PEOPLE.courier, transfer?.callback_data ?? "")
-    await expect.poll(async () => (await report()).awaiting.map((o) => o.id)).toEqual([order.id])
-    expect((await report()).couriers).toEqual([])
-    const confirmed = await owner(`/owner/orders/${order.id}/payment`, {
-        action: "paid",
-        method: "card_transfer",
-    })
-    expect(confirmed.status).toBe(200)
-})
-
-test("a debt: delivered now, paid later; the owner marks it", async ({ page }) => {
-    const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
-    for (const status of ["accepted", "preparing", "ready", "picked_up"]) {
-        await owner(`/owner/orders/${order.id}`, { status })
-    }
-    await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
-    await page.getByRole("button", { name: "Мой магазин" }).click()
-    const card = page
-        .locator("li")
-        .filter({ has: page.getByText(`Заказ #${order.number}`, { exact: true }) })
-    await card.getByRole("button", { name: "Доставлен", exact: true }).click()
-    await page
-        .getByRole("dialog")
-        .getByRole("button", { name: /Заплатит позже/ })
-        .click()
-    await page.getByRole("tab", { name: "Завершённые" }).click()
-    await expect(card).toContainText("Не оплачено")
-
-    await page.getByRole("tab", { name: "Деньги" }).click()
-    const debts = block(page, "Не оплачено")
-    await expect(debts).toContainText(`Заказ #${order.number}`)
-    await debts.getByRole("button", { name: "Оплатил наличными" }).click()
-    await expect(debts).toBeHidden()
+        .toEqual([`a:${order.id}:delivered`])
+    await courierChat().press(PEOPLE.courier, delivered[0]?.callback_data ?? "")
+    await waitForMessage(PEOPLE.customer.id, `Заказ #${order.number} доставлен`, since)
 })
 
 test("a paid order cancelled: owed back until «Вернул»", async ({ page }) => {
-    const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }], {
-        paymentMethod: "card_transfer",
-    })
-    await owner(`/owner/orders/${order.id}/payment`, { action: "paid", method: "card_transfer" })
+    const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
+    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await owner(`/owner/orders/${order.id}`, { status: "cancelled" })
     await openMoney(page)
     const refunds = block(page, "Вернуть клиентам")
     await expect(refunds).toContainText(/55\s000/)
     await refunds.getByRole("button", { name: "Вернул" }).click()
     await expect(refunds).toBeHidden()
-    await expect(page.getByText("Всё оплачено, никто ничего не должен.")).toBeVisible()
+    await expect(page.getByText("Все переводы проверены, возвращать нечего.")).toBeVisible()
 })
 
 test("the day adds up to the sum; the CSV report arrives in the owner's chat", async ({ page }) => {
     const today = await report()
-    // Delivered today: 100 000 in cash, 55 000 by transfer, a 55 000 debt paid in cash.
-    // The first transfer is paid but not delivered yet: money counts on delivery.
-    expect(today.totals).toMatchObject({
-        placed: 4,
-        delivered: 3,
-        cancelled: 1,
-        paidCash: 155_000,
-        paidCard: 55_000,
-        awaiting: 0,
-        debt: 0,
-    })
-    expect((today.totals["goods"] ?? 0) + (today.totals["delivery"] ?? 0)).toBe(210_000)
+    // Delivered today: one order for 100 000, paid by transfer before cooking. The other two
+    // are paid and accepted but not delivered: money counts on delivery.
+    expect(today.totals).toMatchObject({ placed: 3, delivered: 1, cancelled: 1, paid: 100_000 })
+    expect((today.totals["goods"] ?? 0) + (today.totals["delivery"] ?? 0)).toBe(100_000)
 
     const since = await lastSeq()
     await openMoney(page)
-    await expect(page.getByText(/210\s000/).first()).toBeVisible()
+    await expect(page.getByText(/100\s000/).first()).toBeVisible()
+    await expect(page.getByText("Получено переводами")).toBeVisible()
+    await expect(page.getByText(/Наличн/)).toHaveCount(0)
     await page.getByRole("tab", { name: "Этот месяц" }).click()
     await page.getByRole("button", { name: "Отчёт для Excel" }).click()
     await expect(page.getByText("Отчёт отправлен в чат с ботом")).toBeVisible()
@@ -249,9 +217,46 @@ test("the day adds up to the sum; the CSV report arrives in the owner's chat", a
     const bytes = Buffer.from(csv?.base64 ?? "", "base64")
     expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf])
     const lines = bytes.toString("utf8").slice(1).trim().split("\r\n")
-    // Header + the 5 orders of this file, the cancelled one too.
-    expect(lines).toHaveLength(6)
+    // Header + the 4 orders of this file, the cancelled one too.
+    expect(lines).toHaveLength(5)
     expect(lines[0]).toContain("Оплата")
+    expect(lines[0]).not.toContain("Способ оплаты")
+})
+
+test("no card, no orders: the storefront waits; the owner adds the card from the banner", async ({
+    page,
+}) => {
+    const removed = await apiAs(PEOPLE.groceryOwner, "/owner/shop", {
+        shop: GROCERY,
+        method: "PATCH",
+        json: { payoutCard: null },
+    })
+    expect(removed.status).toBe(200)
+    const refused = await apiAs(PEOPLE.customer, "/orders", {
+        shop: GROCERY,
+        method: "POST",
+        json: { items: [{ productId: "dev-grocery-p1", quantity: 500 }], address: "Navoiy 12" },
+    })
+    expect(refused.status).toBe(422)
+    expect(await refused.json()).toMatchObject({ error: { code: "NO_PAYOUT_CARD" } })
+
+    await openApp(page, { user: PEOPLE.customer, shop: GROCERY })
+    await expect(page.getByText("Скоро начнёт принимать заказы")).toBeVisible()
+
+    await openOwner(page, GROCERY, PEOPLE.groceryOwner)
+    const banner = page.getByRole("button", { name: /Добавьте карту для переводов/ })
+    await expect(banner).toBeVisible()
+    await banner.click()
+    await page.getByLabel("Номер карты").fill("5614681234567893")
+    await page.getByLabel("Имя на карте").fill("Sardor Yusupov")
+    await bottomButton(page).click()
+    await expect(page.getByText("Сохранено")).toBeVisible()
+    await expect(banner).toBeHidden()
+    const shop = (await (await apiAs(PEOPLE.customer, "/shop", { shop: GROCERY })).json()) as {
+        hasPayoutCard: boolean
+        isOpen: boolean
+    }
+    expect(shop.hasPayoutCard).toBe(true)
 })
 
 test("the QR poster arrives as a PNG and its code opens the shop bot", async ({ page }) => {

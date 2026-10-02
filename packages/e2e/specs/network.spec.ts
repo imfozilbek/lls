@@ -1,12 +1,13 @@
 /**
  * The district network: an order of a shop whose own courier cannot take it goes to the free
- * network couriers of the district; the first «Беру» wins; the cash goes back to that shop.
+ * network couriers of the district; the first «Беру» wins. The customer paid that shop's card
+ * before cooking, so the courier carries no money.
  */
 import { expect, test } from "@playwright/test"
 
 import { courierBot } from "../stand/config.js"
 import { runSql } from "../stand/seed.js"
-import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
 import { courierChat, lastSeq, llsChat, messagesTo, waitForMessage } from "../support/telegram.js"
 import { openApp } from "../support/webapp.js"
 
@@ -39,7 +40,7 @@ async function placeAndAccept(): Promise<OrderBody> {
         [{ productId: "dev-food-p1", quantity: 2 }],
         { landmark: "возле рынка", location: { latitude: 40.5, longitude: 68.79 } },
     )
-    const accepted = await owner(`/owner/orders/${order.id}`, { status: "accepted" })
+    const accepted = await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)
     expect(accepted.status).toBe(200)
     return (await accepted.json()) as OrderBody
 }
@@ -70,7 +71,7 @@ test("no free courier of its own: the order goes to the network, without the cus
         const offer = await offerFor(person.id, order, since)
         expect(offer.text).toContain("Новый заказ рядом")
         expect(offer.text).toContain("Osh Markaz")
-        expect(offer.text).toMatch(/Взять с клиента: <b>100\s000/)
+        expect(offer.text).toContain("Оплачено заранее — денег с клиента не брать")
         expect(offer.text).not.toContain("Navoiy")
         expect(offer.text).not.toContain("возле рынка")
         expect(offer.text).not.toContain("Aziz")
@@ -102,7 +103,7 @@ test("the first «Беру» wins; the second hears it is taken; the owner learn
     expect(otabekNext.filter((m) => m.text.includes(`#${second.number}`))).toEqual([])
 })
 
-test("Otabek delivers in the app; the cash is Osh Markaz's, and its owner takes it", async ({
+test("Otabek delivers in the app with one «Доставил»; the money is already Osh Markaz's", async ({
     page,
 }) => {
     const home = (await (
@@ -116,25 +117,20 @@ test("Otabek delivers in the app; the cash is Osh Markaz's, and its owner takes 
     await openApp(page, { user: PEOPLE.networkCourier, courierBot: true })
     await expect(page.getByText("Osh Markaz").first()).toBeVisible()
     await page.getByRole("button", { name: "Забрал" }).click()
+    await expect(page.getByText("Оплачено заранее — денег не брать").first()).toBeVisible()
     await page.getByRole("button", { name: "Доставил" }).click()
-    await page.getByRole("dialog").getByRole("button", { name: "Наличными" }).click()
+    await expect(page.getByRole("dialog")).toBeHidden()
     const shop = page
         .getByRole("listitem")
         .filter({ hasText: "сеть района" })
         .filter({ hasText: "Osh Markaz" })
-    await expect(shop).toContainText(/На руках: 100\s000/)
+    await expect(shop).toBeVisible()
+    await expect(shop).not.toContainText("На руках")
 
     const report = (await (await owner("/owner/money", undefined, "GET")).json()) as {
-        couriers: { courierId: string; name: string; onHand: number }[]
+        totals: { delivered: number; paid: number }
     }
-    const cash = report.couriers.find((c) => c.name === "Otabek")
-    expect(cash?.onHand).toBe(100_000)
-    const handed = await owner(
-        `/owner/couriers/${cash?.courierId ?? ""}/handovers`,
-        { amount: 100_000 },
-        "POST",
-    )
-    expect(handed.status).toBe(200)
+    expect(report.totals).toMatchObject({ delivered: 1, paid: 100_000 })
     // Not the shop's courier: its list stays its own.
     const list = (await (await owner("/owner/couriers", undefined, "GET")).json()) as {
         name: string

@@ -4,7 +4,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, apiAs, placeOrder, resetStand, payAndAccept } from "../support/stand.js"
 import {
     callsOf,
     chatWithSecret,
@@ -47,6 +47,12 @@ async function apply(page: Page, token: string, name: string): Promise<void> {
     await page.getByLabel(/Адрес/).fill("Guliston, Navoiy 20")
     await bottomButton(page).click()
     await page.getByLabel("Стоимость доставки").fill("5000")
+    // Customers pay only by transfer: no card, no «Отправить заявку».
+    await expect(bottomButton(page)).toBeDisabled()
+    await page.getByLabel("Номер карты").fill("4111 1111 1111 1112")
+    await expect(page.getByText("В номере ошибка: проверьте цифры.")).toBeVisible()
+    await page.getByLabel("Номер карты").fill("4111 1111 1111 1111")
+    await page.getByLabel("Имя на карте").fill("Sardor Aliyev")
     await bottomButton(page).click()
 }
 
@@ -105,7 +111,13 @@ test("the application reaches the admin; the pending shop opens only for its own
 test("the same bot cannot be connected twice", async () => {
     const response = await apiAs(PEOPLE.newOwner, "/platform/shops", {
         method: "POST",
-        json: { botToken: NEW_BOT.token, name: "Again", type: "grocery", deliveryFee: 0 },
+        json: {
+            botToken: NEW_BOT.token,
+            name: "Again",
+            type: "grocery",
+            deliveryFee: 0,
+            payoutCard: { number: "4111111111111111", holder: "Sardor Aliyev" },
+        },
     })
     expect(response.status).toBe(409)
 })
@@ -192,11 +204,7 @@ test("a customer who blocked the bot is not an alert", async () => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
-    await apiAs(PEOPLE.foodOwner, `/owner/orders/${order.id}`, {
-        shop: FOOD,
-        method: "PATCH",
-        json: { status: "accepted" },
-    })
+    await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)
     await new Promise((resolve) => setTimeout(resolve, 1500))
     const alerts = await messagesTo(PEOPLE.admin.id, since)
     expect(alerts.filter((m) => m.text.includes("🚨"))).toHaveLength(0)
@@ -206,7 +214,13 @@ test("a customer who blocked the bot is not an alert", async () => {
 async function openAndApply(owner: TgUser, token: string, name: string): Promise<void> {
     const response = await apiAs(owner, "/platform/shops", {
         method: "POST",
-        json: { botToken: token, name, type: "grocery", deliveryFee: 5_000 },
+        json: {
+            botToken: token,
+            name,
+            type: "grocery",
+            deliveryFee: 5_000,
+            payoutCard: { number: "4111111111111111", holder: "Test Owner" },
+        },
     })
     expect(response.status).toBe(201)
 }

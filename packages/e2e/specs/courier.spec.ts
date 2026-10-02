@@ -6,7 +6,15 @@
 import { expect, test } from "@playwright/test"
 
 import { APP_URL, WORKER_URL, courierBot, shopBySlug } from "../stand/config.js"
-import { FOOD, PEOPLE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import {
+    FOOD,
+    PEOPLE,
+    WATER,
+    apiAs,
+    payAndAccept,
+    placeOrder,
+    resetStand,
+} from "../support/stand.js"
 import { courierChat, lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
 import { openApp, signInitData } from "../support/webapp.js"
 
@@ -22,6 +30,11 @@ async function owner(orderId: string, json: object, path = "", shop = FOOD): Pro
         method: path ? "PUT" : "PATCH",
         json,
     })
+}
+
+/** «Деньги пришли — принять»: the shop starts only after the transfer. */
+async function accept(orderId: string, shop = FOOD): Promise<Response> {
+    return payAndAccept(shop === FOOD ? PEOPLE.foodOwner : PEOPLE.waterOwner, shop, orderId)
 }
 
 async function courierApi(
@@ -40,14 +53,14 @@ async function assigned(courierId = COURIER_ID): Promise<PlacedOrder> {
         [{ productId: "dev-food-p1", quantity: 2 }],
         { landmark: "возле рынка", location: { latitude: 40.49, longitude: 68.78 } },
     )
-    expect((await owner(order.id, { status: "accepted" })).status).toBe(200)
+    expect((await accept(order.id)).status).toBe(200)
     expect((await owner(order.id, { courierId }, "/courier")).status).toBe(200)
     return order
 }
 
 interface Home {
     profile: { onShift: boolean; vehicle?: string }
-    shops: { shopName: string; onHand: number; worksToday: boolean }[]
+    shops: { shopName: string; worksToday: boolean }[]
     orders: { id: string; number: number; status: string; shopName: string }[]
 }
 
@@ -92,7 +105,8 @@ test("the card comes from the courier bot with the shop's name; no buttons until
     expect(card.text).toContain("Osh Markaz")
     expect(card.text).toContain("Navoiy 12")
     expect(card.text).toContain("+998 90 123 45 67")
-    expect(card.text).toMatch(/Взять с клиента: <b>100\s000/)
+    // Paid to the shop's card before cooking: nothing to take at the door.
+    expect(card.text).toContain("Оплачено заранее — денег с клиента не брать")
     expect(card.text).toContain("возле рынка")
     expect(card.text).toContain("yandex")
     expect(card.buttons.filter((b) => b.callback_data)).toHaveLength(0)
@@ -125,16 +139,13 @@ test("ready → «Забрал» in the courier bot → «Доставил» in 
 
     await openApp(page, { user: PEOPLE.courier, courierBot: true })
     await expect(page.getByRole("heading", { name: "Мои доставки" })).toBeVisible()
-    await expect(page.getByText(/100\s000/).first()).toBeVisible()
+    await expect(page.getByText("Оплачено заранее — денег не брать")).toBeVisible()
     const before = await lastSeq()
+    // One «Доставил»: the money is already the shop's, nobody asks how it was paid.
     await page.getByRole("button", { name: "Доставил" }).click()
-    await page.getByRole("dialog").getByRole("button", { name: "Наличными" }).click()
+    await expect(page.getByRole("dialog")).toBeHidden()
     await expect(page.getByText(/Доставлено сегодня · 1/)).toBeVisible()
-    // The cash taken at the door is on the courier's hands, under that shop.
-    const cash = page.getByRole("listitem").filter({ hasText: "Osh Markaz" }).filter({
-        hasText: "На руках",
-    })
-    await expect(cash).toContainText(/На руках: 100\s000/)
+    await expect(page.getByText(/На руках/)).toBeHidden()
     await waitForMessage(PEOPLE.customer.id, "доставлен", before)
 })
 
@@ -157,7 +168,7 @@ test("a courier moves only own orders and only the delivery part; never cancels"
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
-    await owner(order.id, { status: "accepted" })
+    await accept(order.id)
     const path = `/orders/${order.id}`
     expect((await courierApi(PEOPLE.courier, path, "PATCH", { status: "picked_up" })).status).toBe(
         403,
@@ -196,7 +207,7 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
-    await owner(order.id, { status: "accepted" })
+    await accept(order.id)
     const early = await owner(order.id, { courierId: id }, "/courier")
     expect(early.status).toBe(422)
     expect(
@@ -229,7 +240,7 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
     })
 })
 
-test("one person, two shops: both orders in one screen, cash per shop, owners see only theirs", async ({
+test("one person, two shops: both orders in one screen, owners see only theirs", async ({
     page,
 }) => {
     // Bobur is already Osh Markaz's courier; Toza Suv invites him too.
@@ -255,7 +266,7 @@ test("one person, two shops: both orders in one screen, cash per shop, owners se
         [food, FOOD, foodLink?.id ?? ""],
         [water, WATER, waterId],
     ] as const) {
-        expect((await owner(order.id, { status: "accepted" }, "", shop)).status).toBe(200)
+        expect((await accept(order.id, shop)).status).toBe(200)
         expect((await owner(order.id, { courierId: id }, "/courier", shop)).status).toBe(200)
         await owner(order.id, { status: "preparing" }, "", shop)
         await owner(order.id, { status: "ready" }, "", shop)
@@ -265,27 +276,24 @@ test("one person, two shops: both orders in one screen, cash per shop, owners se
     expect(screen.shops.map((s) => s.shopName).sort()).toEqual(["Osh Markaz", "Toza Suv"])
     expect(screen.orders.map((o) => o.shopName).sort()).toEqual(["Osh Markaz", "Toza Suv"])
 
-    // Delivers both, cash at both doors.
+    // Delivers both: paid in advance, nothing to collect at either door.
     for (const order of [food, water]) {
         const path = `/orders/${order.id}`
         await courierApi(PEOPLE.newCourier, path, "PATCH", { status: "picked_up" })
-        const done = await courierApi(PEOPLE.newCourier, path, "PATCH", {
-            status: "delivered",
-            paidWith: "cash",
-        })
+        const done = await courierApi(PEOPLE.newCourier, path, "PATCH", { status: "delivered" })
         expect(done.status).toBe(200)
     }
-    const after = await home(PEOPLE.newCourier)
-    const onHand = Object.fromEntries(after.shops.map((s) => [s.shopName, s.onHand]))
-    expect(onHand["Osh Markaz"]).toBe(food.total)
-    expect(onHand["Toza Suv"]).toBe(water.total)
 
-    // Each owner sees only their own cash with this courier.
+    // Each owner sees only their own couriers and money.
+    const waterCouriers = (await (
+        await apiAs(PEOPLE.waterOwner, "/owner/couriers", { shop: WATER })
+    ).json()) as { id: string }[]
+    expect(waterCouriers.map((c) => c.id)).toContain(waterId)
+    expect(waterCouriers.map((c) => c.id)).not.toContain(foodLink?.id)
     const report = (await (
         await apiAs(PEOPLE.waterOwner, "/owner/money", { shop: WATER })
-    ).json()) as { couriers: { courierId: string; onHand: number }[] }
-    expect(report.couriers.find((c) => c.courierId === waterId)?.onHand).toBe(water.total)
-    expect(report.couriers.find((c) => c.courierId === foodLink?.id)).toBeUndefined()
+    ).json()) as { totals: { delivered: number; paid: number } }
+    expect(report.totals).toMatchObject({ delivered: 1, paid: water.total })
 
     await openApp(page, { user: PEOPLE.newCourier, courierBot: true })
     await expect(page.getByText(/Доставлено сегодня · 2/)).toBeVisible()
@@ -299,7 +307,7 @@ test("days and shift: «сегодня не работает» and «не на �
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
-    await owner(order.id, { status: "accepted" })
+    await accept(order.id)
     const reasonOf = async (response: Response): Promise<string> => {
         expect(response.status).toBe(422)
         const body = (await response.json()) as {

@@ -5,7 +5,7 @@
 import { expect, test } from "@playwright/test"
 
 import { platformBot } from "../stand/config.js"
-import { FOOD, PEOPLE, WATER, apiAs, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, WATER, apiAs, resetStand, payAndAccept } from "../support/stand.js"
 import { lastSeq, llsChat, waitForMessage } from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
@@ -93,11 +93,7 @@ test("an order through the showcase: commission for LLS, LLS bot tells the custo
     ).json()) as { data: { id: string; channel: string; commission: number }[] }
     expect(orders.data[0]).toMatchObject({ channel: "marketplace", commission: 2_250 })
     const before = await lastSeq()
-    await apiAs(PEOPLE.foodOwner, `/owner/orders/${orders.data[0]?.id ?? ""}`, {
-        shop: FOOD,
-        method: "PATCH",
-        json: { status: "accepted" },
-    })
+    await payAndAccept(PEOPLE.foodOwner, FOOD, orders.data[0]?.id ?? "")
     const told = await waitForMessage(PEOPLE.customer.id, "принят", before)
     expect(told.token).toBe(platformBot().token)
     expect(told.text).toContain("Osh Markaz")

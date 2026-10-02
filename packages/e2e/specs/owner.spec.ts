@@ -53,8 +53,9 @@ test("empty orders, then a new order: card, every step from the app, customer to
     await expect(one).toContainText("To'y oshi")
     await expect(one).toContainText("Aziz Karimov")
 
+    await expect(one).toContainText("Ждём перевод")
     const steps: [string, string][] = [
-        ["Принять", "принят"],
+        ["Деньги пришли — принять", "Оплата получена"],
         ["Начать готовить", "готовится"],
         ["Готово", "готов"],
         ["Отправить", "в пути"],
@@ -63,10 +64,8 @@ test("empty orders, then a new order: card, every step from the app, customer to
     for (const [button, told] of steps) {
         const since = await lastSeq()
         await one.getByRole("button", { name: button, exact: true }).click()
-        if (button === "Доставлен") {
-            // Delivering asks how the customer paid.
-            await page.getByRole("dialog").getByRole("button", { name: "Наличными" }).click()
-        }
+        // Paid before cooking: «Доставлен» asks nothing more.
+        await expect(page.getByRole("dialog")).toBeHidden()
         await waitForMessage(PEOPLE.customer.id, told, since)
     }
     await expect(one).toContainText("Оплачено")
@@ -93,14 +92,16 @@ test("cancel with a reason: the customer sees the reason", async ({ page }) => {
     await expect(page.getByText("Плов закончился")).toBeVisible()
 })
 
-test("bot chat buttons: the owner moves the order; old buttons and strangers are refused", async () => {
+test("bot chat buttons: «Деньги пришли — принять»; old buttons and strangers are refused", async () => {
     const since = await lastSeq()
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
     const newCard = await waitForMessage(PEOPLE.foodOwner.id, `#${order.number}`, since)
-    const accept = newCard.buttons.find((b) => b.callback_data?.endsWith(":accepted"))
-    expect(accept?.text).toBe("✅ Принять")
+    // A new order waits for the transfer: the step is «Деньги пришли — принять».
+    expect(newCard.text).toContain("Ждём перевод на карту")
+    const accept = newCard.buttons.find((b) => b.callback_data === `p:${order.id}`)
+    expect(accept?.text).toBe("💳 Деньги пришли — принять")
 
     // A stranger who got the button data cannot press it.
     await shopChat(FOOD).press(PEOPLE.stranger, accept?.callback_data ?? "")
@@ -117,7 +118,7 @@ test("bot chat buttons: the owner moves the order; old buttons and strangers are
                 ?.buttons.map((b) => b.text),
         )
         .toContain("👨‍🍳 Начать готовить")
-    // The old "accept" button again: nothing changes.
+    // The old button again: the money is confirmed already, nothing changes.
     await shopChat(FOOD).press(PEOPLE.foodOwner, accept?.callback_data ?? "")
     const after = await apiAs(PEOPLE.customer, `/orders/${order.id}`, { shop: FOOD })
     expect(((await after.json()) as { status: string }).status).toBe("accepted")
@@ -226,7 +227,7 @@ test("«Деньги» count today's orders and revenue", async ({ page }) => {
         "true",
     )
     await expect(page.getByText("Выручка").first()).toBeVisible()
-    // One delivered order for 55 000, paid in cash to the owner, earlier in this file.
+    // One delivered order for 55 000, paid by transfer before cooking, earlier in this file.
     await expect(page.getByText(/55\s000/).first()).toBeVisible()
 })
 

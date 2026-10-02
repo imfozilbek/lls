@@ -4,7 +4,15 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import {
+    FOOD,
+    PEOPLE,
+    WATER,
+    apiAs,
+    placeOrder,
+    resetStand,
+    payAndAccept,
+} from "../support/stand.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
@@ -98,11 +106,7 @@ for (const theme of ["light", "dark"] as const) {
         const order = await placeOrder(PEOPLE.customer, FOOD, [
             { productId: "dev-food-p1", quantity: 2 },
         ])
-        await apiAs(PEOPLE.foodOwner, `/owner/orders/${order.id}`, {
-            shop: FOOD,
-            method: "PATCH",
-            json: { status: "accepted" },
-        })
+        await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)
         await openApp(page, { user: PEOPLE.networkCourier, courierBot: true, theme })
         await expect(page.getByRole("button", { name: "Беру" }).first()).toBeVisible()
         await snap(page, "25-courier-nearby", theme)

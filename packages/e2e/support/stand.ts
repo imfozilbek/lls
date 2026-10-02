@@ -128,3 +128,19 @@ export async function placeOrder(
     }
     return (await response.json()) as PlacedOrder
 }
+
+/**
+ * «Деньги пришли — принять»: the owner of `shop` saw the transfer on the card. The order is paid
+ * and accepted in one step (the shop starts only after the money).
+ */
+export async function payAndAccept(
+    owner: TgUser,
+    shop: string,
+    orderId: string,
+): Promise<Response> {
+    return apiAs(owner, `/owner/orders/${orderId}/payment`, {
+        shop,
+        method: "PATCH",
+        json: { action: "paid" },
+    })
+}
