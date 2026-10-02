@@ -179,7 +179,9 @@ test("a courier moves only own orders and only the delivery part; never cancels"
     expect(await viaCourierBot.json()).toMatchObject({ error: { code: "SHOP_REQUIRED" } })
 })
 
-test("an invite in the courier bot: phone asked, waits for the owner, the owner approves", async () => {
+test("an invite in the courier bot: phone asked, waits for the owner, the owner approves", async ({
+    page,
+}) => {
     const since = await lastSeq()
     const id = await invite(FOOD, PEOPLE.newCourier)
     const waiting = await waitForMessage(PEOPLE.newCourier.id, "Ждём, пока владелец", since)
@@ -201,6 +203,10 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
         ((await early.json()) as { error: { details: { reason: string } } }).error.details,
     ).toMatchObject({ reason: "not_approved" })
     expect((await courierApi(PEOPLE.newCourier, "/home")).status).toBe(403)
+    // The app says the same as the bot: wait for the owner, no new link needed.
+    await openApp(page, { user: PEOPLE.newCourier, courierBot: true })
+    await expect(page.getByText("Вы пока не доставщик")).toBeVisible()
+    await expect(page.getByText(/уже открыли — ждите подтверждения/)).toBeVisible()
 
     // The owner presses «Подтвердить» in the shop bot.
     const ask = (await messagesTo(PEOPLE.foodOwner.id, since)).findLast((m) =>

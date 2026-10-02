@@ -376,7 +376,8 @@ export const uz = {
         vehicle: "Transport",
         vehiclePlaceholder: "Masalan: Damas",
         notCourierTitle: "Siz hali kuryer emassiz",
-        notCourierText: "Do'kon egasidan taklif havolasini so'rang.",
+        notCourierText:
+            "Do'kon egasidan taklif havolasini so'rang. Havolani ochgan bo'lsangiz, tasdiqlashni kuting — bot yozadi.",
     },
     showcase: {
         title: "Tumaningiz do'konlari",

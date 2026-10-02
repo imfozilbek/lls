@@ -370,7 +370,8 @@ export const ru: Dictionary = {
         vehicle: "Транспорт",
         vehiclePlaceholder: "Например: Damas",
         notCourierTitle: "Вы пока не доставщик",
-        notCourierText: "Попросите у владельца магазина ссылку-приглашение.",
+        notCourierText:
+            "Попросите у владельца точки ссылку-приглашение. Если вы её уже открыли — ждите подтверждения, бот напишет.",
     },
     showcase: {
         title: "Магазины вашего района",
