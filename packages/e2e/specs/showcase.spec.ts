@@ -55,8 +55,12 @@ test("a product opens its shop inside the LLS bot; Back returns to the search", 
     page,
 }) => {
     const app = await openApp(page, { user: PEOPLE.foodOwner, query: "?mode=market" })
+    // Each step waits for what it needs, so a stall names itself instead of a 1-minute timeout.
+    await expect(search(page)).toBeVisible()
     await search(page).fill("oshi")
-    await page.getByRole("button", { name: /To'y oshi/ }).click()
+    const product = page.getByRole("button", { name: /To'y oshi/ })
+    await expect(product).toBeVisible()
+    await product.click()
     await expect(page.getByRole("heading", { name: "Osh Markaz" })).toBeVisible()
     // Owner screens never open through the showcase.
     await expect(page.getByRole("button", { name: "Мой магазин" })).toBeHidden()
@@ -140,13 +144,15 @@ test("the admin adds and removes a shop; others cannot", async ({ page }) => {
 })
 
 test("search is rate-limited per person", async ({ page }) => {
+    // A fresh person per run: the limiter keeps its minute across repeated runs of this test.
+    const person = { ...PEOPLE.newOwner, id: 500_000 + Math.floor(Math.random() * 400_000) }
     const statuses: number[] = []
     for (let i = 0; i < 31; i++) {
-        statuses.push((await apiAs(PEOPLE.newOwner, "/showcase/products?q=osh")).status)
+        statuses.push((await apiAs(person, "/showcase/products?q=osh")).status)
     }
     expect(statuses.slice(0, 30).every((s) => s === 200)).toBe(true)
     expect(statuses.at(-1)).toBe(429)
-    await openApp(page, { user: PEOPLE.newOwner, query: "?mode=market" })
+    await openApp(page, { user: person, query: "?mode=market" })
     await search(page).fill("osh")
     await expect(page.getByText("Слишком много запросов. Попробуйте через минуту.")).toBeVisible()
 })
