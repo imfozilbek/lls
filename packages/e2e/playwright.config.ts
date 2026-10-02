@@ -20,6 +20,9 @@ export default defineConfig({
         baseURL: APP_URL,
         locale: "ru-RU",
         timezoneId: "Asia/Tashkent",
+        // An action that waits for an element fails in 15 s with its own message, not at the
+        // 1-minute test timeout.
+        actionTimeout: 15_000,
         trace: "retain-on-failure",
         screenshot: "only-on-failure",
     },
