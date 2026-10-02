@@ -9,7 +9,7 @@
         "browsers": "playwright install --with-deps chromium"
     },
     "devDependencies": {
-        "@playwright/test": "1.56.1",
+        "@playwright/test": "1.63.0",
         "@types/pngjs": "^6",
         "jsqr": "^1.4",
         "pngjs": "^7",
