@@ -11,10 +11,12 @@ interface OwnerState {
     tab: OwnerTab
     /** All products, hidden ones too. `null` until the first load. */
     products: ProductDTO[] | null
-    /** Active couriers of the shop. `null` until the first load. */
+    /** The shop's couriers, waiting for approval first. `null` until the first load. */
     couriers: CourierDTO[] | null
     setTab(tab: OwnerTab): void
     loadCouriers(): Promise<void>
+    /** One courier changed (days, "not today"): swap it in place. */
+    replaceCourier(courier: CourierDTO): void
     loadProducts(): Promise<void>
     upsert(product: ProductDTO): void
     drop(id: string): void
@@ -34,6 +36,9 @@ export const useOwner = create<OwnerState>((set, get) => ({
     setTab: (tab): void => set({ tab }),
     loadCouriers: async (): Promise<void> => {
         set({ couriers: await api.owner.couriers() })
+    },
+    replaceCourier: (courier): void => {
+        set({ couriers: (get().couriers ?? []).map((c) => (c.id === courier.id ? courier : c)) })
     },
     loadProducts: async (): Promise<void> => {
         set({ products: await loadOwnerProducts() })

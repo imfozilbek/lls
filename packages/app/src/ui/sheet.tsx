@@ -55,17 +55,21 @@ export function SheetOption({
     hint,
     onClick,
     danger = false,
+    disabled = false,
 }: {
     label: string
     hint?: string
     onClick(): void
     danger?: boolean
+    /** Shown but not pickable, e.g. a courier who is not on shift; the hint says why. */
+    disabled?: boolean
 }): React.JSX.Element {
     return (
         <button
             type="button"
             onClick={onClick}
-            className="tap flex min-h-[52px] flex-col justify-center rounded-control bg-tg-secondary px-4 py-2.5 text-left"
+            disabled={disabled}
+            className="tap flex min-h-[52px] flex-col justify-center rounded-control bg-tg-secondary px-4 py-2.5 text-left disabled:opacity-50 disabled:active:scale-100"
         >
             <span className={danger ? "font-semibold text-tg-destructive" : "font-semibold"}>
                 {label}

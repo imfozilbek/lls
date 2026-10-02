@@ -1,22 +1,30 @@
 import { OrderStatus, PaidWith, PaymentMethod, PaymentStatus } from "@lls/core"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
-import { ApiError, api } from "../lib/api.js"
+import { ApiError, api, setCourierBot } from "../lib/api.js"
+import { LLS_BRAND_COLOR, applyBrand } from "../lib/brand.js"
 import { formatMoney } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
-import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
-import { CashIcon, CheckIcon, ClockIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import { CashIcon, CheckIcon, ClockIcon, ScooterIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusBadge } from "../ui/order-status.js"
-import { Button, EmptyState, PoweredBy, Skeleton } from "../ui/primitives.js"
+import {
+    Button,
+    EmptyState,
+    Field,
+    PoweredBy,
+    Skeleton,
+    Switch,
+    TextInput,
+} from "../ui/primitives.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
 
-import type { OrderDTO } from "@lls/core"
+import type { CourierHomeDTO, CourierOrderDTO, CourierShopDTO, OrderDTO } from "@lls/core"
 
 const POLL_MS = 20_000
 
@@ -28,7 +36,7 @@ function courierStep(status: OrderStatus): "picked_up" | "delivered" | null {
     return status === OrderStatus.PICKED_UP ? "delivered" : null
 }
 
-function isActive(order: OrderDTO): boolean {
+function isActive(order: CourierOrderDTO): boolean {
     return order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.CANCELLED
 }
 
@@ -141,7 +149,7 @@ function DeliveryCard({
     onChange,
     onStale,
 }: {
-    order: OrderDTO
+    order: CourierOrderDTO
     onChange(order: OrderDTO): void
     onStale(): void
 }): React.JSX.Element {
@@ -149,7 +157,13 @@ function DeliveryCard({
     return (
         <li className="flex animate-rise flex-col gap-3 rounded-tile bg-tg-secondary p-4">
             <div className="flex items-center justify-between gap-3">
-                <span className="text-lg font-bold">#{order.number}</span>
+                <span className="min-w-0">
+                    <span className="flex items-center gap-1.5 text-sm font-semibold text-tg-subtitle">
+                        <StoreIcon size={14} className="shrink-0" />
+                        <span className="truncate">{order.shopName}</span>
+                    </span>
+                    <span className="text-lg font-bold">#{order.number}</span>
+                </span>
                 <StatusBadge status={order.status} />
             </div>
             <p className="font-medium">{order.customerName}</p>
@@ -172,15 +186,18 @@ function DeliveryCard({
     )
 }
 
-function DoneRow({ order }: { order: OrderDTO }): React.JSX.Element {
+function DoneRow({ order }: { order: CourierOrderDTO }): React.JSX.Element {
     const language = useLanguage()
     return (
         <li className="flex items-center gap-3 py-3">
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-success/15 text-success">
                 <CheckIcon size={18} />
             </span>
-            <span className="min-w-0 flex-1 truncate">
-                #{order.number} · {order.address}
+            <span className="min-w-0 flex-1">
+                <span className="block truncate">
+                    #{order.number} · {order.address}
+                </span>
+                <span className="block truncate text-sm text-tg-hint">{order.shopName}</span>
             </span>
             <span className="shrink-0 tabular-nums text-tg-hint">
                 {formatMoney(order.total, language)}
@@ -189,22 +206,19 @@ function DoneRow({ order }: { order: OrderDTO }): React.JSX.Element {
     )
 }
 
-/** Active deliveries plus today's delivered ones; refreshes calmly while on screen. */
-function useDeliveries(): {
-    orders: OrderDTO[] | null
-    onHand: number
+/** Everything on the screen, refreshed calmly while it is visible. */
+function useHome(): {
+    home: CourierHomeDTO | null
     error: string | null
     reload(): Promise<void>
     replace(order: OrderDTO): void
+    setHome(home: CourierHomeDTO): void
 } {
-    const [orders, setOrders] = useState<OrderDTO[] | null>(null)
-    const [onHand, setOnHand] = useState(0)
+    const [home, setHome] = useState<CourierHomeDTO | null>(null)
     const [error, setError] = useState<string | null>(null)
     const reload = useCallback(async (): Promise<void> => {
         try {
-            const [list, cash] = await Promise.all([api.courier.orders(), api.courier.cash()])
-            setOrders(list.data)
-            setOnHand(cash.onHand)
+            setHome(await api.courier.home())
             setError(null)
         } catch (caught) {
             setError(caught instanceof ApiError ? caught.code : "generic")
@@ -220,67 +234,156 @@ function useDeliveries(): {
         return (): void => window.clearInterval(timer)
     }, [reload])
     const replace = (order: OrderDTO): void => {
-        setOrders((list) => list?.map((o) => (o.id === order.id ? order : o)) ?? null)
-        // Cash taken at the door adds to what the courier holds.
-        api.courier
-            .cash()
-            .then((cash) => setOnHand(cash.onHand))
-            .catch(() => undefined)
+        setHome((current) =>
+            current
+                ? {
+                      ...current,
+                      orders: current.orders.map((o) =>
+                          o.id === order.id ? { ...order, shopName: o.shopName } : o,
+                      ),
+                  }
+                : current,
+        )
+        // Cash taken at the door adds to what the courier holds for that shop.
+        void reload()
     }
-    return { orders, onHand, error, reload, replace }
+    return { home, error, reload, replace, setHome }
 }
 
-function Title({ onHand }: { onHand: number }): React.JSX.Element {
+/** "Я на смене": shops give orders only to couriers on shift; it ends at midnight. */
+function ShiftCard({
+    home,
+    onChange,
+}: {
+    home: CourierHomeDTO
+    onChange(home: CourierHomeDTO): void
+}): React.JSX.Element {
     const t = useT()
-    const language = useLanguage()
-    const shop = useSession((state) => state.shop)
+    const [busy, setBusy] = useState(false)
+    const toggle = async (onShift: boolean): Promise<void> => {
+        setBusy(true)
+        try {
+            const profile = await api.courier.shift(onShift)
+            onChange({ ...home, profile })
+            haptic.success()
+        } catch (caught) {
+            haptic.error()
+            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+        } finally {
+            setBusy(false)
+        }
+    }
+    const on = home.profile.onShift
     return (
-        <header className="pb-1 pt-4">
-            <p className="text-sm text-tg-hint">{shop?.name}</p>
-            <h1 className="text-2xl font-bold">{t.courier.title}</h1>
-            {onHand > 0 ? (
-                <p className="mt-2 inline-flex animate-rise items-center gap-2 rounded-full bg-brand/15 px-3 py-1.5 text-sm font-semibold">
-                    <CashIcon size={18} className="text-brand" />
-                    {fill(t.courier.onHand, { sum: formatMoney(onHand, language) })}
-                </p>
-            ) : null}
-        </header>
+        <div
+            className={`flex items-center gap-3 rounded-tile p-4 transition-colors duration-300 ${
+                on ? "bg-success/15" : "bg-tg-secondary"
+            }`}
+            aria-busy={busy || undefined}
+        >
+            <span className="flex-1">
+                <span className="block font-semibold">{t.courier.shift}</span>
+                <span className="text-sm text-tg-hint">{t.courier.shiftHint}</span>
+            </span>
+            <Switch
+                checked={on}
+                onChange={(next): void => void toggle(next)}
+                label={t.courier.shift}
+            />
+        </div>
     )
 }
 
-/** The courier's own screen: what to deliver now, and what is done today. */
-export function CourierApp(): React.JSX.Element {
+/** One shop the courier works for: today or a day off, and that shop's cash on their hands. */
+function ShopRow({ shop }: { shop: CourierShopDTO }): React.JSX.Element {
     const t = useT()
-    const { orders, onHand, error, reload, replace } = useDeliveries()
-    useMainAction(null)
-
-    if (error && orders === null) {
-        return (
-            <EmptyState
-                art={<WifiOffIcon size={44} />}
-                title={errorText(t, error)}
-                action={
-                    <Button variant="secondary" onClick={(): void => void reload()}>
-                        {t.common.retry}
-                    </Button>
-                }
-            />
-        )
-    }
-    const active = orders?.filter(isActive) ?? []
-    const done = orders?.filter((o) => o.status === OrderStatus.DELIVERED) ?? []
+    const language = useLanguage()
     return (
-        <main className="flex flex-col gap-4 px-4">
-            <Title onHand={onHand} />
-            {orders === null ? <Skeleton className="h-72 rounded-tile" /> : null}
-            {orders !== null && active.length === 0 ? (
+        <li className="flex items-center gap-3 py-2.5">
+            <span
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full ${
+                    shop.worksToday ? "bg-brand/15 text-brand" : "bg-tg-hint/15 text-tg-hint"
+                }`}
+            >
+                <StoreIcon size={18} />
+            </span>
+            <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium">{shop.shopName}</span>
+                {shop.worksToday ? null : (
+                    <span className="block text-sm text-tg-hint">{t.courier.dayOff}</span>
+                )}
+            </span>
+            {shop.onHand > 0 ? (
+                <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-brand/10 px-3 py-1 text-sm font-semibold tabular-nums">
+                    <CashIcon size={16} className="text-brand" />
+                    {fill(t.courier.onHand, { sum: formatMoney(shop.onHand, language) })}
+                </span>
+            ) : null}
+        </li>
+    )
+}
+
+/** What the courier drives: shops see it next to the name. */
+function VehicleField({
+    home,
+    onChange,
+}: {
+    home: CourierHomeDTO
+    onChange(home: CourierHomeDTO): void
+}): React.JSX.Element {
+    const t = useT()
+    const saved = home.profile.vehicle ?? ""
+    const [value, setValue] = useState(saved)
+    const lastSaved = useRef(saved)
+    const save = async (): Promise<void> => {
+        if (value.trim() === lastSaved.current) {
+            return
+        }
+        try {
+            const profile = await api.courier.profile(value.trim() || null)
+            lastSaved.current = profile.vehicle ?? ""
+            onChange({ ...home, profile })
+            haptic.success()
+        } catch (caught) {
+            haptic.error()
+            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+        }
+    }
+    return (
+        <Field label={t.courier.vehicle} htmlFor="vehicle">
+            <TextInput
+                id="vehicle"
+                value={value}
+                maxLength={40}
+                placeholder={t.courier.vehiclePlaceholder}
+                onChange={(e): void => setValue(e.target.value)}
+                onBlur={(): void => void save()}
+            />
+        </Field>
+    )
+}
+
+function Deliveries({
+    home,
+    replace,
+    reload,
+}: {
+    home: CourierHomeDTO
+    replace(order: OrderDTO): void
+    reload(): Promise<void>
+}): React.JSX.Element {
+    const t = useT()
+    const active = home.orders.filter(isActive)
+    const done = home.orders.filter((o) => o.status === OrderStatus.DELIVERED)
+    return (
+        <>
+            {active.length === 0 ? (
                 <EmptyState
                     art={<ScooterIcon size={44} />}
                     title={t.courier.empty}
                     text={t.courier.emptyText}
                 />
-            ) : null}
-            {active.length > 0 ? (
+            ) : (
                 <ul className="flex flex-col gap-3" aria-label={t.courier.active}>
                     {active.map((order) => (
                         <DeliveryCard
@@ -291,7 +394,7 @@ export function CourierApp(): React.JSX.Element {
                         />
                     ))}
                 </ul>
-            ) : null}
+            )}
             {done.length > 0 ? (
                 <section>
                     <h2 className="px-1 text-sm font-semibold text-tg-subtitle">
@@ -304,6 +407,71 @@ export function CourierApp(): React.JSX.Element {
                     </ul>
                 </section>
             ) : null}
+        </>
+    )
+}
+
+/**
+ * The courier's screen in the LLS courier bot: the shift, what to deliver now across all their
+ * shops, what is done today, and each shop's cash on their hands.
+ */
+export function CourierApp(): React.JSX.Element {
+    const t = useT()
+    useEffect(() => {
+        setCourierBot()
+        applyBrand(LLS_BRAND_COLOR)
+        document.title = "LLS Kuryer"
+    }, [])
+    const { home, error, reload, replace, setHome } = useHome()
+    useMainAction(null)
+
+    if (error === "FORBIDDEN" && home === null) {
+        return (
+            <EmptyState
+                art={<ScooterIcon size={44} />}
+                title={t.courier.notCourierTitle}
+                text={t.courier.notCourierText}
+            />
+        )
+    }
+    if (error && home === null) {
+        return (
+            <EmptyState
+                art={<WifiOffIcon size={44} />}
+                title={errorText(t, error)}
+                action={
+                    <Button variant="secondary" onClick={(): void => void reload()}>
+                        {t.common.retry}
+                    </Button>
+                }
+            />
+        )
+    }
+    return (
+        <main className="flex flex-col gap-4 px-4">
+            <header className="pb-1 pt-4">
+                <p className="text-sm text-tg-hint">LLS Kuryer</p>
+                <h1 className="text-2xl font-bold">{t.courier.title}</h1>
+            </header>
+            {home === null ? (
+                <Skeleton className="h-72 rounded-tile" />
+            ) : (
+                <>
+                    <ShiftCard home={home} onChange={setHome} />
+                    <Deliveries home={home} replace={replace} reload={reload} />
+                    <section className="flex flex-col gap-2">
+                        <h2 className="px-1 text-sm font-semibold text-tg-subtitle">
+                            {t.courier.shops}
+                        </h2>
+                        <ul className="divide-y divide-tg-separator rounded-tile bg-tg-secondary px-4">
+                            {home.shops.map((shop) => (
+                                <ShopRow key={shop.businessId} shop={shop} />
+                            ))}
+                        </ul>
+                    </section>
+                    <VehicleField home={home} onChange={setHome} />
+                </>
+            )}
             <PoweredBy />
             <BottomSpacer />
         </main>

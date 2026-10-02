@@ -3,7 +3,7 @@ import { Hono } from "hono"
 import { cors } from "hono/cors"
 
 import { alertAdmins } from "./alerts.js"
-import { INIT_DATA_HEADER, SHOP_HEADER, VIA_HEADER, authenticate } from "./auth.js"
+import { BOT_HEADER, INIT_DATA_HEADER, SHOP_HEADER, VIA_HEADER, authenticate } from "./auth.js"
 import { toErrorResponse } from "./http/errors.js"
 import { courierRoutes } from "./routes/courier.routes.js"
 import { customerRoutes } from "./routes/customer.routes.js"
@@ -37,7 +37,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         cors({
             origin: (origin, c) => (origin === c.env.APP_ORIGIN ? origin : null),
             allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
-            allowHeaders: ["Content-Type", INIT_DATA_HEADER, SHOP_HEADER, VIA_HEADER],
+            allowHeaders: ["Content-Type", INIT_DATA_HEADER, SHOP_HEADER, VIA_HEADER, BOT_HEADER],
             maxAge: 86_400,
         }),
     )

@@ -12,7 +12,7 @@
  */
 import { createServer } from "node:http"
 
-import { DEV_SHOPS, NEW_BOT_TOKEN_PATTERN, platformBot } from "./config.js"
+import { DEV_SHOPS, NEW_BOT_TOKEN_PATTERN, courierBot, platformBot } from "./config.js"
 
 import type { IncomingMessage, Server, ServerResponse } from "node:http"
 
@@ -51,6 +51,12 @@ function knownBots(): Map<string, Bot> {
     const platform = platformBot()
     const platformId = Number(platform.token.split(":")[0])
     bots.set(platform.token, { id: platformId, username: "lls_dev_bot", first_name: "LLS" })
+    const courier = courierBot()
+    bots.set(courier.token, {
+        id: courier.id,
+        username: courier.username,
+        first_name: "LLS Kuryer",
+    })
     return bots
 }
 

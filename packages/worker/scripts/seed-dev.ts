@@ -16,12 +16,13 @@ import { searchText } from "@lls/core"
 
 import { encryptSecret } from "../src/crypto.js"
 
-import { DEV_ADMIN_ID, DEV_COURIER, DEV_SHOPS } from "./dev-fixtures.js"
+import { DEV_ADMIN_ID, DEV_COURIER, DEV_COURIER_BOT, DEV_SHOPS } from "./dev-fixtures.js"
 
 import type { DevShop } from "./dev-fixtures.js"
 
 const ROOT = join(import.meta.dirname, "..")
 const DEV_VARS = join(ROOT, ".dev.vars")
+const DAY_MS = 24 * 60 * 60 * 1000
 
 interface DemoProduct {
     name: string
@@ -98,17 +99,29 @@ function randomBase64(bytes: number): string {
     return Buffer.from(crypto.getRandomValues(new Uint8Array(bytes))).toString("base64")
 }
 
-/** Reads `.dev.vars`, creating it with fresh local-only secrets when missing. */
+/** Local-only values; a missing key is added to an existing `.dev.vars`, others stay. */
+function defaultDevVars(): Record<string, string> {
+    return {
+        TOKEN_ENC_KEY: randomBase64(32),
+        PLATFORM_BOT_TOKEN: "100200999:DEV-platform-token-not-a-real-bot-x",
+        PLATFORM_WEBHOOK_SECRET: "dev-platform-secret",
+        PLATFORM_ADMIN_IDS: String(DEV_ADMIN_ID),
+        COURIER_BOT_TOKEN: DEV_COURIER_BOT.token,
+        COURIER_WEBHOOK_SECRET: DEV_COURIER_BOT.webhookSecret,
+    }
+}
+
+/** Reads `.dev.vars`, creating it (or adding missing keys) with local-only secrets. */
 function devVars(): Record<string, string> {
-    if (!existsSync(DEV_VARS)) {
-        const lines = [
-            `TOKEN_ENC_KEY="${randomBase64(32)}"`,
-            `PLATFORM_BOT_TOKEN="100200999:DEV-platform-token-not-a-real-bot-x"`,
-            `PLATFORM_WEBHOOK_SECRET="dev-platform-secret"`,
-            `PLATFORM_ADMIN_IDS="${DEV_ADMIN_ID}"`,
-        ]
-        writeFileSync(DEV_VARS, `${lines.join("\n")}\n`)
-        console.warn("Created .dev.vars with local-only secrets")
+    const current = existsSync(DEV_VARS) ? readFileSync(DEV_VARS, "utf8") : ""
+    const missing = Object.entries(defaultDevVars()).filter(
+        ([key]) => !new RegExp(`^${key}\\s*=`, "m").test(current),
+    )
+    if (missing.length > 0) {
+        const lines = missing.map(([key, value]) => `${key}="${value}"`)
+        const separator = current === "" || current.endsWith("\n") ? "" : "\n"
+        writeFileSync(DEV_VARS, `${current}${separator}${lines.join("\n")}\n`)
+        console.warn(`.dev.vars: added ${missing.map(([key]) => key).join(", ")}`)
     }
     const vars: Record<string, string> = {}
     for (const line of readFileSync(DEV_VARS, "utf8").split("\n")) {
@@ -146,22 +159,27 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
             ${card ? quote(card[0]) : "NULL"}, ${card ? quote(card[1]) : "NULL"}, ${now}, ${now});`,
         `INSERT INTO products (id, business_id, name, price, unit, step, returnable, category,
             search_text, position, created_at, updated_at) VALUES ${products.join(",\n")};`,
-        `INSERT INTO couriers (id, business_id, telegram_id, name, phone, is_active, created_at,
-            updated_at) VALUES (${quote(`${shop.id}-courier`)}, ${quote(shop.id)},
-            ${DEV_COURIER.id}, ${quote(DEV_COURIER.first_name)}, '+998901112233', 1, ${now},
-            ${now});`,
+        `INSERT INTO couriers (id, business_id, telegram_id, name, phone, is_active, status,
+            created_at, updated_at) VALUES (${quote(`${shop.id}-courier`)}, ${quote(shop.id)},
+            ${DEV_COURIER.id}, ${quote(DEV_COURIER.first_name)}, '+998901112233', 1, 'active',
+            ${now}, ${now});`,
     ]
 }
 
 async function seedSql(tokenKey: string): Promise<string> {
     const now = Date.now()
     const shops = await Promise.all(DEV_SHOPS.map((shop) => shopSql(shop, tokenKey, now)))
+    // The demo courier works for all three shops and is on shift for the next day.
+    const courierProfile = `INSERT INTO courier_profiles (telegram_id, name, phone, shift_until,
+        created_at, updated_at) VALUES (${DEV_COURIER.id}, ${quote(DEV_COURIER.first_name)},
+        '+998901112233', ${now + DAY_MS}, ${now}, ${now});`
     return [
         "DELETE FROM order_items;",
         "DELETE FROM cash_handovers;",
         "DELETE FROM orders;",
         "DELETE FROM courier_invites;",
         "DELETE FROM couriers;",
+        "DELETE FROM courier_profiles;",
         "DELETE FROM customer_phone_shares;",
         "DELETE FROM alert_log;",
         "DELETE FROM customer_businesses;",
@@ -169,6 +187,7 @@ async function seedSql(tokenKey: string): Promise<string> {
         "DELETE FROM products;",
         "DELETE FROM businesses;",
         ...shops.flat(),
+        courierProfile,
     ].join("\n")
 }
 

@@ -99,7 +99,7 @@ export interface LaunchParams {
     /** Shop slug from `?shop=` or `startapp=shop_<slug>`. */
     shop: string | null
     onboarding: boolean
-    /** `?mode=courier`: the courier's deliveries, opened from the shop bot. */
+    /** `?mode=courier`: the courier's deliveries across shops, opened from the LLS courier bot. */
     courier: boolean
     /** `?mode=market`: the LLS showcase, opened from the LLS bot. */
     market: boolean

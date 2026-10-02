@@ -2,138 +2,38 @@ import {
     DomainError,
     ForbiddenError,
     Language,
-    Phone,
-    TRUSTED_SCOPE,
     languageFromTelegram,
     toShopOwnerDTO,
 } from "@lls/core"
 import { Hono } from "hono"
-import { z } from "zod"
 
 import { timingSafeEqual } from "../crypto.js"
 import { platformAdminIds } from "../env.js"
 import {
     formatRate,
-    parseCourierInvite,
+    parseCourierReviewCallback,
     parseOrderCallback,
     parseReviewCallback,
 } from "../telegram/format.js"
 import { TelegramApiError, escapeHtml } from "../telegram/gateway.js"
-import {
-    Notifier,
-    courierAppUrl,
-    onboardingAppUrl,
-    shopAppUrl,
-    showcaseAppUrl,
-} from "../telegram/notifier.js"
+import { Notifier, onboardingAppUrl, shopAppUrl, showcaseAppUrl } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
+import {
+    SECRET_HEADER,
+    callbackErrorText,
+    handleSafely,
+    isStart,
+    openButton,
+    readUpdate,
+    toTelegramUser,
+} from "../telegram/updates.js"
+
+import { handleCourierBotCallback, handleCourierBotMessage } from "./courier-bot.js"
 
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
-import type { InlineKeyboard } from "../telegram/gateway.js"
-import type { Business, OrderDTO, ShopOwnerDTO, TelegramUser } from "@lls/core"
-
-const SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
-
-const userSchema = z.object({
-    id: z.number().int(),
-    first_name: z.string().default(""),
-    last_name: z.string().optional(),
-    username: z.string().optional(),
-    language_code: z.string().optional(),
-})
-
-const updateSchema = z.object({
-    message: z
-        .object({
-            from: userSchema.optional(),
-            chat: z.object({ id: z.number().int() }),
-            text: z.string().optional(),
-            contact: z
-                .object({ phone_number: z.string(), user_id: z.number().int().optional() })
-                .optional(),
-        })
-        .optional(),
-    callback_query: z
-        .object({
-            id: z.string(),
-            from: userSchema,
-            data: z.string().optional(),
-            message: z
-                .object({ message_id: z.number().int(), chat: z.object({ id: z.number().int() }) })
-                .optional(),
-        })
-        .optional(),
-})
-
-type Update = z.infer<typeof updateSchema>
-type Callback = NonNullable<Update["callback_query"]>
-type ShopMessage = NonNullable<Update["message"]>
-
-function toTelegramUser(user: z.infer<typeof userSchema>): TelegramUser {
-    return {
-        id: user.id,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        username: user.username,
-        languageCode: user.language_code,
-    }
-}
-
-async function readUpdate(request: Request): Promise<Update | null> {
-    const parsed = updateSchema.safeParse(await request.json().catch(() => null))
-    return parsed.success ? parsed.data : null
-}
-
-function isStart(text: string | undefined): boolean {
-    return text?.trim().startsWith("/start") ?? false
-}
-
-function openButton(label: string, url: string): InlineKeyboard {
-    return { inline_keyboard: [[{ text: label, web_app: { url } }]] }
-}
-
-/** `/start c_<code>`: the sender joins the shop as a courier. */
-async function joinAsCourier(
-    services: Services,
-    business: Business,
-    token: string,
-    message: ShopMessage,
-    code: string,
-): Promise<void> {
-    const from = message.from
-    if (!from) {
-        return
-    }
-    const texts = textsFor(languageFromTelegram(from.language_code), business.type)
-    try {
-        const user = toTelegramUser(from)
-        const courier = await services.useCases.joinAsCourier.execute({
-            code,
-            businessId: business.id,
-            user,
-        })
-        // Order cards follow the person's language: remember it now (Telegram signed this update).
-        await services.useCases.resolveCustomer.execute(user, TRUSTED_SCOPE)
-        await services.telegram.sendMessage(
-            token,
-            message.chat.id,
-            fill(texts.courierJoined, { shop: `<b>${escapeHtml(business.name)}</b>` }),
-            {
-                keyboard: openButton(
-                    texts.myDeliveries,
-                    courierAppUrl(services.env.APP_ORIGIN, business.slug.value),
-                ),
-            },
-        )
-        await new Notifier(services).courierJoined(business, courier.name)
-    } catch (error) {
-        if (!(error instanceof DomainError)) {
-            throw error
-        }
-        await services.telegram.sendMessage(token, message.chat.id, texts.inviteInvalid)
-    }
-}
+import type { Callback, IncomingMessage } from "../telegram/updates.js"
+import type { Business, OrderDTO, ShopOwnerDTO } from "@lls/core"
 
 /**
  * Saves the customer's phone from a shared contact. Only the sender's own contact counts:
@@ -141,7 +41,7 @@ async function joinAsCourier(
  */
 async function saveOwnPhone(
     services: Services,
-    message: ShopMessage,
+    message: IncomingMessage,
     businessId?: string,
 ): Promise<boolean> {
     const { from, contact } = message
@@ -158,21 +58,16 @@ async function saveOwnPhone(
     return true
 }
 
-/** A shared contact: the customer's phone, and the courier's too if the sender is one. */
+/** A shared contact: the customer's phone for this shop. */
 async function saveContact(
     services: Services,
     business: Business,
     token: string,
-    message: ShopMessage,
+    message: IncomingMessage,
 ): Promise<void> {
-    const { from, contact } = message
-    if (!from || !contact || !(await saveOwnPhone(services, message, business.id))) {
+    const { from } = message
+    if (!from || !(await saveOwnPhone(services, message, business.id))) {
         return
-    }
-    const courier = await services.couriers.findByTelegramId(business.id, from.id)
-    if (courier) {
-        courier.setPhone(Phone.create(contact.phone_number), services.clock.now())
-        await services.couriers.save(courier)
     }
     const texts = textsFor(languageFromTelegram(from.language_code), business.type)
     await services.telegram.sendMessage(token, message.chat.id, texts.phoneSaved)
@@ -182,7 +77,7 @@ async function handleShopMessage(
     services: Services,
     business: Business,
     token: string,
-    message: ShopMessage,
+    message: IncomingMessage,
 ): Promise<void> {
     const from = message.from
     if (!from) {
@@ -192,42 +87,20 @@ async function handleShopMessage(
         await saveContact(services, business, token, message)
         return
     }
-    const invite = parseCourierInvite(message.text)
-    if (invite) {
-        await joinAsCourier(services, business, token, message, invite)
-        return
-    }
     if (!isStart(message.text)) {
         return
     }
     const texts = textsFor(languageFromTelegram(from.language_code), business.type)
-    const origin = services.env.APP_ORIGIN
-    const courier = await services.couriers.findByTelegramId(business.id, from.id)
-    const keyboard = openButton(texts.openMenu, shopAppUrl(origin, business.slug.value))
-    if (courier?.worksFor(business.id)) {
-        keyboard.inline_keyboard.push([
-            {
-                text: texts.myDeliveries,
-                web_app: { url: courierAppUrl(origin, business.slug.value) },
-            },
-        ])
-    }
+    const keyboard = openButton(
+        texts.openMenu,
+        shopAppUrl(services.env.APP_ORIGIN, business.slug.value),
+    )
     await services.telegram.sendMessage(
         token,
         message.chat.id,
         fill(texts.shopWelcome, { shop: `<b>${escapeHtml(business.name)}</b>` }),
         { keyboard },
     )
-}
-
-function callbackErrorText(error: unknown, texts: ReturnType<typeof textsFor>): string {
-    if (error instanceof ForbiddenError) {
-        return texts.callbackForbidden
-    }
-    if (error instanceof DomainError) {
-        return texts.callbackOutdated
-    }
-    throw error
 }
 
 async function handleOrderCallback(
@@ -261,6 +134,40 @@ async function handleOrderCallback(
     // Notify first: if answering the button fails, the owner card and the customer still update.
     await new Notifier(services).orderChanged(business, order)
     await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
+}
+
+/** "k:<courierId>:approve|decline": the owner answers a courier who accepted the invite. */
+async function handleCourierReviewCallback(
+    services: Services,
+    business: Business,
+    token: string,
+    callback: Callback,
+    review: { courierId: string; approve: boolean },
+): Promise<void> {
+    const texts = textsFor(languageFromTelegram(callback.from.language_code), business.type)
+    try {
+        const change = await services.useCases.reviewCourier.execute({
+            actorTelegramId: callback.from.id,
+            businessId: business.id,
+            courierId: review.courierId,
+            approve: review.approve,
+        })
+        const name = escapeHtml(change.courier.name)
+        if (callback.message) {
+            await services.telegram.editMessage(
+                token,
+                callback.message.chat.id,
+                callback.message.message_id,
+                fill(review.approve ? texts.courierApprovedOwner : texts.courierDeclinedOwner, {
+                    name,
+                }),
+            )
+        }
+        await new Notifier(services).courierReviewed(business, change.courier, change.telegramId)
+        await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
+    } catch (error) {
+        await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, texts))
+    }
 }
 
 /** Cancel buttons live only in the owner's chat, but check ownership anyway. */
@@ -318,21 +225,6 @@ async function handleReviewCallback(
     }
 }
 
-/**
- * Runs an update handler. A failed reply (bot blocked, query too old, Telegram down) is logged,
- * not thrown: the update is already applied, and a 500 would make Telegram resend it for hours.
- */
-async function handleSafely(work: () => Promise<void>): Promise<void> {
-    try {
-        await work()
-    } catch (error) {
-        if (!(error instanceof TelegramApiError)) {
-            throw error
-        }
-        console.error("Telegram reply failed:", error.message)
-    }
-}
-
 const MARKET_COMMAND = /^\/market(?:@\w+)?\s+([a-z0-9-]{3,40})\s+(off|\d{1,2}(?:[.,]\d{1,2})?)\s*$/i
 const BPS_PER_PERCENT = 100
 
@@ -374,7 +266,7 @@ const RECONNECT_COMMAND = /^\/reconnect(?:@\w+)?\s+([a-z0-9-]{3,40})\s*$/i
 /** `/reconnect <slug>` from a platform admin: set the shop bot's webhook and menu again. */
 async function handleReconnectCommand(
     services: Services,
-    message: ShopMessage,
+    message: IncomingMessage,
     workerOrigin: string,
 ): Promise<void> {
     const from = message.from
@@ -409,7 +301,7 @@ async function handleReconnectCommand(
 }
 
 /** `/market <slug> <percent|off>` from a platform admin: sign or end a showcase deal. */
-async function handleMarketCommand(services: Services, message: ShopMessage): Promise<void> {
+async function handleMarketCommand(services: Services, message: IncomingMessage): Promise<void> {
     const from = message.from
     const token = services.env.PLATFORM_BOT_TOKEN
     // Everyone else gets no hint that the command exists.
@@ -451,7 +343,7 @@ async function handleMarketCommand(services: Services, message: ShopMessage): Pr
 /** The LLS bot: welcome with the showcase and onboarding buttons, phones, admin commands. */
 async function handlePlatformMessage(
     services: Services,
-    message: ShopMessage,
+    message: IncomingMessage,
     workerOrigin: string,
 ): Promise<void> {
     const from = message.from
@@ -510,6 +402,25 @@ export const webhookRoutes = new Hono<AppEnv>()
         return c.json({ ok: true })
     })
 
+    /** The LLS courier bot: invites, phones, and the buttons on order cards of every shop. */
+    .post("/courier", async (c) => {
+        const secret = c.req.header(SECRET_HEADER) ?? ""
+        if (!timingSafeEqual(secret, c.env.COURIER_WEBHOOK_SECRET)) {
+            return c.json({ ok: false }, 401)
+        }
+        const services = c.get("services")
+        const update = await readUpdate(c.req.raw)
+        const message = update?.message
+        if (message) {
+            await handleSafely(() => handleCourierBotMessage(services, message))
+        }
+        const callback = update?.callback_query
+        if (callback) {
+            await handleSafely(() => handleCourierBotCallback(services, callback))
+        }
+        return c.json({ ok: true })
+    })
+
     .post("/:botId", async (c) => {
         const services = c.get("services")
         const botId = Number(c.req.param("botId"))
@@ -534,7 +445,18 @@ export const webhookRoutes = new Hono<AppEnv>()
             )
         }
         const callback = update?.callback_query
-        if (callback) {
+        const review = callback ? parseCourierReviewCallback(callback.data ?? "") : null
+        if (callback && review) {
+            await handleSafely(() =>
+                handleCourierReviewCallback(
+                    services,
+                    business,
+                    credentials.token,
+                    callback,
+                    review,
+                ),
+            )
+        } else if (callback) {
             await handleSafely(() =>
                 handleOrderCallback(services, business, credentials.token, callback),
             )

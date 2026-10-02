@@ -141,17 +141,24 @@ export class FakeTelegram implements TelegramGateway {
 export interface TestClient {
     telegram: FakeTelegram
     request(path: string, init?: RequestInit): Promise<Response>
-    /** Request as `user` inside the Mini App opened from `botToken` (X-Shop = slug). */
+    /**
+     * Request as `user` inside the Mini App opened from `botToken` (X-Shop = slug), or from the
+     * LLS courier bot (`courierBot`).
+     */
     as(
         user: object,
-        options: { botToken?: string; shop?: string; via?: "marketplace" },
+        options: { botToken?: string; shop?: string; via?: "marketplace"; courierBot?: boolean },
     ): (path: string, init?: RequestInit & { json?: unknown }) => Promise<Response>
+    /** An update from Telegram to the LLS courier bot's webhook. */
+    courierBot(update: object): Promise<Response>
 }
+
+export const COURIER_BOT: BotInfo = { id: 100100, username: "lls_kuryer_bot", firstName: "LLS" }
 
 export function testClient(
     options: { bots?: Record<string, BotInfo>; clock?: Clock } = {},
 ): TestClient {
-    const telegram = new FakeTelegram(options.bots)
+    const telegram = new FakeTelegram({ [env.COURIER_BOT_TOKEN]: COURIER_BOT, ...options.bots })
     const app = createApp({ telegram, clock: options.clock })
 
     async function request(path: string, init: RequestInit = {}): Promise<Response> {
@@ -164,10 +171,23 @@ export function testClient(
     return {
         telegram,
         request,
-        as(user, { botToken = env.PLATFORM_BOT_TOKEN, shop, via }) {
+        courierBot: (update) =>
+            request("/tg/courier", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Telegram-Bot-Api-Secret-Token": env.COURIER_WEBHOOK_SECRET,
+                },
+                body: JSON.stringify(update),
+            }),
+        as(user, { botToken = env.PLATFORM_BOT_TOKEN, shop, via, courierBot }) {
             return async (path, init = {}) => {
                 const headers = new Headers(init.headers)
-                headers.set("X-Telegram-Init-Data", await signInitData(user, botToken))
+                const signer = courierBot ? env.COURIER_BOT_TOKEN : botToken
+                headers.set("X-Telegram-Init-Data", await signInitData(user, signer))
+                if (courierBot) {
+                    headers.set("X-Bot", "courier")
+                }
                 if (shop) {
                     headers.set("X-Shop", shop)
                 }
@@ -202,13 +222,16 @@ export async function sharePhoneWithShops(telegramId: number): Promise<void> {
 }
 
 /** Registers a shop through the real onboarding API and approves it as admin. */
-export async function createActiveShop(client: TestClient): Promise<{ id: string; slug: string }> {
-    const owner = client.as(OWNER, {})
+export async function createActiveShop(
+    client: TestClient,
+    shop: { botToken?: string; name?: string; owner?: object } = {},
+): Promise<{ id: string; slug: string }> {
+    const owner = client.as(shop.owner ?? OWNER, {})
     const response = await owner("/api/platform/shops", {
         method: "POST",
         json: {
-            botToken: SHOP_BOT_TOKEN,
-            name: "Osh Markaz",
+            botToken: shop.botToken ?? SHOP_BOT_TOKEN,
+            name: shop.name ?? "Osh Markaz",
             type: "food",
             address: "Chorsu",
             deliveryFee: 10_000,
@@ -218,9 +241,54 @@ export async function createActiveShop(client: TestClient): Promise<{ id: string
     if (response.status !== 201) {
         throw new Error(`Shop registration failed: ${await response.text()}`)
     }
-    const shop = (await response.json()) as { id: string; slug: string }
-    await env.DB.prepare("UPDATE businesses SET status = 'active' WHERE id = ?").bind(shop.id).run()
-    return shop
+    const created = (await response.json()) as { id: string; slug: string }
+    await env.DB.prepare("UPDATE businesses SET status = 'active' WHERE id = ?")
+        .bind(created.id)
+        .run()
+    return created
+}
+
+/**
+ * The whole hiring path: the owner makes an invite, the person accepts it in the LLS courier bot
+ * and shares a phone, the owner approves, the courier starts a shift. Returns the courier id.
+ */
+export async function hireCourier(
+    client: TestClient,
+    shop: { slug: string; botToken?: string; owner?: object },
+    courier: { id: number; first_name: string; language_code?: string },
+): Promise<string> {
+    const owner = client.as(shop.owner ?? OWNER, {
+        botToken: shop.botToken ?? SHOP_BOT_TOKEN,
+        shop: shop.slug,
+    })
+    const invite = (await (
+        await owner("/api/owner/couriers/invites", { method: "POST" })
+    ).json()) as { link: string }
+    await client.courierBot({
+        message: {
+            from: courier,
+            chat: { id: courier.id },
+            text: `/start ${invite.link.split("start=")[1] ?? ""}`,
+        },
+    })
+    await client.courierBot({
+        message: {
+            from: courier,
+            chat: { id: courier.id },
+            contact: { phone_number: "+998901112233", user_id: courier.id },
+        },
+    })
+    const list = (await (await owner("/api/owner/couriers")).json()) as {
+        id: string
+        name: string
+    }[]
+    const id = list.find((c) => c.name === courier.first_name)?.id ?? ""
+    await owner(`/api/owner/couriers/${id}/review`, { method: "POST", json: { approve: true } })
+    await client.as(courier, { courierBot: true })("/api/courier/shift", {
+        method: "PUT",
+        json: { onShift: true },
+    })
+    return id
 }
 
 export const SHOP_BOT: BotInfo = { id: 777000, username: "osh_markaz_bot", firstName: "Osh" }

@@ -19,6 +19,9 @@ export const SHOP_HEADER = "X-Shop"
 /** `marketplace`: a shop opened from the LLS showcase, inside the LLS bot. */
 export const VIA_HEADER = "X-Via"
 export const VIA_MARKETPLACE = "marketplace"
+/** `courier`: the LLS courier bot opened the app (the courier's screen across their shops). */
+export const BOT_HEADER = "X-Bot"
+export const BOT_COURIER = "courier"
 
 interface SignedBy {
     business: Business | null
@@ -53,6 +56,7 @@ async function signerOf(
  * Verifies Telegram initData with the token of the bot that opened the Mini App:
  * - `X-Shop` alone: the shop's own bot;
  * - `X-Shop` + `X-Via: marketplace`: the LLS bot, and the shop must be in the showcase;
+ * - `X-Bot: courier`: the LLS courier bot (the courier's screen, no shop);
  * - nothing: the LLS bot (onboarding, showcase search).
  * The token that verified the signature fixes the order channel, so the client cannot pick it.
  */
@@ -62,6 +66,26 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
         throw unauthorized()
     }
     const services = c.get("services")
+    if (c.req.header(BOT_HEADER) === BOT_COURIER) {
+        const courier = await verifyInitData(
+            initData,
+            c.env.COURIER_BOT_TOKEN,
+            services.clock.now(),
+        )
+        if (!courier) {
+            throw unauthorized()
+        }
+        // Who they deliver for is decided per order and per shop, by their approved links.
+        c.set("auth", {
+            user: courier.user,
+            business: null,
+            channel: OrderChannel.SHOP_BOT,
+            scope: TRUSTED_SCOPE,
+            role: "courier",
+        })
+        await next()
+        return
+    }
     const viaShowcase = c.req.header(VIA_HEADER) === VIA_MARKETPLACE
     const { business, botToken } = await signerOf(
         services,
@@ -73,9 +97,8 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
     if (!verified) {
         throw unauthorized()
     }
-    // Owner and courier screens open only from the shop's own bot.
-    const role =
-        business && !viaShowcase ? await roleIn(services, business, verified.user.id) : "customer"
+    // The owner screen opens only from the shop's own bot.
+    const role = business && !viaShowcase ? roleIn(business, verified.user.id) : "customer"
     // A shop that is not live yet is open to its owner only; a turned-off shop to nobody.
     if (business && !business.isActive() && (role !== "owner" || !business.isPending())) {
         throw EntityNotFoundError.businessBySlug(business.slug.value)
@@ -91,17 +114,9 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
     await next()
 })
 
-/** Owner by the shop record, courier by an active courier row, everyone else is a customer. */
-async function roleIn(
-    services: Services,
-    business: Business,
-    telegramId: number,
-): Promise<ViewerRole> {
-    if (business.isOwnedBy(telegramId)) {
-        return "owner"
-    }
-    const courier = await services.couriers.findByTelegramId(business.id, telegramId)
-    return courier?.worksFor(business.id) ? "courier" : "customer"
+/** Owner by the shop record; everyone else is a customer (couriers use the courier bot). */
+function roleIn(business: Business, telegramId: number): ViewerRole {
+    return business.isOwnedBy(telegramId) ? "owner" : "customer"
 }
 
 /** The route works inside a shop (the app was opened from a shop bot). */
@@ -121,10 +136,10 @@ export const requireOwner = createMiddleware<AppEnv>(async (c, next) => {
     await next()
 })
 
+/** Opened from the LLS courier bot. Whether they really deliver for a shop, the use cases check. */
 export const requireCourier = createMiddleware<AppEnv>(async (c, next) => {
-    const business = shopOf(c)
     if (c.get("auth").role !== "courier") {
-        throw ForbiddenError.notCourier(business.id)
+        throw ForbiddenError.notACourier()
     }
     await next()
 })

@@ -8,6 +8,8 @@ declare global {
             PLATFORM_BOT_TOKEN: string
             PLATFORM_WEBHOOK_SECRET: string
             PLATFORM_ADMIN_IDS: string
+            COURIER_BOT_TOKEN: string
+            COURIER_WEBHOOK_SECRET: string
         }
     }
 }

@@ -32,6 +32,24 @@ export interface InlineKeyboard {
 
 export interface MessageOptions {
     keyboard?: InlineKeyboard
+    /** A reply-keyboard button that sends the person's own contact (the courier's phone). */
+    askContact?: string
+    /** Hides a reply keyboard shown before (after the contact arrived). */
+    removeKeyboard?: boolean
+}
+
+function replyMarkup(options: MessageOptions): unknown {
+    if (options.keyboard) {
+        return options.keyboard
+    }
+    if (options.askContact) {
+        return {
+            keyboard: [[{ text: options.askContact, request_contact: true }]],
+            resize_keyboard: true,
+            one_time_keyboard: true,
+        }
+    }
+    return options.removeKeyboard ? { remove_keyboard: true } : undefined
 }
 
 export interface BotInfo {
@@ -118,7 +136,7 @@ export class HttpTelegramGateway implements TelegramGateway {
             text: html,
             parse_mode: "HTML",
             link_preview_options: { is_disabled: true },
-            reply_markup: options.keyboard,
+            reply_markup: replyMarkup(options),
         })
         return { messageId: message.message_id }
     }

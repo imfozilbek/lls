@@ -5,7 +5,6 @@ import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
 import { addDays, startOfLocalDay, startOfLocalMonth } from "../../../domain/shared/time.js"
 import { Money } from "../../../domain/value-objects/money.js"
 import { toOrderDTO } from "../../dtos/order.dto.js"
-import { requireCourier } from "../courier/courier.use-cases.js"
 import { requireOwnedBusiness } from "../shared.js"
 
 import type { Order } from "../../../domain/entities/order.js"
@@ -45,15 +44,24 @@ export function periodRange(period: MoneyPeriod, now: Date): { from: Date; to: D
     return { from: startOfLocalMonth(now), to }
 }
 
-/** Cash each courier holds: taken at doors minus handed over. Only couriers who hold some. */
-async function courierCash(deps: MoneyDeps, businessId: string): Promise<CourierCashDTO[]> {
+/** Cash of this shop each courier holds: taken at doors minus handed over, by courier id. */
+export async function cashOnHandByCourier(
+    deps: Pick<MoneyDeps, "orders" | "handovers">,
+    businessId: string,
+): Promise<Map<string, number>> {
     const [collected, handed] = await Promise.all([
         deps.orders.cashCollectedByCourier(businessId),
         deps.handovers.totalsByCourier(businessId),
     ])
     const given = new Map(handed.map((h) => [h.courierId, h.amount]))
-    const holding = collected
-        .map((c) => ({ courierId: c.courierId, onHand: c.amount - (given.get(c.courierId) ?? 0) }))
+    return new Map(collected.map((c) => [c.courierId, c.amount - (given.get(c.courierId) ?? 0)]))
+}
+
+/** Cash each courier holds: taken at doors minus handed over. Only couriers who hold some. */
+async function courierCash(deps: MoneyDeps, businessId: string): Promise<CourierCashDTO[]> {
+    const onHand = await cashOnHandByCourier(deps, businessId)
+    const holding = [...onHand]
+        .map(([courierId, amount]) => ({ courierId, onHand: amount }))
         .filter((c) => c.onHand > 0)
     const couriers = await Promise.all(holding.map((c) => deps.couriers.findById(c.courierId)))
     return holding
@@ -198,16 +206,5 @@ export class ExportOrdersUseCase {
             EXPORT_LIMIT,
         )
         return { from, to, orders: orders.map(toOrderDTO) }
-    }
-}
-
-/** The courier's own cash on hand. */
-export class GetCourierCashUseCase {
-    constructor(private readonly deps: MoneyDeps) {}
-
-    async execute(input: { telegramId: number; businessId: string }): Promise<{ onHand: number }> {
-        const courier = await requireCourier(this.deps.couriers, input.businessId, input.telegramId)
-        const holding = await courierCash(this.deps, input.businessId)
-        return { onHand: holding.find((c) => c.courierId === courier.id)?.onHand ?? 0 }
     }
 }

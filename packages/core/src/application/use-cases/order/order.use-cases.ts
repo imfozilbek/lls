@@ -118,6 +118,30 @@ export class AdvanceOrderUseCase {
     }
 }
 
+export class CourierAdvanceOrderUseCase {
+    constructor(private readonly deps: OrderAccessDeps) {}
+
+    /** From the courier bot or the courier screen: the shop is the order's own shop. */
+    async execute(input: {
+        telegramId: number
+        orderId: string
+        to: OrderStatus
+        paidWith?: PaidWith
+    }): Promise<OrderDTO> {
+        const order = await this.deps.orders.findById(input.orderId)
+        if (!order) {
+            throw EntityNotFoundError.order(input.orderId)
+        }
+        return new AdvanceOrderUseCase(this.deps).execute({
+            actorTelegramId: input.telegramId,
+            businessId: order.businessId,
+            orderId: order.id,
+            to: input.to,
+            paidWith: input.paidWith,
+        })
+    }
+}
+
 export class ListMyOrdersUseCase {
     constructor(
         private readonly customers: CustomerRepository,

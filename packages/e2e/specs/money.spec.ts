@@ -7,7 +7,14 @@ import jsQR from "jsqr"
 import { PNG } from "pngjs"
 
 import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
-import { callsOf, lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
+import {
+    callsOf,
+    courierChat,
+    lastSeq,
+    messagesTo,
+    shopChat,
+    waitForMessage,
+} from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
 import type { RecordedFile } from "../stand/fake-telegram.js"
@@ -50,7 +57,7 @@ async function atTheDoor(order: PlacedOrder): Promise<void> {
         }
     }
     const picked = await apiAs(PEOPLE.courier, `/courier/orders/${order.id}`, {
-        shop: FOOD,
+        courierBot: true,
         method: "PATCH",
         json: { status: "picked_up" },
     })
@@ -117,7 +124,7 @@ test("transfer: the customer sees the card, the owner confirms, the customer is 
 test("cash at the door: on the courier's hands until the owner takes it", async ({ page }) => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 2 }])
     await atTheDoor(order)
-    await openApp(page, { user: PEOPLE.courier, shop: FOOD, query: `?shop=${FOOD}&mode=courier` })
+    await openApp(page, { user: PEOPLE.courier, courierBot: true })
     await expect(page.getByText(/Взять с клиента/)).toBeVisible()
     await page.getByRole("button", { name: "Доставил" }).click()
     await page.getByRole("dialog").getByRole("button", { name: "Наличными" }).click()
@@ -139,7 +146,7 @@ test("cash at the door: on the courier's hands until the owner takes it", async 
     await sheet.getByRole("button", { name: "Принял деньги" }).click()
     await expect(couriers).toBeHidden()
 
-    await openApp(page, { user: PEOPLE.courier, shop: FOOD, query: `?shop=${FOOD}&mode=courier` })
+    await openApp(page, { user: PEOPLE.courier, courierBot: true })
     await expect(page.getByRole("heading", { name: "Мои доставки" })).toBeVisible()
     await expect(page.getByText(/На руках/)).toBeHidden()
 })
@@ -167,7 +174,7 @@ test("the bot card: three «Доставил» buttons; a transfer at the door w
         "later",
     ])
     const transfer = delivered.find((b) => b.callback_data?.endsWith(":card_transfer"))
-    await shopChat(FOOD).press(PEOPLE.courier, transfer?.callback_data ?? "")
+    await courierChat().press(PEOPLE.courier, transfer?.callback_data ?? "")
     await expect.poll(async () => (await report()).awaiting.map((o) => o.id)).toEqual([order.id])
     expect((await report()).couriers).toEqual([])
     const confirmed = await owner(`/owner/orders/${order.id}/payment`, {

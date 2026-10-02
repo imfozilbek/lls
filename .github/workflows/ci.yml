@@ -105,9 +105,10 @@ jobs:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
                   PLATFORM_BOT_TOKEN: ${{ secrets.PLATFORM_BOT_TOKEN }}
                   PLATFORM_ADMIN_IDS: ${{ secrets.PLATFORM_ADMIN_IDS }}
+                  COURIER_BOT_TOKEN: ${{ secrets.COURIER_BOT_TOKEN }}
               run: |
                   missing=""
-                  for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN PLATFORM_ADMIN_IDS; do
+                  for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN PLATFORM_ADMIN_IDS COURIER_BOT_TOKEN; do
                       if [ -z "${!name}" ]; then missing="$missing $name"; fi
                   done
                   if [ -n "$missing" ]; then
@@ -147,6 +148,7 @@ jobs:
                   CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
                   PLATFORM_BOT_TOKEN: ${{ secrets.PLATFORM_BOT_TOKEN }}
                   PLATFORM_ADMIN_IDS: ${{ secrets.PLATFORM_ADMIN_IDS }}
+                  COURIER_BOT_TOKEN: ${{ secrets.COURIER_BOT_TOKEN }}
                   # Optional saved copy of the encryption key (SECURITY.md, "Encryption key").
                   TOKEN_ENC_KEY: ${{ secrets.TOKEN_ENC_KEY }}
               run: .github/scripts/deploy.sh

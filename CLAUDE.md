@@ -14,15 +14,21 @@ The old NestJS + MongoDB code is kept only at git tag `legacy-v0`. Reuse ideas f
 LLS (LocalLoopSolutions) — local delivery platform for small businesses.
 TypeScript monorepo (Bun workspaces). Bun 1.3.
 
-**Target market:** small businesses in regions and districts of Uzbekistan, where
-Yandex Eats / Uzum and other aggregators do not operate. The goal is to own these small markets:
-first every shop gets its own bot, then all their products join one LLS marketplace.
+**Target market:** small businesses in regions and districts of Uzbekistan, where aggregators
+are absent or take 20–30% of each order (Uzum Tezkor has worked in Guliston since April 2025).
+**The goal: every offline point within 20–30 km of one district becomes an online point.** Today
+the customer has to come to the point; with LLS they order from home and a courier brings it.
+Start with the three pilots; next to them grow the district's own delivery network, then one
+LLS marketplace on top of both.
 
 | Package | Description |
 |---------|-------------|
 | `@lls/core` | Domain logic (DDD): entities, value objects, use cases, ports. Pure TS, no deps |
 | `@lls/worker` | Cloudflare Worker: HTTP API (Hono) + Telegram bot webhooks |
 | `@lls/app` | Telegram Mini App (React), hosted on Pages: customer storefront, owner section "Мой магазин", courier section, shop onboarding |
+
+Two products on one platform, both in stage 1: the **online point** (a shop's own bot, orders,
+money, showcase) and **district delivery** (LLS courier bot, couriers for many points).
 
 ## White-Label Model
 
@@ -31,7 +37,8 @@ LLS is the platform brand. Customers see the **shop's brand**; the app shows a s
 - **One bot per shop.** The owner creates it in BotFather. The chat, name and avatar are the shop's.
 - **Platform bot (LLS).** Owners connect their shop through it (self-serve onboarding).
   Platform admins (`PLATFORM_ADMIN_IDS`) approve new shops with a button.
-- **One Worker serves all bots:** webhook `/tg/:botId` for shop bots, `/tg/platform` for the LLS bot.
+- **One Worker serves all bots:** webhook `/tg/:botId` for shop bots, `/tg/platform` for the LLS bot,
+  `/tg/courier` for the LLS courier bot.
 - **One Mini App for all shops.** The shop bot's menu button opens it with `?shop=<slug>`.
 - **Per-shop branding:** name, logo, brand color. Everything else is shared.
 
@@ -39,27 +46,58 @@ LLS is the platform brand. Customers see the **shop's brand**; the app shows a s
 
 | Stage | What | Revenue |
 |-------|------|---------|
-| **1. Own bot per business (NOW)** | The pilot shops' whole process: found → order → delivery → **paid**, and the owner sees where the money is. Own couriers. **LLS showcase**: search across shops in the LLS bot, the order goes to one shop | Subscription + commission on showcase orders |
+| **1. Online point + district delivery (NOW)** | **Online point:** the pilot shops' whole process: found → order → delivery → **paid**, and the owner sees where the money is. **LLS showcase**: search across shops in the LLS bot, the order goes to one shop. **District delivery** (standalone from the first versions): the LLS courier bot; a courier works for several points; points without couriers are served by the district network | Service fee on every order (paid by the customer) + subscription + commission on showcase orders. Delivery revenue: **not decided** (the owner decides) |
 | 2. District marketplace | One cart from several shops, district filter | Commission on marketplace sales only |
-| 3. Shared delivery | Shared courier pool, several pickups per trip | Delivery fee + volume terms |
+| 3. Delivery at scale | Several pickups per trip, routes | Delivery fee + volume terms |
 
 **Pilot:** Jasur (national food; car and carpet cleaning), Maqsudbek (burgers; coffee and drinks),
 Zoir (20 l water production and delivery). Each business has its own bot. The first launch must
 cover each one's whole process; what exactly comes from the meeting with them.
 
-**Money rule of the platform:** LLS takes a commission **only** on sales made through the LLS
-marketplace channel. Sales through a shop's own bot are the shop's business (a separate
-subscription deal); the system never takes a cut there.
+**Money rules of the platform** (LLS earns on volume):
+- **LLS service fee (plan — not in code yet):** a small percentage on **every** order through LLS,
+  in any channel (shop bot, showcase, district delivery). The **customer** pays it as a separate
+  "Сервис" line in the cart, the order and the messages. The shop's prices never change: the shop
+  gets its price in full.
+- The rate is set per business by a platform admin, like `/market`: `/fee <slug> <percent>`.
+  Zero is allowed (pilots).
+- Every order stores a **service fee snapshot** (rate + amount, integer UZS), fixed when the
+  order is placed; 0 when the rate is 0. Computed only on the server.
+- No payment gateways: the shop receives the fee with the order (cash or transfer) and pays LLS
+  the month's fees by a monthly per-shop report.
+- Not decided (the owner decides, never invent): the fee base (goods, or goods + delivery; bottle
+  deposits never count), and the pilots' rate.
+- **Showcase commission** stays separate: a share of the goods that the shop pays on showcase
+  orders only (0 for `shop_bot`).
+- Subscription for the shop's own bot: a separate deal.
+
+**District delivery (stage 1):**
+- **Done (goal 05):** one LLS courier bot for all couriers. One courier profile per `telegram_id`
+  (name, phone, vehicle, shift) plus a courier↔business link (`couriers` row: status
+  pending/active/removed, working days, "not today").
+- **Done:** only a business invites a courier: an invite from "Мой магазин" → the person accepts
+  it in the courier bot → the business approves (bot button or app) and switches the courier on or
+  off by day (like the menu's stop-list). The courier marks "on shift" himself (until midnight).
+  An order goes only to a courier who is approved, works today and is on shift.
+- **Done:** a courier's cash is counted per business; a business never sees its courier's other
+  businesses or their money.
+- **Plan:** every courier a business connects is **offered** to deliver for other points of the
+  district too (`in_network`, the courier's own consent).
+- **Plan:** an order of a point without its own courier on shift is shown to the free network
+  couriers of the district; the first who accepts takes it. Goods money goes back to that point.
 
 **⛔ RULES:**
-- Build ONLY stage 1 now. Money is in: payment method (cash or transfer to the shop's card),
-  paid / awaiting / debt / refund per order, cash each courier holds and hands over, money report
-  and CSV export. **No payment gateways (Click, Payme)**: the owner confirms transfers by hand.
+- Build ONLY stage 1 now: the online point and district delivery. Money is in: payment method
+  (cash or transfer to the shop's card), paid / awaiting / debt / refund per order, cash each
+  courier holds and hands over, money report and CSV export. **No payment gateways (Click, Payme)**: the owner confirms transfers by hand.
 - Services (carpet and car cleaning) join stage 1 as their own business type once their process
   is agreed with the client.
 - The LLS showcase is in: search across shops + shop list in the LLS bot;
   a tap opens that shop's storefront inside the LLS bot; cart and order stay per shop.
-  No shared cart, shared courier pool, routing, settlements or payouts.
+- Still forbidden: shared cart, algorithmic order dispatch (couriers accept orders themselves),
+  routing, settlements or payouts between businesses through LLS.
+- Not decided (ask the owner, never invent): who gets the delivery fee when a network courier
+  delivers, and whether LLS takes a share of it.
 - Only shops with a marketplace deal (`business.marketplace`) appear in the showcase. A platform
   admin sets the deal in the LLS bot: `/market <slug> <percent>` or `/market <slug> off`.
 - One universal core for all business types. Vertical specifics = feature toggles per business:
@@ -73,7 +111,10 @@ subscription deal); the system never takes a cut there.
   - geo: business location + delivery zone, customer location
   - every order stores its **channel** (`shop_bot` | `marketplace`) and a **commission snapshot**
     (rate + amount, integer UZS, 0 for `shop_bot`), fixed when the order is placed
-  - couriers belong to one business now (`business_id`); stage 3 adds a shared pool on top
+  - every order stores a **service fee snapshot** (rate + amount, integer UZS) — plan, see
+    "Money rules"
+  - couriers: one global profile per `telegram_id` (`courier_profiles`) + courier↔business
+    links (`couriers` rows, their ids stay in orders and cash handovers)
 
 ## SLC Rules (MANDATORY)
 
@@ -84,9 +125,9 @@ subscription deal); the system never takes a cut there.
 
 | Rule | Requirement |
 |------|-------------|
-| **v1.0 scope** | Stage 1: orders, status tracking, shop couriers, vertical toggles |
+| **v1.0 scope** | Stage 1: orders, status tracking, money, shop couriers, district delivery, vertical toggles |
 | **Quality** | Must be PERFECT, not "good enough" |
-| **No scope creep** | Shared cart, shared courier pool, multi-city, payment gateways — NOT in v1.0 |
+| **No scope creep** | Shared cart, algorithmic dispatch, routing, multi-city, payment gateways — NOT in v1.0 |
 | **UX** | Order in 3 taps |
 | **Cost** | $0/month until real usage requires more |
 
@@ -164,6 +205,16 @@ subscription deal); the system never takes a cut there.
 | 3 | Sort by progress (completed first, least ready last) |
 | 4 | Bottom: show blocking/lagging task |
 
+### "Дай, друг, дай следующую цель" (next goal)
+The path to the full product vision is split into goals in `docs/goals/` (index: `README.md`).
+| Step | Action |
+|------|--------|
+| 1 | Open `docs/goals/README.md`; take the first goal from the top that is not ✅ and whose dependencies are ✅ |
+| 2 | If it waits for the owner (keys, a decision, a meeting): say exactly what is needed and offer the next goal that does not |
+| 3 | Show the goal briefly: why, what will be done, what is needed from the owner |
+| 4 | Work by these rules: plan mode → approval → atomic commits with gates → PR watched until merged |
+| 5 | Mark ✅ only when the whole Definition of done is met; update the goal and the index in the same PR |
+
 ### "end-work"
 | Step | Action |
 |------|--------|
@@ -212,7 +263,7 @@ src/
 ├── app.ts            # Hono app: CORS, /health, /api, /img, /tg
 ├── env.ts            # Bindings (DB, BUCKET) + secrets
 ├── crypto.ts         # initData HMAC check, AES-GCM for bot tokens
-├── auth.ts           # X-Shop → shop's bot token → verify initData → user + role (owner/courier/customer)
+├── auth.ts           # X-Shop / X-Bot → bot token → verify initData → user + role (owner/customer/courier)
 ├── services.ts       # Wires repositories, gateway and use cases
 ├── http/             # Error mapping, zod schemas, image upload
 ├── routes/           # customer, owner, courier, platform, image, webhook
@@ -241,12 +292,13 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through t
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout card (number, holder) or none |
+| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout card (number, holder) or none, service fee rate (bps; plan) |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at — whose customer this is |
-| Courier | id, business_id, telegram_id, name, phone, is_active — the shop's own delivery person |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method cash/card_transfer, status unpaid/awaiting/paid/refund_due/refunded, paid_at, cash courier), delivered_at |
+| CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until — the person; in_network (plan) |
+| Courier | id, business_id, telegram_id, status (pending/active/removed), work_days, off_until — the person's link to one shop |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method cash/card_transfer, status unpaid/awaiting/paid/refund_due/refunded, paid_at, cash courier), delivered_at, service fee (rate + amount; plan) |
 | CashHandover | id, business_id, courier_id, amount, at — cash a courier gave to the owner |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
@@ -333,23 +385,27 @@ and in the marketplace. The token that verified the signature decides the order 
 never returned by the API. Validate a new token with `getMe` before saving.
 
 **Roles** (per shop, one app, one auth): `customer` (default), `owner`
-(`business.owner_telegram_id`), `courier` (active row in `couriers` for this shop).
-Through the showcase (`X-Via: marketplace`) the role is always `customer`.
+(`business.owner_telegram_id`). Through the showcase (`X-Via: marketplace`) the role is always
+`customer`. `X-Bot: courier` → initData is verified with `COURIER_BOT_TOKEN`, no shop, role
+`courier`; which shops and orders they may touch, the use cases check by the links.
 
-**Entry:** the shop bot's menu button opens `?shop=<slug>`. Couriers get a button to
-`?shop=<slug>&mode=courier`. Onboarding: the platform bot opens `?mode=onboarding`.
+**Entry:** the shop bot's menu button opens `?shop=<slug>`. The LLS courier bot opens
+`?mode=courier` (all the courier's shops in one screen). Onboarding: the platform bot opens `?mode=onboarding`.
 Showcase: the platform bot opens `?mode=market`.
 
-**Courier invite:** the owner creates a one-time link `t.me/<shop_bot>?start=c_<code>` (48 h).
-`/start c_<code>` in the shop bot makes the sender a courier of that shop.
+**Courier invite:** the owner creates a one-time link `t.me/<courier_bot>?start=c_<code>` (48 h).
+`/start c_<code>` in the LLS courier bot (webhook `/tg/courier`) makes the sender a **pending**
+courier of that shop and asks for the phone; the owner gets "Подтвердить / Отклонить" from the
+shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин".
 
 **Notifications (no WebSockets):**
 - New order → message to the owner with a button for the **next allowed status** + "Отменить".
-- Courier assigned → order card to the courier (address, landmark, map, phone, cash to collect,
-  empty bottles) with "Забрал", then "Доставил" × how it was paid (cash / transfer / later).
+- Courier assigned → order card from the LLS courier bot, titled with the shop's name (address,
+  landmark, map, phone, cash to collect, empty bottles) with "Забрал", then "Доставил" × how it
+  was paid (cash / transfer / later).
 - Status change → message to the customer (courier name, never the courier's phone). Showcase
-  orders: the LLS bot writes to the customer (with the shop name); owner and courier still get
-  messages from the shop bot.
+  orders: the LLS bot writes to the customer (with the shop name); the owner still gets messages
+  from the shop bot.
 - Texts depend on the business type (food: «Меню», «Готовится»; water/grocery: «Каталог», «Собираем»).
 - Before the first order, the app calls `requestWriteAccess()` so the shop bot may message the customer.
 - Phone: `requestContact()` → Telegram sends a `contact` message to the bot that opened the app
@@ -366,7 +422,10 @@ Showcase: the platform bot opens `?mode=market`.
 - Customer: Open shop link → Browse → Cart → Order → Track
 - Showcase customer: LLS bot → Search → Shop → Cart → Order → Track
 - Owner: New order message → Accept → Next status → assign courier; catalog and couriers in "Мой магазин"
-- Courier: Invite link → Start → assigned order card → Picked up → Delivered
+- Courier: Invite link → LLS courier bot → phone → approved → "on shift" → assigned order card →
+  Picked up → Delivered
+- Network courier (plan): invite from a point → accept in the LLS courier bot → agree to the
+  district network → "on shift" → accept an order of any point → Picked up → Delivered
 
 ## Security (MANDATORY)
 
@@ -383,7 +442,7 @@ document.innerHTML = x                 // XSS
 - Validate all inputs with zod (especially Telegram data)
 - Never log passwords/tokens/secrets
 - Verify Telegram initData on every request
-- Prices, totals and `customerId` are computed on the server. Never trust them from the client
+- Prices, totals, the service fee and `customerId` are computed on the server. Never trust them from the client
 - Check ownership on every route (owner edits only own shop, customer sees only own orders)
 - Frontend NEVER talks to D1/R2 directly. Only through the Worker
 - CORS: allow only `APP_ORIGIN` (the Pages address)
@@ -613,7 +672,8 @@ Telegram ─► Mini App (Pages, *.pages.dev) ─► Worker (*.workers.dev, /api
 Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 ```
 
-**Worker secrets:** `TOKEN_ENC_KEY`, `PLATFORM_BOT_TOKEN`, `PLATFORM_WEBHOOK_SECRET`, `PLATFORM_ADMIN_IDS`.
+**Worker secrets:** `TOKEN_ENC_KEY`, `PLATFORM_BOT_TOKEN`, `PLATFORM_WEBHOOK_SECRET`, `PLATFORM_ADMIN_IDS`,
+`COURIER_BOT_TOKEN`, `COURIER_WEBHOOK_SECRET`.
 **Worker vars:** `APP_ORIGIN` (Pages URL).
 
 - Custom domain: later, optional.
@@ -635,9 +695,12 @@ Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 - [ ] Owner notification with buttons
 - [ ] Order status updates → customer notification
 - [ ] Courier invite → assign → picked up → delivered
+- [ ] District delivery: invite → accept in the courier bot → join the network → an order of a
+      point without couriers taken by a network courier → cash counted per point
 - [ ] Water: empty bottles + deposit; reorder
 - [ ] Grocery: weight items (kg steps); stop-list for today
 - [ ] Each order stores channel + commission (0 for own bot)
+- [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow
 - [ ] Uzbek + Russian texts
 - [ ] Empty states handling

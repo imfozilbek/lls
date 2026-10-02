@@ -3,7 +3,6 @@ import { createRoot } from "react-dom/client"
 
 import { App, initialLanguage } from "./App.js"
 import { readLaunchParams, webApp } from "./lib/telegram.js"
-import { useRouter } from "./stores/router.js"
 import "./index.css"
 
 const app = webApp()
@@ -12,9 +11,6 @@ app?.expand()
 initialLanguage()
 
 const launch = readLaunchParams(new URL(window.location.href), app)
-if (launch.courier) {
-    useRouter.getState().start({ name: "courier" })
-}
 
 const root = document.getElementById("root")
 

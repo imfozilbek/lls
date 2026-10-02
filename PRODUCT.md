@@ -13,11 +13,16 @@ product
 - **Shop owners**: small local businesses (a café, a water producer, a grocery store). They manage
   orders from the Telegram chat between other work, edit the catalog in "Мой магазин" on the
   phone and hand orders to their own couriers. They are not tech people.
-- **Couriers** of one shop (often a family member or a hired driver). They get an order card in
-  the shop's bot and press "Забрал" / "Доставил". They need the address, the landmark, the
-  customer's phone and how much cash to collect — nothing else.
+- **Couriers**: today a shop's own person (often a family member or a hired driver). They get an
+  order card in the shop's bot and press "Забрал" / "Доставил". They need the address, the
+  landmark, the customer's phone and how much cash to collect — nothing else. Next: people with a
+  car in the district who deliver for several points through one LLS courier bot and earn more.
 
 ## Product Purpose
+
+Every offline point within 20–30 km of one district becomes an online point: today the customer
+has to come and pick it up; with LLS they order from home and a courier brings it. A point
+without its own courier is served by the district's courier network.
 
 LLS gives each small shop its own ordering bot and Mini App under the shop's own brand
 ("powered by LLS"). Customers order without calls and voice messages; owners get every order as
@@ -26,8 +31,8 @@ shops (food, water, grocery), owners stop taking orders by phone, and customers 
 
 The LLS bot is the showcase of the district: one search across the products of every shop that
 signed a marketplace deal. A tap opens that shop's storefront inside the LLS bot; the order goes
-to that one shop. LLS earns a commission only on these showcase orders; a shop's own bot stays the
-shop's. Later the showcase grows into a marketplace with one cart from several shops.
+to that one shop. LLS earns on volume: a small service fee that the customer pays on every order
+(a separate line; the shop's prices never change), plus a commission on showcase orders. Later the showcase grows into a marketplace with one cart from several shops.
 
 ## Brand Personality
 

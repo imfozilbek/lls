@@ -6,6 +6,8 @@ import { requireOwner, shopOf } from "../auth.js"
 import { deleteImage, readImageBody, storeImage } from "../http/images.js"
 import {
     assignCourierBody,
+    courierReviewBody,
+    courierSchedulePatch,
     idParam,
     ownerOrderBody,
     ownerOrdersQuery,
@@ -127,23 +129,70 @@ export const ownerRoutes = new Hono<AppEnv>()
         return c.json(couriers)
     })
 
-    /** A one-time link for the shop bot: `t.me/<bot>?start=c_<code>`. */
+    /** A one-time link to the LLS courier bot: `t.me/<courier_bot>?start=c_<code>`. */
     .post("/couriers/invites", async (c) => {
-        const business = shopOf(c)
-        const invite = await c.get("services").useCases.createCourierInvite.execute({
+        const services = c.get("services")
+        const invite = await services.useCases.createCourierInvite.execute({
             actorTelegramId: c.get("auth").user.id,
-            businessId: business.id,
+            businessId: shopOf(c).id,
         })
-        const link = `https://t.me/${business.bot.username}?start=c_${invite.code}`
+        const bot = await services.telegram.getMe(services.env.COURIER_BOT_TOKEN)
+        const link = `https://t.me/${bot.username}?start=c_${invite.code}`
         return c.json({ link, expiresAt: invite.expiresAt }, 201)
     })
 
+    /** The owner's week for a courier, and "сегодня не работает". */
+    .patch(
+        "/couriers/:id",
+        zValidator("param", idParam, onInvalid),
+        zValidator("json", courierSchedulePatch, onInvalid),
+        async (c) => {
+            const courier = await c.get("services").useCases.setCourierSchedule.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: shopOf(c).id,
+                courierId: c.req.valid("param").id,
+                ...c.req.valid("json"),
+            })
+            return c.json(courier)
+        },
+    )
+
+    /** Approve or decline someone who accepted the invite; the courier hears it in their bot. */
+    .post(
+        "/couriers/:id/review",
+        zValidator("param", idParam, onInvalid),
+        zValidator("json", courierReviewBody, onInvalid),
+        async (c) => {
+            const services = c.get("services")
+            const business = shopOf(c)
+            const change = await services.useCases.reviewCourier.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: business.id,
+                courierId: c.req.valid("param").id,
+                approve: c.req.valid("json").approve,
+            })
+            inBackground(
+                c.executionCtx,
+                services,
+                new Notifier(services).courierReviewed(business, change.courier, change.telegramId),
+            )
+            return c.json(change.courier)
+        },
+    )
+
     .delete("/couriers/:id", zValidator("param", idParam, onInvalid), async (c) => {
-        await c.get("services").useCases.deactivateCourier.execute({
+        const services = c.get("services")
+        const business = shopOf(c)
+        const removed = await services.useCases.deactivateCourier.execute({
             actorTelegramId: c.get("auth").user.id,
-            businessId: shopOf(c).id,
+            businessId: business.id,
             courierId: c.req.valid("param").id,
         })
+        inBackground(
+            c.executionCtx,
+            services,
+            new Notifier(services).courierRemovedFromShop(business, removed.telegramId),
+        )
         return c.body(null, 204)
     })
 

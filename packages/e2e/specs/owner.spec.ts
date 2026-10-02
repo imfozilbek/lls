@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test"
 
 import { pngImage } from "../support/images.js"
 import { FOOD, PEOPLE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
-import { lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
+import { courierChat, lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
 import type { OpenedApp } from "../support/webapp.js"
@@ -285,9 +285,7 @@ test("settings: logo upload and the accepting switch", async ({ page }) => {
     await page.getByRole("switch", { name: "Принимать заказы" }).click()
 })
 
-test("couriers: invite link shared in Telegram, the courier joins, the owner removes", async ({
-    page,
-}) => {
+test("couriers: invite to the courier bot, approve in the app, days, remove", async ({ page }) => {
     const app = await openOwner(page)
     await page.getByRole("tab", { name: "Настройки" }).click()
     await expect(page.getByText("Jasur")).toBeVisible()
@@ -296,26 +294,47 @@ test("couriers: invite link shared in Telegram, the courier joins, the owner rem
     const shared = (await app.calls()).find((c) => c.method === "openTelegramLink")
     const shareUrl = new URL(String(shared?.args[0]))
     const link = shareUrl.searchParams.get("url") ?? ""
-    expect(link).toMatch(/^https:\/\/t\.me\/osh_markaz_dev_bot\?start=c_[\w-]{16}$/)
-    expect(shareUrl.searchParams.get("text")).toContain("Чтобы стать доставщиком")
+    expect(link).toMatch(/^https:\/\/t\.me\/lls_kuryer_dev_bot\?start=c_[\w-]{16}$/)
+    expect(shareUrl.searchParams.get("text")).toContain("в боте доставщиков LLS")
 
     const since = await lastSeq()
-    await shopChat(FOOD).send(PEOPLE.newCourier, `/start ${link.split("start=")[1] ?? ""}`)
-    const welcome = await waitForMessage(PEOPLE.newCourier.id, "Osh Markaz", since)
-    expect(welcome.buttons[0]?.web_app?.url).toContain("mode=courier")
-    await waitForMessage(PEOPLE.foodOwner.id, "Новый доставщик: Bobur", since)
+    await courierChat().send(PEOPLE.newCourier, `/start ${link.split("start=")[1] ?? ""}`)
+    await waitForMessage(PEOPLE.newCourier.id, "Ждём, пока владелец", since)
+    await waitForMessage(PEOPLE.foodOwner.id, "Bobur принял приглашение", since)
 
     // The same link does not work twice.
-    await shopChat(FOOD).send(PEOPLE.stranger, `/start ${link.split("start=")[1] ?? ""}`)
+    await courierChat().send(PEOPLE.stranger, `/start ${link.split("start=")[1] ?? ""}`)
     await waitForMessage(PEOPLE.stranger.id, /не работает|ishlamaydi/, since)
 
-    await page.reload()
-    await page.getByRole("button", { name: "Мой магазин" }).click()
-    await page.getByRole("tab", { name: "Настройки" }).click()
-    await expect(page.getByText("Bobur")).toBeVisible()
-    await page.getByRole("button", { name: "Удалить: Bobur" }).click()
+    // The app comes back to the front: the new courier waits for approval there.
+    await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")))
+    const pending = page.locator("div").filter({
+        has: page.getByRole("heading", { name: "Ждут подтверждения" }),
+    })
+    await expect(pending.getByText("Bobur")).toBeVisible()
+    const before = await lastSeq()
+    await pending.getByRole("button", { name: "Подтвердить" }).click()
+    await expect(page.getByText("Доставщик подтверждён")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Ждут подтверждения" })).toBeHidden()
+    await waitForMessage(PEOPLE.newCourier.id, "подтвердил вас", before)
+
+    // Days: Bobur does not work on Sundays.
+    const bobur = page.getByRole("listitem").filter({ hasText: "Bobur" })
+    await bobur.getByRole("button", { name: "Вс" }).click()
+    await expect(bobur.getByRole("button", { name: "Вс" })).toHaveAttribute("aria-pressed", "false")
+    await expect
+        .poll(async () => {
+            const list = (await (
+                await apiAs(PEOPLE.foodOwner, "/owner/couriers", { shop: FOOD })
+            ).json()) as { name: string; workDays: string[] }[]
+            return list.find((c) => c.name === "Bobur")?.workDays
+        })
+        .toEqual(["mon", "tue", "wed", "thu", "fri", "sat"])
+
+    await bobur.getByRole("button", { name: "Удалить: Bobur" }).click()
     await expect(page.getByText("Bobur")).toBeHidden()
-    expect((await apiAs(PEOPLE.newCourier, "/courier/orders", { shop: FOOD })).status).toBe(403)
+    await waitForMessage(PEOPLE.newCourier.id, "убрал вас", before)
+    expect((await apiAs(PEOPLE.newCourier, "/courier/home", { courierBot: true })).status).toBe(403)
 })
 
 test("water shop settings: bottle deposit and returnable bottles", async ({ page }) => {

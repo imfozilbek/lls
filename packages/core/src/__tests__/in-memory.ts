@@ -1,4 +1,5 @@
 import { offsetOf } from "../application/dtos/pagination.js"
+import { CourierStatus } from "../domain/enums/courier-status.js"
 import { ACTIVE_ORDER_STATUSES, OrderStatus } from "../domain/enums/order-status.js"
 import { PaymentMethod, PaymentStatus } from "../domain/enums/payment.js"
 
@@ -20,6 +21,7 @@ import type {
 import type { Business } from "../domain/entities/business.js"
 import type { CashHandover } from "../domain/entities/cash-handover.js"
 import type { Courier, CourierInvite } from "../domain/entities/courier.js"
+import type { CourierProfile } from "../domain/entities/courier-profile.js"
 import type { Customer } from "../domain/entities/customer.js"
 import type { Order } from "../domain/entities/order.js"
 import type { Product } from "../domain/entities/product.js"
@@ -289,6 +291,7 @@ export function fixedClock(date: Date): Clock {
 
 export class InMemoryCouriers implements CourierRepository {
     readonly items = new Map<string, Courier>()
+    readonly profiles = new Map<number, CourierProfile>()
     readonly invites = new Map<string, CourierInvite>()
 
     async findById(id: string): Promise<Courier | null> {
@@ -301,11 +304,23 @@ export class InMemoryCouriers implements CourierRepository {
             ) ?? null
         )
     }
-    async listActive(businessId: string): Promise<Courier[]> {
-        return [...this.items.values()].filter((c) => c.worksFor(businessId))
+    async listByBusiness(businessId: string): Promise<Courier[]> {
+        return [...this.items.values()].filter(
+            (c) => c.businessId === businessId && c.status !== CourierStatus.REMOVED,
+        )
+    }
+    async listByPerson(telegramId: number): Promise<Courier[]> {
+        return [...this.items.values()].filter((c) => c.telegramId.value === telegramId)
     }
     async save(courier: Courier): Promise<void> {
         this.items.set(courier.id, courier)
+    }
+    /** The same instance every time, as the links hold it: a shift shows on every link. */
+    async findProfile(telegramId: number): Promise<CourierProfile | null> {
+        return this.profiles.get(telegramId) ?? null
+    }
+    async saveProfile(profile: CourierProfile): Promise<void> {
+        this.profiles.set(profile.telegramId.value, profile)
     }
     async saveInvite(invite: CourierInvite): Promise<void> {
         this.invites.set(invite.code, invite)

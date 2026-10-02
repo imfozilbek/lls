@@ -7,6 +7,24 @@ All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### LLS courier bot (goal 05)
+- **Added (core):** `CourierProfile` — one per person (name, phone, vehicle, shift until
+  midnight); a `Courier` is now the person's link to one shop with status pending / active /
+  removed, working days and "not today"; an order goes only to a courier who is approved, works
+  today and is on shift (`COURIER_NOT_AVAILABLE` with the reason); the courier's home across
+  shops with cash per shop
+- **Added (worker):** migration `0003_courier_profiles.sql` (additive, moves today's couriers);
+  the LLS courier bot (`/tg/courier`, `COURIER_BOT_TOKEN`): invites, phone, order cards with the
+  shop's name and their buttons; owner approval from the shop bot or the app; `X-Bot: courier`
+  auth; `/api/courier/home`, `/shift`, `/profile`; owner `PATCH /couriers/:id` and
+  `POST /couriers/:id/review`; the deploy connects the courier bot
+- **Changed:** courier invites, cards and "Мои доставки" moved from shop bots to the courier bot;
+  `/api/courier/orders` and `/api/courier/cash` replaced by `/api/courier/home`
+- **Added (app):** the courier screen across shops (shift, orders with the shop's name, cash per
+  shop, vehicle); owners approve couriers, set their days and "not today", see who is on shift;
+  unavailable couriers are greyed out with the reason
+- **Added (e2e):** courier bot scenarios: two shops, approval, days, shift, cash per shop
+
 ### Money, hours per day, QR poster
 - **Added (core):** `Payment` per order — cash or a transfer to the shop's card; statuses
   unpaid / awaiting / paid / refund due / refunded; the courier says how the customer paid at the

@@ -306,13 +306,20 @@ export class Order {
         this.touch()
     }
 
-    /** The owner hands the order to one of the shop's couriers (or to another one, before pickup). */
-    assignCourier(courier: Courier): void {
+    /**
+     * The owner hands the order to one of the shop's couriers (or to another one, before pickup).
+     * Only a courier who works for this shop today and is on shift may get a new order.
+     */
+    assignCourier(courier: Courier, now: Date): void {
         if (!ASSIGNABLE.includes(this.props.status)) {
             throw BusinessRuleViolationError.orderNotAssignable(this.props.id, this.props.status)
         }
-        if (!courier.worksFor(this.props.businessId)) {
-            throw BusinessRuleViolationError.courierNotAvailable(courier.id)
+        const reason =
+            courier.businessId === this.props.businessId
+                ? courier.unavailableReason(now)
+                : "not_approved"
+        if (reason !== null) {
+            throw BusinessRuleViolationError.courierNotAvailable(courier.id, reason)
         }
         this.props.courierId = courier.id
         this.props.courierName = courier.name

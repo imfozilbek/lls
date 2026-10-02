@@ -1,11 +1,17 @@
 # LLS Roadmap
 
 LLS (LocalLoopSolutions): a white-label delivery platform for small businesses in the regions
-and districts of Uzbekistan, where Yandex Eats / Uzum do not operate.
+and districts of Uzbekistan, where aggregators are absent or take 20–30% of each order.
 Each shop gets its own Telegram bot and brand; the app says "powered by LLS".
+
+**Goal:** every offline point within 20–30 km of one district becomes an online point. Start with
+the three pilots (Guliston); next to them grow the district's own delivery network; then one LLS
+marketplace on top of both.
 
 > Rules, stack and architecture: `CLAUDE.md`. Product context for design: `PRODUCT.md`.
 > Technical debt: `TODO.md`. Owner's launch steps: `docs/launch-checklist.md`.
+> Questions for the pilots' meeting: `docs/pilot-meeting.md`.
+> The path to the full vision, goal by goal: `docs/goals/README.md` («Дай, друг, дай следующую цель»).
 
 ## Current status: stage 1 — money, hours per day and QR poster done; waiting for Cloudflare accounts and the pilots' meeting
 
@@ -22,18 +28,34 @@ Each shop gets its own Telegram bot and brand; the app says "powered by LLS".
 **Blocking:** Cloudflare account, API token and the LLS platform bot — owner tasks in
 `docs/launch-checklist.md`.
 
+**Owner decisions still open** (never invent them in code or docs):
+- service fee rate and base (goods, or goods + delivery), the pilots' rate;
+- who gets the delivery fee for a network delivery, and LLS's share;
+- subscription price and trial period;
+- delivery supplies: range and prices.
+
 ---
 
 ## Stages
 
 | Stage | What | Revenue | Status |
 |-------|------|---------|--------|
-| **1. Own bot per business + LLS showcase** | Storefront + orders + notifications, own couriers. The LLS bot searches across shops; a tap opens that shop, the order goes to it | Subscription + commission on showcase orders | 🔨 Now |
+| **1. Online point + district delivery** | **Online point:** storefront, orders, money, own couriers, LLS showcase. **District delivery** (standalone from the first versions): LLS courier bot, a courier for several points, points without couriers served by the network | Service fee on every order (paid by the customer) + subscription + commission on showcase orders + delivery supplies. Delivery: **not decided** (owner decides) | 🔨 Now |
 | 2. District marketplace | One cart from several shops, district filter | Commission on marketplace sales + subscription | Later |
-| 3. Own delivery | Shared couriers, several pickups per trip | Delivery fee | Later |
+| 3. Delivery at scale | Several pickups per trip, routes | Delivery fee + volume terms | Later |
 
-Pilot: **food, water and grocery at the same time.** Sales through a shop's own bot never carry
-an LLS commission; only marketplace sales will (stage 2).
+**District metrics:** points online, active couriers, share of orders delivered by network couriers.
+
+**Financial model:** LLS earns on volume, from four sources:
+- **Service fee:** paid by the customer on every order through LLS; ≈ turnover through LLS ×
+  average fee rate. The shop's prices never change. Showcase orders also carry the showcase
+  commission (paid by the shop).
+- **Subscription:** a monthly fee for a shop's own bot; ≈ shops × price.
+- **Delivery supplies:** LLS-branded packaging, bags and disposable dishes sold to businesses.
+  Every bag that reaches a customer also advertises LLS.
+- **District delivery:** not decided.
+
+Pilot: **food, water and grocery at the same time.**
 
 ---
 
@@ -120,6 +142,42 @@ an LLS commission; only marketplace sales will (stage 2).
 - [ ] Production check: connect a test shop → order → statuses → notifications
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
+
+### M6. District delivery 🔨 (stage 1; part 1 — the courier bot — is goal 05)
+- [x] LLS courier bot; one courier profile per person (name, phone, vehicle)
+- [x] Invite from "Мой магазин" → accept in the courier bot → the business approves
+- [x] The business switches a courier on or off by day; the courier marks "on shift"
+- [ ] Every connected courier is offered to join the district network
+- [ ] An order of a point without its own courier on shift goes to free network couriers; the
+      first who accepts takes it; goods money goes back to that point
+- [x] Orders from several points in one place; cash on hand counted per point
+- [x] Today's shop couriers move to the new model without losing data
+- [ ] Decide (owner): who gets the delivery fee for a network delivery, and LLS's share
+
+### M7. Online point in an hour ⏳
+- [ ] Pickup: order ahead, collect without a queue
+- [ ] We fill the catalog for the point (import from Excel or photos — when a point asks)
+
+### M8. Service fee ⏳
+- [ ] Decide (owner): the fee base (goods, or goods + delivery; deposits never count) and the pilots' rate
+- [ ] Rate per business: `/fee <slug> <percent>` in the LLS bot (0 allowed)
+- [ ] "Сервис" line in the cart, checkout, order screen and bot messages; snapshot in every order
+- [ ] The fee in «Деньги» and the CSV
+- [ ] Monthly per-shop report "to pay LLS" (fees + showcase commission); admin report for all shops
+- [ ] Shop balance with LLS: charged, received, owed; the admin marks "Received from the shop" in
+      the LLS bot
+- [ ] At the start of a month the bot reminds the shop: the sum and LLS's card number
+- [ ] A shop that does not pay for too long: the admin pauses it and its bot stops taking orders
+
+### M9. Subscription ⏳
+- [ ] Decide (owner): price and trial period
+- [ ] Paid-until date on the shop card for the admin; reminder before it ends
+- [ ] Not paid: pause the shop, as in M8
+
+### M10. LLS delivery supplies ⏳ (when the first supplies are in stock)
+- [ ] Decide (owner): range (packaging, bags, disposable dishes — all with the LLS brand) and prices
+- [ ] Catalog of LLS supplies in "Мой магазин"; the shop orders, the order comes to LLS
+- [ ] Delivered by the district delivery; paid in cash or by transfer to LLS's card
 
 ---
 

@@ -7,7 +7,6 @@ export type Route =
     | { name: "order"; id: string; justPlaced?: boolean }
     | { name: "orders" }
     | { name: "owner" }
-    | { name: "courier" }
     /** Owner's product editor; `id: null` creates a new product. */
     | { name: "product"; id: string | null }
 
@@ -15,7 +14,7 @@ interface RouterState {
     stack: Route[]
     push(route: Route): void
     back(): void
-    /** A different first screen, e.g. the courier's deliveries. */
+    /** A different first screen, e.g. the showcase opening a shop. */
     start(route: Route): void
     /** Replace everything after the root, e.g. checkout → order without a way back to checkout. */
     reset(...routes: Route[]): void

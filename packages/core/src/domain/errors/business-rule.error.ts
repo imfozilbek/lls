@@ -102,11 +102,12 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
-    static courierNotAvailable(courierId: string): BusinessRuleViolationError {
+    /** `reason`: not_approved, day_off, off_today or not_on_shift — the app explains it. */
+    static courierNotAvailable(courierId: string, reason: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "COURIER_NOT_AVAILABLE",
-            "This courier does not work for the shop",
-            { courierId },
+            "This courier cannot take an order now",
+            { courierId, reason },
         )
     }
 

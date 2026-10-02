@@ -141,12 +141,15 @@ export function formatNewOrderForOwner(order: OrderDTO, reader: Reader): string 
     return `${textsFor(reader.language).newOrder}\n\n${formatOrderForOwner(order, reader)}`
 }
 
-/** The courier's card: where to go, whom to call, how much cash and how many bottles to take. */
-export function formatOrderForCourier(order: OrderDTO, reader: Reader): string {
+/**
+ * The courier's card in the LLS courier bot: which shop, where to go, whom to call, how much cash
+ * and how many bottles to take. A courier may work for several shops, so the shop comes first.
+ */
+export function formatOrderForCourier(order: OrderDTO, reader: Reader, shopName: string): string {
     const { language } = reader
     const t = textsFor(language, reader.type)
     const lines = [
-        `<b>${t.courierCard} · ${t.order} #${order.number}</b>`,
+        `<b>${t.courierCard} · ${escapeHtml(shopName)} · ${t.order} #${order.number}</b>`,
         "",
         ...itemLines(order, t, language),
         "",
@@ -257,6 +260,28 @@ export function parseReviewCallback(
         return null
     }
     return { businessId, decision }
+}
+
+/** The owner approves or declines someone who accepted the invite: "k:<courierId>:approve". */
+export function courierReviewKeyboard(courierId: string, t: BotTexts): InlineKeyboard {
+    return {
+        inline_keyboard: [
+            [
+                { text: t.approveCourier, callback_data: `k:${courierId}:approve` },
+                { text: t.declineCourier, callback_data: `k:${courierId}:decline` },
+            ],
+        ],
+    }
+}
+
+export function parseCourierReviewCallback(
+    data: string,
+): { courierId: string; approve: boolean } | null {
+    const [kind, courierId, decision] = data.split(":")
+    if (kind !== "k" || !courierId || (decision !== "approve" && decision !== "decline")) {
+        return null
+    }
+    return { courierId, approve: decision === "approve" }
 }
 
 /** Invite payload of `/start c_<code>`, or null for a plain /start. */

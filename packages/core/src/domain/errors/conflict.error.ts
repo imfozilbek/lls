@@ -10,4 +10,8 @@ export class ConflictError extends DomainError {
     static slugTaken(slug: string): ConflictError {
         return new ConflictError(`Shop address "${slug}" is taken`, { slug })
     }
+
+    static courierAlreadyReviewed(courierId: string): ConflictError {
+        return new ConflictError("This courier was already approved or declined", { courierId })
+    }
 }

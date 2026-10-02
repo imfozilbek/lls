@@ -5,9 +5,9 @@
  */
 import { createHmac } from "node:crypto"
 
-import { APP_URL, platformBot, shopBySlug } from "../stand/config.js"
+import { APP_URL, courierBot, platformBot, shopBySlug } from "../stand/config.js"
 
-import { llsChat, shopChat } from "./telegram.js"
+import { courierChat, llsChat, shopChat } from "./telegram.js"
 
 import type { Chat, TgUser } from "./telegram.js"
 import type { Page } from "@playwright/test"
@@ -51,7 +51,9 @@ export interface OpenOptions {
     user: TgUser
     /** Opened from this shop's bot; without it, from the LLS bot. */
     shop?: string
-    /** Query string after `/`, e.g. `?shop=osh-markaz-dev&mode=courier`. Default: `?shop=<shop>`. */
+    /** Opened from the LLS courier bot (`?mode=courier`), whatever `shop` says. */
+    courierBot?: boolean
+    /** Query string after `/`, e.g. `?mode=market`. Default: `?shop=<shop>`. */
     query?: string
     /** Sign with this token instead (forged identities, wrong bots). */
     signWith?: string
@@ -217,10 +219,21 @@ function stubConfig(options: OpenOptions, initData: string): StubConfig {
 /** Per tab: where a shared contact goes now. */
 const opened = new WeakMap<Page, { share(): Promise<Response> }>()
 
+/** The bot that opened the app: its token signs initData, its chat gets a shared contact. */
+function openedFrom(options: OpenOptions): { token: string; chat: Chat; query: string } {
+    if (options.courierBot) {
+        return { token: courierBot().token, chat: courierChat(), query: "?mode=courier" }
+    }
+    if (options.shop) {
+        const shop = shopBySlug(options.shop)
+        return { token: shop.bot.token, chat: shopChat(shop.slug), query: `?shop=${shop.slug}` }
+    }
+    return { token: platformBot().token, chat: llsChat(), query: "" }
+}
+
 export async function openApp(page: Page, options: OpenOptions): Promise<OpenedApp> {
-    const shop = options.shop ? shopBySlug(options.shop) : null
-    const token = options.signWith ?? shop?.bot.token ?? platformBot().token
-    const chat = shop ? shopChat(shop.slug) : llsChat()
+    const { token: botToken, chat, query: defaultQuery } = openedFrom(options)
+    const token = options.signWith ?? botToken
     const initData = options.noInitData ? "" : signInitData(options.user, token)
     const phone = options.phone ?? "+998901234567"
 
@@ -248,7 +261,7 @@ export async function openApp(page: Page, options: OpenOptions): Promise<OpenedA
     if (options.theme === "dark") {
         await page.emulateMedia({ colorScheme: "dark" })
     }
-    const query = options.query ?? (shop ? `?shop=${shop.slug}` : "")
+    const query = options.query ?? defaultQuery
     await page.goto(`${APP_URL}/${query}`)
 
     const tg = (): Promise<{

@@ -2,9 +2,11 @@
 # Deploys LLS to Cloudflare. Idempotent: safe to run on every push to main.
 #
 # Creates what is missing (D1, R2, Pages project, workers.dev subdomain), applies D1 migrations,
-# deploys the Worker with its secrets, deploys the Mini App to Pages and connects the platform bot.
+# deploys the Worker with its secrets, deploys the Mini App to Pages and connects the LLS bot and
+# the LLS courier bot.
 #
-# Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS.
+# Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS,
+# COURIER_BOT_TOKEN.
 # Optional: TOKEN_ENC_KEY — a saved copy of the encryption key, used only when the Worker has none.
 set -euo pipefail
 # Temp files (the Worker secrets file) are readable by this user only.
@@ -137,22 +139,28 @@ encryption_key() {
     ENC_KEY="$(openssl rand -base64 32)"
 }
 
+# A webhook secret derived from a bot token: `webhook_secret <label> <token>`.
+webhook_secret() {
+    printf '%s' "$1" | openssl dgst -sha256 -hmac "$2" -r | cut -d' ' -f1
+}
+
 deploy_worker() {
     log "Migrations"
     wrangler d1 migrations apply "$DATABASE" --remote
 
     log "Worker"
     # Derived, not stored: the same bot token always gives the same webhook secret.
-    local webhook_secret
-    webhook_secret="$(printf '%s' "lls-platform-webhook" \
-        | openssl dgst -sha256 -hmac "$PLATFORM_BOT_TOKEN" -r | cut -d' ' -f1)"
-    PLATFORM_WEBHOOK_SECRET="$webhook_secret"
+    PLATFORM_WEBHOOK_SECRET="$(webhook_secret lls-platform-webhook "$PLATFORM_BOT_TOKEN")"
+    COURIER_WEBHOOK_SECRET="$(webhook_secret lls-courier-webhook "$COURIER_BOT_TOKEN")"
     echo "::add-mask::${PLATFORM_WEBHOOK_SECRET}"
+    echo "::add-mask::${COURIER_WEBHOOK_SECRET}"
 
     local secrets_file="$SECRETS_FILE"
     jq -n --arg bot "$PLATFORM_BOT_TOKEN" --arg admins "$PLATFORM_ADMIN_IDS" \
-        --arg hook "$PLATFORM_WEBHOOK_SECRET" \
-        '{PLATFORM_BOT_TOKEN: $bot, PLATFORM_ADMIN_IDS: $admins, PLATFORM_WEBHOOK_SECRET: $hook}' \
+        --arg hook "$PLATFORM_WEBHOOK_SECRET" --arg courier "$COURIER_BOT_TOKEN" \
+        --arg courier_hook "$COURIER_WEBHOOK_SECRET" \
+        '{PLATFORM_BOT_TOKEN: $bot, PLATFORM_ADMIN_IDS: $admins, PLATFORM_WEBHOOK_SECRET: $hook,
+          COURIER_BOT_TOKEN: $courier, COURIER_WEBHOOK_SECRET: $courier_hook}' \
         >"$secrets_file"
     if needs_encryption_key; then
         encryption_key
@@ -170,22 +178,35 @@ deploy_app() {
         --commit-dirty=true
 }
 
+# `telegram <token> <method> [curl args]`
 telegram() {
-    local method="$1"
-    shift
+    local token="$1" method="$2"
+    shift 2
     local result
-    result="$(curl -sS "https://api.telegram.org/bot${PLATFORM_BOT_TOKEN}/${method}" "$@")"
+    result="$(curl -sS "https://api.telegram.org/bot${token}/${method}" "$@")"
     jq -e '.ok' <<<"$result" >/dev/null || fail "Telegram ${method} failed: $(jq -r '.description' <<<"$result")"
 }
 
 connect_platform_bot() {
     log "Platform bot"
-    telegram setWebhook \
+    telegram "$PLATFORM_BOT_TOKEN" setWebhook \
         --data-urlencode "url=${WORKER_URL}/tg/platform" \
         --data-urlencode "secret_token=${PLATFORM_WEBHOOK_SECRET}" \
         --data-urlencode 'allowed_updates=["message","callback_query"]'
-    telegram setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=market" \
+    telegram "$PLATFORM_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=market" \
         '{type: "web_app", text: "LLS", web_app: {url: $url}}')"
+    echo "webhook and menu button set"
+}
+
+# The LLS courier bot: one bot for every courier; its menu button opens the courier screen.
+connect_courier_bot() {
+    log "Courier bot"
+    telegram "$COURIER_BOT_TOKEN" setWebhook \
+        --data-urlencode "url=${WORKER_URL}/tg/courier" \
+        --data-urlencode "secret_token=${COURIER_WEBHOOK_SECRET}" \
+        --data-urlencode 'allowed_updates=["message","callback_query"]'
+    telegram "$COURIER_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=courier" \
+        '{type: "web_app", text: "Kuryer", web_app: {url: $url}}')"
     echo "webhook and menu button set"
 }
 
@@ -211,7 +232,7 @@ smoke_test() {
 }
 
 main() {
-    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN PLATFORM_ADMIN_IDS; do
+    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN PLATFORM_ADMIN_IDS COURIER_BOT_TOKEN; do
         [[ -n "${!name:-}" ]] || fail "Secret ${name} is not set."
     done
     ensure_d1
@@ -222,6 +243,7 @@ main() {
     deploy_app
     smoke_test
     connect_platform_bot
+    connect_courier_bot
 }
 
 main "$@"
