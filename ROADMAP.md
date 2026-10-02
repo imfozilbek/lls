@@ -27,21 +27,32 @@ marketplace on top of both.
 **Blocking:** Cloudflare account, API token and the LLS platform bot — owner tasks in
 `docs/launch-checklist.md`.
 
+**Owner decisions still open** (never invent them in code or docs):
+- service fee rate and base (goods, or goods + delivery), the pilots' rate;
+- who gets the delivery fee for a network delivery, and LLS's share;
+- subscription price and trial period;
+- delivery supplies: range and prices.
+
 ---
 
 ## Stages
 
 | Stage | What | Revenue | Status |
 |-------|------|---------|--------|
-| **1. Online point + district delivery** | **Online point:** storefront, orders, money, own couriers, LLS showcase. **District delivery** (standalone from the first versions): LLS courier bot, a courier for several points, points without couriers served by the network | Service fee on every order (paid by the customer) + subscription + commission on showcase orders. Delivery: **not decided** (owner decides) | 🔨 Now |
+| **1. Online point + district delivery** | **Online point:** storefront, orders, money, own couriers, LLS showcase. **District delivery** (standalone from the first versions): LLS courier bot, a courier for several points, points without couriers served by the network | Service fee on every order (paid by the customer) + subscription + commission on showcase orders + delivery supplies. Delivery: **not decided** (owner decides) | 🔨 Now |
 | 2. District marketplace | One cart from several shops, district filter | Commission on marketplace sales + subscription | Later |
 | 3. Delivery at scale | Several pickups per trip, routes | Delivery fee + volume terms | Later |
 
 **District metrics:** points online, active couriers, share of orders delivered by network couriers.
 
-**Financial model:** LLS earns on volume. A small service fee, paid by the customer, on every
-order through LLS: revenue ≈ turnover through LLS × average fee rate. The shop's prices never
-change. Showcase orders also carry the showcase commission (paid by the shop).
+**Financial model:** LLS earns on volume, from four sources:
+- **Service fee:** paid by the customer on every order through LLS; ≈ turnover through LLS ×
+  average fee rate. The shop's prices never change. Showcase orders also carry the showcase
+  commission (paid by the shop).
+- **Subscription:** a monthly fee for a shop's own bot; ≈ shops × price.
+- **Delivery supplies:** LLS-branded packaging, bags and disposable dishes sold to businesses.
+  Every bag that reaches a customer also advertises LLS.
+- **District delivery:** not decided.
 
 Pilot: **food, water and grocery at the same time.**
 
@@ -152,6 +163,20 @@ Pilot: **food, water and grocery at the same time.**
 - [ ] "Сервис" line in the cart, checkout, order screen and bot messages; snapshot in every order
 - [ ] The fee in «Деньги» and the CSV
 - [ ] Monthly per-shop report "to pay LLS" (fees + showcase commission); admin report for all shops
+- [ ] Shop balance with LLS: charged, received, owed; the admin marks "Received from the shop" in
+      the LLS bot
+- [ ] At the start of a month the bot reminds the shop: the sum and LLS's card number
+- [ ] A shop that does not pay for too long: the admin pauses it and its bot stops taking orders
+
+### M9. Subscription ⏳
+- [ ] Decide (owner): price and trial period
+- [ ] Paid-until date on the shop card for the admin; reminder before it ends
+- [ ] Not paid: pause the shop, as in M8
+
+### M10. LLS delivery supplies ⏳ (when the first supplies are in stock)
+- [ ] Decide (owner): range (packaging, bags, disposable dishes — all with the LLS brand) and prices
+- [ ] Catalog of LLS supplies in "Мой магазин"; the shop orders, the order comes to LLS
+- [ ] Delivered by the district delivery; paid in cash or by transfer to LLS's card
 
 ---
 
