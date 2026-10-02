@@ -1,4 +1,4 @@
-import { Feature, formatPhone } from "@lls/core"
+import { Feature, PaymentMethod, formatPhone } from "@lls/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -11,7 +11,8 @@ import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
+import { CardIcon, CashIcon, CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
+import { CardBlock } from "../ui/payment.js"
 import { Button, Field, Section, Stepper, TextArea, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
@@ -112,6 +113,7 @@ interface Delivery {
     location: Point | null
     /** Empty returnable bottles handed back (water shops). */
     bottlesReturned: number
+    payment: PaymentMethod
 }
 
 function AddressSection({
@@ -194,6 +196,7 @@ function usePlaceOrder(delivery: Delivery): { placing: boolean; place(): Promise
                 location: delivery.location ?? undefined,
                 comment: delivery.comment.trim() || undefined,
                 bottlesReturned: delivery.bottlesReturned || undefined,
+                paymentMethod: delivery.payment,
             })
             saveAddress({ address: delivery.address.trim(), landmark: delivery.landmark.trim() })
             clearCart()
@@ -250,6 +253,82 @@ function BottlesField({
     )
 }
 
+function PayOption({
+    selected,
+    icon,
+    label,
+    hint,
+    onClick,
+}: {
+    selected: boolean
+    icon: React.ReactNode
+    label: string
+    hint: string
+    onClick(): void
+}): React.JSX.Element {
+    return (
+        <button
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={(): void => {
+                haptic.select()
+                onClick()
+            }}
+            className={cn(
+                "tap flex items-center gap-3 rounded-control px-4 py-3 text-left ring-2 transition-colors duration-200",
+                selected ? "bg-brand/10 ring-brand" : "bg-tg-secondary ring-transparent",
+            )}
+        >
+            <span className={selected ? "text-brand" : "text-tg-hint"}>{icon}</span>
+            <span className="flex-1">
+                <span className="block font-semibold">{label}</span>
+                <span className="text-sm text-tg-hint">{hint}</span>
+            </span>
+            {selected ? <CheckIcon size={20} className="animate-pop text-brand" /> : null}
+        </button>
+    )
+}
+
+/** Cash, or a transfer to the shop's card when the shop gave one. No payment gateways. */
+function PaymentSection({
+    value,
+    total,
+    onChange,
+}: {
+    value: PaymentMethod
+    total: number
+    onChange(value: PaymentMethod): void
+}): React.JSX.Element {
+    const t = useT()
+    const card = useSession((state) => state.shop?.payoutCard)
+    return (
+        <Section title={t.pay.title}>
+            <div className="flex flex-col gap-2" role="radiogroup" aria-label={t.pay.title}>
+                <PayOption
+                    selected={value === PaymentMethod.CASH}
+                    icon={<CashIcon size={24} />}
+                    label={t.pay.cash}
+                    hint={t.pay.cashHint}
+                    onClick={(): void => onChange(PaymentMethod.CASH)}
+                />
+                {card ? (
+                    <PayOption
+                        selected={value === PaymentMethod.CARD_TRANSFER}
+                        icon={<CardIcon size={24} />}
+                        label={t.pay.card}
+                        hint={t.pay.cardHint}
+                        onClick={(): void => onChange(PaymentMethod.CARD_TRANSFER)}
+                    />
+                ) : null}
+            </div>
+            {card && value === PaymentMethod.CARD_TRANSFER ? (
+                <CardBlock card={card} total={total} />
+            ) : null}
+        </Section>
+    )
+}
+
 function Totals({ rows }: { rows: [string, number | string, boolean?][] }): React.JSX.Element {
     const language = useLanguage()
     return (
@@ -285,6 +364,7 @@ export function CheckoutScreen(): React.JSX.Element {
         comment: "",
         location: null,
         bottlesReturned: 0,
+        payment: PaymentMethod.CASH,
     }))
     const { placing, place } = usePlaceOrder(delivery)
 
@@ -354,9 +434,11 @@ export function CheckoutScreen(): React.JSX.Element {
                 ]}
             />
 
-            <p className="rounded-control bg-tg-secondary px-4 py-3 text-sm text-tg-subtitle">
-                {t.checkout.payment}
-            </p>
+            <PaymentSection
+                value={delivery.payment}
+                total={total}
+                onChange={(payment): void => setDelivery((d) => ({ ...d, payment }))}
+            />
             <BottomSpacer />
         </main>
     )

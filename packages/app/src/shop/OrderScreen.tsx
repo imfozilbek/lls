@@ -1,4 +1,4 @@
-import { OrderStatus, isFinalStatus } from "@lls/core"
+import { OrderStatus, PaymentMethod, PaymentStatus, isFinalStatus } from "@lls/core"
 import { useCallback, useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -7,10 +7,12 @@ import { formatTime } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
+import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusHero, StatusTimeline } from "../ui/order-status.js"
+import { CardBlock, PaymentLine } from "../ui/payment.js"
 import { Button, EmptyState, Section, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
@@ -20,6 +22,25 @@ import type { OrderDTO } from "@lls/core"
 
 /** Status changes arrive by bot message too, so a calm 20 s refresh is enough (free-tier friendly). */
 const POLL_MS = 20_000
+
+/** How the order is paid; while a transfer is awaited, the shop's card stays at hand. */
+function Payment({ order }: { order: OrderDTO }): React.JSX.Element {
+    const t = useT()
+    const card = useSession((state) => state.shop?.payoutCard)
+    const transferDue =
+        order.payment.method === PaymentMethod.CARD_TRANSFER &&
+        order.payment.status === PaymentStatus.AWAITING &&
+        order.status !== OrderStatus.CANCELLED
+    return (
+        <Section title={t.pay.title}>
+            <PaymentLine
+                order={order}
+                className="rounded-control bg-tg-secondary px-4 py-3 text-base"
+            />
+            {transferDue && card ? <CardBlock card={card} total={order.total} /> : null}
+        </Section>
+    )
+}
 
 function useOrder(id: string): {
     order: OrderDTO | null
@@ -210,6 +231,7 @@ export function OrderScreen({
             <Section title={t.order.address}>
                 <Address order={order} />
             </Section>
+            <Payment order={order} />
 
             <OrderActions order={order} onChange={setOrder} onStale={reload} />
             <BottomSpacer />

@@ -1,4 +1,4 @@
-import { FEATURES, Feature, WEEKDAYS } from "@lls/core"
+import { FEATURES, Feature, PayoutCard } from "@lls/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
@@ -25,17 +25,12 @@ import {
 import { BottomSpacer } from "../ui/shell.js"
 
 import { CouriersSection } from "./CouriersSection.js"
+import { HoursEditor } from "./HoursEditor.js"
+import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 
+import type { Hours } from "./hours.js"
 import type { ShopPatch } from "../lib/api.js"
-import type { ShopOwnerDTO, WeeklySchedule } from "@lls/core"
-
-interface Hours {
-    alwaysOpen: boolean
-    open: string
-    close: string
-    /** Index 0 = Monday, as in WEEKDAYS. */
-    days: boolean[]
-}
+import type { ShopOwnerDTO } from "@lls/core"
 
 interface Form {
     name: string
@@ -50,45 +45,37 @@ interface Form {
     hours: Hours
     features: Feature[]
     bottleDeposit: number | null
+    /** Digits only while typing; empty number = no card, cash only. */
+    cardNumber: string
+    cardHolder: string
 }
 
 const METERS_PER_KM = 1000
 const BPS_PER_PERCENT = 100
 const MAX_RADIUS_KM = 100
+const CARD_DIGITS = 16
 
-const DEFAULT_OPEN = "09:00"
-const DEFAULT_CLOSE = "22:00"
-
-/** One daily time range for the chosen days: simple enough for a small shop. */
-function hoursOf(schedule: WeeklySchedule | null): Hours {
-    if (schedule === null) {
-        return {
-            alwaysOpen: true,
-            open: DEFAULT_OPEN,
-            close: DEFAULT_CLOSE,
-            days: WEEKDAYS.map(() => true),
-        }
+/** No card, or a full card number that passes the bank check, with a name on it. */
+function cardIsValid(form: Form): boolean {
+    if (form.cardNumber === "") {
+        return true
     }
-    const first = WEEKDAYS.map((day) => schedule[day]).find((range) => range !== undefined)
-    return {
-        alwaysOpen: false,
-        open: first?.open ?? DEFAULT_OPEN,
-        close: first?.close ?? DEFAULT_CLOSE,
-        days: WEEKDAYS.map((day) => schedule[day] !== undefined),
+    try {
+        PayoutCard.create(form.cardNumber, form.cardHolder)
+        return true
+    } catch {
+        return false
     }
 }
 
-function scheduleOf(hours: Hours): WeeklySchedule | null {
-    if (hours.alwaysOpen) {
-        return null
+/** A full number with a wrong digit: say so right away, not after "Save". */
+function cardHasTypo(number: string): boolean {
+    try {
+        PayoutCard.create(number, "-")
+        return false
+    } catch {
+        return number.length === CARD_DIGITS
     }
-    const schedule: WeeklySchedule = {}
-    WEEKDAYS.forEach((day, index) => {
-        if (hours.days[index]) {
-            schedule[day] = { open: hours.open, close: hours.close }
-        }
-    })
-    return schedule
 }
 
 function formOf(shop: ShopOwnerDTO): Form {
@@ -106,6 +93,8 @@ function formOf(shop: ShopOwnerDTO): Form {
         hours: hoursOf(shop.workingHours),
         features: [...shop.features],
         bottleDeposit: shop.bottleDeposit || null,
+        cardNumber: shop.payoutCard?.number ?? "",
+        cardHolder: shop.payoutCard?.holder ?? "",
     }
 }
 
@@ -125,6 +114,9 @@ function patchOf(form: Form): ShopPatch {
         // Canonical order, so ticking a box off and on again leaves the form clean.
         features: FEATURES.filter((f) => form.features.includes(f)),
         bottleDeposit: form.bottleDeposit ?? 0,
+        payoutCard: form.cardNumber
+            ? { number: form.cardNumber, holder: form.cardHolder.trim() }
+            : null,
     }
 }
 
@@ -296,78 +288,6 @@ function ColorPicker({
     )
 }
 
-function HoursEditor({
-    hours,
-    onChange,
-}: {
-    hours: Hours
-    onChange(hours: Hours): void
-}): React.JSX.Element {
-    const t = useT()
-    const s = t.owner.settings
-    return (
-        <div className="flex flex-col gap-4 rounded-tile bg-tg-secondary p-4">
-            <label className="flex items-center justify-between gap-3">
-                <span className="font-medium">{s.alwaysOpen}</span>
-                <Switch
-                    checked={hours.alwaysOpen}
-                    onChange={(alwaysOpen): void => onChange({ ...hours, alwaysOpen })}
-                    label={s.alwaysOpen}
-                />
-            </label>
-            {hours.alwaysOpen ? null : (
-                <>
-                    <div className="grid grid-cols-7 gap-1.5">
-                        {s.days.map((label, index) => (
-                            <button
-                                key={label}
-                                type="button"
-                                aria-pressed={hours.days[index]}
-                                onClick={(): void => {
-                                    haptic.select()
-                                    const days = [...hours.days]
-                                    days[index] = !days[index]
-                                    onChange({ ...hours, days })
-                                }}
-                                className={cn(
-                                    "tap h-11 rounded-full text-sm font-semibold transition-colors duration-200",
-                                    hours.days[index]
-                                        ? "bg-brand text-brand-ink"
-                                        : "bg-tg-bg text-tg-hint",
-                                )}
-                            >
-                                {label}
-                            </button>
-                        ))}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        <Field label={s.opens} htmlFor="opens">
-                            <TextInput
-                                id="opens"
-                                type="time"
-                                value={hours.open}
-                                onChange={(e): void => onChange({ ...hours, open: e.target.value })}
-                                className="bg-tg-bg"
-                            />
-                        </Field>
-                        <Field label={s.closes} htmlFor="closes">
-                            <TextInput
-                                id="closes"
-                                type="time"
-                                value={hours.close}
-                                onChange={(e): void =>
-                                    onChange({ ...hours, close: e.target.value })
-                                }
-                                className="bg-tg-bg"
-                            />
-                        </Field>
-                    </div>
-                </>
-            )}
-        </div>
-    )
-}
-
 function ShopLink({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
     const t = useT()
     const [copied, setCopied] = useState(false)
@@ -483,6 +403,67 @@ function LocationFields({
     )
 }
 
+/** Customers who pay by transfer see this card. Without it the shop takes cash only. */
+function CardFields({
+    form,
+    patch,
+}: {
+    form: Form
+    patch(change: Partial<Form>): void
+}): React.JSX.Element {
+    const s = useT().owner.settings
+    const shown = form.cardNumber.replace(/(\d{4})(?=\d)/g, "$1 ")
+    return (
+        <Section title={s.payoutCard}>
+            <Field
+                label={s.cardNumber}
+                htmlFor="card-number"
+                hint={
+                    cardHasTypo(form.cardNumber) ? (
+                        <span className="text-tg-destructive">{s.cardInvalid}</span>
+                    ) : (
+                        s.cardHint
+                    )
+                }
+            >
+                <TextInput
+                    id="card-number"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    className="tabular-nums tracking-wide"
+                    placeholder="8600 0000 0000 0000"
+                    value={shown}
+                    onChange={(e): void =>
+                        patch({
+                            cardNumber: e.target.value.replace(/\D/g, "").slice(0, CARD_DIGITS),
+                        })
+                    }
+                />
+            </Field>
+            {form.cardNumber ? (
+                <>
+                    <Field label={s.cardHolder} htmlFor="card-holder">
+                        <TextInput
+                            id="card-holder"
+                            autoComplete="off"
+                            className="uppercase"
+                            maxLength={60}
+                            value={form.cardHolder}
+                            onChange={(e): void => patch({ cardHolder: e.target.value })}
+                        />
+                    </Field>
+                    <Button
+                        variant="danger"
+                        onClick={(): void => patch({ cardNumber: "", cardHolder: "" })}
+                    >
+                        {s.removeCard}
+                    </Button>
+                </>
+            ) : null}
+        </Section>
+    )
+}
+
 /** Vertical features the owner switches on or off; the bottle deposit lives with its switch. */
 function FeatureFields({
     form,
@@ -536,8 +517,7 @@ function SettingsForm({
     const [saving, setSaving] = useState(false)
     const patch = (change: Partial<Form>): void => setForm((f) => ({ ...f, ...change }))
     const dirty = JSON.stringify(patchOf(form)) !== JSON.stringify(patchOf(formOf(shop)))
-    const valid =
-        form.name.trim().length > 0 && (form.hours.alwaysOpen || form.hours.days.some(Boolean))
+    const valid = form.name.trim().length > 0 && hasOpenDay(form.hours) && cardIsValid(form)
 
     const save = async (): Promise<void> => {
         setSaving(true)
@@ -589,6 +569,7 @@ function SettingsForm({
                 <HoursEditor hours={form.hours} onChange={(hours): void => patch({ hours })} />
             </Section>
             <LocationFields form={form} patch={patch} />
+            <CardFields form={form} patch={patch} />
             <FeatureFields form={form} patch={patch} />
         </>
     )

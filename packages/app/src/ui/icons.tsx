@@ -170,6 +170,28 @@ export const WifiOffIcon = (p: IconProps): React.JSX.Element => (
     </Icon>
 )
 
+export const CashIcon = (p: IconProps): React.JSX.Element => (
+    <Icon {...p}>
+        <rect x="2.5" y="6" width="19" height="12" rx="2.5" />
+        <circle cx="12" cy="12" r="2.6" />
+        <path d="M6 9.5v.01M18 14.5v.01" />
+    </Icon>
+)
+export const CardIcon = (p: IconProps): React.JSX.Element => (
+    <Icon {...p}>
+        <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
+        <path d="M2.5 10h19M6.5 15h4" />
+    </Icon>
+)
+export const QrIcon = (p: IconProps): React.JSX.Element => (
+    <Icon {...p}>
+        <rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.5" />
+        <rect x="14" y="3.5" width="6.5" height="6.5" rx="1.5" />
+        <rect x="3.5" y="14" width="6.5" height="6.5" rx="1.5" />
+        <path d="M14 14h2.5v2.5M20.5 14v.01M14 20.5h.01M17.5 20.5h3v-3" />
+    </Icon>
+)
+
 /** Placeholder art for products without a photo, one per shared category. */
 const CATEGORY_PATHS: Record<string, ReactNode> = {
     meals: (
