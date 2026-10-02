@@ -4,7 +4,12 @@ import { env } from "cloudflare:workers"
 import { createApp } from "../src/app.js"
 import { TelegramApiError } from "../src/telegram/gateway.js"
 
-import type { BotInfo, MessageOptions, TelegramGateway } from "../src/telegram/gateway.js"
+import type {
+    BotInfo,
+    MessageOptions,
+    OutgoingFile,
+    TelegramGateway,
+} from "../src/telegram/gateway.js"
 import type { Clock } from "@lls/core"
 
 export const OWNER = { id: 1001, first_name: "Rustam", language_code: "uz" }
@@ -65,6 +70,8 @@ export class FakeTelegram implements TelegramGateway {
     readonly webhooks: { token: string; url: string; secret: string }[] = []
     readonly menuButtons: { token: string; url: string }[] = []
     readonly answered: string[] = []
+    readonly documents: { token: string; chatId: number; file: OutgoingFile; caption?: string }[] =
+        []
     /** Simulates a blocked bot or Telegram outage: replies to users fail. */
     failReplies = false
     /** Simulates Telegram refusing setWebhook (network hiccup, revoked token). */
@@ -111,6 +118,14 @@ export class FakeTelegram implements TelegramGateway {
             throw new TelegramApiError("answerCallbackQuery", "Bad Request: query is too old")
         }
         this.answered.push(callbackQueryId)
+    }
+    async sendDocument(
+        token: string,
+        chatId: number,
+        file: OutgoingFile,
+        caption?: string,
+    ): Promise<void> {
+        this.documents.push({ token, chatId, file, caption })
     }
     async setWebhook(token: string, url: string, secret: string): Promise<void> {
         if (this.failWebhooks) {

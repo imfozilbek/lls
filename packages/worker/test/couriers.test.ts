@@ -156,7 +156,11 @@ describe("shop couriers, verticals and channels", () => {
         expect(toCustomer?.html).toContain("Jasur")
 
         await botUpdate({
-            callback_query: { id: "cb-1", from: COURIER, data: `a:${String(order.id)}:delivered` },
+            callback_query: {
+                id: "cb-1",
+                from: COURIER,
+                data: `a:${String(order.id)}:delivered:cash`,
+            },
         })
         const mine = await json<{ data: { status: string }[] }>(
             await as(COURIER)("/api/courier/orders"),

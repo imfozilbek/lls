@@ -5,12 +5,14 @@ import {
     getNextStatus,
     isFinalStatus,
 } from "../enums/order-status.js"
+import { PaidWith, PaymentMethod } from "../enums/payment.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ForbiddenError } from "../errors/forbidden.error.js"
 import { InvalidOrderTransitionError } from "../errors/invalid-transition.error.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { optionalText, requireInteger, requireText } from "../shared/guards.js"
 import { Money } from "../value-objects/money.js"
+import { Payment } from "../value-objects/payment.js"
 
 import type { Courier } from "./courier.js"
 import type { OrderItem } from "./order-item.js"
@@ -66,6 +68,8 @@ export interface OrderProps {
     customerPhone?: Phone
     cancelReason?: string
     cancelledBy?: CancelledBy
+    payment: Payment
+    deliveredAt?: Date
     createdAt: Date
     updatedAt: Date
 }
@@ -87,6 +91,8 @@ export interface PlaceOrderProps {
     comment?: string
     customerName: string
     customerPhone?: Phone
+    /** Cash unless the customer chose a transfer to the shop's card. */
+    paymentMethod?: PaymentMethod
 }
 
 export function subtotalOf(items: readonly OrderItem[]): Money {
@@ -133,6 +139,7 @@ export class Order {
             comment: optionalText("comment", input.comment, COMMENT_MAX),
             customerName: input.customerName,
             customerPhone: input.customerPhone,
+            payment: Payment.start(input.paymentMethod ?? PaymentMethod.CASH),
             createdAt: now,
             updatedAt: now,
         })
@@ -214,6 +221,12 @@ export class Order {
     get cancelledBy(): CancelledBy | undefined {
         return this.props.cancelledBy
     }
+    get payment(): Payment {
+        return this.props.payment
+    }
+    get deliveredAt(): Date | undefined {
+        return this.props.deliveredAt
+    }
     get createdAt(): Date {
         return this.props.createdAt
     }
@@ -240,8 +253,9 @@ export class Order {
     /**
      * Moves the order forward. The owner may make every step; a courier only the delivery part
      * of an order assigned to them. Cancelling goes through `cancel()`.
+     * Delivering records how the customer paid, unless the money was already confirmed.
      */
-    advanceTo(status: OrderStatus, by: OrderMover = OWNER): void {
+    advanceTo(status: OrderStatus, by: OrderMover = OWNER, paidWith?: PaidWith): void {
         if (status === OrderStatus.CANCELLED) {
             throw ValidationError.fromField("status", "Use cancel() to cancel an order", status)
         }
@@ -254,7 +268,41 @@ export class Order {
         if (!canActorMove(by.role, this.props.status, status)) {
             throw ForbiddenError.stepNotAllowed(this.props.id, status)
         }
+        if (status === OrderStatus.DELIVERED) {
+            this.settlePayment(by, paidWith)
+        }
         this.props.status = status
+        this.touch()
+    }
+
+    private settlePayment(by: OrderMover, paidWith: PaidWith | undefined): void {
+        const now = new Date()
+        if (!this.props.payment.isPaid()) {
+            if (paidWith === undefined) {
+                throw ValidationError.fromField("paidWith", "How did the customer pay?")
+            }
+            const holder =
+                by.role === "courier"
+                    ? { kind: "courier" as const, courierId: by.courierId }
+                    : { kind: "owner" as const }
+            this.props.payment = this.props.payment.settleOnDelivery(paidWith, holder, now)
+        }
+        this.props.deliveredAt = now
+    }
+
+    /** The owner saw the money arrive: a transfer, or a debt paid later. */
+    confirmPayment(method: PaymentMethod): void {
+        this.props.payment = this.props.payment.confirm(
+            method,
+            new Date(),
+            this.props.status === OrderStatus.CANCELLED,
+        )
+        this.touch()
+    }
+
+    /** The owner gave the money of a cancelled order back. */
+    markRefunded(): void {
+        this.props.payment = this.props.payment.refund()
         this.touch()
     }
 
@@ -290,6 +338,7 @@ export class Order {
             )
         }
         this.props.status = OrderStatus.CANCELLED
+        this.props.payment = this.props.payment.onCancel()
         this.props.cancelledBy = by
         this.props.cancelReason = optionalText("cancelReason", reason, REASON_MAX)
         this.touch()

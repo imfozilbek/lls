@@ -1,3 +1,4 @@
+/** @deprecated Replaced by MoneyReportDTO; removed once the app reads «Деньги». */
 export interface OrderStatsDTO {
     /** Orders placed in the period, excluding cancelled ones. */
     orders: number

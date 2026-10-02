@@ -117,4 +117,36 @@ export class BusinessRuleViolationError extends DomainError {
             { businessId },
         )
     }
+
+    static paymentNotConfirmable(status: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "PAYMENT_NOT_CONFIRMABLE",
+            "Only an unpaid or awaited payment can be confirmed",
+            { status },
+        )
+    }
+
+    static paymentNotRefundable(status: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "PAYMENT_NOT_REFUNDABLE",
+            "Only money owed back can be marked as refunded",
+            { status },
+        )
+    }
+
+    static cardTransferUnavailable(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "CARD_TRANSFER_UNAVAILABLE",
+            "The shop has no card for transfers",
+            { businessId },
+        )
+    }
+
+    static handoverTooLarge(onHand: number, amount: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "HANDOVER_TOO_LARGE",
+            "A courier cannot hand over more cash than they hold",
+            { onHand, amount },
+        )
+    }
 }

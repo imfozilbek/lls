@@ -1,4 +1,4 @@
-import { Language, OrderChannel, OrderStatus } from "@lls/core"
+import { Language, OrderChannel, OrderStatus, PaymentMethod, PaymentStatus } from "@lls/core"
 
 import { alertAdmins, describeError, isRecipientProblem } from "../alerts.js"
 import { platformAdminIds } from "../env.js"
@@ -16,7 +16,8 @@ import { escapeHtml } from "./gateway.js"
 import { fill, textsFor } from "./texts.js"
 
 import type { Reader } from "./format.js"
-import type { InlineKeyboard } from "./gateway.js"
+import type { InlineKeyboard, OutgoingFile } from "./gateway.js"
+import type { BotTexts } from "./texts.js"
 import type { Services } from "../services.js"
 import type { Business, OrderDTO, ShopOwnerDTO } from "@lls/core"
 
@@ -103,6 +104,36 @@ export class Notifier {
         }
         await this.refreshCourierCard(token, business, order, null)
         await this.orderChangedForOwner(token, business, order)
+    }
+
+    /**
+     * The owner confirmed a payment or a refund: both cards show it; a customer whose transfer
+     * arrived hears so.
+     */
+    async paymentChanged(business: Business, order: OrderDTO): Promise<void> {
+        const token = await this.shopToken(business.id)
+        const messages = await this.services.orders.getMessageIds(order.id)
+        await this.orderChangedForOwner(token, business, order)
+        await this.refreshCourierCard(token, business, order, messages.courier)
+        const received =
+            order.payment.status === PaymentStatus.PAID &&
+            order.payment.method === PaymentMethod.CARD_TRANSFER
+        if (received) {
+            await this.tellCustomer(token, business, order, (t) =>
+                fill(t.paymentReceived, { n: order.number }),
+            )
+        }
+    }
+
+    /** A file for the owner in the shop bot's chat: the CSV report or the QR poster. */
+    async fileToOwner(business: Business, file: OutgoingFile, caption: string): Promise<void> {
+        const token = await this.shopToken(business.id)
+        await this.services.telegram.sendDocument(
+            token,
+            business.ownerTelegramId.value,
+            file,
+            caption,
+        )
     }
 
     /** Tells the owner a new courier joined through their invite link. */
@@ -267,14 +298,23 @@ export class Notifier {
         business: Business,
         order: OrderDTO,
     ): Promise<void> {
+        await this.tellCustomer(token, business, order, (_t, language) =>
+            formatStatusForCustomer(order, { language, type: business.type }),
+        )
+    }
+
+    /** Writes the customer in their language; a showcase customer hears from the LLS bot. */
+    private async tellCustomer(
+        token: string,
+        business: Business,
+        order: OrderDTO,
+        compose: (t: BotTexts, language: Language) => string | null,
+    ): Promise<void> {
         const customer = await this.services.customers.findById(order.customerId)
         if (!customer) {
             return
         }
-        const text = formatStatusForCustomer(order, {
-            language: customer.language,
-            type: business.type,
-        })
+        const text = compose(textsFor(customer.language, business.type), customer.language)
         if (!text) {
             return
         }

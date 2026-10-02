@@ -31,3 +31,10 @@ export function startOfLocalDay(date: Date, offsetMinutes: number = UZ_UTC_OFFSE
 export function addDays(date: Date, days: number): Date {
     return new Date(date.getTime() + days * MINUTES_PER_DAY * MS_PER_MINUTE)
 }
+
+/** Start of the local month (UZ time) that contains `date`, as a UTC instant. */
+export function startOfLocalMonth(date: Date, offsetMinutes: number = UZ_UTC_OFFSET_MINUTES): Date {
+    const local = new Date(date.getTime() + offsetMinutes * MS_PER_MINUTE)
+    const firstLocal = Date.UTC(local.getUTCFullYear(), local.getUTCMonth(), 1)
+    return new Date(firstLocal - offsetMinutes * MS_PER_MINUTE)
+}

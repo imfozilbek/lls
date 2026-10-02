@@ -55,7 +55,7 @@ export async function readImageBody(request: Request): Promise<ArrayBuffer> {
 const RIFF_HEADER_BYTES = 12
 
 /** The first bytes must match the declared type: a renamed HTML file is not an image. */
-function looksLike(type: string, body: ArrayBuffer): boolean {
+export function looksLike(type: string, body: ArrayBuffer): boolean {
     const b = new Uint8Array(body.slice(0, RIFF_HEADER_BYTES))
     const text = (from: number, to: number): string => String.fromCharCode(...b.slice(from, to))
     switch (type) {

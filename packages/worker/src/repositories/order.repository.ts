@@ -8,6 +8,9 @@ import {
     Order,
     OrderItem,
     OrderStatus,
+    PAYMENT_METHODS,
+    PAYMENT_STATUSES,
+    Payment,
     Phone,
     UNITS,
     offsetOf,
@@ -15,7 +18,14 @@ import {
 
 import { isUniqueViolation, oneOf, optional, placeholders } from "./rows.js"
 
-import type { CancelledBy, OrderRepository, OrderStatsDTO, Page, PageRequest } from "@lls/core"
+import type {
+    CancelledBy,
+    CourierAmount,
+    MoneyTotals,
+    OrderRepository,
+    Page,
+    PageRequest,
+} from "@lls/core"
 
 interface OrderRow {
     id: string
@@ -42,6 +52,11 @@ interface OrderRow {
     customer_phone: string | null
     cancel_reason: string | null
     cancelled_by: string | null
+    payment_method: string
+    payment_status: string
+    paid_at: number | null
+    cash_courier_id: string | null
+    delivered_at: number | null
     created_at: number
     updated_at: number
 }
@@ -63,11 +78,26 @@ export type OrderCardHolder = "owner" | "courier"
 const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal, delivery_fee,
     deposit_total, bottles_returned, total, commission_bps, commission, courier_id, courier_name,
     address, landmark, latitude, longitude, comment, customer_name, customer_phone,
-    cancel_reason, cancelled_by, created_at, updated_at`
+    cancel_reason, cancelled_by, payment_method, payment_status, paid_at, cash_courier_id,
+    delivered_at, created_at, updated_at`
 
 const ITEM_COLUMNS = "order_id, line, product_id, name, unit, category, unit_price, quantity"
 
 const CANCELLED_BY: readonly CancelledBy[] = ["customer", "owner"]
+
+const EMPTY_TOTALS: MoneyTotals = {
+    placed: 0,
+    delivered: 0,
+    cancelled: 0,
+    goods: 0,
+    delivery: 0,
+    deposits: 0,
+    paidCash: 0,
+    paidCard: 0,
+    awaiting: 0,
+    debt: 0,
+    commission: 0,
+}
 
 /** Most a courier's screen shows at once: today's work fits easily. */
 const COURIER_LIST_LIMIT = 50
@@ -115,6 +145,13 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
             row.cancelled_by === null
                 ? undefined
                 : oneOf(row.cancelled_by, CANCELLED_BY, "cancelled_by"),
+        payment: Payment.reconstitute({
+            method: oneOf(row.payment_method, PAYMENT_METHODS, "payment method"),
+            status: oneOf(row.payment_status, PAYMENT_STATUSES, "payment status"),
+            paidAt: row.paid_at === null ? undefined : new Date(row.paid_at),
+            cashCourierId: optional(row.cash_courier_id),
+        }),
+        deliveredAt: row.delivered_at === null ? undefined : new Date(row.delivered_at),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -146,8 +183,20 @@ function orderValues(order: Order): (string | number | null)[] {
         order.customerPhone?.number ?? null,
         order.cancelReason ?? null,
         order.cancelledBy ?? null,
+        ...paymentValues(order),
         order.createdAt.getTime(),
         order.updatedAt.getTime(),
+    ]
+}
+
+function paymentValues(order: Order): (string | number | null)[] {
+    const { payment } = order
+    return [
+        payment.method,
+        payment.status,
+        payment.paidAt?.getTime() ?? null,
+        payment.cashCourierId ?? null,
+        order.deliveredAt?.getTime() ?? null,
     ]
 }
 
@@ -213,7 +262,8 @@ export class D1OrderRepository implements OrderRepository {
         await this.db
             .prepare(
                 `UPDATE orders SET status = ?, courier_id = ?, courier_name = ?, cancel_reason = ?,
-                    cancelled_by = ?, updated_at = ?
+                    cancelled_by = ?, payment_method = ?, payment_status = ?, paid_at = ?,
+                    cash_courier_id = ?, delivered_at = ?, updated_at = ?
                  WHERE id = ?`,
             )
             .bind(
@@ -222,6 +272,7 @@ export class D1OrderRepository implements OrderRepository {
                 order.courierName ?? null,
                 order.cancelReason ?? null,
                 order.cancelledBy ?? null,
+                ...paymentValues(order),
                 order.updatedAt.getTime(),
                 order.id,
             )
@@ -260,29 +311,79 @@ export class D1OrderRepository implements OrderRepository {
         return this.page("customer_id = ? AND business_id = ?", [customerId, businessId], page)
     }
 
-    /** Revenue = delivered orders without bottle deposits (a deposit is returned money). */
-    async stats(businessId: string, from: Date, to: Date): Promise<OrderStatsDTO> {
-        const row = await this.db
+    /** Counts by creation time; money of delivered orders by delivery time. Two scans. */
+    async moneyTotals(businessId: string, from: Date, to: Date): Promise<MoneyTotals> {
+        const range = [businessId, from.getTime(), to.getTime()]
+        const [counts, money] = await this.db.batch([
+            this.db
+                .prepare(
+                    `SELECT COALESCE(SUM(status != 'cancelled'), 0) AS placed,
+                        COALESCE(SUM(status = 'cancelled'), 0) AS cancelled
+                     FROM orders WHERE business_id = ? AND created_at >= ? AND created_at < ?`,
+                )
+                .bind(...range),
+            this.db
+                .prepare(
+                    `SELECT COUNT(*) AS delivered,
+                        COALESCE(SUM(subtotal), 0) AS goods,
+                        COALESCE(SUM(delivery_fee), 0) AS delivery,
+                        COALESCE(SUM(deposit_total), 0) AS deposits,
+                        COALESCE(SUM(CASE WHEN payment_status = 'paid'
+                            AND payment_method = 'cash' THEN total END), 0) AS paidCash,
+                        COALESCE(SUM(CASE WHEN payment_status = 'paid'
+                            AND payment_method = 'card_transfer' THEN total END), 0) AS paidCard,
+                        COALESCE(SUM(CASE WHEN payment_status = 'awaiting' THEN total END), 0)
+                            AS awaiting,
+                        COALESCE(SUM(CASE WHEN payment_status = 'unpaid' THEN total END), 0) AS debt,
+                        COALESCE(SUM(commission), 0) AS commission
+                     FROM orders
+                     WHERE business_id = ? AND status = 'delivered'
+                        AND delivered_at >= ? AND delivered_at < ?`,
+                )
+                .bind(...range),
+        ])
+        // Every column is COALESCEd in SQL: the rows always carry numbers.
+        return {
+            ...EMPTY_TOTALS,
+            ...(counts?.results[0] as Partial<MoneyTotals> | undefined),
+            ...(money?.results[0] as Partial<MoneyTotals> | undefined),
+        }
+    }
+
+    async listOpenPayments(businessId: string, limit: number): Promise<Order[]> {
+        return this.list(
+            `business_id = ? AND (payment_status IN ('awaiting', 'refund_due')
+                OR (payment_status = 'unpaid' AND status = 'delivered'))`,
+            [businessId],
+            "number ASC",
+            limit,
+        )
+    }
+
+    async cashCollectedByCourier(businessId: string): Promise<CourierAmount[]> {
+        const { results } = await this.db
             .prepare(
-                `SELECT
-                    COALESCE(SUM(status != ?), 0) AS orders,
-                    COALESCE(SUM(status = ?), 0) AS delivered,
-                    COALESCE(SUM(status = ?), 0) AS cancelled,
-                    COALESCE(SUM(CASE WHEN status = ? THEN total - deposit_total ELSE 0 END), 0)
-                        AS revenue
-                 FROM orders WHERE business_id = ? AND created_at >= ? AND created_at < ?`,
+                `SELECT cash_courier_id AS courierId, SUM(total) AS amount FROM orders
+                 WHERE business_id = ? AND cash_courier_id IS NOT NULL AND payment_status = 'paid'
+                 GROUP BY cash_courier_id`,
             )
-            .bind(
-                OrderStatus.CANCELLED,
-                OrderStatus.DELIVERED,
-                OrderStatus.CANCELLED,
-                OrderStatus.DELIVERED,
-                businessId,
-                from.getTime(),
-                to.getTime(),
-            )
-            .first<OrderStatsDTO>()
-        return row ?? { orders: 0, delivered: 0, cancelled: 0, revenue: 0 }
+            .bind(businessId)
+            .all<CourierAmount>()
+        return results
+    }
+
+    async listCreatedBetween(
+        businessId: string,
+        from: Date,
+        to: Date,
+        limit: number,
+    ): Promise<Order[]> {
+        return this.list(
+            "business_id = ? AND created_at >= ? AND created_at < ?",
+            [businessId, from.getTime(), to.getTime()],
+            "number ASC",
+            limit,
+        )
     }
 
     /** Telegram message id of an order card, to edit it on status change. */
@@ -302,6 +403,20 @@ export class D1OrderRepository implements OrderRepository {
             .bind(orderId)
             .first<{ owner_message_id: number | null; courier_message_id: number | null }>()
         return { owner: row?.owner_message_id ?? null, courier: row?.courier_message_id ?? null }
+    }
+
+    private async list(
+        where: string,
+        params: (string | number)[],
+        order: string,
+        limit: number,
+    ): Promise<Order[]> {
+        const { results } = await this.db
+            .prepare(`SELECT ${COLUMNS} FROM orders WHERE ${where} ORDER BY ${order} LIMIT ?`)
+            .bind(...params, limit)
+            .all<OrderRow>()
+        const items = await this.itemsFor(results.map((o) => o.id))
+        return results.map((row) => toOrder(row, items.get(row.id) ?? []))
     }
 
     private async page(

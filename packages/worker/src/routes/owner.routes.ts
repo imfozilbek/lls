@@ -52,14 +52,6 @@ export const ownerRoutes = new Hono<AppEnv>()
         return c.json(shop)
     })
 
-    .get("/stats", async (c) => {
-        const stats = await c.get("services").useCases.shopStats.execute({
-            actorTelegramId: c.get("auth").user.id,
-            businessId: shopOf(c).id,
-        })
-        return c.json(stats)
-    })
-
     .get("/orders", zValidator("query", ownerOrdersQuery, onInvalid), async (c) => {
         const page = await c.get("services").useCases.listShopOrders.execute({
             ...c.req.valid("query"),
@@ -78,7 +70,7 @@ export const ownerRoutes = new Hono<AppEnv>()
             const actor = c.get("auth").user.id
             const businessId = shopOf(c).id
             const orderId = c.req.valid("param").id
-            const { status, reason } = c.req.valid("json")
+            const { status, reason, paidWith } = c.req.valid("json")
             const order =
                 status === OrderStatus.CANCELLED
                     ? await services.useCases.cancelOrder.execute({
@@ -92,6 +84,7 @@ export const ownerRoutes = new Hono<AppEnv>()
                           businessId,
                           orderId,
                           to: status,
+                          paidWith,
                       })
             inBackground(
                 c.executionCtx,

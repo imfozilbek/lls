@@ -1,9 +1,19 @@
-import { OrderChannel, OrderStatus, Unit, formatPhone, mapUrl } from "@lls/core"
+import {
+    OrderChannel,
+    OrderStatus,
+    PAID_WITH,
+    PaidWith,
+    PaymentMethod,
+    PaymentStatus,
+    Unit,
+    formatPhone,
+    mapUrl,
+} from "@lls/core"
 
 import { escapeHtml } from "./gateway.js"
 import { fill, textsFor } from "./texts.js"
 
-import type { InlineKeyboard } from "./gateway.js"
+import type { InlineButton, InlineKeyboard } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
 import type { BusinessType, Language, OrderDTO, OrderItemDTO } from "@lls/core"
 
@@ -53,6 +63,43 @@ function addressLines(order: OrderDTO, t: BotTexts): string[] {
     return lines
 }
 
+/** One line about the money of an order. The owner also sees which courier holds the cash. */
+export function paymentLine(order: OrderDTO, t: BotTexts, forOwner = false): string {
+    const { payment } = order
+    const p = t.payment
+    switch (payment.status) {
+        case PaymentStatus.AWAITING:
+            return p.transferAwaited
+        case PaymentStatus.REFUND_DUE:
+            return p.refundDue
+        case PaymentStatus.REFUNDED:
+            return p.refunded
+        case PaymentStatus.UNPAID:
+            return order.status === OrderStatus.DELIVERED ? p.debt : p.cashDue
+        case PaymentStatus.PAID: {
+            if (payment.method === PaymentMethod.CARD_TRANSFER) {
+                return p.paidCard
+            }
+            const courier =
+                forOwner && payment.cashCourierId && order.courierName
+                    ? ` · ${fill(t.withCourier, { name: escapeHtml(order.courierName) })}`
+                    : ""
+            return p.paidCash + courier
+        }
+    }
+}
+
+/** What the courier takes at the door: the total in cash, or nothing. */
+function collectLine(order: OrderDTO, t: BotTexts, language: Language): string {
+    if (order.payment.status === PaymentStatus.PAID) {
+        return t.nothingToCollect
+    }
+    if (order.payment.status === PaymentStatus.AWAITING) {
+        return t.collectTransfer
+    }
+    return fill(t.collect, { sum: `<b>${formatMoney(order.total, language)}</b>` })
+}
+
 /** The owner's order card: items, totals, customer, address, courier, current status. */
 export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
     const { language } = reader
@@ -64,6 +111,7 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
         lines.push(`${t.deposit}: ${formatMoney(order.depositTotal, language)}`)
     }
     lines.push(`<b>${t.total}: ${formatMoney(order.total, language)}</b>`)
+    lines.push(paymentLine(order, t, true))
     if (order.bottlesReturned > 0) {
         lines.push(fill(t.bottlesBack, { n: order.bottlesReturned }))
     }
@@ -102,7 +150,7 @@ export function formatOrderForCourier(order: OrderDTO, reader: Reader): string {
         "",
         ...itemLines(order, t, language),
         "",
-        fill(t.collect, { sum: `<b>${formatMoney(order.total, language)}</b>` }),
+        collectLine(order, t, language),
     ]
     if (order.bottlesReturned > 0) {
         lines.push(fill(t.bottlesToCollect, { n: order.bottlesReturned }))
@@ -129,24 +177,47 @@ export function formatStatusForCustomer(order: OrderDTO, reader: Reader): string
     return text + reason
 }
 
-// Callback data (≤ 64 bytes): "a:<orderId>:<status>" advance, "x:<orderId>" cancel.
+// Callback data (≤ 64 bytes): "a:<orderId>:<status>[:<paidWith>]" advance, "x:<orderId>" cancel.
 export type OrderCallback =
-    { kind: "advance"; orderId: string; to: OrderStatus } | { kind: "cancel"; orderId: string }
+    | { kind: "advance"; orderId: string; to: OrderStatus; paidWith?: PaidWith }
+    | { kind: "cancel"; orderId: string }
 
 const ORDER_STATUS_VALUES = new Set<string>(Object.values(OrderStatus))
+const PAID_WITH_VALUES = new Set<string>(PAID_WITH)
 
 export function parseOrderCallback(data: string): OrderCallback | null {
-    const [kind, orderId, status] = data.split(":")
+    const [kind, orderId, status, paidWith] = data.split(":")
     if (!orderId) {
         return null
     }
     if (kind === "x") {
         return { kind: "cancel", orderId }
     }
-    if (kind === "a" && status && ORDER_STATUS_VALUES.has(status)) {
-        return { kind: "advance", orderId, to: status as OrderStatus }
+    if (kind !== "a" || !status || !ORDER_STATUS_VALUES.has(status)) {
+        return null
     }
-    return null
+    if (paidWith !== undefined && !PAID_WITH_VALUES.has(paidWith)) {
+        return null
+    }
+    return { kind: "advance", orderId, to: status as OrderStatus, paidWith: paidWith as PaidWith }
+}
+
+/**
+ * The next-step buttons. Delivering an unpaid order asks how the customer paid: one button each.
+ */
+function nextStepRows(order: OrderDTO, label: string, t: BotTexts): InlineButton[][] {
+    const next = order.nextStatus
+    if (next !== OrderStatus.DELIVERED || order.payment.status === PaymentStatus.PAID) {
+        return [[{ text: label, callback_data: `a:${order.id}:${next ?? ""}` }]]
+    }
+    const options: [PaidWith, string][] = [
+        [PaidWith.CASH, t.paidCash],
+        [PaidWith.CARD_TRANSFER, t.paidCard],
+        [PaidWith.LATER, t.paidLater],
+    ]
+    return options.map(([paidWith, text]) => [
+        { text, callback_data: `a:${order.id}:${next}:${paidWith}` },
+    ])
 }
 
 /** Owner: next-step button + cancel, or no buttons for a finished order. */
@@ -158,7 +229,7 @@ export function orderKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard {
     }
     return {
         inline_keyboard: [
-            [{ text: t.actions[next] ?? next, callback_data: `a:${order.id}:${next}` }],
+            ...nextStepRows(order, t.actions[next] ?? next, t),
             [{ text: t.cancel, callback_data: `x:${order.id}` }],
         ],
     }
@@ -174,11 +245,7 @@ export function courierKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard
     if (!next) {
         return { inline_keyboard: [] }
     }
-    return {
-        inline_keyboard: [
-            [{ text: t.courierActions[next] ?? next, callback_data: `a:${order.id}:${next}` }],
-        ],
-    }
+    return { inline_keyboard: nextStepRows(order, t.courierActions[next] ?? next, t) }
 }
 
 // Platform admin review: "r:<businessId>:approve" / "r:<businessId>:reject".

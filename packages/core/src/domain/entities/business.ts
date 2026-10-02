@@ -11,6 +11,7 @@ import { WorkingHours } from "../value-objects/working-hours.js"
 
 import type { BusinessType } from "../enums/business-type.js"
 import type { Location } from "../value-objects/location.js"
+import type { PayoutCard } from "../value-objects/payout-card.js"
 import type { Slug } from "../value-objects/slug.js"
 import type { TelegramId } from "../value-objects/telegram-id.js"
 
@@ -60,6 +61,8 @@ export interface BusinessProps {
     bottleDeposit: Money
     /** Undefined: the shop sells only through its own bot. */
     marketplace?: MarketplaceTerms
+    /** The card customers transfer to; without it a shop takes cash only. */
+    payoutCard?: PayoutCard
     createdAt: Date
     updatedAt: Date
 }
@@ -171,6 +174,13 @@ export class Business {
     }
     get bottleDeposit(): Money {
         return this.props.bottleDeposit
+    }
+    get payoutCard(): PayoutCard | undefined {
+        return this.props.payoutCard
+    }
+    /** Transfers need the shop's card. */
+    acceptsCardTransfers(): boolean {
+        return this.props.payoutCard !== undefined
     }
     get marketplace(): MarketplaceTerms | undefined {
         return this.props.marketplace ? { ...this.props.marketplace } : undefined
@@ -293,6 +303,12 @@ export class Business {
 
     setFeatures(features: Feature[]): void {
         this.props.features = [...new Set(features)]
+        this.touch()
+    }
+
+    /** `null` removes the card: the shop takes cash only. */
+    setPayoutCard(card: PayoutCard | null): void {
+        this.props.payoutCard = card ?? undefined
         this.touch()
     }
 

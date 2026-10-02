@@ -1,19 +1,24 @@
 import { offsetOf } from "../application/dtos/pagination.js"
 import { ACTIVE_ORDER_STATUSES, OrderStatus } from "../domain/enums/order-status.js"
+import { PaymentMethod, PaymentStatus } from "../domain/enums/payment.js"
 
 import type { Page, PageRequest } from "../application/dtos/pagination.js"
-import type { OrderStatsDTO } from "../application/dtos/stats.dto.js"
 import type { BusinessRepository } from "../application/ports/business-repository.js"
+import type {
+    CashHandoverRepository,
+    CourierAmount,
+} from "../application/ports/cash-handover-repository.js"
 import type { Clock } from "../application/ports/clock.js"
 import type { CourierRepository } from "../application/ports/courier-repository.js"
 import type { CustomerRepository } from "../application/ports/customer-repository.js"
-import type { OrderRepository } from "../application/ports/order-repository.js"
+import type { MoneyTotals, OrderRepository } from "../application/ports/order-repository.js"
 import type {
     ProductListQuery,
     ProductRepository,
     ShowcaseSearch,
 } from "../application/ports/product-repository.js"
 import type { Business } from "../domain/entities/business.js"
+import type { CashHandover } from "../domain/entities/cash-handover.js"
 import type { Courier, CourierInvite } from "../domain/entities/courier.js"
 import type { Customer } from "../domain/entities/customer.js"
 import type { Order } from "../domain/entities/order.js"
@@ -195,17 +200,86 @@ export class InMemoryOrders implements OrderRepository {
             .sort((a, b) => b.number - a.number)
         return paginate(matching, page)
     }
-    async stats(businessId: string, from: Date, to: Date): Promise<OrderStatsDTO> {
-        const inRange = [...this.items.values()].filter(
-            (o) => o.businessId === businessId && o.createdAt >= from && o.createdAt < to,
+    async moneyTotals(businessId: string, from: Date, to: Date): Promise<MoneyTotals> {
+        const mine = [...this.items.values()].filter((o) => o.businessId === businessId)
+        const created = mine.filter((o) => o.createdAt >= from && o.createdAt < to)
+        const delivered = mine.filter(
+            (o) =>
+                o.status === OrderStatus.DELIVERED &&
+                o.deliveredAt !== undefined &&
+                o.deliveredAt >= from &&
+                o.deliveredAt < to,
         )
-        const delivered = inRange.filter((o) => o.status === OrderStatus.DELIVERED)
+        const sum = (list: Order[], pick: (o: Order) => number): number =>
+            list.reduce((total, o) => total + pick(o), 0)
+        const paidBy = (method: PaymentMethod): Order[] =>
+            delivered.filter(
+                (o) => o.payment.status === PaymentStatus.PAID && o.payment.method === method,
+            )
+        const withStatus = (status: PaymentStatus): Order[] =>
+            delivered.filter((o) => o.payment.status === status)
         return {
-            orders: inRange.filter((o) => o.status !== OrderStatus.CANCELLED).length,
+            placed: created.filter((o) => o.status !== OrderStatus.CANCELLED).length,
             delivered: delivered.length,
-            cancelled: inRange.filter((o) => o.status === OrderStatus.CANCELLED).length,
-            revenue: delivered.reduce((sum, o) => sum + o.total.amount, 0),
+            cancelled: created.filter((o) => o.status === OrderStatus.CANCELLED).length,
+            goods: sum(delivered, (o) => o.subtotal.amount),
+            delivery: sum(delivered, (o) => o.deliveryFee.amount),
+            deposits: sum(delivered, (o) => o.depositTotal.amount),
+            paidCash: sum(paidBy(PaymentMethod.CASH), (o) => o.total.amount),
+            paidCard: sum(paidBy(PaymentMethod.CARD_TRANSFER), (o) => o.total.amount),
+            awaiting: sum(withStatus(PaymentStatus.AWAITING), (o) => o.total.amount),
+            debt: sum(withStatus(PaymentStatus.UNPAID), (o) => o.total.amount),
+            commission: sum(delivered, (o) => o.commission.amount),
         }
+    }
+    async listOpenPayments(businessId: string, limit: number): Promise<Order[]> {
+        return [...this.items.values()]
+            .filter(
+                (o) =>
+                    o.businessId === businessId &&
+                    (o.payment.status === PaymentStatus.AWAITING ||
+                        o.payment.status === PaymentStatus.REFUND_DUE ||
+                        (o.payment.status === PaymentStatus.UNPAID &&
+                            o.status === OrderStatus.DELIVERED)),
+            )
+            .sort((a, b) => a.number - b.number)
+            .slice(0, limit)
+    }
+    async cashCollectedByCourier(businessId: string): Promise<CourierAmount[]> {
+        const totals = new Map<string, number>()
+        for (const o of this.items.values()) {
+            const courierId = o.payment.cashCourierId
+            if (o.businessId === businessId && courierId && o.payment.isPaid()) {
+                totals.set(courierId, (totals.get(courierId) ?? 0) + o.total.amount)
+            }
+        }
+        return [...totals].map(([courierId, amount]) => ({ courierId, amount }))
+    }
+    async listCreatedBetween(
+        businessId: string,
+        from: Date,
+        to: Date,
+        limit: number,
+    ): Promise<Order[]> {
+        return [...this.items.values()]
+            .filter((o) => o.businessId === businessId && o.createdAt >= from && o.createdAt < to)
+            .sort((a, b) => a.number - b.number)
+            .slice(0, limit)
+    }
+}
+
+export class InMemoryHandovers implements CashHandoverRepository {
+    readonly items: CashHandover[] = []
+
+    async insert(handover: CashHandover): Promise<void> {
+        this.items.push(handover)
+    }
+    async totalsByCourier(businessId: string): Promise<CourierAmount[]> {
+        const totals = new Map<string, number>()
+        for (const h of this.items.filter((x) => x.businessId === businessId)) {
+            totals.set(h.courierId, (totals.get(h.courierId) ?? 0) + h.amount.amount)
+        }
+        return [...totals].map(([courierId, amount]) => ({ courierId, amount }))
     }
 }
 

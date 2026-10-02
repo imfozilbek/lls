@@ -274,8 +274,8 @@ describe("inside a shop", () => {
         )
         expect(active.meta.total).toBe(1)
 
-        const stats = await json<{ today: Json }>(await asOwner()("/api/owner/stats"))
-        expect(stats.today).toMatchObject({ orders: 1, cancelled: 1 })
+        const money = await json<{ totals: Json }>(await asOwner()("/api/owner/money"))
+        expect(money.totals).toMatchObject({ placed: 1, cancelled: 1 })
     })
 
     it("an order of one shop cannot be read or changed through another shop", async () => {
@@ -294,7 +294,8 @@ describe("inside a shop", () => {
                 logo_key, address, latitude, longitude, delivery_fee, free_delivery_from,
                 min_order, delivery_radius_m, working_hours, features, accepting_orders,
                 bottle_deposit, marketplace_commission_bps, marketplace_joined_at,
-                created_at, updated_at FROM businesses WHERE slug = ?`,
+                created_at, updated_at, payout_card_number, payout_card_holder
+             FROM businesses WHERE slug = ?`,
         )
             .bind(slug)
             .run()

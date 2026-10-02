@@ -80,6 +80,13 @@ const SHOWCASE_BPS: Record<DevShop["type"], number | null> = {
     grocery: 300,
 }
 
+/** Demo cards for transfers (valid checksums, not real accounts). Grocery takes cash only. */
+const PAYOUT_CARDS: Record<DevShop["type"], [string, string] | null> = {
+    food: ["8600123456789012", "RUSTAM KARIMOV"], // secret-scan: fake
+    water: ["9860123456789015", "DILSHOD TOSHEV"], // secret-scan: fake
+    grocery: null,
+}
+
 /** Minimum order per kind of shop; one bottle of water is a normal order. */
 const MIN_ORDER: Record<DevShop["type"], number | null> = {
     food: 40_000,
@@ -118,6 +125,7 @@ const quote = (value: string): string => `'${value.replaceAll("'", "''")}'`
 async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<string[]> {
     const tokenEnc = await encryptSecret(shop.bot.token, tokenKey)
     const deposit = shop.type === "water" ? BOTTLE_DEPOSIT : 0
+    const card = PAYOUT_CARDS[shop.type]
     const products = (CATALOGS[shop.type] ?? []).map(
         (p, index) =>
             `(${quote(`${shop.id}-p${index + 1}`)}, ${quote(shop.id)}, ${quote(p.name)}, ` +
@@ -128,14 +136,14 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
         `INSERT INTO businesses (id, slug, name, type, owner_telegram_id, status, bot_id,
             bot_username, bot_token_enc, webhook_secret, brand_color, address, delivery_fee,
             free_delivery_from, min_order, features, bottle_deposit, marketplace_commission_bps,
-            marketplace_joined_at, created_at, updated_at)
+            marketplace_joined_at, payout_card_number, payout_card_holder, created_at, updated_at)
          VALUES (${quote(shop.id)}, ${quote(shop.slug)}, ${quote(shop.name)}, ${quote(shop.type)},
             ${shop.owner.id}, 'active', ${shop.bot.id}, ${quote(shop.bot.username)},
             ${quote(tokenEnc)}, ${quote(shop.bot.webhookSecret)}, ${quote(shop.brandColor)},
             'Guliston, Mustaqillik 12', 10000, 150000, ${MIN_ORDER[shop.type] ?? "NULL"},
             ${quote(JSON.stringify(FEATURES[shop.type]))}, ${deposit},
             ${SHOWCASE_BPS[shop.type] ?? "NULL"}, ${SHOWCASE_BPS[shop.type] === null ? "NULL" : now},
-            ${now}, ${now});`,
+            ${card ? quote(card[0]) : "NULL"}, ${card ? quote(card[1]) : "NULL"}, ${now}, ${now});`,
         `INSERT INTO products (id, business_id, name, price, unit, step, returnable, category,
             search_text, position, created_at, updated_at) VALUES ${products.join(",\n")};`,
         `INSERT INTO couriers (id, business_id, telegram_id, name, phone, is_active, created_at,
@@ -150,6 +158,7 @@ async function seedSql(tokenKey: string): Promise<string> {
     const shops = await Promise.all(DEV_SHOPS.map((shop) => shopSql(shop, tokenKey, now)))
     return [
         "DELETE FROM order_items;",
+        "DELETE FROM cash_handovers;",
         "DELETE FROM orders;",
         "DELETE FROM courier_invites;",
         "DELETE FROM couriers;",
