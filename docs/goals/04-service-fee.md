@@ -21,8 +21,8 @@
      - база по решению владельца — `subtotal` или `subtotal + deliveryFee`, залог не входит никогда.
    - **`Business`:** ставка сбора (`serviceFeeBps`, по умолчанию 0), метод `setServiceFee`.
    - **`Order`:** снимок сбора (ставка + сумма), фиксируется при оформлении в
-     `place-order.use-case.ts`. `total` включает сбор, а `Payment` и касса доставщика считают
-     уже новый `total`.
+     `place-order.use-case.ts`. `total` включает сбор: клиент переводит на карту магазина
+     уже новый `total` (оплата только переводом, до готовки).
    - **Отчёт:**
      - в `MoneyTotals` (`ports/order-repository.ts`) добавить `serviceFees` — сборы
        доставленных заказов за период;

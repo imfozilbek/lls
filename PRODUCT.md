@@ -15,7 +15,8 @@ product
   phone and hand orders to their own couriers. They are not tech people.
 - **Couriers**: today a shop's own person (often a family member or a hired driver). They get an
   order card in the shop's bot and press "Забрал" / "Доставил". They need the address, the
-  landmark, the customer's phone and how much cash to collect — nothing else. Next: people with a
+  landmark and the customer's phone — nothing else. They take no money: every order is paid
+  to the shop's card before cooking. Next: people with a
   car in the district who deliver for several points through one LLS courier bot and earn more.
 
 ## Product Purpose

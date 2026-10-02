@@ -13,12 +13,12 @@ marketplace on top of both.
 > Questions for the pilots' meeting: `docs/pilot-meeting.md`.
 > The path to the full vision, goal by goal: `docs/goals/README.md` («Дай, друг, дай следующую цель»).
 
-## Current status: stage 1 — money, hours per day and QR poster done; waiting for Cloudflare accounts and the pilots' meeting
+## Current status: stage 1 — online point, courier bot, district network and transfer-only payments done; waiting for Cloudflare accounts and the pilots' meeting
 
 | Part | Status | Notes |
 |------|--------|-------|
-| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search, payments and courier cash; 158 tests |
-| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or LLS bot), roles, bot webhooks, `/market`, `/reconnect`, alerts, money routes, CSV and poster files; 76 tests |
+| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search, district network, transfer-only payments; 188 tests |
+| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or LLS bot), roles, bot webhooks, `/market`, `/reconnect`, `/district`, alerts, money routes («Я перевёл», «Деньги пришли — принять»), CSV and poster files; 86 tests |
 | `@lls/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, LLS showcase, onboarding, «Деньги», QR poster; 42 tests; 91 KB gzip JS |
 | CI | ✅ Done | format, lint, build, test, coverage, 75 e2e scenarios on every push |
 | Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
@@ -128,12 +128,21 @@ Pilot: **food, water and grocery at the same time.**
       admin card, "shop not found"
 
 ### M4f. Money, hours per day, QR poster ✅
-- [x] Cash or transfer to the shop's card; payment status on every order
-- [x] Courier says how the customer paid; cash on the courier's hands; handovers to the owner
-- [x] «Деньги»: revenue split, transfers to confirm, debts, refunds, couriers' cash, CSV report
+- [x] ~~Cash or transfer to the shop's card; cash on the courier's hands; debts~~ — replaced by
+      M4g (owner's decision)
+- [x] «Деньги»: revenue split, transfers to confirm, refunds, CSV report
 - [x] Working hours per day; QR poster as a PNG in the owner's chat
 - [ ] After the meeting with the pilots: service type (carpets, car wash), variants and add-ons,
       pickup and order time, water subscriptions, staff, expenses — only what they confirm
+
+### M4g. Transfer only, before cooking ✅ (owner's decision, October 2026)
+- [x] Customers pay only by transfer to the shop's card; the card shows at checkout and in the bot
+- [x] «Я перевёл» → the owner hears it → «Деньги пришли — принять» (paid and accepted in one tap);
+      an unpaid order is never accepted
+- [x] No cash: one «Доставил» for couriers and owners, no courier cash, no handovers, no debts
+- [x] The card is a required onboarding step; a shop without it takes no orders («Скоро начнёт
+      принимать заказы», a banner in "Мой магазин")
+- [x] Cancelled after the money came: owed back until «Вернул»
 
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)
@@ -149,9 +158,9 @@ Pilot: **food, water and grocery at the same time.**
 - [x] The business switches a courier on or off by day; the courier marks "on shift"
 - [x] Every connected courier is offered to join the district network
 - [x] An order of a point without its own courier on shift goes to free network couriers; the
-      first who accepts takes it; goods money goes back to that point
+      first who accepts takes it; the customer paid that point's card before cooking
 - [x] Districts set by the admin (`/district`), `/network` report, "nobody took it" alerts
-- [x] Orders from several points in one place; cash on hand counted per point
+- [x] Orders from several points in one place; each point sees only its own
 - [x] Today's shop couriers move to the new model without losing data
 - [ ] Decide (owner): who gets the delivery fee for a network delivery, and LLS's share
       (temporary rule in code: the shop keeps it, LLS takes none)
@@ -179,7 +188,7 @@ Pilot: **food, water and grocery at the same time.**
 ### M10. LLS delivery supplies ⏳ (when the first supplies are in stock)
 - [ ] Decide (owner): range (packaging, bags, disposable dishes — all with the LLS brand) and prices
 - [ ] Catalog of LLS supplies in "Мой магазин"; the shop orders, the order comes to LLS
-- [ ] Delivered by the district delivery; paid in cash or by transfer to LLS's card
+- [ ] Delivered by the district delivery; paid by transfer to LLS's card
 
 ---
 

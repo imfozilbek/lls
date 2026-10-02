@@ -20,7 +20,9 @@ Qisqa va oddiy: do'konni ulash, katalogni to'ldirish, kuryerlarni qo'shish, buyu
    - bot manzilini yozing, u `bot` bilan tugashi kerak (masalan, `osh_markaz_bot`);
    - BotFather bergan **tokenni** nusxa oling va ilovaga qo'ying.
 4. **2-qadam — Do'kon haqida:** nomi, faoliyat turi (Taomlar / Suv / Oziq-ovqat), manzil.
-5. **3-qadam — Yetkazib berish:** yetkazish narxi, bepul yetkazish chegarasi, minimal buyurtma.
+5. **3-qadam — Yetkazib berish va karta:** yetkazish narxi, bepul yetkazish chegarasi, minimal
+   buyurtma va **to'lov uchun karta** (raqam va egasining ismi). Mijozlar faqat shu kartaga
+   o'tkazma qiladi — kartasiz ariza yuborilmaydi.
 6. **Ariza yuborish** ni bosing. Tekshirib, shu chatga xabar beramiz.
 
 Tasdiqlangandan keyin bot sizga do'koningiz havolasini yuboradi: `t.me/osh_markaz_bot`.
@@ -59,30 +61,36 @@ pulini ko'rasiz.
 Kuryerni o'chirish: ro'yxatdagi 🗑 tugmasi.
 
 **Tuman tarmog'i.** O'z kuryeringiz bo'sh bo'lmasa (yo'q, dam olishda yoki smenada emas),
-**Qabul qilish** dan keyin buyurtma tumanning bo'sh kuryerlariga yuboriladi. Birinchi bo'lib
+**Pul keldi — qabul qilish** dan keyin buyurtma tumanning bo'sh kuryerlariga yuboriladi. Birinchi bo'lib
 **🙋 Olaman** ni bosgan kuryer oladi, bot sizga uning ismini yozadi. U mijoz manzilini faqat
-buyurtmani olgandan keyin ko'radi va buyurtma pulini **sizga** topshiradi (bu **Pul → Kuryerlardagi
-naqd pul** da ko'rinadi). Yetkazish narxi hozircha sizda qoladi.
+buyurtmani olgandan keyin ko'radi. Pul allaqachon sizning kartangizda — kuryer pul olmaydi.
+Yetkazish narxi hozircha sizda qoladi.
 - O'chirish: **Sozlamalar → Tuman tarmog'i → Kuryerlarim band bo'lsa — tuman tarmog'iga berish**.
 - Qo'lda berish: buyurtmada **Kuryer tayinlash → Tuman tarmog'i kuryeri**.
 - 10 daqiqada hech kim olmasa, bot sizga yozadi: o'z kuryeringizni tayinlang yoki o'zingiz olib boring.
 
 ### 4. Buyurtmani qabul qilish va yetkazish
 
-Yangi buyurtma kelganda bot sizga xabar yuboradi: tarkibi, summasi, manzili, mo'ljal va telefon.
-Xabar ostidagi tugmani bosing. Har bir bosishda mijozga xabar boradi.
+Yangi buyurtma kelganda bot sizga xabar yuboradi: tarkibi, summasi, manzili, mo'ljal va telefon,
+hamda **💳 Kartaga o'tkazma kutilmoqda**. Mijozga bot kartangiz raqami va summani yozadi.
 
-**✅ Qabul qilish → 👨‍🍳 Tayyorlashni boshlash / 📦 Yig'ishni boshlash → 📦 Tayyor**
+Mijozlar **faqat kartangizga o'tkazma** bilan, **ish boshlanishidan oldin** to'laydi:
+1. Mijoz pulni o'tkazadi va ilovada **O'tkazdim** ni bosadi — bot sizga «Mijoz o'tkazdi» deb yozadi.
+2. Kartangizni tekshiring. Pul kelgan bo'lsa — **💳 Pul keldi — qabul qilish**. Buyurtma to'langan va
+   qabul qilingan bo'ladi, mijozga «To'lov keldi, buyurtmangiz qabul qilindi» boradi.
+3. Pul kelmagan bo'lsa, tayyorlamang. Kerak bo'lsa **❌ Bekor qilish**.
+
+Keyin har bir bosishda mijozga xabar boradi:
+**👨‍🍳 Tayyorlashni boshlash / 📦 Yig'ishni boshlash → 📦 Tayyor**
 
 Keyin ilovada **Mening do'konim → Buyurtmalar → Kuryer tayinlash** ni bosing va kuryerni tanlang.
 
 - Kuryerga LLS kuryer botidan buyurtma kartasi keladi (sarlavhada do'kon nomi): manzil, xarita,
-  mijoz telefoni, **mijozdan olinadigan summa**.
-- Buyurtma tayyor bo'lganda kuryer **🚚 Oldim** ni bosadi. Eshik oldida mijoz qanday to'laganini
-  tanlaydi: **🏁 💵 Naqd pul**, **🏁 💳 Kartaga o'tkazma** yoki **🏁 🕓 Keyinroq to'laydi** (qarz).
+  mijoz telefoni va **«Oldindan to'langan — mijozdan pul olmang»**.
+- Buyurtma tayyor bo'lganda kuryer **🚚 Oldim**, eshik oldida **🏁 Yetkazdim** ni bosadi.
 - Mijoz kuryer ismini ko'radi: «Buyurtmangizni Jasur olib kelmoqda».
 
-Kuryer yo'q bo'lsa, hammasini o'zingiz bosasiz: **🚚 Jo'natish → 🏁 Yetkazildi** (to'lov usuli bilan).
+Kuryer yo'q bo'lsa, hammasini o'zingiz bosasiz: **🚚 Jo'natish → 🏁 Yetkazildi**.
 Bekor qilish: **❌ Bekor qilish** (ilovada sababini yozish mumkin).
 
 ### 5. Suv do'koni uchun
@@ -113,7 +121,7 @@ Shu yerda nom, logotip, rang, yetkazish narxi va radiusni ham o'zgartirasiz.
 - Havolani (`t.me/osh_markaz_bot`) Telegram guruhlaringizga, Instagram'ga, stikerga yozing.
 - **Sozlamalar → Chop etish uchun QR-kod**: bot sizga do'kon nomi, logotipi va QR-kodli plakatni
   PNG fayl qilib yuboradi. Chop etib peshtaxtaga, eshikka yopishtiring yoki Instagram'ga joylang.
-- Mijoz **naqd** yoki **kartaga o'tkazma** bilan to'laydi (10-bo'limga qarang).
+- Mijoz faqat **kartangizga o'tkazma** bilan to'laydi (10-bo'limga qarang).
 - O'z botingiz orqali sotuvdan LLS komissiya olmaydi.
 
 ### 9. LLS vitrinasi (ixtiyoriy)
@@ -129,23 +137,20 @@ Shu yerda nom, logotip, rang, yetkazish narxi va radiusni ham o'zgartirasiz.
 
 ### 10. Pul
 
-**To'lov.** Mijoz buyurtmada **Naqd pul** yoki **Kartaga o'tkazma** ni tanlaydi. O'tkazma uchun
-**Sozlamalar → O'tkazmalar uchun karta** da karta raqami (16 raqam) va egasining ismini yozing.
-Karta bo'lmasa, mijozga faqat naqd ko'rinadi. Click/Payme yo'q — pul to'g'ridan-to'g'ri sizga.
+**To'lov.** Mijozlar faqat **kartangizga o'tkazma** bilan, buyurtma ustida ish boshlanishidan
+oldin to'laydi. Naqd pul yo'q, kuryer pul olmaydi. Karta raqami (16 raqam) va egasining ismi
+do'konni ulashda yoziladi; o'zgartirish — **Sozlamalar → O'tkazmalar uchun karta**.
+**Kartasiz buyurtma qabul qilinmaydi**: mijoz «Tez orada buyurtma qabul qila boshlaydi» ni ko'radi.
+Click/Payme yo'q — pul to'g'ridan-to'g'ri sizga.
 
 **Mening do'konim → Pul** (bugun, 7 kun, shu oy):
-- **Tushum**: tovarlar va yetkazish alohida, naqd va o'tkazma alohida. Idish garovi — alohida,
-  tushum emas. Vitrina buyurtmalaridan LLS komissiyasi.
-- **O'tkazmani tasdiqlang** — pul kartaga kelgach **Pul keldi** ni bosing. Mijozga xabar boradi.
-- **To'lanmagan** — yetkazilgan, lekin to'lanmagan (masalan, ofis keyin to'laydi). To'laganda
-  **Naqd to'ladi** yoki **O'tkazma qildi**.
-- **Kuryerlardagi naqd pul** — har bir kuryer qo'lidagi pul. Pulni olganingizda **Pulni oldim**
-  (summani kamroq yozish mumkin).
+- **Tushum**: tovarlar va yetkazish alohida, **o'tkazmalar orqali olingan** summa. Idish garovi —
+  alohida, tushum emas. Vitrina buyurtmalaridan LLS komissiyasi.
+- **Mijozlar o'tkazdi — kartani tekshiring** — mijoz **O'tkazdim** ni bosgan buyurtmalar. Pul
+  kelgach **Pul keldi — qabul qilish** ni bosing.
 - **Mijozlarga qaytarish** — to'langan, keyin bekor qilingan buyurtma. Qaytarganda **Qaytardim**.
 - **Excel uchun hisobot** — bot sizga davr buyurtmalarini CSV fayl qilib yuboradi
   (Excel va Google Sheets'da ochiladi).
-
-Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 
 ---
 
@@ -161,7 +166,9 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
    - напишите адрес бота, он должен заканчиваться на `bot` (например, `osh_markaz_bot`);
    - скопируйте **токен** от BotFather и вставьте в приложение.
 4. **Шаг 2 — О магазине:** название, чем торгуете (Еда / Вода / Продукты), адрес.
-5. **Шаг 3 — Доставка:** стоимость доставки, бесплатная доставка от, минимальный заказ.
+5. **Шаг 3 — Доставка и карта:** стоимость доставки, бесплатная доставка от, минимальный заказ и
+   **карта для оплаты** (номер и имя владельца). Клиенты платят только переводом на эту карту —
+   без карты заявку не отправить.
 6. Нажмите **Отправить заявку**. Мы проверим и напишем в этот чат.
 
 После подтверждения бот пришлёт ссылку на ваш магазин: `t.me/osh_markaz_bot`.
@@ -194,35 +201,40 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 в работе. Выйдя на работу, доставщик сам включает **На смене**; в списке видна зелёная точка.
 Заказ можно дать только тому, кто сегодня работает и на смене.
 
-Один доставщик может возить для нескольких точек. Вы видите только заказы и деньги своей точки.
+Один доставщик может возить для нескольких точек. Вы видите только заказы своей точки.
 
 Убрать доставщика: кнопка 🗑 в списке.
 
 **Сеть района.** Если вашего доставщика сейчас нет (нет вовсе, выходной или не на смене), после
-**Принять** заказ уходит свободным доставщикам района. Берёт тот, кто первым нажал **🙋 Беру**,
-бот пишет вам его имя. Адрес клиента он видит только после того, как взял заказ, а деньги за
-заказ отдаёт **вам** (видно в **Деньги → Наличные у доставщиков**). Плата за доставку пока
-остаётся у вас.
+**Деньги пришли — принять** заказ уходит свободным доставщикам района. Берёт тот, кто первым нажал
+**🙋 Беру**, бот пишет вам его имя. Адрес клиента он видит только после того, как взял заказ.
+Деньги уже на вашей карте — доставщик денег не берёт. Плата за доставку пока остаётся у вас.
 - Выключить: **Настройки → Сеть района → Если мои заняты — отдавать сети района**.
 - Отдать вручную: в заказе **Назначить доставщика → Доставщик сети района**.
 - Если за 10 минут никто не взял, бот напишет: назначьте своего доставщика или отвезите сами.
 
 ### 4. Принять и доставить заказ
 
-Когда приходит заказ, бот пишет вам: состав, сумма, адрес, ориентир и телефон.
-Нажимайте кнопку под сообщением. После каждого нажатия клиент получает сообщение.
+Когда приходит заказ, бот пишет вам: состав, сумма, адрес, ориентир и телефон, и
+**💳 Ждём перевод на карту**. Клиенту бот пишет номер вашей карты и сумму.
 
-**✅ Принять → 👨‍🍳 Начать готовить / 📦 Собрать → 📦 Готово**
+Клиенты платят **только переводом на вашу карту** и **до начала работы над заказом**:
+1. Клиент переводит деньги и нажимает в приложении **Я перевёл** — бот пишет вам «Клиент перевёл».
+2. Проверьте карту. Деньги пришли — нажмите **💳 Деньги пришли — принять**. Заказ оплачен и
+   принят, клиенту придёт «Оплата получена, заказ принят».
+3. Денег нет — не начинайте. Если нужно — **❌ Отменить**.
+
+Дальше после каждого нажатия клиент получает сообщение:
+**👨‍🍳 Начать готовить / 📦 Собрать → 📦 Готово**
 
 Затем в приложении **Мой магазин → Заказы → Назначить доставщика** и выберите его.
 
 - Доставщику бот доставщиков LLS присылает карточку (в заголовке — название точки): адрес, карта,
-  телефон клиента, **сколько взять с клиента**.
-- Когда заказ готов, доставщик нажимает **🚚 Забрал**. У двери он выбирает, как заплатил клиент:
-  **🏁 💵 Наличными**, **🏁 💳 Переводом на карту** или **🏁 🕓 Заплатит позже** (долг).
+  телефон клиента и **«Оплачено заранее — денег с клиента не брать»**.
+- Когда заказ готов, доставщик нажимает **🚚 Забрал**, у двери — **🏁 Доставил**.
 - Клиент видит имя доставщика: «Заказ везёт Жасур».
 
-Нет доставщика — нажимайте всё сами: **🚚 Отправить → 🏁 Доставлен** (с выбором оплаты).
+Нет доставщика — нажимайте всё сами: **🚚 Отправить → 🏁 Доставлен**.
 Отменить: **❌ Отменить** (в приложении можно написать причину).
 
 ### 5. Для магазина воды
@@ -253,7 +265,7 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 - Ссылку (`t.me/osh_markaz_bot`) разместите в своих Telegram-группах, Instagram, на наклейке.
 - **Настройки → QR-код для печати**: бот пришлёт вам плакат с названием, логотипом и QR-кодом
   файлом PNG. Распечатайте на кассу и дверь или выложите в Instagram.
-- Клиент платит **наличными** или **переводом на карту** (см. раздел 10).
+- Клиент платит только **переводом на вашу карту** (см. раздел 10).
 - С продаж через вашего бота LLS комиссию не берёт.
 
 ### 9. Витрина LLS (по желанию)
@@ -267,24 +279,20 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 
 ### 10. Деньги
 
-**Оплата.** Клиент при заказе выбирает **Наличными** или **Переводом на карту**. Для перевода
-в **Настройки → Карта для переводов** впишите номер карты (16 цифр) и имя владельца. Без карты
-клиент видит только «Наличными». Click/Payme нет — деньги идут напрямую вам.
+**Оплата.** Клиенты платят только **переводом на вашу карту**, до начала работы над заказом.
+Наличных нет, доставщик денег не берёт. Номер карты (16 цифр) и имя владельца вы вписываете при
+подключении магазина; поменять — **Настройки → Карта для переводов**. **Без карты заказы не
+принимаются**: клиент видит «Скоро начнёт принимать заказы». Click/Payme нет — деньги идут
+напрямую вам.
 
 **Мой магазин → Деньги** (сегодня, 7 дней, этот месяц):
-- **Выручка**: товары и доставка отдельно, наличные и переводы отдельно. Залог за бутыли —
+- **Выручка**: товары и доставка отдельно, сумма **получено переводами**. Залог за бутыли —
   отдельно, это не выручка. Комиссия LLS по заказам из витрины.
-- **Подтвердите переводы** — когда деньги пришли на карту, нажмите **Деньги пришли**. Клиенту
-  придёт сообщение.
-- **Не оплачено** — доставлено, но не оплачено (например, офис заплатит позже). Когда заплатили —
-  **Оплатил наличными** или **Оплатил переводом**.
-- **Наличные у доставщиков** — сколько денег на руках у каждого. Забрали — **Принял деньги**
-  (можно вписать меньше).
+- **Клиенты перевели — проверьте карту** — заказы, где клиент нажал **Я перевёл**. Деньги
+  пришли — нажмите **Деньги пришли — принять**.
 - **Вернуть клиентам** — оплаченный, а потом отменённый заказ. Вернули — **Вернул**.
 - **Отчёт для Excel** — бот пришлёт вам заказы за период файлом CSV (открывается в Excel и
   Google Таблицах).
-
-Доставщик видит у себя **На руках: X сум**.
 
 ---
 
@@ -294,21 +302,18 @@ Kuryer o'z ekranida **Qo'lingizda: X so'm** ni ko'radi.
 1. Do'kondan olingan havolani oching → **LLS kuryer boti** → **Start** → **📱 Raqamni yuborish**.
 2. Do'kon tasdiqlashini kuting: bot yozadi.
 3. Ishga chiqqanda **🚚 Yetkazishlarim** → **Smenadaman** ni yoqing. Smena yarim tunda tugaydi.
-4. Buyurtma kartasi botga keladi. Tayyor bo'lganda **🚚 Oldim**, eshik oldida —
-   **🏁 Yetkazdim** va mijoz qanday to'laganini tanlang.
-5. Ekranda har bir do'kon puli alohida: **Qo'lingizda: X so'm**. Pulni o'sha do'konga topshiring.
+4. Buyurtma kartasi botga keladi. Tayyor bo'lganda **🚚 Oldim**, eshik oldida — **🏁 Yetkazdim**.
+5. Mijoz do'kon kartasiga oldindan to'lagan: **mijozdan pul olmang**.
 6. **Tuman tarmog'i** (xohishga ko'ra): botda **✅ Ha, tuman uchun** yoki ilovada **Tuman
    buyurtmalarini olaman**. Smenada bo'lsangiz, yaqindagi buyurtmalar keladi: **🙋 Olaman** —
-   birinchi bosgan oladi. Bir vaqtda bitta tarmoq buyurtmasi. Pulni shu buyurtma do'koniga
-   topshirasiz.
+   birinchi bosgan oladi. Bir vaqtda bitta tarmoq buyurtmasi.
 
 **Русский**
 1. Откройте ссылку от точки → **бот доставщиков LLS** → **Start** → **📱 Отправить номер**.
 2. Дождитесь подтверждения точки: бот напишет.
 3. Вышли на работу — **🚚 Мои доставки** → включите **Я на смене**. Смена заканчивается в полночь.
-4. Карточка заказа приходит в бот. Когда заказ готов — **🚚 Забрал**, у двери — **🏁 Доставил** и
-   как заплатил клиент.
-5. На экране деньги каждой точки отдельно: **На руках: X сум**. Сдавайте их именно этой точке.
+4. Карточка заказа приходит в бот. Когда заказ готов — **🚚 Забрал**, у двери — **🏁 Доставил**.
+5. Клиент уже заплатил переводом на карту точки: **денег с клиента не берите**.
 6. **Сеть района** (по желанию): в боте **✅ Да, для района** или в приложении **Беру заказы
    района**. На смене вам приходят заказы рядом: **🙋 Беру** — берёт тот, кто нажал первым.
-   Одновременно один заказ сети. Деньги отдаёте той точке, чей это заказ.
+   Одновременно один заказ сети.

@@ -55,6 +55,13 @@ Zoir (20 l water production and delivery). Each business has its own bot. The fi
 cover each one's whole process; what exactly comes from the meeting with them.
 
 **Money rules of the platform** (LLS earns on volume):
+- **Customers pay only by transfer to the shop's card, before the shop starts** (owner's
+  decision, October 2026). The order is placed unpaid → the customer transfers and presses
+  «Я перевёл» → the owner sees the money and presses «Деньги пришли — принять» (paid and
+  accepted in one tap). An order is never accepted unpaid (`PAYMENT_REQUIRED`). No cash: couriers
+  carry no money, there is no courier cash, no handovers, no debts.
+- **No card, no orders.** The card is a required onboarding step; a shop without it shows
+  «Скоро начнёт принимать заказы» and refuses orders (`NO_PAYOUT_CARD`).
 - **LLS service fee (plan — not in code yet):** a small percentage on **every** order through LLS,
   in any channel (shop bot, showcase, district delivery). The **customer** pays it as a separate
   "Сервис" line in the cart, the order and the messages. The shop's prices never change: the shop
@@ -63,8 +70,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
   Zero is allowed (pilots).
 - Every order stores a **service fee snapshot** (rate + amount, integer UZS), fixed when the
   order is placed; 0 when the rate is 0. Computed only on the server.
-- No payment gateways: the shop receives the fee with the order (cash or transfer) and pays LLS
-  the month's fees by a monthly per-shop report.
+- No payment gateways: the shop receives the fee with the order's transfer and pays LLS the
+  month's fees by a monthly per-shop report.
 - Not decided (the owner decides, never invent): the fee base (goods, or goods + delivery; bottle
   deposits never count), and the pilots' rate.
 - **Showcase commission** stays separate: a share of the goods that the shop pays on showcase
@@ -79,8 +86,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
   it in the courier bot → the business approves (bot button or app) and switches the courier on or
   off by day (like the menu's stop-list). The courier marks "on shift" himself (until midnight).
   An order goes only to a courier who is approved, works today and is on shift.
-- **Done:** a courier's cash is counted per business; a business never sees its courier's other
-  businesses or their money.
+- **Done:** a business never sees its courier's other businesses. Couriers carry no money: every
+  order is paid to the shop's card before cooking.
 - **Done (goal 06):** every courier a business approves is **offered** once to deliver for other
   points of the district too (`in_network`, only the courier's own consent).
 - **Done:** a district is a circle (center + radius) the platform admin sets in the LLS bot:
@@ -90,17 +97,19 @@ cover each one's whole process; what exactly comes from the meeting with them.
   order goes to the free network couriers of the district (in the network, on shift, carrying no
   other network order): «Новый заказ рядом» without the customer, «Беру»; the first press wins
   (one conditional UPDATE). The shop switch «Если мои заняты — отдавать сети района» is **on by
-  default** (owner's decision); the owner may also hand an order over by hand. Goods money goes
-  back to that point (cash counted per point). Nobody took it in `wait` minutes (default 10):
+  default** (owner's decision); the owner may also hand an order over by hand. The customer paid
+  that point's card before cooking: the network courier carries no money. Nobody took it in
+  `wait` minutes (default 10):
   the shop and the admins hear it once (no cron: checked on every network event and `/network`).
 - **Temporary rule (owner decides later, goal 02):** the delivery fee of a network order stays
   with the shop and LLS takes no share. It is a snapshot in the order (`delivery_fee_to`), set in
   one place (`NETWORK_DELIVERY_FEE_RECIPIENT`).
 
 **⛔ RULES:**
-- Build ONLY stage 1 now: the online point and district delivery. Money is in: payment method
-  (cash or transfer to the shop's card), paid / awaiting / debt / refund per order, cash each
-  courier holds and hands over, money report and CSV export. **No payment gateways (Click, Payme)**: the owner confirms transfers by hand.
+- Build ONLY stage 1 now: the online point and district delivery. Money is in: only a transfer to
+  the shop's card, before the shop starts (unpaid → «Я перевёл» → paid by the owner's
+  «Деньги пришли — принять»; refund due / refunded after a cancel), money report and CSV export.
+  **No cash, no payment gateways (Click, Payme)**: the owner confirms transfers by hand.
 - Services (carpet and car cleaning) join stage 1 as their own business type once their process
   is agreed with the client.
 - The LLS showcase is in: search across shops + shop list in the LLS bot;
@@ -125,7 +134,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
   - every order stores a **service fee snapshot** (rate + amount, integer UZS) — plan, see
     "Money rules"
   - couriers: one global profile per `telegram_id` (`courier_profiles`) + courier↔business
-    links (`couriers` rows, their ids stay in orders and cash handovers)
+    links (`couriers` rows, their ids stay in orders)
 
 ## SLC Rules (MANDATORY)
 
@@ -303,15 +312,15 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through t
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout card (number, holder) or none, service fee rate (bps; plan), district_id, network_delivery (on by default) |
+| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout card (number, holder; required to take orders), service fee rate (bps; plan), district_id, network_delivery (on by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at — whose customer this is |
 | District | id, name, center (lat, lng), radius, wait_minutes — a circle of the delivery network |
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at — the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until — the person's link to one shop (`network`: took a network order of it) |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method cash/card_transfer, status unpaid/awaiting/paid/refund_due/refunded, paid_at, cash courier), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
-| CashHandover | id, business_id, courier_id, amount, at — cash a courier gave to the owner |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer — `cash` only in old rows; status unpaid/awaiting/paid/refund_due/refunded, paid_at; cash courier — history only), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
+| CashHandover | History only: the `cash_handovers` table stays (additive schema), no code uses it since payments became transfer-only |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
 items; line total = `round(price × grams / 1000)`.
@@ -323,6 +332,8 @@ pending → accepted → preparing → ready → picked_up → delivered
 cancelled  cancelled  cancelled  cancelled  cancelled
 ```
 - `pending → ready` = shop part. `picked_up → delivered` = delivery part.
+- `pending → accepted` only when paid: the owner's «Деньги пришли — принять» confirms the transfer
+  and accepts in one step (`Order.advanceTo` refuses an unpaid accept).
 - Owner moves every step and may cancel. The assigned courier moves only
   `ready → picked_up → delivered` and never cancels. The customer cancels only while `pending`.
 - The owner assigns a courier (`accepted`…`ready`); without couriers the owner delivers.
@@ -411,10 +422,12 @@ courier of that shop and asks for the phone; the owner gets "Подтверди�
 shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин".
 
 **Notifications (no WebSockets):**
-- New order → message to the owner with a button for the **next allowed status** + "Отменить".
+- New order → message to the owner «💳 Ждём перевод» with «Деньги пришли — принять» + «Отменить»;
+  the customer gets the shop's card and the sum. «Я перевёл» → the owner hears «Клиент перевёл».
+  After that the owner's button is the **next allowed status**.
 - Courier assigned → order card from the LLS courier bot, titled with the shop's name (address,
-  landmark, map, phone, cash to collect, empty bottles) with "Забрал", then "Доставил" × how it
-  was paid (cash / transfer / later).
+  landmark, map, phone, «Оплачено заранее — денег не брать», empty bottles) with "Забрал", then
+  one "Доставил".
 - Status change → message to the customer (courier name, never the courier's phone). Showcase
   orders: the LLS bot writes to the customer (with the shop name); the owner still gets messages
   from the shop bot.
@@ -427,17 +440,19 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 - Languages: Uzbek (Latin) + Russian. Simple dictionary, no heavy i18n library
 - Address: Telegram location + "ориентир" (landmark) field
 - Phone: Telegram "share contact" button, never typed by hand
-- Payment: cash, or a transfer to the shop's card (shown at checkout). The courier records how the
-  customer paid at the door: cash / transfer / later (debt). The owner confirms transfers by hand
+- Payment: only a transfer to the shop's card, shown at checkout with a copy button and the sum;
+  the customer transfers after placing and presses «Я перевёл»; the owner confirms by hand
+  («Деньги пришли — принять»), then the shop starts
 
 **User Flow:**
-- Customer: Open shop link → Browse → Cart → Order → Track
+- Customer: Open shop link → Browse → Cart → Order → Transfer → «Я перевёл» → Track
 - Showcase customer: LLS bot → Search → Shop → Cart → Order → Track
-- Owner: New order message → Accept → Next status → assign courier; catalog and couriers in "Мой магазин"
+- Owner: New order message → the transfer arrives → «Деньги пришли — принять» → Next status →
+  assign courier; catalog, couriers and the card in "Мой магазин"
 - Courier: Invite link → LLS courier bot → phone → approved → "on shift" → assigned order card →
   Picked up → Delivered
 - Network courier: approved by a point → «Да, для района» in the LLS courier bot → "on shift" →
-  «Новый заказ рядом» → «Беру» → full card → Picked up → Delivered → hands the cash to that point
+  «Новый заказ рядом» → «Беру» → full card → Picked up → Delivered
 
 ## Security (MANDATORY)
 
@@ -706,9 +721,11 @@ Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 - [ ] Customer order placement (contact + location + landmark)
 - [ ] Owner notification with buttons
 - [ ] Order status updates → customer notification
+- [ ] Money: card at checkout → «Я перевёл» → «Деньги пришли — принять» → one «Доставил»;
+      cancel after paid → «Вернул»; a shop without a card takes no orders
 - [ ] Courier invite → assign → picked up → delivered
 - [ ] District delivery: invite → accept in the courier bot → join the network → an order of a
-      point without couriers taken by a network courier → cash counted per point
+      point without couriers taken by a network courier → paid before cooking, no cash
 - [ ] Water: empty bottles + deposit; reorder
 - [ ] Grocery: weight items (kg steps); stop-list for today
 - [ ] Each order stores channel + commission (0 for own bot)

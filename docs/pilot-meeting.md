@@ -40,7 +40,7 @@ kuryer olib keladi. Kuryeri yoʻq nuqtaga tuman kuryerlari tarmogʻi yordam bera
 
 **Toʻlov va hisob**
 19. Hozir qanday toʻlov olasizlar: naqd, kartaga oʻtkazma, Click, Payme?
-20. Boshida naqd va kartaga oʻtkazma yetarlimi? (Click va Payme hozircha yoʻq.)
+20. Mijoz buyurtma uchun ish boshlanishidan oldin kartangizga oʻtkazma qiladi. Sizga qulaymi? (Naqd, Click va Payme hozircha yoʻq.)
 21. Qanday hisobot kerak: kunlik tushum, kuryerlar boʻyicha, mahsulotlar boʻyicha?
 22. Xarajatlarni (mahsulot, ish haqi, ijara) ham shu yerda yuritish kerakmi yoki faqat tushum yetarlimi?
 
@@ -135,8 +135,8 @@ kuryer olib keladi. Kuryeri yoʻq nuqtaga tuman kuryerlari tarmogʻi yordam bera
 ## По-русски: что запускает каждый ответ
 
 **Уже есть в продукте:** заказ в боте, свои доставщики, статусы, вода с залогом, весовые товары,
-стоп-лист, витрина LLS, оплата наличными или переводом на карту, касса доставщика, долги,
-отчёт для Excel, часы работы по дням, QR-плакат.
+стоп-лист, витрина LLS, оплата только переводом на карту магазина до готовки (решение
+владельца), отчёт для Excel, часы работы по дням, QR-плакат.
 
 | Ответ «да» на вопрос | Что это значит для нас |
 |---|---|
