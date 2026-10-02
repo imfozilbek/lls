@@ -39,18 +39,25 @@ LLS is the platform brand. Customers see the **shop's brand**; the app shows a s
 
 | Stage | What | Revenue |
 |-------|------|---------|
-| **1. Own bot per business (NOW)** | Storefront + orders + notifications. The shop delivers with **its own couriers**. **LLS showcase**: search across shops in the LLS bot, the order goes to one shop | Subscription + commission on showcase orders |
+| **1. Own bot per business (NOW)** | The pilot shops' whole process: found → order → delivery → **paid**, and the owner sees where the money is. Own couriers. **LLS showcase**: search across shops in the LLS bot, the order goes to one shop | Subscription + commission on showcase orders |
 | 2. District marketplace | One cart from several shops, district filter | Commission on marketplace sales only |
 | 3. Shared delivery | Shared courier pool, several pickups per trip | Delivery fee + volume terms |
 
-**Pilot:** three shops at once — food, water, grocery. Each has its own bot.
+**Pilot:** Jasur (national food; car and carpet cleaning), Maqsudbek (burgers; coffee and drinks),
+Zoir (20 l water production and delivery). Each business has its own bot. The first launch must
+cover each one's whole process; what exactly comes from the meeting with them.
 
 **Money rule of the platform:** LLS takes a commission **only** on sales made through the LLS
 marketplace channel. Sales through a shop's own bot are the shop's business (a separate
 subscription deal); the system never takes a cut there.
 
 **⛔ RULES:**
-- Build ONLY stage 1 now. The LLS showcase is in: search across shops + shop list in the LLS bot;
+- Build ONLY stage 1 now. Money is in: payment method (cash or transfer to the shop's card),
+  paid / awaiting / debt / refund per order, cash each courier holds and hands over, money report
+  and CSV export. **No payment gateways (Click, Payme)**: the owner confirms transfers by hand.
+- Services (carpet and car cleaning) join stage 1 as their own business type once their process
+  is agreed with the client.
+- The LLS showcase is in: search across shops + shop list in the LLS bot;
   a tap opens that shop's storefront inside the LLS bot; cart and order stay per shop.
   No shared cart, shared courier pool, routing, settlements or payouts.
 - Only shops with a marketplace deal (`business.marketplace`) appear in the showcase. A platform
@@ -79,7 +86,7 @@ subscription deal); the system never takes a cut there.
 |------|-------------|
 | **v1.0 scope** | Stage 1: orders, status tracking, shop couriers, vertical toggles |
 | **Quality** | Must be PERFECT, not "good enough" |
-| **No scope creep** | Shared cart, shared courier pool, multi-city, online payments — NOT in v1.0 |
+| **No scope creep** | Shared cart, shared courier pool, multi-city, payment gateways — NOT in v1.0 |
 | **UX** | Order in 3 taps |
 | **Cost** | $0/month until real usage requires more |
 
@@ -234,12 +241,13 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through t
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours, features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none |
+| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout card (number, holder) or none |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at — whose customer this is |
 | Courier | id, business_id, telegram_id, name, phone, is_active — the shop's own delivery person |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method cash/card_transfer, status unpaid/awaiting/paid/refund_due/refunded, paid_at, cash courier), delivered_at |
+| CashHandover | id, business_id, courier_id, amount, at — cash a courier gave to the owner |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
 items; line total = `round(price × grams / 1000)`.
@@ -338,7 +346,7 @@ Showcase: the platform bot opens `?mode=market`.
 **Notifications (no WebSockets):**
 - New order → message to the owner with a button for the **next allowed status** + "Отменить".
 - Courier assigned → order card to the courier (address, landmark, map, phone, cash to collect,
-  empty bottles) with "Забрал" / "Доставил".
+  empty bottles) with "Забрал", then "Доставил" × how it was paid (cash / transfer / later).
 - Status change → message to the customer (courier name, never the courier's phone). Showcase
   orders: the LLS bot writes to the customer (with the shop name); owner and courier still get
   messages from the shop bot.
@@ -351,7 +359,8 @@ Showcase: the platform bot opens `?mode=market`.
 - Languages: Uzbek (Latin) + Russian. Simple dictionary, no heavy i18n library
 - Address: Telegram location + "ориентир" (landmark) field
 - Phone: Telegram "share contact" button, never typed by hand
-- Payment: cash on delivery (online payments later)
+- Payment: cash, or a transfer to the shop's card (shown at checkout). The courier records how the
+  customer paid at the door: cash / transfer / later (debt). The owner confirms transfers by hand
 
 **User Flow:**
 - Customer: Open shop link → Browse → Cart → Order → Track
