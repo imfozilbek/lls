@@ -126,7 +126,11 @@ function ClosedNote({ shop }: { shop: Shop | null }): React.JSX.Element | null {
     }
     return (
         <p className="mt-3 text-center text-sm text-tg-hint">
-            {shop.acceptingOrders ? t.errors.SHOP_CLOSED : t.errors.NOT_ACCEPTING_ORDERS}
+            {!shop.hasPayoutCard
+                ? t.errors.NO_PAYOUT_CARD
+                : shop.acceptingOrders
+                  ? t.errors.SHOP_CLOSED
+                  : t.errors.NOT_ACCEPTING_ORDERS}
         </p>
     )
 }

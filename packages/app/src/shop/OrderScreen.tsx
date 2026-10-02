@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentMethod, PaymentStatus, isFinalStatus } from "@lls/core"
+import { OrderStatus, PaymentStatus, isFinalStatus } from "@lls/core"
 import { useCallback, useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -9,7 +9,7 @@ import { confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import { CheckIcon, PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusHero, StatusTimeline } from "../ui/order-status.js"
 import { CardBlock, PaymentLine } from "../ui/payment.js"
@@ -23,21 +23,59 @@ import type { OrderDTO } from "@lls/core"
 /** Status changes arrive by bot message too, so a calm 20 s refresh is enough (free-tier friendly). */
 const POLL_MS = 20_000
 
-/** How the order is paid; while a transfer is awaited, the shop's card stays at hand. */
-function Payment({ order }: { order: OrderDTO }): React.JSX.Element {
+/**
+ * Paid before the shop starts: until then the shop's card stays at hand with «Я перевёл». After
+ * the press the customer waits for the shop to see the money.
+ */
+function Payment({
+    order,
+    onChange,
+}: {
+    order: OrderDTO
+    onChange(order: OrderDTO): void
+}): React.JSX.Element {
     const t = useT()
     const card = useSession((state) => state.shop?.payoutCard)
-    const transferDue =
-        order.payment.method === PaymentMethod.CARD_TRANSFER &&
-        order.payment.status === PaymentStatus.AWAITING &&
-        order.status !== OrderStatus.CANCELLED
+    const [sending, setSending] = useState(false)
+    const open = order.status !== OrderStatus.CANCELLED
+    const unpaid = open && order.payment.status === PaymentStatus.UNPAID
+    const checking = open && order.payment.status === PaymentStatus.AWAITING
+
+    const sent = async (): Promise<void> => {
+        setSending(true)
+        try {
+            onChange(await api.transferSent(order.id))
+            haptic.success()
+        } catch (caught) {
+            haptic.error()
+            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+        } finally {
+            setSending(false)
+        }
+    }
+
     return (
         <Section title={t.pay.title}>
             <PaymentLine
                 order={order}
                 className="rounded-control bg-tg-secondary px-4 py-3 text-base"
             />
-            {transferDue && card ? <CardBlock card={card} total={order.total} /> : null}
+            {(unpaid || checking) && card ? <CardBlock card={card} total={order.total} /> : null}
+            {unpaid ? (
+                <Button
+                    className="w-full"
+                    loading={sending}
+                    icon={<CheckIcon size={20} />}
+                    onClick={(): void => void sent()}
+                >
+                    {t.pay.sent}
+                </Button>
+            ) : null}
+            {checking ? (
+                <p className="animate-fade-in px-1 text-sm text-tg-subtitle">
+                    {t.pay.checkingHint}
+                </p>
+            ) : null}
         </Section>
     )
 }
@@ -193,12 +231,18 @@ export function OrderScreen({
     }
 
     const celebrate = justPlaced && order.status === "pending"
+    const waitingHint =
+        order.status === OrderStatus.PENDING
+            ? order.payment.status === PaymentStatus.AWAITING
+                ? t.pay.checkingHint
+                : t.pay.waitingHint
+            : undefined
     return (
         <main className="flex flex-col gap-6 px-4">
             <StatusHero
                 status={order.status}
                 title={celebrate ? t.order.placedTitle : undefined}
-                hint={celebrate ? t.order.placedText : undefined}
+                hint={celebrate ? t.order.placedText : waitingHint}
             />
 
             <div className="flex items-baseline justify-between px-1">
@@ -231,7 +275,7 @@ export function OrderScreen({
             <Section title={t.order.address}>
                 <Address order={order} />
             </Section>
-            <Payment order={order} />
+            <Payment order={order} onChange={setOrder} />
 
             <OrderActions order={order} onChange={setOrder} onStale={reload} />
             <BottomSpacer />

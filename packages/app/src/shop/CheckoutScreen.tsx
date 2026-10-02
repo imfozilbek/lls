@@ -1,4 +1,4 @@
-import { Feature, PaymentMethod, formatPhone } from "@lls/core"
+import { Feature, formatPhone } from "@lls/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -11,7 +11,7 @@ import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { CardIcon, CashIcon, CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
+import { CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
 import { CardBlock } from "../ui/payment.js"
 import { Button, Field, Section, Stepper, TextArea, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
@@ -113,7 +113,6 @@ interface Delivery {
     location: Point | null
     /** Empty returnable bottles handed back (water shops). */
     bottlesReturned: number
-    payment: PaymentMethod
 }
 
 function AddressSection({
@@ -196,7 +195,6 @@ function usePlaceOrder(delivery: Delivery): { placing: boolean; place(): Promise
                 location: delivery.location ?? undefined,
                 comment: delivery.comment.trim() || undefined,
                 bottlesReturned: delivery.bottlesReturned || undefined,
-                paymentMethod: delivery.payment,
             })
             saveAddress({ address: delivery.address.trim(), landmark: delivery.landmark.trim() })
             clearCart()
@@ -253,78 +251,20 @@ function BottlesField({
     )
 }
 
-function PayOption({
-    selected,
-    icon,
-    label,
-    hint,
-    onClick,
-}: {
-    selected: boolean
-    icon: React.ReactNode
-    label: string
-    hint: string
-    onClick(): void
-}): React.JSX.Element {
-    return (
-        <button
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={(): void => {
-                haptic.select()
-                onClick()
-            }}
-            className={cn(
-                "tap flex items-center gap-3 rounded-control px-4 py-3 text-left ring-2 transition-colors duration-200",
-                selected ? "bg-brand/10 ring-brand" : "bg-tg-secondary ring-transparent",
-            )}
-        >
-            <span className={selected ? "text-brand" : "text-tg-hint"}>{icon}</span>
-            <span className="flex-1">
-                <span className="block font-semibold">{label}</span>
-                <span className="text-sm text-tg-hint">{hint}</span>
-            </span>
-            {selected ? <CheckIcon size={20} className="animate-pop text-brand" /> : null}
-        </button>
-    )
-}
-
-/** Cash, or a transfer to the shop's card when the shop gave one. No payment gateways. */
-function PaymentSection({
-    value,
-    total,
-    onChange,
-}: {
-    value: PaymentMethod
-    total: number
-    onChange(value: PaymentMethod): void
-}): React.JSX.Element {
+/**
+ * Only a transfer to the shop's card, made after placing: the shop starts once the money
+ * arrives. The card is shown here so the customer knows before tapping «Заказать».
+ */
+function PaymentSection({ total }: { total: number }): React.JSX.Element | null {
     const t = useT()
     const card = useSession((state) => state.shop?.payoutCard)
+    if (!card) {
+        return null
+    }
     return (
         <Section title={t.pay.title}>
-            <div className="flex flex-col gap-2" role="radiogroup" aria-label={t.pay.title}>
-                <PayOption
-                    selected={value === PaymentMethod.CASH}
-                    icon={<CashIcon size={24} />}
-                    label={t.pay.cash}
-                    hint={t.pay.cashHint}
-                    onClick={(): void => onChange(PaymentMethod.CASH)}
-                />
-                {card ? (
-                    <PayOption
-                        selected={value === PaymentMethod.CARD_TRANSFER}
-                        icon={<CardIcon size={24} />}
-                        label={t.pay.card}
-                        hint={t.pay.cardHint}
-                        onClick={(): void => onChange(PaymentMethod.CARD_TRANSFER)}
-                    />
-                ) : null}
-            </div>
-            {card && value === PaymentMethod.CARD_TRANSFER ? (
-                <CardBlock card={card} total={total} />
-            ) : null}
+            <p className="px-1 text-sm text-tg-subtitle">{t.pay.beforeCooking}</p>
+            <CardBlock card={card} total={total} />
         </Section>
     )
 }
@@ -352,6 +292,21 @@ function Totals({ rows }: { rows: [string, number | string, boolean?][] }): Reac
     )
 }
 
+/** A phone, an address, something in the cart, and a shop card to transfer to. */
+function canPlace(input: {
+    phone: string | undefined
+    hasCard: boolean | undefined
+    address: string
+    count: number
+}): boolean {
+    return (
+        Boolean(input.phone) &&
+        Boolean(input.hasCard) &&
+        input.address.trim().length > 0 &&
+        input.count > 0
+    )
+}
+
 export function CheckoutScreen(): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -364,7 +319,6 @@ export function CheckoutScreen(): React.JSX.Element {
         comment: "",
         location: null,
         bottlesReturned: 0,
-        payment: PaymentMethod.CASH,
     }))
     const { placing, place } = usePlaceOrder(delivery)
 
@@ -376,7 +330,12 @@ export function CheckoutScreen(): React.JSX.Element {
         ? (shop?.bottleDeposit ?? 0) * Math.max(0, cart.returnable - delivery.bottlesReturned)
         : 0
     const total = cart.subtotal + fee + deposit
-    const ready = Boolean(me?.phone) && delivery.address.trim().length > 0 && cart.count > 0
+    const ready = canPlace({
+        phone: me?.phone,
+        hasCard: shop?.hasPayoutCard,
+        address: delivery.address,
+        count: cart.count,
+    })
 
     useMainAction({
         text: placing
@@ -434,11 +393,7 @@ export function CheckoutScreen(): React.JSX.Element {
                 ]}
             />
 
-            <PaymentSection
-                value={delivery.payment}
-                total={total}
-                onChange={(payment): void => setDelivery((d) => ({ ...d, payment }))}
-            />
+            <PaymentSection total={total} />
             <BottomSpacer />
         </main>
     )

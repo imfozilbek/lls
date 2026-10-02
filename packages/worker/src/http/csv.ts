@@ -36,7 +36,6 @@ export function ordersCsv(orders: readonly OrderDTO[], t: BotTexts): string {
         o.deliveryFee,
         o.depositTotal,
         o.total,
-        c.method[o.payment.method],
         c.payment[o.payment.status],
         localDateTime(o.payment.paidAt),
         o.courierName ?? "",

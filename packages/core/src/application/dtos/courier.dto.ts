@@ -64,8 +64,6 @@ export interface CourierShopDTO {
     workDays: Weekday[]
     /** Works for this shop today: approved, a working day, not switched off for today. */
     worksToday: boolean
-    /** Cash of this shop the courier holds: taken at doors minus handed over. */
-    onHand: number
 }
 
 export interface CourierOrderDTO extends OrderDTO {
@@ -82,8 +80,8 @@ export interface NetworkOrderDTO {
     shopName: string
     shopAddress?: string
     number: number
-    /** Cash to take at the door: 0 when it is paid or paid by transfer. */
-    collect: number
+    /** What the order costs (already paid by transfer: nothing to take at the door). */
+    total: number
     itemsCount: number
     bottlesReturned: number
     /** Shop → customer, straight line, when both locations are known. */

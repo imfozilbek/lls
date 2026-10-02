@@ -88,11 +88,11 @@ const SHOWCASE_BPS: Record<DevShop["type"], number | null> = {
     grocery: 300,
 }
 
-/** Demo cards for transfers (valid checksums, not real accounts). Grocery takes cash only. */
+/** Demo cards for transfers (valid checksums, not real accounts): customers pay only by transfer. */
 const PAYOUT_CARDS: Record<DevShop["type"], [string, string] | null> = {
     food: ["8600123456789012", "RUSTAM KARIMOV"], // secret-scan: fake
     water: ["9860123456789015", "DILSHOD TOSHEV"], // secret-scan: fake
-    grocery: null,
+    grocery: ["5614681234567893", "SARDOR YUSUPOV"], // secret-scan: fake
 }
 
 /** Minimum order per kind of shop; one bottle of water is a normal order. */

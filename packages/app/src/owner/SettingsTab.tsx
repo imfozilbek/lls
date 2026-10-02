@@ -1,4 +1,4 @@
-import { FEATURES, Feature, PayoutCard } from "@lls/core"
+import { FEATURES, Feature } from "@lls/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
@@ -11,6 +11,7 @@ import { useMainAction } from "../lib/main-button.js"
 import { getLocation, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
+import { PayoutCardFields, payoutCardIsValid } from "../ui/card-fields.js"
 import { CheckIcon, CopyIcon, PinIcon, WifiOffIcon } from "../ui/icons.js"
 import {
     Button,
@@ -46,7 +47,7 @@ interface Form {
     hours: Hours
     features: Feature[]
     bottleDeposit: number | null
-    /** Digits only while typing; empty number = no card, cash only. */
+    /** Digits only while typing. Empty only for a shop that never added its card. */
     cardNumber: string
     cardHolder: string
 }
@@ -54,29 +55,10 @@ interface Form {
 const METERS_PER_KM = 1000
 const BPS_PER_PERCENT = 100
 const MAX_RADIUS_KM = 100
-const CARD_DIGITS = 16
 
-/** No card, or a full card number that passes the bank check, with a name on it. */
+/** The card is required; only a shop that never added one may still save other settings. */
 function cardIsValid(form: Form): boolean {
-    if (form.cardNumber === "") {
-        return true
-    }
-    try {
-        PayoutCard.create(form.cardNumber, form.cardHolder)
-        return true
-    } catch {
-        return false
-    }
-}
-
-/** A full number with a wrong digit: say so right away, not after "Save". */
-function cardHasTypo(number: string): boolean {
-    try {
-        PayoutCard.create(number, "-")
-        return false
-    } catch {
-        return number.length === CARD_DIGITS
-    }
+    return form.cardNumber === "" || payoutCardIsValid(form.cardNumber, form.cardHolder)
 }
 
 function formOf(shop: ShopOwnerDTO): Form {
@@ -115,9 +97,10 @@ function patchOf(form: Form): ShopPatch {
         // Canonical order, so ticking a box off and on again leaves the form clean.
         features: FEATURES.filter((f) => form.features.includes(f)),
         bottleDeposit: form.bottleDeposit ?? 0,
+        // Never removed from here: without a card the shop takes no orders.
         payoutCard: form.cardNumber
             ? { number: form.cardNumber, holder: form.cardHolder.trim() }
-            : null,
+            : undefined,
     }
 }
 
@@ -404,7 +387,7 @@ function LocationFields({
     )
 }
 
-/** Customers who pay by transfer see this card. Without it the shop takes cash only. */
+/** Customers transfer to this card before the shop starts. Without it no orders come in. */
 function CardFields({
     form,
     patch,
@@ -413,54 +396,19 @@ function CardFields({
     patch(change: Partial<Form>): void
 }): React.JSX.Element {
     const s = useT().owner.settings
-    const shown = form.cardNumber.replace(/(\d{4})(?=\d)/g, "$1 ")
     return (
         <Section title={s.payoutCard}>
-            <Field
-                label={s.cardNumber}
-                htmlFor="card-number"
-                hint={
-                    cardHasTypo(form.cardNumber) ? (
-                        <span className="text-tg-destructive">{s.cardInvalid}</span>
-                    ) : (
-                        s.cardHint
-                    )
+            <PayoutCardFields
+                number={form.cardNumber}
+                holder={form.cardHolder}
+                hint={s.cardHint}
+                onChange={(change): void =>
+                    patch({
+                        ...(change.number === undefined ? {} : { cardNumber: change.number }),
+                        ...(change.holder === undefined ? {} : { cardHolder: change.holder }),
+                    })
                 }
-            >
-                <TextInput
-                    id="card-number"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    className="tabular-nums tracking-wide"
-                    placeholder="8600 0000 0000 0000"
-                    value={shown}
-                    onChange={(e): void =>
-                        patch({
-                            cardNumber: e.target.value.replace(/\D/g, "").slice(0, CARD_DIGITS),
-                        })
-                    }
-                />
-            </Field>
-            {form.cardNumber ? (
-                <>
-                    <Field label={s.cardHolder} htmlFor="card-holder">
-                        <TextInput
-                            id="card-holder"
-                            autoComplete="off"
-                            className="uppercase"
-                            maxLength={60}
-                            value={form.cardHolder}
-                            onChange={(e): void => patch({ cardHolder: e.target.value })}
-                        />
-                    </Field>
-                    <Button
-                        variant="danger"
-                        onClick={(): void => patch({ cardNumber: "", cardHolder: "" })}
-                    >
-                        {s.removeCard}
-                    </Button>
-                </>
-            ) : null}
+            />
         </Section>
     )
 }

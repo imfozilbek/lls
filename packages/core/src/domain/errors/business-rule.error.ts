@@ -137,6 +137,24 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    /** Paid before the shop starts: an order is accepted only after the transfer arrived. */
+    static paymentRequired(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "PAYMENT_REQUIRED",
+            "The transfer has not arrived yet",
+            { orderId },
+        )
+    }
+
+    /** Customers pay only by transfer: a shop without a card cannot take orders. */
+    static noPayoutCard(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NO_PAYOUT_CARD",
+            "The shop has no card for transfers yet",
+            { businessId },
+        )
+    }
+
     static paymentNotConfirmable(status: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "PAYMENT_NOT_CONFIRMABLE",
@@ -150,22 +168,6 @@ export class BusinessRuleViolationError extends DomainError {
             "PAYMENT_NOT_REFUNDABLE",
             "Only money owed back can be marked as refunded",
             { status },
-        )
-    }
-
-    static cardTransferUnavailable(businessId: string): BusinessRuleViolationError {
-        return new BusinessRuleViolationError(
-            "CARD_TRANSFER_UNAVAILABLE",
-            "The shop has no card for transfers",
-            { businessId },
-        )
-    }
-
-    static handoverTooLarge(onHand: number, amount: number): BusinessRuleViolationError {
-        return new BusinessRuleViolationError(
-            "HANDOVER_TOO_LARGE",
-            "A courier cannot hand over more cash than they hold",
-            { onHand, amount },
         )
     }
 }

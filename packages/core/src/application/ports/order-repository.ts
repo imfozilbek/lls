@@ -1,4 +1,3 @@
-import type { CourierAmount } from "./cash-handover-repository.js"
 import type { Order } from "../../domain/entities/order.js"
 import type { OrderStatus } from "../../domain/enums/order-status.js"
 import type { Page, PageRequest } from "../dtos/pagination.js"
@@ -23,12 +22,10 @@ export interface OrderRepository {
     /** Counts by creation time and money by delivery time, both in [from, to). */
     moneyTotals(businessId: string, from: Date, to: Date): Promise<MoneyTotals>
     /**
-     * Money that needs the owner: transfers not confirmed yet, delivered but unpaid (debts),
-     * cancelled but paid (owed back). Oldest first.
+     * Money that needs the owner: transfers the customer says are sent but not confirmed yet,
+     * and cancelled orders that were paid (owed back). Oldest first.
      */
     listOpenPayments(businessId: string, limit: number): Promise<Order[]>
-    /** Cash each courier took at the door, all time (before handovers). */
-    cashCollectedByCourier(businessId: string): Promise<CourierAmount[]>
     /** Orders created in [from, to), oldest first: the owner's export. */
     listCreatedBetween(businessId: string, from: Date, to: Date, limit: number): Promise<Order[]>
     /**
@@ -57,12 +54,8 @@ export interface MoneyTotals {
     delivery: number
     /** Bottle deposits: held for the customer, not revenue. */
     deposits: number
-    paidCash: number
-    paidCard: number
-    /** Transfers not confirmed yet. */
-    awaiting: number
-    /** Delivered and not paid. */
-    debt: number
+    /** Transfers that arrived for the delivered orders. */
+    paid: number
     /** LLS commission on showcase orders. */
     commission: number
 }

@@ -7,6 +7,7 @@ import { BusinessType } from "../domain/enums/business-type.js"
 import { Language } from "../domain/enums/language.js"
 import { Unit } from "../domain/enums/unit.js"
 import { Money } from "../domain/value-objects/money.js"
+import { PayoutCard } from "../domain/value-objects/payout-card.js"
 import { Phone } from "../domain/value-objects/phone.js"
 import { Slug } from "../domain/value-objects/slug.js"
 import { TelegramId } from "../domain/value-objects/telegram-id.js"
@@ -17,8 +18,12 @@ export const OWNER_TG = 1001
 export const CUSTOMER_TG = 2002
 export const STRANGER_TG = 3003
 
+/** The shop's card for transfers in tests (a valid Luhn number). secret-scan: fake */
+export const TEST_CARD = { number: "4111111111111111", holder: "Rustam Karimov" }
+
+/** An active shop with a card: it takes orders. `card: false` — a shop that has not added one. */
 export function makeBusiness(
-    overrides: { id?: string; delivery?: DeliverySettings; active?: boolean } = {},
+    overrides: { id?: string; delivery?: DeliverySettings; active?: boolean; card?: boolean } = {},
 ): Business {
     const business = Business.register({
         id: overrides.id ?? "biz-1",
@@ -31,6 +36,9 @@ export function makeBusiness(
     })
     if (overrides.active ?? true) {
         business.approve()
+    }
+    if (overrides.card ?? true) {
+        business.setPayoutCard(PayoutCard.create(TEST_CARD.number, TEST_CARD.holder))
     }
     return business
 }

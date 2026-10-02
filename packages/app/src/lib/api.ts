@@ -11,11 +11,8 @@ import type {
     Page,
     ProductDTO,
     ShopOwnerDTO,
-    CourierCashDTO,
     MoneyPeriod,
     MoneyReportDTO,
-    PaidWith,
-    PaymentMethod,
     ShopPublicDTO,
     ShowcaseProductDTO,
 } from "@lls/core"
@@ -133,7 +130,6 @@ export interface PlaceOrderBody {
     location?: { latitude: number; longitude: number }
     comment?: string
     bottlesReturned?: number
-    paymentMethod?: PaymentMethod
 }
 
 export type ShopPatch = Partial<{
@@ -174,6 +170,8 @@ export interface RegisterShopBody {
     deliveryFee: number
     freeDeliveryFrom?: number
     minOrder?: number
+    /** Customers pay only by transfer: the card is a required step. */
+    payoutCard: { number: string; holder: string }
 }
 
 export interface CourierInvite {
@@ -194,6 +192,9 @@ export const api = {
     order: (id: string): Promise<OrderDTO> => request("GET", `/api/orders/${id}`),
     cancelOrder: (id: string): Promise<OrderDTO> =>
         request("PATCH", `/api/orders/${id}`, { status: "cancelled" }),
+    /** «Я перевёл»: the owner gets a ping to check the card. */
+    transferSent: (id: string): Promise<OrderDTO> =>
+        request("POST", `/api/orders/${id}/transfer-sent`),
 
     owner: {
         shop: (): Promise<ShopOwnerDTO> => request("GET", "/api/owner/shop"),
@@ -206,12 +207,11 @@ export const api = {
         /** The bot sends the period's orders to the owner's chat as a CSV file. */
         exportMoney: (period: MoneyPeriod): Promise<{ sent: number }> =>
             request("POST", `/api/owner/money/export${query({ period })}`),
-        confirmPayment: (orderId: string, method: PaymentMethod): Promise<OrderDTO> =>
-            request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "paid", method }),
+        /** «Деньги пришли — принять»: paid, and a new order is accepted in the same tap. */
+        confirmPayment: (orderId: string): Promise<OrderDTO> =>
+            request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "paid" }),
         markRefunded: (orderId: string): Promise<OrderDTO> =>
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "refunded" }),
-        handover: (courierId: string, amount: number): Promise<{ data: CourierCashDTO[] }> =>
-            request("POST", `/api/owner/couriers/${courierId}/handovers`, { amount }),
         /** The bot sends the QR poster back to the owner's chat. */
         sendPoster: (png: Blob): Promise<{ sent: boolean }> =>
             request("POST", "/api/owner/shop/poster", png),
@@ -220,7 +220,7 @@ export const api = {
         setStatus: (
             id: string,
             status: string,
-            extra: { reason?: string; paidWith?: PaidWith } = {},
+            extra: { reason?: string } = {},
         ): Promise<OrderDTO> => request("PATCH", `/api/owner/orders/${id}`, { status, ...extra }),
         products: (page = 1): Promise<Page<ProductDTO>> =>
             request("GET", `/api/owner/products${query({ page, limit: 100 })}`),
@@ -260,11 +260,8 @@ export const api = {
     /** The LLS courier bot's screen (`setCourierBot`): every shop the courier works for. */
     courier: {
         home: (): Promise<CourierHomeDTO> => request("GET", "/api/courier/home"),
-        setStatus: (
-            id: string,
-            status: "picked_up" | "delivered",
-            paidWith?: PaidWith,
-        ): Promise<OrderDTO> => request("PATCH", `/api/courier/orders/${id}`, { status, paidWith }),
+        setStatus: (id: string, status: "picked_up" | "delivered"): Promise<OrderDTO> =>
+            request("PATCH", `/api/courier/orders/${id}`, { status }),
         shift: (onShift: boolean): Promise<CourierProfileDTO> =>
             request("PUT", "/api/courier/shift", { onShift }),
         profile: (vehicle: string | null): Promise<CourierProfileDTO> =>

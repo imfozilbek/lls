@@ -9,6 +9,7 @@ import {
     SHOP_BOT_TOKEN,
     createActiveShop,
     testClient,
+    TEST_CARD,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -39,7 +40,13 @@ describe("a shop owner cannot borrow other shops' customers", () => {
     async function registerShopB(): Promise<{ id: string; slug: string }> {
         const response = await client.as(ATTACKER, {})("/api/platform/shops", {
             method: "POST",
-            json: { botToken: OTHER_BOT_TOKEN, name: "Mallory", type: "food", deliveryFee: 0 },
+            json: {
+                botToken: OTHER_BOT_TOKEN,
+                name: "Mallory",
+                type: "food",
+                deliveryFee: 0,
+                payoutCard: TEST_CARD,
+            },
         })
         return json<{ id: string; slug: string }>(response)
     }

@@ -61,7 +61,7 @@ export interface BusinessProps {
     bottleDeposit: Money
     /** Undefined: the shop sells only through its own bot. */
     marketplace?: MarketplaceTerms
-    /** The card customers transfer to; without it a shop takes cash only. */
+    /** The card customers transfer to; without it a shop takes no orders. */
     payoutCard?: PayoutCard
     /** The delivery-network district the shop's location falls in. */
     districtId?: string
@@ -191,7 +191,7 @@ export class Business {
     get payoutCard(): PayoutCard | undefined {
         return this.props.payoutCard
     }
-    /** Transfers need the shop's card. */
+    /** Customers pay only by transfer: without the card the shop takes no orders. */
     acceptsCardTransfers(): boolean {
         return this.props.payoutCard !== undefined
     }
@@ -242,14 +242,21 @@ export class Business {
         if (!this.props.acceptingOrders) {
             throw BusinessRuleViolationError.notAcceptingOrders(this.props.id)
         }
+        if (!this.acceptsCardTransfers()) {
+            throw BusinessRuleViolationError.noPayoutCard(this.props.id)
+        }
         if (!this.props.workingHours.isOpenAt(now)) {
             throw BusinessRuleViolationError.shopClosed(this.props.id)
         }
     }
 
+    /** Takes orders right now: active, accepting, has its card for transfers, within hours. */
     isOpenAt(now: Date): boolean {
         return (
-            this.isActive() && this.props.acceptingOrders && this.props.workingHours.isOpenAt(now)
+            this.isActive() &&
+            this.props.acceptingOrders &&
+            this.acceptsCardTransfers() &&
+            this.props.workingHours.isOpenAt(now)
         )
     }
 
@@ -330,7 +337,7 @@ export class Business {
         this.touch()
     }
 
-    /** `null` removes the card: the shop takes cash only. */
+    /** `null` removes the card: the shop takes no orders until it adds one. */
     setPayoutCard(card: PayoutCard | null): void {
         this.props.payoutCard = card ?? undefined
         this.touch()

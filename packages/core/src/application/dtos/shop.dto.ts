@@ -34,6 +34,8 @@ export interface ShopPublicDTO {
     bottleDeposit: number
     /** The card to transfer to; only in the shop's own view, never in the showcase list. */
     payoutCard?: PayoutCardDTO
+    /** Customers pay only by transfer: without a card the shop takes no orders yet. */
+    hasPayoutCard: boolean
 }
 
 export interface PayoutCardDTO {
@@ -91,6 +93,7 @@ export function toShopPublicDTO(
         features: business.features,
         bottleDeposit: business.bottleDeposit.amount,
         payoutCard: options.withCard ? toPayoutCardDTO(business) : undefined,
+        hasPayoutCard: business.acceptsCardTransfers(),
     }
 }
 

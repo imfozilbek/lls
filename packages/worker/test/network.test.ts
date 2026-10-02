@@ -94,9 +94,9 @@ describe("district network", () => {
                 },
             }),
         )
-        const accepted = await foodOwner()(`/api/owner/orders/${placed.id}`, {
+        const accepted = await foodOwner()(`/api/owner/orders/${placed.id}/payment`, {
             method: "PATCH",
-            json: { status: "accepted" },
+            json: { action: "paid" },
         })
         expect(accepted.status).toBe(200)
         return json<Order>(accepted)
@@ -197,12 +197,10 @@ describe("district network", () => {
             expect(offer?.html).not.toContain("Navoiy")
             expect(offer?.html).not.toContain("Aziz")
         }
-        const listed = await json<{ data: { id: string; collect: number }[] }>(
+        const listed = await json<{ data: { id: string; total: number }[] }>(
             await courierApp(BOBUR)("/api/courier/network/orders"),
         )
-        expect(listed.data).toEqual([
-            expect.objectContaining({ id: order.id, collect: order.total }),
-        ])
+        expect(listed.data).toEqual([expect.objectContaining({ id: order.id, total: order.total })])
 
         // Both press at the same moment.
         const [first, second] = await Promise.all(
@@ -230,7 +228,8 @@ describe("district network", () => {
             ),
         ).toBe(true)
 
-        // Delivers it; the cash belongs to the food shop.
+        // Delivers it; the money is already the food shop's: paid before cooking. (A week:
+        // near Tashkent midnight the test clock is an hour ahead of the delivery time.)
         for (const status of ["preparing", "ready"]) {
             await foodOwner()(`/api/owner/orders/${order.id}`, {
                 method: "PATCH",
@@ -238,36 +237,31 @@ describe("district network", () => {
             })
         }
         const courier = courierApp(winner)
+        // While it is on the road, the courier's screen lists that shop as a network one.
+        const home = await json<{ shops: { shopName: string; status: string }[] }>(
+            await courier("/api/courier/home"),
+        )
+        expect(home.shops).toContainEqual(
+            expect.objectContaining({ shopName: "Osh Markaz", status: "network" }),
+        )
         await courier(`/api/courier/orders/${order.id}`, {
             method: "PATCH",
             json: { status: "picked_up" },
         })
         const delivered = await courier(`/api/courier/orders/${order.id}`, {
             method: "PATCH",
-            json: { status: "delivered", paidWith: "cash" },
+            json: { status: "delivered" },
         })
         expect(await json<Order>(delivered)).toMatchObject({
             status: "delivered",
             viaNetwork: true,
         })
-        const money = await json<{ couriers: { name: string; onHand: number }[] }>(
-            await foodOwner()("/api/owner/money"),
+        const money = await json<{ totals: { delivered: number; paid: number } }>(
+            await foodOwner()("/api/owner/money?period=week"),
         )
-        expect(money.couriers).toEqual([
-            expect.objectContaining({ name: winner.first_name, onHand: order.total }),
-        ])
+        expect(money.totals).toMatchObject({ delivered: 1, paid: order.total })
         // The food shop's courier list stays its own.
         expect(await json<unknown[]>(await foodOwner()("/api/owner/couriers"))).toEqual([])
-        const home = await json<{ shops: { shopName: string; status: string; onHand: number }[] }>(
-            await courier("/api/courier/home"),
-        )
-        expect(home.shops).toContainEqual(
-            expect.objectContaining({
-                shopName: "Osh Markaz",
-                status: "network",
-                onHand: order.total,
-            }),
-        )
     })
 
     it("«Беру» from the chat; a late press hears it is taken", async () => {

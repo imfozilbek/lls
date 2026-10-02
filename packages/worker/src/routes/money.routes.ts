@@ -6,7 +6,8 @@ import { requireOwner, shopOf } from "../auth.js"
 import { ordersCsv, localDateTime } from "../http/csv.js"
 import { ApiError } from "../http/errors.js"
 import { looksLike, readImageBody } from "../http/images.js"
-import { handoverBody, idParam, moneyQuery, onInvalid, paymentBody } from "../http/schemas.js"
+import { idParam, moneyQuery, onInvalid, paymentBody } from "../http/schemas.js"
+import { networkAfterStep, notifyPaymentConfirmed } from "../network-flow.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 
@@ -22,7 +23,7 @@ async function ownerLanguage(c: Context<AppEnv>, business: Business): Promise<La
     return owner?.language ?? languageFromTelegram(c.get("auth").user.languageCode)
 }
 
-/** «Деньги» in "Мой магазин": the report, payments, couriers' cash, the CSV and the poster. */
+/** «Деньги» in "Мой магазин": the report, transfers and refunds, the CSV and the poster. */
 export const moneyRoutes = new Hono<AppEnv>()
     .use(requireOwner)
 
@@ -76,36 +77,24 @@ export const moneyRoutes = new Hono<AppEnv>()
                 businessId: business.id,
                 orderId: c.req.valid("param").id,
             }
-            const body = c.req.valid("json")
-            const order =
-                body.action === "paid"
-                    ? await services.useCases.confirmPayment.execute({
-                          ...ids,
-                          method: body.method,
-                      })
-                    : await services.useCases.markRefunded.execute(ids)
+            if (c.req.valid("json").action === "refunded") {
+                const order = await services.useCases.markRefunded.execute(ids)
+                inBackground(
+                    c.executionCtx,
+                    services,
+                    new Notifier(services).paymentChanged(business, order),
+                )
+                return c.json(order)
+            }
+            // «Деньги пришли — принять»: paid and accepted; the network if no courier is free.
+            const paid = await services.useCases.confirmPayment.execute(ids)
+            const step = await networkAfterStep(services, paid)
             inBackground(
                 c.executionCtx,
                 services,
-                new Notifier(services).paymentChanged(business, order),
+                notifyPaymentConfirmed(services, business, step.order, step.request),
             )
-            return c.json(order)
-        },
-    )
-
-    /** The owner took cash from a courier. Returns every courier's cash on hand after it. */
-    .post(
-        "/couriers/:id/handovers",
-        zValidator("param", idParam, onInvalid),
-        zValidator("json", handoverBody, onInvalid),
-        async (c) => {
-            const couriers = await c.get("services").useCases.recordHandover.execute({
-                actorTelegramId: c.get("auth").user.id,
-                businessId: shopOf(c).id,
-                courierId: c.req.valid("param").id,
-                amount: c.req.valid("json").amount,
-            })
-            return c.json({ data: couriers })
+            return c.json(step.order)
         },
     )
 

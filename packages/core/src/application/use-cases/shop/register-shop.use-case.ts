@@ -2,6 +2,7 @@ import { Business } from "../../../domain/entities/business.js"
 import { ConflictError } from "../../../domain/errors/conflict.error.js"
 import { Location } from "../../../domain/value-objects/location.js"
 import { Money } from "../../../domain/value-objects/money.js"
+import { PayoutCard } from "../../../domain/value-objects/payout-card.js"
 import { Slug } from "../../../domain/value-objects/slug.js"
 import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
 import { toShopOwnerDTO } from "../../dtos/shop.dto.js"
@@ -24,6 +25,8 @@ export interface RegisterShopInput {
     deliveryFee: number
     freeDeliveryFrom?: number
     minOrder?: number
+    /** Customers pay only by transfer: the card comes with the application. */
+    payoutCard: { number: string; holder: string }
 }
 
 /** Self-serve onboarding: the owner connects their own bot. The shop waits for admin approval. */
@@ -56,6 +59,7 @@ export class RegisterShopUseCase {
             },
         })
 
+        business.setPayoutCard(PayoutCard.create(input.payoutCard.number, input.payoutCard.holder))
         await this.businesses.insert(business, input.bot.token)
         return toShopOwnerDTO(business, this.clock.now())
     }

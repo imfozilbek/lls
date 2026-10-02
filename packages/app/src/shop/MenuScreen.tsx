@@ -100,7 +100,13 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     const push = useRouter((state) => state.push)
-    const status = !shop.acceptingOrders ? t.shop.paused : shop.isOpen ? t.shop.open : t.shop.closed
+    const status = !shop.hasPayoutCard
+        ? t.shop.soon
+        : !shop.acceptingOrders
+          ? t.shop.paused
+          : shop.isOpen
+            ? t.shop.open
+            : t.shop.closed
     return (
         <header className="px-4 pb-2 pt-4">
             <div className="flex items-start justify-between gap-3">

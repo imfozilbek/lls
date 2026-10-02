@@ -63,7 +63,9 @@ export const customerRoutes = new Hono<AppEnv>()
             // Fixed by the bot that signed the request: own bot = never commissioned.
             channel: c.get("auth").channel,
         })
-        inBackground(c.executionCtx, services, new Notifier(services).orderPlaced(business, order))
+        const notifier = new Notifier(services)
+        inBackground(c.executionCtx, services, notifier.orderPlaced(business, order))
+        inBackground(c.executionCtx, services, notifier.askForTransfer(business, order))
         return c.json(order, 201)
     })
 
@@ -105,3 +107,21 @@ export const customerRoutes = new Hono<AppEnv>()
             return c.json(order)
         },
     )
+
+    /** «Я перевёл»: the customer sent the transfer; the owner checks the card and accepts. */
+    .post("/orders/:id/transfer-sent", zValidator("param", idParam, onInvalid), async (c) => {
+        const services = c.get("services")
+        const { order, changed } = await services.useCases.markTransferSent.execute({
+            telegramId: c.get("auth").user.id,
+            businessId: shopOf(c).id,
+            orderId: c.req.valid("param").id,
+        })
+        if (changed) {
+            inBackground(
+                c.executionCtx,
+                services,
+                new Notifier(services).transferSent(shopOf(c), order),
+            )
+        }
+        return c.json(order)
+    })

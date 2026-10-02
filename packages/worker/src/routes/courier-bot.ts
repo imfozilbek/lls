@@ -155,7 +155,6 @@ export async function handleCourierBotCallback(
             telegramId: callback.from.id,
             orderId: action.orderId,
             to: action.to,
-            paidWith: action.paidWith,
         })
         const business = await services.businesses.findById(order.businessId)
         if (business) {

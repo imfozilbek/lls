@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { CashHandover } from "../../../domain/entities/cash-handover.js"
-import { PaidWith, PaymentMethod, PaymentStatus } from "../../../domain/enums/payment.js"
+import { PaymentMethod, PaymentStatus } from "../../../domain/enums/payment.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { startOfLocalMonth } from "../../../domain/shared/time.js"
@@ -10,90 +9,58 @@ import { Payment } from "../../../domain/value-objects/payment.js"
 import { PayoutCard } from "../../../domain/value-objects/payout-card.js"
 
 const AT = new Date("2026-10-01T10:00:00Z")
-const COURIER = { kind: "courier", courierId: "courier-1" } as const
-const OWNER = { kind: "owner" } as const
 
 describe("Payment", () => {
-    it("starts unpaid for cash and awaited for a transfer", () => {
-        expect(Payment.start(PaymentMethod.CASH).status).toBe(PaymentStatus.UNPAID)
-        expect(Payment.start(PaymentMethod.CARD_TRANSFER).status).toBe(PaymentStatus.AWAITING)
+    it("always a transfer to the shop's card; nothing has arrived at checkout", () => {
+        const payment = Payment.start()
+        expect(payment).toMatchObject({
+            method: PaymentMethod.CARD_TRANSFER,
+            status: PaymentStatus.UNPAID,
+        })
+        expect(payment.paidAt).toBeUndefined()
+        expect(payment.cashCourierId).toBeUndefined()
+        expect(payment.isPaid()).toBe(false)
     })
 
-    it("cash at the door is paid and held by whoever delivered", () => {
-        const byCourier = Payment.start(PaymentMethod.CARD_TRANSFER).settleOnDelivery(
-            PaidWith.CASH,
-            COURIER,
-            AT,
-        )
-        // The customer changed their mind at the door: the method follows what happened.
-        expect(byCourier).toMatchObject({
+    it("«Я перевёл» asks the owner to look; pressing it again changes nothing", () => {
+        const sent = Payment.start().markSent()
+        expect(sent.status).toBe(PaymentStatus.AWAITING)
+        expect(sent.markSent()).toBe(sent)
+        const paid = sent.confirm(AT, false)
+        expect(paid.markSent()).toBe(paid)
+    })
+
+    it("the owner confirms an awaited or an unannounced transfer; nothing else", () => {
+        expect(Payment.start().markSent().confirm(AT, false)).toMatchObject({
+            status: PaymentStatus.PAID,
+            method: PaymentMethod.CARD_TRANSFER,
+            paidAt: AT,
+        })
+        const paid = Payment.start().confirm(AT, false)
+        expect(paid.isPaid()).toBe(true)
+        expect(() => paid.confirm(AT, false)).toThrow(BusinessRuleViolationError)
+    })
+
+    it("cancelling: paid money is owed back, an unconfirmed transfer stays awaited", () => {
+        const owed = Payment.start().confirm(AT, false).onCancel()
+        expect(owed.status).toBe(PaymentStatus.REFUND_DUE)
+        expect(owed.refund().status).toBe(PaymentStatus.REFUNDED)
+        expect(() => owed.refund().refund()).toThrow(BusinessRuleViolationError)
+        expect(Payment.start().onCancel().status).toBe(PaymentStatus.UNPAID)
+        expect(Payment.start().markSent().onCancel().status).toBe(PaymentStatus.AWAITING)
+        // A transfer that arrives after the cancel is owed back at once.
+        expect(Payment.start().markSent().confirm(AT, true).status).toBe(PaymentStatus.REFUND_DUE)
+    })
+
+    it("old cash rows still read", () => {
+        const old = Payment.reconstitute({
             method: PaymentMethod.CASH,
             status: PaymentStatus.PAID,
             paidAt: AT,
             cashCourierId: "courier-1",
         })
-        const byOwner = Payment.start(PaymentMethod.CASH).settleOnDelivery(PaidWith.CASH, OWNER, AT)
-        expect(byOwner.cashCourierId).toBeUndefined()
-        expect(byOwner.isPaid()).toBe(true)
-    })
-
-    it("a transfer at the door waits for the owner; 'later' is a debt", () => {
-        const transfer = Payment.start(PaymentMethod.CASH).settleOnDelivery(
-            PaidWith.CARD_TRANSFER,
-            COURIER,
-            AT,
-        )
-        expect(transfer).toMatchObject({
-            method: PaymentMethod.CARD_TRANSFER,
-            status: PaymentStatus.AWAITING,
-        })
-        expect(transfer.cashCourierId).toBeUndefined()
-        const later = Payment.start(PaymentMethod.CASH).settleOnDelivery(PaidWith.LATER, OWNER, AT)
-        expect(later.status).toBe(PaymentStatus.UNPAID)
-    })
-
-    it("money confirmed before delivery stays as it is", () => {
-        const paid = Payment.start(PaymentMethod.CARD_TRANSFER).confirm(
-            PaymentMethod.CARD_TRANSFER,
-            AT,
-            false,
-        )
-        expect(paid.settleOnDelivery(PaidWith.CASH, COURIER, AT)).toBe(paid)
-    })
-
-    it("the owner confirms a transfer or a paid debt; nothing else", () => {
-        const debt = Payment.start(PaymentMethod.CASH).settleOnDelivery(PaidWith.LATER, OWNER, AT)
-        expect(debt.confirm(PaymentMethod.CASH, AT, false)).toMatchObject({
-            status: PaymentStatus.PAID,
-            method: PaymentMethod.CASH,
-        })
-        const paid = debt.confirm(PaymentMethod.CARD_TRANSFER, AT, false)
-        expect(() => paid.confirm(PaymentMethod.CASH, AT, false)).toThrow(
-            BusinessRuleViolationError,
-        )
-    })
-
-    it("cancelling: paid money is owed back, an unconfirmed transfer is dropped", () => {
-        const paid = Payment.start(PaymentMethod.CARD_TRANSFER).confirm(
-            PaymentMethod.CARD_TRANSFER,
-            AT,
-            false,
-        )
-        const owed = paid.onCancel()
-        expect(owed.status).toBe(PaymentStatus.REFUND_DUE)
-        expect(owed.refund().status).toBe(PaymentStatus.REFUNDED)
-        expect(() => owed.refund().refund()).toThrow(BusinessRuleViolationError)
-        expect(Payment.start(PaymentMethod.CARD_TRANSFER).onCancel().status).toBe(
-            PaymentStatus.UNPAID,
-        )
-        // A transfer that arrives after the cancel is owed back at once.
-        expect(
-            Payment.start(PaymentMethod.CARD_TRANSFER).confirm(
-                PaymentMethod.CARD_TRANSFER,
-                AT,
-                true,
-            ).status,
-        ).toBe(PaymentStatus.REFUND_DUE)
+        expect(old.cashCourierId).toBe("courier-1")
+        expect(old.onCancel().status).toBe(PaymentStatus.REFUND_DUE)
     })
 })
 
@@ -112,22 +79,7 @@ describe("PayoutCard", () => {
     })
 })
 
-describe("CashHandover and money helpers", () => {
-    const base = { id: "h-1", businessId: "biz-1", courierId: "courier-1", at: AT }
-
-    it("never more than the courier holds, never zero", () => {
-        expect(
-            CashHandover.record({ ...base, amount: Money.of(50_000), onHand: Money.of(80_000) })
-                .amount.amount,
-        ).toBe(50_000)
-        expect(() =>
-            CashHandover.record({ ...base, amount: Money.of(90_000), onHand: Money.of(80_000) }),
-        ).toThrow(BusinessRuleViolationError)
-        expect(() =>
-            CashHandover.record({ ...base, amount: Money.zero(), onHand: Money.of(80_000) }),
-        ).toThrow(BusinessRuleViolationError)
-    })
-
+describe("money helpers", () => {
     it("Money.subtract never goes below zero", () => {
         expect(Money.of(10).subtract(Money.of(4)).amount).toBe(6)
         expect(() => Money.of(4).subtract(Money.of(10))).toThrow(ValidationError)

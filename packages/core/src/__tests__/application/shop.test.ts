@@ -12,7 +12,7 @@ import { BusinessType } from "../../domain/enums/business-type.js"
 import { ConflictError } from "../../domain/errors/conflict.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../domain/errors/not-found.error.js"
-import { NOON_MONDAY_UZ, OWNER_TG, STRANGER_TG, makeBusiness } from "../fixtures.js"
+import { NOON_MONDAY_UZ, OWNER_TG, STRANGER_TG, TEST_CARD, makeBusiness } from "../fixtures.js"
 import { InMemoryBusinesses, fixedClock } from "../in-memory.js"
 
 import type { RegisterShopInput } from "../../application/use-cases/shop/register-shop.use-case.js"
@@ -31,6 +31,7 @@ function registration(overrides: Partial<RegisterShopInput> = {}): RegisterShopI
         deliveryFee: 10_000,
         freeDeliveryFrom: 150_000,
         minOrder: 0,
+        payoutCard: TEST_CARD,
         ...overrides,
     }
 }
@@ -52,6 +53,8 @@ describe("shop use cases", () => {
             expect(shop.botUsername).toBe("Osh_Markaz_bot")
             expect(businesses.tokens.get(shop.id)).toBe("555:secret")
             expect(shop).not.toHaveProperty("token")
+            // The card is a required step: the shop takes transfers from the first order.
+            expect(businesses.items.get(shop.id)?.acceptsCardTransfers()).toBe(true)
         })
 
         it("adds a suffix when the slug is taken", async () => {

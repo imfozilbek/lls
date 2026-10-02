@@ -13,7 +13,6 @@ import {
     GetCourierHomeUseCase,
     GetMoneyReportUseCase,
     MarkRefundedUseCase,
-    RecordCashHandoverUseCase,
     JoinAsCourierUseCase,
     ReviewCourierUseCase,
     SetCourierScheduleUseCase,
@@ -26,6 +25,7 @@ import {
     ListProductsUseCase,
     ListShopOrdersUseCase,
     ListShowcaseShopsUseCase,
+    MarkTransferSentUseCase,
     PlaceOrderUseCase,
     RegisterShopUseCase,
     ResolveCustomerUseCase,
@@ -50,7 +50,6 @@ import {
 
 import { platformAdminIds } from "./env.js"
 import { D1BusinessRepository } from "./repositories/business.repository.js"
-import { D1CashHandoverRepository } from "./repositories/cash-handover.repository.js"
 import { D1CourierRepository } from "./repositories/courier.repository.js"
 import { D1CustomerRepository } from "./repositories/customer.repository.js"
 import { D1DistrictRepository } from "./repositories/district.repository.js"
@@ -84,12 +83,12 @@ export interface UseCases {
     getOrder: GetOrderUseCase
     cancelOrder: CancelOrderUseCase
     advanceOrder: AdvanceOrderUseCase
+    markTransferSent: MarkTransferSentUseCase
     listMyOrders: ListMyOrdersUseCase
     listShopOrders: ListShopOrdersUseCase
     moneyReport: GetMoneyReportUseCase
     confirmPayment: ConfirmPaymentUseCase
     markRefunded: MarkRefundedUseCase
-    recordHandover: RecordCashHandoverUseCase
     exportOrders: ExportOrdersUseCase
     createCourierInvite: CreateCourierInviteUseCase
     joinAsCourier: JoinAsCourierUseCase
@@ -142,7 +141,6 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const orderAccess = { businesses, customers, couriers, orders }
     const courierAccess = { businesses, couriers, orders, clock }
     const network = { ...courierAccess, districts }
-    const money = { ...network, handovers: new D1CashHandoverRepository(env.DB) }
 
     return {
         env,
@@ -172,13 +170,13 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             getOrder: new GetOrderUseCase(orderAccess),
             cancelOrder: new CancelOrderUseCase(orderAccess),
             advanceOrder: new AdvanceOrderUseCase(orderAccess),
+            markTransferSent: new MarkTransferSentUseCase(orderAccess),
             listMyOrders: new ListMyOrdersUseCase(customers, orders),
             listShopOrders: new ListShopOrdersUseCase(businesses, orders),
-            moneyReport: new GetMoneyReportUseCase(money),
-            confirmPayment: new ConfirmPaymentUseCase(money),
-            markRefunded: new MarkRefundedUseCase(money),
-            recordHandover: new RecordCashHandoverUseCase(money),
-            exportOrders: new ExportOrdersUseCase(money),
+            moneyReport: new GetMoneyReportUseCase(network),
+            confirmPayment: new ConfirmPaymentUseCase(network),
+            markRefunded: new MarkRefundedUseCase(network),
+            exportOrders: new ExportOrdersUseCase(network),
             createCourierInvite: new CreateCourierInviteUseCase(courierAccess),
             joinAsCourier: new JoinAsCourierUseCase(courierAccess),
             listCouriers: new ListCouriersUseCase(courierAccess),
@@ -188,7 +186,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             setCourierSchedule: new SetCourierScheduleUseCase(courierAccess),
             setShift: new SetShiftUseCase(courierAccess),
             updateCourierProfile: new UpdateCourierProfileUseCase(courierAccess),
-            courierHome: new GetCourierHomeUseCase(money),
+            courierHome: new GetCourierHomeUseCase(network),
             courierAdvanceOrder: new CourierAdvanceOrderUseCase(orderAccess),
             listShowcaseShops: new ListShowcaseShopsUseCase(businesses, clock),
             searchShowcase: new SearchShowcaseUseCase(businesses, products, clock),

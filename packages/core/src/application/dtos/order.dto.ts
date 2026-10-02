@@ -62,7 +62,7 @@ export interface OrderPaymentDTO {
     method: PaymentMethod
     status: PaymentStatus
     paidAt?: string
-    /** The courier who took the cash at the door. */
+    /** History only: the courier who took cash at the door before payments became transfers. */
     cashCourierId?: string
 }
 

@@ -6,6 +6,7 @@ import {
     OWNER,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
+    TEST_CARD as CARD,
     createActiveShop,
     hireCourier,
     sharePhoneWithShops,
@@ -15,8 +16,6 @@ import {
 import type { TestClient } from "./helpers.js"
 
 const COURIER = { id: 5005, first_name: "Jasur", language_code: "ru" }
-const SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
-const CARD = { number: "4111 1111 1111 1111", holder: "Rustam Karimov" }
 const PNG_HEADER = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
 
 interface Json {
@@ -27,14 +26,14 @@ interface Order {
     number: number
     total: number
     status: string
-    payment: { method: string; status: string; cashCourierId?: string }
+    payment: { method: string; status: string }
 }
 
 async function json<T = Json>(response: Response): Promise<T> {
     return (await response.json()) as T
 }
 
-describe("money: payments, courier cash, report, files", () => {
+describe("money: transfer before the shop starts, report, files", () => {
     let client: TestClient
     let slug: string
     let courierId: string
@@ -43,30 +42,21 @@ describe("money: payments, courier cash, report, files", () => {
     const as = (user: object): ReturnType<TestClient["as"]> =>
         client.as(user, { botToken: SHOP_BOT_TOKEN, shop: slug })
 
-    async function place(paymentMethod?: string): Promise<Response> {
+    async function place(): Promise<Response> {
         return as(CUSTOMER)("/api/orders", {
             method: "POST",
-            json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12", paymentMethod },
+            json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12" },
         })
     }
 
-    const setStatus = (id: string, status: string, paidWith?: string): Promise<Response> =>
-        as(OWNER)(`/api/owner/orders/${id}`, { method: "PATCH", json: { status, paidWith } })
+    const setStatus = (id: string, status: string): Promise<Response> =>
+        as(OWNER)(`/api/owner/orders/${id}`, { method: "PATCH", json: { status } })
 
-    /** Accepted, assigned to the courier, cooked, picked up: the courier is at the door. */
-    async function atTheDoor(order: Order): Promise<void> {
-        await setStatus(order.id, "accepted")
-        await as(OWNER)(`/api/owner/orders/${order.id}/courier`, {
-            method: "PUT",
-            json: { courierId },
-        })
-        await setStatus(order.id, "preparing")
-        await setStatus(order.id, "ready")
-        await courierApp(`/api/courier/orders/${order.id}`, {
-            method: "PATCH",
-            json: { status: "picked_up" },
-        })
-    }
+    const payment = (id: string, action: "paid" | "refunded"): Promise<Response> =>
+        as(OWNER)(`/api/owner/orders/${id}/payment`, { method: "PATCH", json: { action } })
+
+    const transferSent = (id: string, user: object = CUSTOMER): Promise<Response> =>
+        as(user)(`/api/orders/${id}/transfer-sent`, { method: "POST" })
 
     const courierApp = (path: string, init?: RequestInit & { json?: unknown }): Promise<Response> =>
         client.as(COURIER, { courierBot: true })(path, init)
@@ -74,9 +64,7 @@ describe("money: payments, courier cash, report, files", () => {
     const money = async (): Promise<{
         totals: Json
         awaiting: Order[]
-        debts: Order[]
         refunds: Order[]
-        couriers: { courierId: string; onHand: number }[]
     }> => json(await as(OWNER)("/api/owner/money"))
 
     beforeEach(async () => {
@@ -92,125 +80,124 @@ describe("money: payments, courier cash, report, files", () => {
         await sharePhoneWithShops(CUSTOMER.id)
     })
 
-    it("a transfer needs the shop's card; the card shows in the shop, not in lists", async () => {
-        const refused = await place("card_transfer")
-        expect(refused.status).toBe(422)
-        expect(await json(refused)).toMatchObject({ error: { code: "CARD_TRANSFER_UNAVAILABLE" } })
+    it("no card, no orders; the card shows in the shop, a typo is refused", async () => {
+        const shop = await json<{ payoutCard?: Json; hasPayoutCard: boolean }>(
+            await as(CUSTOMER)("/api/shop"),
+        )
+        expect(shop.payoutCard).toEqual({ number: "4111111111111111", holder: "Rustam Karimov" })
+        expect(shop.hasPayoutCard).toBe(true)
 
         const typo = await as(OWNER)("/api/owner/shop", {
             method: "PATCH",
             json: { payoutCard: { number: "4111 1111 1111 1112", holder: "R" } },
         })
         expect(typo.status).toBe(400)
+
+        await as(OWNER)("/api/owner/shop", { method: "PATCH", json: { payoutCard: null } })
+        const closed = await json<{ hasPayoutCard: boolean }>(await as(CUSTOMER)("/api/shop"))
+        expect(closed.hasPayoutCard).toBe(false)
+        const refused = await place()
+        expect(refused.status).toBe(422)
+        expect(await json(refused)).toMatchObject({ error: { code: "NO_PAYOUT_CARD" } })
+
         await as(OWNER)("/api/owner/shop", { method: "PATCH", json: { payoutCard: CARD } })
-        const shop = await json<{ payoutCard?: Json }>(await as(CUSTOMER)("/api/shop"))
-        expect(shop.payoutCard).toEqual({ number: "4111111111111111", holder: "Rustam Karimov" })
-
-        const order = await json<Order>(await place("card_transfer"))
-        expect(order.payment).toMatchObject({ method: "card_transfer", status: "awaiting" })
-        const card = client.telegram.sent.find(
-            (m) => m.chatId === OWNER.id && m.html.includes("#1"),
-        )
-        expect(card?.html).toMatch(/o'tkazma · kutilmoqda|Перевод на карту · ждём/)
+        expect((await place()).status).toBe(201)
     })
 
-    it("cash at the door: three buttons for the courier, cash on hand, handover", async () => {
+    it("«Я перевёл» pings the owner once; «Деньги пришли — принять» starts the shop", async () => {
         const order = await json<Order>(await place())
-        await atTheDoor(order)
-        const card = client.telegram.edited.filter((m) => m.chatId === COURIER.id).at(-1)
-        const buttons = card?.options?.keyboard?.inline_keyboard.flat() ?? []
-        expect(buttons.map((b) => b.callback_data)).toEqual([
-            `a:${order.id}:delivered:cash`,
-            `a:${order.id}:delivered:card_transfer`,
-            `a:${order.id}:delivered:later`,
-        ])
-        expect(card?.html).toContain("Взять с клиента")
+        expect(order.payment).toMatchObject({ method: "card_transfer", status: "unpaid" })
+        // The customer has the card and the sum in the chat right away.
+        const toPay = client.telegram.sent.filter((m) => m.chatId === CUSTOMER.id).at(-1)
+        expect(toPay?.html).toContain("4111 1111 1111 1111")
+        expect(toPay?.html).toContain("80 000")
 
-        // Without saying how the customer paid, "delivered" is refused.
-        const blind = await courierApp(`/api/courier/orders/${order.id}`, {
-            method: "PATCH",
-            json: { status: "delivered" },
-        })
-        expect(blind.status).toBe(400)
+        // Only the customer of the order says it is sent.
+        expect((await transferSent(order.id, OWNER)).status).toBe(403)
+        const sent = await transferSent(order.id)
+        expect(await json<Order>(sent)).toMatchObject({ payment: { status: "awaiting" } })
+        const ping = client.telegram.sent.at(-1)
+        expect(ping).toMatchObject({ chatId: OWNER.id, token: SHOP_BOT_TOKEN })
+        expect(ping?.html).toContain("80 000")
+        const before = client.telegram.sent.length
+        await transferSent(order.id)
+        expect(client.telegram.sent.length).toBe(before)
+        expect((await money()).awaiting.map((o) => o.id)).toEqual([order.id])
 
-        await client.courierBot({
-            callback_query: { id: "cb-1", from: COURIER, data: `a:${order.id}:delivered:cash` },
-        })
-        const home = await json<{ shops: { onHand: number }[] }>(
-            await courierApp("/api/courier/home"),
-        )
-        expect(home.shops[0]?.onHand).toBe(80_000)
-        let report = await money()
-        expect(report.totals).toMatchObject({ delivered: 1, paidCash: 80_000, goods: 70_000 })
-        expect(report.couriers).toMatchObject([{ courierId, onHand: 80_000 }])
-
-        const tooMuch = await as(OWNER)(`/api/owner/couriers/${courierId}/handovers`, {
-            method: "POST",
-            json: { amount: 90_000 },
-        })
-        expect(tooMuch.status).toBe(422)
-        const handed = await as(OWNER)(`/api/owner/couriers/${courierId}/handovers`, {
-            method: "POST",
-            json: { amount: 80_000 },
-        })
-        expect(await json(handed)).toEqual({ data: [] })
-        report = await money()
-        expect(report.couriers).toEqual([])
+        // Not by hand: the shop starts only after the money.
+        expect((await setStatus(order.id, "accepted")).status).toBe(422)
+        const accepted = await json<Order>(await payment(order.id, "paid"))
+        expect(accepted).toMatchObject({ status: "accepted", payment: { status: "paid" } })
+        expect(client.telegram.sent.at(-1)).toMatchObject({ chatId: CUSTOMER.id })
+        expect(client.telegram.sent.at(-1)?.html).toContain("Оплата получена")
+        expect((await money()).awaiting).toEqual([])
+        // Pressed again: nothing left to confirm.
+        expect((await payment(order.id, "paid")).status).toBe(422)
     })
 
-    it("a transfer at the door is confirmed by the owner; the customer hears it", async () => {
+    it("one «Доставил» for the courier, nothing to collect; the report adds up", async () => {
         const order = await json<Order>(await place())
-        await atTheDoor(order)
+        await payment(order.id, "paid")
+        await as(OWNER)(`/api/owner/orders/${order.id}/courier`, {
+            method: "PUT",
+            json: { courierId },
+        })
+        await setStatus(order.id, "preparing")
+        await setStatus(order.id, "ready")
         await courierApp(`/api/courier/orders/${order.id}`, {
             method: "PATCH",
-            json: { status: "delivered", paidWith: "card_transfer" },
+            json: { status: "picked_up" },
         })
-        let report = await money()
-        expect(report.awaiting.map((o) => o.id)).toEqual([order.id])
-        expect(report.couriers).toEqual([])
+        const card = client.telegram.edited.filter((m) => m.chatId === COURIER.id).at(-1)
+        const buttons = card?.options?.keyboard?.inline_keyboard.flat() ?? []
+        expect(buttons.map((b) => b.callback_data)).toEqual([`a:${order.id}:delivered`])
+        expect(card?.html).toContain("денег с клиента не брать")
 
-        const confirmed = await as(OWNER)(`/api/owner/orders/${order.id}/payment`, {
-            method: "PATCH",
-            json: { action: "paid", method: "card_transfer" },
+        await client.courierBot({
+            callback_query: { id: "cb-1", from: COURIER, data: `a:${order.id}:delivered` },
         })
-        expect(await json<Order>(confirmed)).toMatchObject({ payment: { status: "paid" } })
-        expect(client.telegram.sent.at(-1)).toMatchObject({ chatId: CUSTOMER.id })
-        expect(client.telegram.sent.at(-1)?.html).toContain("Оплата заказа #1 получена")
-        report = await money()
-        expect(report.totals).toMatchObject({ paidCard: 80_000, awaiting: 0 })
+        const home = await json<{ shops: Json[] }>(await courierApp("/api/courier/home"))
+        expect(home.shops[0]).not.toHaveProperty("onHand")
+        const report = await money()
+        expect(report.totals).toEqual({
+            placed: 1,
+            delivered: 1,
+            cancelled: 0,
+            goods: 70_000,
+            delivery: 10_000,
+            deposits: 0,
+            paid: 80_000,
+            commission: 0,
+        })
+        // The cash routes are gone.
+        const handover = await as(OWNER)(`/api/owner/couriers/${courierId}/handovers`, {
+            method: "POST",
+            json: { amount: 1 },
+        })
+        expect(handover.status).toBe(404)
     })
 
-    it("debts and refunds", async () => {
-        const debt = await json<Order>(await place())
-        await setStatus(debt.id, "accepted")
-        await setStatus(debt.id, "preparing")
-        await setStatus(debt.id, "ready")
-        await setStatus(debt.id, "picked_up")
-        await setStatus(debt.id, "delivered", "later")
-        let report = await money()
-        expect(report.debts.map((o) => o.id)).toEqual([debt.id])
-
-        await as(OWNER)("/api/owner/shop", { method: "PATCH", json: { payoutCard: CARD } })
-        const paid = await json<Order>(await place("card_transfer"))
-        await as(OWNER)(`/api/owner/orders/${paid.id}/payment`, {
-            method: "PATCH",
-            json: { action: "paid", method: "card_transfer" },
-        })
+    it("cancelled after the money came: owed back until «Вернул»", async () => {
+        const paid = await json<Order>(await place())
+        await payment(paid.id, "paid")
         await setStatus(paid.id, "cancelled")
-        report = await money()
+        let report = await money()
         expect(report.refunds.map((o) => o.id)).toEqual([paid.id])
-        await as(OWNER)(`/api/owner/orders/${paid.id}/payment`, {
-            method: "PATCH",
-            json: { action: "refunded" },
-        })
+        await payment(paid.id, "refunded")
         // A second "refunded" is refused: it was already given back.
-        const again = await as(OWNER)(`/api/owner/orders/${paid.id}/payment`, {
-            method: "PATCH",
-            json: { action: "refunded" },
-        })
-        expect(again.status).toBe(422)
+        expect((await payment(paid.id, "refunded")).status).toBe(422)
         report = await money()
         expect(report.refunds).toEqual([])
+
+        // Sent, then cancelled by the customer: if the money comes, it is owed back.
+        const late = await json<Order>(await place())
+        await transferSent(late.id)
+        await as(CUSTOMER)(`/api/orders/${late.id}`, {
+            method: "PATCH",
+            json: { status: "cancelled" },
+        })
+        const owed = await json<Order>(await payment(late.id, "paid"))
+        expect(owed).toMatchObject({ status: "cancelled", payment: { status: "refund_due" } })
     })
 
     it("the report as a CSV file and the QR poster arrive in the owner's chat", async () => {
@@ -225,7 +212,7 @@ describe("money: payments, courier cash, report, files", () => {
         expect([...(csv?.file.bytes.slice(0, 3) ?? [])]).toEqual([0xef, 0xbb, 0xbf])
         const text = new TextDecoder().decode(csv?.file.bytes)
         const [header, row] = text.split("\r\n")
-        expect(header?.split(";")).toHaveLength(16)
+        expect(header?.split(";")).toHaveLength(15)
         expect(row).toContain(";80000;")
 
         const png = new Uint8Array([...PNG_HEADER, 0, 0, 0, 13])

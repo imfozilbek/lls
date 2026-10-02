@@ -29,7 +29,6 @@ export * from "./domain/value-objects/working-hours.js"
 
 // Domain - Entities
 export * from "./domain/entities/business.js"
-export * from "./domain/entities/cash-handover.js"
 export * from "./domain/entities/courier.js"
 export * from "./domain/entities/courier-profile.js"
 export * from "./domain/entities/customer.js"

@@ -10,6 +10,7 @@ import {
     STRANGER,
     createActiveShop,
     testClient,
+    TEST_CARD,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -47,7 +48,13 @@ describe("platform bot", () => {
         const russian = { ...OWNER, language_code: "ru" }
         await client.as(russian, {})("/api/platform/shops", {
             method: "POST",
-            json: { botToken: SHOP_BOT_TOKEN, name: "Osh", type: "food", deliveryFee: 0 },
+            json: {
+                botToken: SHOP_BOT_TOKEN,
+                name: "Osh",
+                type: "food",
+                deliveryFee: 0,
+                payoutCard: TEST_CARD,
+            },
         })
         const toOwner = client.telegram.sent.find((m) => m.chatId === OWNER.id)
         expect(toOwner?.html).toContain("Заявка")
@@ -72,7 +79,13 @@ describe("platform bot", () => {
     it("registration notifies the owner and admins; admin approval connects the shop bot", async () => {
         const registered = await client.as(OWNER, {})("/api/platform/shops", {
             method: "POST",
-            json: { botToken: SHOP_BOT_TOKEN, name: "Osh <Markaz>", type: "food", deliveryFee: 0 },
+            json: {
+                botToken: SHOP_BOT_TOKEN,
+                name: "Osh <Markaz>",
+                type: "food",
+                deliveryFee: 0,
+                payoutCard: TEST_CARD,
+            },
         })
         const shop = (await registered.json()) as { id: string }
         const [toOwner, toAdmin] = client.telegram.sent
@@ -142,7 +155,13 @@ describe("platform bot: a failed connection on approval", () => {
     it("tells the admin, and /reconnect connects the bot later", async () => {
         const registered = await client.as(OWNER, {})("/api/platform/shops", {
             method: "POST",
-            json: { botToken: SHOP_BOT_TOKEN, name: "Osh Markaz", type: "food", deliveryFee: 0 },
+            json: {
+                botToken: SHOP_BOT_TOKEN,
+                name: "Osh Markaz",
+                type: "food",
+                deliveryFee: 0,
+                payoutCard: TEST_CARD,
+            },
         })
         const shop = (await registered.json()) as { id: string; slug: string }
 
@@ -274,43 +293,54 @@ describe("shop bot", () => {
         expect(start.status).toBe(200)
     })
 
-    it("new order → owner card with buttons; accept → card edited, customer told", async () => {
+    it("new order → card «ждём перевод», the customer gets the card; «Деньги пришли — принять»", async () => {
         const order = await placeOrder()
-        const card = client.telegram.sent.at(-1)
-        expect(card?.chatId).toBe(OWNER.id)
+        const card = client.telegram.sent.find((m) => m.chatId === OWNER.id)
         expect(card?.html).toContain(`#${order.number}`)
         expect(card?.html).toContain("Maktab")
         expect(card?.html).toContain("+998 90 123 45 67")
-        expect(card?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
-            `a:${order.id}:accepted`,
-        )
-
-        await shopUpdate({
-            callback_query: { id: "cb-1", from: OWNER, data: `a:${order.id}:accepted` },
+        expect(card?.html).toContain("o'tkazma kutilmoqda")
+        expect(card?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual({
+            text: "💳 Pul keldi — qabul qilish",
+            callback_data: `p:${order.id}`,
         })
+        const toPay = client.telegram.sent.at(-1)
+        expect(toPay?.chatId).toBe(CUSTOMER.id)
+        expect(toPay?.html).toContain("4111 1111 1111 1111")
+        expect(toPay?.html).toContain("Rustam Karimov")
+
+        // Accepting before the money arrived is refused: the order stays new.
+        await shopUpdate({
+            callback_query: { id: "cb-0", from: OWNER, data: `a:${order.id}:accepted` },
+        })
+        expect(client.telegram.answered).toContain("cb-0")
+        const still = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
+        expect(still?.status).toBe("pending")
+
+        await shopUpdate({ callback_query: { id: "cb-1", from: OWNER, data: `p:${order.id}` } })
         expect(client.telegram.answered).toContain("cb-1")
         const edited = client.telegram.edited.at(-1)
         expect(edited?.messageId).toBeGreaterThan(0)
         expect(edited?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
             `a:${order.id}:preparing`,
         )
+        expect(edited?.html).toContain("O'tkazma bilan to'langan")
         const toCustomer = client.telegram.sent.at(-1)
         expect(toCustomer?.chatId).toBe(CUSTOMER.id)
         expect(toCustomer?.html).toContain(`#${order.number}`)
+        expect(toCustomer?.html).toContain("Оплата получена")
 
         // A stale button does not move the order again
-        await shopUpdate({
-            callback_query: { id: "cb-2", from: OWNER, data: `a:${order.id}:accepted` },
-        })
-        const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
-        expect(row?.status).toBe("accepted")
+        await shopUpdate({ callback_query: { id: "cb-2", from: OWNER, data: `p:${order.id}` } })
+        const row = await env.DB.prepare("SELECT status, payment_status FROM orders").first()
+        expect(row).toEqual({ status: "accepted", payment_status: "paid" })
     })
 
     it("a failed answer to the button still updates the order and the owner card", async () => {
         const order = await placeOrder()
         client.telegram.failReplies = true
         const response = await shopUpdate({
-            callback_query: { id: "cb-1", from: OWNER, data: `a:${order.id}:accepted` },
+            callback_query: { id: "cb-1", from: OWNER, data: `p:${order.id}` },
         })
         expect(response.status).toBe(200)
         const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
@@ -322,9 +352,7 @@ describe("shop bot", () => {
 
     it("buttons pressed by someone else change nothing", async () => {
         const order = await placeOrder()
-        await shopUpdate({
-            callback_query: { id: "cb-1", from: STRANGER, data: `a:${order.id}:accepted` },
-        })
+        await shopUpdate({ callback_query: { id: "cb-1", from: STRANGER, data: `p:${order.id}` } })
         await shopUpdate({ callback_query: { id: "cb-2", from: STRANGER, data: `x:${order.id}` } })
         const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
         expect(row?.status).toBe("pending")

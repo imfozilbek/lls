@@ -21,7 +21,6 @@ import { isUniqueViolation, oneOf, optional, placeholders } from "./rows.js"
 
 import type {
     CancelledBy,
-    CourierAmount,
     MoneyTotals,
     NetworkShare,
     OrderRepository,
@@ -101,10 +100,7 @@ const EMPTY_TOTALS: MoneyTotals = {
     goods: 0,
     delivery: 0,
     deposits: 0,
-    paidCash: 0,
-    paidCard: 0,
-    awaiting: 0,
-    debt: 0,
+    paid: 0,
     commission: 0,
 }
 
@@ -406,13 +402,7 @@ export class D1OrderRepository implements OrderRepository {
                         COALESCE(SUM(subtotal), 0) AS goods,
                         COALESCE(SUM(delivery_fee), 0) AS delivery,
                         COALESCE(SUM(deposit_total), 0) AS deposits,
-                        COALESCE(SUM(CASE WHEN payment_status = 'paid'
-                            AND payment_method = 'cash' THEN total END), 0) AS paidCash,
-                        COALESCE(SUM(CASE WHEN payment_status = 'paid'
-                            AND payment_method = 'card_transfer' THEN total END), 0) AS paidCard,
-                        COALESCE(SUM(CASE WHEN payment_status = 'awaiting' THEN total END), 0)
-                            AS awaiting,
-                        COALESCE(SUM(CASE WHEN payment_status = 'unpaid' THEN total END), 0) AS debt,
+                        COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN total END), 0) AS paid,
                         COALESCE(SUM(commission), 0) AS commission
                      FROM orders
                      WHERE business_id = ? AND status = 'delivered'
@@ -430,24 +420,11 @@ export class D1OrderRepository implements OrderRepository {
 
     async listOpenPayments(businessId: string, limit: number): Promise<Order[]> {
         return this.list(
-            `business_id = ? AND (payment_status IN ('awaiting', 'refund_due')
-                OR (payment_status = 'unpaid' AND status = 'delivered'))`,
+            "business_id = ? AND payment_status IN ('awaiting', 'refund_due')",
             [businessId],
             "number ASC",
             limit,
         )
-    }
-
-    async cashCollectedByCourier(businessId: string): Promise<CourierAmount[]> {
-        const { results } = await this.db
-            .prepare(
-                `SELECT cash_courier_id AS courierId, SUM(total) AS amount FROM orders
-                 WHERE business_id = ? AND cash_courier_id IS NOT NULL AND payment_status = 'paid'
-                 GROUP BY cash_courier_id`,
-            )
-            .bind(businessId)
-            .all<CourierAmount>()
-        return results
     }
 
     async listCreatedBetween(

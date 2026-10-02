@@ -73,7 +73,7 @@ export const ownerRoutes = new Hono<AppEnv>()
             const actor = c.get("auth").user.id
             const businessId = shopOf(c).id
             const orderId = c.req.valid("param").id
-            const { status, reason, paidWith } = c.req.valid("json")
+            const { status, reason } = c.req.valid("json")
             const order =
                 status === OrderStatus.CANCELLED
                     ? await services.useCases.cancelOrder.execute({
@@ -87,7 +87,6 @@ export const ownerRoutes = new Hono<AppEnv>()
                           businessId,
                           orderId,
                           to: status,
-                          paidWith,
                       })
             const step = await networkAfterStep(services, order)
             inBackground(

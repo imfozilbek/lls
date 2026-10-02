@@ -35,7 +35,7 @@ export interface ShopSettingsPatch {
     features?: string[]
     /** Deposit per kept returnable bottle, UZS (0 = only count bottles). */
     bottleDeposit?: number
-    /** The card for customers' transfers; `null` = cash only. */
+    /** The card for customers' transfers; `null` removes it and the shop stops taking orders. */
     payoutCard?: { number: string; holder: string } | null
     /** When its own couriers are busy, orders go to the district network. */
     networkDelivery?: boolean

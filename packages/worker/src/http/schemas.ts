@@ -6,8 +6,6 @@ import {
     MONEY_PERIODS,
     ORDER_STATUSES,
     OrderStatus,
-    PAID_WITH,
-    PAYMENT_METHODS,
     UNITS,
     WEEKDAYS,
 } from "@lls/core"
@@ -64,7 +62,6 @@ export const placeOrderBody = z.object({
     location: locationSchema.optional(),
     comment: z.string().trim().max(300).optional(),
     bottlesReturned: z.number().int().min(0).max(99).optional(),
-    paymentMethod: z.enum(PAYMENT_METHODS).optional(),
 })
 
 export const customerCancelBody = z.object({
@@ -75,8 +72,6 @@ export const customerCancelBody = z.object({
 export const ownerOrderBody = z.object({
     status: z.enum(ORDER_STATUSES),
     reason: z.string().trim().max(200).optional(),
-    /** With "delivered": how the customer paid. */
-    paidWith: z.enum(PAID_WITH).optional(),
 })
 
 export const productBody = z.object({
@@ -121,22 +116,24 @@ export const courierProfileBody = z.object({
 /** A courier moves only the delivery part. */
 export const courierOrderBody = z.object({
     status: z.enum([OrderStatus.PICKED_UP, OrderStatus.DELIVERED]),
-    paidWith: z.enum(PAID_WITH).optional(),
 })
 
-/** The owner saw the money arrive, or gave it back. */
-export const paymentBody = z.discriminatedUnion("action", [
-    z.object({ action: z.literal("paid"), method: z.enum(PAYMENT_METHODS) }),
-    z.object({ action: z.literal("refunded") }),
-])
+/**
+ * «Деньги пришли — принять»: the transfer arrived (a new order is accepted in the same tap);
+ * or «Вернул»: the money of a cancelled order went back.
+ */
+export const paymentBody = z.object({ action: z.enum(["paid", "refunded"]) })
 
 export const moneyQuery = z.object({ period: z.enum(MONEY_PERIODS).default("today") })
-
-export const handoverBody = z.object({ amount: z.number().int().min(1).max(1_000_000_000) })
 
 const timeRange = z.object({
     open: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
     close: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+})
+
+const payoutCardSchema = z.object({
+    number: z.string().trim().min(16).max(25),
+    holder: text(60),
 })
 
 export const shopPatchBody = z.object({
@@ -160,13 +157,7 @@ export const shopPatchBody = z.object({
     networkDelivery: z.boolean().optional(),
     features: z.array(z.enum(FEATURES)).max(10).optional(),
     bottleDeposit: z.number().int().min(0).max(1_000_000).optional(),
-    payoutCard: z
-        .object({
-            number: z.string().trim().min(16).max(25),
-            holder: text(60),
-        })
-        .nullable()
-        .optional(),
+    payoutCard: payoutCardSchema.nullable().optional(),
 })
 
 export const registerShopBody = z.object({
@@ -178,6 +169,8 @@ export const registerShopBody = z.object({
     deliveryFee: money,
     freeDeliveryFrom: money.optional(),
     minOrder: money.optional(),
+    /** Customers pay only by transfer: no card, no orders. */
+    payoutCard: payoutCardSchema,
 })
 
 interface ValidationResult {

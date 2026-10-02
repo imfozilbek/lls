@@ -18,6 +18,7 @@ import {
     CourierAdvanceOrderUseCase,
     GetOrderUseCase,
 } from "../../application/use-cases/order/order.use-cases.js"
+import { ConfirmPaymentUseCase } from "../../application/use-cases/money/money.use-cases.js"
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
 import { UpdateProductUseCase } from "../../application/use-cases/product/product.use-cases.js"
 import { UpdateShopUseCase } from "../../application/use-cases/shop/update-shop.use-case.js"
@@ -26,7 +27,6 @@ import { CourierStatus } from "../../domain/enums/courier-status.js"
 import { Feature } from "../../domain/enums/feature.js"
 import { OrderChannel } from "../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
-import { PaidWith } from "../../domain/enums/payment.js"
 import { Unit } from "../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../domain/errors/conflict.error.js"
@@ -47,7 +47,6 @@ import {
     InMemoryBusinesses,
     InMemoryCouriers,
     InMemoryDistricts,
-    InMemoryHandovers,
     InMemoryCustomers,
     InMemoryOrders,
     InMemoryProducts,
@@ -65,7 +64,6 @@ describe("shop couriers and vertical features", () => {
     let customers: InMemoryCustomers
     let orders: InMemoryOrders
     let couriers: InMemoryCouriers
-    let handovers: InMemoryHandovers
 
     function courierDeps(): {
         businesses: InMemoryBusinesses
@@ -121,16 +119,21 @@ describe("shop couriers and vertical features", () => {
     }
 
     /** "Today" for the courier screen is real time: entities stamp updates with it. */
-    function homeDeps(): ReturnType<typeof courierDeps> & {
-        handovers: InMemoryHandovers
-        districts: InMemoryDistricts
-    } {
+    function homeDeps(): ReturnType<typeof courierDeps> & { districts: InMemoryDistricts } {
         return {
             ...courierDeps(),
             clock: fixedClock(new Date()),
-            handovers,
             districts: new InMemoryDistricts(),
         }
+    }
+
+    /** «Деньги пришли — принять»: the transfer arrived, the shop starts. */
+    async function payAndAccept(orderId: string, businessId = "biz-1"): Promise<void> {
+        await new ConfirmPaymentUseCase({ businesses, orders, clock }).execute({
+            actorTelegramId: OWNER_TG,
+            businessId,
+            orderId,
+        })
     }
 
     beforeEach(async () => {
@@ -139,7 +142,6 @@ describe("shop couriers and vertical features", () => {
         customers = new InMemoryCustomers()
         orders = new InMemoryOrders()
         couriers = new InMemoryCouriers()
-        handovers = new InMemoryHandovers()
         await businesses.save(makeBusiness())
         await businesses.save(makeBusiness({ id: "biz-2" }))
         await products.save(makeProduct())
@@ -223,7 +225,7 @@ describe("shop couriers and vertical features", () => {
             const order = await place()
             const advance = new AdvanceOrderUseCase(orderDeps())
             const owner = { actorTelegramId: OWNER_TG, businessId: "biz-1", orderId: order.id }
-            await advance.execute({ ...owner, to: OrderStatus.ACCEPTED })
+            await payAndAccept(order.id)
             const assign = new AssignCourierUseCase(courierDeps())
             // Not approved yet.
             await expect(assign.execute({ ...owner, courierId })).rejects.toThrow(
@@ -254,11 +256,7 @@ describe("shop couriers and vertical features", () => {
             await advance.execute({ ...owner, to: OrderStatus.PREPARING })
             await advance.execute({ ...owner, to: OrderStatus.READY })
             await asCourier.execute({ ...me, to: OrderStatus.PICKED_UP })
-            const done = await asCourier.execute({
-                ...me,
-                to: OrderStatus.DELIVERED,
-                paidWith: PaidWith.CASH,
-            })
+            const done = await asCourier.execute({ ...me, to: OrderStatus.DELIVERED })
             expect(done.status).toBe(OrderStatus.DELIVERED)
             await expect(
                 asCourier.execute({ ...me, orderId: "missing", to: OrderStatus.PICKED_UP }),
@@ -269,7 +267,6 @@ describe("shop couriers and vertical features", () => {
             })
             expect(home.orders.map((o) => [o.id, o.shopName])).toEqual([[order.id, "Osh Markaz"]])
             expect(home.shops).toMatchObject([{ businessId: "biz-1", worksToday: true }])
-            expect(home.shops[0]?.onHand).toBe(done.total)
             expect(home.profile.name).toBe("Jasur")
         })
 
@@ -352,12 +349,7 @@ describe("shop couriers and vertical features", () => {
         it("the courier sees but never cancels; strangers get nothing", async () => {
             const courierId = await hireCourier()
             const order = await place()
-            await new AdvanceOrderUseCase(orderDeps()).execute({
-                actorTelegramId: OWNER_TG,
-                businessId: "biz-1",
-                orderId: order.id,
-                to: OrderStatus.ACCEPTED,
-            })
+            await payAndAccept(order.id)
             await new AssignCourierUseCase(courierDeps()).execute({
                 actorTelegramId: OWNER_TG,
                 businessId: "biz-1",

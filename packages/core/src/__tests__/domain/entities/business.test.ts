@@ -52,6 +52,10 @@ describe("Business", () => {
         expect(() => paused.assertCanAcceptOrders(NOON_MONDAY_UZ)).toThrow(/not accepting/)
         expect(paused.isOpenAt(NOON_MONDAY_UZ)).toBe(false)
 
+        const noCard = makeBusiness({ card: false })
+        expect(() => noCard.assertCanAcceptOrders(NOON_MONDAY_UZ)).toThrow(/no card/)
+        expect(noCard.isOpenAt(NOON_MONDAY_UZ)).toBe(false)
+
         const closed = makeBusiness()
         closed.setWorkingHours(WorkingHours.create({ tue: { open: "09:00", close: "18:00" } }))
         expect(() => closed.assertCanAcceptOrders(NOON_MONDAY_UZ)).toThrow(/closed/)

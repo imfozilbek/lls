@@ -11,6 +11,7 @@ import {
     createActiveShop,
     sharePhoneWithShops,
     testClient,
+    TEST_CARD,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -68,6 +69,7 @@ describe("onboarding through the platform bot", () => {
                 name: "Osh Markaz",
                 type: "food",
                 deliveryFee: 10_000,
+                payoutCard: TEST_CARD,
             },
         })
         expect(response.status).toBe(201)
@@ -92,7 +94,13 @@ describe("onboarding through the platform bot", () => {
         const client = testClient()
         const response = await client.as(OWNER, {})("/api/platform/shops", {
             method: "POST",
-            json: { botToken: OTHER_BOT_TOKEN, name: "X", type: "food", deliveryFee: 0 },
+            json: {
+                botToken: OTHER_BOT_TOKEN,
+                name: "X",
+                type: "food",
+                deliveryFee: 0,
+                payoutCard: TEST_CARD,
+            },
         })
         expect(response.status).toBe(400)
         expect(await json(response)).toMatchObject({ error: { code: "INVALID_BOT_TOKEN" } })
@@ -108,7 +116,7 @@ describe("onboarding through the platform bot", () => {
         const body = await json<{ error: { code: string; details: { field: string }[] } }>(response)
         expect(body.error.code).toBe("VALIDATION_ERROR")
         expect(body.error.details.map((d) => d.field)).toEqual(
-            expect.arrayContaining(["botToken", "name", "type", "deliveryFee"]),
+            expect.arrayContaining(["botToken", "name", "type", "deliveryFee", "payoutCard"]),
         )
     })
 })
@@ -242,9 +250,16 @@ describe("inside a shop", () => {
         const stranger = asCustomer(STRANGER)
         expect((await stranger(`/api/orders/${order.id}`)).status).toBe(403)
 
-        const accepted = await asOwner()(`/api/owner/orders/${order.id}`, {
+        // The shop starts only after the transfer arrived.
+        const unpaid = await asOwner()(`/api/owner/orders/${order.id}`, {
             method: "PATCH",
             json: { status: "accepted" },
+        })
+        expect(unpaid.status).toBe(422)
+        expect(await json(unpaid)).toMatchObject({ error: { code: "PAYMENT_REQUIRED" } })
+        const accepted = await asOwner()(`/api/owner/orders/${order.id}/payment`, {
+            method: "PATCH",
+            json: { action: "paid" },
         })
         expect(await json(accepted)).toMatchObject({ status: "accepted", nextStatus: "preparing" })
 

@@ -6,7 +6,6 @@ import { emptyPage, mapPage, normalizePage } from "../../dtos/pagination.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
 import type { Order, OrderMover } from "../../../domain/entities/order.js"
-import type { PaidWith } from "../../../domain/enums/payment.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { Page } from "../../dtos/pagination.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
@@ -104,15 +103,13 @@ export class AdvanceOrderUseCase {
         businessId: string
         orderId: string
         to: OrderStatus
-        /** With "delivered": how the customer paid at the door. */
-        paidWith?: PaidWith
     }): Promise<OrderDTO> {
         const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
         const mover = await participantOf(this.deps, order, input.actorTelegramId)
         if (mover.role === "customer") {
             throw ForbiddenError.notOwner(order.businessId)
         }
-        order.advanceTo(input.to, mover, input.paidWith)
+        order.advanceTo(input.to, mover)
         await this.deps.orders.save(order)
         return toOrderDTO(order)
     }
@@ -126,7 +123,6 @@ export class CourierAdvanceOrderUseCase {
         telegramId: number
         orderId: string
         to: OrderStatus
-        paidWith?: PaidWith
     }): Promise<OrderDTO> {
         const order = await this.deps.orders.findById(input.orderId)
         if (!order) {
@@ -137,8 +133,34 @@ export class CourierAdvanceOrderUseCase {
             businessId: order.businessId,
             orderId: order.id,
             to: input.to,
-            paidWith: input.paidWith,
         })
+    }
+}
+
+export class MarkTransferSentUseCase {
+    constructor(private readonly deps: OrderAccessDeps) {}
+
+    /**
+     * «Я перевёл»: only the customer of the order; the owner then checks the card. `changed` is
+     * false when it was pressed before (or the money is already confirmed): nobody is pinged twice.
+     */
+    async execute(input: {
+        telegramId: number
+        businessId: string
+        orderId: string
+    }): Promise<{ order: OrderDTO; changed: boolean }> {
+        const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
+        const { role } = await participantOf(this.deps, order, input.telegramId)
+        if (role !== "customer") {
+            throw ForbiddenError.notOrderParticipant(order.id)
+        }
+        const before = order.payment.status
+        order.markTransferSent()
+        const changed = order.payment.status !== before
+        if (changed) {
+            await this.deps.orders.save(order)
+        }
+        return { order: toOrderDTO(order), changed }
     }
 }
 

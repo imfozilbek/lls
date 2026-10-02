@@ -6,7 +6,6 @@ import {
     getNextStatus,
     isFinalStatus,
 } from "../enums/order-status.js"
-import { PaidWith, PaymentMethod } from "../enums/payment.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ForbiddenError } from "../errors/forbidden.error.js"
 import { InvalidOrderTransitionError } from "../errors/invalid-transition.error.js"
@@ -98,8 +97,6 @@ export interface PlaceOrderProps {
     comment?: string
     customerName: string
     customerPhone?: Phone
-    /** Cash unless the customer chose a transfer to the shop's card. */
-    paymentMethod?: PaymentMethod
 }
 
 export function subtotalOf(items: readonly OrderItem[]): Money {
@@ -146,7 +143,7 @@ export class Order {
             comment: optionalText("comment", input.comment, COMMENT_MAX),
             customerName: input.customerName,
             customerPhone: input.customerPhone,
-            payment: Payment.start(input.paymentMethod ?? PaymentMethod.CASH),
+            payment: Payment.start(),
             createdAt: now,
             updatedAt: now,
         })
@@ -282,10 +279,10 @@ export class Order {
 
     /**
      * Moves the order forward. The owner may make every step; a courier only the delivery part
-     * of an order assigned to them. Cancelling goes through `cancel()`.
-     * Delivering records how the customer paid, unless the money was already confirmed.
+     * of an order assigned to them. Cancelling goes through `cancel()`. The shop starts only
+     * after the transfer arrived: accepting an unpaid order is refused.
      */
-    advanceTo(status: OrderStatus, by: OrderMover = OWNER, paidWith?: PaidWith): void {
+    advanceTo(status: OrderStatus, by: OrderMover = OWNER): void {
         if (status === OrderStatus.CANCELLED) {
             throw ValidationError.fromField("status", "Use cancel() to cancel an order", status)
         }
@@ -298,36 +295,37 @@ export class Order {
         if (!canActorMove(by.role, this.props.status, status)) {
             throw ForbiddenError.stepNotAllowed(this.props.id, status)
         }
+        if (status === OrderStatus.ACCEPTED && !this.props.payment.isPaid()) {
+            throw BusinessRuleViolationError.paymentRequired(this.props.id)
+        }
         if (status === OrderStatus.DELIVERED) {
-            this.settlePayment(by, paidWith)
+            this.props.deliveredAt = new Date()
         }
         this.props.status = status
         this.touch()
     }
 
-    private settlePayment(by: OrderMover, paidWith: PaidWith | undefined): void {
-        const now = new Date()
-        if (!this.props.payment.isPaid()) {
-            if (paidWith === undefined) {
-                throw ValidationError.fromField("paidWith", "How did the customer pay?")
-            }
-            const holder =
-                by.role === "courier"
-                    ? { kind: "courier" as const, courierId: by.courierId }
-                    : { kind: "owner" as const }
-            this.props.payment = this.props.payment.settleOnDelivery(paidWith, holder, now)
-        }
-        this.props.deliveredAt = now
+    /** «Я перевёл»: the customer says the transfer is sent; the owner checks the card. */
+    markTransferSent(): void {
+        this.props.payment = this.props.payment.markSent()
+        this.touch()
     }
 
-    /** The owner saw the money arrive: a transfer, or a debt paid later. */
-    confirmPayment(method: PaymentMethod): void {
+    /** The owner saw the transfer on the card. On a cancelled order it is owed back. */
+    confirmPayment(): void {
         this.props.payment = this.props.payment.confirm(
-            method,
             new Date(),
             this.props.status === OrderStatus.CANCELLED,
         )
         this.touch()
+    }
+
+    /** «Деньги пришли — принять»: the transfer arrived and the shop starts, in one tap. */
+    confirmPaymentAndAccept(): void {
+        this.confirmPayment()
+        if (this.props.status === OrderStatus.PENDING) {
+            this.advanceTo(OrderStatus.ACCEPTED)
+        }
     }
 
     /** The owner gave the money of a cancelled order back. */

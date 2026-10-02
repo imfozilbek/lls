@@ -1,11 +1,4 @@
-import {
-    OrderChannel,
-    OrderStatus,
-    PaidWith,
-    PaymentStatus,
-    formatPhone,
-    isFinalStatus,
-} from "@lls/core"
+import { OrderChannel, OrderStatus, PaymentStatus, formatPhone, isFinalStatus } from "@lls/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -15,7 +8,7 @@ import { usePagedList } from "../lib/paged.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
-import { ReceiptIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import { CardIcon, ReceiptIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
 import { LoadMore } from "../ui/load-more.js"
 import { StatusBadge } from "../ui/order-status.js"
 import { PaymentLine } from "../ui/payment.js"
@@ -161,57 +154,19 @@ function CancelSheet({
     )
 }
 
-/** Delivered: how the customer paid at the door decides where the money stands. */
-function PaidWithSheet({
-    onPick,
-    onClose,
-}: {
-    onPick(paidWith: PaidWith): void
-    onClose(): void
-}): React.JSX.Element {
-    const t = useT()
-    const options = [
-        { value: PaidWith.CASH, label: t.owner.paidCash },
-        { value: PaidWith.CARD_TRANSFER, label: t.owner.paidCard },
-        { value: PaidWith.LATER, label: t.owner.paidLater },
-    ]
-    return (
-        <Sheet title={t.owner.howPaid} onClose={onClose}>
-            {options.map((option) => (
-                <SheetOption
-                    key={option.value}
-                    label={option.label}
-                    onClick={(): void => {
-                        onClose()
-                        onPick(option.value)
-                    }}
-                />
-            ))}
-        </Sheet>
-    )
-}
-
 function OrderActions(props: CardProps): React.JSX.Element | null {
     const { order, onChange, onStale } = props
     const t = useT()
     const [busy, setBusy] = useState(false)
-    const [sheet, setSheet] = useState<"courier" | "cancel" | "paid" | null>(null)
+    const [sheet, setSheet] = useState<"courier" | "cancel" | null>(null)
     if (isFinalStatus(order.status)) {
         return null
     }
 
-    const advance = async (status: OrderStatus, paidWith?: PaidWith): Promise<void> => {
-        if (
-            status === OrderStatus.DELIVERED &&
-            !paidWith &&
-            order.payment.status !== PaymentStatus.PAID
-        ) {
-            setSheet("paid")
-            return
-        }
+    const act = async (request: () => Promise<OrderDTO>): Promise<void> => {
         setBusy(true)
         try {
-            onChange(await api.owner.setStatus(order.id, status, { paidWith }))
+            onChange(await request())
             haptic.success()
         } catch (caught) {
             failToast(t, caught)
@@ -222,12 +177,27 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
     }
 
     const next = order.nextStatus
+    // The shop starts only after the transfer: accepting is «Деньги пришли — принять».
+    const waitsForMoney =
+        next === OrderStatus.ACCEPTED && order.payment.status !== PaymentStatus.PAID
     const actions = t.owner.actions as Record<string, string>
     const close = (): void => setSheet(null)
     return (
         <div className="mt-4 flex flex-col gap-2">
-            {next ? (
-                <Button loading={busy} onClick={(): void => void advance(next)}>
+            {next && waitsForMoney ? (
+                <Button
+                    loading={busy}
+                    icon={<CardIcon size={18} />}
+                    onClick={(): void => void act(() => api.owner.confirmPayment(order.id))}
+                >
+                    {t.owner.paidAccept}
+                </Button>
+            ) : null}
+            {next && !waitsForMoney ? (
+                <Button
+                    loading={busy}
+                    onClick={(): void => void act(() => api.owner.setStatus(order.id, next))}
+                >
                     {actions[next] ?? next}
                 </Button>
             ) : null}
@@ -253,12 +223,6 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
             </div>
             {sheet === "courier" ? <CourierSheet {...props} onClose={close} /> : null}
             {sheet === "cancel" ? <CancelSheet {...props} onClose={close} /> : null}
-            {sheet === "paid" ? (
-                <PaidWithSheet
-                    onClose={close}
-                    onPick={(paidWith): void => void advance(OrderStatus.DELIVERED, paidWith)}
-                />
-            ) : null}
         </div>
     )
 }
