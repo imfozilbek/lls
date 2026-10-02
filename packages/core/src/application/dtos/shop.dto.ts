@@ -32,6 +32,14 @@ export interface ShopPublicDTO {
     features: Feature[]
     /** Deposit per kept returnable bottle, UZS. */
     bottleDeposit: number
+    /** The card to transfer to; only in the shop's own view, never in the showcase list. */
+    payoutCard?: PayoutCardDTO
+}
+
+export interface PayoutCardDTO {
+    /** 16 digits, no spaces. */
+    number: string
+    holder: string
 }
 
 /** What the owner sees in "Мой магазин". */
@@ -50,7 +58,17 @@ export function toLocationDTO(
     return location ? { latitude: location.latitude, longitude: location.longitude } : undefined
 }
 
-export function toShopPublicDTO(business: Business, now: Date): ShopPublicDTO {
+function toPayoutCardDTO(business: Business): PayoutCardDTO | undefined {
+    const card = business.payoutCard
+    return card && { number: card.number, holder: card.holder }
+}
+
+/** `withCard`: the shop opened by a customer, who may pay by transfer. Lists never carry it. */
+export function toShopPublicDTO(
+    business: Business,
+    now: Date,
+    options: { withCard?: boolean } = {},
+): ShopPublicDTO {
     const { fee, freeFrom, minOrder } = business.delivery
     return {
         id: business.id,
@@ -68,12 +86,13 @@ export function toShopPublicDTO(business: Business, now: Date): ShopPublicDTO {
         botUsername: business.bot.username,
         features: business.features,
         bottleDeposit: business.bottleDeposit.amount,
+        payoutCard: options.withCard ? toPayoutCardDTO(business) : undefined,
     }
 }
 
 export function toShopOwnerDTO(business: Business, now: Date): ShopOwnerDTO {
     return {
-        ...toShopPublicDTO(business, now),
+        ...toShopPublicDTO(business, now, { withCard: true }),
         status: business.status,
         ownerTelegramId: business.ownerTelegramId.value,
         deliveryRadiusMeters: business.delivery.radiusMeters,

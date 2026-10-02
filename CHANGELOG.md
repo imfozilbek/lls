@@ -7,6 +7,20 @@ All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Money, hours per day, QR poster
+- **Added (core):** `Payment` per order — cash or a transfer to the shop's card; statuses
+  unpaid / awaiting / paid / refund due / refunded; the courier says how the customer paid at the
+  door (cash, transfer, later = debt); cash a courier holds and handovers to the owner; money
+  report by period; `PayoutCard` (16 digits, Luhn). No payment gateways.
+- **Added (worker):** migration `0002_money.sql` (additive); `/api/owner/money`, payment
+  confirm / refund, courier handovers, `/api/courier/cash`; the CSV report and the QR poster
+  are sent to the owner's chat (`sendDocument`); three "Доставил" buttons in the courier's card
+- **Added (app):** payment choice at checkout with the shop's card and a copy button; payment
+  line on order screens; «Деньги» tab instead of «Статистика»; courier "how paid" and
+  «На руках»; payout card, working hours per day and the QR poster in settings
+- **Removed:** the stats endpoint and DTO (replaced by the money report)
+- **Added (e2e):** 8 money scenarios; the fake Telegram accepts files
+
 ### Stack
 - **Removed:** `@lls/api` (NestJS, MongoDB, Redis), `@lls/bot`, `@lls/admin`, `deploy/`, `.gitea/`
 - **Added:** `@lls/worker` — Cloudflare Worker (Hono + zod), D1 database, R2 for photos

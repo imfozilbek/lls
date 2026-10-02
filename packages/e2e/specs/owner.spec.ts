@@ -1,6 +1,6 @@
 /**
  * The shop owner: orders from the bot chat and from "Мой магазин", catalog with photos,
- * stop-list, stats, settings, couriers.
+ * stop-list, money, settings, couriers.
  */
 import { expect, test } from "@playwright/test"
 
@@ -63,8 +63,13 @@ test("empty orders, then a new order: card, every step from the app, customer to
     for (const [button, told] of steps) {
         const since = await lastSeq()
         await one.getByRole("button", { name: button, exact: true }).click()
+        if (button === "Доставлен") {
+            // Delivering asks how the customer paid.
+            await page.getByRole("dialog").getByRole("button", { name: "Наличными" }).click()
+        }
         await waitForMessage(PEOPLE.customer.id, told, since)
     }
+    await expect(one).toContainText("Оплачено")
     await expect(one.getByRole("button", { name: "Отменить" })).toBeHidden()
     await page.getByRole("tab", { name: "Завершённые" }).click()
     await expect(card(page, order.number)).toBeVisible()
@@ -213,12 +218,15 @@ test("catalog in Telegram's native button: «Добавить товар» opens
     await expect(page.getByRole("tab", { name: "Меню" })).toBeVisible()
 })
 
-test("stats count today's orders and revenue", async ({ page }) => {
+test("«Деньги» count today's orders and revenue", async ({ page }) => {
     await openOwner(page)
-    await page.getByRole("tab", { name: "Статистика" }).click()
-    await expect(page.getByText("Сегодня")).toBeVisible()
+    await page.getByRole("tab", { name: "Деньги" }).click()
+    await expect(page.getByRole("tab", { name: "Сегодня" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+    )
     await expect(page.getByText("Выручка").first()).toBeVisible()
-    // One delivered order for 55 000 earlier in this file.
+    // One delivered order for 55 000, paid in cash to the owner, earlier in this file.
     await expect(page.getByText(/55\s000/).first()).toBeVisible()
 })
 

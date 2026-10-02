@@ -32,6 +32,18 @@ export class Money {
         return Money.of(this.amount + other.amount)
     }
 
+    /** Never below zero: a balance cannot go negative. */
+    subtract(other: Money): Money {
+        if (other.amount > this.amount) {
+            throw ValidationError.fromField(
+                "amount",
+                "Cannot take more than there is",
+                other.amount,
+            )
+        }
+        return new Money(this.amount - other.amount)
+    }
+
     /** Price per unit × a part of it, e.g. per-kg price × 1500 g / 1000. Rounded to whole sum. */
     multiplyRatio(numerator: number, denominator: number): Money {
         if (!Number.isSafeInteger(numerator) || numerator < 0) {

@@ -8,7 +8,6 @@ import {
     ListShopOrdersUseCase,
 } from "../../application/use-cases/order/order.use-cases.js"
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
-import { GetShopStatsUseCase } from "../../application/use-cases/stats/get-shop-stats.use-case.js"
 import { OrderChannel } from "../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
@@ -334,31 +333,6 @@ describe("order use cases", () => {
             await expect(
                 shopOrders.execute({ actorTelegramId: STRANGER_TG, businessId: "biz-1" }),
             ).rejects.toThrow(ForbiddenError)
-        })
-
-        it("stats count today and this week in Tashkent time", async () => {
-            const advance = new AdvanceOrderUseCase(deps())
-            for (const to of [
-                OrderStatus.ACCEPTED,
-                OrderStatus.PREPARING,
-                OrderStatus.READY,
-                OrderStatus.PICKED_UP,
-                OrderStatus.DELIVERED,
-            ]) {
-                await advance.execute({
-                    businessId: "biz-1",
-                    actorTelegramId: OWNER_TG,
-                    orderId,
-                    to,
-                })
-            }
-            const stats = await new GetShopStatsUseCase(
-                businesses,
-                orders,
-                fixedClock(new Date()),
-            ).execute({ actorTelegramId: OWNER_TG, businessId: "biz-1" })
-            expect(stats.today).toEqual({ orders: 1, delivered: 1, cancelled: 0, revenue: 80_000 })
-            expect(stats.week.orders).toBe(1)
         })
     })
 })

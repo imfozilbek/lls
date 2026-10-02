@@ -7,14 +7,14 @@ Each shop gets its own Telegram bot and brand; the app says "powered by LLS".
 > Rules, stack and architecture: `CLAUDE.md`. Product context for design: `PRODUCT.md`.
 > Technical debt: `TODO.md`. Owner's launch steps: `docs/launch-checklist.md`.
 
-## Current status: stage 1 — code complete for three shops, waiting for Cloudflare accounts
+## Current status: stage 1 — money, hours per day and QR poster done; waiting for Cloudflare accounts and the pilots' meeting
 
 | Part | Status | Notes |
 |------|--------|-------|
-| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search; 140 tests |
-| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or LLS bot), roles, bot webhooks, `/market`, `/reconnect`, alerts; 70 tests |
-| `@lls/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, LLS showcase, onboarding; 38 tests; 93 KB gzip |
-| CI | ✅ Done | format, lint, build, test, coverage, 67 e2e scenarios on every push |
+| `@lls/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search, payments and courier cash; 158 tests |
+| `@lls/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or LLS bot), roles, bot webhooks, `/market`, `/reconnect`, alerts, money routes, CSV and poster files; 76 tests |
+| `@lls/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, LLS showcase, onboarding, «Деньги», QR poster; 42 tests; 91 KB gzip JS |
+| CI | ✅ Done | format, lint, build, test, coverage, 75 e2e scenarios on every push |
 | Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
 | Deploy | 🟡 Ready | Deploy job in `ci.yml` waits for GitHub secrets (`docs/launch-checklist.md`); public-repo hardening in `SECURITY.md` |
 | Pilot (food, water, grocery) | ⏳ Next | Three friends' shops, each with its own bot and couriers |
@@ -100,10 +100,18 @@ an LLS commission; only marketplace sales will (stage 2).
 
 ### M4e. Local stand and end-to-end checks ✅
 - [x] `bun run stand`: local D1, Worker, Mini App, fake Telegram Bot API
-- [x] 67 browser scenarios for every role and screen, light and dark, 360 px (`docs/e2e.md`)
+- [x] 67 browser scenarios (75 with money) for every role and screen, light and dark, 360 px (`docs/e2e.md`)
 - [x] `e2e` job in CI; the deploy waits for it
 - [x] Fixed what the run found: bottom sheets, first visit race, courier notices and language,
       admin card, "shop not found"
+
+### M4f. Money, hours per day, QR poster ✅
+- [x] Cash or transfer to the shop's card; payment status on every order
+- [x] Courier says how the customer paid; cash on the courier's hands; handovers to the owner
+- [x] «Деньги»: revenue split, transfers to confirm, debts, refunds, couriers' cash, CSV report
+- [x] Working hours per day; QR poster as a PNG in the owner's chat
+- [ ] After the meeting with the pilots: service type (carpets, car wash), variants and add-ons,
+      pickup and order time, water subscriptions, staff, expenses — only what they confirm
 
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)
@@ -117,5 +125,4 @@ an LLS commission; only marketplace sales will (stage 2).
 
 ## After the pilot (only when a real client asks)
 
-- Different working hours per day (see `TODO.md`)
 - Custom domain

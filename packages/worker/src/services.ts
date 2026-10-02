@@ -8,7 +8,12 @@ import {
     DeleteProductUseCase,
     GetOrderUseCase,
     GetShopBySlugUseCase,
-    GetShopStatsUseCase,
+    ConfirmPaymentUseCase,
+    ExportOrdersUseCase,
+    GetCourierCashUseCase,
+    GetMoneyReportUseCase,
+    MarkRefundedUseCase,
+    RecordCashHandoverUseCase,
     JoinAsCourierUseCase,
     ListCourierOrdersUseCase,
     ListCouriersUseCase,
@@ -31,6 +36,7 @@ import {
 
 import { platformAdminIds } from "./env.js"
 import { D1BusinessRepository } from "./repositories/business.repository.js"
+import { D1CashHandoverRepository } from "./repositories/cash-handover.repository.js"
 import { D1CourierRepository } from "./repositories/courier.repository.js"
 import { D1CustomerRepository } from "./repositories/customer.repository.js"
 import { D1OrderRepository } from "./repositories/order.repository.js"
@@ -64,7 +70,12 @@ export interface UseCases {
     advanceOrder: AdvanceOrderUseCase
     listMyOrders: ListMyOrdersUseCase
     listShopOrders: ListShopOrdersUseCase
-    shopStats: GetShopStatsUseCase
+    moneyReport: GetMoneyReportUseCase
+    confirmPayment: ConfirmPaymentUseCase
+    markRefunded: MarkRefundedUseCase
+    recordHandover: RecordCashHandoverUseCase
+    exportOrders: ExportOrdersUseCase
+    courierCash: GetCourierCashUseCase
     createCourierInvite: CreateCourierInviteUseCase
     joinAsCourier: JoinAsCourierUseCase
     listCouriers: ListCouriersUseCase
@@ -96,6 +107,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const { clock, telegram } = deps
     const orderAccess = { businesses, customers, couriers, orders }
     const courierAccess = { businesses, couriers, orders, clock }
+    const money = { ...courierAccess, handovers: new D1CashHandoverRepository(env.DB) }
 
     return {
         env,
@@ -125,7 +137,12 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             advanceOrder: new AdvanceOrderUseCase(orderAccess),
             listMyOrders: new ListMyOrdersUseCase(customers, orders),
             listShopOrders: new ListShopOrdersUseCase(businesses, orders),
-            shopStats: new GetShopStatsUseCase(businesses, orders, clock),
+            moneyReport: new GetMoneyReportUseCase(money),
+            confirmPayment: new ConfirmPaymentUseCase(money),
+            markRefunded: new MarkRefundedUseCase(money),
+            recordHandover: new RecordCashHandoverUseCase(money),
+            exportOrders: new ExportOrdersUseCase(money),
+            courierCash: new GetCourierCashUseCase(money),
             createCourierInvite: new CreateCourierInviteUseCase(courierAccess),
             joinAsCourier: new JoinAsCourierUseCase(courierAccess),
             listCouriers: new ListCouriersUseCase(courierAccess),

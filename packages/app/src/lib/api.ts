@@ -8,8 +8,12 @@ import type {
     Page,
     ProductDTO,
     ShopOwnerDTO,
+    CourierCashDTO,
+    MoneyPeriod,
+    MoneyReportDTO,
+    PaidWith,
+    PaymentMethod,
     ShopPublicDTO,
-    ShopStatsDTO,
     ShowcaseProductDTO,
 } from "@lls/core"
 
@@ -114,6 +118,7 @@ export interface PlaceOrderBody {
     location?: { latitude: number; longitude: number }
     comment?: string
     bottlesReturned?: number
+    paymentMethod?: PaymentMethod
 }
 
 export type ShopPatch = Partial<{
@@ -131,6 +136,7 @@ export type ShopPatch = Partial<{
     acceptingOrders: boolean
     features: string[]
     bottleDeposit: number
+    payoutCard: { number: string; holder: string } | null
 }>
 
 export interface ProductInput {
@@ -179,11 +185,27 @@ export const api = {
             request("PATCH", "/api/owner/shop", patch),
         uploadLogo: (image: Blob): Promise<ShopOwnerDTO> =>
             request("PUT", "/api/owner/shop/logo", image),
-        stats: (): Promise<ShopStatsDTO> => request("GET", "/api/owner/stats"),
+        money: (period: MoneyPeriod): Promise<MoneyReportDTO> =>
+            request("GET", `/api/owner/money${query({ period })}`),
+        /** The bot sends the period's orders to the owner's chat as a CSV file. */
+        exportMoney: (period: MoneyPeriod): Promise<{ sent: number }> =>
+            request("POST", `/api/owner/money/export${query({ period })}`),
+        confirmPayment: (orderId: string, method: PaymentMethod): Promise<OrderDTO> =>
+            request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "paid", method }),
+        markRefunded: (orderId: string): Promise<OrderDTO> =>
+            request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "refunded" }),
+        handover: (courierId: string, amount: number): Promise<{ data: CourierCashDTO[] }> =>
+            request("POST", `/api/owner/couriers/${courierId}/handovers`, { amount }),
+        /** The bot sends the QR poster back to the owner's chat. */
+        sendPoster: (png: Blob): Promise<{ sent: boolean }> =>
+            request("POST", "/api/owner/shop/poster", png),
         orders: (filter: "active" | "done", page = 1): Promise<Page<OrderDTO>> =>
             request("GET", `/api/owner/orders${query({ filter, page })}`),
-        setStatus: (id: string, status: string, reason?: string): Promise<OrderDTO> =>
-            request("PATCH", `/api/owner/orders/${id}`, { status, reason }),
+        setStatus: (
+            id: string,
+            status: string,
+            extra: { reason?: string; paidWith?: PaidWith } = {},
+        ): Promise<OrderDTO> => request("PATCH", `/api/owner/orders/${id}`, { status, ...extra }),
         products: (page = 1): Promise<Page<ProductDTO>> =>
             request("GET", `/api/owner/products${query({ page, limit: 100 })}`),
         createProduct: (input: ProductInput): Promise<ProductDTO> =>
@@ -212,8 +234,12 @@ export const api = {
 
     courier: {
         orders: (): Promise<{ data: OrderDTO[] }> => request("GET", "/api/courier/orders"),
-        setStatus: (id: string, status: "picked_up" | "delivered"): Promise<OrderDTO> =>
-            request("PATCH", `/api/courier/orders/${id}`, { status }),
+        setStatus: (
+            id: string,
+            status: "picked_up" | "delivered",
+            paidWith?: PaidWith,
+        ): Promise<OrderDTO> => request("PATCH", `/api/courier/orders/${id}`, { status, paidWith }),
+        cash: (): Promise<{ onHand: number }> => request("GET", "/api/courier/cash"),
     },
 
     showcase: {

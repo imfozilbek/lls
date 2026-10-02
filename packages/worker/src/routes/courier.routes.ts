@@ -19,6 +19,15 @@ export const courierRoutes = new Hono<AppEnv>()
         return c.json({ data: orders })
     })
 
+    /** The cash this courier holds now. */
+    .get("/cash", async (c) => {
+        const cash = await c.get("services").useCases.courierCash.execute({
+            telegramId: c.get("auth").user.id,
+            businessId: shopOf(c).id,
+        })
+        return c.json(cash)
+    })
+
     .patch(
         "/orders/:id",
         zValidator("param", idParam, onInvalid),
@@ -31,6 +40,7 @@ export const courierRoutes = new Hono<AppEnv>()
                 businessId: business.id,
                 orderId: c.req.valid("param").id,
                 to: c.req.valid("json").status,
+                paidWith: c.req.valid("json").paidWith,
             })
             inBackground(
                 c.executionCtx,

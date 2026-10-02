@@ -251,6 +251,7 @@ async function handleOrderCallback(
                       businessId: business.id,
                       orderId: action.orderId,
                       to: action.to,
+                      paidWith: action.paidWith,
                   })
                 : await requireOwnerCancel(services, business, callback.from.id, action.orderId)
     } catch (error) {

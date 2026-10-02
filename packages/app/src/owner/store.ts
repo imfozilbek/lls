@@ -5,7 +5,7 @@ import { useSession } from "../stores/session.js"
 
 import type { CourierDTO, ProductDTO } from "@lls/core"
 
-export type OwnerTab = "orders" | "menu" | "stats" | "settings"
+export type OwnerTab = "orders" | "menu" | "money" | "settings"
 
 interface OwnerState {
     tab: OwnerTab

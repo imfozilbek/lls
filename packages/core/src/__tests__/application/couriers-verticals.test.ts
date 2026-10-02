@@ -20,6 +20,7 @@ import { Product } from "../../domain/entities/product.js"
 import { Feature } from "../../domain/enums/feature.js"
 import { OrderChannel } from "../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
+import { PaidWith } from "../../domain/enums/payment.js"
 import { Unit } from "../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
@@ -178,7 +179,11 @@ describe("shop couriers and vertical features", () => {
             await advance.execute({ ...owner, to: OrderStatus.PREPARING })
             await advance.execute({ ...owner, to: OrderStatus.READY })
             await advance.execute({ ...courier, to: OrderStatus.PICKED_UP })
-            const done = await advance.execute({ ...courier, to: OrderStatus.DELIVERED })
+            const done = await advance.execute({
+                ...courier,
+                to: OrderStatus.DELIVERED,
+                paidWith: PaidWith.CASH,
+            })
             expect(done.status).toBe(OrderStatus.DELIVERED)
 
             // Entities stamp updates with the real time, so "today" must be real time too.

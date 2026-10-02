@@ -10,6 +10,9 @@
     },
     "devDependencies": {
         "@playwright/test": "1.56.1",
+        "@types/pngjs": "^6",
+        "jsqr": "^1.4",
+        "pngjs": "^7",
         "typescript": "^5.7.2"
     }
 }

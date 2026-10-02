@@ -18,7 +18,7 @@ export class GetShopBySlugUseCase {
         if (!business || (!business.isActive() && !isOwner)) {
             throw EntityNotFoundError.businessBySlug(slug)
         }
-        return toShopPublicDTO(business, this.clock.now())
+        return toShopPublicDTO(business, this.clock.now(), { withCard: true })
     }
 }
 

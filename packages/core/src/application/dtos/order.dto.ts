@@ -5,6 +5,7 @@ import type { CancelledBy, Order } from "../../domain/entities/order.js"
 import type { Category } from "../../domain/enums/category.js"
 import type { OrderChannel } from "../../domain/enums/order-channel.js"
 import type { OrderStatus } from "../../domain/enums/order-status.js"
+import type { PaymentMethod, PaymentStatus } from "../../domain/enums/payment.js"
 import type { Unit } from "../../domain/enums/unit.js"
 
 export interface OrderItemDTO {
@@ -45,8 +46,18 @@ export interface OrderDTO {
     customerPhone?: string
     cancelReason?: string
     cancelledBy?: CancelledBy
+    payment: OrderPaymentDTO
+    deliveredAt?: string
     createdAt: string
     updatedAt: string
+}
+
+export interface OrderPaymentDTO {
+    method: PaymentMethod
+    status: PaymentStatus
+    paidAt?: string
+    /** The courier who took the cash at the door. */
+    cashCourierId?: string
 }
 
 export function toOrderDTO(order: Order): OrderDTO {
@@ -84,6 +95,13 @@ export function toOrderDTO(order: Order): OrderDTO {
         customerPhone: order.customerPhone?.number,
         cancelReason: order.cancelReason,
         cancelledBy: order.cancelledBy,
+        payment: {
+            method: order.payment.method,
+            status: order.payment.status,
+            paidAt: order.payment.paidAt?.toISOString(),
+            cashCourierId: order.payment.cashCourierId,
+        },
+        deliveredAt: order.deliveredAt?.toISOString(),
         createdAt: order.createdAt.toISOString(),
         updatedAt: order.updatedAt.toISOString(),
     }

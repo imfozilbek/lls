@@ -6,6 +6,9 @@
  *   GET  /__log                 — every recorded call, oldest first
  *   POST /__reset               — forget calls and failures
  *   POST /__control             — { broken?: number[], blocked?: number[], failWebhooks?: boolean }
+ *
+ * Files (sendDocument) come as multipart: the call body keeps the text fields, and the file as
+ * `{ name, contentType, size, base64 }` under its field name.
  */
 import { createServer } from "node:http"
 
@@ -64,13 +67,55 @@ function botFor(bots: Map<string, Bot>, token: string): Bot | null {
     return { id, username: `new_${id}_bot`, first_name: "New shop" }
 }
 
-async function readJson(request: IncomingMessage): Promise<Record<string, unknown>> {
+export interface RecordedFile {
+    name: string
+    contentType: string
+    size: number
+    base64: string
+}
+
+async function readBytes(request: IncomingMessage): Promise<Buffer> {
     const chunks: Buffer[] = []
     for await (const chunk of request) {
         chunks.push(chunk as Buffer)
     }
-    const text = Buffer.concat(chunks).toString("utf8")
+    return Buffer.concat(chunks)
+}
+
+async function readJson(request: IncomingMessage): Promise<Record<string, unknown>> {
+    const text = (await readBytes(request)).toString("utf8")
     return text ? (JSON.parse(text) as Record<string, unknown>) : {}
+}
+
+/** A Bot API call body: JSON, or multipart form data with files. */
+async function readBody(request: IncomingMessage): Promise<Record<string, unknown>> {
+    const type = request.headers["content-type"] ?? ""
+    if (!type.startsWith("multipart/form-data")) {
+        return readJson(request)
+    }
+    const form = await new Request("http://fake", {
+        method: "POST",
+        headers: { "Content-Type": type },
+        body: new Uint8Array(await readBytes(request)),
+    }).formData()
+    const entries: [string, FormDataEntryValue][] = []
+    form.forEach((value, key) => entries.push([key, value]))
+    const body: Record<string, unknown> = {}
+    for (const [key, value] of entries) {
+        if (typeof value === "string") {
+            body[key] = value
+            continue
+        }
+        const bytes = Buffer.from(await value.arrayBuffer())
+        const file: RecordedFile = {
+            name: value.name,
+            contentType: value.type,
+            size: bytes.length,
+            base64: bytes.toString("base64"),
+        }
+        body[key] = file
+    }
+    return body
 }
 
 function send(response: ServerResponse, status: number, body: unknown): void {
@@ -98,6 +143,11 @@ function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
             return [200, { ok: true, result: { message_id: state.nextMessageId++ } }]
         case "setWebhook":
             return state.failWebhooks ? fail(502, "Bad Gateway") : [200, { ok: true, result: true }]
+        case "sendDocument":
+            if (state.blocked.has(chatId)) {
+                return fail(403, "Forbidden: bot was blocked by the user")
+            }
+            return [200, { ok: true, result: { message_id: state.nextMessageId++ } }]
         case "editMessageText":
         case "answerCallbackQuery":
         case "setChatMenuButton":
@@ -149,7 +199,7 @@ async function handle(
         seq: state.calls.length + 1,
         token,
         method: match[2],
-        body: await readJson(request),
+        body: await readBody(request),
     }
     state.calls.push(call)
     const [status, body] = answer(state, bot, call)

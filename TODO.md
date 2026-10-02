@@ -4,8 +4,7 @@ Known shortcuts. Fix an item when a real shop hits it or before the stage that n
 
 | # | Where | Debt | Why it waits | Fix when |
 |---|-------|------|--------------|----------|
-| 1 | `app/owner/SettingsTab.tsx` | Working hours: one open/close time for all chosen days. A shop with different hours per day gets them flattened on save | Small shops in the pilot keep one schedule | A shop asks for per-day hours |
-| 2 | `app` bundle | Customer JS + CSS is 92 KB gzip of the 100 KB budget | React alone is ~61 KB | Before adding any customer-side dependency; measure after each `vite build` |
+| 2 | `app` bundle | Customer JS is 91 KB gzip (+5 KB CSS) of the 100 KB budget | React alone is ~61 KB | Before adding any customer-side dependency; measure after each `vite build` |
 | 4 | `worker/telegram/notifier.ts` | A failed notification is logged and the admins are alerted, but it is never retried | Customers also see the status in the app | If owners report missed order messages |
 | 6 | `app/owner/OrdersTab.tsx` | The 20 s refresh of active orders reloads only the first page | Active orders rarely exceed 20 | A shop regularly has > 20 open orders |
 | 8 | `worker` couriers | A courier removed by the owner keeps already assigned active orders; the owner must reassign them by hand | Rare in a small shop | If an owner reports a stuck order after removing a courier |
@@ -17,3 +16,5 @@ Known shortcuts. Fix an item when a real shop hits it or before the stage that n
 | 14 | Backups | R2 photos have no backup; D1 copies older than 7 days are manual and weekly | Owners can upload photos again | More than ~10 shops: a scheduled export to a private bucket |
 | 15 | `worker/telegram/notifier.ts` | If the owner reassigns a courier within a split second, the first card's message id may be saved after the second one, and later edits of the card fail (logged and alerted) | Needs two taps faster than one Telegram call | An owner reports a courier card that stops updating |
 | 16 | API lists | `GET /api/platform/shops` and `GET /api/owner/couriers` return a plain array, not `{ data, meta }` | Both are short (a person's shops, a shop's couriers) | Before any of them can grow past one screen |
+| 17 | Money | Cash a courier holds is counted from delivered cash orders minus handovers; a handover cannot be undone in the app | A wrong handover is rare and visible in the CSV | An owner asks to correct a handover |
+| 18 | Money | No expenses: the report shows money in, not profit | Waits for the pilots' answer on how they track spending | A pilot asks for expenses |

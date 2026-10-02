@@ -40,6 +40,12 @@ export interface BotInfo {
     firstName: string
 }
 
+export interface OutgoingFile {
+    name: string
+    contentType: string
+    bytes: Uint8Array
+}
+
 /** Everything the Worker needs from the Bot API. Faked in tests. */
 export interface TelegramGateway {
     getMe(token: string): Promise<BotInfo>
@@ -57,6 +63,8 @@ export interface TelegramGateway {
         options?: MessageOptions,
     ): Promise<void>
     answerCallback(token: string, callbackQueryId: string, text?: string): Promise<void>
+    /** A file in the chat: the owner's CSV report or the QR poster. */
+    sendDocument(token: string, chatId: number, file: OutgoingFile, caption?: string): Promise<void>
     setWebhook(token: string, url: string, secretToken: string): Promise<void>
     setMenuButton(token: string, text: string, webAppUrl: string): Promise<void>
 }
@@ -151,11 +159,33 @@ export class HttpTelegramGateway implements TelegramGateway {
         })
     }
 
+    async sendDocument(
+        token: string,
+        chatId: number,
+        file: OutgoingFile,
+        caption?: string,
+    ): Promise<void> {
+        const form = new FormData()
+        form.set("chat_id", String(chatId))
+        form.set("document", new Blob([file.bytes], { type: file.contentType }), file.name)
+        if (caption) {
+            form.set("caption", caption)
+            form.set("parse_mode", "HTML")
+        }
+        await this.send(token, "sendDocument", { body: form })
+    }
+
     private async call<T>(token: string, method: string, body: object): Promise<T> {
-        const response = await this.fetcher(`${this.apiBase}/bot${token}/${method}`, {
-            method: "POST",
+        return this.send<T>(token, method, {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
+        })
+    }
+
+    private async send<T>(token: string, method: string, init: RequestInit): Promise<T> {
+        const response = await this.fetcher(`${this.apiBase}/bot${token}/${method}`, {
+            method: "POST",
+            ...init,
         })
         const data = (await response.json()) as ApiResponse<T>
         if (!data.ok || data.result === undefined) {

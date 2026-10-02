@@ -1,7 +1,7 @@
+import type { CourierAmount } from "./cash-handover-repository.js"
 import type { Order } from "../../domain/entities/order.js"
 import type { OrderStatus } from "../../domain/enums/order-status.js"
 import type { Page, PageRequest } from "../dtos/pagination.js"
-import type { OrderStatsDTO } from "../dtos/stats.dto.js"
 
 export interface OrderRepository {
     findById(id: string): Promise<Order | null>
@@ -20,6 +20,35 @@ export interface OrderRepository {
     listByCourier(courierId: string, since: Date): Promise<Order[]>
     /** Newest first. */
     listByCustomer(customerId: string, businessId: string, page: PageRequest): Promise<Page<Order>>
-    /** Orders created in [from, to). */
-    stats(businessId: string, from: Date, to: Date): Promise<OrderStatsDTO>
+    /** Counts by creation time and money by delivery time, both in [from, to). */
+    moneyTotals(businessId: string, from: Date, to: Date): Promise<MoneyTotals>
+    /**
+     * Money that needs the owner: transfers not confirmed yet, delivered but unpaid (debts),
+     * cancelled but paid (owed back). Oldest first.
+     */
+    listOpenPayments(businessId: string, limit: number): Promise<Order[]>
+    /** Cash each courier took at the door, all time (before handovers). */
+    cashCollectedByCourier(businessId: string): Promise<CourierAmount[]>
+    /** Orders created in [from, to), oldest first: the owner's export. */
+    listCreatedBetween(businessId: string, from: Date, to: Date, limit: number): Promise<Order[]>
+}
+
+/** Sums for a period, UZS. Money counts delivered orders by delivery time. */
+export interface MoneyTotals {
+    /** Orders placed in the period (any status but cancelled). */
+    placed: number
+    delivered: number
+    cancelled: number
+    goods: number
+    delivery: number
+    /** Bottle deposits: held for the customer, not revenue. */
+    deposits: number
+    paidCash: number
+    paidCard: number
+    /** Transfers not confirmed yet. */
+    awaiting: number
+    /** Delivered and not paid. */
+    debt: number
+    /** LLS commission on showcase orders. */
+    commission: number
 }

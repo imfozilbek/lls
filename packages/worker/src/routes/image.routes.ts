@@ -27,6 +27,8 @@ export const imageRoutes = new Hono<AppEnv>().get("/*", async (c) => {
     headers.set("Cache-Control", IMMUTABLE_CACHE)
     // Never let a browser guess another type (e.g. HTML) from the bytes.
     headers.set("X-Content-Type-Options", "nosniff")
+    // Public photos: the app may draw the logo on a canvas (the QR poster) and export it.
+    headers.set("Access-Control-Allow-Origin", "*")
     const response = new Response(object.body, { headers })
     c.executionCtx.waitUntil(cache.put(c.req.raw, response.clone()))
     return response

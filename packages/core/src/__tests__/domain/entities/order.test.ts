@@ -5,12 +5,14 @@ import { MAX_ORDER_LINES, Order } from "../../../domain/entities/order.js"
 import { OrderItem } from "../../../domain/entities/order-item.js"
 import { OrderChannel } from "../../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../../domain/enums/order-status.js"
+import { PaidWith, PaymentMethod } from "../../../domain/enums/payment.js"
 import { Unit } from "../../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../../domain/errors/forbidden.error.js"
 import { InvalidOrderTransitionError } from "../../../domain/errors/invalid-transition.error.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { Money } from "../../../domain/value-objects/money.js"
+import { Payment } from "../../../domain/value-objects/payment.js"
 import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
 
 import type { PlaceOrderProps } from "../../../domain/entities/order.js"
@@ -126,7 +128,7 @@ describe("Order", () => {
             OrderStatus.PICKED_UP,
             OrderStatus.DELIVERED,
         ]) {
-            order.advanceTo(status)
+            order.advanceTo(status, undefined, PaidWith.CASH)
             expect(order.status).toBe(status)
         }
         expect(order.isFinal()).toBe(true)
@@ -176,6 +178,7 @@ describe("Order", () => {
             total: order.total,
             commissionBps: 0,
             commission: Money.zero(),
+            payment: Payment.start(PaymentMethod.CASH),
             status: OrderStatus.READY,
             courierId: "courier-1",
             courierName: "Jasur",
@@ -228,8 +231,10 @@ describe("Order and couriers", () => {
         order.advanceTo(OrderStatus.PREPARING)
         order.advanceTo(OrderStatus.READY)
         order.advanceTo(OrderStatus.PICKED_UP, me)
-        order.advanceTo(OrderStatus.DELIVERED, me)
+        order.advanceTo(OrderStatus.DELIVERED, me, PaidWith.CASH)
         expect(order.status).toBe(OrderStatus.DELIVERED)
+        // The courier took the cash.
+        expect(order.payment.cashCourierId).toBe("courier-1")
     })
 
     it("another courier cannot touch the order", () => {

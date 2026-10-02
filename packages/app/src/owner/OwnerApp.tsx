@@ -2,12 +2,12 @@ import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
-import { BagIcon, ChartIcon, GearIcon, ListIcon } from "../ui/icons.js"
+import { BagIcon, CashIcon, GearIcon, ListIcon } from "../ui/icons.js"
 
 import { MenuTab } from "./MenuTab.js"
+import { MoneyTab } from "./MoneyTab.js"
 import { OrdersTab } from "./OrdersTab.js"
 import { SettingsTab } from "./SettingsTab.js"
-import { StatsTab } from "./StatsTab.js"
 import { useOwner } from "./store.js"
 
 import type { OwnerTab } from "./store.js"
@@ -16,7 +16,7 @@ import type { ReactNode } from "react"
 const TABS: readonly { id: OwnerTab; icon: (size: number) => ReactNode }[] = [
     { id: "orders", icon: (s) => <ListIcon size={s} /> },
     { id: "menu", icon: (s) => <BagIcon size={s} /> },
-    { id: "stats", icon: (s) => <ChartIcon size={s} /> },
+    { id: "money", icon: (s) => <CashIcon size={s} /> },
     { id: "settings", icon: (s) => <GearIcon size={s} /> },
 ]
 
@@ -72,7 +72,7 @@ export function OwnerApp(): React.JSX.Element {
             <div key={tab} className="animate-fade-in">
                 {tab === "orders" ? <OrdersTab /> : null}
                 {tab === "menu" ? <MenuTab /> : null}
-                {tab === "stats" ? <StatsTab /> : null}
+                {tab === "money" ? <MoneyTab /> : null}
                 {tab === "settings" ? <SettingsTab /> : null}
             </div>
         </div>
