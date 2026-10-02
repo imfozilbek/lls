@@ -76,26 +76,15 @@ function NotInTelegram(): React.JSX.Element {
     )
 }
 
-/**
- * Loads the shop, the user and the catalog in parallel, then paints the shop's brand.
- * A courier's screen needs no catalog, so it is skipped there.
- */
-function useShopBootstrap(
-    slug: string,
-    options: { withCatalog: boolean; viaShowcase: boolean },
-): { state: LoadState; retry(): void } {
-    const { withCatalog, viaShowcase } = options
+/** Loads the shop, the user and the catalog in parallel, then paints the shop's brand. */
+function useShopBootstrap(slug: string, viaShowcase: boolean): { state: LoadState; retry(): void } {
     const [state, setState] = useState<LoadState>({ kind: "loading" })
     const setLanguage = useLanguageStore((s) => s.setLanguage)
 
     const load = useCallback(async (): Promise<void> => {
         setState({ kind: "loading" })
         try {
-            const [shop, me, products] = await Promise.all([
-                api.shop(),
-                api.me(),
-                withCatalog ? loadCatalog() : Promise.resolve([]),
-            ])
+            const [shop, me, products] = await Promise.all([api.shop(), api.me(), loadCatalog()])
             applyBrand(shop.brandColor)
             setLanguage(me.language)
             const session = useSession.getState()
@@ -111,7 +100,7 @@ function useShopBootstrap(
         } catch (caught) {
             setState({ kind: "error", code: caught instanceof ApiError ? caught.code : "generic" })
         }
-    }, [setLanguage, withCatalog])
+    }, [setLanguage])
 
     useEffect(() => {
         setShop(slug, { viaShowcase })
@@ -139,12 +128,6 @@ function Screen(): React.JSX.Element {
                     <OwnerApp />
                 </Suspense>
             )
-        case "courier":
-            return (
-                <Suspense fallback={<MenuSkeleton />}>
-                    <CourierApp />
-                </Suspense>
-            )
         case "product":
             return (
                 <Suspense fallback={<MenuSkeleton />}>
@@ -158,19 +141,14 @@ function Screen(): React.JSX.Element {
 
 function ShopApp({
     slug,
-    courier = false,
     onExit,
 }: {
     slug: string
-    courier?: boolean
     /** Opened from the LLS showcase: "back" on the first screen returns to the search. */
     onExit?: () => void
 }): React.JSX.Element {
     const t = useT()
-    const { state, retry } = useShopBootstrap(slug, {
-        withCatalog: !courier,
-        viaShowcase: onExit !== undefined,
-    })
+    const { state, retry } = useShopBootstrap(slug, onExit !== undefined)
     const depth = useRouter((s) => s.stack.length)
     const back = useRouter((s) => s.back)
     const route = useCurrentRoute()
@@ -256,10 +234,17 @@ export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
                 <OnboardingApp />
             </Suspense>
         )
+    } else if (launch.courier) {
+        // The LLS courier bot: one screen across every shop the courier delivers for.
+        content = (
+            <Suspense fallback={<MenuSkeleton />}>
+                <CourierApp />
+            </Suspense>
+        )
     } else if (launch.market) {
         content = <ShowcaseApp />
     } else if (launch.shop) {
-        content = <ShopApp slug={launch.shop} courier={launch.courier} />
+        content = <ShopApp slug={launch.shop} />
     } else {
         content = <NotInTelegram />
     }

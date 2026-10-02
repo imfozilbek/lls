@@ -52,7 +52,7 @@ function failToast(t: Dictionary, caught: unknown): void {
     toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
 }
 
-/** Pick one of the shop's couriers. Couriers are invited in Settings. */
+/** Pick one of the shop's couriers on shift today. Couriers are invited in Settings. */
 function CourierSheet({
     order,
     onChange,
@@ -62,6 +62,10 @@ function CourierSheet({
     const t = useT()
     const couriers = useOwner((state) => state.couriers)
     const loadCouriers = useOwner((state) => state.loadCouriers)
+    // Available ones first; the rest stay visible, greyed, with the reason.
+    const active = couriers
+        ?.filter((courier) => courier.isActive)
+        .sort((a, b) => Number(a.unavailableReason !== null) - Number(b.unavailableReason !== null))
     useEffect(() => {
         loadCouriers().catch(() => undefined)
     }, [loadCouriers])
@@ -80,12 +84,19 @@ function CourierSheet({
     return (
         <Sheet title={t.owner.assign} onClose={onClose}>
             {couriers === null ? <Skeleton className="h-[52px]" /> : null}
-            {couriers?.length === 0 ? <p className="text-tg-hint">{t.owner.noCouriers}</p> : null}
-            {couriers?.map((courier) => (
+            {active?.length === 0 ? <p className="text-tg-hint">{t.owner.noCouriers}</p> : null}
+            {active?.map((courier) => (
                 <SheetOption
                     key={courier.id}
                     label={courier.name}
-                    hint={courier.phone ? formatPhone(courier.phone) : undefined}
+                    hint={
+                        courier.unavailableReason
+                            ? t.owner.courierReasons[courier.unavailableReason]
+                            : courier.phone
+                              ? formatPhone(courier.phone)
+                              : undefined
+                    }
+                    disabled={courier.unavailableReason !== null}
                     onClick={(): void => void assign(courier.id)}
                 />
             ))}

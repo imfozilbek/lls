@@ -3,6 +3,9 @@ import { webApp } from "./telegram.js"
 import type { Shop } from "../stores/session.js"
 import type {
     CourierDTO,
+    CourierHomeDTO,
+    CourierProfileDTO,
+    Weekday,
     CustomerDTO,
     OrderDTO,
     Page,
@@ -37,6 +40,7 @@ interface ErrorBody {
 
 let currentShop: string | null = null
 let viaShowcase = false
+let courierBot = false
 
 /**
  * Every request carries the shop, so the Worker verifies with the right bot token: the shop's own
@@ -45,10 +49,21 @@ let viaShowcase = false
 export function setShop(slug: string | null, options: { viaShowcase?: boolean } = {}): void {
     currentShop = slug
     viaShowcase = options.viaShowcase ?? false
+    courierBot = false
+}
+
+/** Opened from the LLS courier bot: no shop; the courier bot's token signed the request. */
+export function setCourierBot(): void {
+    currentShop = null
+    viaShowcase = false
+    courierBot = true
 }
 
 function authHeaders(): Headers {
     const headers = new Headers({ "X-Telegram-Init-Data": webApp()?.initData ?? "" })
+    if (courierBot) {
+        headers.set("X-Bot", "courier")
+    }
     if (currentShop) {
         headers.set("X-Shop", currentShop)
         if (viaShowcase) {
@@ -230,16 +245,26 @@ export const api = {
             request("DELETE", `/api/owner/couriers/${id}`),
         assignCourier: (orderId: string, courierId: string): Promise<OrderDTO> =>
             request("PUT", `/api/owner/orders/${orderId}/courier`, { courierId }),
+        reviewCourier: (id: string, approve: boolean): Promise<CourierDTO> =>
+            request("POST", `/api/owner/couriers/${id}/review`, { approve }),
+        setCourierSchedule: (
+            id: string,
+            patch: { workDays?: Weekday[]; offToday?: boolean },
+        ): Promise<CourierDTO> => request("PATCH", `/api/owner/couriers/${id}`, patch),
     },
 
+    /** The LLS courier bot's screen (`setCourierBot`): every shop the courier works for. */
     courier: {
-        orders: (): Promise<{ data: OrderDTO[] }> => request("GET", "/api/courier/orders"),
+        home: (): Promise<CourierHomeDTO> => request("GET", "/api/courier/home"),
         setStatus: (
             id: string,
             status: "picked_up" | "delivered",
             paidWith?: PaidWith,
         ): Promise<OrderDTO> => request("PATCH", `/api/courier/orders/${id}`, { status, paidWith }),
-        cash: (): Promise<{ onHand: number }> => request("GET", "/api/courier/cash"),
+        shift: (onShift: boolean): Promise<CourierProfileDTO> =>
+            request("PUT", "/api/courier/shift", { onShift }),
+        profile: (vehicle: string | null): Promise<CourierProfileDTO> =>
+            request("PATCH", "/api/courier/profile", { vehicle }),
     },
 
     showcase: {

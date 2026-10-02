@@ -10,7 +10,7 @@ import { haptic } from "../lib/telegram.js"
 import { summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
-import { BagIcon, PlusIcon, ReceiptIcon, ScooterIcon, StoreIcon } from "../ui/icons.js"
+import { BagIcon, PlusIcon, ReceiptIcon, StoreIcon } from "../ui/icons.js"
 import { LanguageSwitch } from "../ui/language-switch.js"
 import { EmptyState, PoweredBy, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
@@ -135,14 +135,6 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                         icon={<StoreIcon size={16} />}
                         label={t.shop.manage}
                         onClick={(): void => push({ name: "owner" })}
-                        accent
-                    />
-                ) : null}
-                {shop.viewerRole === "courier" ? (
-                    <HeaderAction
-                        icon={<ScooterIcon size={16} />}
-                        label={t.shop.deliveries}
-                        onClick={(): void => push({ name: "courier" })}
                         accent
                     />
                 ) : null}
