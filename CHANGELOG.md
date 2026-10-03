@@ -170,6 +170,10 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   `production` environment, `scripts/check-secrets.sh` in CI and as a git pre-commit hook,
   Dependabot, `SECURITY.md`, `CODEOWNERS`
 - **Changed:** the workers.dev subdomain is random instead of derived from the account id
+- **Changed:** CI in about a minute: in a PR `static` (secrets, dashes, format, lint, build) and
+  `unit` (every test once, with coverage) run side by side, e2e runs on six machines in the
+  runner's Chrome, and each e2e spec resets only data, not migrations; a push to `main` only
+  deploys (~30 s). The required checks keep their names (`quality-gates`, `e2e`)
 - **Changed:** CI runs once per change: `pull_request` for a PR, `push` only for `main` (a push
   to a PR branch ran quality-gates and e2e twice)
 - **Changed:** no em dash anywhere (owner's decision): product texts, code and docs use a colon,

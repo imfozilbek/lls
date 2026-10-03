@@ -21,8 +21,9 @@ Please **do not** open a public issue. Use GitHub's private report instead:
 
 - Pull requests and forks run CI with a read-only token and **no secrets**.
 - The deploy job runs only for `main` of this repository (a push, a manual run or the `deploy`
-  dispatch event, which only someone with write access can send), after green checks, in the
-  `production` environment. Only the deploy step receives the secrets.
+  dispatch event, which only someone with write access can send), in the
+  `production` environment. `main` takes only pull requests whose checks passed on code up to
+  date with `main`. Only the deploy step receives the secrets.
 - GitHub Actions are pinned to exact commits.
 - `scripts/check-secrets.sh` runs in CI and as a git pre-commit hook: it blocks `.dev.vars`,
   `.env`, private keys and secret-looking values.
