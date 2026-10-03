@@ -25,6 +25,7 @@ import { webSessionRoutes } from "./routes/web-session.routes.js"
 import { webhookRoutes } from "./routes/webhook.routes.js"
 import { createServices } from "./services.js"
 import { HttpTelegramGateway, telegramApiBase } from "./telegram/gateway.js"
+import { publishedKeys, telegramOauthBase } from "./telegram-login.js"
 
 import type { AppEnv, Bindings } from "./env.js"
 import type { ServiceDeps } from "./services.js"
@@ -55,7 +56,12 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
 
     app.use(async (c, next) => {
         gateway ??= new HttpTelegramGateway(undefined, telegramApiBase(c.env.TELEGRAM_API_BASE))
-        const deps: ServiceDeps = { telegram: overrides.telegram ?? gateway, clock }
+        const deps: ServiceDeps = {
+            telegram: overrides.telegram ?? gateway,
+            clock,
+            loginKeys:
+                overrides.loginKeys ?? publishedKeys(telegramOauthBase(c.env.TELEGRAM_OAUTH_BASE)),
+        }
         c.set("services", createServices(c.env, deps))
         await next()
     })

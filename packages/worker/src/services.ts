@@ -69,11 +69,14 @@ import { D1ProductRepository } from "./repositories/product.repository.js"
 
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
+import type { LoginKeys } from "./telegram-login.js"
 import type { Clock } from "@zumda/core"
 
 export interface ServiceDeps {
     telegram: TelegramGateway
     clock: Clock
+    /** Telegram Login's public keys (tests and the stand bring their own). */
+    loginKeys?: LoginKeys
 }
 
 export interface UseCases {
@@ -169,6 +172,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         env,
         clock,
         telegram,
+        loginKeys: deps.loginKeys,
         businesses,
         products,
         customers,

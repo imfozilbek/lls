@@ -1,8 +1,7 @@
 /**
- * Zumda | Business outside Telegram (business.zumda.shop in a browser): the owner signs in with
- * the Telegram Login Widget of the Zumda | Business bot and gets a session token. The token goes
- * in `Authorization: Bearer`; no cookies, so no CSRF.
- * https://core.telegram.org/widgets/login#checking-authorization
+ * Zumda | Business outside Telegram (business.zumda.shop in a browser): after Telegram Login
+ * (`telegram-login.ts`) the owner gets a session token. The token goes in
+ * `Authorization: Bearer`; no cookies, so no CSRF.
  */
 import { timingSafeEqual } from "./crypto.js"
 
@@ -10,9 +9,6 @@ import type { TelegramUser } from "@zumda/core"
 
 const encoder = new TextEncoder()
 
-/** A widget login older than this is refused, like old initData. */
-const LOGIN_MAX_AGE_SECONDS = 24 * 60 * 60
-const CLOCK_SKEW_SECONDS = 60
 /** How long one sign-in lasts on a computer. */
 export const SESSION_DAYS = 30
 const SESSION_MS = SESSION_DAYS * 24 * 60 * 60 * 1000
@@ -45,50 +41,6 @@ function fromBase64Url(value: string): string {
     const padded = value.replaceAll("-", "+").replaceAll("_", "/")
     const bytes = Uint8Array.from(atob(padded), (char) => char.charCodeAt(0))
     return new TextDecoder().decode(bytes)
-}
-
-/** What the widget hands the page: every field it sent, as text, `hash` included. */
-export type WidgetLogin = Record<string, string>
-
-/**
- * The widget's data, checked against the bot token: secret = SHA-256(token), hash =
- * HMAC-SHA-256(secret, sorted "key=value" lines). Returns the person, or null.
- */
-export async function verifyWidgetLogin(
-    login: WidgetLogin,
-    botToken: string,
-    now: Date,
-): Promise<TelegramUser | null> {
-    const { hash, ...fields } = login
-    if (!hash) {
-        return null
-    }
-    const dataCheckString = Object.entries(fields)
-        .map(([key, value]) => `${key}=${value}`)
-        .sort()
-        .join("\n")
-    const secret = await crypto.subtle.digest("SHA-256", encoder.encode(botToken))
-    if (!timingSafeEqual(await hmacHex(secret, dataCheckString), hash)) {
-        return null
-    }
-    const authDate = Number(fields["auth_date"])
-    const ageSeconds = now.getTime() / 1000 - authDate
-    if (!Number.isFinite(authDate) || ageSeconds > LOGIN_MAX_AGE_SECONDS) {
-        return null
-    }
-    if (ageSeconds < -CLOCK_SKEW_SECONDS) {
-        return null
-    }
-    const id = Number(fields["id"])
-    if (!Number.isSafeInteger(id) || id <= 0) {
-        return null
-    }
-    return {
-        id,
-        firstName: fields["first_name"] ?? "",
-        lastName: fields["last_name"],
-        username: fields["username"],
-    }
 }
 
 interface SessionPayload {
