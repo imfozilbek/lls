@@ -85,7 +85,9 @@ for (const theme of ["light"] as const) {
         await openApp(page, { user: PEOPLE.customer, shop: FOOD, theme })
         await page.getByRole("button", { name: "Buyurtmalarim" }).click()
         await page.getByRole("button", { name: /Buyurtma #1/ }).click()
-        await expect(page.getByRole("heading", { name: "Do'kon pulni topmadi" })).toBeVisible()
+        await expect(
+            page.getByRole("heading", { name: "Do'kon pulni hali ko'rmadi" }),
+        ).toBeVisible()
         await snap(page, "09-order-rejected", theme)
         await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD, theme })
         await page.getByRole("button", { name: "Mening do'konim" }).click()
@@ -128,6 +130,7 @@ for (const theme of ["light"] as const) {
         await openApp(page, { ...app, createsBot: 777300400 })
         await bottomButton(page).click()
         await page.getByLabel("Biznes nomi").fill("Kamola Somsa")
+        await page.getByRole("radio", { name: "Restoran" }).click()
         await snap(page, "27-business-step1", theme)
         await bottomButton(page).click()
         await expect(page.getByRole("heading", { name: "Biznesingiz boti" })).toBeVisible()

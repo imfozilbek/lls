@@ -100,7 +100,7 @@ test("checkout tells the sum; the order screen gives the card; «O'tkazdim» wit
     const placed = await lastSeq()
     await bottomButton(page).click()
     await expect(page.getByRole("heading", { name: "Buyurtma yuborildi!" })).toBeVisible()
-    await expect(page.getByText(/55\s000\sso'm ni do'kon kartasiga o'tkazing/)).toBeVisible()
+    await expect(page.getByText(/Quyidagi kartaga 55\s000\sso'm o'tkazing/)).toBeVisible()
     // The card on the order screen, and in the bot too.
     await expect(page.getByText(CARD)).toBeVisible()
     await expect(page.getByText("RUSTAM KARIMOV")).toBeVisible()
@@ -237,7 +237,7 @@ test("«Pul kelmadi»: the customer sends again; a screenshot seen before warns 
         shop: FOOD,
         query: `?shop=${FOOD}&order=${first.id}`,
     })
-    await expect(page.getByRole("heading", { name: "Do'kon pulni topmadi" })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Do'kon pulni hali ko'rmadi" })).toBeVisible()
     await expect(page.getByRole("button", { name: "Chekni qayta yuborish" })).toBeVisible()
     await expect(page.getByText(CARD)).toBeVisible()
 })
