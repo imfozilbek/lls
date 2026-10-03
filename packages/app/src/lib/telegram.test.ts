@@ -1,6 +1,12 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { LIGHT_SURFACE, paintLightFrame, readLaunchParams } from "./telegram.js"
+import {
+    LIGHT_SURFACE,
+    canRequestChat,
+    paintLightFrame,
+    readLaunchParams,
+    requestChat,
+} from "./telegram.js"
 
 import type { WebApp } from "./telegram.js"
 
@@ -80,5 +86,48 @@ describe("paintLightFrame", () => {
         paintLightFrame(app)
         expect(painted).toEqual([`header ${LIGHT_SURFACE}`, `background ${LIGHT_SURFACE}`])
         expect(() => paintLightFrame(null)).not.toThrow()
+    })
+})
+
+describe("requestChat (Managed Bots: the «create a bot» window)", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals()
+    })
+
+    function telegram(version: string, created?: boolean): { calls: string[] } {
+        const calls: string[] = []
+        const webApp = {
+            initData: "signed",
+            isVersionAtLeast: (wanted: string): boolean => Number(version) >= Number(wanted),
+            requestChat:
+                created === undefined
+                    ? undefined
+                    : (id: string, done: (shared: boolean) => void): void => {
+                          calls.push(id)
+                          done(created)
+                      },
+        }
+        vi.stubGlobal("window", { Telegram: { WebApp: webApp } })
+        return { calls }
+    }
+
+    it("opens the prepared window on Telegram 9.6+ and tells whether the bot was created", async () => {
+        const { calls } = telegram("9.6", true)
+        expect(canRequestChat()).toBe(true)
+        expect(await requestChat("prepared-1")).toBe(true)
+        expect(calls).toEqual(["prepared-1"])
+        telegram("9.6", false)
+        expect(await requestChat("prepared-2")).toBe(false)
+    })
+
+    it("older Telegram apps and the browser fall back to the link", async () => {
+        const { calls } = telegram("8.0", true)
+        expect(canRequestChat()).toBe(false)
+        expect(await requestChat("prepared-1")).toBe(false)
+        expect(calls).toEqual([])
+        telegram("9.6")
+        expect(canRequestChat()).toBe(false)
+        vi.stubGlobal("window", {})
+        expect(canRequestChat()).toBe(false)
     })
 })

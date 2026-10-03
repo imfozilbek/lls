@@ -6,23 +6,28 @@ import { ApiError, api } from "../lib/api.js"
 import { updateBotPhoto } from "../lib/bot-photo.js"
 import { cn } from "../lib/cn.js"
 import { useBackButton, useMainAction } from "../lib/main-button.js"
-import { haptic, openTelegramLink } from "../lib/telegram.js"
+import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { PayoutCardFields, payoutCardIsValid } from "../ui/card-fields.js"
-import { BotIcon, CheckIcon } from "../ui/icons.js"
-import { Button, EmptyState, Field, MoneyInput, TextInput } from "../ui/primitives.js"
+import { CheckIcon } from "../ui/icons.js"
+import { EmptyState, Field, MoneyInput, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import { BotStep, TOKEN_PATTERN, useManagedBot } from "./BotStep.js"
+
+import type { BotMode, ManagedBotFlow } from "./BotStep.js"
 import type { Dictionary } from "../i18n/index.js"
+import type { ManagedBot, RegisterShopBot } from "../lib/api.js"
 import type { ShopOwnerDTO } from "@zumda/core"
 
-/** Same shape the Worker accepts; checked here so the owner sees the mistake at once. */
-const TOKEN_PATTERN = /^\d{5,15}:[A-Za-z0-9_-]{30,64}$/
 type ShopType = BusinessType
 type Step = 1 | 2 | 3
 
 interface Draft {
+    /** `create`: Zumda creates the bot (no token); `token`: a BotFather bot the owner has. */
+    botMode: BotMode
     botToken: string
+    managedBot: ManagedBot | null
     name: string
     type: ShopType
     address: string
@@ -35,7 +40,9 @@ interface Draft {
 }
 
 const EMPTY: Draft = {
+    botMode: "create",
     botToken: "",
+    managedBot: null,
     name: "",
     type: BusinessType.FOOD,
     address: "",
@@ -46,12 +53,18 @@ const EMPTY: Draft = {
     cardHolder: "",
 }
 
+function hasBot(draft: Draft): boolean {
+    return draft.botMode === "token"
+        ? TOKEN_PATTERN.test(draft.botToken.trim())
+        : draft.managedBot !== null
+}
+
 function canContinue(step: Step, draft: Draft): boolean {
     if (step === 1) {
-        return TOKEN_PATTERN.test(draft.botToken.trim())
+        return draft.name.trim().length > 0
     }
     if (step === 2) {
-        return draft.name.trim().length > 0
+        return hasBot(draft)
     }
     return draft.fee !== null && payoutCardIsValid(draft.cardNumber, draft.cardHolder)
 }
@@ -69,50 +82,6 @@ function Progress({ step }: { step: Step }): React.JSX.Element {
                 />
             ))}
         </div>
-    )
-}
-
-function BotStep({
-    draft,
-    patch,
-}: {
-    draft: Draft
-    patch(change: Partial<Draft>): void
-}): React.JSX.Element {
-    const t = useT().onboarding
-    return (
-        <>
-            <h1 className="text-2xl font-bold">{t.botTitle}</h1>
-            <ol className="flex flex-col gap-3">
-                {t.botSteps.map((text, index) => (
-                    <li key={text} className="flex gap-3">
-                        <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-brand/15 text-sm font-bold">
-                            {index + 1}
-                        </span>
-                        <span className="pt-0.5">{text}</span>
-                    </li>
-                ))}
-            </ol>
-            <Button
-                variant="secondary"
-                icon={<BotIcon size={20} className="text-brand" />}
-                onClick={(): void => openTelegramLink("https://t.me/BotFather")}
-            >
-                {t.openBotFather}
-            </Button>
-            <Field label={t.token} htmlFor="bot-token">
-                <TextInput
-                    id="bot-token"
-                    value={draft.botToken}
-                    placeholder={t.tokenPlaceholder}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    className="font-mono text-sm"
-                    onChange={(e): void => patch({ botToken: e.target.value.trim() })}
-                />
-            </Field>
-        </>
     )
 }
 
@@ -226,13 +195,20 @@ function Sent(): React.JSX.Element {
     )
 }
 
+/** A bot problem sends the owner back to step «Bot». */
 function stepAfterError(code: string): Step | null {
-    return code === "INVALID_BOT_TOKEN" || code === "CONFLICT" ? 1 : null
+    return ["INVALID_BOT_TOKEN", "CONFLICT", "ENTITY_NOT_FOUND"].includes(code) ? 2 : null
+}
+
+function chosenBot(draft: Draft): RegisterShopBot {
+    return draft.botMode === "create" && draft.managedBot
+        ? { managedBotId: draft.managedBot.botId }
+        : { botToken: draft.botToken.trim() }
 }
 
 async function submit(draft: Draft): Promise<ShopOwnerDTO> {
     return api.platform.register({
-        botToken: draft.botToken.trim(),
+        ...chosenBot(draft),
         name: draft.name.trim(),
         type: draft.type,
         address: draft.address.trim() || undefined,
@@ -250,7 +226,23 @@ function actionText(t: Dictionary, step: Step, sending: boolean): string {
     return sending ? t.onboarding.submitting : t.onboarding.submit
 }
 
-/** Three short steps: bot → shop → delivery and the card. The platform admin approves it. */
+/** Step «Bot» without a bot yet: the main button creates it. */
+function needsBotCreation(step: Step, draft: Draft): boolean {
+    return step === 2 && draft.botMode === "create" && draft.managedBot === null
+}
+
+function createAction(
+    t: Dictionary,
+    flow: ManagedBotFlow,
+): { text: string; onClick(): void; loading: boolean } {
+    return {
+        text: t.onboarding.botCreate,
+        onClick: (): void => void flow.create(),
+        loading: flow.phase === "opening" || flow.phase === "waiting",
+    }
+}
+
+/** Three short steps: business → bot → delivery and the card. The platform admin approves it. */
 export function Wizard({
     onDone,
     onCancel,
@@ -264,6 +256,7 @@ export function Wizard({
     const [sending, setSending] = useState(false)
     const [sent, setSent] = useState(false)
     const patch = (change: Partial<Draft>): void => setDraft((d) => ({ ...d, ...change }))
+    const flow = useManagedBot(draft.name, (managedBot) => patch({ managedBot }))
 
     const next = async (): Promise<void> => {
         if (step < 3) {
@@ -286,7 +279,12 @@ export function Wizard({
             haptic.error()
             const code = caught instanceof ApiError ? caught.code : "generic"
             toast(errorText(t, code), "error")
-            setStep(stepAfterError(code) ?? step)
+            const back = stepAfterError(code)
+            if (back) {
+                // The managed bot was taken or is gone: choose the bot again.
+                patch({ managedBot: null })
+                setStep(back)
+            }
         } finally {
             setSending(false)
         }
@@ -299,12 +297,14 @@ export function Wizard({
     useMainAction(
         sent
             ? { text: t.common.done, onClick: onDone }
-            : {
-                  text: actionText(t, step, sending),
-                  onClick: (): void => void next(),
-                  loading: sending,
-                  disabled: !canContinue(step, draft),
-              },
+            : needsBotCreation(step, draft)
+              ? createAction(t, flow)
+              : {
+                    text: actionText(t, step, sending),
+                    onClick: (): void => void next(),
+                    loading: sending,
+                    disabled: !canContinue(step, draft),
+                },
     )
 
     if (sent) {
@@ -317,8 +317,17 @@ export function Wizard({
                 {fill(t.onboarding.step, { n: step })}
             </p>
             <div key={step} className="flex animate-rise flex-col gap-5">
-                {step === 1 ? <BotStep draft={draft} patch={patch} /> : null}
-                {step === 2 ? <ShopStep draft={draft} patch={patch} /> : null}
+                {step === 1 ? <ShopStep draft={draft} patch={patch} /> : null}
+                {step === 2 ? (
+                    <BotStep
+                        name={draft.name}
+                        mode={draft.botMode}
+                        token={draft.botToken}
+                        flow={flow}
+                        onMode={(botMode): void => patch({ botMode })}
+                        onToken={(botToken): void => patch({ botToken })}
+                    />
+                ) : null}
                 {step === 3 ? <DeliveryStep draft={draft} patch={patch} /> : null}
             </div>
             <BottomSpacer />

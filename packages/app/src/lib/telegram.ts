@@ -64,6 +64,8 @@ export interface WebApp {
     requestWriteAccess?(callback: (allowed: boolean) => void): void
     showConfirm?(message: string, callback: (ok: boolean) => void): void
     openTelegramLink?(url: string): void
+    /** Bot API 9.6: opens a prepared button's window, here «create a bot» (Managed Bots). */
+    requestChat?(preparedId: string, callback?: (shared: boolean) => void): void
 }
 
 declare global {
@@ -164,6 +166,27 @@ export function requestWriteAccess(): Promise<boolean> {
     }
     const request = app.requestWriteAccess.bind(app)
     return callbackPromise((done) => request(done), false)
+}
+
+/** Telegram apps from Bot API 9.6 open the «create a bot» window right inside the Mini App. */
+export const REQUEST_CHAT_VERSION = "9.6"
+
+export function canRequestChat(): boolean {
+    const app = webApp()
+    return Boolean(app?.requestChat && app.isVersionAtLeast(REQUEST_CHAT_VERSION))
+}
+
+/**
+ * Opens the prepared «create a bot» window. Resolves true when the bot was created; false when the
+ * owner closed it, or the app cannot do it (then the t.me/newbot link is the way).
+ */
+export function requestChat(preparedId: string): Promise<boolean> {
+    const app = webApp()
+    if (!app?.requestChat || !canRequestChat()) {
+        return Promise.resolve(false)
+    }
+    const request = app.requestChat.bind(app)
+    return callbackPromise((done) => request(preparedId, done), false)
 }
 
 export function getLocation(): Promise<LocationData | null> {
