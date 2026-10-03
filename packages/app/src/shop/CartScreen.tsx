@@ -185,7 +185,7 @@ export function CartScreen(): React.JSX.Element {
                 <button
                     type="button"
                     onClick={clear}
-                    className="tap text-sm font-medium text-tg-hint"
+                    className="tap -mr-2 inline-flex min-h-11 items-center rounded-control px-3 text-sm font-semibold text-tg-subtitle active:bg-tg-secondary"
                 >
                     {t.cart.clear}
                 </button>

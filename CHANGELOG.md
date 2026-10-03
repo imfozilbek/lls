@@ -7,6 +7,19 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Readable everywhere (UX phase 2)
+- **Changed (app):** secondary text, links and the destructive red reach WCAG AA (≥4.5:1) on
+  white, gray and tinted surfaces; success and amber marks reach 3:1. Small print is never
+  under 13 px.
+- **Added (app):** brand-colored words use a shade of the shop's color darkened just enough to
+  read (an amber or sky shop color was 3.2:1); a mid-tone shop color gets black text when neither
+  white nor dark gray reads on it.
+- **Changed (app):** switches, segments, the courier's days, the courier's phone and «Savatni
+  tozalash» are 44 px targets with a pressed state; an unavailable button is a calm gray instead
+  of a see-through one; «Ishga tayyor» fills with a transform, not a layout change; status words
+  are in the text color with a colored mark.
+- **Added (e2e):** every main screen is checked for contrast and text size (`support/readability.ts`).
+
 ### Money and trust: the transfer screenshot (UX phase 1, owner's decision)
 - **Added (core, worker, app):** «O'tkazdim» carries the screenshot of the transfer; without it
   the press is refused (`RECEIPT_REQUIRED`). It is stored privately (never on a public address),
