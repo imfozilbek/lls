@@ -122,7 +122,7 @@ export const uz = {
         pcs: "dona",
         portion: "porsiya",
         kg: "kg",
-        l: "l",
+        l: "litr",
         bottle_19l: "19 l",
     },
     cart: {
@@ -177,15 +177,17 @@ export const uz = {
         copySumShort: "Summa",
         sumCopied: "Summa nusxalandi",
         transferNote: "{sum} ni shu kartaga o'tkazing va «O'tkazdim» ni bosing.",
+        transferNoteAgain: "{sum} shu kartaga o'tganini tekshiring va chekni qayta yuboring.",
         beforeCooking:
             "Faqat do'kon kartasiga o'tkazma. Buyurtma bering va summani o'tkazing. Pul kelishi bilan do'kon boshlaydi.",
         sent: "O'tkazdim",
         ownerAwaiting: "Mijoz o'tkazdi, kartani tekshiring",
         afterOrder: "Buyurtmadan keyin do'kon kartasiga {sum} o'tkazasiz",
+        howItWorks: "To'lov: buyurtmadan keyin do'kon kartasiga o'tkazma va chek skrinshoti",
         afterOrderHint:
             "Karta raqami buyurtma berilgach ko'rinadi. Pul kelishi bilan do'kon boshlaydi.",
         waitingTitle: "O'tkazma kutilmoqda",
-        waitingSum: "{sum} ni do'kon kartasiga o'tkazing. Pul kelishi bilan do'kon boshlaydi.",
+        waitingSum: "Quyidagi kartaga {sum} o'tkazing.",
         checkingTitle: "Do'kon pulni tekshirmoqda",
         checkingShort: "O'tkazma tekshirilmoqda",
         cardOwner: "Bu karta {shop} do'koniga tegishli",
@@ -193,7 +195,7 @@ export const uz = {
         remind: "Do'konga eslatish",
         reminded: "Do'konga eslatdik. Javobni botda yozamiz.",
         checkingTime: "Odatda 5-10 daqiqa. Qabul qilinishi bilan botda yozamiz.",
-        rejectedTitle: "Do'kon pulni topmadi",
+        rejectedTitle: "Do'kon pulni hali ko'rmadi",
         rejectedText:
             "Bank ilovangizda pul shu kartaga o'tganini tekshiring va chekni qayta yuboring.",
         resend: "Chekni qayta yuborish",
@@ -226,6 +228,7 @@ export const uz = {
         placedTitle: "Buyurtma yuborildi!",
         cancel: "Buyurtmani bekor qilish",
         cancelConfirm: "Buyurtmani bekor qilasizmi?",
+        otherActions: "Boshqa amallar",
         cancelAfterTransfer:
             "Buyurtmani bekor qilasizmi? Pulni o'tkazgan bo'lsangiz, do'kon uni qaytaradi.",
         items: "Tarkibi",
@@ -394,6 +397,8 @@ export const uz = {
             rejectedBefore: "Bu mijozning {count} ta o'tkazmasi avval topilmagan.",
             yes: "Ha, {sum} keldi",
             no: "Yo'q, pul kelmadi",
+            noConfirm:
+                "Pul kartangizga kelmaganiga ishonchingiz komilmi? Mijozdan chekni qayta so'raymiz.",
             rejected: "Mijozdan chekni qayta so'radik",
         },
         noCard: "O'tkazmalar uchun karta qo'shing: kartasiz buyurtma qabul qilinmaydi.",
@@ -550,6 +555,7 @@ export const uz = {
         addShop: "Yangi biznes",
         start: "Boshlash",
         needName: "Biznes nomini yozing",
+        needType: "Faoliyat turini tanlang",
         needBot: "Botni yarating yoki tokenini qo'ying",
         introSteps: [
             "Biznes nomi va turi",

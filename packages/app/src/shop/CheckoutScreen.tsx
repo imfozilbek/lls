@@ -431,7 +431,14 @@ export function CheckoutScreen(): React.JSX.Element {
 
     return (
         <main className="flex flex-col gap-6 px-4 pt-4">
-            <h1 className="text-2xl font-bold">{t.checkout.title}</h1>
+            <div>
+                <h1 className="text-2xl font-bold">{t.checkout.title}</h1>
+                {/* How paying works, before anything is filled in: never a surprise at the end. */}
+                <p className="mt-1 flex items-center gap-2 text-sm text-tg-subtitle">
+                    <CardIcon size={16} className="shrink-0 text-brand" />
+                    {t.pay.howItWorks}
+                </p>
+            </div>
 
             <Section title={t.checkout.phone} id={CHECKOUT_PHONE} className={glow(CHECKOUT_PHONE)}>
                 <PhoneRow />

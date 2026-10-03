@@ -4,7 +4,7 @@ import { useState } from "react"
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { formatMoney } from "../lib/format.js"
-import { haptic } from "../lib/telegram.js"
+import { confirm, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { AlertIcon, CardIcon } from "../ui/icons.js"
 import { Button } from "../ui/primitives.js"
@@ -60,6 +60,10 @@ export function PaymentCheckSheet({
     const warnings = paymentWarnings(order, t)
 
     const answer = async (kind: "yes" | "no"): Promise<void> => {
+        // «Pul kelmadi» sends the customer back to the worst moment: one more question first.
+        if (kind === "no" && !(await confirm(c.noConfirm))) {
+            return
+        }
         setBusy(kind)
         try {
             onChange(

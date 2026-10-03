@@ -67,11 +67,14 @@ export function CardBlock({
     card,
     total,
     shopName,
+    again = false,
 }: {
     card: { number: string; holder: string }
     total: number
     /** Whose card this is: the shop's name next to a person's, so it never looks like a stranger. */
     shopName?: string
+    /** The shop did not see the money: check it and send the screenshot again. */
+    again?: boolean
 }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -123,7 +126,9 @@ export function CardBlock({
                 </Button>
             </div>
             <p className="mt-3 text-sm text-tg-subtitle">
-                {fill(t.pay.transferNote, { sum: formatMoney(total, language) })}
+                {fill(again ? t.pay.transferNoteAgain : t.pay.transferNote, {
+                    sum: formatMoney(total, language),
+                })}
             </p>
         </div>
     )

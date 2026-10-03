@@ -35,7 +35,8 @@ interface Draft {
     botToken: string
     managedBot: ManagedBot | null
     name: string
-    type: ShopType
+    /** Nothing is picked for the owner: a wrong kind changes every word the customers read. */
+    type: ShopType | null
     address: string
     /** Where the business is: its district and the network's couriers come from this. */
     location: { latitude: number; longitude: number } | null
@@ -46,7 +47,7 @@ const EMPTY: Draft = {
     botToken: "",
     managedBot: null,
     name: "",
-    type: BusinessType.GROCERY,
+    type: null,
     address: "",
     location: null,
 }
@@ -57,9 +58,17 @@ function hasBot(draft: Draft): boolean {
         : draft.managedBot !== null
 }
 
+/** What the step still needs, in the order the owner fills it in. */
+function missingText(t: Dictionary, step: Step, draft: Draft): string {
+    if (step === 2) {
+        return t.onboarding.needBot
+    }
+    return draft.name.trim().length === 0 ? t.onboarding.needName : t.onboarding.needType
+}
+
 function canContinue(step: Step, draft: Draft): boolean {
     if (step === 1) {
-        return draft.name.trim().length > 0
+        return draft.name.trim().length > 0 && draft.type !== null
     }
     if (step === 2) {
         return hasBot(draft)
@@ -228,7 +237,8 @@ async function submit(draft: Draft): Promise<ShopOwnerDTO> {
     return api.platform.register({
         ...chosenBot(draft),
         name: draft.name.trim(),
-        type: draft.type,
+        // Step 1 does not let the owner on without a kind.
+        type: draft.type ?? BusinessType.GROCERY,
         address: draft.address.trim() || undefined,
         location: draft.location ?? undefined,
     })
@@ -329,7 +339,7 @@ export function Wizard({
                           return
                       }
                       haptic.error()
-                      toast(step === 1 ? t.onboarding.needName : t.onboarding.needBot, "error")
+                      toast(missingText(t, step, draft), "error")
                   },
                   loading: sending,
               },

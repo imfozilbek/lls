@@ -7,6 +7,16 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Calm when the money is in doubt (UX phase 7, from the fourth critique)
+- **Changed (app):** «Pul kelmadi» reads «Do'kon pulni hali ko'rmadi», and the note under the
+  card asks to check the transfer and send the screenshot again (it no longer says «O'tkazdim»
+  next to «Chekni qayta yuborish»).
+- **Changed (app):** while the shop checks money already sent, the customer's cancel waits behind
+  «Boshqa amallar»; the owner's «Yo'q, pul kelmadi» asks once before sending the customer back.
+- **Changed (app):** the application picks no kind of business for the owner («Faoliyat turini
+  tanlang»); checkout says how paying works at the top; the order refreshes when the customer
+  comes back from the bank app; the hero only says «Quyidagi kartaga … o'tkazing»; «l» is «litr».
+
 ### The money first, no dead buttons (UX phase 6, from the third critique)
 - **Changed (app):** while an order is unpaid, the big bottom button is «O'tkazdim» (not «back to
   the catalog»), and the card with «Raqam» and «Summa» copy buttons stands right under the
