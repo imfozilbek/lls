@@ -66,12 +66,12 @@ describe("district network", () => {
     const courierApp = (user: object): ReturnType<TestClient["as"]> =>
         client.as(user, { courierBot: true })
 
-    /** Admins' commands live in the Zumda Business bot. */
-    async function platform(text: string, from = ADMIN): Promise<void> {
-        await client.businessBot({
-            update_id: 1,
-            message: { message_id: 1, from, chat: { id: from.id }, text },
-        })
+    /** «Platforma» in Zumda | Business: what admins did with bot commands. */
+    const platform = (from: object = ADMIN): ReturnType<TestClient["as"]> =>
+        client.as(from, { businessBot: true })
+
+    async function setDistrict(body: object, from: object = ADMIN): Promise<Response> {
+        return platform(from)("/api/admin/districts", { method: "PUT", json: body })
     }
 
     async function placeAndAccept(): Promise<Order> {
@@ -122,7 +122,12 @@ describe("district network", () => {
         ).slug
         await foodOwner()("/api/owner/shop", { method: "PATCH", json: { location: GULISTAN } })
         await waterOwner()("/api/owner/shop", { method: "PATCH", json: { location: YANGIYER } })
-        await platform("/district Guliston 40.4897,68.7842 30")
+        const district = await setDistrict({
+            name: "Guliston",
+            center: { latitude: 40.4897, longitude: 68.7842 },
+            radiusKm: 30,
+        })
+        expect(district.status).toBe(200)
         const created = await foodOwner()("/api/owner/products", {
             method: "POST",
             json: { name: "Osh", price: 35_000, unit: "portion", category: "meals" },
@@ -154,23 +159,26 @@ describe("district network", () => {
     })
 
     it("the admin sets the district; shops inside learn it", async () => {
-        const saved = client.telegram.sent.find(
-            (m) => m.chatId === ADMIN.id && m.html.includes("Guliston"),
+        const districts = await json<{ data: { name: string; shops: number }[] }>(
+            await platform()("/api/admin/districts"),
         )
-        expect(saved?.html).toContain("Guliston")
-        expect(saved?.html).toMatch(/2\.?$/)
+        expect(districts.data).toMatchObject([
+            { name: "Guliston", shops: 2, radiusKm: 30, waitMinutes: 10 },
+        ])
         const shop = await json<{ inDistrict: boolean; networkDelivery: boolean }>(
             await foodOwner()("/api/owner/shop"),
         )
         expect(shop).toMatchObject({ inDistrict: true, networkDelivery: true })
-        // Only admins: others get silence, a wrong command gets the format.
-        const before = client.telegram.sent.length
-        await platform("/district Guliston wait 15", OWNER)
-        expect(client.telegram.sent.length).toBe(before)
-        await platform("/district nonsense")
-        expect(client.telegram.sent.at(-1)?.html).toContain("/district")
-        await platform("/district Guliston wait 15")
-        expect(client.telegram.sent.at(-1)?.html).toContain("15")
+        // Only admins; a new district needs its circle; the wait changes alone.
+        expect((await setDistrict({ name: "Guliston", waitMinutes: 15 }, OWNER)).status).toBe(403)
+        expect((await platform(OWNER)("/api/admin/districts")).status).toBe(403)
+        expect((await setDistrict({ name: "Sirdaryo", waitMinutes: 15 })).status).toBe(400)
+        expect((await setDistrict({ name: "<script>", radiusKm: 5 })).status).toBe(400)
+        const changed = await setDistrict({ name: "Guliston", waitMinutes: 15 })
+        expect(await json<{ waitMinutes: number; shops: number }>(changed)).toMatchObject({
+            waitMinutes: 15,
+            shops: 2,
+        })
     })
 
     it("accepted without a free courier: offers without the customer, the first «Беру» wins", async () => {
@@ -310,10 +318,15 @@ describe("district network", () => {
         const order = await placeAndAccept()
         expect(offersTo(BOBUR.id)).toEqual([])
         now += 10 * MINUTE
-        await platform("/network")
+        const stats = await json<{ data: { name: string; waiting: number }[] }>(
+            await platform()("/api/admin/districts"),
+        )
+        expect(stats.data[0]).toMatchObject({ name: "Guliston", waiting: 1 })
         const report = client.telegram.sent.filter((m) => m.chatId === ADMIN.id)
-        expect(report.some((m) => m.html.includes("Guliston"))).toBe(true)
-        expect(report.some((m) => m.html.includes(`#${order.number}`))).toBe(true)
+        const late = report.find((m) => m.html.includes(`#${order.number}`))
+        expect(late?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toContain(
+            "admin=districts",
+        )
         expect(
             client.telegram.sent.some(
                 (m) =>
@@ -323,8 +336,8 @@ describe("district network", () => {
             ),
         ).toBe(true)
         const count = client.telegram.sent.length
-        await platform("/network")
-        expect(client.telegram.sent.length).toBe(count + 1)
+        await platform()("/api/admin/districts")
+        expect(client.telegram.sent.length).toBe(count)
         // Back on shift: the waiting order reaches the chat.
         await courierApp(OTABEK)("/api/courier/shift", { method: "PUT", json: { onShift: true } })
         expect(offersTo(OTABEK.id).map((o) => o.data)).toContain(`n:${order.id}`)

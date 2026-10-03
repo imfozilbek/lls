@@ -4,6 +4,16 @@ import { alertAdmins, describeError, isRecipientProblem } from "../alerts.js"
 import { platformAdminIds } from "../env.js"
 
 import {
+    appButton,
+    appKeyboard,
+    businessAppUrl,
+    courierAppUrl,
+    platformAppUrl,
+    shopAppUrl,
+    showcaseOrderUrl,
+    withAppButton,
+} from "./app-links.js"
+import {
     courierKeyboard,
     courierReviewKeyboard,
     formatNetworkOffer,
@@ -21,8 +31,9 @@ import { escapeHtml } from "./gateway.js"
 import { refreshManagedBotToken } from "./managed-token.js"
 import { fill, textsFor } from "./texts.js"
 
+import type { PlatformTarget } from "./app-links.js"
 import type { Reader } from "./format.js"
-import type { InlineKeyboard, OutgoingFile } from "./gateway.js"
+import type { InlineButton, InlineKeyboard, OutgoingFile } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
 import type { Services } from "../services.js"
 import type {
@@ -34,26 +45,6 @@ import type {
     OverdueNetworkOrder,
     ShopOwnerDTO,
 } from "@zumda/core"
-
-/** Mini App URL for a shop: the shop bot's menu button and /start button open this. */
-export function shopAppUrl(appOrigin: string, slug: string): string {
-    return `${appOrigin}/?shop=${encodeURIComponent(slug)}`
-}
-
-/** The courier's screen across all their shops, opened from the Zumda courier bot. */
-export function courierAppUrl(appOrigin: string): string {
-    return `${appOrigin}/?mode=courier`
-}
-
-/** «Mening bizneslarim»: the owner's businesses, opened from the Zumda Business bot. */
-export function businessAppUrl(appOrigin: string): string {
-    return `${appOrigin}/?mode=business`
-}
-
-/** The Zumda showcase: search across shops, opened from the Zumda bot. */
-export function showcaseAppUrl(appOrigin: string): string {
-    return `${appOrigin}/?mode=market`
-}
 
 /**
  * Sends Telegram messages about orders and shops.
@@ -70,7 +61,7 @@ export class Notifier {
             token,
             ownerId,
             formatNewOrderForOwner(order, reader),
-            { keyboard: orderKeyboard(order, reader) },
+            { keyboard: this.ownerKeyboard(business, order, reader) },
         )
         await this.services.orders.setMessageId(order.id, "owner", messageId)
     }
@@ -106,7 +97,7 @@ export class Notifier {
             n: order.number,
             sum: `<b>${formatMoney(order.total, language)}</b>`,
         })
-        await this.services.telegram.sendMessage(token, ownerId, text)
+        await this.toOwner(token, business, order, text)
     }
 
     /** After a status change: refresh the owner's and the courier's cards, tell the customer. */
@@ -117,7 +108,7 @@ export class Notifier {
         const owner = await this.readerFor(ownerId, business)
         await this.upsertCard(token, ownerId, messages.owner, {
             text: formatOrderForOwner(order, owner),
-            keyboard: orderKeyboard(order, owner),
+            keyboard: this.ownerKeyboard(business, order, owner),
         })
         await this.refreshCourierCard(business, order, messages.courier)
         if (order.status === OrderStatus.CANCELLED) {
@@ -126,7 +117,7 @@ export class Notifier {
 
         if (order.status === OrderStatus.CANCELLED && order.cancelledBy === "customer") {
             const text = `${textsFor(owner.language).cancelledByCustomer}: #${order.number}`
-            await this.services.telegram.sendMessage(token, ownerId, text)
+            await this.toOwner(token, business, order, text)
             return
         }
         await this.notifyCustomer(token, business, order)
@@ -179,9 +170,10 @@ export class Notifier {
         const token = await this.shopToken(business.id)
         const ownerId = business.ownerTelegramId.value
         const t = textsFor(await this.languageOf(ownerId), business.type)
-        await this.services.telegram.sendMessage(
+        await this.toOwner(
             token,
-            ownerId,
+            business,
+            order,
             fill(t.networkRequestedOwner, { n: order.number }),
         )
         const people = await this.services.useCases.freeNetworkCouriers.execute({
@@ -219,7 +211,12 @@ export class Notifier {
                 this.services.env.COURIER_BOT_TOKEN,
                 telegramId,
                 formatNetworkOffer(offer, language),
-                { keyboard: networkOfferKeyboard(orderId, textsFor(language)) },
+                {
+                    keyboard: withAppButton(
+                        networkOfferKeyboard(orderId, textsFor(language)),
+                        this.courierAppButton(textsFor(language)),
+                    ),
+                },
             )
             await this.services.networkOffers.save(
                 orderId,
@@ -241,9 +238,10 @@ export class Notifier {
         const ownerId = business.ownerTelegramId.value
         const t = textsFor(await this.languageOf(ownerId), business.type)
         await this.orderChangedForOwner(token, business, order)
-        await this.services.telegram.sendMessage(
+        await this.toOwner(
             token,
-            ownerId,
+            business,
+            order,
             fill(t.networkClaimedOwner, {
                 n: order.number,
                 name: escapeHtml(order.courierName ?? ""),
@@ -285,9 +283,10 @@ export class Notifier {
             const ownerId = business.ownerTelegramId.value
             const minutes = district.waitMinutes
             const t = textsFor(await this.languageOf(ownerId), business.type)
-            await this.services.telegram.sendMessage(
+            await this.toOwner(
                 token,
-                ownerId,
+                business,
+                order,
                 fill(t.networkOverdueOwner, { n: order.number, min: minutes }),
             )
             for (const adminId of platformAdminIds(this.services.env)) {
@@ -301,6 +300,7 @@ export class Notifier {
                         min: minutes,
                         district: escapeHtml(district.name),
                     }),
+                    { keyboard: this.platformKeyboard(admin, "districts") },
                 )
             }
         }
@@ -332,7 +332,13 @@ export class Notifier {
         const t = textsFor(await this.languageOf(ownerId), business.type)
         const text = fill(t.courierJoinedOwner, { name: escapeHtml(courier.name) })
         await this.services.telegram.sendMessage(token, ownerId, text, {
-            keyboard: courierReviewKeyboard(courier.id, t),
+            keyboard: withAppButton(
+                courierReviewKeyboard(courier.id, t),
+                appButton(
+                    t.openInApp,
+                    shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value),
+                ),
+            ),
         })
     }
 
@@ -350,20 +356,7 @@ export class Notifier {
             telegramId,
             fill(approved ? t.courierApproved : t.courierDeclined, { shop }),
             approved
-                ? {
-                      keyboard: {
-                          inline_keyboard: [
-                              [
-                                  {
-                                      text: t.myDeliveries,
-                                      web_app: {
-                                          url: courierAppUrl(this.services.env.COURIER_APP_ORIGIN),
-                                      },
-                                  },
-                              ],
-                          ],
-                      },
-                  }
+                ? { keyboard: { inline_keyboard: [[this.courierAppButton(t, t.myDeliveries)]] } }
                 : {},
         )
         if (approved && (await this.services.useCases.offerNetwork.execute({ telegramId }))) {
@@ -383,6 +376,7 @@ export class Notifier {
             this.services.env.COURIER_BOT_TOKEN,
             telegramId,
             fill(t.courierRemovedFromShop, { shop: `<b>${escapeHtml(business.name)}</b>` }),
+            { keyboard: { inline_keyboard: [[this.courierAppButton(t, t.myDeliveries)]] } },
         )
     }
 
@@ -400,6 +394,7 @@ export class Notifier {
             this.services.env.BUSINESS_BOT_TOKEN,
             shop.ownerTelegramId,
             text,
+            { keyboard: this.businessesKeyboard(t) },
         )
     }
 
@@ -407,10 +402,12 @@ export class Notifier {
         const token = this.services.env.BUSINESS_BOT_TOKEN
         const ownerLanguage = await this.languageOf(shop.ownerTelegramId)
         const name = escapeHtml(shop.name)
+        const ownerTexts = textsFor(ownerLanguage)
         await this.services.telegram.sendMessage(
             token,
             shop.ownerTelegramId,
-            fill(textsFor(ownerLanguage).applicationReceived, { shop: `<b>${name}</b>` }),
+            fill(ownerTexts.applicationReceived, { shop: `<b>${name}</b>` }),
+            { keyboard: this.businessesKeyboard(ownerTexts) },
         )
         const owner = await this.services.customers.findByTelegramId(shop.ownerTelegramId)
         const ownerName = escapeHtml(owner?.name ?? String(shop.ownerTelegramId))
@@ -427,6 +424,14 @@ export class Notifier {
                         [
                             { text: t.approve, callback_data: `r:${shop.id}:approve` },
                             { text: t.reject, callback_data: `r:${shop.id}:reject` },
+                        ],
+                        [
+                            appButton(
+                                t.openApplication,
+                                platformAppUrl(this.services.env.BUSINESS_APP_ORIGIN, {
+                                    shopId: shop.id,
+                                }),
+                            ),
                         ],
                     ],
                 },
@@ -486,6 +491,10 @@ export class Notifier {
             texts.openMenu,
             shopAppUrl(this.services.env.APP_ORIGIN, shop.slug),
         )
+        // Only `/start`: a command the owner once set in @BotFather would lead nowhere.
+        await this.services.telegram.setCommands(credentials.token, [
+            { command: "start", description: texts.startCommand },
+        ])
     }
 
     /** The owner created a bot from Zumda Business: back to the application, no token to copy. */
@@ -496,18 +505,10 @@ export class Notifier {
             ownerTelegramId,
             fill(texts.managedBotCreated, { bot: `@${escapeHtml(botUsername)}` }),
             {
-                keyboard: {
-                    inline_keyboard: [
-                        [
-                            {
-                                text: texts.continueSetup,
-                                web_app: {
-                                    url: businessAppUrl(this.services.env.BUSINESS_APP_ORIGIN),
-                                },
-                            },
-                        ],
-                    ],
-                },
+                keyboard: appKeyboard(
+                    texts.continueSetup,
+                    businessAppUrl(this.services.env.BUSINESS_APP_ORIGIN),
+                ),
             },
         )
     }
@@ -525,6 +526,7 @@ export class Notifier {
                     bot: `@${escapeHtml(shop.botUsername)}`,
                     owner: `<a href="tg://user?id=${newOwnerTelegramId}">${newOwnerTelegramId}</a>`,
                 }),
+                { keyboard: this.platformKeyboard(t, { shopId: shop.id }) },
             )
         }
     }
@@ -539,6 +541,7 @@ export class Notifier {
                 businessToken,
                 shop.ownerTelegramId,
                 fill(texts.shopRejected, { shop: name }),
+                { keyboard: this.businessesKeyboard(texts) },
             )
             return
         }
@@ -548,6 +551,7 @@ export class Notifier {
             businessToken,
             shop.ownerTelegramId,
             `${fill(texts.shopApproved, { shop: name })}\n${link}`,
+            { keyboard: this.businessesKeyboard(texts) },
         )
         // The shop already works: a description Telegram refused only reaches the admins.
         await this.shopBotDescriptions(shop).catch((error: unknown) =>
@@ -565,7 +569,7 @@ export class Notifier {
         const owner = await this.readerFor(ownerId, business)
         await this.upsertCard(token, ownerId, messageId, {
             text: formatOrderForOwner(order, owner),
-            keyboard: orderKeyboard(order, owner),
+            keyboard: this.ownerKeyboard(business, order, owner),
         })
     }
 
@@ -590,7 +594,10 @@ export class Notifier {
         const reader = await this.readerFor(chatId, business)
         const sent = await this.upsertCard(token, chatId, messageId, {
             text: formatOrderForCourier(order, reader, business.name),
-            keyboard: courierKeyboard(order, reader),
+            keyboard: withAppButton(
+                courierKeyboard(order, reader),
+                this.courierAppButton(textsFor(reader.language)),
+            ),
         })
         if (sent !== null) {
             await this.services.orders.setMessageId(order.id, "courier", sent)
@@ -600,7 +607,9 @@ export class Notifier {
                 n: order.number,
                 shop: escapeHtml(business.name),
             })
-            await this.services.telegram.sendMessage(token, chatId, ping)
+            await this.services.telegram.sendMessage(token, chatId, ping, {
+                keyboard: { inline_keyboard: [[this.courierAppButton(textsFor(reader.language))]] },
+            })
         }
     }
 
@@ -649,6 +658,9 @@ export class Notifier {
         if (!text) {
             return
         }
+        const t = textsFor(customer.language, business.type)
+        const origin = this.services.env.APP_ORIGIN
+        const slug = business.slug.value
         // A showcase customer started only the Zumda bot, so the Zumda bot writes, naming the shop.
         if (order.channel === OrderChannel.MARKETPLACE) {
             const shop = `<b>${escapeHtml(business.name)}</b>`
@@ -656,10 +668,50 @@ export class Notifier {
                 this.services.env.PLATFORM_BOT_TOKEN,
                 customer.telegramId.value,
                 `${shop}\n${text}`,
+                { keyboard: appKeyboard(t.openOrder, showcaseOrderUrl(origin, slug, order.id)) },
             )
             return
         }
-        await this.services.telegram.sendMessage(token, customer.telegramId.value, text)
+        await this.services.telegram.sendMessage(token, customer.telegramId.value, text, {
+            keyboard: appKeyboard(t.openOrder, shopAppUrl(origin, slug, order.id)),
+        })
+    }
+
+    /** The owner's order card: the next step and cancel, then the order in the app. */
+    private ownerKeyboard(business: Business, order: OrderDTO, reader: Reader): InlineKeyboard {
+        const t = textsFor(reader.language, reader.type)
+        const url = shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value, order.id)
+        return withAppButton(orderKeyboard(order, reader), appButton(t.openOrder, url))
+    }
+
+    /** A line to the owner about an order, from the shop bot, with the order in the app. */
+    private async toOwner(
+        token: string,
+        business: Business,
+        order: OrderDTO,
+        text: string,
+    ): Promise<void> {
+        const ownerId = business.ownerTelegramId.value
+        const t = textsFor(await this.languageOf(ownerId), business.type)
+        const url = shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value, order.id)
+        await this.services.telegram.sendMessage(token, ownerId, text, {
+            keyboard: appKeyboard(t.openOrder, url),
+        })
+    }
+
+    private courierAppButton(t: BotTexts, label = t.openInApp): InlineButton {
+        return appButton(label, courierAppUrl(this.services.env.COURIER_APP_ORIGIN))
+    }
+
+    private businessesKeyboard(t: BotTexts): InlineKeyboard {
+        return appKeyboard(t.openBusinesses, businessAppUrl(this.services.env.BUSINESS_APP_ORIGIN))
+    }
+
+    private platformKeyboard(t: BotTexts, target: PlatformTarget): InlineKeyboard {
+        return appKeyboard(
+            t.openPlatform,
+            platformAppUrl(this.services.env.BUSINESS_APP_ORIGIN, target),
+        )
     }
 
     private async shopToken(businessId: string): Promise<string> {

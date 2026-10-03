@@ -221,7 +221,13 @@ describe("shop couriers, verticals and channels", () => {
         expect(card?.html).toContain("70 000")
         // Paid to the shop's card before cooking: nothing to take at the door.
         expect(card?.html).toContain("mijozdan pul olmang")
-        expect(card?.options?.keyboard?.inline_keyboard).toHaveLength(0)
+        // Nothing to press yet, only the way into the courier screen.
+        expect(card?.options?.keyboard?.inline_keyboard.flat()).toEqual([
+            {
+                text: "📱 Ilovada ochish",
+                web_app: { url: "https://delivery.zumda.test/?mode=courier" },
+            },
+        ])
 
         await setStatus(order.id, "preparing")
         await setStatus(order.id, "ready")

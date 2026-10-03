@@ -160,7 +160,7 @@ describe("Zumda Business bot: a failed connection on approval", () => {
         client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
     })
 
-    it("tells the admin, and /reconnect connects the bot later", async () => {
+    it("tells the admin, and «Botni qayta ulash» in «Platforma» connects the bot later", async () => {
         const registered = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: {
@@ -179,24 +179,35 @@ describe("Zumda Business bot: a failed connection on approval", () => {
         })
         const warning = client.telegram.sent.at(-1)
         expect(warning?.chatId).toBe(ADMIN.id)
-        expect(warning?.html).toContain(`/reconnect ${shop.slug}`)
+        expect(warning?.html).toContain("Botni qayta ulash")
+        expect(warning?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
+            `https://business.zumda.test/?mode=business&admin=shop_${shop.id}`,
+        )
 
-        // Pressing Approve again cannot help (the shop is active); the command can.
+        // The command is gone: the bot points to the app and changes nothing.
         client.telegram.failWebhooks = false
-        await platform({
-            message: { from: STRANGER, chat: { id: STRANGER.id }, text: `/reconnect ${shop.slug}` },
-        })
-        expect(client.telegram.webhooks).toHaveLength(0)
-
         await platform({
             message: { from: ADMIN, chat: { id: ADMIN.id }, text: `/reconnect ${shop.slug}` },
         })
+        expect(client.telegram.webhooks).toHaveLength(0)
+        expect(client.telegram.sent.at(-1)?.html).toContain("ilovada")
+
+        const reconnect = (user: object): Promise<Response> =>
+            client.as(user, { businessBot: true })(`/api/admin/shops/${shop.id}/reconnect`, {
+                method: "POST",
+            })
+        expect((await reconnect(STRANGER)).status).toBe(403)
+        expect((await reconnect(OWNER)).status).toBe(403)
+        expect(client.telegram.webhooks).toHaveLength(0)
+
+        const done = await reconnect(ADMIN)
+        expect(done.status).toBe(200)
+        expect(((await done.json()) as { bot: object }).bot).toEqual({ connected: true })
         expect(client.telegram.webhooks).toHaveLength(1)
         expect(client.telegram.menuButtons[0]?.url).toContain(`shop=${shop.slug}`)
         expect(
             client.telegram.sent.some((m) => m.chatId === OWNER.id && m.html.includes("t.me/")),
         ).toBe(true)
-        expect(client.telegram.sent.at(-1)?.chatId).toBe(ADMIN.id)
     })
 })
 
@@ -215,13 +226,16 @@ describe("the Zumda bot is for customers only", () => {
         expect(response.status).toBe(401)
     })
 
-    it("admins' commands do nothing here: they live in Zumda Business", async () => {
+    it("a command does nothing: the bot points to the showcase", async () => {
         const { slug } = await createActiveShop(client)
-        const before = client.telegram.sent.length
         await zumdaShop({
             message: { from: ADMIN, chat: { id: ADMIN.id }, text: `/market ${slug} 5` },
         })
-        expect(client.telegram.sent).toHaveLength(before)
+        const reply = client.telegram.sent.at(-1)
+        expect(reply?.html).toContain("ilovada")
+        expect(reply?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toContain(
+            "mode=market",
+        )
         const row = await env.DB.prepare(
             "SELECT marketplace_commission_bps AS bps FROM businesses WHERE slug = ?",
         )
@@ -387,6 +401,14 @@ describe("shop bot", () => {
         expect(toCustomer?.chatId).toBe(CUSTOMER.id)
         expect(toCustomer?.html).toContain(`#${order.number}`)
         expect(toCustomer?.html).toContain("To'lov keldi")
+        // The customer's message opens this order in the shop's app.
+        expect(toCustomer?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
+            `https://zumda-app.pages.dev/?shop=${slug}&order=${order.id}`,
+        )
+        // The owner's card: the next step, cancel, then the order in the app.
+        expect(edited?.options?.keyboard?.inline_keyboard.at(-1)?.[0]?.web_app?.url).toBe(
+            `https://zumda-app.pages.dev/?shop=${slug}&order=${order.id}`,
+        )
 
         // A stale button does not move the order again
         await shopUpdate({ callback_query: { id: "cb-2", from: OWNER, data: `p:${order.id}` } })
@@ -424,7 +446,13 @@ describe("shop bot", () => {
             .bind(first.id)
             .first<{ status: string; cancelled_by: string }>()
         expect(row).toEqual({ status: "cancelled", cancelled_by: "owner" })
-        expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard).toEqual([])
+        // A finished order keeps only the way into the app.
+        expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard.flat()).toEqual([
+            {
+                text: "📱 Buyurtmani ochish",
+                web_app: { url: `https://zumda-app.pages.dev/?shop=${slug}&order=${first.id}` },
+            },
+        ])
 
         const second = await placeOrder()
         const customer = client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug })

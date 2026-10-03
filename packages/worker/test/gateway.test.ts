@@ -99,12 +99,17 @@ describe("HttpTelegramGateway", () => {
         await gateway.answerCallback("t", "cb", "Done")
         await gateway.setWebhook("t", "https://w.dev/tg/1", "secret")
         await gateway.setMenuButton("t", "Menu", "https://app.dev/?shop=osh")
+        await gateway.setCommands("t", [{ command: "start", description: "Boshlash" }])
         expect(calls.map((c) => c.url.split("/").at(-1))).toEqual([
             "editMessageText",
             "answerCallbackQuery",
             "setWebhook",
             "setChatMenuButton",
+            "setMyCommands",
         ])
+        expect(calls[4]?.body).toEqual({
+            commands: [{ command: "start", description: "Boshlash" }],
+        })
         expect(calls[0]?.body).toMatchObject({ reply_markup: { inline_keyboard: [] } })
         expect(calls[2]?.body).toMatchObject({ secret_token: "secret", url: "https://w.dev/tg/1" })
         expect(calls[3]?.body).toMatchObject({

@@ -28,6 +28,7 @@ async function json<T = Json>(response: Response): Promise<T> {
 describe("Zumda showcase", () => {
     let client: TestClient
     let slug: string
+    let shopId: string
 
     const inShop = (user: object): ReturnType<TestClient["as"]> =>
         client.as(user, { botToken: SHOP_BOT_TOKEN, shop: slug })
@@ -47,9 +48,12 @@ describe("Zumda showcase", () => {
         })
     }
 
-    /** Admins' commands live in the Zumda Business bot. */
-    async function market(args: string, from: object = ADMIN): Promise<void> {
-        await client.businessBot({ message: { chat: { id: 1 }, from, text: `/market ${args}` } })
+    /** The showcase deal, from «Platforma» in Zumda | Business. */
+    async function market(percent: number | null, from: object = ADMIN): Promise<Response> {
+        return client.as(from, { businessBot: true })(`/api/admin/shops/${shopId}/marketplace`, {
+            method: "PUT",
+            json: { percent },
+        })
     }
 
     async function addProduct(name: string, category = "meals"): Promise<string> {
@@ -62,7 +66,9 @@ describe("Zumda showcase", () => {
 
     beforeEach(async () => {
         client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
-        slug = (await createActiveShop(client)).slug
+        const shop = await createActiveShop(client)
+        slug = shop.slug
+        shopId = shop.id
         await addProduct("To'y oshi")
         await addProduct("Lag'mon", "soups")
     })
@@ -77,22 +83,30 @@ describe("Zumda showcase", () => {
 
     it("only an admin signs a deal; the owner is told", async () => {
         const before = client.telegram.sent.length
-        await market(`${slug} 5`, STRANGER)
+        expect((await market(5, STRANGER)).status).toBe(403)
+        expect((await market(5, OWNER)).status).toBe(403)
         expect(client.telegram.sent).toHaveLength(before)
 
-        await market(`${slug} 5`)
-        const [toAdmin, toOwner] = client.telegram.sent.slice(before)
-        expect(toAdmin?.chatId).toBe(1)
-        expect(toAdmin?.html).toContain("5%")
+        const signed = await market(2.5)
+        expect(signed.status).toBe(200)
+        const body = await json<{ shop: { marketplace: { commissionBps: number } } }>(signed)
+        expect(body.shop.marketplace.commissionBps).toBe(250)
+        expect(body.shop).not.toHaveProperty("payoutCard")
+        const [toOwner] = client.telegram.sent.slice(before)
         expect(toOwner?.chatId).toBe(OWNER.id)
         expect(toOwner?.token).toBe(env.BUSINESS_BOT_TOKEN)
+        expect(toOwner?.html).toContain("2,5%")
+        expect(toOwner?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toContain(
+            "mode=business",
+        )
 
-        await market("nonsense")
-        expect(client.telegram.sent.at(-1)?.html).toContain("/market")
+        expect((await market(-1)).status).toBe(400)
+        const ended = await json<{ shop: { marketplace?: unknown } }>(await market(null))
+        expect(ended.shop.marketplace).toBeUndefined()
     })
 
     it("search finds products in any alphabet, lists shops, hides stop-listed items", async () => {
-        await market(`${slug} 5`)
+        await market(5)
         const shops = await json<{ data: { slug: string }[] }>(
             await viaPlatform(CUSTOMER)("/api/showcase/shops"),
         )
@@ -128,7 +142,7 @@ describe("Zumda showcase", () => {
     })
 
     it("an order through the showcase is a marketplace sale with the commission", async () => {
-        await market(`${slug} 5`)
+        await market(5)
         const shop = await json(await viaShowcase(OWNER)("/api/shop"))
         // Owner screens open only from the shop's own bot.
         expect(shop).toMatchObject({ viewerRole: "customer" })
@@ -175,7 +189,7 @@ describe("Zumda showcase", () => {
     })
 
     it("the channel comes from the signing bot, never from the client", async () => {
-        await market(`${slug} 5`)
+        await market(5)
         // Signed by the shop bot but claiming the showcase: the signature does not match.
         const forged = await client.as(CUSTOMER, {
             botToken: SHOP_BOT_TOKEN,

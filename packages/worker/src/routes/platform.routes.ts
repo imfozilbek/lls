@@ -12,6 +12,7 @@ import { refreshManagedBotToken } from "../telegram/managed-token.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
 import { textsFor } from "../telegram/texts.js"
 
+import { isPlatformAdmin } from "./admin.routes.js"
 import { setShopBotPhoto } from "./owner.routes.js"
 
 import type { AppEnv } from "../env.js"
@@ -72,6 +73,12 @@ export const platformRoutes = new Hono<AppEnv>()
             throw new ApiError(403, "BUSINESS_BOT_ONLY", "Open this from the Zumda Business bot")
         }
         await next()
+    })
+
+    /** Who opened Zumda | Business: a platform admin also sees «Platforma». */
+    .get("/me", (c) => {
+        const { user } = c.get("auth")
+        return c.json({ admin: isPlatformAdmin(c.get("services"), user.id) })
     })
 
     .get("/shops", async (c) => {

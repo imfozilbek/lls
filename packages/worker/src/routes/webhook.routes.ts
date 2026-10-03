@@ -3,17 +3,17 @@ import { Hono } from "hono"
 
 import { timingSafeEqual } from "../crypto.js"
 import { networkAfterStep, notifyOwnerStep, notifyPaymentConfirmed } from "../network-flow.js"
+import { appKeyboard, shopAppUrl, showcaseAppUrl } from "../telegram/app-links.js"
 import { parseCourierReviewCallback, parseOrderCallback } from "../telegram/format.js"
 import { escapeHtml } from "../telegram/gateway.js"
 import { handleManagedBot } from "../telegram/managed-bots.js"
-import { Notifier, shopAppUrl, showcaseAppUrl } from "../telegram/notifier.js"
+import { Notifier } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 import {
     SECRET_HEADER,
     callbackErrorText,
     handleSafely,
     isStart,
-    openButton,
     readUpdate,
     toTelegramUser,
 } from "../telegram/updates.js"
@@ -80,14 +80,15 @@ async function handleShopMessage(
         await saveContact(services, business, token, message)
         return
     }
-    if (!isStart(message.text)) {
-        return
-    }
     const texts = textsFor(languageFromTelegram(from.language_code), business.type)
-    const keyboard = openButton(
+    const keyboard = appKeyboard(
         texts.openMenu,
         shopAppUrl(services.env.APP_ORIGIN, business.slug.value),
     )
+    if (!isStart(message.text)) {
+        await services.telegram.sendMessage(token, message.chat.id, texts.onlyInApp, { keyboard })
+        return
+    }
     await services.telegram.sendMessage(
         token,
         message.chat.id,
@@ -208,22 +209,19 @@ async function handlePlatformMessage(services: Services, message: IncomingMessag
         }
         return
     }
-    if (isStart(message.text)) {
-        const origin = services.env.APP_ORIGIN
-        await sendWelcome(services.telegram, {
-            token,
-            chatId: message.chat.id,
-            pictureUrl: welcomePictureUrl(origin, "platform"),
-            html: texts.platformWelcome,
-            options: {
-                keyboard: {
-                    inline_keyboard: [
-                        [{ text: texts.openShowcase, web_app: { url: showcaseAppUrl(origin) } }],
-                    ],
-                },
-            },
-        })
+    const origin = services.env.APP_ORIGIN
+    const keyboard = appKeyboard(texts.openShowcase, showcaseAppUrl(origin))
+    if (!isStart(message.text)) {
+        await services.telegram.sendMessage(token, message.chat.id, texts.onlyInApp, { keyboard })
+        return
     }
+    await sendWelcome(services.telegram, {
+        token,
+        chatId: message.chat.id,
+        pictureUrl: welcomePictureUrl(origin, "platform"),
+        html: texts.platformWelcome,
+        options: { keyboard },
+    })
 }
 
 /** Telegram webhooks. Always answer 200 to valid updates so Telegram does not retry. */
@@ -250,7 +248,7 @@ export const webhookRoutes = new Hono<AppEnv>()
         return c.json({ ok: true })
     })
 
-    /** The Zumda Business bot: owners, applications, admins' commands, bots it manages. */
+    /** The Zumda Business bot: owners, applications, admins' approvals, bots it manages. */
     .post("/business", async (c) => {
         const secret = c.req.header(SECRET_HEADER) ?? ""
         if (!timingSafeEqual(secret, c.env.BUSINESS_WEBHOOK_SECRET)) {
@@ -261,7 +259,7 @@ export const webhookRoutes = new Hono<AppEnv>()
         const origin = new URL(c.req.url).origin
         const message = update?.message
         if (message) {
-            await handleSafely(() => handleBusinessMessage(services, message, origin))
+            await handleSafely(() => handleBusinessMessage(services, message))
         }
         const callback = update?.callback_query
         if (callback) {

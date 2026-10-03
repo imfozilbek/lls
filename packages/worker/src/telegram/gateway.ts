@@ -114,10 +114,17 @@ export interface TelegramGateway {
     sendDocument(token: string, chatId: number, file: OutgoingFile, caption?: string): Promise<void>
     setWebhook(token: string, url: string, secretToken: string): Promise<void>
     setMenuButton(token: string, text: string, webAppUrl: string): Promise<void>
+    /** The bot's command list: Zumda's bots have only `/start` (the app does the rest). */
+    setCommands(token: string, commands: readonly BotCommand[]): Promise<void>
     /** The bot's own picture: Zumda sets it on shop bots (the shop's logo or name + the mark). */
     setProfilePhoto(token: string, jpeg: Uint8Array): Promise<void>
     /** The empty-chat description (≤512) and the profile line (≤120). */
     setDescriptions(token: string, texts: BotDescriptions): Promise<void>
+}
+
+export interface BotCommand {
+    command: string
+    description: string
 }
 
 export interface BotDescriptions {
@@ -256,6 +263,10 @@ export class HttpTelegramGateway implements TelegramGateway {
         await this.call(token, "setChatMenuButton", {
             menu_button: { type: "web_app", text, web_app: { url: webAppUrl } },
         })
+    }
+
+    async setCommands(token: string, commands: readonly BotCommand[]): Promise<void> {
+        await this.call(token, "setMyCommands", { commands })
     }
 
     async setProfilePhoto(token: string, jpeg: Uint8Array): Promise<void> {

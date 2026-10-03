@@ -3,7 +3,6 @@ import { z } from "zod"
 
 import { TelegramApiError } from "./gateway.js"
 
-import type { InlineKeyboard } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
 import type { TelegramUser } from "@zumda/core"
 
@@ -70,10 +69,6 @@ export async function readUpdate(request: Request): Promise<Update | null> {
 
 export function isStart(text: string | undefined): boolean {
     return text?.trim().startsWith("/start") ?? false
-}
-
-export function openButton(label: string, url: string): InlineKeyboard {
-    return { inline_keyboard: [[{ text: label, web_app: { url } }]] }
 }
 
 export function callbackErrorText(error: unknown, texts: BotTexts): string {

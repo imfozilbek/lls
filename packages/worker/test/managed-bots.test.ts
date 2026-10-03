@@ -270,7 +270,7 @@ describe("a bot created from Zumda Business (Managed Bots)", () => {
         expect(client.telegram.webhooks.at(-1)?.token).toBe(NEW_MANAGED_TOKEN)
     })
 
-    it("approval and /reconnect ask Telegram for the current token every time", async () => {
+    it("approval and «Botni qayta ulash» ask Telegram for the current token every time", async () => {
         await managedBotUpdate(client, OWNER)
         const shop = (await (await applyWithManagedBot(client)).json()) as {
             id: string
@@ -282,9 +282,11 @@ describe("a bot created from Zumda Business (Managed Bots)", () => {
 
         const third = "555000:managed-bot-token-third-in-tests-xxxxx" // secret-scan: fake
         client.telegram.managedTokens.set(MANAGED_BOT.id, third)
-        await platformUpdate(client, {
-            message: { from: ADMIN, chat: { id: ADMIN.id }, text: `/reconnect ${shop.slug}` },
-        })
+        const reconnected = await client.as(ADMIN, { businessBot: true })(
+            `/api/admin/shops/${shop.id}/reconnect`,
+            { method: "POST" },
+        )
+        expect(reconnected.status).toBe(200)
         expect(client.telegram.webhooks.at(-1)?.token).toBe(third)
     })
 
@@ -296,7 +298,7 @@ describe("a bot created from Zumda Business (Managed Bots)", () => {
         await approve(client, shop.id)
         expect(client.telegram.webhooks).toHaveLength(0)
         expect(client.telegram.sent.at(-1)?.chatId).toBe(ADMIN.id)
-        expect(client.telegram.sent.at(-1)?.html).toContain("/reconnect")
+        expect(client.telegram.sent.at(-1)?.html).toContain("Botni qayta ulash")
     })
 
     it("the pasted-token path still works", async () => {

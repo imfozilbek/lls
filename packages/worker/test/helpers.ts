@@ -5,6 +5,7 @@ import { createApp } from "../src/app.js"
 import { TelegramApiError } from "../src/telegram/gateway.js"
 
 import type {
+    BotCommand,
     BotDescriptions,
     BotInfo,
     ManagedBotButton,
@@ -182,6 +183,10 @@ export class FakeTelegram implements TelegramGateway {
     }
     async setMenuButton(token: string, _text: string, url: string): Promise<void> {
         this.menuButtons.push({ token, url })
+    }
+    readonly commands: { token: string; commands: readonly BotCommand[] }[] = []
+    async setCommands(token: string, commands: readonly BotCommand[]): Promise<void> {
+        this.commands.push({ token, commands })
     }
     async setProfilePhoto(token: string, jpeg: Uint8Array): Promise<void> {
         if (this.failPhotos) {
