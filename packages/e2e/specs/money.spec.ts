@@ -427,6 +427,25 @@ test("the QR poster arrives as a PNG and its code opens the shop bot", async ({ 
     expect(code?.data).toBe("https://t.me/osh_markaz_dev_bot")
 })
 
+test("the shop is quiet too long: «Do'konga eslatish» asks the owner again", async ({ page }) => {
+    const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
+    expect((await sendReceipt(PEOPLE.customer, FOOD, order.id)).status).toBe(200)
+    // Eleven minutes pass without an answer.
+    runSql(`UPDATE orders SET receipt_at = ${Date.now() - 11 * 60_000} WHERE id = '${order.id}'`)
+    const since = await lastSeq()
+    await openApp(page, {
+        user: PEOPLE.customer,
+        shop: FOOD,
+        query: `?shop=${FOOD}&order=${order.id}`,
+    })
+    await expect(page.getByText("Hali javob yo'qmi?")).toBeVisible()
+    await page.getByRole("button", { name: "Do'konga eslatish" }).click()
+    await expect(page.getByText("Do'konga eslatdik")).toBeVisible()
+    await expect(page.getByRole("button", { name: "Do'konga eslatish" })).toBeHidden()
+    const ping = await waitForMessage(PEOPLE.foodOwner.id, "tekshirishingizni kutmoqda", since)
+    expect(ping.buttons.map((b) => b.callback_data)).toContain(`pc:${order.id}`)
+})
+
 test("hours per day: Monday off, Tuesday 9–18, then Monday's hours for every day", async ({
     page,
 }) => {
