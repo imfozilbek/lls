@@ -130,6 +130,16 @@ describe("shop couriers, verticals and channels", () => {
         expect(pending?.status).toBe("pending")
         expect((await courierApp()("/api/courier/home")).status).toBe(403)
 
+        // A broken number is the person's mistake: 200, or Telegram resends it for hours.
+        const broken = await client.courierBot({
+            message: {
+                from: COURIER,
+                chat: { id: COURIER.id },
+                contact: { phone_number: "12", user_id: COURIER.id },
+            },
+        })
+        expect(broken.status).toBe(200)
+
         // A forwarded contact never counts; their own does.
         await client.courierBot({
             message: {
@@ -184,6 +194,20 @@ describe("shop couriers, verticals and channels", () => {
         expect(await json<unknown[]>(await as(OWNER)("/api/owner/couriers"))).toHaveLength(1)
         // Couriers have no special role in the shop bot any more.
         expect(await json(await as(COURIER)("/api/shop"))).toMatchObject({ viewerRole: "customer" })
+    })
+
+    it("two people opening one link at the same moment: only one gets in", async () => {
+        const response = await as(OWNER)("/api/owner/couriers/invites", { method: "POST" })
+        const { link } = await json<{ link: string }>(response)
+        const code = link.split("start=")[1]
+        await Promise.all(
+            [COURIER, STRANGER].map((person) =>
+                client.courierBot({
+                    message: { from: person, chat: { id: person.id }, text: `/start ${code}` },
+                }),
+            ),
+        )
+        expect(await json<unknown[]>(await as(OWNER)("/api/owner/couriers"))).toHaveLength(1)
     })
 
     it("/start in the courier bot: unknown people get the how-to, couriers their shops", async () => {

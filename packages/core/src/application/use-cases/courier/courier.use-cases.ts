@@ -1,6 +1,7 @@
 import { CourierProfile } from "../../../domain/entities/courier-profile.js"
 import { Courier, CourierInvite } from "../../../domain/entities/courier.js"
 import { CourierStatus } from "../../../domain/enums/courier-status.js"
+import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
 import { startOfLocalDay } from "../../../domain/shared/time.js"
@@ -133,6 +134,10 @@ export class JoinAsCourierUseCase {
         const business = await requireBusiness(this.deps.businesses, invite.businessId)
         const now = clock.now()
         invite.use(now)
+        // The link is single-use for real: of two people at the same moment, one gets in.
+        if (!(await couriers.claimInvite(invite))) {
+            throw BusinessRuleViolationError.inviteUsed()
+        }
         const profile =
             (await couriers.findProfile(input.user.id)) ??
             CourierProfile.create({
@@ -145,7 +150,6 @@ export class JoinAsCourierUseCase {
             existing ??
             Courier.join({ id: crypto.randomUUID(), businessId: business.id, profile, now })
         existing?.rejoin(now)
-        await couriers.saveInvite(invite)
         await couriers.saveProfile(profile)
         await couriers.save(courier)
         return {

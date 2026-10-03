@@ -20,5 +20,10 @@ export interface CourierRepository {
      */
     listFreeNetworkCouriers(districtId: string, now: Date, limit: number): Promise<CourierProfile[]>
     saveInvite(invite: CourierInvite): Promise<void>
+    /**
+     * Marks a used invite only if nobody used it in between: one conditional write, so two
+     * people opening the same link at once never both get in.
+     */
+    claimInvite(invite: CourierInvite): Promise<boolean>
     findInvite(code: string): Promise<CourierInvite | null>
 }

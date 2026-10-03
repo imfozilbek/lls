@@ -443,6 +443,16 @@ export class InMemoryCouriers implements CourierRepository {
     async saveInvite(invite: CourierInvite): Promise<void> {
         this.invites.set(invite.code, invite)
     }
+    /** Set to N to let the next N claims lose a race to someone faster. */
+    inviteRaces = 0
+    async claimInvite(invite: CourierInvite): Promise<boolean> {
+        if (this.inviteRaces > 0) {
+            this.inviteRaces--
+            return false
+        }
+        this.invites.set(invite.code, invite)
+        return true
+    }
     async findInvite(code: string): Promise<CourierInvite | null> {
         return this.invites.get(code) ?? null
     }

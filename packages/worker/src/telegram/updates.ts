@@ -92,6 +92,11 @@ export async function handleSafely(work: () => Promise<void>): Promise<void> {
     try {
         await work()
     } catch (error) {
+        if (error instanceof DomainError) {
+            // A person's own mistake (a broken phone in a contact): resending will not fix it.
+            console.warn("Update refused:", error.code, error.message)
+            return
+        }
         if (!(error instanceof TelegramApiError)) {
             throw error
         }
