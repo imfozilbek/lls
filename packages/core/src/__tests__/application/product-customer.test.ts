@@ -157,9 +157,18 @@ describe("product use cases", () => {
         ).rejects.toThrow(ValidationError)
     })
 
-    it("an inactive shop's catalog is hidden from customers", async () => {
-        await businesses.save(makeBusiness({ id: "biz-3", active: false }))
+    it("a shop waiting for approval shows its catalog; a turned-off one hides it", async () => {
+        const waiting = makeBusiness({ id: "biz-3", active: false })
+        await businesses.save(waiting)
         const list = new ListProductsUseCase(businesses, products, fixedClock(NOON_MONDAY_UZ))
+        const seen = await list.execute({
+            businessId: "biz-3",
+            audience: "customer",
+            actorTelegramId: CUSTOMER_TG,
+        })
+        expect(seen.data).toEqual([])
+        waiting.disable()
+        await businesses.save(waiting)
         await expect(
             list.execute({
                 businessId: "biz-3",

@@ -40,6 +40,8 @@ export interface ShopPublicDTO {
     payoutCard?: PayoutCardDTO
     /** Customers pay only by transfer: without a card the shop takes no orders yet. */
     hasPayoutCard: boolean
+    /** Waiting for Zumda's approval: the storefront opens, orders do not («Tez orada ochiladi»). */
+    opensSoon: boolean
 }
 
 export interface PayoutCardDTO {
@@ -102,6 +104,7 @@ export function toShopPublicDTO(
         bottleDeposit: business.bottleDeposit.amount,
         payoutCard: options.withCard ? toPayoutCardDTO(business) : undefined,
         hasPayoutCard: business.acceptsCardTransfers(),
+        opensSoon: business.isPending(),
     }
 }
 

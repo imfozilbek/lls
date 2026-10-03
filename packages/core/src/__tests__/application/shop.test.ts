@@ -330,9 +330,14 @@ describe("shop use cases", () => {
     })
 
     describe("GetShopBySlug and ListMyShops", () => {
-        it("hides inactive shops from customers but not from the owner", async () => {
-            await businesses.save(makeBusiness({ active: false }))
+        it("a shop waiting for approval opens soon; a turned-off one only to its owner", async () => {
+            const waiting = makeBusiness({ active: false })
+            await businesses.save(waiting)
             const getShop = new GetShopBySlugUseCase(businesses, clock)
+            const soon = await getShop.execute("osh-markaz", STRANGER_TG)
+            expect(soon.opensSoon).toBe(true)
+            waiting.disable()
+            await businesses.save(waiting)
             await expect(getShop.execute("osh-markaz", STRANGER_TG)).rejects.toThrow(
                 EntityNotFoundError,
             )

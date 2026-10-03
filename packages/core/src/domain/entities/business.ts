@@ -248,6 +248,17 @@ export class Business {
         return this.props.status === BusinessStatus.ACTIVE
     }
 
+    /**
+     * Who may open the storefront: a live shop, or one waiting for approval («Tez orada
+     * ochiladi»: visible, but it takes no orders); a turned-off shop only to its owner.
+     */
+    isVisibleTo(telegramId: number | undefined): boolean {
+        if (this.props.status !== BusinessStatus.DISABLED) {
+            return true
+        }
+        return telegramId !== undefined && this.isOwnedBy(telegramId)
+    }
+
     hasFeature(feature: Feature): boolean {
         return this.props.features.includes(feature)
     }

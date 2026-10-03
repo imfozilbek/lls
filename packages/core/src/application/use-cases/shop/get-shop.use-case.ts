@@ -5,7 +5,7 @@ import type { ShopOwnerDTO, ShopPublicDTO } from "../../dtos/shop.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
 
-/** Storefront entry: an inactive shop is visible only to its owner. */
+/** Storefront entry: a turned-off or rejected shop is visible only to its owner. */
 export class GetShopBySlugUseCase {
     constructor(
         private readonly businesses: BusinessRepository,
@@ -14,8 +14,7 @@ export class GetShopBySlugUseCase {
 
     async execute(slug: string, viewerTelegramId?: number): Promise<ShopPublicDTO> {
         const business = await this.businesses.findBySlug(slug)
-        const isOwner = viewerTelegramId !== undefined && business?.isOwnedBy(viewerTelegramId)
-        if (!business || (!business.isActive() && !isOwner)) {
+        if (!business?.isVisibleTo(viewerTelegramId)) {
             throw EntityNotFoundError.businessBySlug(slug)
         }
         return toShopPublicDTO(business, this.clock.now(), { withCard: true })
