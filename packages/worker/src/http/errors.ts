@@ -1,6 +1,8 @@
 import { BusinessRuleViolationError, ConflictError, DomainError } from "@zumda/core"
 import { HTTPException } from "hono/http-exception"
 
+import { TelegramApiError } from "../telegram/gateway.js"
+
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 
 export interface ErrorBody {
@@ -49,6 +51,13 @@ export function toErrorResponse(error: unknown): { status: ContentfulStatusCode;
         return {
             status: error.status as ContentfulStatusCode,
             body: { error: { code: error.code, message: error.message } },
+        }
+    }
+    if (error instanceof TelegramApiError) {
+        // Telegram refused or is down: the app says so instead of «something went wrong».
+        return {
+            status: 502,
+            body: { error: { code: "TELEGRAM_FAILED", message: "Telegram did not answer" } },
         }
     }
     if (error instanceof HTTPException) {

@@ -2,7 +2,7 @@ import { systemClock } from "@zumda/core"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 
-import { alertAdmins, requestPlace } from "./alerts.js"
+import { alertAdmins, isRecipientProblem, requestPlace } from "./alerts.js"
 import {
     AUTHORIZATION_HEADER,
     BOT_HEADER,
@@ -105,7 +105,8 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
     app.notFound((c) => c.json({ error: { code: "NOT_FOUND", message: "Not found" } }, 404))
     app.onError((error, c) => {
         const { status, body } = toErrorResponse(error)
-        if (status >= 500) {
+        // An owner who blocked his own bot is not an outage: no alarm for that.
+        if (status >= 500 && !isRecipientProblem(error)) {
             console.error(error)
             const where = requestPlace(c.req.method, c.req.url)
             c.executionCtx.waitUntil(alertAdmins(c.get("services"), "server_error", error, where))

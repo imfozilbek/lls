@@ -8,8 +8,13 @@ const SEPARATOR = ";"
 const BOM = "\uFEFF"
 const MS_PER_MINUTE = 60_000
 
-function cell(value: string | number): string {
-    const text = String(value)
+/** Text Excel would run as a formula: a name or an address the customer typed. */
+const FORMULA_START = /^[=+\-@\t\r]/
+
+export function cell(value: string | number): string {
+    // A leading ' keeps it text: «=HYPERLINK(...)» as a name stays a name.
+    const text =
+        typeof value === "string" && FORMULA_START.test(value) ? `'${value}` : String(value)
     return /[";\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
 }
 

@@ -1,5 +1,7 @@
 import { Customer, Phone, TelegramId, toLanguage } from "@zumda/core"
 
+import { IN_CHUNK } from "./rows.js"
+
 import type { CustomerRepository } from "@zumda/core"
 
 interface CustomerRow {
@@ -13,7 +15,6 @@ interface CustomerRow {
 }
 
 const COLUMNS = "id, telegram_id, name, phone, language, created_at, updated_at"
-const IN_CHUNK = 90
 
 function toCustomer(row: CustomerRow): Customer {
     return Customer.reconstitute({

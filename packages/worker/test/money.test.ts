@@ -288,6 +288,22 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect(fake.status).toBe(415)
     })
 
+    it("a month of more than 100 orders exports; text never runs as a formula", async () => {
+        for (let i = 0; i < 101; i++) {
+            expect((await place()).status).toBe(201)
+        }
+        await env.DB.prepare("UPDATE orders SET address = '=HYPERLINK(\"http://x\")'").run()
+        await env.DB.prepare("UPDATE businesses SET name = 'Tom & Jerry'").run()
+        const sent = await as(OWNER)("/api/owner/money/export?period=month", { method: "POST" })
+        expect(await json(sent)).toEqual({ sent: 101 })
+        const csv = client.telegram.documents.at(-1)
+        // The shop's name is escaped in the HTML caption, or Telegram refuses the file.
+        expect(csv?.caption).toContain("Tom &amp; Jerry")
+        const rows = new TextDecoder().decode(csv?.file.bytes).split("\r\n").slice(1)
+        expect(rows.filter((row) => row.length > 0)).toHaveLength(101)
+        expect(rows[0]).toContain(`"'=HYPERLINK(""http://x"")"`)
+    })
+
     it("only the owner sees the shop's money", async () => {
         expect((await as(CUSTOMER)("/api/owner/money")).status).toBe(403)
         expect((await as(COURIER)("/api/owner/money")).status).toBe(403)

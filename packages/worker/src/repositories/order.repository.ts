@@ -19,7 +19,7 @@ import {
     offsetOf,
 } from "@zumda/core"
 
-import { Versions, isUniqueViolation, oneOf, optional, placeholders } from "./rows.js"
+import { IN_CHUNK, Versions, isUniqueViolation, oneOf, optional, placeholders } from "./rows.js"
 
 import type {
     CancelledBy,
@@ -541,15 +541,23 @@ export class D1OrderRepository implements OrderRepository {
         if (orderIds.length === 0) {
             return byOrder
         }
-        const { results } = await this.db
-            .prepare(
-                `SELECT ${ITEM_COLUMNS} FROM order_items
-                 WHERE order_id IN (${placeholders(orderIds.length)})`,
+        // D1 binds at most 100 values per statement: the month's export has thousands of orders.
+        const statements: D1PreparedStatement[] = []
+        for (let start = 0; start < orderIds.length; start += IN_CHUNK) {
+            const chunk = orderIds.slice(start, start + IN_CHUNK)
+            statements.push(
+                this.db
+                    .prepare(
+                        `SELECT ${ITEM_COLUMNS} FROM order_items
+                         WHERE order_id IN (${placeholders(chunk.length)})`,
+                    )
+                    .bind(...chunk),
             )
-            .bind(...orderIds)
-            .all<ItemRow>()
-        for (const item of results) {
-            byOrder.set(item.order_id, [...(byOrder.get(item.order_id) ?? []), item])
+        }
+        for (const { results } of await this.db.batch<ItemRow>(statements)) {
+            for (const item of results) {
+                byOrder.set(item.order_id, [...(byOrder.get(item.order_id) ?? []), item])
+            }
         }
         return byOrder
     }

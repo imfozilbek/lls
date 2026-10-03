@@ -47,3 +47,6 @@ export class Versions<T extends object> {
         return { expected, version }
     }
 }
+
+/** D1 binds at most 100 values per statement: long `IN (...)` lists go in chunks of this. */
+export const IN_CHUNK = 90
