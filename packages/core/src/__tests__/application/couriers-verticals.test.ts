@@ -127,7 +127,7 @@ describe("shop couriers and vertical features", () => {
         }
     }
 
-    /** «Деньги пришли — принять»: the transfer arrived, the shop starts. */
+    /** «Деньги пришли, принять»: the transfer arrived, the shop starts. */
     async function payAndAccept(orderId: string, businessId = "biz-1"): Promise<void> {
         await new ConfirmPaymentUseCase({ businesses, orders, clock }).execute({
             actorTelegramId: OWNER_TG,

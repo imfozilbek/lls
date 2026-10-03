@@ -22,7 +22,7 @@ export const STRANGER_TG = 3003
 export const TEST_CARD = { number: "4111111111111111", holder: "Rustam Karimov" }
 export const TEST_CARD_ID = "card-1"
 
-/** An active shop with a card: it takes orders. `card: false` — a shop that has not added one. */
+/** An active shop with a card: it takes orders. `card: false`: a shop that has not added one. */
 export function makeBusiness(
     overrides: { id?: string; delivery?: DeliverySettings; active?: boolean; card?: boolean } = {},
 ): Business {

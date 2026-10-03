@@ -30,7 +30,7 @@ describe("WorkingHours", () => {
         const hours = WorkingHours.create({ fri: { open: "22:00", close: "04:00" } })
         // Friday 2026-10-02
         expect(hours.isOpenAt(tashkent("2026-10-02T23:30:00"))).toBe(true)
-        // Saturday 01:00 — still Friday's shift
+        // Saturday 01:00 is still Friday's shift
         expect(hours.isOpenAt(tashkent("2026-10-03T01:00:00"))).toBe(true)
         expect(hours.isOpenAt(tashkent("2026-10-03T04:00:00"))).toBe(false)
         expect(hours.isOpenAt(tashkent("2026-10-02T21:59:00"))).toBe(false)

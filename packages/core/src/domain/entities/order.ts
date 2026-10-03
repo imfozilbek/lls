@@ -323,7 +323,7 @@ export class Order {
         this.touch()
     }
 
-    /** «Деньги пришли — принять»: the transfer arrived and the shop starts, in one tap. */
+    /** «Деньги пришли, принять»: the transfer arrived and the shop starts, in one tap. */
     confirmPaymentAndAccept(): void {
         this.confirmPayment()
         if (this.props.status === OrderStatus.PENDING) {

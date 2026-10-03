@@ -14,7 +14,7 @@ export const PAYMENT_METHODS: readonly PaymentMethod[] = Object.values(PaymentMe
  * - `unpaid`: the customer has not transferred yet; the shop does not start.
  * - `awaiting`: the customer pressed «Я перевёл»; the owner has not seen it arrive yet.
  * - `paid`: the owner saw it on the card; the shop starts.
- * - `refund_due`: paid, then cancelled — the shop owes it back.
+ * - `refund_due`: paid, then cancelled; the shop owes it back.
  * - `refunded`: given back.
  */
 export enum PaymentStatus {

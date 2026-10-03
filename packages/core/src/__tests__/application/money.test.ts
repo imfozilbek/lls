@@ -96,7 +96,7 @@ describe("money: transfer before the shop starts, report", () => {
             orderId: order.id,
         })
 
-    /** «Деньги пришли — принять» from the owner. */
+    /** «Деньги пришли, принять» from the owner. */
     const confirm = (order: OrderDTO, actorTelegramId = OWNER_TG): Promise<OrderDTO> =>
         new ConfirmPaymentUseCase(money()).execute(ids(order, actorTelegramId))
 
@@ -171,7 +171,7 @@ describe("money: transfer before the shop starts, report", () => {
         expect((await report()).awaiting).toEqual([])
     })
 
-    it("«Я перевёл» → the owner checks → «Деньги пришли — принять» in one tap", async () => {
+    it("«Я перевёл» → the owner checks → «Деньги пришли, принять» in one tap", async () => {
         const order = await place()
         // Only the customer of the order presses «Я перевёл».
         await expect(sent(order, STRANGER_TG)).rejects.toThrow(ForbiddenError)
