@@ -137,7 +137,12 @@ function Payment({
                 />
             )}
             {unpaid && card ? (
-                <CardBlock card={card} total={order.total} shopName={shopName} />
+                <CardBlock
+                    card={card}
+                    total={order.total}
+                    shopName={shopName}
+                    again={order.payment.rejections > 0}
+                />
             ) : null}
             {checking ? (
                 <SentReceipt
@@ -174,6 +179,14 @@ function useOrder(id: string): {
     const active = order !== null && !isFinalStatus(order.status)
     useEffect(() => {
         void reload()
+        // Back from the bank app: show the news at once, not after the next 20 s tick.
+        const onVisible = (): void => {
+            if (document.visibilityState === "visible") {
+                void reload()
+            }
+        }
+        document.addEventListener("visibilitychange", onVisible)
+        return (): void => document.removeEventListener("visibilitychange", onVisible)
     }, [reload])
     useEffect(() => {
         if (!active) {
@@ -229,6 +242,8 @@ function OrderActions({
     const t = useT()
     const reorder = useReorder(order)
     const [cancelling, setCancelling] = useState(false)
+    const [revealed, setRevealed] = useState(false)
+    const cancelHidden = order.payment.status === PaymentStatus.AWAITING && !revealed
 
     const cancel = async (): Promise<void> => {
         const sent = order.payment.status === PaymentStatus.AWAITING
@@ -255,7 +270,19 @@ function OrderActions({
             </Button>
         )
     }
-    // Quiet and far from «O'tkazdim»: a mistaken tap here costs the order.
+    // Quiet and far from «O'tkazdim»: a mistaken tap here costs the order. While the shop checks
+    // money already sent, it hides behind one more tap: panic is the wrong moment to cancel.
+    if (order.status === OrderStatus.PENDING && cancelHidden) {
+        return (
+            <button
+                type="button"
+                onClick={(): void => setRevealed(true)}
+                className="tap mx-auto min-h-11 rounded-control px-3 text-sm font-medium text-tg-subtitle"
+            >
+                {t.order.otherActions}
+            </button>
+        )
+    }
     if (order.status === OrderStatus.PENDING) {
         return (
             <Button
