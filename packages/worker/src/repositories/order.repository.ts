@@ -1,4 +1,5 @@
 import {
+    ConflictError,
     ACTIVE_ORDER_STATUSES,
     CATEGORIES,
     DELIVERY_FEE_RECIPIENTS,
@@ -18,7 +19,7 @@ import {
     offsetOf,
 } from "@zumda/core"
 
-import { isUniqueViolation, oneOf, optional, placeholders } from "./rows.js"
+import { Versions, isUniqueViolation, oneOf, optional, placeholders } from "./rows.js"
 
 import type {
     CancelledBy,
@@ -121,8 +122,10 @@ function toItem(row: ItemRow): OrderItem {
     })
 }
 
+const versions = new Versions<Order>()
+
 function toOrder(row: OrderRow, items: ItemRow[]): Order {
-    return Order.reconstitute({
+    const order = Order.reconstitute({
         id: row.id,
         businessId: row.business_id,
         customerId: row.customer_id,
@@ -170,6 +173,7 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
+    return versions.remember(order, row.updated_at)
 }
 
 function dateOrUndefined(value: number | null): Date | undefined {
@@ -284,6 +288,7 @@ export class D1OrderRepository implements OrderRepository {
         ]
         try {
             await this.db.batch(statements)
+            versions.remember(order, order.updatedAt.getTime())
             return true
         } catch (error) {
             if (isUniqueViolation(error)) {
@@ -293,14 +298,17 @@ export class D1OrderRepository implements OrderRepository {
         }
     }
 
+    /** Writes only over the version this copy was loaded with: a newer change wins, 409 here. */
     async save(order: Order): Promise<void> {
-        await this.db
+        const { expected, version } = versions.next(order, order.updatedAt)
+        const guard = expected === undefined ? "" : " AND updated_at = ?"
+        const result = await this.db
             .prepare(
                 `UPDATE orders SET status = ?, courier_id = ?, courier_name = ?, cancel_reason = ?,
                     cancelled_by = ?, payment_method = ?, payment_status = ?, paid_at = ?,
                     cash_courier_id = ?, delivered_at = ?, updated_at = ?,
                     network_requested_at = ?, network_alerted_at = ?, delivery_fee_to = ?
-                 WHERE id = ?`,
+                 WHERE id = ?${guard}`,
             )
             .bind(
                 order.status,
@@ -309,11 +317,16 @@ export class D1OrderRepository implements OrderRepository {
                 order.cancelReason ?? null,
                 order.cancelledBy ?? null,
                 ...paymentValues(order),
-                order.updatedAt.getTime(),
+                version,
                 ...networkValues(order),
                 order.id,
+                ...(expected === undefined ? [] : [expected]),
             )
             .run()
+        if (result.meta.changes === 0) {
+            throw ConflictError.stale("order", order.id)
+        }
+        versions.remember(order, version)
     }
 
     /** One statement with the condition: of two «Беру» at the same moment, one changes a row. */
@@ -321,7 +334,7 @@ export class D1OrderRepository implements OrderRepository {
         const result = await this.db
             .prepare(
                 `UPDATE orders SET courier_id = ?, courier_name = ?, delivery_fee_to = ?,
-                    updated_at = ?
+                    updated_at = MAX(?, updated_at + 1)
                  WHERE id = ? AND courier_id IS NULL AND network_requested_at IS NOT NULL
                     AND status IN (${placeholders(TAKEABLE.length)})`,
             )
@@ -340,7 +353,7 @@ export class D1OrderRepository implements OrderRepository {
     async markNetworkAlerted(orderId: string, at: Date): Promise<boolean> {
         const result = await this.db
             .prepare(
-                `UPDATE orders SET network_alerted_at = ?
+                `UPDATE orders SET network_alerted_at = ?1, updated_at = MAX(?1, updated_at + 1)
                  WHERE id = ? AND network_alerted_at IS NULL AND network_requested_at IS NOT NULL
                     AND courier_id IS NULL AND status IN (${placeholders(TAKEABLE.length)})`,
             )

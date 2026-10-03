@@ -26,3 +26,24 @@ export function placeholders(count: number): string {
 export function isUniqueViolation(error: unknown): boolean {
     return error instanceof Error && error.message.includes("UNIQUE constraint failed")
 }
+
+/**
+ * The `updated_at` each loaded entity had. A save writes only over that very version, so a
+ * request working on an older copy gets a conflict instead of undoing someone's change.
+ */
+export class Versions<T extends object> {
+    private readonly loaded = new WeakMap<T, number>()
+
+    remember(entity: T, version: number): T {
+        this.loaded.set(entity, version)
+        return entity
+    }
+
+    /** The version to write, always newer, and the one the row must still have. */
+    next(entity: T, wanted: Date): { expected: number | undefined; version: number } {
+        const expected = this.loaded.get(entity)
+        const version =
+            expected === undefined ? wanted.getTime() : Math.max(wanted.getTime(), expected + 1)
+        return { expected, version }
+    }
+}
