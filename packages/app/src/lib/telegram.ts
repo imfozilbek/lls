@@ -48,6 +48,9 @@ export interface WebApp {
     colorScheme: "light" | "dark"
     ready(): void
     expand(): void
+    setHeaderColor?(color: string): void
+    setBackgroundColor?(color: string): void
+    setBottomBarColor?(color: string): void
     isVersionAtLeast(version: string): boolean
     MainButton: BottomButton
     BackButton: BackButtonApi
@@ -72,6 +75,24 @@ declare global {
 export function webApp(): WebApp | null {
     const app = window.Telegram?.WebApp
     return app && app.initData ? app : null
+}
+
+/** The app's own surface: Telegram's header and bottom bar match it, even in a dark theme. */
+export const LIGHT_SURFACE = "#ffffff"
+
+/**
+ * Always light (owner's decision): paint Telegram's frame around the app white too, so a dark
+ * Telegram theme does not frame a light app. Older clients simply skip it.
+ */
+export function paintLightFrame(app: WebApp | null): void {
+    if (!app?.isVersionAtLeast("6.1")) {
+        return
+    }
+    app.setHeaderColor?.(LIGHT_SURFACE)
+    app.setBackgroundColor?.(LIGHT_SURFACE)
+    if (app.isVersionAtLeast("7.10")) {
+        app.setBottomBarColor?.(LIGHT_SURFACE)
+    }
 }
 
 /** The native bottom button exists only inside real Telegram clients. */

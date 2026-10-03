@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest"
 
-import { BusinessType } from "@lls/core"
+import { BusinessType, LANGUAGES, Language } from "@lls/core"
 
 import { dictionaryFor } from "./index.js"
-import { ru } from "./ru.js"
 import { uz } from "./uz.js"
 
 /** "a.b.c" → value, for every leaf; arrays count as leaves with their length. */
@@ -25,52 +24,47 @@ const placeholders = (text: unknown): string[] =>
     typeof text === "string" ? [...text.matchAll(/\{(\w+)\}/g)].map((m) => m[1] ?? "").sort() : []
 
 describe("dictionaries", () => {
-    const uzLeaves = leaves(uz)
-    const ruLeaves = leaves(ru)
-
-    it("have the same keys", () => {
-        expect([...ruLeaves.keys()].sort()).toEqual([...uzLeaves.keys()].sort())
-    })
-
-    it("have no empty texts and the same list lengths", () => {
-        for (const [path, value] of uzLeaves) {
-            const other = ruLeaves.get(path)
-            if (Array.isArray(value)) {
-                expect(Array.isArray(other) && other.length, path).toBe(value.length)
-            } else {
-                expect(String(value).trim(), path).not.toBe("")
-                expect(String(other).trim(), path).not.toBe("")
+    it("every language has every text, with no empty ones", () => {
+        const uzLeaves = leaves(uz)
+        for (const language of LANGUAGES) {
+            const own = leaves(dictionaryFor(language))
+            expect([...own.keys()].sort()).toEqual([...uzLeaves.keys()].sort())
+            for (const [path, value] of own) {
+                if (!Array.isArray(value)) {
+                    expect(String(value).trim(), path).not.toBe("")
+                }
+                expect(placeholders(value), path).toEqual(placeholders(uzLeaves.get(path)))
             }
         }
     })
 
-    it("use the same placeholders", () => {
-        for (const [path, value] of uzLeaves) {
-            expect(placeholders(ruLeaves.get(path)), path).toEqual(placeholders(value))
+    it("speak Uzbek (Latin) only: no Cyrillic in any text", () => {
+        for (const language of LANGUAGES) {
+            for (const [path, value] of leaves(dictionaryFor(language, BusinessType.FOOD))) {
+                expect(String(value), path).not.toMatch(/[\u0400-\u04FF]/)
+            }
         }
     })
 })
 
 describe("words by business type", () => {
     it("food shops talk about a menu and cooking", () => {
-        const food = dictionaryFor("uz" as never, BusinessType.FOOD)
+        const food = dictionaryFor(Language.UZ, BusinessType.FOOD)
         expect(food.owner.tabs.menu).toBe("Menyu")
         expect(food.order.steps.preparing).toBe("Tayyorlanmoqda")
-        expect(dictionaryFor("ru" as never, BusinessType.FOOD).order.hints.delivered).toContain(
-            "аппетита",
-        )
+        expect(food.order.hints.delivered).toContain("ishtaha")
     })
 
     it("water and grocery shops get neutral words", () => {
         for (const type of [BusinessType.WATER, BusinessType.GROCERY]) {
-            const words = dictionaryFor("ru" as never, type)
-            expect(words.owner.tabs.menu).toBe(ru.owner.tabs.menu)
-            expect(words.order.hints.delivered).not.toContain("аппетита")
+            const words = dictionaryFor(Language.UZ, type)
+            expect(words.owner.tabs.menu).toBe(uz.owner.tabs.menu)
+            expect(words.order.hints.delivered).not.toContain("ishtaha")
         }
     })
 
     it("food overlays keep every placeholder", () => {
-        for (const language of ["uz", "ru"] as never[]) {
+        for (const language of LANGUAGES) {
             const food = leaves(dictionaryFor(language, BusinessType.FOOD))
             for (const [path, value] of leaves(dictionaryFor(language))) {
                 expect(placeholders(food.get(path)), path).toEqual(placeholders(value))

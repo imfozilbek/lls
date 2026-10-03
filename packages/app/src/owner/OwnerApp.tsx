@@ -2,7 +2,7 @@ import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
-import { BagIcon, CashIcon, GearIcon, ListIcon } from "../ui/icons.js"
+import { BagIcon, CardIcon, CashIcon, GearIcon, ListIcon } from "../ui/icons.js"
 
 import { MenuTab } from "./MenuTab.js"
 import { MoneyTab } from "./MoneyTab.js"
@@ -58,6 +58,24 @@ function TabBar({
     )
 }
 
+/** No card, no orders: customers pay only by transfer. One tap leads to the card field. */
+function NoCardBanner({ onOpen }: { onOpen(): void }): React.JSX.Element {
+    const t = useT()
+    return (
+        <button
+            type="button"
+            onClick={(): void => {
+                haptic.tap()
+                onOpen()
+            }}
+            className="tap mx-4 mt-3 flex w-[calc(100%-2rem)] animate-rise items-center gap-3 rounded-control bg-warning/15 px-4 py-3 text-left"
+        >
+            <CardIcon size={22} className="shrink-0 text-warning" />
+            <span className="flex-1 text-sm font-medium">{t.owner.noCard}</span>
+        </button>
+    )
+}
+
 /** "Мой магазин": the owner's side of the same Mini App. Loaded only when an owner opens it. */
 export function OwnerApp(): React.JSX.Element {
     const shop = useSession((state) => state.shop)
@@ -68,6 +86,9 @@ export function OwnerApp(): React.JSX.Element {
             <header className="px-4 pt-4">
                 <h1 className="truncate text-xl font-bold">{shop?.name}</h1>
             </header>
+            {shop && !shop.hasPayoutCard ? (
+                <NoCardBanner onOpen={(): void => setTab("settings")} />
+            ) : null}
             <TabBar tab={tab} onChange={setTab} />
             <div key={tab} className="animate-fade-in">
                 {tab === "orders" ? <OrdersTab /> : null}

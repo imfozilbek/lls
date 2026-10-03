@@ -164,9 +164,9 @@ describe("LLS showcase", () => {
         expect(card?.token).toBe(SHOP_BOT_TOKEN)
         expect(card?.html).toContain("3 000")
 
-        await inShop(OWNER)(`/api/owner/orders/${order.id}`, {
+        await inShop(OWNER)(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
-            json: { status: "accepted" },
+            json: { action: "paid" },
         })
         const toCustomer = client.telegram.sent.filter((m) => m.chatId === CUSTOMER.id).at(-1)
         expect(toCustomer?.token).toBe(env.PLATFORM_BOT_TOKEN)

@@ -178,7 +178,8 @@ describe("customer use cases", () => {
         const resolve = new ResolveCustomerUseCase(customers)
         const first = await resolve.execute(user, TRUSTED_SCOPE)
         expect(first.name).toBe("Aziz Karimov")
-        expect(first.language).toBe(Language.RU)
+        // A Russian Telegram still gets the product language: Uzbek.
+        expect(first.language).toBe(Language.UZ)
         expect(first.phone).toBeUndefined()
 
         const renamed = await resolve.execute({ ...user, lastName: undefined }, TRUSTED_SCOPE)

@@ -1,12 +1,13 @@
 /**
  * The district network: an order of a shop whose own courier cannot take it goes to the free
- * network couriers of the district; the first «Беру» wins; the cash goes back to that shop.
+ * network couriers of the district; the first «Беру» wins. The customer paid that shop's card
+ * before cooking, so the courier carries no money.
  */
 import { expect, test } from "@playwright/test"
 
 import { courierBot } from "../stand/config.js"
 import { runSql } from "../stand/seed.js"
-import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
 import { courierChat, lastSeq, llsChat, messagesTo, waitForMessage } from "../support/telegram.js"
 import { openApp } from "../support/webapp.js"
 
@@ -37,9 +38,9 @@ async function placeAndAccept(): Promise<OrderBody> {
         PEOPLE.customer,
         FOOD,
         [{ productId: "dev-food-p1", quantity: 2 }],
-        { landmark: "возле рынка", location: { latitude: 40.5, longitude: 68.79 } },
+        { landmark: "bozor yonida", location: { latitude: 40.5, longitude: 68.79 } },
     )
-    const accepted = await owner(`/owner/orders/${order.id}`, { status: "accepted" })
+    const accepted = await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)
     expect(accepted.status).toBe(200)
     return (await accepted.json()) as OrderBody
 }
@@ -52,7 +53,7 @@ async function offerFor(
 ): Promise<{ data: string; messageId: number; text: string }> {
     const message = await waitForMessage(chatId, `#${order.number}`, since)
     const button = message.buttons.find((b) => b.callback_data === `n:${order.id}`)
-    expect(button?.text).toBe("🙋 Беру")
+    expect(button?.text).toBe("🙋 Olaman")
     expect(message.token).toBe(courierBot().token)
     return { data: button?.callback_data ?? "", messageId: message.seq, text: message.text }
 }
@@ -65,14 +66,14 @@ test("no free courier of its own: the order goes to the network, without the cus
     const since = await lastSeq()
     const order = await placeAndAccept()
     expect(order.waitingForNetwork).toBe(true)
-    await waitForMessage(PEOPLE.foodOwner.id, "отдан сети района", since)
+    await waitForMessage(PEOPLE.foodOwner.id, "tuman tarmog'iga berildi", since)
     for (const person of [PEOPLE.networkCourier, PEOPLE.networkCourier2]) {
         const offer = await offerFor(person.id, order, since)
-        expect(offer.text).toContain("Новый заказ рядом")
+        expect(offer.text).toContain("Yaqinda yangi buyurtma")
         expect(offer.text).toContain("Osh Markaz")
-        expect(offer.text).toMatch(/Взять с клиента: <b>100\s000/)
+        expect(offer.text).toContain("Oldindan to'langan — mijozdan pul olmang")
         expect(offer.text).not.toContain("Navoiy")
-        expect(offer.text).not.toContain("возле рынка")
+        expect(offer.text).not.toContain("bozor yonida")
         expect(offer.text).not.toContain("Aziz")
     }
     // Jasur is not in the network: he hears nothing about it.
@@ -88,11 +89,11 @@ test("the first «Беру» wins; the second hears it is taken; the owner learn
 
     await courierChat().press(PEOPLE.networkCourier, otabek.data, 1)
     await courierChat().press(PEOPLE.networkCourier2, `n:${order.id}`, 1)
-    await waitForMessage(PEOPLE.networkCourier2.id, "уже взял другой доставщик", since)
+    await waitForMessage(PEOPLE.networkCourier2.id, "boshqa kuryer oldi", since)
     const card = await waitForMessage(PEOPLE.networkCourier.id, "Navoiy 12", since)
     expect(card.text).toContain("Osh Markaz")
-    expect(card.text).toContain("возле рынка")
-    await waitForMessage(PEOPLE.foodOwner.id, "доставщик сети района: Otabek", since)
+    expect(card.text).toContain("bozor yonida")
+    await waitForMessage(PEOPLE.foodOwner.id, "tuman tarmog'i kuryeri olib boradi: Otabek", since)
 
     // Busy with one network order: Otabek is not offered the next one.
     const next = await lastSeq()
@@ -102,7 +103,7 @@ test("the first «Беру» wins; the second hears it is taken; the owner learn
     expect(otabekNext.filter((m) => m.text.includes(`#${second.number}`))).toEqual([])
 })
 
-test("Otabek delivers in the app; the cash is Osh Markaz's, and its owner takes it", async ({
+test("Otabek delivers in the app with one «Доставил»; the money is already Osh Markaz's", async ({
     page,
 }) => {
     const home = (await (
@@ -115,26 +116,21 @@ test("Otabek delivers in the app; the cash is Osh Markaz's, and its owner takes 
     }
     await openApp(page, { user: PEOPLE.networkCourier, courierBot: true })
     await expect(page.getByText("Osh Markaz").first()).toBeVisible()
-    await page.getByRole("button", { name: "Забрал" }).click()
-    await page.getByRole("button", { name: "Доставил" }).click()
-    await page.getByRole("dialog").getByRole("button", { name: "Наличными" }).click()
+    await page.getByRole("button", { name: "Oldim" }).click()
+    await expect(page.getByText("Oldindan to'langan — pul olmang").first()).toBeVisible()
+    await page.getByRole("button", { name: "Yetkazdim" }).click()
+    await expect(page.getByRole("dialog")).toBeHidden()
     const shop = page
         .getByRole("listitem")
-        .filter({ hasText: "сеть района" })
+        .filter({ hasText: "tuman tarmog'i" })
         .filter({ hasText: "Osh Markaz" })
-    await expect(shop).toContainText(/На руках: 100\s000/)
+    await expect(shop).toBeVisible()
+    await expect(shop).not.toContainText("Qo'lingizda")
 
     const report = (await (await owner("/owner/money", undefined, "GET")).json()) as {
-        couriers: { courierId: string; name: string; onHand: number }[]
+        totals: { delivered: number; paid: number }
     }
-    const cash = report.couriers.find((c) => c.name === "Otabek")
-    expect(cash?.onHand).toBe(100_000)
-    const handed = await owner(
-        `/owner/couriers/${cash?.courierId ?? ""}/handovers`,
-        { amount: 100_000 },
-        "POST",
-    )
-    expect(handed.status).toBe(200)
+    expect(report.totals).toMatchObject({ delivered: 1, paid: 100_000 })
     // Not the shop's courier: its list stays its own.
     const list = (await (await owner("/owner/couriers", undefined, "GET")).json()) as {
         name: string
@@ -146,9 +142,11 @@ test("the owner: the network switch, «Доставщик сети района�
     page,
 }) => {
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
-    await page.getByRole("button", { name: "Мой магазин" }).click()
-    await page.getByRole("tab", { name: "Настройки" }).click()
-    const network = page.getByRole("switch", { name: "Если мои заняты — отдавать сети района" })
+    await page.getByRole("button", { name: "Mening do'konim" }).click()
+    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    const network = page.getByRole("switch", {
+        name: "Kuryerlarim band bo'lsa — tuman tarmog'iga berish",
+    })
     await expect(network).toHaveAttribute("aria-checked", "true")
     await network.click()
     await expect(network).toHaveAttribute("aria-checked", "false")
@@ -159,21 +157,21 @@ test("the owner: the network switch, «Доставщик сети района�
     expect(order.waitingForNetwork).toBe(false)
 
     // By hand, from the order.
-    await page.getByRole("tab", { name: "Заказы" }).click()
-    const card = page.getByRole("listitem").filter({ hasText: `Заказ #${order.number}` })
-    await card.getByRole("button", { name: "Назначить доставщика" }).click()
+    await page.getByRole("tab", { name: "Buyurtmalar" }).click()
+    const card = page.getByRole("listitem").filter({ hasText: `Buyurtma #${order.number}` })
+    await card.getByRole("button", { name: "Kuryer tayinlash" }).click()
     await page
         .getByRole("dialog")
-        .getByRole("button", { name: /Доставщик сети района/ })
+        .getByRole("button", { name: /Tuman tarmog'i kuryeri/ })
         .click()
-    await expect(card).toContainText("Ищем доставщика сети района")
+    await expect(card).toContainText("Tuman tarmog'idan kuryer qidirilmoqda")
     await offerFor(PEOPLE.networkCourier2.id, order, since)
 
     // Jasur works again: the owner gives it to him, and the network's offers close.
     await ownCourierOff(false)
-    await card.getByRole("button", { name: "Назначить доставщика" }).click()
+    await card.getByRole("button", { name: "Kuryer tayinlash" }).click()
     await page.getByRole("dialog").getByRole("button", { name: /Jasur/ }).click()
-    await expect(card).toContainText("Доставщик: Jasur")
+    await expect(card).toContainText("Kuryer: Jasur")
     await expect
         .poll(async () =>
             (await messagesTo(PEOPLE.networkCourier2.id, since))
@@ -182,7 +180,7 @@ test("the owner: the network switch, «Доставщик сети района�
         )
         .toBe(true)
 
-    await page.getByRole("tab", { name: "Настройки" }).click()
+    await page.getByRole("tab", { name: "Sozlamalar" }).click()
     await network.click()
     await expect(network).toHaveAttribute("aria-checked", "true")
 })
@@ -194,14 +192,14 @@ test("the courier's app: «Заказы рядом» with «Беру», and leav
     const nearby = page.getByRole("listitem").filter({ hasText: `#${order.number}` })
     await expect(nearby).toContainText("Osh Markaz")
     await expect(nearby).not.toContainText("Navoiy")
-    await nearby.getByRole("button", { name: "Беру" }).click()
+    await nearby.getByRole("button", { name: "Olaman" }).click()
     await expect(page.getByText("Navoiy 12").first()).toBeVisible()
 
-    const network = page.getByRole("switch", { name: "Беру заказы района" })
+    const network = page.getByRole("switch", { name: "Tuman buyurtmalarini olaman" })
     await expect(network).toHaveAttribute("aria-checked", "true")
     await network.click()
     await expect(network).toHaveAttribute("aria-checked", "false")
-    await expect(page.getByText("Заказы рядом")).toBeHidden()
+    await expect(page.getByText("Yaqindagi buyurtmalar")).toBeHidden()
     const since = await lastSeq()
     const next = await placeAndAccept()
     await offerFor(PEOPLE.networkCourier.id, next, since)
@@ -216,13 +214,13 @@ test("nobody took it in 10 minutes: the shop and the admin hear it once", async 
         `UPDATE orders SET network_requested_at = network_requested_at - 11 * 60000 WHERE id = '${order.id}'`,
     )
     await llsChat().send(PEOPLE.admin, "/network")
-    await waitForMessage(PEOPLE.admin.id, "Сеть района за 7 дней", since)
-    await waitForMessage(PEOPLE.admin.id, `заказ #${order.number} 10 мин`, since)
-    await waitForMessage(PEOPLE.foodOwner.id, `Заказ #${order.number} уже 10 мин`, since)
+    await waitForMessage(PEOPLE.admin.id, "Tuman tarmog'i, 7 kun", since)
+    await waitForMessage(PEOPLE.admin.id, `#${order.number} buyurtma 10 daqiqa`, since)
+    await waitForMessage(PEOPLE.foodOwner.id, `#${order.number} buyurtma 10 daqiqadan beri`, since)
     const again = await lastSeq()
     await llsChat().send(PEOPLE.admin, "/network")
-    await waitForMessage(PEOPLE.admin.id, "Сеть района за 7 дней", again)
+    await waitForMessage(PEOPLE.admin.id, "Tuman tarmog'i, 7 kun", again)
     const owners = await messagesTo(PEOPLE.foodOwner.id, again)
-    expect(owners.filter((m) => m.text.includes("уже 10 мин"))).toEqual([])
+    expect(owners.filter((m) => m.text.includes("10 daqiqadan beri"))).toEqual([])
     await ownCourierOff(false)
 })

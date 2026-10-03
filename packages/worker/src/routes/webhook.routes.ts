@@ -9,7 +9,7 @@ import { Hono } from "hono"
 
 import { timingSafeEqual } from "../crypto.js"
 import { platformAdminIds } from "../env.js"
-import { networkAfterStep, notifyOwnerStep } from "../network-flow.js"
+import { networkAfterStep, notifyOwnerStep, notifyPaymentConfirmed } from "../network-flow.js"
 import {
     formatRate,
     parseCourierReviewCallback,
@@ -34,6 +34,7 @@ import { handleDistrictCommand, handleNetworkCommand } from "./district-commands
 
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
+import type { OrderCallback } from "../telegram/format.js"
 import type { Callback, IncomingMessage } from "../telegram/updates.js"
 import type { Business, OrderDTO, ShopOwnerDTO } from "@lls/core"
 
@@ -119,24 +120,37 @@ async function handleOrderCallback(
     }
     let order: OrderDTO
     try {
-        order =
-            action.kind === "advance"
-                ? await services.useCases.advanceOrder.execute({
-                      actorTelegramId: callback.from.id,
-                      businessId: business.id,
-                      orderId: action.orderId,
-                      to: action.to,
-                      paidWith: action.paidWith,
-                  })
-                : await requireOwnerCancel(services, business, callback.from.id, action.orderId)
+        order = await runOrderAction(services, business, callback.from.id, action)
     } catch (error) {
         await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, texts))
         return
     }
     const step = await networkAfterStep(services, order)
     // Notify first: if answering the button fails, the owner card and the customer still update.
-    await notifyOwnerStep(services, business, step.order, step.request)
+    if (action.kind === "paid") {
+        await notifyPaymentConfirmed(services, business, step.order, step.request)
+    } else {
+        await notifyOwnerStep(services, business, step.order, step.request)
+    }
     await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
+}
+
+/** The owner's button: the next step, «Деньги пришли — принять», or cancel. */
+async function runOrderAction(
+    services: Services,
+    business: Business,
+    actorTelegramId: number,
+    action: OrderCallback,
+): Promise<OrderDTO> {
+    const ids = { actorTelegramId, businessId: business.id, orderId: action.orderId }
+    switch (action.kind) {
+        case "advance":
+            return services.useCases.advanceOrder.execute({ ...ids, to: action.to })
+        case "paid":
+            return services.useCases.confirmPayment.execute(ids)
+        case "cancel":
+            return requireOwnerCancel(services, business, actorTelegramId, action.orderId)
+    }
 }
 
 /** "k:<courierId>:approve|decline": the owner answers a courier who accepted the invite. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { readLaunchParams } from "./telegram.js"
+import { LIGHT_SURFACE, paintLightFrame, readLaunchParams } from "./telegram.js"
 
 import type { WebApp } from "./telegram.js"
 
@@ -46,5 +46,39 @@ describe("readLaunchParams", () => {
             courier: true,
             market: false,
         })
+    })
+})
+
+describe("paintLightFrame", () => {
+    function client(version: string): { app: WebApp; painted: string[] } {
+        const painted: string[] = []
+        const [major = 0, minor = 0] = version.split(".").map(Number)
+        const app = {
+            isVersionAtLeast: (wanted: string): boolean => {
+                const [wMajor = 0, wMinor = 0] = wanted.split(".").map(Number)
+                return major > wMajor || (major === wMajor && minor >= wMinor)
+            },
+            setHeaderColor: (color: string): void => void painted.push(`header ${color}`),
+            setBackgroundColor: (color: string): void => void painted.push(`background ${color}`),
+            setBottomBarColor: (color: string): void => void painted.push(`bottom ${color}`),
+        } as unknown as WebApp
+        return { app, painted }
+    }
+
+    it("paints Telegram's header, background and bottom bar white, even in a dark theme", () => {
+        const { app, painted } = client("8.0")
+        paintLightFrame(app)
+        expect(painted).toEqual([
+            `header ${LIGHT_SURFACE}`,
+            `background ${LIGHT_SURFACE}`,
+            `bottom ${LIGHT_SURFACE}`,
+        ])
+    })
+
+    it("older clients get what they support; outside Telegram nothing happens", () => {
+        const { app, painted } = client("7.0")
+        paintLightFrame(app)
+        expect(painted).toEqual([`header ${LIGHT_SURFACE}`, `background ${LIGHT_SURFACE}`])
+        expect(() => paintLightFrame(null)).not.toThrow()
     })
 })

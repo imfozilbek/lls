@@ -1,4 +1,4 @@
-import { CourierStatus, OrderStatus, PaidWith, PaymentMethod, PaymentStatus } from "@lls/core"
+import { CourierStatus, OrderStatus, PaymentStatus } from "@lls/core"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -9,7 +9,7 @@ import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
-import { CashIcon, CheckIcon, ClockIcon, ScooterIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
+import { CheckIcon, ClockIcon, ScooterIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusBadge } from "../ui/order-status.js"
 import {
@@ -21,7 +21,6 @@ import {
     Switch,
     TextInput,
 } from "../ui/primitives.js"
-import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
 
 import type {
@@ -58,7 +57,6 @@ function StepButton({
 }): React.JSX.Element {
     const t = useT()
     const [busy, setBusy] = useState(false)
-    const [asking, setAsking] = useState(false)
     const step = courierStep(order.status)
     if (!step) {
         return (
@@ -68,15 +66,10 @@ function StepButton({
             </p>
         )
     }
-    const go = async (paidWith?: PaidWith): Promise<void> => {
-        // At the door the courier says how the customer paid: it decides who holds the money.
-        if (step === "delivered" && !paidWith && order.payment.status !== PaymentStatus.PAID) {
-            setAsking(true)
-            return
-        }
+    const go = async (): Promise<void> => {
         setBusy(true)
         try {
-            onChange(await api.courier.setStatus(order.id, step, paidWith))
+            onChange(await api.courier.setStatus(order.id, step))
             haptic.success()
         } catch (caught) {
             haptic.error()
@@ -88,66 +81,35 @@ function StepButton({
             setBusy(false)
         }
     }
-    const options = [
-        { value: PaidWith.CASH, label: t.owner.paidCash },
-        { value: PaidWith.CARD_TRANSFER, label: t.owner.paidCard },
-        { value: PaidWith.LATER, label: t.owner.paidLater },
-    ]
     return (
-        <>
-            <Button
-                size="lg"
-                loading={busy}
-                icon={step === "delivered" ? <CheckIcon size={20} /> : <ScooterIcon size={20} />}
-                onClick={(): void => void go()}
-            >
-                {step === "delivered" ? t.courier.delivered : t.courier.pickedUp}
-            </Button>
-            {asking ? (
-                <Sheet title={t.courier.howPaid} onClose={(): void => setAsking(false)}>
-                    {options.map((option) => (
-                        <SheetOption
-                            key={option.value}
-                            label={option.label}
-                            onClick={(): void => {
-                                setAsking(false)
-                                void go(option.value)
-                            }}
-                        />
-                    ))}
-                </Sheet>
-            ) : null}
-        </>
+        <Button
+            size="lg"
+            loading={busy}
+            icon={step === "delivered" ? <CheckIcon size={20} /> : <ScooterIcon size={20} />}
+            onClick={(): void => void go()}
+        >
+            {step === "delivered" ? t.courier.delivered : t.courier.pickedUp}
+        </Button>
     )
 }
 
-/** What to take at the door: the total in cash, or nothing when it is paid or transferred. */
+/** Paid to the shop's card before the shop started: the courier takes no money at the door. */
 function Collect({ order }: { order: OrderDTO }): React.JSX.Element {
     const t = useT()
-    const language = useLanguage()
-    if (order.payment.status === PaymentStatus.PAID) {
-        return (
-            <p className="flex items-center gap-2 rounded-control bg-success/15 px-4 py-3 font-medium">
-                <CheckIcon size={20} className="shrink-0 text-success" />
-                {t.courier.nothingToCollect}
-            </p>
-        )
-    }
-    if (order.payment.method === PaymentMethod.CARD_TRANSFER) {
-        return (
-            <p className="flex items-center gap-2 rounded-control bg-warning/15 px-4 py-3 font-medium">
-                <ClockIcon size={20} className="shrink-0 text-warning" />
-                {t.courier.collectTransfer}
-            </p>
-        )
-    }
+    const paid = order.payment.status === PaymentStatus.PAID
     return (
-        <div className="flex items-baseline justify-between rounded-control bg-brand/10 px-4 py-3">
-            <span className="font-medium">{t.courier.collect}</span>
-            <span className="text-xl font-bold tabular-nums">
-                {formatMoney(order.total, language)}
-            </span>
-        </div>
+        <p
+            className={`flex items-center gap-2 rounded-control px-4 py-3 font-medium ${
+                paid ? "bg-success/15" : "bg-warning/15"
+            }`}
+        >
+            {paid ? (
+                <CheckIcon size={20} className="shrink-0 text-success" />
+            ) : (
+                <ClockIcon size={20} className="shrink-0 text-warning" />
+            )}
+            {paid ? t.courier.nothingToCollect : t.courier.notPaidYet}
+        </p>
     )
 }
 
@@ -347,7 +309,6 @@ function NearbyCard({
     onStale(): void
 }): React.JSX.Element {
     const t = useT()
-    const language = useLanguage()
     const [busy, setBusy] = useState(false)
     const take = async (): Promise<void> => {
         setBusy(true)
@@ -393,11 +354,7 @@ function NearbyCard({
                 ) : null}
             </p>
             <div className="flex items-center justify-between gap-3">
-                <span className="font-semibold tabular-nums">
-                    {offer.collect > 0
-                        ? `${t.courier.collect}: ${formatMoney(offer.collect, language)}`
-                        : t.courier.nothingToCollect}
-                </span>
+                <span className="text-sm font-semibold">{t.courier.nothingToCollect}</span>
                 <Button
                     loading={busy}
                     className="shrink-0"
@@ -450,7 +407,6 @@ function Nearby({
 
 function ShopRow({ shop }: { shop: CourierShopDTO }): React.JSX.Element {
     const t = useT()
-    const language = useLanguage()
     return (
         <li className="flex items-center gap-3 py-2.5">
             <span
@@ -468,12 +424,6 @@ function ShopRow({ shop }: { shop: CourierShopDTO }): React.JSX.Element {
                     <span className="block text-sm text-tg-hint">{t.courier.dayOff}</span>
                 )}
             </span>
-            {shop.onHand > 0 ? (
-                <span className="flex shrink-0 items-center gap-1.5 rounded-full bg-brand/10 px-3 py-1 text-sm font-semibold tabular-nums">
-                    <CashIcon size={16} className="text-brand" />
-                    {fill(t.courier.onHand, { sum: formatMoney(shop.onHand, language) })}
-                </span>
-            ) : null}
         </li>
     )
 }

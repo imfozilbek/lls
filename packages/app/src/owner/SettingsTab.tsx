@@ -1,4 +1,4 @@
-import { FEATURES, Feature, PayoutCard } from "@lls/core"
+import { FEATURES, Feature } from "@lls/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
@@ -26,6 +26,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 import { CouriersSection, NetworkSection } from "./CouriersSection.js"
 import { HoursEditor } from "./HoursEditor.js"
+import { PaymentCardsSection } from "./PaymentCardsSection.js"
 import { PosterSection } from "./PosterSection.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 
@@ -46,38 +47,11 @@ interface Form {
     hours: Hours
     features: Feature[]
     bottleDeposit: number | null
-    /** Digits only while typing; empty number = no card, cash only. */
-    cardNumber: string
-    cardHolder: string
 }
 
 const METERS_PER_KM = 1000
 const BPS_PER_PERCENT = 100
 const MAX_RADIUS_KM = 100
-const CARD_DIGITS = 16
-
-/** No card, or a full card number that passes the bank check, with a name on it. */
-function cardIsValid(form: Form): boolean {
-    if (form.cardNumber === "") {
-        return true
-    }
-    try {
-        PayoutCard.create(form.cardNumber, form.cardHolder)
-        return true
-    } catch {
-        return false
-    }
-}
-
-/** A full number with a wrong digit: say so right away, not after "Save". */
-function cardHasTypo(number: string): boolean {
-    try {
-        PayoutCard.create(number, "-")
-        return false
-    } catch {
-        return number.length === CARD_DIGITS
-    }
-}
 
 function formOf(shop: ShopOwnerDTO): Form {
     return {
@@ -94,8 +68,6 @@ function formOf(shop: ShopOwnerDTO): Form {
         hours: hoursOf(shop.workingHours),
         features: [...shop.features],
         bottleDeposit: shop.bottleDeposit || null,
-        cardNumber: shop.payoutCard?.number ?? "",
-        cardHolder: shop.payoutCard?.holder ?? "",
     }
 }
 
@@ -115,9 +87,6 @@ function patchOf(form: Form): ShopPatch {
         // Canonical order, so ticking a box off and on again leaves the form clean.
         features: FEATURES.filter((f) => form.features.includes(f)),
         bottleDeposit: form.bottleDeposit ?? 0,
-        payoutCard: form.cardNumber
-            ? { number: form.cardNumber, holder: form.cardHolder.trim() }
-            : null,
     }
 }
 
@@ -404,67 +373,6 @@ function LocationFields({
     )
 }
 
-/** Customers who pay by transfer see this card. Without it the shop takes cash only. */
-function CardFields({
-    form,
-    patch,
-}: {
-    form: Form
-    patch(change: Partial<Form>): void
-}): React.JSX.Element {
-    const s = useT().owner.settings
-    const shown = form.cardNumber.replace(/(\d{4})(?=\d)/g, "$1 ")
-    return (
-        <Section title={s.payoutCard}>
-            <Field
-                label={s.cardNumber}
-                htmlFor="card-number"
-                hint={
-                    cardHasTypo(form.cardNumber) ? (
-                        <span className="text-tg-destructive">{s.cardInvalid}</span>
-                    ) : (
-                        s.cardHint
-                    )
-                }
-            >
-                <TextInput
-                    id="card-number"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    className="tabular-nums tracking-wide"
-                    placeholder="8600 0000 0000 0000"
-                    value={shown}
-                    onChange={(e): void =>
-                        patch({
-                            cardNumber: e.target.value.replace(/\D/g, "").slice(0, CARD_DIGITS),
-                        })
-                    }
-                />
-            </Field>
-            {form.cardNumber ? (
-                <>
-                    <Field label={s.cardHolder} htmlFor="card-holder">
-                        <TextInput
-                            id="card-holder"
-                            autoComplete="off"
-                            className="uppercase"
-                            maxLength={60}
-                            value={form.cardHolder}
-                            onChange={(e): void => patch({ cardHolder: e.target.value })}
-                        />
-                    </Field>
-                    <Button
-                        variant="danger"
-                        onClick={(): void => patch({ cardNumber: "", cardHolder: "" })}
-                    >
-                        {s.removeCard}
-                    </Button>
-                </>
-            ) : null}
-        </Section>
-    )
-}
-
 /** Vertical features the owner switches on or off; the bottle deposit lives with its switch. */
 function FeatureFields({
     form,
@@ -518,7 +426,7 @@ function SettingsForm({
     const [saving, setSaving] = useState(false)
     const patch = (change: Partial<Form>): void => setForm((f) => ({ ...f, ...change }))
     const dirty = JSON.stringify(patchOf(form)) !== JSON.stringify(patchOf(formOf(shop)))
-    const valid = form.name.trim().length > 0 && hasOpenDay(form.hours) && cardIsValid(form)
+    const valid = form.name.trim().length > 0 && hasOpenDay(form.hours)
 
     const save = async (): Promise<void> => {
         setSaving(true)
@@ -570,7 +478,6 @@ function SettingsForm({
                 <HoursEditor hours={form.hours} onChange={(hours): void => patch({ hours })} />
             </Section>
             <LocationFields form={form} patch={patch} />
-            <CardFields form={form} patch={patch} />
             <FeatureFields form={form} patch={patch} />
         </>
     )
@@ -604,6 +511,7 @@ export function SettingsTab(): React.JSX.Element {
         <div className="flex flex-col gap-6 px-4 pt-2">
             <AcceptingCard shop={shop} onSaved={setShop} />
             <SettingsForm shop={shop} onSaved={setShop} />
+            <PaymentCardsSection onSaved={setShop} />
             <CouriersSection shopName={shop.name} />
             <NetworkSection shop={shop} onSaved={setShop} />
             <Section title={t.owner.settings.link}>

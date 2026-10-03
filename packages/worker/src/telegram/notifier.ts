@@ -1,11 +1,4 @@
-import {
-    Language,
-    OrderChannel,
-    OrderStatus,
-    PaymentMethod,
-    PaymentStatus,
-    toNetworkOrderDTO,
-} from "@lls/core"
+import { Language, OrderChannel, OrderStatus, toNetworkOrderDTO } from "@lls/core"
 
 import { alertAdmins, describeError, isRecipientProblem } from "../alerts.js"
 import { platformAdminIds } from "../env.js"
@@ -17,6 +10,7 @@ import {
     formatNewOrderForOwner,
     formatOrderForCourier,
     formatOrderForOwner,
+    formatMoney,
     formatRate,
     formatStatusForCustomer,
     networkInviteKeyboard,
@@ -77,6 +71,40 @@ export class Notifier {
             { keyboard: orderKeyboard(order, reader) },
         )
         await this.services.orders.setMessageId(order.id, "owner", messageId)
+    }
+
+    /**
+     * Right after checkout: the card and the sum, so the customer can transfer from the chat.
+     * Sent on its own: a failed owner card never keeps the customer from paying.
+     */
+    async askForTransfer(business: Business, order: OrderDTO): Promise<void> {
+        // The card this order was shown: the owner may have switched the payment card since.
+        const card = order.payment.card
+        if (!card) {
+            return
+        }
+        const token = await this.shopToken(business.id)
+        await this.tellCustomer(token, business, order, (t, language) =>
+            fill(t.payByTransfer, {
+                n: order.number,
+                sum: `<b>${formatMoney(order.total, language)}</b>`,
+                card: card.number.replace(/(\d{4})(?=\d)/g, "$1 "),
+                holder: escapeHtml(card.holder),
+            }),
+        )
+    }
+
+    /** «Я перевёл»: the owner's card shows it, and a ping says to check the card. */
+    async transferSent(business: Business, order: OrderDTO): Promise<void> {
+        const token = await this.shopToken(business.id)
+        await this.orderChangedForOwner(token, business, order)
+        const ownerId = business.ownerTelegramId.value
+        const { language } = await this.readerFor(ownerId, business)
+        const text = fill(textsFor(language).transferSentOwner, {
+            n: order.number,
+            sum: `<b>${formatMoney(order.total, language)}</b>`,
+        })
+        await this.services.telegram.sendMessage(token, ownerId, text)
     }
 
     /** After a status change: refresh the owner's and the courier's cards, tell the customer. */
@@ -276,23 +304,12 @@ export class Notifier {
         }
     }
 
-    /**
-     * The owner confirmed a payment or a refund: both cards show it; a customer whose transfer
-     * arrived hears so.
-     */
+    /** A transfer for a cancelled order arrived (owed back), or the money went back. */
     async paymentChanged(business: Business, order: OrderDTO): Promise<void> {
         const token = await this.shopToken(business.id)
         const messages = await this.services.orders.getMessageIds(order.id)
         await this.orderChangedForOwner(token, business, order)
         await this.refreshCourierCard(business, order, messages.courier)
-        const received =
-            order.payment.status === PaymentStatus.PAID &&
-            order.payment.method === PaymentMethod.CARD_TRANSFER
-        if (received) {
-            await this.tellCustomer(token, business, order, (t) =>
-                fill(t.paymentReceived, { n: order.number }),
-            )
-        }
     }
 
     /** A file for the owner in the shop bot's chat: the CSV report or the QR poster. */

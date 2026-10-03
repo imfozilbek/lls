@@ -29,8 +29,8 @@ export const PEOPLE = {
 } satisfies Record<string, TgUser>
 
 /**
- * Fresh demo data and an empty Telegram log. Owners and the courier read Russian, so bot texts
- * in the specs are readable; Uzbek is checked on its own.
+ * Fresh demo data and an empty Telegram log. Everyone's Telegram is in Russian on purpose: the
+ * product still speaks Uzbek only (owner's decision), and every spec checks Uzbek texts.
  */
 export async function resetStand(): Promise<void> {
     seed()
@@ -48,7 +48,7 @@ export async function resetStand(): Promise<void> {
         const response = await apiAs(user, "/me", {
             shop,
             method: "PATCH",
-            json: { language: "ru" },
+            json: { language: "uz" },
         })
         if (!response.ok) {
             throw new Error(`Cannot set the language of ${user.first_name}: ${response.status}`)
@@ -127,4 +127,20 @@ export async function placeOrder(
         throw new Error(`Order failed: ${response.status} ${await response.text()}`)
     }
     return (await response.json()) as PlacedOrder
+}
+
+/**
+ * «Деньги пришли — принять»: the owner of `shop` saw the transfer on the card. The order is paid
+ * and accepted in one step (the shop starts only after the money).
+ */
+export async function payAndAccept(
+    owner: TgUser,
+    shop: string,
+    orderId: string,
+): Promise<Response> {
+    return apiAs(owner, `/owner/orders/${orderId}/payment`, {
+        shop,
+        method: "PATCH",
+        json: { action: "paid" },
+    })
 }

@@ -4,7 +4,7 @@ import { MAX_ORDER_LINES, Order } from "../../../domain/entities/order.js"
 import { OrderItem } from "../../../domain/entities/order-item.js"
 import { OrderChannel } from "../../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../../domain/enums/order-status.js"
-import { PaidWith, PaymentMethod } from "../../../domain/enums/payment.js"
+import { PaymentMethod, PaymentStatus } from "../../../domain/enums/payment.js"
 import { Unit } from "../../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../../domain/errors/forbidden.error.js"
@@ -53,7 +53,7 @@ function courier(businessId = "biz-1", id = "courier-1"): Courier {
 
 function readyOrder(): Order {
     const order = placeOrder()
-    order.advanceTo(OrderStatus.ACCEPTED)
+    order.confirmPaymentAndAccept()
     order.advanceTo(OrderStatus.PREPARING)
     order.advanceTo(OrderStatus.READY)
     return order
@@ -115,8 +115,9 @@ describe("Order", () => {
         expect(() => placeOrder([item()], { address: " " })).toThrow(ValidationError)
     })
 
-    it("moves forward step by step", () => {
+    it("moves forward step by step once the transfer arrived", () => {
         const order = placeOrder()
+        order.confirmPayment()
         for (const status of [
             OrderStatus.ACCEPTED,
             OrderStatus.PREPARING,
@@ -124,11 +125,46 @@ describe("Order", () => {
             OrderStatus.PICKED_UP,
             OrderStatus.DELIVERED,
         ]) {
-            order.advanceTo(status, undefined, PaidWith.CASH)
+            order.advanceTo(status)
             expect(order.status).toBe(status)
         }
         expect(order.isFinal()).toBe(true)
         expect(order.nextStatus()).toBeNull()
+        expect(order.deliveredAt).toBeInstanceOf(Date)
+    })
+
+    it("the shop starts only after the transfer: unpaid orders are not accepted", () => {
+        const order = placeOrder()
+        expect(order.payment.method).toBe(PaymentMethod.CARD_TRANSFER)
+        expect(order.payment.status).toBe(PaymentStatus.UNPAID)
+        expect(() => order.advanceTo(OrderStatus.ACCEPTED)).toThrow(/transfer has not arrived/)
+        order.markTransferSent()
+        expect(order.payment.status).toBe(PaymentStatus.AWAITING)
+        expect(() => order.advanceTo(OrderStatus.ACCEPTED)).toThrow(BusinessRuleViolationError)
+        order.confirmPaymentAndAccept()
+        expect(order.status).toBe(OrderStatus.ACCEPTED)
+        expect(order.payment.isPaid()).toBe(true)
+        // Confirmed twice: nothing more to confirm.
+        expect(() => order.confirmPaymentAndAccept()).toThrow(BusinessRuleViolationError)
+    })
+
+    it("a transfer that arrives after the cancel is owed back, and the order stays cancelled", () => {
+        const order = placeOrder()
+        order.markTransferSent()
+        order.cancel("customer")
+        expect(order.payment.status).toBe(PaymentStatus.AWAITING)
+        order.confirmPaymentAndAccept()
+        expect(order.status).toBe(OrderStatus.CANCELLED)
+        expect(order.payment.status).toBe(PaymentStatus.REFUND_DUE)
+        order.markRefunded()
+        expect(order.payment.status).toBe(PaymentStatus.REFUNDED)
+    })
+
+    it("cancelling a paid order owes the money back", () => {
+        const order = placeOrder()
+        order.confirmPaymentAndAccept()
+        order.cancel("owner", "Tugab qoldi")
+        expect(order.payment.status).toBe(PaymentStatus.REFUND_DUE)
     })
 
     it("does not skip steps or cancel through advanceTo", () => {
@@ -145,13 +181,13 @@ describe("Order", () => {
         expect(pending.cancelReason).toBe("Adashdim")
 
         const accepted = placeOrder()
-        accepted.advanceTo(OrderStatus.ACCEPTED)
+        accepted.confirmPaymentAndAccept()
         expect(() => accepted.cancel("customer")).toThrow(BusinessRuleViolationError)
     })
 
     it("owner can cancel any active order, but not a final one", () => {
         const order = placeOrder()
-        order.advanceTo(OrderStatus.ACCEPTED)
+        order.confirmPaymentAndAccept()
         order.advanceTo(OrderStatus.PREPARING)
         order.cancel("owner", "Tugab qoldi")
         expect(order.cancelledBy).toBe("owner")
@@ -174,7 +210,7 @@ describe("Order", () => {
             total: order.total,
             commissionBps: 0,
             commission: Money.zero(),
-            payment: Payment.start(PaymentMethod.CASH),
+            payment: Payment.start(),
             status: OrderStatus.READY,
             courierId: "courier-1",
             courierName: "Jasur",
@@ -194,7 +230,7 @@ describe("Order and couriers", () => {
     it("the owner assigns a courier of the shop between accepted and ready", () => {
         const order = placeOrder()
         expect(() => order.assignCourier(courier(), NOW)).toThrow(BusinessRuleViolationError)
-        order.advanceTo(OrderStatus.ACCEPTED)
+        order.confirmPaymentAndAccept()
         order.assignCourier(courier(), NOW)
         expect(order.courierName).toBe("Jasur")
         order.assignCourier(courier("biz-1", "courier-2"), NOW)
@@ -223,17 +259,17 @@ describe("Order and couriers", () => {
 
     it("the assigned courier moves only the delivery part", () => {
         const order = placeOrder()
-        order.advanceTo(OrderStatus.ACCEPTED)
+        order.confirmPaymentAndAccept()
         order.assignCourier(courier(), NOW)
         const me = { role: "courier", courierId: "courier-1" } as const
         expect(() => order.advanceTo(OrderStatus.PREPARING, me)).toThrow(ForbiddenError)
         order.advanceTo(OrderStatus.PREPARING)
         order.advanceTo(OrderStatus.READY)
         order.advanceTo(OrderStatus.PICKED_UP, me)
-        order.advanceTo(OrderStatus.DELIVERED, me, PaidWith.CASH)
+        order.advanceTo(OrderStatus.DELIVERED, me)
         expect(order.status).toBe(OrderStatus.DELIVERED)
-        // The courier took the cash.
-        expect(order.payment.cashCourierId).toBe("courier-1")
+        // Paid in advance: the courier holds no money.
+        expect(order.payment.cashCourierId).toBeUndefined()
     })
 
     it("another courier cannot touch the order", () => {

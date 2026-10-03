@@ -221,7 +221,10 @@ export async function sharePhoneWithShops(telegramId: number): Promise<void> {
         .run()
 }
 
-/** Registers a shop through the real onboarding API and approves it as admin. */
+/** The shop's card for transfers: a valid Luhn number, not a real card. secret-scan: fake */
+export const TEST_CARD = { number: "4111 1111 1111 1111", holder: "Rustam Karimov" }
+
+/** Registers a shop (with its card) through the real onboarding API and approves it as admin. */
 export async function createActiveShop(
     client: TestClient,
     shop: { botToken?: string; name?: string; owner?: object } = {},
@@ -236,6 +239,7 @@ export async function createActiveShop(
             address: "Chorsu",
             deliveryFee: 10_000,
             freeDeliveryFrom: 200_000,
+            payoutCard: TEST_CARD,
         },
     })
     if (response.status !== 201) {

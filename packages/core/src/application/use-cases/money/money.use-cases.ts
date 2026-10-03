@@ -1,20 +1,14 @@
-import { CashHandover } from "../../../domain/entities/cash-handover.js"
-import { OrderStatus } from "../../../domain/enums/order-status.js"
 import { PaymentStatus } from "../../../domain/enums/payment.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
 import { addDays, startOfLocalDay, startOfLocalMonth } from "../../../domain/shared/time.js"
-import { Money } from "../../../domain/value-objects/money.js"
 import { toOrderDTO } from "../../dtos/order.dto.js"
 import { requireOwnedBusiness } from "../shared.js"
 
 import type { Order } from "../../../domain/entities/order.js"
-import type { PaymentMethod } from "../../../domain/enums/payment.js"
-import type { CourierCashDTO, MoneyPeriod, MoneyReportDTO } from "../../dtos/money.dto.js"
+import type { MoneyPeriod, MoneyReportDTO } from "../../dtos/money.dto.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
-import type { CashHandoverRepository } from "../../ports/cash-handover-repository.js"
 import type { Clock } from "../../ports/clock.js"
-import type { CourierRepository } from "../../ports/courier-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
 
 const WEEK_DAYS = 7
@@ -25,9 +19,7 @@ export const EXPORT_LIMIT = 5000
 
 export interface MoneyDeps {
     businesses: BusinessRepository
-    couriers: CourierRepository
     orders: OrderRepository
-    handovers: CashHandoverRepository
     clock: Clock
 }
 
@@ -44,39 +36,6 @@ export function periodRange(period: MoneyPeriod, now: Date): { from: Date; to: D
     return { from: startOfLocalMonth(now), to }
 }
 
-/** Cash of this shop each courier holds: taken at doors minus handed over, by courier id. */
-export async function cashOnHandByCourier(
-    deps: Pick<MoneyDeps, "orders" | "handovers">,
-    businessId: string,
-): Promise<Map<string, number>> {
-    const [collected, handed] = await Promise.all([
-        deps.orders.cashCollectedByCourier(businessId),
-        deps.handovers.totalsByCourier(businessId),
-    ])
-    const given = new Map(handed.map((h) => [h.courierId, h.amount]))
-    return new Map(collected.map((c) => [c.courierId, c.amount - (given.get(c.courierId) ?? 0)]))
-}
-
-/** Cash each courier holds: taken at doors minus handed over. Only couriers who hold some. */
-async function courierCash(deps: MoneyDeps, businessId: string): Promise<CourierCashDTO[]> {
-    const onHand = await cashOnHandByCourier(deps, businessId)
-    const holding = [...onHand]
-        .map(([courierId, amount]) => ({ courierId, onHand: amount }))
-        .filter((c) => c.onHand > 0)
-    const couriers = await Promise.all(holding.map((c) => deps.couriers.findById(c.courierId)))
-    return holding
-        .map((c, i) => ({
-            ...c,
-            name: couriers[i]?.name ?? "—",
-            isActive: couriers[i]?.isActive ?? false,
-        }))
-        .sort((a, b) => b.onHand - a.onHand)
-}
-
-function isDebt(order: Order): boolean {
-    return order.status === OrderStatus.DELIVERED && order.payment.status === PaymentStatus.UNPAID
-}
-
 export class GetMoneyReportUseCase {
     constructor(private readonly deps: MoneyDeps) {}
 
@@ -88,10 +47,9 @@ export class GetMoneyReportUseCase {
         const { businessId } = input
         await requireOwnedBusiness(this.deps.businesses, businessId, input.actorTelegramId)
         const { from, to } = periodRange(input.period, this.deps.clock.now())
-        const [totals, open, couriers] = await Promise.all([
+        const [totals, open] = await Promise.all([
             this.deps.orders.moneyTotals(businessId, from, to),
             this.deps.orders.listOpenPayments(businessId, OPEN_PAYMENTS_LIMIT),
-            courierCash(this.deps, businessId),
         ])
         const pick = (keep: (order: Order) => boolean): OrderDTO[] =>
             open.filter(keep).map(toOrderDTO)
@@ -100,14 +58,9 @@ export class GetMoneyReportUseCase {
             from: from.toISOString(),
             to: to.toISOString(),
             totals,
-            awaiting: pick(
-                (o) =>
-                    o.payment.status === PaymentStatus.AWAITING &&
-                    o.status !== OrderStatus.CANCELLED,
-            ),
-            debts: pick(isDebt),
+            // A cancelled order stays here too: if its transfer arrives, it is owed back.
+            awaiting: pick((o) => o.payment.status === PaymentStatus.AWAITING),
             refunds: pick((o) => o.payment.status === PaymentStatus.REFUND_DUE),
-            couriers,
         }
     }
 }
@@ -124,7 +77,10 @@ async function requireShopOrder(
     return order
 }
 
-/** The owner saw the money: a transfer arrived, or a debt was paid. */
+/**
+ * «Деньги пришли»: the owner saw the transfer on the card. A new order is accepted in the same
+ * tap (the shop starts only after the money); on a cancelled order the money is owed back.
+ */
 export class ConfirmPaymentUseCase {
     constructor(private readonly deps: MoneyDeps) {}
 
@@ -132,10 +88,9 @@ export class ConfirmPaymentUseCase {
         actorTelegramId: number
         businessId: string
         orderId: string
-        method: PaymentMethod
     }): Promise<OrderDTO> {
         const order = await requireShopOrder(this.deps, input)
-        order.confirmPayment(input.method)
+        order.confirmPaymentAndAccept()
         await this.deps.orders.save(order)
         return toOrderDTO(order)
     }
@@ -154,37 +109,6 @@ export class MarkRefundedUseCase {
         order.markRefunded()
         await this.deps.orders.save(order)
         return toOrderDTO(order)
-    }
-}
-
-/** A courier gave cash to the owner. Never more than they hold. */
-export class RecordCashHandoverUseCase {
-    constructor(private readonly deps: MoneyDeps) {}
-
-    async execute(input: {
-        actorTelegramId: number
-        businessId: string
-        courierId: string
-        amount: number
-    }): Promise<CourierCashDTO[]> {
-        const { businessId } = input
-        await requireOwnedBusiness(this.deps.businesses, businessId, input.actorTelegramId)
-        const courier = await this.deps.couriers.findById(input.courierId)
-        if (!courier || courier.businessId !== businessId) {
-            throw EntityNotFoundError.courier(input.courierId)
-        }
-        const holding = await courierCash(this.deps, businessId)
-        const onHand = holding.find((c) => c.courierId === courier.id)?.onHand ?? 0
-        const handover = CashHandover.record({
-            id: crypto.randomUUID(),
-            businessId,
-            courierId: courier.id,
-            amount: Money.of(input.amount),
-            onHand: Money.of(onHand),
-            at: this.deps.clock.now(),
-        })
-        await this.deps.handovers.insert(handover)
-        return courierCash(this.deps, businessId)
     }
 }
 

@@ -12,6 +12,7 @@ import {
     PAYMENT_METHODS,
     PAYMENT_STATUSES,
     Payment,
+    PayoutCard,
     Phone,
     UNITS,
     offsetOf,
@@ -21,7 +22,6 @@ import { isUniqueViolation, oneOf, optional, placeholders } from "./rows.js"
 
 import type {
     CancelledBy,
-    CourierAmount,
     MoneyTotals,
     NetworkShare,
     OrderRepository,
@@ -64,6 +64,8 @@ interface OrderRow {
     network_requested_at: number | null
     network_alerted_at: number | null
     delivery_fee_to: string
+    payment_card_number: string | null
+    payment_card_holder: string | null
 }
 
 interface ItemRow {
@@ -85,7 +87,7 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     address, landmark, latitude, longitude, comment, customer_name, customer_phone,
     cancel_reason, cancelled_by, payment_method, payment_status, paid_at, cash_courier_id,
     delivered_at, created_at, updated_at, network_requested_at, network_alerted_at,
-    delivery_fee_to`
+    delivery_fee_to, payment_card_number, payment_card_holder`
 
 /** A courier can still take the order: from accepted until pickup. */
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
@@ -101,10 +103,7 @@ const EMPTY_TOTALS: MoneyTotals = {
     goods: 0,
     delivery: 0,
     deposits: 0,
-    paidCash: 0,
-    paidCard: 0,
-    awaiting: 0,
-    debt: 0,
+    paid: 0,
     commission: 0,
 }
 
@@ -159,6 +158,10 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
             status: oneOf(row.payment_status, PAYMENT_STATUSES, "payment status"),
             paidAt: row.paid_at === null ? undefined : new Date(row.paid_at),
             cashCourierId: optional(row.cash_courier_id),
+            card:
+                row.payment_card_number === null || row.payment_card_holder === null
+                    ? undefined
+                    : PayoutCard.create(row.payment_card_number, row.payment_card_holder),
         }),
         deliveredAt: row.delivered_at === null ? undefined : new Date(row.delivered_at),
         networkRequestedAt: dateOrUndefined(row.network_requested_at),
@@ -211,7 +214,14 @@ function orderValues(order: Order): (string | number | null)[] {
         order.createdAt.getTime(),
         order.updatedAt.getTime(),
         ...networkValues(order),
+        ...cardValues(order),
     ]
+}
+
+/** Written once: the card the customer was shown never changes with the order. */
+function cardValues(order: Order): (string | null)[] {
+    const { card } = order.payment
+    return [card?.number ?? null, card?.holder ?? null]
 }
 
 function paymentValues(order: Order): (string | number | null)[] {
@@ -406,13 +416,7 @@ export class D1OrderRepository implements OrderRepository {
                         COALESCE(SUM(subtotal), 0) AS goods,
                         COALESCE(SUM(delivery_fee), 0) AS delivery,
                         COALESCE(SUM(deposit_total), 0) AS deposits,
-                        COALESCE(SUM(CASE WHEN payment_status = 'paid'
-                            AND payment_method = 'cash' THEN total END), 0) AS paidCash,
-                        COALESCE(SUM(CASE WHEN payment_status = 'paid'
-                            AND payment_method = 'card_transfer' THEN total END), 0) AS paidCard,
-                        COALESCE(SUM(CASE WHEN payment_status = 'awaiting' THEN total END), 0)
-                            AS awaiting,
-                        COALESCE(SUM(CASE WHEN payment_status = 'unpaid' THEN total END), 0) AS debt,
+                        COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN total END), 0) AS paid,
                         COALESCE(SUM(commission), 0) AS commission
                      FROM orders
                      WHERE business_id = ? AND status = 'delivered'
@@ -430,24 +434,11 @@ export class D1OrderRepository implements OrderRepository {
 
     async listOpenPayments(businessId: string, limit: number): Promise<Order[]> {
         return this.list(
-            `business_id = ? AND (payment_status IN ('awaiting', 'refund_due')
-                OR (payment_status = 'unpaid' AND status = 'delivered'))`,
+            "business_id = ? AND payment_status IN ('awaiting', 'refund_due')",
             [businessId],
             "number ASC",
             limit,
         )
-    }
-
-    async cashCollectedByCourier(businessId: string): Promise<CourierAmount[]> {
-        const { results } = await this.db
-            .prepare(
-                `SELECT cash_courier_id AS courierId, SUM(total) AS amount FROM orders
-                 WHERE business_id = ? AND cash_courier_id IS NOT NULL AND payment_status = 'paid'
-                 GROUP BY cash_courier_id`,
-            )
-            .bind(businessId)
-            .all<CourierAmount>()
-        return results
     }
 
     async listCreatedBetween(

@@ -10,6 +10,7 @@ import { customerRoutes } from "./routes/customer.routes.js"
 import { imageRoutes } from "./routes/image.routes.js"
 import { moneyRoutes } from "./routes/money.routes.js"
 import { ownerRoutes } from "./routes/owner.routes.js"
+import { payoutCardRoutes } from "./routes/payout-card.routes.js"
 import { platformRoutes } from "./routes/platform.routes.js"
 import { showcaseRoutes } from "./routes/showcase.routes.js"
 import { webhookRoutes } from "./routes/webhook.routes.js"
@@ -49,6 +50,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         .route("/", customerRoutes)
         .route("/owner", ownerRoutes)
         .route("/owner", moneyRoutes)
+        .route("/owner", payoutCardRoutes)
         .route("/courier", courierRoutes)
         .route("/platform", platformRoutes)
         .route("/showcase", showcaseRoutes)

@@ -5,7 +5,16 @@
 import { expect, test } from "@playwright/test"
 
 import { WORKER_URL, platformBot, shopBySlug } from "../stand/config.js"
-import { FOOD, GROCERY, PEOPLE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import {
+    FOOD,
+    GROCERY,
+    PEOPLE,
+    WATER,
+    apiAs,
+    placeOrder,
+    resetStand,
+    payAndAccept,
+} from "../support/stand.js"
 import { signInitData } from "../support/webapp.js"
 
 test.describe.configure({ mode: "serial" })
@@ -65,11 +74,7 @@ test("another customer's order is not found; another shop's order neither", asyn
         404,
     )
     // Another shop's owner cannot touch it either.
-    const foreign = await apiAs(PEOPLE.groceryOwner, `/owner/orders/${order.id}`, {
-        shop: GROCERY,
-        method: "PATCH",
-        json: { status: "accepted" },
-    })
+    const foreign = await payAndAccept(PEOPLE.groceryOwner, GROCERY, order.id)
     expect(foreign.status).toBe(404)
 })
 

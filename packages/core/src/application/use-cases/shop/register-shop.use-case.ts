@@ -1,7 +1,9 @@
 import { Business } from "../../../domain/entities/business.js"
+import { PayoutCardBook } from "../../../domain/entities/payout-card-book.js"
 import { ConflictError } from "../../../domain/errors/conflict.error.js"
 import { Location } from "../../../domain/value-objects/location.js"
 import { Money } from "../../../domain/value-objects/money.js"
+import { PayoutCard } from "../../../domain/value-objects/payout-card.js"
 import { Slug } from "../../../domain/value-objects/slug.js"
 import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
 import { toShopOwnerDTO } from "../../dtos/shop.dto.js"
@@ -10,6 +12,7 @@ import type { BusinessType } from "../../../domain/enums/business-type.js"
 import type { LocationDTO, ShopOwnerDTO } from "../../dtos/shop.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
+import type { PayoutCardRepository } from "../../ports/payout-card-repository.js"
 
 const MAX_SLUG_ATTEMPTS = 20
 
@@ -24,6 +27,8 @@ export interface RegisterShopInput {
     deliveryFee: number
     freeDeliveryFrom?: number
     minOrder?: number
+    /** Customers pay only by transfer: the card comes with the application. */
+    payoutCard: { number: string; holder: string }
 }
 
 /** Self-serve onboarding: the owner connects their own bot. The shop waits for admin approval. */
@@ -31,6 +36,7 @@ export class RegisterShopUseCase {
     constructor(
         private readonly businesses: BusinessRepository,
         private readonly clock: Clock,
+        private readonly cards: PayoutCardRepository,
     ) {}
 
     async execute(input: RegisterShopInput): Promise<ShopOwnerDTO> {
@@ -56,7 +62,15 @@ export class RegisterShopUseCase {
             },
         })
 
+        // The first card is a required step: customers pay only by transfer.
+        const book = new PayoutCardBook(business, [])
+        const card = book.add({
+            id: crypto.randomUUID(),
+            card: PayoutCard.create(input.payoutCard.number, input.payoutCard.holder),
+            now: this.clock.now(),
+        })
         await this.businesses.insert(business, input.bot.token)
+        await this.cards.insert(business.id, card)
         return toShopOwnerDTO(business, this.clock.now())
     }
 

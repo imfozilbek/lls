@@ -12,8 +12,8 @@ import { BusinessType } from "../../domain/enums/business-type.js"
 import { ConflictError } from "../../domain/errors/conflict.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../domain/errors/not-found.error.js"
-import { NOON_MONDAY_UZ, OWNER_TG, STRANGER_TG, makeBusiness } from "../fixtures.js"
-import { InMemoryBusinesses, fixedClock } from "../in-memory.js"
+import { NOON_MONDAY_UZ, OWNER_TG, STRANGER_TG, TEST_CARD, makeBusiness } from "../fixtures.js"
+import { InMemoryBusinesses, InMemoryPayoutCards, fixedClock } from "../in-memory.js"
 
 import type { RegisterShopInput } from "../../application/use-cases/shop/register-shop.use-case.js"
 
@@ -31,20 +31,25 @@ function registration(overrides: Partial<RegisterShopInput> = {}): RegisterShopI
         deliveryFee: 10_000,
         freeDeliveryFrom: 150_000,
         minOrder: 0,
+        payoutCard: TEST_CARD,
         ...overrides,
     }
 }
 
 describe("shop use cases", () => {
     let businesses: InMemoryBusinesses
+    let cards: InMemoryPayoutCards
 
     beforeEach(() => {
         businesses = new InMemoryBusinesses()
+        cards = new InMemoryPayoutCards()
     })
 
     describe("RegisterShop", () => {
         it("creates a pending shop, derives the slug and keeps the token for the adapter", async () => {
-            const shop = await new RegisterShopUseCase(businesses, clock).execute(registration())
+            const shop = await new RegisterShopUseCase(businesses, clock, cards).execute(
+                registration(),
+            )
             expect(shop.status).toBe(BusinessStatus.PENDING)
             expect(shop.slug).toBe("osh-markaz")
             expect(shop.delivery).toEqual({ fee: 10_000, freeFrom: 150_000, minOrder: undefined })
@@ -52,10 +57,16 @@ describe("shop use cases", () => {
             expect(shop.botUsername).toBe("Osh_Markaz_bot")
             expect(businesses.tokens.get(shop.id)).toBe("555:secret")
             expect(shop).not.toHaveProperty("token")
+            // The card is a required step: the shop takes transfers from the first order.
+            expect(businesses.items.get(shop.id)?.acceptsCardTransfers()).toBe(true)
+            // It is the shop's first card in its list, and the one customers are shown.
+            const [first] = await cards.listByBusiness(shop.id)
+            expect(first?.card.number).toBe("4111111111111111")
+            expect(businesses.items.get(shop.id)?.paymentCardId).toBe(first?.id)
         })
 
         it("adds a suffix when the slug is taken", async () => {
-            const useCase = new RegisterShopUseCase(businesses, clock)
+            const useCase = new RegisterShopUseCase(businesses, clock, cards)
             await useCase.execute(registration())
             const second = await useCase.execute(
                 registration({ bot: { id: 556, username: "osh_markaz_bot", token: "x" } }),
@@ -64,7 +75,7 @@ describe("shop use cases", () => {
         })
 
         it("rejects a bot that is already connected", async () => {
-            const useCase = new RegisterShopUseCase(businesses, clock)
+            const useCase = new RegisterShopUseCase(businesses, clock, cards)
             await useCase.execute(registration())
             await expect(useCase.execute(registration())).rejects.toThrow(ConflictError)
         })

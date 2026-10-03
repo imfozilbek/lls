@@ -29,7 +29,7 @@ interface Json {
 
 interface Home {
     profile: { onShift: boolean; phone?: string }
-    shops: { businessId: string; shopName: string; onHand: number; worksToday: boolean }[]
+    shops: { businessId: string; shopName: string; worksToday: boolean }[]
     orders: { id: string; status: string; shopName: string }[]
 }
 
@@ -81,8 +81,14 @@ describe("shop couriers, verticals and channels", () => {
         return json(response)
     }
 
+    /** "accepted" is «Деньги пришли — принять»: the shop starts only after the transfer. */
     const setStatus = (orderId: unknown, status: string, owner = as(OWNER)): Promise<Response> =>
-        owner(`/api/owner/orders/${String(orderId)}`, { method: "PATCH", json: { status } })
+        status === "accepted"
+            ? owner(`/api/owner/orders/${String(orderId)}/payment`, {
+                  method: "PATCH",
+                  json: { action: "paid" },
+              })
+            : owner(`/api/owner/orders/${String(orderId)}`, { method: "PATCH", json: { status } })
 
     const assign = (orderId: unknown, courierId: string, owner = as(OWNER)): Promise<Response> =>
         owner(`/api/owner/orders/${String(orderId)}/courier`, {
@@ -210,7 +216,9 @@ describe("shop couriers, verticals and channels", () => {
         expect(card?.token).toBe(env.COURIER_BOT_TOKEN)
         expect(card?.html).toContain("Osh Markaz")
         expect(card?.html).toContain("Navoiy 12")
-        expect(card?.html).toContain("80 000")
+        expect(card?.html).toContain("70 000")
+        // Paid to the shop's card before cooking: nothing to take at the door.
+        expect(card?.html).toContain("mijozdan pul olmang")
         expect(card?.options?.keyboard?.inline_keyboard).toHaveLength(0)
 
         await setStatus(order.id, "preparing")
@@ -236,12 +244,12 @@ describe("shop couriers, verticals and channels", () => {
             callback_query: {
                 id: "cb-1",
                 from: COURIER,
-                data: `a:${String(order.id)}:delivered:cash`,
+                data: `a:${String(order.id)}:delivered`,
             },
         })
         const home = await json<Home>(await courierApp()("/api/courier/home"))
         expect(home.orders[0]).toMatchObject({ status: "delivered", shopName: "Osh Markaz" })
-        expect(home.shops[0]?.onHand).toBe(80_000)
+        expect(home.shops[0]).not.toHaveProperty("onHand")
         expect(home.profile).toMatchObject({ onShift: true, phone: "+998901112233" })
     })
 
@@ -309,7 +317,7 @@ describe("shop couriers, verticals and channels", () => {
         expect(await json(vehicle)).toMatchObject({ vehicle: "Damas" })
     })
 
-    it("one person, two shops: one bot, both shops' orders, cash kept apart", async () => {
+    it("one person, two shops: one bot, both shops' orders, each shop sees only its own", async () => {
         const water = await createActiveShop(client, {
             botToken: OTHER_BOT_TOKEN,
             name: "Toza Suv",
@@ -345,20 +353,19 @@ describe("shop couriers, verticals and channels", () => {
         })
         await courierApp()(`/api/courier/orders/${String(food.id)}`, {
             method: "PATCH",
-            json: { status: "delivered", paidWith: "cash" },
+            json: { status: "delivered" },
         })
 
         const home = await json<Home>(await courierApp()("/api/courier/home"))
         expect(home.orders.map((o) => o.shopName).sort()).toEqual(["Osh Markaz", "Toza Suv"])
-        expect(home.shops.map((s) => [s.shopName, s.onHand])).toEqual([
-            ["Osh Markaz", 80_000],
-            ["Toza Suv", 0],
-        ])
+        expect(home.shops.map((s) => s.shopName)).toEqual(["Osh Markaz", "Toza Suv"])
         // Each owner sees only their own link and their own money.
         const waterCouriers = await json<{ id: string }[]>(await waterOwner("/api/owner/couriers"))
         expect(waterCouriers.map((c) => c.id)).toEqual([inWater])
-        const waterMoney = await json<{ couriers: unknown[] }>(await waterOwner("/api/owner/money"))
-        expect(waterMoney.couriers).toEqual([])
+        const waterMoney = await json<{ totals: { delivered: number } }>(
+            await waterOwner("/api/owner/money"),
+        )
+        expect(waterMoney.totals.delivered).toBe(0)
         // The food owner cannot touch the water link.
         const foreign = await as(OWNER)(`/api/owner/couriers/${inWater}`, {
             method: "PATCH",
@@ -383,8 +390,8 @@ describe("shop couriers, verticals and channels", () => {
         const toBobur = client.telegram.sent.find(
             (m) => m.chatId === second.id && m.html.includes("#1"),
         )
-        // Bobur's Telegram is in Russian: so is his order card.
-        expect(toBobur?.html).toContain("Доставка")
+        // Bobur's Telegram is in Russian; the product speaks Uzbek only.
+        expect(toBobur?.html).toContain("Yetkazib berish")
         const removed = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
         expect(removed?.token).toBe(env.COURIER_BOT_TOKEN)
         expect(removed?.html).toContain("#1")
@@ -498,6 +505,6 @@ describe("shop couriers, verticals and channels", () => {
         const second = await placeOrder([{ productId: osh, quantity: 2 }])
         await setStatus(second.id, "accepted")
         await setStatus(second.id, "preparing")
-        expect(client.telegram.sent.at(-1)?.html).toContain("Собираем")
+        expect(client.telegram.sent.at(-1)?.html).toContain("yig'ilmoqda")
     })
 })

@@ -4,7 +4,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, apiAs, placeOrder, resetStand, payAndAccept } from "../support/stand.js"
 import {
     callsOf,
     chatWithSecret,
@@ -40,13 +40,19 @@ async function myShops(owner: TgUser = PEOPLE.newOwner): Promise<MyShop[]> {
 }
 
 async function apply(page: Page, token: string, name: string): Promise<void> {
-    await page.getByLabel("Токен бота").fill(token)
+    await page.getByLabel("Bot tokeni").fill(token)
     await bottomButton(page).click()
-    await page.getByLabel("Название магазина").fill(name)
-    await page.getByRole("radio", { name: "Продукты" }).click()
-    await page.getByLabel(/Адрес/).fill("Guliston, Navoiy 20")
+    await page.getByLabel("Do'kon nomi").fill(name)
+    await page.getByRole("radio", { name: "Oziq-ovqat" }).click()
+    await page.getByLabel(/Manzil/).fill("Guliston, Navoiy 20")
     await bottomButton(page).click()
-    await page.getByLabel("Стоимость доставки").fill("5000")
+    await page.getByLabel("Yetkazish narxi").fill("5000")
+    // Customers pay only by transfer: no card, no «Отправить заявку».
+    await expect(bottomButton(page)).toBeDisabled()
+    await page.getByLabel("Karta raqami").fill("4111 1111 1111 1112")
+    await expect(page.getByText("Raqamda xato bor: tekshirib qayta kiriting.")).toBeVisible()
+    await page.getByLabel("Karta raqami").fill("4111 1111 1111 1111")
+    await page.getByLabel("Kartadagi ism").fill("Sardor Aliyev")
     await bottomButton(page).click()
 }
 
@@ -55,18 +61,16 @@ test.beforeAll(resetStand)
 
 test("a wrong token is refused and the wizard returns to the bot step", async ({ page }) => {
     const app = await openApp(page, { user: PEOPLE.newOwner, query: "?mode=onboarding" })
-    await expect(page.getByRole("heading", { name: "Подключите магазин" })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Do'koningizni ulang" })).toBeVisible()
     await bottomButton(page).click() // «Начать»
-    await expect(page.getByText("Шаг 1 из 3")).toBeVisible()
-    await page.getByRole("button", { name: "Открыть @BotFather" }).click()
+    await expect(page.getByText("1/3-qadam")).toBeVisible()
+    await page.getByRole("button", { name: "@BotFather'ni ochish" }).click()
     expect((await app.calls()).find((c) => c.method === "openTelegramLink")?.args[0]).toBe(
         "https://t.me/BotFather",
     )
     await apply(page, UNKNOWN_TOKEN, "Yangi Non")
-    await expect(
-        page.getByText("Неверный токен. Скопируйте его из BotFather целиком."),
-    ).toBeVisible()
-    await expect(page.getByText("Шаг 1 из 3")).toBeVisible()
+    await expect(page.getByText("Token noto'g'ri. BotFather'dan to'liq nusxa oling.")).toBeVisible()
+    await expect(page.getByText("1/3-qadam")).toBeVisible()
 })
 
 test("the application reaches the admin; the pending shop opens only for its owner", async ({
@@ -76,15 +80,15 @@ test("the application reaches the admin; the pending shop opens only for its own
     await bottomButton(page).click()
     const since = await lastSeq()
     await apply(page, NEW_BOT.token, "Yangi Non")
-    await expect(page.getByRole("heading", { name: "Заявка отправлена!" })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Ariza yuborildi!" })).toBeVisible()
     await bottomButton(page).click() // «Готово»
     await expect(page.getByText("Yangi Non")).toBeVisible()
-    await expect(page.getByText("На проверке")).toBeVisible()
+    await expect(page.getByText("Tekshiruvda")).toBeVisible()
 
-    await waitForMessage(PEOPLE.newOwner.id, "Заявка", since)
-    const card = await waitForMessage(PEOPLE.admin.id, "Новый магазин", since)
+    await waitForMessage(PEOPLE.newOwner.id, "arizasi qabul qilindi", since)
+    const card = await waitForMessage(PEOPLE.admin.id, "Yangi do'kon", since)
     expect(card.text).toContain("Yangi Non")
-    expect(card.buttons.map((b) => b.text)).toEqual(["✅ Одобрить", "❌ Отклонить"])
+    expect(card.buttons.map((b) => b.text)).toEqual(["✅ Tasdiqlash", "❌ Rad etish"])
 
     const [shop] = await myShops()
     await openApp(page, {
@@ -92,20 +96,26 @@ test("the application reaches the admin; the pending shop opens only for its own
         query: `?shop=${shop?.slug ?? ""}`,
         signWith: NEW_BOT.token,
     })
-    await expect(page.getByRole("button", { name: "Мой магазин" })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Mening do'konim" })).toBeVisible()
     await openApp(page, {
         user: PEOPLE.customer,
         query: `?shop=${shop?.slug ?? ""}`,
         signWith: NEW_BOT.token,
     })
-    await expect(page.getByRole("button", { name: "Мой магазин" })).toBeHidden()
-    await expect(page.getByRole("heading", { name: "Магазин не найден" })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Mening do'konim" })).toBeHidden()
+    await expect(page.getByRole("heading", { name: "Do'kon topilmadi" })).toBeVisible()
 })
 
 test("the same bot cannot be connected twice", async () => {
     const response = await apiAs(PEOPLE.newOwner, "/platform/shops", {
         method: "POST",
-        json: { botToken: NEW_BOT.token, name: "Again", type: "grocery", deliveryFee: 0 },
+        json: {
+            botToken: NEW_BOT.token,
+            name: "Again",
+            type: "grocery",
+            deliveryFee: 0,
+            payoutCard: { number: "4111111111111111", holder: "Sardor Aliyev" },
+        },
     })
     expect(response.status).toBe(409)
 })
@@ -113,14 +123,14 @@ test("the same bot cannot be connected twice", async () => {
 test("a stranger cannot approve; the admin approves: webhook, menu button, owner told", async ({
     page,
 }) => {
-    const card = await waitForMessage(PEOPLE.admin.id, "Новый магазин")
-    const approve = card.buttons.find((b) => b.text === "✅ Одобрить")?.callback_data ?? ""
+    const card = await waitForMessage(PEOPLE.admin.id, "Yangi do'kon")
+    const approve = card.buttons.find((b) => b.text === "✅ Tasdiqlash")?.callback_data ?? ""
     await llsChat().press(PEOPLE.stranger, approve)
     expect((await myShops())[0]?.status).toBe("pending")
 
     const since = await lastSeq()
     await llsChat().press(PEOPLE.admin, approve)
-    await waitForMessage(PEOPLE.newOwner.id, "запущен", since)
+    await waitForMessage(PEOPLE.newOwner.id, "ishga tushdi", since)
     const [hook] = await callsOf("setWebhook", since)
     expect(hook?.token).toBe(NEW_BOT.token)
     expect(hook?.body["url"]).toBe(`http://localhost:8787/tg/${NEW_BOT.id}`)
@@ -140,7 +150,7 @@ test("a stranger cannot approve; the admin approves: webhook, menu button, owner
         query: `?shop=${shop?.slug ?? ""}`,
         signWith: NEW_BOT.token,
     })
-    await expect(page.getByText("Каталог пока пустой")).toBeVisible()
+    await expect(page.getByText("Katalog hali bo'sh")).toBeVisible()
 })
 
 test("a failed connection warns the admin; /reconnect fixes it", async () => {
@@ -149,14 +159,14 @@ test("a failed connection warns the admin; /reconnect fixes it", async () => {
     const card = await waitForMessage(PEOPLE.admin.id, "Ikkinchi", since)
     await controlTelegram({ failWebhooks: true })
     await llsChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
-    const warning = await waitForMessage(PEOPLE.admin.id, "не подключился", since)
+    const warning = await waitForMessage(PEOPLE.admin.id, "bot ulanmadi", since)
     const slug = /\/reconnect ([a-z0-9-]+)/.exec(warning.text)?.[1] ?? ""
     expect(slug).not.toBe("")
 
     await controlTelegram({ failWebhooks: false })
     await llsChat().send(PEOPLE.stranger, `/reconnect ${slug}`)
     await llsChat().send(PEOPLE.admin, `/reconnect ${slug}`)
-    await waitForMessage(PEOPLE.admin.id, "бот подключён", since)
+    await waitForMessage(PEOPLE.admin.id, "bot ulandi", since)
 })
 
 test("a rejected shop is told and never opens", async ({ page }) => {
@@ -165,7 +175,7 @@ test("a rejected shop is told and never opens", async ({ page }) => {
     await openAndApply(THIRD_OWNER, third, "Uchinchi")
     const card = await waitForMessage(PEOPLE.admin.id, "Uchinchi", since)
     await llsChat().press(PEOPLE.admin, card.buttons[1]?.callback_data ?? "")
-    await waitForMessage(THIRD_OWNER.id, "отклонена", since)
+    await waitForMessage(THIRD_OWNER.id, "arizasi rad etildi", since)
     const rejected = (await myShops(THIRD_OWNER)).find((s) => s.name === "Uchinchi")
     expect(rejected?.status).toBe("disabled")
     await openApp(page, {
@@ -173,14 +183,14 @@ test("a rejected shop is told and never opens", async ({ page }) => {
         query: `?shop=${rejected?.slug ?? ""}`,
         signWith: third,
     })
-    await expect(page.getByRole("button", { name: "Мой магазин" })).toBeHidden()
+    await expect(page.getByRole("button", { name: "Mening do'konim" })).toBeHidden()
 })
 
 test("admins hear about failures: a notification that did not go out", async () => {
     await controlTelegram({ broken: [PEOPLE.foodOwner.id] })
     const since = await lastSeq()
     await placeOrder(PEOPLE.customer, FOOD, [{ productId: "dev-food-p1", quantity: 1 }])
-    const alert = await waitForMessage(PEOPLE.admin.id, "сообщение не отправлено", since)
+    const alert = await waitForMessage(PEOPLE.admin.id, "xabar yuborilmadi", since)
     expect(alert.text).toContain("Internal Server Error")
     expect(alert.text).not.toContain("DEV-local-only-token")
     await controlTelegram({ broken: [] })
@@ -192,11 +202,7 @@ test("a customer who blocked the bot is not an alert", async () => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
-    await apiAs(PEOPLE.foodOwner, `/owner/orders/${order.id}`, {
-        shop: FOOD,
-        method: "PATCH",
-        json: { status: "accepted" },
-    })
+    await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)
     await new Promise((resolve) => setTimeout(resolve, 1500))
     const alerts = await messagesTo(PEOPLE.admin.id, since)
     expect(alerts.filter((m) => m.text.includes("🚨"))).toHaveLength(0)
@@ -206,7 +212,13 @@ test("a customer who blocked the bot is not an alert", async () => {
 async function openAndApply(owner: TgUser, token: string, name: string): Promise<void> {
     const response = await apiAs(owner, "/platform/shops", {
         method: "POST",
-        json: { botToken: token, name, type: "grocery", deliveryFee: 5_000 },
+        json: {
+            botToken: token,
+            name,
+            type: "grocery",
+            deliveryFee: 5_000,
+            payoutCard: { number: "4111111111111111", holder: "Test Owner" },
+        },
     })
     expect(response.status).toBe(201)
 }

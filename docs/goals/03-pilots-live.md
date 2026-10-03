@@ -17,7 +17,7 @@
    Возможные пункты и подход к ним:
    - **20 л для Zoir.** Новая единица `bottle_20l` рядом с `bottle_19l` в
      `packages/core/src/domain/enums/unit.ts`; возврат бутылей работает по флагу `returnable`.
-     Нужны тексты uz/ru в `packages/app/src/i18n/*.ts` и `packages/worker/src/telegram/texts.ts`,
+     Нужны тексты (только узбекский) в `packages/app/src/i18n/*.ts` и `packages/worker/src/telegram/texts.ts`,
      плюс тесты.
    - **Варианты и добавки для Maqsudbek** (размер кофе, сироп, «без лука»):
      - в `Product` — группы вариантов (один выбор) и добавки (несколько выборов) с ценой в

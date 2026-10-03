@@ -50,7 +50,7 @@ export const DEV_SHOPS: readonly DevShop[] = [
         name: "Baraka Market",
         type: "grocery",
         brandColor: "#059669",
-        owner: { id: 1003, first_name: "Nodira", language_code: "ru" },
+        owner: { id: 1003, first_name: "Nodira", language_code: "uz" },
         bot: {
             id: 100200302,
             username: "baraka_market_dev_bot",
@@ -84,8 +84,8 @@ export const DEV_DISTRICT = {
  * shops' own courier, is not in the network.
  */
 export const DEV_NETWORK_COURIERS = [
-    { id: 3005, first_name: "Otabek", language_code: "ru", shop: "dev-water" },
-    { id: 3006, first_name: "Sherzod", language_code: "ru", shop: "dev-grocery" },
+    { id: 3005, first_name: "Otabek", language_code: "uz", shop: "dev-water" },
+    { id: 3006, first_name: "Sherzod", language_code: "uz", shop: "dev-grocery" },
 ] as const
 
 export const DEV_CUSTOMER = { id: 2002, first_name: "Aziz", language_code: "uz" }

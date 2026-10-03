@@ -7,8 +7,11 @@ import { haptic } from "../lib/telegram.js"
 
 import type { Language } from "@lls/core"
 
-/** UZ / RU pill. The choice is saved, so bot messages follow it too. */
-export function LanguageSwitch(): React.JSX.Element {
+/**
+ * A pill per language; the choice is saved, so bot messages follow it too. With one language
+ * (Uzbek only, owner's decision) there is nothing to choose and nothing is shown.
+ */
+export function LanguageSwitch(): React.JSX.Element | null {
     const language = useLanguage()
     const setLanguage = useLanguageStore((state) => state.setLanguage)
     const choose = (next: Language): void => {
@@ -18,6 +21,9 @@ export function LanguageSwitch(): React.JSX.Element {
         haptic.select()
         setLanguage(next)
         api.setLanguage(next).catch(() => undefined)
+    }
+    if (LANGUAGES.length < 2) {
+        return null
     }
     return (
         <div className="flex rounded-full bg-tg-secondary p-0.5 text-xs font-semibold">

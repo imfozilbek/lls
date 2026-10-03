@@ -7,6 +7,49 @@ All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Many cards, Uzbek only, light only (owner's decisions)
+- **Added (core):** `PayoutCardBook`: a shop keeps up to 20 cards, chooses the payment card
+  customers are shown, switches it any time; the payment card is never removed (`CARD_EXISTS`,
+  `PAYOUT_CARD_LIMIT`, `PAYMENT_CARD_IN_USE`). Every order keeps the card it was shown
+  (`Payment.card`). Registration adds the first card.
+- **Added (worker):** migration `0005_payout_cards.sql` (additive, moves today's card into the
+  list); `GET/POST /api/owner/shop/cards`, `PUT …/:id/payment`, `DELETE …/:id`; the message to
+  the customer names the card of the order. `PATCH /api/owner/shop` no longer takes a card.
+- **Added (app):** «Kartalar» in settings: the list, «To'lov uchun», «Shu kartaga to'lansin»,
+  add, delete; the order screen shows the order's card.
+- **Changed:** Uzbek (Latin) only in the app, the bots, the CSV and the QR poster; the language
+  switch hides itself while there is one language; old `ru` rows and Russian Telegram read as
+  Uzbek. The owner guide and the courier memo are Uzbek only.
+- **Changed (app):** always light: our own light palette instead of Telegram's theme; Telegram's
+  header, background and bottom bar are painted white.
+- **Changed (e2e):** Uzbek texts everywhere; many cards; a dark Telegram still shows the light
+  app; light screenshots only.
+
+### Transfer only, before cooking (owner's decision)
+- **Changed (core):** customers pay only by transfer to the shop's card: every order starts
+  unpaid; «Я перевёл» marks it sent; the owner's «Деньги пришли — принять» confirms the money and
+  accepts in one step; `pending → accepted` is refused while unpaid (`PAYMENT_REQUIRED`). A shop
+  without a card takes no orders (`NO_PAYOUT_CARD`) and is not open; the card is required when a
+  shop registers. The money report: placed, delivered, cancelled, goods, delivery, deposits,
+  paid by transfer, commission; transfers to check (cancelled ones too) and refunds.
+- **Removed (core, worker, app):** cash at the door, «how the customer paid», courier cash on
+  hand, handovers to the owner, debts (`PaidWith`, `CashHandover`, `RecordCashHandover`,
+  `/owner/couriers/:id/handovers`). The `cash_handovers` table and the `cash_courier_id` column
+  stay as history (additive schema).
+- **Added (worker):** `POST /api/orders/:id/transfer-sent` (the customer only; the owner is
+  pinged once); `PATCH /api/owner/orders/:id/payment` `{ action: "paid" }` accepts as well and
+  hands the order to the district network if no own courier is free; the owner's card «💳 Ждём
+  перевод» with «💳 Деньги пришли — принять» (`p:<id>`); the customer gets the card and the sum
+  after placing; the courier card says «Оплачено заранее — денег с клиента не брать» and has one
+  «Доставил»; the CSV has no payment method column.
+- **Added (app):** «Оплата переводом» at checkout (the card, copy, the sum); «Я перевёл» and
+  «Магазин проверяет перевод» on the order; «Скоро начнёт принимать заказы» for a shop without a
+  card; owners: «Деньги пришли — принять» on the order, a banner without a card, the card field
+  in onboarding (required) and in settings (never removed from there); «Деньги» without couriers'
+  cash and debts; couriers: one «Доставил», no «На руках».
+- **Changed (e2e):** the money spec follows the transfer path; a shop without a card; every
+  accept is «Деньги пришли — принять»; the demo grocery shop has a card.
+
 ### District network (goal 06)
 - **Added (core):** `District` (center + radius, waiting time); a shop's district from its
   location; network delivery per shop, on by default; the courier's own network consent; a link

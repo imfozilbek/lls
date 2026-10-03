@@ -1,7 +1,6 @@
 import { Courier } from "../../../domain/entities/courier.js"
 import { District, districtOf } from "../../../domain/entities/district.js"
 import { OrderStatus, isFinalStatus } from "../../../domain/enums/order-status.js"
-import { PaymentMethod } from "../../../domain/enums/payment.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
@@ -90,13 +89,6 @@ async function isBusy(
     return lists.flat().some((order) => order.isViaNetwork() && !isFinalStatus(order.status))
 }
 
-function collectAtDoor(order: Order): number {
-    if (order.payment.isPaid() || order.payment.method === PaymentMethod.CARD_TRANSFER) {
-        return 0
-    }
-    return order.total.amount
-}
-
 export function toNetworkOrderDTO(order: Order, shop: Business): NetworkOrderDTO {
     return {
         id: order.id,
@@ -104,7 +96,7 @@ export function toNetworkOrderDTO(order: Order, shop: Business): NetworkOrderDTO
         shopName: shop.name,
         shopAddress: shop.address,
         number: order.number,
-        collect: collectAtDoor(order),
+        total: order.total.amount,
         itemsCount: order.items.length,
         bottlesReturned: order.bottlesReturned,
         distanceMeters:
@@ -318,7 +310,7 @@ export class ListNetworkOrdersUseCase {
     }
 }
 
-/** Who took a network order: the order now has a courier, and the cash is owed to its shop. */
+/** Who took a network order: the order now has a courier of the network. */
 export interface NetworkClaim {
     order: OrderDTO
     business: Business

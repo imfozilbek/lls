@@ -8,7 +8,7 @@ import {
 import { BUSINESS_TYPES, BusinessType } from "../../../domain/enums/business-type.js"
 import { CATEGORIES } from "../../../domain/enums/category.js"
 import { Feature } from "../../../domain/enums/feature.js"
-import { Language, languageFromTelegram } from "../../../domain/enums/language.js"
+import { Language, languageFromTelegram, toLanguage } from "../../../domain/enums/language.js"
 import { UNITS, Unit, unitScale } from "../../../domain/enums/unit.js"
 import {
     ACTIVE_ORDER_STATUSES,
@@ -86,8 +86,11 @@ describe("business profiles", () => {
 
 describe("languageFromTelegram", () => {
     it("maps ru to Russian and everything else to Uzbek", () => {
-        expect(languageFromTelegram("ru")).toBe(Language.RU)
-        expect(languageFromTelegram("RU-ru")).toBe(Language.RU)
+        // Only Uzbek in the product: any other Telegram language reads as Uzbek.
+        expect(languageFromTelegram("ru")).toBe(Language.UZ)
+        expect(languageFromTelegram("UZ-latn")).toBe(Language.UZ)
+        expect(toLanguage("ru")).toBe(Language.UZ)
+        expect(toLanguage(null)).toBe(Language.UZ)
         expect(languageFromTelegram("uz")).toBe(Language.UZ)
         expect(languageFromTelegram("en")).toBe(Language.UZ)
         expect(languageFromTelegram(undefined)).toBe(Language.UZ)

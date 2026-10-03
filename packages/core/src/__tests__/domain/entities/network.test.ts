@@ -58,7 +58,7 @@ function placed(): Order {
 
 function accepted(): Order {
     const order = placed()
-    order.advanceTo(OrderStatus.ACCEPTED)
+    order.confirmPaymentAndAccept()
     return order
 }
 

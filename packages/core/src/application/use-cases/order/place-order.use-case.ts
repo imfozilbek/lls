@@ -2,7 +2,6 @@ import { OrderItem } from "../../../domain/entities/order-item.js"
 import { MAX_ORDER_LINES, Order, subtotalOf } from "../../../domain/entities/order.js"
 import { Feature } from "../../../domain/enums/feature.js"
 import { OrderChannel } from "../../../domain/enums/order-channel.js"
-import { PaymentMethod } from "../../../domain/enums/payment.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../../domain/errors/conflict.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
@@ -44,8 +43,6 @@ export interface PlaceOrderInput {
     bottlesReturned?: number
     /** Decided by the server from which bot opened the app; never sent by the client. */
     channel?: OrderChannel
-    /** Cash by default; a transfer needs the shop's card. */
-    paymentMethod?: PaymentMethod
 }
 
 export interface PlaceOrderDeps {
@@ -107,10 +104,6 @@ export class PlaceOrderUseCase {
 
         const business = await requireBusiness(businesses, input.businessId)
         business.assertCanAcceptOrders(now)
-        const paymentMethod = input.paymentMethod ?? PaymentMethod.CASH
-        if (paymentMethod === PaymentMethod.CARD_TRANSFER && !business.acceptsCardTransfers()) {
-            throw BusinessRuleViolationError.cardTransferUnavailable(business.id)
-        }
 
         const lines = mergeLines(input.items)
         if (lines.length === 0) {
@@ -168,7 +161,7 @@ export class PlaceOrderUseCase {
                 // The name as signed for this order: a shop-signed name never renames the customer.
                 customerName: displayNameOf(input.user),
                 customerPhone: customer.phone,
-                paymentMethod,
+                paymentCard: business.payoutCard,
             })
             if (await orders.insert(order)) {
                 await customers.linkToBusiness(customer.id, business.id, now)

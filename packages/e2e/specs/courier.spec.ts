@@ -6,7 +6,15 @@
 import { expect, test } from "@playwright/test"
 
 import { APP_URL, WORKER_URL, courierBot, shopBySlug } from "../stand/config.js"
-import { FOOD, PEOPLE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import {
+    FOOD,
+    PEOPLE,
+    WATER,
+    apiAs,
+    payAndAccept,
+    placeOrder,
+    resetStand,
+} from "../support/stand.js"
 import { courierChat, lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
 import { openApp, signInitData } from "../support/webapp.js"
 
@@ -24,6 +32,11 @@ async function owner(orderId: string, json: object, path = "", shop = FOOD): Pro
     })
 }
 
+/** «Деньги пришли — принять»: the shop starts only after the transfer. */
+async function accept(orderId: string, shop = FOOD): Promise<Response> {
+    return payAndAccept(shop === FOOD ? PEOPLE.foodOwner : PEOPLE.waterOwner, shop, orderId)
+}
+
 async function courierApi(
     user: TgUser,
     path: string,
@@ -38,16 +51,16 @@ async function assigned(courierId = COURIER_ID): Promise<PlacedOrder> {
         PEOPLE.customer,
         FOOD,
         [{ productId: "dev-food-p1", quantity: 2 }],
-        { landmark: "возле рынка", location: { latitude: 40.49, longitude: 68.78 } },
+        { landmark: "bozor yonida", location: { latitude: 40.49, longitude: 68.78 } },
     )
-    expect((await owner(order.id, { status: "accepted" })).status).toBe(200)
+    expect((await accept(order.id)).status).toBe(200)
     expect((await owner(order.id, { courierId }, "/courier")).status).toBe(200)
     return order
 }
 
 interface Home {
     profile: { onShift: boolean; vehicle?: string }
-    shops: { shopName: string; onHand: number; worksToday: boolean }[]
+    shops: { shopName: string; worksToday: boolean }[]
     orders: { id: string; number: number; status: string; shopName: string }[]
 }
 
@@ -66,9 +79,13 @@ async function invite(shop: string, person: TgUser): Promise<string> {
     expect(created.link).toContain(`t.me/${courierBot().username}?start=c_`)
     const since = await lastSeq()
     await courierChat().send(person, `/start ${created.link.split("start=")[1] ?? ""}`)
-    const ask = await waitForMessage(ownerUser.id, `${person.first_name} принял приглашение`, since)
+    const ask = await waitForMessage(
+        ownerUser.id,
+        `${person.first_name} kuryer bo'lish taklifini qabul qildi`,
+        since,
+    )
     const approve = ask.buttons.find((b) => b.callback_data?.endsWith(":approve"))
-    expect(approve?.text).toBe("✅ Подтвердить")
+    expect(approve?.text).toBe("✅ Tasdiqlash")
     return approve?.callback_data?.split(":")[1] ?? ""
 }
 
@@ -92,14 +109,15 @@ test("the card comes from the courier bot with the shop's name; no buttons until
     expect(card.text).toContain("Osh Markaz")
     expect(card.text).toContain("Navoiy 12")
     expect(card.text).toContain("+998 90 123 45 67")
-    expect(card.text).toMatch(/Взять с клиента: <b>100\s000/)
-    expect(card.text).toContain("возле рынка")
+    // Paid to the shop's card before cooking: nothing to take at the door.
+    expect(card.text).toContain("Oldindan to'langan — mijozdan pul olmang")
+    expect(card.text).toContain("bozor yonida")
     expect(card.text).toContain("yandex")
     expect(card.buttons.filter((b) => b.callback_data)).toHaveLength(0)
-    expect(card.text).toContain("Сообщим, когда заказ будет готов")
+    expect(card.text).toContain("Buyurtma tayyor bo'lganda xabar beramiz")
     expect((await owner(order.id, { status: "preparing" })).status).toBe(200)
     expect((await owner(order.id, { status: "ready" })).status).toBe(200)
-    const ping = await waitForMessage(PEOPLE.courier.id, `заказ #${order.number} готов`, since)
+    const ping = await waitForMessage(PEOPLE.courier.id, `#${order.number} buyurtma tayyor`, since)
     expect(ping.token).toBe(courierBot().token)
     expect(ping.text).toContain("Osh Markaz")
 })
@@ -114,7 +132,7 @@ test("ready → «Забрал» in the courier bot → «Доставил» in 
         .at(-1)
     expect(edited?.token).toBe(courierBot().token)
     const picked = edited?.buttons.find((b) => b.callback_data?.endsWith(":picked_up"))
-    expect(picked?.text).toBe("🚚 Забрал")
+    expect(picked?.text).toBe("🚚 Oldim")
 
     const since = await lastSeq()
     await courierChat().press(PEOPLE.courier, picked?.callback_data ?? "")
@@ -124,18 +142,15 @@ test("ready → «Забрал» in the courier bot → «Доставил» in 
     expect(told.text).not.toContain("+998 90 111 22 33")
 
     await openApp(page, { user: PEOPLE.courier, courierBot: true })
-    await expect(page.getByRole("heading", { name: "Мои доставки" })).toBeVisible()
-    await expect(page.getByText(/100\s000/).first()).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Yetkazishlarim" })).toBeVisible()
+    await expect(page.getByText("Oldindan to'langan — pul olmang")).toBeVisible()
     const before = await lastSeq()
-    await page.getByRole("button", { name: "Доставил" }).click()
-    await page.getByRole("dialog").getByRole("button", { name: "Наличными" }).click()
-    await expect(page.getByText(/Доставлено сегодня · 1/)).toBeVisible()
-    // The cash taken at the door is on the courier's hands, under that shop.
-    const cash = page.getByRole("listitem").filter({ hasText: "Osh Markaz" }).filter({
-        hasText: "На руках",
-    })
-    await expect(cash).toContainText(/На руках: 100\s000/)
-    await waitForMessage(PEOPLE.customer.id, "доставлен", before)
+    // One «Доставил»: the money is already the shop's, nobody asks how it was paid.
+    await page.getByRole("button", { name: "Yetkazdim" }).click()
+    await expect(page.getByRole("dialog")).toBeHidden()
+    await expect(page.getByText(/Bugun yetkazilgan · 1/)).toBeVisible()
+    await expect(page.getByText(/Qo'lingizda/)).toBeHidden()
+    await waitForMessage(PEOPLE.customer.id, "yetkazildi", before)
 })
 
 test("the customer sees «Везёт Jasur» while the order is on the way", async ({ page }) => {
@@ -147,17 +162,17 @@ test("the customer sees «Везёт Jasur» while the order is on the way", asy
             .status,
     ).toBe(200)
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
-    await page.getByRole("button", { name: "Мои заказы" }).click()
-    await page.getByRole("button", { name: new RegExp(`Заказ #${order.number}`) }).click()
-    await expect(page.getByText("Везёт Jasur")).toBeVisible()
-    await expect(page.getByRole("heading", { name: "В пути" })).toBeVisible()
+    await page.getByRole("button", { name: "Buyurtmalarim" }).click()
+    await page.getByRole("button", { name: new RegExp(`Buyurtma #${order.number}`) }).click()
+    await expect(page.getByText("Jasur olib kelmoqda")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Yo'lda" })).toBeVisible()
 })
 
 test("a courier moves only own orders and only the delivery part; never cancels", async () => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
-    await owner(order.id, { status: "accepted" })
+    await accept(order.id)
     const path = `/orders/${order.id}`
     expect((await courierApi(PEOPLE.courier, path, "PATCH", { status: "picked_up" })).status).toBe(
         403,
@@ -184,19 +199,23 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
 }) => {
     const since = await lastSeq()
     const id = await invite(FOOD, PEOPLE.newCourier)
-    const waiting = await waitForMessage(PEOPLE.newCourier.id, "Ждём, пока владелец", since)
+    const waiting = await waitForMessage(
+        PEOPLE.newCourier.id,
+        "egasi sizni tasdiqlashini kuting",
+        since,
+    )
     expect(waiting.token).toBe(courierBot().token)
-    expect(waiting.text).toContain("Отправьте номер телефона")
+    expect(waiting.text).toContain("telefon raqamingizni yuboring")
     // A forwarded contact is not theirs; their own one is saved.
     await courierChat().shareContact(PEOPLE.newCourier, "+998907776655", PEOPLE.stranger.id)
     await courierChat().shareContact(PEOPLE.newCourier, "+998907776655")
-    await waitForMessage(PEOPLE.newCourier.id, /номер/i, since)
+    await waitForMessage(PEOPLE.newCourier.id, /raqamingiz/i, since)
 
     // Not approved yet: cannot get an order, sees no deliveries.
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
-    await owner(order.id, { status: "accepted" })
+    await accept(order.id)
     const early = await owner(order.id, { courierId: id }, "/courier")
     expect(early.status).toBe(422)
     expect(
@@ -205,8 +224,8 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
     expect((await courierApi(PEOPLE.newCourier, "/home")).status).toBe(403)
     // The app says the same as the bot: wait for the owner, no new link needed.
     await openApp(page, { user: PEOPLE.newCourier, courierBot: true })
-    await expect(page.getByText("Вы пока не доставщик")).toBeVisible()
-    await expect(page.getByText(/уже открыли — ждите подтверждения/)).toBeVisible()
+    await expect(page.getByText("Siz hali kuryer emassiz")).toBeVisible()
+    await expect(page.getByText(/Havolani ochgan bo'lsangiz, tasdiqlashni kuting/)).toBeVisible()
 
     // The owner presses «Подтвердить» in the shop bot.
     const ask = (await messagesTo(PEOPLE.foodOwner.id, since)).findLast((m) =>
@@ -214,9 +233,13 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
     )
     const before = await lastSeq()
     await shopChat(FOOD).press(PEOPLE.foodOwner, ask?.buttons[0]?.callback_data ?? "", 1)
-    const welcome = await waitForMessage(PEOPLE.newCourier.id, "подтвердил вас", before)
+    const welcome = await waitForMessage(
+        PEOPLE.newCourier.id,
+        "sizni kuryer sifatida tasdiqladi",
+        before,
+    )
     expect(welcome.buttons[0]?.web_app?.url).toBe("http://localhost:5173/?mode=courier")
-    await waitForMessage(PEOPLE.foodOwner.id, "Bobur теперь ваш доставщик", before)
+    await waitForMessage(PEOPLE.foodOwner.id, "Bobur endi sizning kuryeringiz", before)
     // The same button twice is a no-op with a clear answer, never a second approval.
     expect((await approve(FOOD, id)).status).toBe(409)
 
@@ -229,7 +252,7 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
     })
 })
 
-test("one person, two shops: both orders in one screen, cash per shop, owners see only theirs", async ({
+test("one person, two shops: both orders in one screen, owners see only theirs", async ({
     page,
 }) => {
     // Bobur is already Osh Markaz's courier; Toza Suv invites him too.
@@ -255,7 +278,7 @@ test("one person, two shops: both orders in one screen, cash per shop, owners se
         [food, FOOD, foodLink?.id ?? ""],
         [water, WATER, waterId],
     ] as const) {
-        expect((await owner(order.id, { status: "accepted" }, "", shop)).status).toBe(200)
+        expect((await accept(order.id, shop)).status).toBe(200)
         expect((await owner(order.id, { courierId: id }, "/courier", shop)).status).toBe(200)
         await owner(order.id, { status: "preparing" }, "", shop)
         await owner(order.id, { status: "ready" }, "", shop)
@@ -265,30 +288,27 @@ test("one person, two shops: both orders in one screen, cash per shop, owners se
     expect(screen.shops.map((s) => s.shopName).sort()).toEqual(["Osh Markaz", "Toza Suv"])
     expect(screen.orders.map((o) => o.shopName).sort()).toEqual(["Osh Markaz", "Toza Suv"])
 
-    // Delivers both, cash at both doors.
+    // Delivers both: paid in advance, nothing to collect at either door.
     for (const order of [food, water]) {
         const path = `/orders/${order.id}`
         await courierApi(PEOPLE.newCourier, path, "PATCH", { status: "picked_up" })
-        const done = await courierApi(PEOPLE.newCourier, path, "PATCH", {
-            status: "delivered",
-            paidWith: "cash",
-        })
+        const done = await courierApi(PEOPLE.newCourier, path, "PATCH", { status: "delivered" })
         expect(done.status).toBe(200)
     }
-    const after = await home(PEOPLE.newCourier)
-    const onHand = Object.fromEntries(after.shops.map((s) => [s.shopName, s.onHand]))
-    expect(onHand["Osh Markaz"]).toBe(food.total)
-    expect(onHand["Toza Suv"]).toBe(water.total)
 
-    // Each owner sees only their own cash with this courier.
+    // Each owner sees only their own couriers and money.
+    const waterCouriers = (await (
+        await apiAs(PEOPLE.waterOwner, "/owner/couriers", { shop: WATER })
+    ).json()) as { id: string }[]
+    expect(waterCouriers.map((c) => c.id)).toContain(waterId)
+    expect(waterCouriers.map((c) => c.id)).not.toContain(foodLink?.id)
     const report = (await (
         await apiAs(PEOPLE.waterOwner, "/owner/money", { shop: WATER })
-    ).json()) as { couriers: { courierId: string; onHand: number }[] }
-    expect(report.couriers.find((c) => c.courierId === waterId)?.onHand).toBe(water.total)
-    expect(report.couriers.find((c) => c.courierId === foodLink?.id)).toBeUndefined()
+    ).json()) as { totals: { delivered: number; paid: number } }
+    expect(report.totals).toMatchObject({ delivered: 1, paid: water.total })
 
     await openApp(page, { user: PEOPLE.newCourier, courierBot: true })
-    await expect(page.getByText(/Доставлено сегодня · 2/)).toBeVisible()
+    await expect(page.getByText(/Bugun yetkazilgan · 2/)).toBeVisible()
     await expect(page.getByText("Osh Markaz").first()).toBeVisible()
     await expect(page.getByText("Toza Suv").first()).toBeVisible()
 })
@@ -299,7 +319,7 @@ test("days and shift: «сегодня не работает» and «не на �
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
-    await owner(order.id, { status: "accepted" })
+    await accept(order.id)
     const reasonOf = async (response: Response): Promise<string> => {
         expect(response.status).toBe(422)
         const body = (await response.json()) as {
@@ -311,19 +331,19 @@ test("days and shift: «сегодня не работает» and «не на �
 
     // The owner switches the courier off for today in "Мой магазин".
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
-    await page.getByRole("button", { name: "Мой магазин" }).click()
-    await page.getByRole("tab", { name: "Настройки" }).click()
+    await page.getByRole("button", { name: "Mening do'konim" }).click()
+    await page.getByRole("tab", { name: "Sozlamalar" }).click()
     const row = page.getByRole("listitem").filter({ hasText: "Jasur" })
-    await row.getByRole("switch", { name: /Сегодня не работает/ }).click()
-    await expect(row.getByRole("switch", { name: /Сегодня не работает/ })).toHaveAttribute(
+    await row.getByRole("switch", { name: /Bugun ishlamaydi/ }).click()
+    await expect(row.getByRole("switch", { name: /Bugun ishlamaydi/ })).toHaveAttribute(
         "aria-checked",
         "true",
     )
     expect(await reasonOf(await owner(order.id, { courierId: COURIER_ID }, "/courier"))).toBe(
         "off_today",
     )
-    await row.getByRole("switch", { name: /Сегодня не работает/ }).click()
-    await expect(row.getByRole("switch", { name: /Сегодня не работает/ })).toHaveAttribute(
+    await row.getByRole("switch", { name: /Bugun ishlamaydi/ }).click()
+    await expect(row.getByRole("switch", { name: /Bugun ishlamaydi/ })).toHaveAttribute(
         "aria-checked",
         "false",
     )
@@ -331,7 +351,7 @@ test("days and shift: «сегодня не работает» and «не на �
     // The courier ends the shift in the courier app.
     const courierPage = await page.context().newPage()
     await openApp(courierPage, { user: PEOPLE.courier, courierBot: true })
-    const shift = courierPage.getByRole("switch", { name: "Я на смене" })
+    const shift = courierPage.getByRole("switch", { name: "Smenadaman" })
     await expect(shift).toHaveAttribute("aria-checked", "true")
     await shift.click()
     await expect(shift).toHaveAttribute("aria-checked", "false")
@@ -340,10 +360,10 @@ test("days and shift: «сегодня не работает» and «не на �
     )
 
     // In the order the owner sees why, and cannot pick them.
-    await page.getByRole("tab", { name: "Заказы" }).click()
-    await page.getByRole("button", { name: "Назначить доставщика" }).first().click()
+    await page.getByRole("tab", { name: "Buyurtmalar" }).click()
+    await page.getByRole("button", { name: "Kuryer tayinlash" }).first().click()
     const option = page.getByRole("dialog").getByRole("button", { name: /Jasur/ })
-    await expect(option).toContainText("не на смене")
+    await expect(option).toContainText("smenada emas")
     await expect(option).toBeDisabled()
 
     // Back on shift: the order goes to them.
@@ -361,7 +381,11 @@ test("reassigning tells the previous courier in the courier bot; the order leave
     const order = await assigned()
     const since = await lastSeq()
     expect((await owner(order.id, { courierId: bobur?.id }, "/courier")).status).toBe(200)
-    const gone = await waitForMessage(PEOPLE.courier.id, `#${order.number} передан другому`, since)
+    const gone = await waitForMessage(
+        PEOPLE.courier.id,
+        `#${order.number} buyurtma boshqa kuryerga berildi`,
+        since,
+    )
     expect(gone.token).toBe(courierBot().token)
     await waitForMessage(PEOPLE.newCourier.id, `#${order.number}`, since)
     expect((await home(PEOPLE.courier)).orders.map((o) => o.id)).not.toContain(order.id)
@@ -372,7 +396,7 @@ test("the courier bot's /start: shops and the button; a stranger is asked for an
 }) => {
     const since = await lastSeq()
     await courierChat().send(PEOPLE.courier, "/start")
-    const greeting = await waitForMessage(PEOPLE.courier.id, "Вы доставщик", since)
+    const greeting = await waitForMessage(PEOPLE.courier.id, "Siz kuryersiz", since)
     expect(greeting.text).toContain("Osh Markaz")
     expect(greeting.text).toContain("Toza Suv")
     expect(greeting.buttons.map((b) => b.web_app?.url)).toEqual([
@@ -380,10 +404,10 @@ test("the courier bot's /start: shops and the button; a stranger is asked for an
     ])
 
     await courierChat().send(PEOPLE.stranger, "/start")
-    await waitForMessage(PEOPLE.stranger.id, "попросите у владельца магазина", since)
+    await waitForMessage(PEOPLE.stranger.id, "do'kon egasidan taklif havolasini so'rang", since)
 
     await openApp(page, { user: PEOPLE.stranger, courierBot: true })
-    await expect(page.getByText("Вы пока не доставщик")).toBeVisible()
+    await expect(page.getByText("Siz hali kuryer emassiz")).toBeVisible()
 })
 
 test("a courier invite opened in a shop bot joins nobody; a forged courier signature is refused", async () => {

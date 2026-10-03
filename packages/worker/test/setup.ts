@@ -18,6 +18,7 @@ const TABLES = [
     "customer_businesses",
     "customers",
     "products",
+    "payout_cards",
     "businesses",
     "districts",
 ]

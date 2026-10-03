@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest"
 
 import { GetCourierHomeUseCase } from "../../application/use-cases/courier/courier.use-cases.js"
-import { GetMoneyReportUseCase } from "../../application/use-cases/money/money.use-cases.js"
 import {
     AutoRequestNetworkUseCase,
     ClaimNetworkOrderUseCase,
@@ -21,7 +20,6 @@ import { Order } from "../../domain/entities/order.js"
 import { OrderItem } from "../../domain/entities/order-item.js"
 import { OrderChannel } from "../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
-import { PaidWith, PaymentMethod } from "../../domain/enums/payment.js"
 import { Unit } from "../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
@@ -35,7 +33,6 @@ import {
     InMemoryCouriers,
     InMemoryCustomers,
     InMemoryDistricts,
-    InMemoryHandovers,
     InMemoryOrders,
     fixedClock,
 } from "../in-memory.js"
@@ -57,7 +54,6 @@ describe("district network", () => {
     let orders: InMemoryOrders
     let couriers: InMemoryCouriers
     let districts: InMemoryDistricts
-    let handovers: InMemoryHandovers
     let now: Date
     const clock: Clock = { now: () => now }
 
@@ -86,7 +82,7 @@ describe("district network", () => {
             location: Location.create(40.5, 68.79),
             customerName: "Aziz",
         })
-        order.advanceTo(OrderStatus.ACCEPTED)
+        order.confirmPaymentAndAccept()
         await orders.save(order)
         return order
     }
@@ -127,7 +123,6 @@ describe("district network", () => {
         orders = new InMemoryOrders(businesses)
         couriers = new InMemoryCouriers(businesses, orders)
         districts = new InMemoryDistricts()
-        handovers = new InMemoryHandovers()
         const food = makeBusiness()
         food.updateProfile({ location: Location.create(GULISTAN.latitude, GULISTAN.longitude) })
         const water = makeBusiness({ id: "biz-2" })
@@ -253,7 +248,7 @@ describe("district network", () => {
             expect(list).toHaveLength(1)
             expect(list[0]).toMatchObject({
                 shopName: "Osh Markaz",
-                collect: 80_000,
+                total: 80_000,
                 itemsCount: 1,
             })
             expect(list[0]?.distanceMeters).toBeGreaterThan(0)
@@ -303,27 +298,16 @@ describe("district network", () => {
                 telegramId: BOBUR_TG,
                 orderId: order.id,
                 to: OrderStatus.DELIVERED,
-                paidWith: PaidWith.CASH,
             })
-            expect(delivered.payment.cashCourierId).toBe(link?.id)
+            // Paid to the shop's card before cooking: the courier carries no money.
+            expect(delivered.status).toBe(OrderStatus.DELIVERED)
+            expect(delivered.payment.cashCourierId).toBeUndefined()
 
-            // The cash belongs to the food shop: its owner sees it, the courier owes it there.
-            const report = await new GetMoneyReportUseCase({
-                businesses,
-                couriers,
-                orders,
-                handovers,
-                clock,
-            }).execute({ actorTelegramId: OWNER_TG, businessId: "biz-1", period: "today" })
-            expect(report.couriers).toEqual([
-                expect.objectContaining({ courierId: link?.id, onHand: 80_000, name: "Jasur" }),
-            ])
-            const home = await new GetCourierHomeUseCase({ ...deps(), handovers }).execute({
-                telegramId: BOBUR_TG,
-            })
-            expect(home.shops.map((s) => [s.shopName, s.status, s.onHand])).toEqual([
-                ["Osh Markaz", "active", 0],
-                ["Osh Markaz", "network", 80_000],
+            // The courier sees the shop they delivered for through the network.
+            const home = await new GetCourierHomeUseCase(deps()).execute({ telegramId: BOBUR_TG })
+            expect(home.shops.map((s) => [s.shopName, s.status])).toEqual([
+                ["Osh Markaz", "active"],
+                ["Osh Markaz", "network"],
             ])
             expect(home.orders.map((o) => o.id)).toEqual([order.id])
         })
@@ -459,7 +443,7 @@ describe("district network", () => {
         })
     })
 
-    it("a transfer at the door means nothing to collect", async () => {
+    it("an order without a location shows no distance", async () => {
         const order = Order.place({
             id: "o-card",
             businessId: "biz-1",
@@ -480,15 +464,14 @@ describe("district network", () => {
             deliveryFee: Money.of(0),
             address: "Navoiy 12",
             customerName: "Aziz",
-            paymentMethod: PaymentMethod.CARD_TRANSFER,
         })
-        order.advanceTo(OrderStatus.ACCEPTED)
+        order.confirmPaymentAndAccept()
         order.requestNetwork(now)
         await orders.save(order)
         const [listed] = await new ListNetworkOrdersUseCase(deps()).execute({
             telegramId: BOBUR_TG,
         })
-        expect(listed).toMatchObject({ collect: 0, distanceMeters: undefined })
+        expect(listed).toMatchObject({ total: 35_000, distanceMeters: undefined })
         expect(fixedClock(now).now()).toEqual(now)
     })
 })

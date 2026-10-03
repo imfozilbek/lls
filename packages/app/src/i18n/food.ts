@@ -26,25 +26,3 @@ export const FOOD_UZ = (base: Dictionary): Overrides => ({
     },
     courier: { ...base.courier, waitReady: "Taom tayyorlanmoqda — tayyor bo'lganda xabar keladi" },
 })
-
-export const FOOD_RU = (base: Dictionary): Overrides => ({
-    shop: { ...base.shop, emptyTitle: "Меню пока пустое" },
-    cart: { ...base.cart, emptyText: "Добавьте что-нибудь из меню.", toMenu: "В меню" },
-    order: {
-        ...base.order,
-        steps: { ...base.order.steps, preparing: "Готовится" },
-        hints: {
-            ...base.order.hints,
-            preparing: "Ваш заказ готовится",
-            delivered: "Приятного аппетита!",
-        },
-    },
-    owner: {
-        ...base.owner,
-        tabs: { ...base.owner.tabs, menu: "Меню" },
-        actions: { ...base.owner.actions, preparing: "Начать готовить" },
-        menuEmpty: "Меню пустое",
-        menuEmptyText: "Добавьте первое блюдо — клиенты увидят его сразу.",
-    },
-    courier: { ...base.courier, waitReady: "Заказ готовится — бот напишет, когда будет готов" },
-})

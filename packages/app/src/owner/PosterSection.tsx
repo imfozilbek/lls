@@ -25,10 +25,7 @@ export function PosterSection({ shop }: { shop: ShopOwnerDTO }): React.JSX.Eleme
                 botUsername: shop.botUsername,
                 brandColor: shop.brandColor,
                 logoUrl: imageUrl(shop.logoKey) ?? null,
-                lines: [
-                    dictionaryFor(Language.UZ, shop.type).owner.settings.posterLine,
-                    dictionaryFor(Language.RU, shop.type).owner.settings.posterLine,
-                ],
+                line: dictionaryFor(Language.UZ, shop.type).owner.settings.posterLine,
             })
             await api.owner.sendPoster(png)
             haptic.success()

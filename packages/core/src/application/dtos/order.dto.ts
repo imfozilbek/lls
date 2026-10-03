@@ -62,8 +62,10 @@ export interface OrderPaymentDTO {
     method: PaymentMethod
     status: PaymentStatus
     paidAt?: string
-    /** The courier who took the cash at the door. */
+    /** History only: the courier who took cash at the door before payments became transfers. */
     cashCourierId?: string
+    /** The shop's card the customer was shown for this order (the money goes there). */
+    card?: { number: string; holder: string }
 }
 
 export function toOrderDTO(order: Order): OrderDTO {
@@ -109,6 +111,10 @@ export function toOrderDTO(order: Order): OrderDTO {
             status: order.payment.status,
             paidAt: order.payment.paidAt?.toISOString(),
             cashCourierId: order.payment.cashCourierId,
+            card: order.payment.card && {
+                number: order.payment.card.number,
+                holder: order.payment.card.holder,
+            },
         },
         deliveredAt: order.deliveredAt?.toISOString(),
         createdAt: order.createdAt.toISOString(),

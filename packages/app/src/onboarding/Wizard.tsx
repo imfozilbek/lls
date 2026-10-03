@@ -7,6 +7,7 @@ import { cn } from "../lib/cn.js"
 import { useBackButton, useMainAction } from "../lib/main-button.js"
 import { haptic, openTelegramLink } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
+import { PayoutCardFields, payoutCardIsValid } from "../ui/card-fields.js"
 import { BotIcon, CheckIcon } from "../ui/icons.js"
 import { Button, EmptyState, Field, MoneyInput, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
@@ -26,6 +27,9 @@ interface Draft {
     fee: number | null
     freeFrom: number | null
     minOrder: number | null
+    /** Customers pay only by transfer to this card: a required step. */
+    cardNumber: string
+    cardHolder: string
 }
 
 const EMPTY: Draft = {
@@ -36,6 +40,8 @@ const EMPTY: Draft = {
     fee: null,
     freeFrom: null,
     minOrder: null,
+    cardNumber: "",
+    cardHolder: "",
 }
 
 function canContinue(step: Step, draft: Draft): boolean {
@@ -45,7 +51,7 @@ function canContinue(step: Step, draft: Draft): boolean {
     if (step === 2) {
         return draft.name.trim().length > 0
     }
-    return draft.fee !== null
+    return draft.fee !== null && payoutCardIsValid(draft.cardNumber, draft.cardHolder)
 }
 
 function Progress({ step }: { step: Step }): React.JSX.Element {
@@ -190,6 +196,18 @@ function DeliveryStep({
                     onChange={(minOrder): void => patch({ minOrder })}
                 />
             </Field>
+            <h2 className="pt-2 text-xl font-bold">{t.cardTitle}</h2>
+            <PayoutCardFields
+                number={draft.cardNumber}
+                holder={draft.cardHolder}
+                hint={t.cardHint}
+                onChange={(change): void =>
+                    patch({
+                        ...(change.number === undefined ? {} : { cardNumber: change.number }),
+                        ...(change.holder === undefined ? {} : { cardHolder: change.holder }),
+                    })
+                }
+            />
         </>
     )
 }
@@ -219,6 +237,7 @@ async function submit(draft: Draft): Promise<void> {
         deliveryFee: draft.fee ?? 0,
         freeDeliveryFrom: draft.freeFrom ?? undefined,
         minOrder: draft.minOrder ?? undefined,
+        payoutCard: { number: draft.cardNumber, holder: draft.cardHolder.trim() },
     })
 }
 
@@ -229,7 +248,7 @@ function actionText(t: Dictionary, step: Step, sending: boolean): string {
     return sending ? t.onboarding.submitting : t.onboarding.submit
 }
 
-/** Three short steps: bot → shop → delivery. The platform admin approves the result. */
+/** Three short steps: bot → shop → delivery and the card. The platform admin approves it. */
 export function Wizard({
     onDone,
     onCancel,

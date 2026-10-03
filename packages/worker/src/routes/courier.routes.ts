@@ -105,7 +105,6 @@ export const courierRoutes = new Hono<AppEnv>()
                 telegramId: c.get("auth").user.id,
                 orderId: c.req.valid("param").id,
                 to: c.req.valid("json").status,
-                paidWith: c.req.valid("json").paidWith,
             })
             const business = await services.businesses.findById(order.businessId)
             if (business) {

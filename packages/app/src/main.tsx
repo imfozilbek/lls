@@ -2,12 +2,13 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 
 import { App, initialLanguage } from "./App.js"
-import { readLaunchParams, webApp } from "./lib/telegram.js"
+import { paintLightFrame, readLaunchParams, webApp } from "./lib/telegram.js"
 import "./index.css"
 
 const app = webApp()
 app?.ready()
 app?.expand()
+paintLightFrame(app)
 initialLanguage()
 
 const launch = readLaunchParams(new URL(window.location.href), app)

@@ -61,8 +61,12 @@ export interface BusinessProps {
     bottleDeposit: Money
     /** Undefined: the shop sells only through its own bot. */
     marketplace?: MarketplaceTerms
-    /** The card customers transfer to; without it a shop takes cash only. */
+    /**
+     * The payment card: the one of the shop's cards customers are shown and transfer to.
+     * Without it a shop takes no orders. The full list lives in `PayoutCardBook`.
+     */
     payoutCard?: PayoutCard
+    paymentCardId?: string
     /** The delivery-network district the shop's location falls in. */
     districtId?: string
     /**
@@ -191,7 +195,10 @@ export class Business {
     get payoutCard(): PayoutCard | undefined {
         return this.props.payoutCard
     }
-    /** Transfers need the shop's card. */
+    get paymentCardId(): string | undefined {
+        return this.props.paymentCardId
+    }
+    /** Customers pay only by transfer: without the card the shop takes no orders. */
     acceptsCardTransfers(): boolean {
         return this.props.payoutCard !== undefined
     }
@@ -242,14 +249,21 @@ export class Business {
         if (!this.props.acceptingOrders) {
             throw BusinessRuleViolationError.notAcceptingOrders(this.props.id)
         }
+        if (!this.acceptsCardTransfers()) {
+            throw BusinessRuleViolationError.noPayoutCard(this.props.id)
+        }
         if (!this.props.workingHours.isOpenAt(now)) {
             throw BusinessRuleViolationError.shopClosed(this.props.id)
         }
     }
 
+    /** Takes orders right now: active, accepting, has its card for transfers, within hours. */
     isOpenAt(now: Date): boolean {
         return (
-            this.isActive() && this.props.acceptingOrders && this.props.workingHours.isOpenAt(now)
+            this.isActive() &&
+            this.props.acceptingOrders &&
+            this.acceptsCardTransfers() &&
+            this.props.workingHours.isOpenAt(now)
         )
     }
 
@@ -330,9 +344,10 @@ export class Business {
         this.touch()
     }
 
-    /** `null` removes the card: the shop takes cash only. */
-    setPayoutCard(card: PayoutCard | null): void {
-        this.props.payoutCard = card ?? undefined
+    /** Customers are shown this card from now on. Goes through `PayoutCardBook`. */
+    usePaymentCard(id: string, card: PayoutCard): void {
+        this.props.paymentCardId = id
+        this.props.payoutCard = card
         this.touch()
     }
 

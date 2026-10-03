@@ -34,8 +34,8 @@ export interface CourierProps {
 
 /**
  * A courier's work for ONE shop: the link between a person (`CourierProfile`, one per Telegram
- * account) and a shop. The same person may work for several shops: one link per shop. Orders and
- * cash refer to the link, so every shop's money stays separate.
+ * account) and a shop. The same person may work for several shops: one link per shop. Orders
+ * refer to the link, so a shop sees only its own work.
  */
 export class Courier {
     private constructor(private props: CourierProps) {}
@@ -124,7 +124,7 @@ export class Courier {
         return this.props.updatedAt
     }
 
-    /** An approved courier of this shop: may see its orders and hold its cash. */
+    /** An approved courier of this shop: may see and deliver its orders. */
     worksFor(businessId: string): boolean {
         return this.isActive && this.props.businessId === businessId
     }

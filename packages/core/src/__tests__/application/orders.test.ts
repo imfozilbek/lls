@@ -7,6 +7,7 @@ import {
     ListMyOrdersUseCase,
     ListShopOrdersUseCase,
 } from "../../application/use-cases/order/order.use-cases.js"
+import { ConfirmPaymentUseCase } from "../../application/use-cases/money/money.use-cases.js"
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
 import { OrderChannel } from "../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
@@ -245,14 +246,21 @@ describe("order use cases", () => {
             ).rejects.toThrow(EntityNotFoundError)
         })
 
-        it("owner advances step by step; a stale button fails", async () => {
+        it("owner advances step by step once paid; a stale button fails", async () => {
             const advance = new AdvanceOrderUseCase(deps())
-            const accepted = await advance.execute({
-                businessId: "biz-1",
-                actorTelegramId: OWNER_TG,
-                orderId,
-                to: OrderStatus.ACCEPTED,
-            })
+            await expect(
+                advance.execute({
+                    businessId: "biz-1",
+                    actorTelegramId: OWNER_TG,
+                    orderId,
+                    to: OrderStatus.ACCEPTED,
+                }),
+            ).rejects.toThrow(BusinessRuleViolationError)
+            const accepted = await new ConfirmPaymentUseCase({
+                businesses,
+                orders,
+                clock: fixedClock(NOON_MONDAY_UZ),
+            }).execute({ businessId: "biz-1", actorTelegramId: OWNER_TG, orderId })
             expect(accepted.nextStatus).toBe(OrderStatus.PREPARING)
             await expect(
                 advance.execute({
@@ -282,12 +290,11 @@ describe("order use cases", () => {
             expect(byCustomer.cancelledBy).toBe("customer")
 
             const second = (await placeOrder.execute(input())).id
-            await new AdvanceOrderUseCase(deps()).execute({
-                businessId: "biz-1",
-                actorTelegramId: OWNER_TG,
-                orderId: second,
-                to: OrderStatus.ACCEPTED,
-            })
+            await new ConfirmPaymentUseCase({
+                businesses,
+                orders,
+                clock: fixedClock(NOON_MONDAY_UZ),
+            }).execute({ businessId: "biz-1", actorTelegramId: OWNER_TG, orderId: second })
             await expect(
                 cancel.execute({ businessId: "biz-1", telegramId: CUSTOMER_TG, orderId: second }),
             ).rejects.toThrow(BusinessRuleViolationError)

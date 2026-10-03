@@ -35,6 +35,23 @@ export async function notifyOwnerStep(
     await reportOverdueNetworkOrders(services)
 }
 
+/**
+ * After «Деньги пришли — принять»: a new order was accepted in the same tap and reaches everyone
+ * like any owner step. A transfer for a cancelled order only changes the cards (owed back).
+ */
+export async function notifyPaymentConfirmed(
+    services: Services,
+    business: Business,
+    order: OrderDTO,
+    request: NetworkRequest | null,
+): Promise<void> {
+    if (order.status === OrderStatus.ACCEPTED) {
+        await notifyOwnerStep(services, business, order, request)
+        return
+    }
+    await new Notifier(services).paymentChanged(business, order)
+}
+
 /** No cron: every network event also reports orders nobody took in time. */
 export async function reportOverdueNetworkOrders(services: Services): Promise<void> {
     const late = await services.useCases.overdueNetworkOrders.execute()
