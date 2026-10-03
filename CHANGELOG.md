@@ -158,6 +158,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   `production` environment, `scripts/check-secrets.sh` in CI and as a git pre-commit hook,
   Dependabot, `SECURITY.md`, `CODEOWNERS`
 - **Changed:** the workers.dev subdomain is random instead of derived from the account id
+- **Added:** Claude deploys `main` again with the `deploy` dispatch event (`repository_dispatch`):
+  no Actions permission needed; only someone with write access can send it
 
 ### Local stand and end-to-end checks
 - **Added (e2e):** `bun run stand` — local D1 with three demo shops, `wrangler dev`, the Mini App and
