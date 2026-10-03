@@ -10,6 +10,8 @@ import { CardIcon, ChartIcon, CheckIcon, ReceiptIcon, WifiOffIcon } from "../ui/
 import { Button, EmptyState, Segmented, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import { PaymentCheckSheet } from "./PaymentCheck.js"
+
 import type { Dictionary } from "../i18n/index.js"
 import type { MoneyPeriod, MoneyReportDTO, OrderDTO } from "@zumda/core"
 import type { ReactNode } from "react"
@@ -159,6 +161,8 @@ function OpenPayments({
     const t = useT()
     const m = t.owner.money
     const { busy, run } = useAction(reload)
+    const [checking, setChecking] = useState<OrderDTO | null>(null)
+    const refresh = (): void => void reload()
     if (report.awaiting.length + report.refunds.length === 0) {
         return (
             <p className="flex items-center gap-2 px-1 text-sm text-tg-hint">
@@ -176,10 +180,10 @@ function OpenPayments({
                             <Button
                                 className="grow"
                                 icon={<CardIcon size={18} />}
-                                loading={busy === order.id}
-                                onClick={(): void =>
-                                    void run(order.id, () => api.owner.confirmPayment(order.id))
-                                }
+                                onClick={(): void => {
+                                    haptic.tap()
+                                    setChecking(order)
+                                }}
                             >
                                 {order.status === OrderStatus.CANCELLED
                                     ? m.confirmCancelled
@@ -206,6 +210,14 @@ function OpenPayments({
                         </OpenOrder>
                     ))}
                 </ListBlock>
+            ) : null}
+            {checking ? (
+                <PaymentCheckSheet
+                    order={checking}
+                    onChange={refresh}
+                    onStale={refresh}
+                    onClose={(): void => setChecking(null)}
+                />
             ) : null}
         </>
     )

@@ -18,6 +18,7 @@ import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
+import { PaymentCheckSheet } from "./PaymentCheck.js"
 import { useOwner } from "./store.js"
 
 import type { Dictionary } from "../i18n/index.js"
@@ -160,7 +161,7 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
     const { order, onChange, onStale } = props
     const t = useT()
     const [busy, setBusy] = useState(false)
-    const [sheet, setSheet] = useState<"courier" | "cancel" | null>(null)
+    const [sheet, setSheet] = useState<"courier" | "cancel" | "pay" | null>(null)
     if (isFinalStatus(order.status)) {
         return null
     }
@@ -188,9 +189,12 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
         <div className="mt-4 flex flex-col gap-2">
             {next && waitsForMoney ? (
                 <Button
-                    loading={busy}
+                    disabled={busy}
                     icon={<CardIcon size={18} />}
-                    onClick={(): void => void act(() => api.owner.confirmPayment(order.id))}
+                    onClick={(): void => {
+                        haptic.tap()
+                        setSheet("pay")
+                    }}
                 >
                     {t.owner.paidAccept}
                 </Button>
@@ -227,6 +231,7 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
             </div>
             {sheet === "courier" ? <CourierSheet {...props} onClose={close} /> : null}
             {sheet === "cancel" ? <CancelSheet {...props} onClose={close} /> : null}
+            {sheet === "pay" ? <PaymentCheckSheet {...props} onClose={close} /> : null}
         </div>
     )
 }

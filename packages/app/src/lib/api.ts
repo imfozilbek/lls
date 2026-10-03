@@ -136,6 +136,28 @@ async function request<T>(method: string, path: string, body?: BodyInit | object
     return data as T
 }
 
+/** A private file the Worker streams (the transfer screenshot): read as a Blob, never cached. */
+async function requestBlob(path: string): Promise<Blob> {
+    let response: Response
+    try {
+        response = await fetch(`${API_URL}${path}`, { headers: authHeaders(), cache: "no-store" })
+    } catch {
+        throw new ApiError(0, "NETWORK", "No connection")
+    }
+    if (!response.ok) {
+        if (response.status === 401 && webSession) {
+            onSessionExpired?.()
+        }
+        const error = ((await response.json().catch(() => null)) as ErrorBody | null)?.error
+        throw new ApiError(
+            response.status,
+            error?.code ?? "HTTP_ERROR",
+            error?.message ?? response.statusText,
+        )
+    }
+    return response.blob()
+}
+
 function query(params: Record<string, string | number | undefined>): string {
     const search = new URLSearchParams()
     for (const [key, value] of Object.entries(params)) {
@@ -244,9 +266,11 @@ export const api = {
     order: (id: string): Promise<OrderDTO> => request("GET", `/api/orders/${id}`),
     cancelOrder: (id: string): Promise<OrderDTO> =>
         request("PATCH", `/api/orders/${id}`, { status: "cancelled" }),
-    /** «Я перевёл»: the owner gets a ping to check the card. */
-    transferSent: (id: string): Promise<OrderDTO> =>
-        request("POST", `/api/orders/${id}/transfer-sent`),
+    /** «O'tkazdim» with the screenshot of the transfer: the owner gets it to check the card. */
+    transferSent: (id: string, receipt: Blob): Promise<OrderDTO> =>
+        request("POST", `/api/orders/${id}/transfer-sent`, receipt),
+    /** The screenshot sent with «O'tkazdim»: only the order's customer and the shop's owner. */
+    orderReceipt: (id: string): Promise<Blob> => requestBlob(`/api/orders/${id}/receipt`),
 
     owner: {
         shop: (): Promise<ShopOwnerDTO> => request("GET", "/api/owner/shop"),
@@ -274,6 +298,9 @@ export const api = {
         /** «Деньги пришли, принять»: paid, and a new order is accepted in the same tap. */
         confirmPayment: (orderId: string): Promise<OrderDTO> =>
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "paid" }),
+        /** «Pul kelmadi»: the money is not on the card; the customer sends the screenshot again. */
+        rejectTransfer: (orderId: string): Promise<OrderDTO> =>
+            request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "rejected" }),
         markRefunded: (orderId: string): Promise<OrderDTO> =>
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "refunded" }),
         /** The bot sends the QR poster back to the owner's chat. */

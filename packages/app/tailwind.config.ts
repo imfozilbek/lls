@@ -78,6 +78,7 @@ const config: Config = {
                 sticky: "10",
                 bar: "20",
                 sheet: "30",
+                viewer: "35",
                 toast: "40",
             },
             transitionTimingFunction: {
