@@ -7,6 +7,14 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Goal 14 closed; a managed bot's token is always fresh
+- **Fixed (worker):** Telegram may not send `managed_bot` when an owner changes the token in
+  @BotFather, so Zumda asks for the current token (`getManagedBotToken`) before it uses a managed
+  bot: at the application, the approval and `/reconnect`. If Telegram refuses, the admin gets the
+  usual `/reconnect` warning.
+- **Docs:** goal 14 closed by the owner with the practice answers; the application and approval
+  in production move to the business onboarding review.
+
 ### Goal 15: kinds of business, own addresses, Zumda | Business in a browser, bot profiles
 - **Changed (core, worker, app):** kinds of business are «Oziq-ovqat do'koni» (`grocery`),
   «Restoran» (`food`), «Xizmat ko'rsatish» (`service`). Water is a grocery store with the bottle
