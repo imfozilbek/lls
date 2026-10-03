@@ -159,7 +159,8 @@ Pilot: **food, water and grocery at the same time.**
       line, showcase, courier screen and QR poster; a new shop is green
 - [x] Zumda sets the shop bot's picture (logo or name + the mark) and description
 - [x] Bot pictures `brand/zumda-bot-avatar.png` and `zumda-kuryer-avatar.png` set through the Bot API
-- [ ] Own addresses `app.zumda.shop` / `api.zumda.shop` once the domain is active in Cloudflare
+- [x] Own addresses `app.zumda.shop` / `api.zumda.shop`; the Worker has no workers.dev address
+- [x] Bots' `/start` welcome with the street picture; Description Pictures set in @BotFather
 
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)

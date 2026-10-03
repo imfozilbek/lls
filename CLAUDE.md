@@ -733,7 +733,7 @@ Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 
 - Addresses: `api.zumda.shop` (Worker, Custom Domain) and `app.zumda.shop` (Pages); the deploy
   adds them and their DNS records. The Worker has no workers.dev address.
-- Checks run on the pull request (`static` and `unit` side by side, e2e on six machines; the
+- Checks run on the pull request (`static` and `unit` side by side, e2e on eight machines; the
   required checks are `quality-gates` and `e2e`). A push to `main` only deploys (~30 s): the
   `main` ruleset takes a PR only with green checks on code up to date with `main`.
 
