@@ -132,9 +132,10 @@ test.describe("customer of a food shop: order and status", () => {
         expect(card.buttons.map((b) => b.callback_data)).toEqual(
             expect.arrayContaining([expect.stringMatching(/^p:/), expect.stringMatching(/^x:/)]),
         )
-        // "To menu" after placing.
+        // Unpaid: the big button is the one thing to do now, «O'tkazdim» with the screenshot.
+        await expect(bottomButton(page)).toContainText("O'tkazdim")
         await bottomButton(page).click()
-        await expect(page.getByRole("heading", { name: "Osh Markaz" })).toBeVisible()
+        await expect(page.getByRole("dialog").filter({ hasText: "O'tkazma cheki" })).toBeVisible()
     })
 
     test("the money came, the owner accepts in the chat; the customer can no longer cancel", async ({
