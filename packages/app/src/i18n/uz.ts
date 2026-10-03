@@ -94,6 +94,10 @@ export const uz = {
         produce: "Meva va sabzavot",
         groceries: "Oziq-ovqat",
         household: "Xo'jalik mollari",
+        cleaning: "Tozalash",
+        car_care: "Avtoxizmat",
+        repair: "Ta'mirlash",
+        beauty: "Go'zallik",
         other: "Boshqa",
     },
     units: {
@@ -449,7 +453,11 @@ export const uz = {
         name: "Biznes nomi",
         namePlaceholder: "Masalan: Toza Suv",
         type: "Faoliyat turi",
-        types: { food: "Ovqat", water: "Suv", grocery: "Oziq-ovqat" },
+        types: {
+            grocery: "Oziq-ovqat do'koni",
+            food: "Restoran",
+            service: "Xizmat ko'rsatish",
+        },
         address: "Manzil",
         deliveryTitle: "Yetkazib berish",
         cardTitle: "To'lov uchun karta",

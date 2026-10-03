@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { BusinessType, LANGUAGES, Language } from "@zumda/core"
+import { BUSINESS_TYPES, BusinessType, LANGUAGES, Language } from "@zumda/core"
 
 import { dictionaryFor } from "./index.js"
 import { uz } from "./uz.js"
@@ -40,8 +40,10 @@ describe("dictionaries", () => {
 
     it("speak Uzbek (Latin) only: no Cyrillic in any text", () => {
         for (const language of LANGUAGES) {
-            for (const [path, value] of leaves(dictionaryFor(language, BusinessType.FOOD))) {
-                expect(String(value), path).not.toMatch(/[\u0400-\u04FF]/)
+            for (const type of BUSINESS_TYPES) {
+                for (const [path, value] of leaves(dictionaryFor(language, type))) {
+                    expect(String(value), path).not.toMatch(/[\u0400-\u04FF]/)
+                }
             }
         }
     })
@@ -55,19 +57,26 @@ describe("words by business type", () => {
         expect(food.order.hints.delivered).toContain("ishtaha")
     })
 
-    it("water and grocery shops get neutral words", () => {
-        for (const type of [BusinessType.WATER, BusinessType.GROCERY]) {
-            const words = dictionaryFor(Language.UZ, type)
-            expect(words.owner.tabs.menu).toBe(uz.owner.tabs.menu)
-            expect(words.order.hints.delivered).not.toContain("ishtaha")
-        }
+    it("grocery stores (water too) get the neutral words", () => {
+        const words = dictionaryFor(Language.UZ, BusinessType.GROCERY)
+        expect(words.owner.tabs.menu).toBe(uz.owner.tabs.menu)
+        expect(words.order.hints.delivered).not.toContain("ishtaha")
     })
 
-    it("food overlays keep every placeholder", () => {
+    it("services talk about services and work being done", () => {
+        const service = dictionaryFor(Language.UZ, BusinessType.SERVICE)
+        expect(service.owner.tabs.menu).toBe("Xizmatlar")
+        expect(service.order.steps.preparing).toBe("Bajarilmoqda")
+        expect(service.onboarding.types[BusinessType.SERVICE]).toBe("Xizmat ko'rsatish")
+    })
+
+    it("every overlay keeps every placeholder", () => {
         for (const language of LANGUAGES) {
-            const food = leaves(dictionaryFor(language, BusinessType.FOOD))
-            for (const [path, value] of leaves(dictionaryFor(language))) {
-                expect(placeholders(food.get(path)), path).toEqual(placeholders(value))
+            for (const type of BUSINESS_TYPES) {
+                const overlay = leaves(dictionaryFor(language, type))
+                for (const [path, value] of leaves(dictionaryFor(language))) {
+                    expect(placeholders(overlay.get(path)), path).toEqual(placeholders(value))
+                }
             }
         }
     })

@@ -87,11 +87,11 @@ const BASE = {
         shopBotShortDescription: "{shop}: uyga buyurtma bering. Zumda asosida ishlaydi",
         shopApproved: "🎉 {shop} ishga tushdi! Mijozlaringizga ushbu havolani yuboring:",
         shopRejected: "😔 {shop} arizasi rad etildi. Savollar bo'lsa, bizga yozing.",
-        newShop: "🏪 Yangi do'kon",
+        newShop: "🏪 Yangi biznes",
         shopTypes: {
-            [BusinessType.FOOD]: "ovqat",
-            [BusinessType.WATER]: "suv",
-            [BusinessType.GROCERY]: "oziq-ovqat",
+            [BusinessType.GROCERY]: "oziq-ovqat do'koni",
+            [BusinessType.FOOD]: "restoran",
+            [BusinessType.SERVICE]: "xizmat ko'rsatish",
         } as Record<BusinessType, string>,
         ownerLabel: "Egasi",
         approve: "✅ Tasdiqlash",
@@ -208,7 +208,7 @@ const BASE = {
 
 export type BotTexts = (typeof BASE)[Language]
 
-/** Food shops cook; water and grocery shops collect goods. Only these words differ. */
+/** A restaurant cooks; a grocery store collects goods. Only these words differ. */
 const FOOD: Record<Language, Partial<BotTexts>> = {
     [Language.UZ]: {
         statusNames: { ...BASE.uz.statusNames, [OrderStatus.PREPARING]: "👨‍🍳 Tayyorlanmoqda" },
@@ -224,9 +224,32 @@ const FOOD: Record<Language, Partial<BotTexts>> = {
     },
 }
 
+/** Services are done, not cooked or collected; and they are «Xizmatlar», not a catalog. */
+const SERVICE: Record<Language, Partial<BotTexts>> = {
+    [Language.UZ]: {
+        statusNames: { ...BASE.uz.statusNames, [OrderStatus.PREPARING]: "🧰 Bajarilmoqda" },
+        actions: { ...BASE.uz.actions, [OrderStatus.PREPARING]: "🧰 Bajarishni boshlash" },
+        customerStatus: {
+            ...BASE.uz.customerStatus,
+            [OrderStatus.PREPARING]: "🧰 #{n} buyurtmangiz bajarilmoqda.",
+            [OrderStatus.DELIVERED]: "🏁 #{n} buyurtmangiz bajarildi. Rahmat!",
+        },
+        shopWelcome:
+            "Assalomu alaykum! {shop} xizmatlarini oching va bir necha bosishda buyurtma bering.",
+        openMenu: "🧰 Xizmatlarni ochish",
+    },
+}
+
+/** The words that differ by kind of business; a grocery store uses the base words. */
+const OVERLAYS: Partial<Record<BusinessType, Record<Language, Partial<BotTexts>>>> = {
+    [BusinessType.FOOD]: FOOD,
+    [BusinessType.SERVICE]: SERVICE,
+}
+
 /** Texts in the reader's language, worded for the shop's kind of business. */
 export function textsFor(language: Language, type?: BusinessType): BotTexts {
-    return type === BusinessType.FOOD ? { ...BASE[language], ...FOOD[language] } : BASE[language]
+    const overlay = type ? OVERLAYS[type]?.[language] : undefined
+    return overlay ? { ...BASE[language], ...overlay } : BASE[language]
 }
 
 /** "{shop}" / "#{n}" placeholders. */

@@ -4,6 +4,7 @@ import { create } from "zustand"
 import { useSession } from "../stores/session.js"
 
 import { FOOD_UZ } from "./food.js"
+import { SERVICE_UZ } from "./service.js"
 import { uz } from "./uz.js"
 
 import type { Dictionary } from "./uz.js"
@@ -18,6 +19,16 @@ const DICTIONARIES: Record<Language, Dictionary> = { uz }
 /** Same keys, food words: "Menyu", "Tayyorlanmoqda", "Yoqimli ishtaha!". */
 const FOOD_DICTIONARIES: Record<Language, Dictionary> = {
     uz: { ...uz, ...FOOD_UZ(uz) } as Dictionary,
+}
+/** Same keys, service words: "Xizmatlar", "Bajarilmoqda", "Bajarildi". */
+const SERVICE_DICTIONARIES: Record<Language, Dictionary> = {
+    uz: { ...uz, ...SERVICE_UZ(uz) } as Dictionary,
+}
+
+/** The words that differ by kind of business; a grocery store uses the base dictionary. */
+const OVERLAYS: Partial<Record<BusinessType, Record<Language, Dictionary>>> = {
+    [BusinessType.FOOD]: FOOD_DICTIONARIES,
+    [BusinessType.SERVICE]: SERVICE_DICTIONARIES,
 }
 
 interface LanguageState {
@@ -58,5 +69,5 @@ export function errorText(t: Dictionary, code: string): string {
 }
 
 export function dictionaryFor(language: Language, type?: BusinessType): Dictionary {
-    return type === BusinessType.FOOD ? FOOD_DICTIONARIES[language] : DICTIONARIES[language]
+    return (type ? OVERLAYS[type]?.[language] : undefined) ?? DICTIONARIES[language]
 }

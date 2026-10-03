@@ -6,8 +6,8 @@ import { expect, test } from "@playwright/test"
 
 import { shopBySlug } from "../stand/config.js"
 import { pngImage } from "../support/images.js"
-import { FOOD, PEOPLE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
-import { courierChat, lastSeq, waitForCall, waitForMessage } from "../support/telegram.js"
+import { FOOD, PEOPLE, SERVICE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import { courierChat, lastSeq, shopChat, waitForCall, waitForMessage } from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
 import type { OpenedApp } from "../support/webapp.js"
@@ -251,4 +251,18 @@ test("water shop settings: bottle deposit and returnable bottles", async ({ page
         "aria-checked",
         "true",
     )
+})
+
+test("a service speaks of services: «Xizmatlar», «Bajarilmoqda», its bot button", async ({
+    page,
+}) => {
+    const since = await lastSeq()
+    await shopChat(SERVICE).send(PEOPLE.customer, "/start")
+    const welcome = await waitForMessage(PEOPLE.customer.id, "xizmatlarini", since)
+    expect(welcome.buttons[0]?.text).toBe("🧰 Xizmatlarni ochish")
+
+    await openApp(page, { user: PEOPLE.serviceOwner, shop: SERVICE })
+    await page.getByRole("button", { name: "Mening do'konim" }).click()
+    await page.getByRole("tab", { name: "Xizmatlar" }).click()
+    await expect(page.getByText("Gilam yuvish (kv. metr)")).toBeVisible()
 })

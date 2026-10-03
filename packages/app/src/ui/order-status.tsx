@@ -5,6 +5,7 @@ import { cn } from "../lib/cn.js"
 import { useSession } from "../stores/session.js"
 
 import {
+    ToolIcon,
     BoxIcon,
     ChefIcon,
     CheckIcon,
@@ -35,11 +36,17 @@ const ICONS: Record<OrderStatus, (size: number) => ReactNode> = {
     cancelled: (s) => <CloseIcon size={s} />,
 }
 
-/** A chef for shops that cook; a box for water and grocery shops that collect goods. */
+/** «Preparing» by kind: a chef cooks, a toolbox serves, a box collects goods. */
+const PREPARING_ICON: Record<BusinessType, (size: number) => ReactNode> = {
+    [BusinessType.FOOD]: (s) => <ChefIcon size={s} />,
+    [BusinessType.SERVICE]: (s) => <ToolIcon size={s} />,
+    [BusinessType.GROCERY]: (s) => <BoxIcon size={s} />,
+}
+
 function useIcon(): (status: OrderStatus, size: number) => ReactNode {
-    const cooks = useSession((state) => state.shop?.type) === BusinessType.FOOD
+    const type = useSession((state) => state.shop?.type) ?? BusinessType.GROCERY
     return (status, size) =>
-        status === OrderStatus.PREPARING && !cooks ? <BoxIcon size={size} /> : ICONS[status](size)
+        status === OrderStatus.PREPARING ? PREPARING_ICON[type](size) : ICONS[status](size)
 }
 
 /** Status tone: in progress = amber, done = green, cancelled = red, new = neutral.

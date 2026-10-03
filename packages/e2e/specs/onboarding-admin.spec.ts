@@ -43,7 +43,7 @@ async function myShops(owner: TgUser = PEOPLE.newOwner): Promise<MyShop[]> {
 /** The BotFather way: step «Bot» → «Menda bot bor» → the token. */
 async function apply(page: Page, token: string, name: string): Promise<void> {
     await page.getByLabel("Biznes nomi").fill(name)
-    await page.getByRole("radio", { name: "Oziq-ovqat" }).click()
+    await page.getByRole("radio", { name: "Oziq-ovqat do'koni" }).click()
     await page.getByLabel(/Manzil/).fill("Guliston, Navoiy 20")
     await bottomButton(page).click()
     await expect(page.getByText("2/3-qadam")).toBeVisible()
@@ -104,7 +104,7 @@ test("the application reaches the admin; the pending shop opens only for its own
     // The new bot at once wears Zumda's picture: the shop's name and the Zumda mark, as a JPEG.
     const photo = await waitForCall("setMyProfilePhoto", NEW_BOT.token, since)
     expect(photo.body["avatar"]).toMatchObject({ contentType: "image/jpeg" })
-    const card = await waitForMessage(PEOPLE.admin.id, "Yangi do'kon", since)
+    const card = await waitForMessage(PEOPLE.admin.id, "Yangi biznes", since)
     expect(card.text).toContain("Yangi Non")
     expect(card.buttons.map((b) => b.text)).toEqual(["✅ Tasdiqlash", "❌ Rad etish"])
 
@@ -142,7 +142,7 @@ test("the same bot cannot be connected twice", async () => {
 test("a stranger cannot approve; the admin approves: webhook, menu button, owner told", async ({
     page,
 }) => {
-    const card = await waitForMessage(PEOPLE.admin.id, "Yangi do'kon")
+    const card = await waitForMessage(PEOPLE.admin.id, "Yangi biznes")
     const approve = card.buttons.find((b) => b.text === "✅ Tasdiqlash")?.callback_data ?? ""
     await businessChat().press(PEOPLE.stranger, approve)
     expect((await myShops())[0]?.status).toBe("pending")
