@@ -111,6 +111,10 @@ async function handleOrderCallback(
         await services.telegram.answerCallback(token, callback.id)
         return
     }
+    if (action.kind === "askPaid") {
+        await askPaymentConfirm(services, business, token, callback, action.orderId)
+        return
+    }
     let order: OrderDTO
     try {
         order = await runOrderAction(services, business, callback.from.id, action)
@@ -122,18 +126,46 @@ async function handleOrderCallback(
     // Notify first: if answering the button fails, the owner card and the customer still update.
     if (action.kind === "paid") {
         await notifyPaymentConfirmed(services, business, step.order, step.request)
+    } else if (action.kind === "notPaid") {
+        await new Notifier(services).transferRejected(business, order)
     } else {
         await notifyOwnerStep(services, business, step.order, step.request)
     }
     await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
 }
 
-/** The owner's button: the next step, «Деньги пришли, принять», or cancel. */
+/** «Pul keldi» in the chat asks first: the sum and the card to check in the bank app. */
+async function askPaymentConfirm(
+    services: Services,
+    business: Business,
+    token: string,
+    callback: Callback,
+    orderId: string,
+): Promise<void> {
+    const texts = textsFor(languageFromTelegram(callback.from.language_code), business.type)
+    try {
+        if (!business.isOwnedBy(callback.from.id)) {
+            throw ForbiddenError.notOwner(business.id)
+        }
+        const order = await services.useCases.getOrder.execute({
+            telegramId: callback.from.id,
+            businessId: business.id,
+            orderId,
+        })
+        await new Notifier(services).askPaymentConfirm(business, order)
+    } catch (error) {
+        await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, texts))
+        return
+    }
+    await services.telegram.answerCallback(token, callback.id)
+}
+
+/** The owner's button: the next step, the money here or not, or cancel. */
 async function runOrderAction(
     services: Services,
     business: Business,
     actorTelegramId: number,
-    action: OrderCallback,
+    action: Exclude<OrderCallback, { kind: "askPaid" }>,
 ): Promise<OrderDTO> {
     const ids = { actorTelegramId, businessId: business.id, orderId: action.orderId }
     switch (action.kind) {
@@ -141,6 +173,8 @@ async function runOrderAction(
             return services.useCases.advanceOrder.execute({ ...ids, to: action.to })
         case "paid":
             return services.useCases.confirmPayment.execute(ids)
+        case "notPaid":
+            return services.useCases.rejectTransfer.execute(ids)
         case "cancel":
             return requireOwnerCancel(services, business, actorTelegramId, action.orderId)
     }

@@ -39,6 +39,18 @@ export interface OrderRepository {
      * one conditional write, so a «Беру» or a cancel at the same moment is never undone.
      */
     markNetworkAlerted(orderId: string, at: Date): Promise<boolean>
+    /**
+     * The same receipt sent earlier for another order of this shop or of this customer: that
+     * order's number in this shop, 0 for another shop, undefined when it is new.
+     */
+    findReceiptReuse(input: {
+        hash: string
+        orderId: string
+        businessId: string
+        customerId: string
+    }): Promise<number | undefined>
+    /** Transfers of this customer an owner did not find («Pul kelmadi»), on other orders. */
+    countTransferRejections(customerId: string, exceptOrderId: string): Promise<number>
     listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]>
     /** Delivered orders of a district in [from, to): all, and those a network courier took. */
     networkShare(districtId: string, from: Date, to: Date): Promise<NetworkShare>

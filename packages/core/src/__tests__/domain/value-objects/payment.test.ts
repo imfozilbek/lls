@@ -9,6 +9,7 @@ import { Payment } from "../../../domain/value-objects/payment.js"
 import { PayoutCard } from "../../../domain/value-objects/payout-card.js"
 
 const AT = new Date("2026-10-01T10:00:00Z")
+const RECEIPT = { key: "receipts/b/o/1", hash: "h1", at: AT, customerRejections: 0 }
 
 describe("Payment", () => {
     it("always a transfer to the shop's card; nothing has arrived at checkout", () => {
@@ -22,16 +23,16 @@ describe("Payment", () => {
         expect(payment.isPaid()).toBe(false)
     })
 
-    it("«Я перевёл» asks the owner to look; pressing it again changes nothing", () => {
-        const sent = Payment.start().markSent()
+    it("«Я перевёл» asks the owner to look; after the money nothing changes", () => {
+        const sent = Payment.start().markSent(RECEIPT)
         expect(sent.status).toBe(PaymentStatus.AWAITING)
-        expect(sent.markSent()).toBe(sent)
+        expect(sent.markSent(RECEIPT).status).toBe(PaymentStatus.AWAITING)
         const paid = sent.confirm(AT, false)
-        expect(paid.markSent()).toBe(paid)
+        expect(paid.markSent(RECEIPT)).toBe(paid)
     })
 
     it("the owner confirms an awaited or an unannounced transfer; nothing else", () => {
-        expect(Payment.start().markSent().confirm(AT, false)).toMatchObject({
+        expect(Payment.start().markSent(RECEIPT).confirm(AT, false)).toMatchObject({
             status: PaymentStatus.PAID,
             method: PaymentMethod.CARD_TRANSFER,
             paidAt: AT,
@@ -47,16 +48,41 @@ describe("Payment", () => {
         expect(owed.refund().status).toBe(PaymentStatus.REFUNDED)
         expect(() => owed.refund().refund()).toThrow(BusinessRuleViolationError)
         expect(Payment.start().onCancel().status).toBe(PaymentStatus.UNPAID)
-        expect(Payment.start().markSent().onCancel().status).toBe(PaymentStatus.AWAITING)
+        expect(Payment.start().markSent(RECEIPT).onCancel().status).toBe(PaymentStatus.AWAITING)
         // A transfer that arrives after the cancel is owed back at once.
-        expect(Payment.start().markSent().confirm(AT, true).status).toBe(PaymentStatus.REFUND_DUE)
+        expect(Payment.start().markSent(RECEIPT).confirm(AT, true).status).toBe(
+            PaymentStatus.REFUND_DUE,
+        )
     })
 
     it("keeps the card the customer was shown through every step", () => {
         const card = PayoutCard.create("4111111111111111", "Rustam Karimov")
-        const paid = Payment.start(card).markSent().confirm(AT, false)
+        const paid = Payment.start(card).markSent(RECEIPT).confirm(AT, false)
         expect(paid.card).toBe(card)
         expect(paid.onCancel().refund().card).toBe(card)
+    })
+
+    it("the receipt rides along; a new one replaces it until the money is confirmed", () => {
+        const sent = Payment.start().markSent(RECEIPT)
+        expect(sent.receipt).toBe(RECEIPT)
+        const again = sent.markSent({ ...RECEIPT, key: "receipts/b/o/2", hash: "h2" })
+        expect(again.receipt?.hash).toBe("h2")
+        const paid = again.confirm(AT, false)
+        expect(paid.receipt?.hash).toBe("h2")
+        expect(paid.markSent(RECEIPT)).toBe(paid)
+    })
+
+    it("«Pul kelmadi»: an awaited transfer goes back to unpaid and is counted", () => {
+        const rejected = Payment.start().markSent(RECEIPT).reject()
+        expect(rejected.status).toBe(PaymentStatus.UNPAID)
+        expect(rejected.rejections).toBe(1)
+        expect(rejected.markSent(RECEIPT).reject().rejections).toBe(2)
+        // Only a transfer the customer reported can be "not found".
+        expect(() => Payment.start().reject()).toThrow(BusinessRuleViolationError)
+        expect(() => Payment.start().confirm(AT, false).reject()).toThrow(
+            BusinessRuleViolationError,
+        )
+        expect(rejected.markSent(RECEIPT).confirm(AT, false).rejections).toBe(1)
     })
 
     it("old cash rows still read", () => {

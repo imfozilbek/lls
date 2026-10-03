@@ -7,6 +7,26 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Money and trust: the transfer screenshot (UX phase 1, owner's decision)
+- **Added (core, worker, app):** «O'tkazdim» carries the screenshot of the transfer; without it
+  the press is refused (`RECEIPT_REQUIRED`). It is stored privately (never on a public address),
+  seen only by the order's customer and the shop's owner, and sent to the owner as a photo with
+  the sum and the card tail. Sending again replaces it until the money is confirmed.
+- **Added (worker, app):** warnings for the owner: the same screenshot came before (this shop, or
+  this customer in any shop), and how many of the customer's transfers were never found.
+- **Added (core, worker, app):** «Pul kelmadi»: the order goes back to unpaid, the customer is
+  told why and sends the screenshot again (`PAYMENT_NOT_REJECTABLE` once settled).
+- **Changed (worker, app):** «Pul keldi» never accepts in one tap: the bot asks «… keldimi?»
+  with «✅ Ha, … keldi» (`pc:`) and «Yo'q, kelmadi» (`pn:`); the app opens a sheet with the sum,
+  the card, the screenshot and the warnings. If Telegram refuses the picture, the owner still
+  gets the text and the buttons.
+- **Changed (app):** checkout says how much will be transferred after the order instead of the
+  card number; the order screen shows «To'lov kutilmoqda · sum», then «Do'kon pulni
+  tekshirmoqda» with the screenshot sent, or «Do'kon pulni topmadi» with «Chekni qayta
+  yuborish». The customer's cancel is a quiet link, far from «O'tkazdim».
+- **Not done (honest limit):** a fake or AI-made screenshot cannot be told reliably; the money on
+  the card stays the only proof.
+
 ### Bug hunt across the platform (four independent audits)
 - **Fixed (core, worker):** a late network report wrote the whole order back and could undo a
   courier's «Беру» or the owner's cancel; it is now one conditional write, reported once.

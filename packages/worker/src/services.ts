@@ -26,6 +26,8 @@ import {
     ListShopOrdersUseCase,
     ListShowcaseShopsUseCase,
     MarkTransferSentUseCase,
+    GetTransferReceiptUseCase,
+    RejectTransferUseCase,
     AddPayoutCardUseCase,
     ChoosePaymentCardUseCase,
     ListPayoutCardsUseCase,
@@ -66,6 +68,7 @@ import { D1NetworkOfferRepository } from "./repositories/network-offer.repositor
 import { D1OrderRepository } from "./repositories/order.repository.js"
 import { D1PayoutCardRepository } from "./repositories/payout-card.repository.js"
 import { D1ProductRepository } from "./repositories/product.repository.js"
+import { R2ReceiptStore } from "./repositories/receipt.store.js"
 
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
@@ -104,6 +107,8 @@ export interface UseCases {
     cancelOrder: CancelOrderUseCase
     advanceOrder: AdvanceOrderUseCase
     markTransferSent: MarkTransferSentUseCase
+    getTransferReceipt: GetTransferReceiptUseCase
+    rejectTransfer: RejectTransferUseCase
     listMyOrders: ListMyOrdersUseCase
     listShopOrders: ListShopOrdersUseCase
     moneyReport: GetMoneyReportUseCase
@@ -160,6 +165,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const couriers = new D1CourierRepository(env.DB)
     const districts = new D1DistrictRepository(env.DB)
     const cards = new D1PayoutCardRepository(env.DB)
+    const receipts = new R2ReceiptStore(env.BUCKET)
     const { clock, telegram } = deps
     const managedBots = new D1ManagedBotRepository(env.DB, env.TOKEN_ENC_KEY, clock)
     const admins = platformAdminIds(env)
@@ -205,12 +211,14 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             getOrder: new GetOrderUseCase(orderAccess),
             cancelOrder: new CancelOrderUseCase(orderAccess),
             advanceOrder: new AdvanceOrderUseCase(orderAccess),
-            markTransferSent: new MarkTransferSentUseCase(orderAccess),
+            markTransferSent: new MarkTransferSentUseCase({ ...orderAccess, receipts, clock }),
+            getTransferReceipt: new GetTransferReceiptUseCase(orderAccess),
             listMyOrders: new ListMyOrdersUseCase(customers, orders),
             listShopOrders: new ListShopOrdersUseCase(businesses, orders),
             moneyReport: new GetMoneyReportUseCase(network),
             confirmPayment: new ConfirmPaymentUseCase(network),
             markRefunded: new MarkRefundedUseCase(network),
+            rejectTransfer: new RejectTransferUseCase(network),
             exportOrders: new ExportOrdersUseCase(network),
             createCourierInvite: new CreateCourierInviteUseCase(courierAccess),
             joinAsCourier: new JoinAsCourierUseCase(courierAccess),

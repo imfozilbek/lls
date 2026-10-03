@@ -11,8 +11,7 @@ import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
-import { CardBlock } from "../ui/payment.js"
+import { CardIcon, CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
 import { Button, Field, Section, Stepper, TextArea, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
@@ -253,18 +252,26 @@ function BottlesField({
 
 /**
  * Only a transfer to the shop's card, made after placing: the shop starts once the money
- * arrives. The card is shown here so the customer knows before tapping «Заказать».
+ * arrives. The card number waits for the order screen; here the customer learns how and how much.
  */
 function PaymentSection({ total }: { total: number }): React.JSX.Element | null {
     const t = useT()
+    const language = useLanguage()
     const card = useSession((state) => state.shop?.payoutCard)
     if (!card) {
         return null
     }
     return (
         <Section title={t.pay.title}>
-            <p className="px-1 text-sm text-tg-subtitle">{t.pay.beforeCooking}</p>
-            <CardBlock card={card} total={total} />
+            <div className="flex gap-3 rounded-tile bg-tg-secondary p-4">
+                <CardIcon size={22} className="mt-0.5 shrink-0 text-brand" />
+                <div>
+                    <p className="font-semibold">
+                        {fill(t.pay.afterOrder, { sum: formatMoney(total, language) })}
+                    </p>
+                    <p className="mt-1 text-sm text-tg-subtitle">{t.pay.afterOrderHint}</p>
+                </div>
+            </div>
         </Section>
     )
 }

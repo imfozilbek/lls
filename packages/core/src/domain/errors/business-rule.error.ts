@@ -192,6 +192,21 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    static paymentNotRejectable(status: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "PAYMENT_NOT_REJECTABLE",
+            "Only a transfer the customer reported can be marked as not found",
+            { status },
+        )
+    }
+
+    static receiptRequired(): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "RECEIPT_REQUIRED",
+            "Attach the screenshot of the transfer",
+        )
+    }
+
     static paymentNotRefundable(status: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "PAYMENT_NOT_REFUNDABLE",

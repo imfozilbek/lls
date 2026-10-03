@@ -78,6 +78,16 @@ export const moneyRoutes = new Hono<AppEnv>()
                 businessId: business.id,
                 orderId: c.req.valid("param").id,
             }
+            if (c.req.valid("json").action === "rejected") {
+                // «Pul kelmadi»: the customer checks and sends the screenshot again.
+                const order = await services.useCases.rejectTransfer.execute(ids)
+                inBackground(
+                    c.executionCtx,
+                    services,
+                    new Notifier(services).transferRejected(business, order),
+                )
+                return c.json(order)
+            }
             if (c.req.valid("json").action === "refunded") {
                 const order = await services.useCases.markRefunded.execute(ids)
                 inBackground(

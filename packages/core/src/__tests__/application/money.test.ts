@@ -13,6 +13,7 @@ import {
     ExportOrdersUseCase,
     GetMoneyReportUseCase,
     MarkRefundedUseCase,
+    RejectTransferUseCase,
     periodRange,
 } from "../../application/use-cases/money/money.use-cases.js"
 import {
@@ -45,6 +46,7 @@ import {
     InMemoryDistricts,
     InMemoryOrders,
     InMemoryProducts,
+    InMemoryReceipts,
     fixedClock,
 } from "../in-memory.js"
 
@@ -60,6 +62,7 @@ describe("money: transfer before the shop starts, report", () => {
     let customers: InMemoryCustomers
     let orders: InMemoryOrders
     let couriers: InMemoryCouriers
+    let receipts: InMemoryReceipts
     let courierId: string
 
     const money = (): {
@@ -91,13 +94,17 @@ describe("money: transfer before the shop starts, report", () => {
     }
 
     /** «Я перевёл» from the customer. */
-    const sent = async (order: OrderDTO, telegramId = CUSTOMER_TG): Promise<OrderDTO> =>
-        (await sentOnce(order, telegramId)).order
-    const sentOnce = (order: OrderDTO, telegramId = CUSTOMER_TG) =>
-        new MarkTransferSentUseCase(access()).execute({
+    const sent = async (
+        order: OrderDTO,
+        telegramId = CUSTOMER_TG,
+        picture?: number[],
+    ): Promise<OrderDTO> => (await sentOnce(order, telegramId, picture)).order
+    const sentOnce = (order: OrderDTO, telegramId = CUSTOMER_TG, picture = [1, 2, 3]) =>
+        new MarkTransferSentUseCase({ ...access(), receipts, clock }).execute({
             telegramId,
             businessId: "biz-1",
             orderId: order.id,
+            receipt: { bytes: new Uint8Array(picture), contentType: "image/webp" },
         })
 
     /** «Деньги пришли, принять» from the owner. */
@@ -132,6 +139,7 @@ describe("money: transfer before the shop starts, report", () => {
         customers = new InMemoryCustomers()
         orders = new InMemoryOrders()
         couriers = new InMemoryCouriers()
+        receipts = new InMemoryReceipts()
         await businesses.save(makeBusiness())
         await products.save(makeProduct())
         await customers.save(makeCustomer())
@@ -181,8 +189,10 @@ describe("money: transfer before the shop starts, report", () => {
         await expect(sent(order, STRANGER_TG)).rejects.toThrow(ForbiddenError)
         await expect(sent(order, OWNER_TG)).rejects.toThrow(ForbiddenError)
         expect((await sent(order)).payment.status).toBe(PaymentStatus.AWAITING)
-        // Pressed twice: still one transfer to check, and the owner is not pinged again.
-        expect((await sentOnce(order)).changed).toBe(false)
+        // A new screenshot replaces the old one (and the old file is gone).
+        const again = await sentOnce(order, CUSTOMER_TG, [4, 5, 6])
+        expect(again.changed).toBe(true)
+        expect(receipts.files.size).toBe(1)
         let today = await report()
         expect(today.awaiting.map((o) => o.id)).toEqual([order.id])
 
@@ -193,8 +203,37 @@ describe("money: transfer before the shop starts, report", () => {
         expect(accepted.payment.method).toBe(PaymentMethod.CARD_TRANSFER)
         today = await report()
         expect(today.awaiting).toEqual([])
-        // Confirmed already: nothing to confirm again.
+        // Confirmed already: nothing to confirm again, and no new screenshot is taken.
         await expect(confirm(order)).rejects.toThrow(BusinessRuleViolationError)
+        expect((await sentOnce(order)).changed).toBe(false)
+    })
+
+    it("no screenshot, no «Я перевёл»", async () => {
+        const order = await place()
+        await expect(sentOnce(order, CUSTOMER_TG, [])).rejects.toThrow(BusinessRuleViolationError)
+    })
+
+    it("the same screenshot for a second order is flagged for the owner", async () => {
+        const first = await place()
+        await sentOnce(first, CUSTOMER_TG, [9, 9, 9])
+        const second = await place()
+        const flagged = await sent(second, CUSTOMER_TG, [9, 9, 9])
+        expect(flagged.payment.receipt?.reusedFrom).toBe(first.number)
+        const fresh = await sent(await place(), CUSTOMER_TG, [7, 7, 7])
+        expect(fresh.payment.receipt?.reusedFrom).toBeUndefined()
+    })
+
+    it("«Pul kelmadi»: back to unpaid, counted, and the next owner check sees it", async () => {
+        const reject = (order: OrderDTO, actorTelegramId = OWNER_TG): Promise<OrderDTO> =>
+            new RejectTransferUseCase(money()).execute(ids(order, actorTelegramId))
+        const order = await place()
+        await expect(reject(order)).rejects.toThrow(BusinessRuleViolationError)
+        await sent(order)
+        await expect(reject(order, STRANGER_TG)).rejects.toThrow(ForbiddenError)
+        const rejected = await reject(order)
+        expect(rejected.payment).toMatchObject({ status: PaymentStatus.UNPAID, rejections: 1 })
+        const next = await sent(await place(), CUSTOMER_TG, [8, 8])
+        expect(next.payment.receipt?.customerRejections).toBe(1)
     })
 
     it("the owner testing his own shop presses «Я перевёл» as its customer", async () => {

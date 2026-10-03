@@ -1,4 +1,6 @@
 import { ACTIVE_ORDER_STATUSES, OrderStatus } from "../../../domain/enums/order-status.js"
+import { PaymentStatus } from "../../../domain/enums/payment.js"
+import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
 import { toOrderDTO } from "../../dtos/order.dto.js"
@@ -9,9 +11,11 @@ import type { Order, OrderMover } from "../../../domain/entities/order.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { Page } from "../../dtos/pagination.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
+import type { Clock } from "../../ports/clock.js"
 import type { CourierRepository } from "../../ports/courier-repository.js"
 import type { CustomerRepository } from "../../ports/customer-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
+import type { ReceiptStore } from "../../ports/receipt-store.js"
 
 export interface OrderAccessDeps {
     businesses: BusinessRepository
@@ -137,31 +141,80 @@ export class CourierAdvanceOrderUseCase {
     }
 }
 
+export interface TransferDeps extends OrderAccessDeps {
+    receipts: ReceiptStore
+    clock: Clock
+}
+
 export class MarkTransferSentUseCase {
-    constructor(private readonly deps: OrderAccessDeps) {}
+    constructor(private readonly deps: TransferDeps) {}
 
     /**
-     * «Я перевёл»: only the customer of the order; the owner then checks the card. `changed` is
-     * false when it was pressed before (or the money is already confirmed): nobody is pinged twice.
+     * «Я перевёл» with the screenshot of the transfer: only the customer of the order; the owner
+     * then checks the card. A new screenshot replaces the old one until the money is confirmed.
+     * `changed` is false once the money is confirmed: nobody is pinged twice.
      */
     async execute(input: {
         telegramId: number
         businessId: string
         orderId: string
+        receipt: { bytes: Uint8Array; contentType: string }
     }): Promise<{ order: OrderDTO; changed: boolean }> {
-        const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
+        const { orders, receipts } = this.deps
+        const order = await requireOrder(orders, input.orderId, input.businessId)
         // The customer of this very order, even when it is the owner testing his own shop.
         const customer = await this.deps.customers.findByTelegramId(input.telegramId)
         if (!customer || !order.isPlacedBy(customer.id)) {
             throw ForbiddenError.notOrderParticipant(order.id)
         }
-        const before = order.payment.status
-        order.markTransferSent()
-        const changed = order.payment.status !== before
-        if (changed) {
-            await this.deps.orders.save(order)
+        const open = [PaymentStatus.UNPAID, PaymentStatus.AWAITING].includes(order.payment.status)
+        if (!open) {
+            return { order: toOrderDTO(order), changed: false }
         }
-        return { order: toOrderDTO(order), changed }
+        if (input.receipt.bytes.byteLength === 0) {
+            throw BusinessRuleViolationError.receiptRequired()
+        }
+        const stored = await receipts.put({
+            businessId: order.businessId,
+            orderId: order.id,
+            ...input.receipt,
+        })
+        const previous = order.payment.receipt?.key
+        order.markTransferSent({
+            ...stored,
+            at: this.deps.clock.now(),
+            reusedFrom: await orders.findReceiptReuse({
+                hash: stored.hash,
+                orderId: order.id,
+                businessId: order.businessId,
+                customerId: customer.id,
+            }),
+            customerRejections: await orders.countTransferRejections(customer.id, order.id),
+        })
+        await orders.save(order)
+        if (previous && previous !== stored.key) {
+            await receipts.remove(previous)
+        }
+        return { order: toOrderDTO(order), changed: true }
+    }
+}
+
+/** The screenshot of an order's transfer: only for its customer and the shop's owner. */
+export class GetTransferReceiptUseCase {
+    constructor(private readonly deps: OrderAccessDeps) {}
+
+    async execute(input: {
+        telegramId: number
+        businessId: string
+        orderId: string
+    }): Promise<string> {
+        const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
+        const { role } = await participantOf(this.deps, order, input.telegramId)
+        const key = order.payment.receipt?.key
+        if (role === "courier" || !key) {
+            throw EntityNotFoundError.order(order.id)
+        }
+        return key
     }
 }
 

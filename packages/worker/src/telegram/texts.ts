@@ -173,6 +173,19 @@ const BASE = {
         paidAccept: "💳 Pul keldi, qabul qilish",
         nothingToCollect: "✅ Oldindan to'langan, mijozdan pul olmang",
         transferSentOwner: "💳 Mijoz #{n} buyurtma uchun {sum} o'tkazdi. Kartani tekshiring.",
+        receiptCaption:
+            "🧾 #{n} · {sum} · {name}\nChek: bu dalil emas. Pul {card} kartangizga kelganini bank ilovangizda tekshiring.",
+        receiptReusedHere: "⚠️ Bu chek avval #{n} buyurtmada yuborilgan.",
+        receiptReusedElsewhere: "⚠️ Bu chek boshqa do'kon buyurtmasida ham yuborilgan.",
+        customerRejected: "⚠️ Bu mijozning {count} ta o'tkazmasi avval topilmagan.",
+        confirmPaidQuestion:
+            "💳 #{n}: {sum} {card} kartangizga keldimi?\nBank ilovangizda tekshirib, javob bering.",
+        confirmPaidNoReceipt: "⚠️ Mijoz o'tkazganini hali bildirmagan.",
+        confirmPaidYes: "✅ Ha, {sum} keldi",
+        confirmPaidNo: "Yo'q, kelmadi",
+        transferRejectedCustomer:
+            "Do'kon #{n} buyurtma uchun pulni topmadi. Kartangizdan o'tganini tekshiring va chekni qayta yuboring.",
+        transferRejectedOwner: "#{n}: «Pul kelmadi» belgilandi. Mijozdan chekni qayta so'radik.",
         payByTransfer:
             "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n<code>{card}</code> ({holder})\nSo'ng ilovada «O'tkazdim» ni bosing. Pul kelishi bilan do'kon boshlaydi.",
         reportCaption: "📊 {shop}: buyurtmalar, {from} - {to}",

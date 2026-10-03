@@ -82,7 +82,7 @@ export class FakeTelegram implements TelegramGateway {
     readonly managedTokens = new Map<number, string>()
     /** Simulates Telegram failing to fetch a picture by URL. */
     failPictures = false
-    /** Simulates Telegram refusing a new bot picture. */
+    /** Simulates Telegram refusing a picture: a new bot picture, or a photo message. */
     failPhotos = false
     readonly documents: { token: string; chatId: number; file: OutgoingFile; caption?: string }[] =
         []
@@ -172,6 +172,28 @@ export class FakeTelegram implements TelegramGateway {
             throw new TelegramApiError("answerCallbackQuery", "Bad Request: query is too old")
         }
         this.answered.push(callbackQueryId)
+    }
+    readonly photoFiles: {
+        token: string
+        chatId: number
+        file: OutgoingFile
+        html: string
+        options?: MessageOptions
+    }[] = []
+    async sendPhotoFile(
+        token: string,
+        chatId: number,
+        file: OutgoingFile,
+        html: string,
+        options?: MessageOptions,
+    ): Promise<void> {
+        if (this.failReplies) {
+            throw new TelegramApiError("sendPhoto", "Forbidden: bot was blocked by the user")
+        }
+        if (this.failPhotos) {
+            throw new TelegramApiError("sendPhoto", "Bad Request: PHOTO_INVALID_DIMENSIONS")
+        }
+        this.photoFiles.push({ token, chatId, file, html, options })
     }
     async sendDocument(
         token: string,

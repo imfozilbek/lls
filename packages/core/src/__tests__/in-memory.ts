@@ -15,6 +15,7 @@ import type {
 } from "../application/ports/managed-bot-repository.js"
 import type { PayoutCardRepository } from "../application/ports/payout-card-repository.js"
 import type { MoneyTotals, OrderRepository } from "../application/ports/order-repository.js"
+import type { ReceiptStore, ReceiptUpload } from "../application/ports/receipt-store.js"
 import type {
     ProductListQuery,
     ProductRepository,
@@ -322,6 +323,28 @@ export class InMemoryOrders implements OrderRepository {
         this.items.set(order.id, order)
         return true
     }
+    async findReceiptReuse(input: {
+        hash: string
+        orderId: string
+        businessId: string
+        customerId: string
+    }): Promise<number | undefined> {
+        const earlier = [...this.items.values()].find(
+            (o) =>
+                o.id !== input.orderId &&
+                o.payment.receipt?.hash === input.hash &&
+                (o.businessId === input.businessId || o.customerId === input.customerId),
+        )
+        if (!earlier) {
+            return undefined
+        }
+        return earlier.businessId === input.businessId ? earlier.number : 0
+    }
+    async countTransferRejections(customerId: string, exceptOrderId: string): Promise<number> {
+        return [...this.items.values()]
+            .filter((o) => o.customerId === customerId && o.id !== exceptOrderId)
+            .reduce((sum, o) => sum + o.payment.rejections, 0)
+    }
     async markNetworkAlerted(orderId: string, at: Date): Promise<boolean> {
         const stored = this.items.get(orderId)
         if (!stored || stored.networkAlertedAt || !stored.isWaitingForNetwork()) {
@@ -473,5 +496,19 @@ export class InMemoryDistricts implements DistrictRepository {
     }
     async save(district: District): Promise<void> {
         this.items.set(district.id, district)
+    }
+}
+
+/** Receipts kept in memory; the hash is the file's text, so equal files collide on purpose. */
+export class InMemoryReceipts implements ReceiptStore {
+    readonly files = new Map<string, Uint8Array>()
+    private next = 0
+    async put(upload: ReceiptUpload): Promise<{ key: string; hash: string }> {
+        const key = `receipts/${upload.businessId}/${upload.orderId}/${this.next++}`
+        this.files.set(key, upload.bytes)
+        return { key, hash: [...upload.bytes].join(",") }
+    }
+    async remove(key: string): Promise<void> {
+        this.files.delete(key)
     }
 }

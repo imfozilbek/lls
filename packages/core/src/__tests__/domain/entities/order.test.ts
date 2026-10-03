@@ -59,6 +59,8 @@ function readyOrder(): Order {
     return order
 }
 
+const RECEIPT = { key: "receipts/b/o/1", hash: "h", at: new Date(), customerRejections: 0 }
+
 describe("OrderItem", () => {
     it("computes totals for pieces and validates quantity", () => {
         expect(item(3, 10_000).total.amount).toBe(30_000)
@@ -138,7 +140,7 @@ describe("Order", () => {
         expect(order.payment.method).toBe(PaymentMethod.CARD_TRANSFER)
         expect(order.payment.status).toBe(PaymentStatus.UNPAID)
         expect(() => order.advanceTo(OrderStatus.ACCEPTED)).toThrow(/transfer has not arrived/)
-        order.markTransferSent()
+        order.markTransferSent(RECEIPT)
         expect(order.payment.status).toBe(PaymentStatus.AWAITING)
         expect(() => order.advanceTo(OrderStatus.ACCEPTED)).toThrow(BusinessRuleViolationError)
         order.confirmPaymentAndAccept()
@@ -150,7 +152,7 @@ describe("Order", () => {
 
     it("a transfer that arrives after the cancel is owed back, and the order stays cancelled", () => {
         const order = placeOrder()
-        order.markTransferSent()
+        order.markTransferSent(RECEIPT)
         order.cancel("customer")
         expect(order.payment.status).toBe(PaymentStatus.AWAITING)
         order.confirmPaymentAndAccept()

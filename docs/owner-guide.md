@@ -93,10 +93,19 @@ Yangi buyurtma kelganda bot sizga xabar yuboradi: tarkibi, summasi, manzili, mo'
 hamda **💳 Kartaga o'tkazma kutilmoqda**. Mijozga bot kartangiz raqami va summani yozadi.
 
 Mijozlar **faqat kartangizga o'tkazma** bilan, **ish boshlanishidan oldin** to'laydi:
-1. Mijoz pulni o'tkazadi va ilovada **O'tkazdim** ni bosadi: bot sizga «Mijoz o'tkazdi» deb yozadi.
-2. Kartangizni tekshiring. Pul kelgan bo'lsa: **💳 Pul keldi, qabul qilish**. Buyurtma to'langan va
+1. Mijoz pulni o'tkazadi va ilovada **O'tkazdim** ni bosib, **o'tkazma chekining skrinshotini**
+   yuboradi. Bot sizga chek rasmini, summani va kartangizning oxirgi 4 raqamini yuboradi.
+2. **Bank ilovangizni oching** va pul kartangizga kelganini ko'ring. Chek dalil emas: uni
+   tahrirlash yoki sun'iy intellekt bilan yasash mumkin. Ishonchli dalil faqat kartadagi pul.
+3. Pul kelgan bo'lsa: **💳 Pul keldi, qabul qilish** → **✅ Ha, … keldi**. Buyurtma to'langan va
    qabul qilingan bo'ladi, mijozga «To'lov keldi, buyurtmangiz qabul qilindi» boradi.
-3. Pul kelmagan bo'lsa, tayyorlamang. Kerak bo'lsa **❌ Bekor qilish**.
+4. Pul kelmagan bo'lsa: **Yo'q, kelmadi**. Mijozga «Do'kon pulni topmadi» boradi va u chekni
+   qayta yuboradi. Tayyorlamang. Kerak bo'lsa **❌ Bekor qilish**.
+
+**⚠️ Ogohlantirishlar** (chek ostida va ilovada):
+- «Bu chek avval #12 buyurtmada yuborilgan»: xuddi shu rasm oldin ham yuborilgan. Ehtiyot bo'ling.
+- «Bu mijozning 2 ta o'tkazmasi avval topilmagan»: bu mijozga oldin «Pul kelmadi» deyilgan.
+- «Mijoz o'tkazganini hali bildirmagan»: chek yo'q. Pulni kartada ko'rmaguncha qabul qilmang.
 
 Keyin har bir bosishda mijozga xabar boradi:
 **👨‍🍳 Tayyorlashni boshlash / 📦 Yig'ishni boshlash → 📦 Tayyor**
@@ -174,8 +183,9 @@ Click/Payme yo'q: pul to'g'ridan-to'g'ri sizga.
 **Mening do'konim → Pul** (bugun, 7 kun, shu oy):
 - **Tushum**: tovarlar va yetkazish alohida, **o'tkazmalar orqali olingan** summa. Idish garovi:
   alohida, tushum emas. Vitrina buyurtmalaridan Zumda komissiyasi.
-- **Mijozlar o'tkazdi, kartani tekshiring**: mijoz **O'tkazdim** ni bosgan buyurtmalar. Pul
-  kelgach **Pul keldi, qabul qilish** ni bosing.
+- **Mijozlar o'tkazdi, kartani tekshiring**: mijoz **O'tkazdim** ni bosgan buyurtmalar. Tugmani
+  bosing: summa, karta, chek rasmi va ogohlantirishlar chiqadi. Pul kelgan bo'lsa **Ha, … keldi**,
+  kelmagan bo'lsa **Yo'q, pul kelmadi**.
 - **Mijozlarga qaytarish**: to'langan, keyin bekor qilingan buyurtma. Qaytarganda **Qaytardim**.
 - **Excel uchun hisobot**: bot sizga davr buyurtmalarini CSV fayl qilib yuboradi
   (Excel va Google Sheets'da ochiladi).

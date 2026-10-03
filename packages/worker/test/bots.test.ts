@@ -401,7 +401,20 @@ describe("shop bot", () => {
         const still = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
         expect(still?.status).toBe("pending")
 
-        await shopUpdate({ callback_query: { id: "cb-1", from: OWNER, data: `p:${order.id}` } })
+        // «Pul keldi» asks first: the sum and the card to check in the bank app.
+        await shopUpdate({ callback_query: { id: "cb-q", from: OWNER, data: `p:${order.id}` } })
+        const question = client.telegram.sent.at(-1)
+        expect(question?.chatId).toBe(OWNER.id)
+        expect(question?.html).toContain("keldimi")
+        expect(question?.html).toContain("•••• 1111")
+        expect(question?.html).toContain("o'tkazganini hali bildirmagan")
+        expect(question?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
+            `pc:${order.id}`,
+        )
+        const asked = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
+        expect(asked?.status).toBe("pending")
+
+        await shopUpdate({ callback_query: { id: "cb-1", from: OWNER, data: `pc:${order.id}` } })
         expect(client.telegram.answered).toContain("cb-1")
         const edited = client.telegram.edited.at(-1)
         expect(edited?.messageId).toBeGreaterThan(0)
@@ -423,16 +436,47 @@ describe("shop bot", () => {
         )
 
         // A stale button does not move the order again
-        await shopUpdate({ callback_query: { id: "cb-2", from: OWNER, data: `p:${order.id}` } })
+        await shopUpdate({ callback_query: { id: "cb-2", from: OWNER, data: `pc:${order.id}` } })
         const row = await env.DB.prepare("SELECT status, payment_status FROM orders").first()
         expect(row).toEqual({ status: "accepted", payment_status: "paid" })
+    })
+
+    it("«Yo'q, kelmadi» under the screenshot: unpaid again, the customer sends it again", async () => {
+        const order = await placeOrder()
+        const customer = client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug })
+        const sent = await customer(`/api/orders/${order.id}/transfer-sent`, {
+            method: "POST",
+            headers: { "Content-Type": "image/png" },
+            body: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 7]),
+        })
+        expect(sent.status).toBe(200)
+        // Asked now, the owner also gets «Yo'q, kelmadi».
+        await shopUpdate({ callback_query: { id: "cb-q", from: OWNER, data: `p:${order.id}` } })
+        const question = client.telegram.sent.at(-1)
+        expect(question?.html).not.toContain("o'tkazganini hali bildirmagan")
+        expect(
+            question?.options?.keyboard?.inline_keyboard.flat().map((b) => b.callback_data),
+        ).toContain(`pn:${order.id}`)
+
+        await shopUpdate({ callback_query: { id: "cb-n", from: OWNER, data: `pn:${order.id}` } })
+        expect(client.telegram.answered).toContain("cb-n")
+        const row = await env.DB.prepare(
+            "SELECT status, payment_status, transfer_rejections FROM orders",
+        ).first()
+        expect(row).toEqual({ status: "pending", payment_status: "unpaid", transfer_rejections: 1 })
+        const toCustomer = client.telegram.sent.filter((m) => m.chatId === CUSTOMER.id).at(-1)
+        expect(toCustomer?.html).toContain("pulni topmadi")
+        // Pressed again: nothing changes.
+        await shopUpdate({ callback_query: { id: "cb-n2", from: OWNER, data: `pn:${order.id}` } })
+        const again = await env.DB.prepare("SELECT transfer_rejections FROM orders").first()
+        expect(again).toEqual({ transfer_rejections: 1 })
     })
 
     it("a failed answer to the button still updates the order and the owner card", async () => {
         const order = await placeOrder()
         client.telegram.failReplies = true
         const response = await shopUpdate({
-            callback_query: { id: "cb-1", from: OWNER, data: `p:${order.id}` },
+            callback_query: { id: "cb-1", from: OWNER, data: `pc:${order.id}` },
         })
         expect(response.status).toBe(200)
         const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
@@ -444,11 +488,16 @@ describe("shop bot", () => {
 
     it("buttons pressed by someone else change nothing", async () => {
         const order = await placeOrder()
-        await shopUpdate({ callback_query: { id: "cb-1", from: STRANGER, data: `p:${order.id}` } })
+        const before = client.telegram.sent.length
+        await shopUpdate({ callback_query: { id: "cb-1", from: STRANGER, data: `pc:${order.id}` } })
         await shopUpdate({ callback_query: { id: "cb-2", from: STRANGER, data: `x:${order.id}` } })
+        await shopUpdate({ callback_query: { id: "cb-3", from: STRANGER, data: `p:${order.id}` } })
+        await shopUpdate({ callback_query: { id: "cb-4", from: STRANGER, data: `pn:${order.id}` } })
         const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
         expect(row?.status).toBe("pending")
-        expect(client.telegram.answered).toEqual(["cb-1", "cb-2"])
+        expect(client.telegram.answered).toEqual(["cb-1", "cb-2", "cb-3", "cb-4"])
+        // The stranger is never shown the sum and the card.
+        expect(client.telegram.sent.length).toBe(before)
     })
 
     it("owner cancels from the chat; customer cancel notifies the owner", async () => {

@@ -68,7 +68,10 @@ export async function controlTelegram(control: {
 }
 
 function toMessage(call: BotCall): BotMessage {
-    const markup = call.body["reply_markup"] as { inline_keyboard?: Button[][] } | undefined
+    // Multipart calls (a photo file) carry the keyboard as a JSON string.
+    const raw = call.body["reply_markup"]
+    const markup = (typeof raw === "string" ? JSON.parse(raw) : raw) as
+        { inline_keyboard?: Button[][] } | undefined
     return {
         seq: call.seq,
         token: call.token,

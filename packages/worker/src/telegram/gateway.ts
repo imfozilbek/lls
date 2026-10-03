@@ -110,6 +110,14 @@ export interface TelegramGateway {
         captionHtml: string,
         options?: MessageOptions,
     ): Promise<void>
+    /** A picture from bytes with an HTML caption and buttons: a transfer receipt for the owner. */
+    sendPhotoFile(
+        token: string,
+        chatId: number,
+        file: OutgoingFile,
+        captionHtml: string,
+        options?: MessageOptions,
+    ): Promise<void>
     /** A file in the chat: the owner's CSV report or the QR poster. */
     sendDocument(token: string, chatId: number, file: OutgoingFile, caption?: string): Promise<void>
     setWebhook(token: string, url: string, secretToken: string): Promise<void>
@@ -297,6 +305,24 @@ export class HttpTelegramGateway implements TelegramGateway {
         await this.call(token, "setMyShortDescription", {
             short_description: texts.shortDescription,
         })
+    }
+
+    async sendPhotoFile(
+        token: string,
+        chatId: number,
+        file: OutgoingFile,
+        captionHtml: string,
+        options?: MessageOptions,
+    ): Promise<void> {
+        const form = new FormData()
+        form.set("chat_id", String(chatId))
+        form.set("photo", new Blob([file.bytes], { type: file.contentType }), file.name)
+        form.set("caption", captionHtml)
+        form.set("parse_mode", "HTML")
+        if (options?.keyboard) {
+            form.set("reply_markup", JSON.stringify(options.keyboard))
+        }
+        await this.send(token, "sendPhoto", { body: form })
     }
 
     async sendDocument(
