@@ -11,13 +11,17 @@
 - аккаунт Cloudflare и R2;
 - API-токен Cloudflare;
 - боты созданы (3 октября 2026): платформа `@zumdashop_bot`, доставщики
-  `@zumdashop_kuryer_bot`; их токены — только в GitHub secrets (шаг 5), не в чат; старый бот с
-  прежним названием больше не нужен (его токен был показан в чате — удалить бота в @BotFather);
+  `@zumdashop_kuryer_bot`; их токены — в переменные окружения Claude (шаг 5) и в секреты
+  GitHub (шаг 6), не в чат; старый бот с прежним названием удалить в @BotFather (его токен был
+  показан в чате);
 - переименовать репозиторий GitHub в `zumda` (деплой запускается только для `imfozilbek/zumda`);
 - ваш Telegram ID;
-- секреты в GitHub: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `PLATFORM_BOT_TOKEN`,
-  `COURIER_BOT_TOKEN`, `PLATFORM_ADMIN_IDS` и рекомендованный `TOKEN_ENC_KEY` с вашей копией;
-- в чат — «готово» и адрес бота. **Токены в чат не присылать.**
+- те же 5 ключей (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `PLATFORM_BOT_TOKEN`,
+  `COURIER_BOT_TOKEN`, `PLATFORM_ADMIN_IDS`) — в переменные облачного окружения Claude (шаг 5) и
+  в секреты окружения `production` в GitHub (шаг 6); настройки Actions, Secret scanning, ruleset
+  для `main` (шаг 6);
+- новая сессия Claude: «проверь доступы» → `scripts/check-access.sh`. **Токены в чат не
+  присылать.** `TOKEN_ENC_KEY` с копией — перед подключением настоящих магазинов.
 
 ## Что сделать (Claude)
 1. Слить в `main` документы из ветки, если они ещё не слиты.

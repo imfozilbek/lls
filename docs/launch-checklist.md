@@ -3,15 +3,15 @@
 Эти шаги можете сделать только вы: нужны ваши аккаунты и карта.
 Всё остальное подготовлю я. Время: примерно 20–30 минут.
 
-**Главное правило:** токены и ключи никому не присылайте, в том числе в этот чат.
-Их нужно вставлять только в секреты GitHub (шаг 5).
+**Главное правило:** токены и ключи не присылайте в чат. Их место — переменные облачного
+окружения Claude (шаг 5) и секреты GitHub (шаг 6). Сейчас один токен Cloudflare используется и
+Claude, и деплоем; перед подключением настоящих магазинов все ключи перевыпустим.
 
 ---
 
-## Шаг 1. Аккаунт Cloudflare
+## Шаг 1. Аккаунт Cloudflare ✅
 
-- [ ] Откройте https://dash.cloudflare.com/sign-up и зарегистрируйтесь (email + пароль).
-- [ ] Подтвердите email: придёт письмо со ссылкой.
+- [x] Аккаунт есть, домен `zumda.shop` подключён к Cloudflare (статус Active, 3 октября 2026).
 
 **Проверка:** вы видите панель Cloudflare (Account Home).
 
@@ -27,96 +27,109 @@
 
 ## Шаг 3. API-токен Cloudflare
 
-Токен позволяет GitHub загружать код в Cloudflare.
+Один токен: им Claude настраивает Cloudflare через API, им же деплой из GitHub загружает код.
 
-- [ ] Справа вверху: иконка профиля → **My Profile** → **API Tokens** → **Create Token**.
-- [ ] Шаблон **Edit Cloudflare Workers** → **Use template**.
-- [ ] В блоке **Permissions** нажмите **+ Add more** и добавьте две строки:
-  - `Account` → `D1` → `Edit`
-  - `Account` → `Cloudflare Pages` → `Edit`
-- [ ] **Account Resources:** выберите свой аккаунт. **Zone Resources:** `All zones`.
-- [ ] **Continue to summary** → **Create Token**.
-- [ ] Скопируйте токен. Его показывают **один раз**, сохраните до шага 5.
+- [ ] Справа вверху: иконка профиля → **My Profile** → **API Tokens** → **Create Token** →
+      **Create Custom Token** → **Get started**.
+- [ ] Имя: `zumda-setup`.
+- [ ] **Permissions** (кнопка **+ Add more** для каждой строки):
 
-**Где взять Account ID:** меню слева **Workers & Pages** → справа блок **Account details** → **Account ID**.
-Второй способ: ID есть в адресной строке, `dash.cloudflare.com/<ACCOUNT_ID>/...` (32 символа).
+| Тип | Что | Доступ |
+|---|---|---|
+| Account | Workers Scripts | Edit |
+| Account | D1 | Edit |
+| Account | Workers R2 Storage | Edit |
+| Account | Cloudflare Pages | Edit |
+| Account | Account Settings | Read |
+| Account | Workers Tail | Read |
+| Zone | Zone | Read |
+| Zone | DNS | Edit |
+| Zone | Workers Routes | Edit |
+| Zone | Zone Settings | Edit |
+| Zone | SSL and Certificates | Edit |
 
-**Проверка:** в списке API Tokens появился новый токен со статусом Active.
+- [ ] **Account Resources:** Include → ваш аккаунт. **Zone Resources:** Include → Specific zone →
+      `zumda.shop`.
+- [ ] **Continue to summary** → **Create Token**. Скопируйте токен: его показывают **один раз**.
+- [ ] **Account ID:** меню слева **Workers & Pages** → справа **Account ID** (32 символа).
 
-## Шаг 4. Платформенный бот Zumda
+**Проверка:** в списке API Tokens новый токен со статусом Active.
 
-Через этого бота владельцы магазинов будут подключаться, а вы — одобрять заявки.
+## Шаг 4. Боты Zumda
 
-- [ ] Откройте в Telegram **@BotFather** → команда `/newbot`.
-- [ ] Имя бота: например, `Zumda`.
-- [ ] Адрес бота: должен заканчиваться на `bot`, например `zumdashop_bot`.
-- [ ] BotFather пришлёт токен вида `123456789:AA...`. Сохраните до шага 5.
-- [ ] Узнайте свой Telegram ID: напишите **@userinfobot**, он ответит числом (например, `123456789`).
+Боты уже созданы: `@zumdashop_bot` (подключение магазинов, витрина, команды админа) и
+`@zumdashop_kuryer_bot` (доставщики). Нужны их токены и ваш Telegram ID.
 
-**Проверка:** бот находится в поиске Telegram по адресу.
+- [ ] @BotFather → `/mybots` → `@zumdashop_bot` → **API Token** → скопируйте.
+- [ ] То же для `@zumdashop_kuryer_bot`.
+- [ ] Ваш Telegram ID: напишите **@userinfobot**, он ответит числом.
+- [ ] Старого бота с прежним названием удалите: @BotFather → `/deletebot` (его токен когда-то
+      попал в чат).
 
-## Шаг 4а. Бот доставщиков Zumda
+Аватары, описания, кнопки меню и вебхуки ботов Zumda настроит Claude и деплой.
 
-Один бот для всех доставщиков всех магазинов: сюда приходят карточки заказов.
+## Шаг 5. Доступ для Claude (3 минуты)
 
-- [ ] В **@BotFather** ещё раз `/newbot`.
-- [ ] Имя: например, `Zumda Kuryer`. Адрес: например, `zumdashop_kuryer_bot`.
-- [ ] Сохраните токен до шага 5. Кнопку меню и вебхук настроит деплой.
+- [ ] В Claude: меню облачного окружения в заголовке сессии → **Edit** → переменные окружения.
+      По одной на строку, имена точно так:
 
-**Проверка:** бот находится в поиске Telegram по адресу.
+```
+CLOUDFLARE_API_TOKEN=…        токен из шага 3
+CLOUDFLARE_ACCOUNT_ID=…       Account ID из шага 3
+PLATFORM_BOT_TOKEN=…          токен @zumdashop_bot
+COURIER_BOT_TOKEN=…           токен @zumdashop_kuryer_bot
+PLATFORM_ADMIN_IDS=…          ваш Telegram ID; несколько админов — через запятую
+```
 
-## Шаг 5. Секреты в GitHub
+- [ ] Сохраните. Переменные видит только **новая** сессия: откройте её и напишите
+      «проверь доступы».
 
-- [ ] Откройте https://github.com/imfozilbek/zumda → **Settings** → **Secrets and variables** → **Actions**.
-- [ ] Для каждой строки: **New repository secret** → имя → значение → **Add secret**.
+Claude запустит `scripts/check-access.sh`: он проверяет токен, аккаунт, зону `zumda.shop`, SSL, R2,
+D1, Pages, Workers и обоих ботов и пишет `OK` / `FAIL` с подсказкой. Значения ключей он не
+показывает.
 
-| Имя (точно так) | Значение |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | токен из шага 3 |
-| `CLOUDFLARE_ACCOUNT_ID` | Account ID из шага 3 |
-| `PLATFORM_BOT_TOKEN` | токен бота из шага 4 |
-| `COURIER_BOT_TOKEN` | токен бота доставщиков из шага 4а |
-| `PLATFORM_ADMIN_IDS` | ваш Telegram ID из шага 4. Если админов несколько — через запятую |
-| `TOKEN_ENC_KEY` | **рекомендую**, см. ниже |
+## Шаг 6. GitHub (10 минут)
 
-**Ключ шифрования `TOKEN_ENC_KEY` (рекомендую, 2 минуты, до первого деплоя).**
-Этим ключом зашифрованы токены ботов магазинов. Если ключ потеряется, все боты магазинов перестанут
-работать. Cloudflare ключ никогда не показывает, поэтому нужна своя копия:
-- [ ] В терминале (macOS/Linux, на Windows — Git Bash) выполните: `openssl rand -base64 32`.
-- [ ] Сохраните результат в менеджер паролей или запишите на бумаге. Не в чат, не в заметки телефона.
-- [ ] Добавьте его как секрет `TOKEN_ENC_KEY`.
-- Если пропустите этот пункт, деплой сам создаст ключ, но копии у вас не будет.
-- Добавлять ключ **после** первого деплоя бесполезно: у Worker уже будет свой, и он не заменится.
+Эти настройки Claude через API недоступны (среда не пускает к настройкам Actions), поэтому их
+делаете вы.
 
-**Проверка:** на странице Actions secrets видны 5 имён (или 6 с ключом).
-Значения GitHub не показывает, это нормально.
+- [ ] **Переименование** (после слияния открытого PR): **Settings → General → Repository name** →
+      `zumda` → **Rename**. Деплой запускается только для `imfozilbek/zumda`.
+- [ ] **Окружение деплоя:** **Settings → Environments → New environment** → `production`.
+  - **Deployment branches and tags** → **Selected branches and tags** → правило `main`.
+  - **Environment secrets** → **Add environment secret** — те же 5 имён и значений, что в шаге 5.
+  - Так ключи получает только деплой из `main`, а не pull request и не форки.
+- [ ] **Settings → Actions → General:**
+  - **Fork pull request workflows from outside collaborators** → **Require approval for all
+    external contributors**.
+  - **Workflow permissions** → **Read repository contents and packages permissions**; снимите
+    галочку **Allow GitHub Actions to create and approve pull requests**.
+- [ ] **Settings → Advanced Security** (в старом интерфейсе **Code security**): включите
+      **Secret scanning** (Secret Protection) и **Push protection**.
+- [ ] **Settings → Rules → Rulesets → New ruleset → New branch ruleset**: имя `main`,
+      Enforcement **Active**, Target **Include default branch**, правила:
+      **Restrict deletions**, **Block force pushes**, **Require a pull request before merging**
+      (0 одобрений), **Require status checks to pass** → `quality-gates` и `e2e`.
+      **Bypass list** → Repository admin (вы).
+- [ ] Удалите старые секреты от прошлого проекта, если они есть: `SSH_HOST`, `SSH_USER`,
+      `SSH_PRIVATE_KEY`, `DISCORD_WEBHOOK`.
 
-**Безопасность (репозиторий открытый, 2 минуты):**
-- [ ] На той же странице удалите старые секреты, если они есть: `SSH_HOST`, `SSH_USER`,
-      `SSH_PRIVATE_KEY`, `DISCORD_WEBHOOK` (от старого проекта). Если тот сервер ещё работает,
-      смените на нём SSH-ключ.
-- [ ] **Settings → Advanced Security** (в старом интерфейсе — **Code security**): проверьте, что
-      включены **Secret Protection** / **Secret scanning** и **Push protection**. Тогда GitHub сам
-      не пустит в репозиторий коммит с ключом.
+**Проверка:** в окружении `production` 5 секретов (значения GitHub не показывает, это нормально).
 
-Ключи никогда не попадают в запросы из чужих форков: деплой получает их только после пуша в
-`main` этого репозитория (подробности в `SECURITY.md`).
+**Ключ шифрования `TOKEN_ENC_KEY`** пока не нужен: первый деплой создаст его сам. Перед
+подключением настоящих магазинов сделаем сохранённую копию (`SECURITY.md`, «Encryption key»):
+пока магазинов нет, ключ можно заменить без потерь.
 
-## Шаг 6. Сообщить мне
-
-- [ ] Напишите в чат: **«готово»** и адреса двух ботов (например, `@zumdashop_bot` и
-      `@zumdashop_kuryer_bot`).
-  Токены не присылайте.
-
-Дальше я:
-1. запущу деплой (GitHub → Actions → **CI** → **Run workflow** на `main`). Он сам создаст базу D1, хранилище R2,
-   сайт на Pages и ключ шифрования (если вы его не добавили), задеплоит Worker и Mini App и
-   подключит бота Zumda. Новый адрес `workers.dev` иногда включается дольше 5 минут: тогда первый
-   запуск остановится с понятной ошибкой, и я запущу его ещё раз через 10 минут;
-2. проверю весь путь на проде: подключение магазина → заказ → статусы → уведомления;
-3. задам район сети доставки командой в боте Zumda: `/district Guliston 40.4897,68.7842 30`
-   (центр и радиус 30 км; поправим, если район другой). Точки с геолокацией внутри сразу в сети;
-4. пришлю вам ссылку на бота и инструкцию для трёх друзей (`docs/owner-guide.md`).
+Дальше Claude:
+1. проверит доступы (`scripts/check-access.sh`) и включит в Cloudflare Full (strict) и Always HTTPS;
+2. поставит аватары и описания ботов Zumda через Telegram API (`brand/`);
+3. запустит деплой (пуш в `main` → CI → деплой) и проверит прод: подключение магазина → заказ →
+   статусы → уведомления. Новый адрес `workers.dev` иногда включается дольше 5 минут: тогда
+   первый запуск остановится с понятной ошибкой, и Claude запустит его снова;
+4. подключит свои адреса `app.zumda.shop` и `api.zumda.shop` (отдельный PR);
+5. задаст район сети доставки командой в боте Zumda, например
+   `/district Guliston 40.4897,68.7842 30`, и пришлёт ссылку на бота и инструкцию для магазинов
+   (`docs/owner-guide.md`).
 
 ## Шаг 7. Три друга подключают магазины
 
@@ -154,7 +167,8 @@
 | Проблема | Что делать |
 |---|---|
 | Cloudflare не принимает карту | Попробуйте другую карту (Visa/Mastercard). Напишите мне, найдём обход |
-| Нет пункта `D1` или `Cloudflare Pages` в Permissions | Пришлите скриншот экрана Permissions (без токена) |
+| Нет нужной строки в Permissions | Пришлите скриншот экрана Permissions (без токена) |
+| `scripts/check-access.sh` пишет `FAIL` | В строке есть подсказка; исправьте и откройте новую сессию |
 | Потеряли токен Cloudflare | Удалите старый (Roll / Delete) и создайте новый по шагу 3 |
 | Потеряли токен бота | В @BotFather: `/mybots` → ваш бот → **API Token** |
 | Бот Zumda пишет «🚨 Ошибка на сервере Zumda» | Перешлите это сообщение мне. Ключей в нём нет |
