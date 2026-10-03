@@ -7,8 +7,8 @@
  *   POST /__reset               — forget calls and failures
  *   POST /__control             — { broken?: number[], blocked?: number[], failWebhooks?: boolean }
  *
- * Files (sendDocument) come as multipart: the call body keeps the text fields, and the file as
- * `{ name, contentType, size, base64 }` under its field name.
+ * Files (sendDocument, setMyProfilePhoto) come as multipart: the call body keeps the text
+ * fields, and the file as `{ name, contentType, size, base64 }` under its field name.
  */
 import { createServer } from "node:http"
 
@@ -134,6 +134,24 @@ const fail = (status: number, description: string): [number, unknown] => [
     { ok: false, error_code: status, description },
 ]
 
+/** Calls that only change a setting: Telegram answers `true`. */
+const ALWAYS_OK = new Set([
+    "editMessageText",
+    "answerCallbackQuery",
+    "setChatMenuButton",
+    "setMyDescription",
+    "setMyShortDescription",
+])
+
+/** Telegram takes a JPEG attached by name: anything else is a bad request. */
+function photoAnswer(call: BotCall): [number, unknown] {
+    const photo = JSON.parse(String(call.body["photo"] ?? "{}")) as { photo?: string }
+    const file = call.body[photo.photo?.replace("attach://", "") ?? ""] as RecordedFile | undefined
+    return file?.contentType === "image/jpeg" && file.size > 0
+        ? [200, { ok: true, result: true }]
+        : fail(400, "Bad Request: PHOTO_INVALID")
+}
+
 function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
     const chatId = Number(call.body["chat_id"])
     switch (call.method) {
@@ -154,12 +172,12 @@ function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
                 return fail(403, "Forbidden: bot was blocked by the user")
             }
             return [200, { ok: true, result: { message_id: state.nextMessageId++ } }]
-        case "editMessageText":
-        case "answerCallbackQuery":
-        case "setChatMenuButton":
-            return [200, { ok: true, result: true }]
+        case "setMyProfilePhoto":
+            return photoAnswer(call)
         default:
-            return fail(404, `Not Found: method ${call.method}`)
+            return ALWAYS_OK.has(call.method)
+                ? [200, { ok: true, result: true }]
+                : fail(404, `Not Found: method ${call.method}`)
     }
 }
 

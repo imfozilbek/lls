@@ -12,6 +12,7 @@ import {
     lastSeq,
     platformChat,
     messagesTo,
+    waitForCall,
     waitForMessage,
 } from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
@@ -56,6 +57,17 @@ async function apply(page: Page, token: string, name: string): Promise<void> {
     await bottomButton(page).click()
 }
 
+/** Zumda writes the bot's description: the shop's name and «Zumda asosida ishlaydi». */
+async function expectZumdaDescriptions(token: string, shop: string, since: number): Promise<void> {
+    const [about] = await callsOf("setMyShortDescription", since)
+    expect(about?.token).toBe(token)
+    expect(about?.body["short_description"]).toBe(
+        `${shop}: uyga buyurtma bering. Zumda asosida ishlaydi`,
+    )
+    const [description] = await callsOf("setMyDescription", since)
+    expect(String(description?.body["description"])).toContain("Zumda asosida ishlaydi")
+}
+
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
@@ -86,6 +98,9 @@ test("the application reaches the admin; the pending shop opens only for its own
     await expect(page.getByText("Tekshiruvda")).toBeVisible()
 
     await waitForMessage(PEOPLE.newOwner.id, "arizasi qabul qilindi", since)
+    // The new bot at once wears Zumda's picture: the shop's name and the Zumda mark, as a JPEG.
+    const photo = await waitForCall("setMyProfilePhoto", NEW_BOT.token, since)
+    expect(photo.body["avatar"]).toMatchObject({ contentType: "image/jpeg" })
     const card = await waitForMessage(PEOPLE.admin.id, "Yangi do'kon", since)
     expect(card.text).toContain("Yangi Non")
     expect(card.buttons.map((b) => b.text)).toEqual(["✅ Tasdiqlash", "❌ Rad etish"])
@@ -138,6 +153,7 @@ test("a stranger cannot approve; the admin approves: webhook, menu button, owner
     const shop = (await myShops())[0]
     expect(JSON.stringify(menu?.body)).toContain(`?shop=${shop?.slug ?? ""}`)
     expect(shop?.status).toBe("active")
+    await expectZumdaDescriptions(NEW_BOT.token, "Yangi Non", since)
 
     // The new shop bot answers through its own webhook.
     const secret = String(hook?.body["secret_token"])

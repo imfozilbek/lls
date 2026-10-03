@@ -4,9 +4,17 @@
  */
 import { expect, test } from "@playwright/test"
 
+import { shopBySlug } from "../stand/config.js"
 import { pngImage } from "../support/images.js"
 import { FOOD, PEOPLE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
-import { courierChat, lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
+import {
+    courierChat,
+    lastSeq,
+    messagesTo,
+    shopChat,
+    waitForCall,
+    waitForMessage,
+} from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
 import type { OpenedApp } from "../support/webapp.js"
@@ -259,6 +267,10 @@ test("settings: name, color, delivery and features reach the storefront", async 
 test("settings: logo upload and the accepting switch", async ({ page }) => {
     await openOwner(page)
     await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await expect(
+        page.getByText("Bot rasmi avtomatik: logotip (yoki nom) va Zumda belgisi."),
+    ).toBeVisible()
+    const since = await lastSeq()
     await page
         .locator('input[type="file"]')
         .first()
@@ -268,6 +280,9 @@ test("settings: logo upload and the accepting switch", async ({ page }) => {
             buffer: pngImage(300, [2, 132, 199]),
         })
     await expect(page.locator("img").first()).toHaveAttribute("src", /\/img\//)
+    // The logo becomes the shop bot's picture, with the Zumda mark: Zumda sets it, as a JPEG.
+    const photo = await waitForCall("setMyProfilePhoto", shopBySlug(FOOD).bot.token, since)
+    expect(photo.body["avatar"]).toMatchObject({ contentType: "image/jpeg" })
     // The switch moves at once; the check below needs the save to land first.
     await Promise.all([
         page.waitForResponse(

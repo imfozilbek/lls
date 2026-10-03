@@ -110,6 +110,24 @@ export async function waitForMessage(
     return found
 }
 
+/** Waits for a Bot API call of `method` made with `token` after `since`; returns it. */
+export async function waitForCall(method: string, token: string, since = 0): Promise<BotCall> {
+    let found: BotCall | undefined
+    await expect
+        .poll(
+            async () => {
+                found = (await callsOf(method, since)).findLast((c) => c.token === token)
+                return found !== undefined
+            },
+            { message: `${method} by ${token.split(":")[0] ?? ""}`, timeout: 10_000 },
+        )
+        .toBe(true)
+    if (!found) {
+        throw new Error("unreachable")
+    }
+    return found
+}
+
 /** Bot API calls of one method after `since` (setWebhook, setChatMenuButton, …). */
 export async function callsOf(method: string, since = 0): Promise<BotCall[]> {
     return (await botCalls()).filter((c) => c.method === method && c.seq > since)
