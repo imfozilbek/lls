@@ -37,6 +37,8 @@ export interface BotMessage {
     method: string
     chatId: number
     text: string
+    /** The picture URL of a sendPhoto (the welcome); the text is then its caption. */
+    photo?: string
     buttons: Button[]
 }
 
@@ -68,15 +70,18 @@ function toMessage(call: BotCall): BotMessage {
         token: call.token,
         method: call.method,
         chatId: Number(call.body["chat_id"]),
-        text: String(call.body["text"] ?? ""),
+        text: String(call.body["text"] ?? call.body["caption"] ?? ""),
+        photo: typeof call.body["photo"] === "string" ? call.body["photo"] : undefined,
         buttons: markup?.inline_keyboard?.flat() ?? [],
     }
 }
 
-/** Messages (sent and edited) to one chat, oldest first. */
+const MESSAGE_METHODS = ["sendMessage", "sendPhoto", "editMessageText"]
+
+/** Messages (sent, sent with a picture, and edited) to one chat, oldest first. */
 export async function messagesTo(chatId: number, since = 0): Promise<BotMessage[]> {
     return (await botCalls())
-        .filter((c) => c.seq > since && ["sendMessage", "editMessageText"].includes(c.method))
+        .filter((c) => c.seq > since && MESSAGE_METHODS.includes(c.method))
         .map(toMessage)
         .filter((m) => m.chatId === chatId)
 }

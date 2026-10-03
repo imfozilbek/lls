@@ -17,11 +17,15 @@ const search = (page: Page): ReturnType<Page["getByRole"]> =>
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
-test("the Zumda bot greets with the showcase and «connect a shop»", async () => {
+test("the Zumda bot greets with the street picture, the showcase and «connect a business»", async () => {
     const since = await lastSeq()
     await platformChat().send(PEOPLE.customer, "/start")
-    const welcome = await waitForMessage(PEOPLE.customer.id, "Zumda", since)
+    const welcome = await waitForMessage(PEOPLE.customer.id, "oshxonalar va xizmatlar", since)
     expect(welcome.token).toBe(platformBot().token)
+    expect(welcome.method).toBe("sendPhoto")
+    expect(welcome.photo).toBe("http://localhost:5173/welcome/zumda.jpg")
+    const picture = await fetch(welcome.photo ?? "")
+    expect(picture.headers.get("content-type")).toBe("image/jpeg")
     expect(welcome.buttons.map((b) => b.web_app?.url)).toEqual([
         "http://localhost:5173/?mode=market",
         "http://localhost:5173/?mode=onboarding",
