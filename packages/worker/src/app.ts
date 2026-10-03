@@ -3,7 +3,14 @@ import { Hono } from "hono"
 import { cors } from "hono/cors"
 
 import { alertAdmins } from "./alerts.js"
-import { BOT_HEADER, INIT_DATA_HEADER, SHOP_HEADER, VIA_HEADER, authenticate } from "./auth.js"
+import {
+    AUTHORIZATION_HEADER,
+    BOT_HEADER,
+    INIT_DATA_HEADER,
+    SHOP_HEADER,
+    VIA_HEADER,
+    authenticate,
+} from "./auth.js"
 import { toErrorResponse } from "./http/errors.js"
 import { courierRoutes } from "./routes/courier.routes.js"
 import { customerRoutes } from "./routes/customer.routes.js"
@@ -13,6 +20,7 @@ import { ownerRoutes } from "./routes/owner.routes.js"
 import { payoutCardRoutes } from "./routes/payout-card.routes.js"
 import { platformRoutes } from "./routes/platform.routes.js"
 import { showcaseRoutes } from "./routes/showcase.routes.js"
+import { webSessionRoutes } from "./routes/web-session.routes.js"
 import { webhookRoutes } from "./routes/webhook.routes.js"
 import { createServices } from "./services.js"
 import { HttpTelegramGateway, telegramApiBase } from "./telegram/gateway.js"
@@ -56,12 +64,22 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         cors({
             origin: (origin, c) => (appOrigins(c.env).includes(origin) ? origin : null),
             allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
-            allowHeaders: ["Content-Type", INIT_DATA_HEADER, SHOP_HEADER, VIA_HEADER, BOT_HEADER],
+            allowHeaders: [
+                "Content-Type",
+                INIT_DATA_HEADER,
+                SHOP_HEADER,
+                VIA_HEADER,
+                BOT_HEADER,
+                AUTHORIZATION_HEADER,
+            ],
             maxAge: 86_400,
         }),
     )
 
     app.get("/health", (c) => c.json({ status: "ok" }))
+
+    // Before `/api` and its initData check: this is where a browser gets its session.
+    app.route("/api/business", webSessionRoutes)
 
     const api = new Hono<AppEnv>()
         .use(authenticate)

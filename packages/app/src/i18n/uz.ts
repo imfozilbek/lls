@@ -419,6 +419,13 @@ export const uz = {
         noShopsText: "Tez orada tumaningiz do'konlari shu yerda bo'ladi.",
         clear: "Tozalash",
     },
+    web: {
+        title: "Zumda Business",
+        text: "Bizneslaringizni kompyuterdan boshqaring: buyurtmalar, menyu, pul va kuryerlar.",
+        hint: "Kirish faqat Telegram orqali: parol kerak emas.",
+        signOut: "Chiqish",
+        back: "Orqaga",
+    },
     onboarding: {
         title: "Biznesingizni ulang",
         subtitle: "Mijozlar sizning botingiz orqali buyurtma beradi. 3 qadam, 5 daqiqa.",

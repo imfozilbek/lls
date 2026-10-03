@@ -1,8 +1,9 @@
 import { languageFromTelegram } from "@zumda/core"
 import { Suspense, lazy, useCallback, useEffect, useState } from "react"
 
+import { clearSession, loadSession, saveSession } from "./business/web-session.js"
 import { dictionaryFor, errorText, fill, useLanguageStore, useT } from "./i18n/index.js"
-import { ApiError, api, loadCatalog, setShop } from "./lib/api.js"
+import { ApiError, api, loadCatalog, setShop, setWebSession } from "./lib/api.js"
 import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "./lib/brand.js"
 import { useBackButton } from "./lib/main-button.js"
 import { webApp } from "./lib/telegram.js"
@@ -17,9 +18,9 @@ import { useSession } from "./stores/session.js"
 import { toast } from "./stores/toast.js"
 import { BotIcon, StoreIcon, WifiOffIcon } from "./ui/icons.js"
 import { Button, EmptyState, Skeleton } from "./ui/primitives.js"
-import { BottomBar, ToastHost } from "./ui/shell.js"
+import { BottomBar, ToastHost, WebBackBar } from "./ui/shell.js"
 
-import type { ShopVia } from "./lib/api.js"
+import type { ShopVia, WebSession } from "./lib/api.js"
 import type { LaunchParams } from "./lib/telegram.js"
 
 // Customers never download these chunks.
@@ -32,6 +33,9 @@ const CourierApp = lazy(() =>
 )
 const ShowcaseScreen = lazy(() =>
     import("./showcase/ShowcaseScreen.js").then((m) => ({ default: m.ShowcaseScreen })),
+)
+const WebSignIn = lazy(() =>
+    import("./business/WebSignIn.js").then((m) => ({ default: m.WebSignIn })),
 )
 const OnboardingApp = lazy(() =>
     import("./onboarding/OnboardingApp.js").then((m) => ({ default: m.OnboardingApp })),
@@ -234,7 +238,7 @@ function ShowcaseApp(): React.JSX.Element {
  * The Zumda Business bot's «Mening bizneslarim»: every shop of the owner, and the owner section of one of
  * them right here, without opening that shop's own bot.
  */
-function BusinessesApp(): React.JSX.Element {
+function BusinessesApp({ onSignOut }: { onSignOut?: () => void }): React.JSX.Element {
     const [slug, setSlug] = useState<string | null>(null)
     useEffect(() => {
         if (slug === null) {
@@ -261,6 +265,7 @@ function BusinessesApp(): React.JSX.Element {
     return (
         <Suspense fallback={<MenuSkeleton />}>
             <OnboardingApp
+                onSignOut={onSignOut}
                 onOpen={(next): void => {
                     useRouter.getState().start({ name: "owner" })
                     setSlug(next)
@@ -270,10 +275,43 @@ function BusinessesApp(): React.JSX.Element {
     )
 }
 
+/**
+ * business.zumda.shop in a browser: sign in with Telegram once, then the same «Mening
+ * bizneslarim» and owner section as inside the Zumda | Business bot.
+ */
+function WebBusinessApp(): React.JSX.Element {
+    const [session, setSession] = useState<WebSession | null>(() => loadSession())
+    setWebSession(session?.token ?? null)
+    if (!session) {
+        return (
+            <Suspense fallback={<MenuSkeleton />}>
+                <WebSignIn
+                    onSignedIn={(next): void => {
+                        saveSession(next)
+                        setSession(next)
+                    }}
+                />
+            </Suspense>
+        )
+    }
+    return (
+        <>
+            <WebBackBar />
+            <BusinessesApp
+                onSignOut={(): void => {
+                    clearSession()
+                    setWebSession(null)
+                    setSession(null)
+                }}
+            />
+        </>
+    )
+}
+
 export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
     let content: React.JSX.Element
     if (!webApp()) {
-        content = <NotInTelegram />
+        content = launch.business ? <WebBusinessApp /> : <NotInTelegram />
     } else if (launch.business) {
         content = <BusinessesApp />
     } else if (launch.courier) {

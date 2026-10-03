@@ -12,6 +12,7 @@ declare global {
             COURIER_WEBHOOK_SECRET: string
             BUSINESS_BOT_TOKEN: string
             BUSINESS_WEBHOOK_SECRET: string
+            BUSINESS_SESSION_SECRET: string
         }
     }
 }

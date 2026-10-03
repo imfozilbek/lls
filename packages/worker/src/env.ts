@@ -16,6 +16,8 @@ export interface Bindings extends Env {
      */
     BUSINESS_BOT_TOKEN: string
     BUSINESS_WEBHOOK_SECRET: string
+    /** Signs the web sessions of Zumda | Business (business.zumda.shop in a browser). */
+    BUSINESS_SESSION_SECRET: string
     /** Comma-separated Telegram ids of platform admins. */
     PLATFORM_ADMIN_IDS: string
     /** Local stand only: a fake Bot API on localhost. Never set in production. */

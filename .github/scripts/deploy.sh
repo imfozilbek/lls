@@ -26,6 +26,9 @@ readonly BUSINESS_HOST="business.${DOMAIN}"
 readonly COURIER_HOST="delivery.${DOMAIN}"
 readonly APP_HOSTS=("$APP_HOST" "$BUSINESS_HOST" "$COURIER_HOST")
 readonly WORKER_URL="https://${API_HOST}"
+# The Zumda | Business bot: its Login Widget signs owners in on business.zumda.shop (its domain is
+# set by hand once in @BotFather: /setdomain).
+readonly BUSINESS_BOT="zumdashop_business_bot"
 readonly APP_ORIGIN="https://${APP_HOST}"
 readonly BUSINESS_ORIGIN="https://${BUSINESS_HOST}"
 readonly COURIER_ORIGIN="https://${COURIER_HOST}"
@@ -183,9 +186,12 @@ deploy_worker() {
     PLATFORM_WEBHOOK_SECRET="$(webhook_secret zumda-platform-webhook "$PLATFORM_BOT_TOKEN")"
     COURIER_WEBHOOK_SECRET="$(webhook_secret zumda-courier-webhook "$COURIER_BOT_TOKEN")"
     BUSINESS_WEBHOOK_SECRET="$(webhook_secret zumda-business-webhook "$BUSINESS_BOT_TOKEN")"
+    # Signs the browser sessions of business.zumda.shop; a new bot token signs everyone out.
+    BUSINESS_SESSION_SECRET="$(webhook_secret zumda-business-session "$BUSINESS_BOT_TOKEN")"
     echo "::add-mask::${PLATFORM_WEBHOOK_SECRET}"
     echo "::add-mask::${COURIER_WEBHOOK_SECRET}"
     echo "::add-mask::${BUSINESS_WEBHOOK_SECRET}"
+    echo "::add-mask::${BUSINESS_SESSION_SECRET}"
 
     SECRETS_FILE="$(mktemp)"
     chmod 600 "$SECRETS_FILE"
@@ -194,10 +200,11 @@ deploy_worker() {
     jq -n --arg bot "$PLATFORM_BOT_TOKEN" --arg admins "$PLATFORM_ADMIN_IDS" \
         --arg hook "$PLATFORM_WEBHOOK_SECRET" --arg courier "$COURIER_BOT_TOKEN" \
         --arg courier_hook "$COURIER_WEBHOOK_SECRET" --arg business "$BUSINESS_BOT_TOKEN" \
-        --arg business_hook "$BUSINESS_WEBHOOK_SECRET" \
+        --arg business_hook "$BUSINESS_WEBHOOK_SECRET" --arg session "$BUSINESS_SESSION_SECRET" \
         '{PLATFORM_BOT_TOKEN: $bot, PLATFORM_ADMIN_IDS: $admins, PLATFORM_WEBHOOK_SECRET: $hook,
           COURIER_BOT_TOKEN: $courier, COURIER_WEBHOOK_SECRET: $courier_hook,
-          BUSINESS_BOT_TOKEN: $business, BUSINESS_WEBHOOK_SECRET: $business_hook}' \
+          BUSINESS_BOT_TOKEN: $business, BUSINESS_WEBHOOK_SECRET: $business_hook,
+          BUSINESS_SESSION_SECRET: $session}' \
         >"$secrets_file"
     if needs_encryption_key; then
         encryption_key
@@ -215,7 +222,7 @@ deploy_worker() {
 
 deploy_app() {
     log "Mini App"
-    (cd "$APP_DIR" && VITE_API_URL="$WORKER_URL" bun run build)
+    (cd "$APP_DIR" && VITE_API_URL="$WORKER_URL" VITE_BUSINESS_BOT="$BUSINESS_BOT" bun run build)
     wrangler pages deploy "${APP_DIR}/dist" --project-name "$PAGES_PROJECT" --branch main \
         --commit-dirty=true
 }

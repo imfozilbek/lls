@@ -46,6 +46,13 @@ export type ShopVia = "marketplace" | "business"
 let currentShop: string | null = null
 let currentVia: ShopVia | null = null
 let courierBot = false
+/** Zumda | Business in a browser: the session from the Telegram Login Widget. */
+let webSession: string | null = null
+
+/** Outside Telegram: every request carries the session instead of initData. */
+export function setWebSession(token: string | null): void {
+    webSession = token
+}
 
 /**
  * Every request carries the shop, so the Worker verifies with the right bot token: the shop's own
@@ -66,6 +73,9 @@ export function setCourierBot(): void {
 
 function authHeaders(): Headers {
     const headers = new Headers({ "X-Telegram-Init-Data": webApp()?.initData ?? "" })
+    if (webSession) {
+        headers.set("Authorization", `Bearer ${webSession}`)
+    }
     if (courierBot) {
         headers.set("X-Bot", "courier")
     } else if (currentVia === "business") {
@@ -169,6 +179,13 @@ export interface ProductInput {
     step?: number
     returnable?: boolean
     position?: number
+}
+
+/** A browser session of Zumda | Business. */
+export interface WebSession {
+    token: string
+    expiresAt: string
+    user: { id: number; firstName: string }
 }
 
 /** Step «Bot»: `preparedId` for `WebApp.requestChat`, `link` for older Telegram apps. */
@@ -321,6 +338,12 @@ export const api = {
             }
             return request("GET", `/api/showcase/products?${params.toString()}`)
         },
+    },
+
+    business: {
+        /** The Telegram Login Widget's data in, a session out (business.zumda.shop). */
+        signIn: (login: Record<string, string | number>): Promise<WebSession> =>
+            request("POST", "/api/business/session", login),
     },
 
     platform: {

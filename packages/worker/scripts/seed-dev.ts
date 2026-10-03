@@ -128,6 +128,7 @@ function defaultDevVars(): Record<string, string> {
         COURIER_WEBHOOK_SECRET: DEV_COURIER_BOT.webhookSecret,
         BUSINESS_BOT_TOKEN: DEV_BUSINESS_BOT.token,
         BUSINESS_WEBHOOK_SECRET: DEV_BUSINESS_BOT.webhookSecret,
+        BUSINESS_SESSION_SECRET: "dev-business-session-secret",
     }
 }
 

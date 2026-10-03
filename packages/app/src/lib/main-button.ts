@@ -71,6 +71,17 @@ export function useMainAction(action: MainAction | null): void {
 }
 
 /** Shows Telegram's BackButton while `onBack` is set. */
+/** Outside Telegram (Zumda | Business in a browser) there is no BackButton: the app draws one. */
+interface WebBackState {
+    onBack: (() => void) | null
+    set(onBack: (() => void) | null): void
+}
+
+export const useWebBackStore = create<WebBackState>((set) => ({
+    onBack: null,
+    set: (onBack): void => set({ onBack }),
+}))
+
 export function useBackButton(onBack: (() => void) | null): void {
     const handler = useRef<() => void>(() => undefined)
     handler.current = onBack ?? ((): void => undefined)
@@ -78,7 +89,9 @@ export function useBackButton(onBack: (() => void) | null): void {
     useEffect(() => {
         const button = webApp()?.BackButton
         if (!button) {
-            return undefined
+            const store = useWebBackStore.getState()
+            store.set(visible ? (): void => handler.current() : null)
+            return (): void => store.set(null)
         }
         const click = (): void => handler.current()
         if (visible) {
