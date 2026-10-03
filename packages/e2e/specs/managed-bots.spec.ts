@@ -46,14 +46,13 @@ async function describeBusiness(page: Page, name: string): Promise<void> {
     await expect(page.getByText("2/3-qadam")).toBeVisible()
 }
 
-/** Step 3: delivery and the card, then the application goes to the admin. */
+/** Step 3: where the business is, then the application goes to the admin. */
 async function finishApplication(page: Page): Promise<void> {
     await bottomButton(page).click() // «Keyingi» after the bot
-    await page.getByLabel("Yetkazish narxi").fill("8000")
-    await page.getByLabel("Karta raqami").fill("4111 1111 1111 1111")
-    await page.getByLabel("Kartadagi ism").fill("Kamola Rahimova")
-    await bottomButton(page).click()
-    await expect(page.getByRole("heading", { name: "Ariza yuborildi!" })).toBeVisible()
+    await page.getByRole("button", { name: "Joylashuvni yuborish" }).click()
+    await expect(page.getByText("Joylashuv olindi")).toBeVisible()
+    await bottomButton(page).click() // «Ariza yuborish»
+    await expect(page.getByRole("region", { name: "Ishga tayyor" })).toBeVisible()
 }
 
 test.describe.configure({ mode: "serial" })

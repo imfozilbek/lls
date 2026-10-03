@@ -113,16 +113,14 @@ for (const theme of ["light"] as const) {
         await expect(page.getByText("Bot yaratildi: @new_777300400_bot")).toBeVisible()
         await snap(page, "30-bot-created", theme)
         await bottomButton(page).click()
-        await page.getByLabel("Yetkazish narxi").fill("8000")
-        await page.getByLabel("Karta raqami").fill("4111 1111 1111 1111")
-        await page.getByLabel("Kartadagi ism").fill("Kamola Rahimova")
-        await bottomButton(page).click()
-        await bottomButton(page).click() // «Tayyor»
-        await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
-        await snap(page, "31-my-businesses", theme)
-        await page.getByRole("button", { name: /Kamola Somsa/ }).click()
-        await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
-        await snap(page, "32-business-owner-section", theme)
+        await expect(page.getByRole("heading", { name: "Biznes qayerda?" })).toBeVisible()
+        await page.getByRole("button", { name: "Joylashuvni yuborish" }).click()
+        await expect(page.getByText("Joylashuv olindi")).toBeVisible()
+        await snap(page, "31-location-step", theme)
+        await bottomButton(page).click() // «Ariza yuborish»
+        // Straight into the new business: under review, and «Ishga tayyor».
+        await expect(page.getByRole("region", { name: "Ishga tayyor" })).toBeVisible()
+        await snap(page, "32-business-ready", theme)
     })
 
     test(`district network, ${theme}`, async ({ page }) => {

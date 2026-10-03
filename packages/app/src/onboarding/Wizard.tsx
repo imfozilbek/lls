@@ -286,14 +286,18 @@ export function Wizard({
         setSending(true)
         try {
             const shop = await submit(draft)
-            haptic.success()
-            toast(t.onboarding.sentTitle, "success")
-            onDone(shop)
             // The new bot gets Zumda's picture at once: the shop's name and the Zumda mark.
-            void updateBotPhoto(
+            // Before opening the shop: from then on requests carry the shop, not the platform.
+            const photoError = await updateBotPhoto(
                 { shopName: shop.name, brandColor: shop.brandColor, logo: null },
                 (jpeg) => api.platform.setBotPhoto(shop.id, jpeg),
-            ).then((code) => code && toast(errorText(t, code), "error"))
+            )
+            haptic.success()
+            toast(
+                photoError ? errorText(t, photoError) : t.onboarding.sentTitle,
+                photoError ? "error" : "success",
+            )
+            onDone(shop)
         } catch (caught) {
             haptic.error()
             const code = caught instanceof ApiError ? caught.code : "generic"
