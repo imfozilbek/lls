@@ -73,7 +73,7 @@ describe("Zumda Business bot", () => {
         expect(welcome?.chatId).toBe(OWNER.id)
         expect(welcome?.token).toBe(env.BUSINESS_BOT_TOKEN)
         expect(welcome?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
-            "https://zumda-app.pages.dev/?mode=business",
+            "https://business.zumda.test/?mode=business",
         )
     })
 

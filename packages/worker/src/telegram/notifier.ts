@@ -355,7 +355,9 @@ export class Notifier {
                               [
                                   {
                                       text: t.myDeliveries,
-                                      web_app: { url: courierAppUrl(this.services.env.APP_ORIGIN) },
+                                      web_app: {
+                                          url: courierAppUrl(this.services.env.COURIER_APP_ORIGIN),
+                                      },
                                   },
                               ],
                           ],
@@ -491,7 +493,9 @@ export class Notifier {
                         [
                             {
                                 text: texts.continueSetup,
-                                web_app: { url: businessAppUrl(this.services.env.APP_ORIGIN) },
+                                web_app: {
+                                    url: businessAppUrl(this.services.env.BUSINESS_APP_ORIGIN),
+                                },
                             },
                         ],
                     ],

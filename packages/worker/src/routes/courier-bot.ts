@@ -110,7 +110,9 @@ async function greet(services: Services, message: IncomingMessage, t: BotTexts):
     await sendWelcome(services.telegram, {
         ...welcome,
         html: fill(t.courierBotHome, { shops: names.join(", ") }),
-        options: { keyboard: openButton(t.myDeliveries, courierAppUrl(origin)) },
+        options: {
+            keyboard: openButton(t.myDeliveries, courierAppUrl(services.env.COURIER_APP_ORIGIN)),
+        },
     })
 }
 
@@ -202,7 +204,10 @@ async function handleNetworkCallback(
                 callback.message.message_id,
                 inNetwork ? t.networkJoined : t.networkSkipped,
                 {
-                    keyboard: openButton(t.myDeliveries, courierAppUrl(services.env.APP_ORIGIN)),
+                    keyboard: openButton(
+                        t.myDeliveries,
+                        courierAppUrl(services.env.COURIER_APP_ORIGIN),
+                    ),
                 },
             )
         }

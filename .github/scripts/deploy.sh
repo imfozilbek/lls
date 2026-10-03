@@ -20,9 +20,15 @@ readonly DB_PLACEHOLDER="00000000-0000-0000-0000-000000000000"
 # Zumda's own addresses. The Worker has no workers.dev address (wrangler.jsonc).
 readonly DOMAIN="zumda.shop"
 readonly API_HOST="api.${DOMAIN}"
+# One Mini App, three addresses: customers, businesses (Mini App and web), couriers.
 readonly APP_HOST="app.${DOMAIN}"
+readonly BUSINESS_HOST="business.${DOMAIN}"
+readonly COURIER_HOST="delivery.${DOMAIN}"
+readonly APP_HOSTS=("$APP_HOST" "$BUSINESS_HOST" "$COURIER_HOST")
 readonly WORKER_URL="https://${API_HOST}"
 readonly APP_ORIGIN="https://${APP_HOST}"
+readonly BUSINESS_ORIGIN="https://${BUSINESS_HOST}"
+readonly COURIER_ORIGIN="https://${COURIER_HOST}"
 readonly CF_ROOT="https://api.cloudflare.com/client/v4"
 readonly CF_API="${CF_ROOT}/accounts/${CLOUDFLARE_ACCOUNT_ID}"
 
@@ -95,14 +101,15 @@ ensure_pages() {
     echo "$PAGES_HOST"
 }
 
-# app.zumda.shop: the Pages custom domain plus its DNS record. A domain added through the API gets
-# no DNS record by itself.
+# `ensure_app_domain <host>`: a Pages custom domain plus its DNS record. A domain added through the
+# API gets no DNS record by itself.
 ensure_app_domain() {
-    log "Mini App address '${APP_HOST}'"
-    cf_call GET "/pages/projects/${PAGES_PROJECT}/domains/${APP_HOST}"
+    local host="$1"
+    log "Mini App address '${host}'"
+    cf_call GET "/pages/projects/${PAGES_PROJECT}/domains/${host}"
     if [[ "$CF_STATUS" == 404 ]]; then
-        cf_call POST "/pages/projects/${PAGES_PROJECT}/domains" "$(jq -n --arg n "$APP_HOST" '{name: $n}')"
-        [[ "$CF_STATUS" == 2?? ]] || fail "Cannot add ${APP_HOST} to Pages (HTTP ${CF_STATUS})."
+        cf_call POST "/pages/projects/${PAGES_PROJECT}/domains" "$(jq -n --arg n "$host" '{name: $n}')"
+        [[ "$CF_STATUS" == 2?? ]] || fail "Cannot add ${host} to Pages (HTTP ${CF_STATUS})."
         echo "added"
     elif [[ "$CF_STATUS" == 200 ]]; then
         echo "exists, $(jq -r '.result.status' <<<"$CF_BODY")"
@@ -115,13 +122,13 @@ ensure_app_domain() {
     local zone
     zone="$(jq -r '.result[0].id // empty' <<<"$CF_BODY")"
     [[ -n "$zone" ]] || fail "The zone ${DOMAIN} is not in this Cloudflare account."
-    cf_call GET "/zones/${zone}/dns_records?name=${APP_HOST}"
+    cf_call GET "/zones/${zone}/dns_records?name=${host}"
     [[ "$CF_STATUS" == 200 ]] || fail "Cannot read DNS records (HTTP ${CF_STATUS}). Check the API token has DNS Edit."
     if [[ "$(jq '.result | length' <<<"$CF_BODY")" == 0 ]]; then
-        cf_call POST "/zones/${zone}/dns_records" "$(jq -n --arg n "$APP_HOST" --arg c "$PAGES_HOST" \
+        cf_call POST "/zones/${zone}/dns_records" "$(jq -n --arg n "$host" --arg c "$PAGES_HOST" \
             '{type: "CNAME", name: $n, content: $c, proxied: true}')"
-        [[ "$CF_STATUS" == 2?? ]] || fail "Cannot create the DNS record ${APP_HOST} (HTTP ${CF_STATUS})."
-        echo "DNS record created: ${APP_HOST} → ${PAGES_HOST}"
+        [[ "$CF_STATUS" == 2?? ]] || fail "Cannot create the DNS record ${host} (HTTP ${CF_STATUS})."
+        echo "DNS record created: ${host} → ${PAGES_HOST}"
     else
         echo "DNS record exists"
     fi
@@ -198,8 +205,11 @@ deploy_worker() {
         jq --arg key "$ENC_KEY" '. + {TOKEN_ENC_KEY: $key}' "$secrets_file" >"${secrets_file}.new"
         mv "${secrets_file}.new" "$secrets_file"
     fi
-    # The custom domain gets its DNS record and certificate from Cloudflare.
-    wrangler deploy --domain "$API_HOST" --var "APP_ORIGIN:${APP_ORIGIN}" \
+    # The custom domains get their DNS records and certificates from Cloudflare. The bare
+    # zumda.shop answers with a redirect to the customers' bot until the landing page exists.
+    wrangler deploy --domain "$API_HOST" --domain "$DOMAIN" \
+        --var "APP_ORIGIN:${APP_ORIGIN}" --var "BUSINESS_APP_ORIGIN:${BUSINESS_ORIGIN}" \
+        --var "COURIER_APP_ORIGIN:${COURIER_ORIGIN}" \
         --secrets-file "$secrets_file"
 }
 
@@ -293,7 +303,7 @@ connect_business_bot() {
         --data-urlencode "url=${WORKER_URL}/tg/business" \
         --data-urlencode "secret_token=${BUSINESS_WEBHOOK_SECRET}" \
         --data-urlencode 'allowed_updates=["message","callback_query","managed_bot"]'
-    telegram "$BUSINESS_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=business" \
+    telegram "$BUSINESS_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${BUSINESS_ORIGIN}/" \
         '{type: "web_app", text: "Bizneslarim", web_app: {url: $url}}')"
     set_profile "$BUSINESS_BOT_TOKEN" "$BUSINESS_NAME" "$BUSINESS_DESCRIPTION" "$BUSINESS_SHORT_DESCRIPTION"
     echo "webhook, menu button, name and descriptions set"
@@ -306,7 +316,7 @@ connect_courier_bot() {
         --data-urlencode "url=${WORKER_URL}/tg/courier" \
         --data-urlencode "secret_token=${COURIER_WEBHOOK_SECRET}" \
         --data-urlencode 'allowed_updates=["message","callback_query"]'
-    telegram "$COURIER_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=courier" \
+    telegram "$COURIER_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${COURIER_ORIGIN}/" \
         '{type: "web_app", text: "Kuryer", web_app: {url: $url}}')"
     set_profile "$COURIER_BOT_TOKEN" "$COURIER_NAME" "$COURIER_DESCRIPTION" "$COURIER_SHORT_DESCRIPTION"
     echo "webhook, menu button, name and descriptions set"
@@ -328,13 +338,15 @@ wait_for() {
 smoke_test() {
     log "Smoke test"
     wait_for "${WORKER_URL}/health"
-    wait_for "${APP_ORIGIN}/"
+    for host in "${APP_HOSTS[@]}"; do
+        wait_for "https://${host}/"
+    done
     echo "Worker:   ${WORKER_URL}"
-    echo "Mini App: ${APP_ORIGIN}"
+    echo "Mini App: ${APP_ORIGIN}, ${BUSINESS_ORIGIN}, ${COURIER_ORIGIN}"
     {
         echo "### Deployed"
         echo "- Worker: ${WORKER_URL}"
-        echo "- Mini App: ${APP_ORIGIN}"
+        echo "- Mini App: ${APP_ORIGIN}, ${BUSINESS_ORIGIN}, ${COURIER_ORIGIN}"
     } >>"${GITHUB_STEP_SUMMARY:-/dev/null}"
 }
 
@@ -345,7 +357,9 @@ main() {
     ensure_d1
     ensure_r2
     ensure_pages
-    ensure_app_domain
+    for host in "${APP_HOSTS[@]}"; do
+        ensure_app_domain "$host"
+    done
     deploy_worker
     deploy_app
     smoke_test

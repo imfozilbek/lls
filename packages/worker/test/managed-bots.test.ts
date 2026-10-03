@@ -148,7 +148,7 @@ describe("a bot created from Zumda Business (Managed Bots)", () => {
         expect(message?.html).toContain("@osh_markaz_bot yaratildi")
         expect(message?.html).not.toContain(MANAGED_TOKEN)
         expect(message?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
-            "https://zumda-app.pages.dev/?mode=business",
+            "https://business.zumda.test/?mode=business",
         )
 
         const mine = await client.as(OWNER, { businessBot: true })("/api/platform/managed-bots")

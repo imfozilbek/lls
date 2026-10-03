@@ -24,6 +24,8 @@ export default defineConfig(async () => {
                         BUSINESS_BOT_TOKEN: "100200:business-bot-token-for-tests-only-xxxxx",
                         BUSINESS_WEBHOOK_SECRET: "business-webhook-secret",
                         APP_ORIGIN: "https://zumda-app.pages.dev",
+                        BUSINESS_APP_ORIGIN: "https://business.zumda.test",
+                        COURIER_APP_ORIGIN: "https://delivery.zumda.test",
                     },
                     // Tests sign up and search many times as the same user; the limit itself is
                     // checked in rate-limit.test.ts with its own tight limiter.

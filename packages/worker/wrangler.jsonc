@@ -8,8 +8,12 @@
     // address. Local `wrangler dev`, the tests and the e2e stand are not affected.
     "workers_dev": false,
     "preview_urls": false,
+    // The Mini App's three addresses: customers (app.), businesses (business.), couriers
+    // (delivery.). Locally all three are the one dev server; the deploy sets the real ones.
     "vars": {
         "APP_ORIGIN": "http://localhost:5173",
+        "BUSINESS_APP_ORIGIN": "http://localhost:5173",
+        "COURIER_APP_ORIGIN": "http://localhost:5173",
     },
     "d1_databases": [
         {

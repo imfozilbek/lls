@@ -163,7 +163,7 @@ describe("shop couriers, verticals and channels", () => {
         const [approved, invite] = client.telegram.sent.slice(-2)
         expect(approved).toMatchObject({ chatId: COURIER.id, token: env.COURIER_BOT_TOKEN })
         expect(approved?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
-            "https://zumda-app.pages.dev/?mode=courier",
+            "https://delivery.zumda.test/?mode=courier",
         )
         // Once, right after the first approval: the district network is offered.
         expect(invite).toMatchObject({ chatId: COURIER.id, token: env.COURIER_BOT_TOKEN })

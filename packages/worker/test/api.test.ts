@@ -36,22 +36,31 @@ describe("auth", () => {
         })
     })
 
+    it("zumda.shop sends people to the customers' Zumda bot", async () => {
+        const response = await testClient().request("https://zumda.shop/")
+        expect(response.status).toBe(302)
+        expect(response.headers.get("Location")).toBe("https://t.me/zumdashop_bot")
+        const api = await testClient().request("https://api.zumda.shop/health")
+        expect(api.status).toBe(200)
+    })
+
     it("health needs no auth", async () => {
         expect((await testClient().request("/health")).status).toBe(200)
     })
 
-    it("CORS allows only the app origin", async () => {
+    it("CORS allows only the app's three addresses", async () => {
         const client = testClient()
-        const allowed = await client.request("/api/me", {
-            method: "OPTIONS",
-            headers: {
-                Origin: "https://zumda-app.pages.dev",
-                "Access-Control-Request-Method": "GET",
-            },
-        })
-        expect(allowed.headers.get("Access-Control-Allow-Origin")).toBe(
+        for (const origin of [
             "https://zumda-app.pages.dev",
-        )
+            "https://business.zumda.test",
+            "https://delivery.zumda.test",
+        ]) {
+            const allowed = await client.request("/api/me", {
+                method: "OPTIONS",
+                headers: { Origin: origin, "Access-Control-Request-Method": "GET" },
+            })
+            expect(allowed.headers.get("Access-Control-Allow-Origin")).toBe(origin)
+        }
         const denied = await client.request("/api/me", {
             method: "OPTIONS",
             headers: { Origin: "https://evil.example", "Access-Control-Request-Method": "GET" },

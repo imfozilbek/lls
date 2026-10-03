@@ -213,7 +213,12 @@ export async function handleBusinessMessage(
             options: {
                 keyboard: {
                     inline_keyboard: [
-                        [{ text: texts.openBusinesses, web_app: { url: businessAppUrl(origin) } }],
+                        [
+                            {
+                                text: texts.openBusinesses,
+                                web_app: { url: businessAppUrl(services.env.BUSINESS_APP_ORIGIN) },
+                            },
+                        ],
                     ],
                 },
             },
