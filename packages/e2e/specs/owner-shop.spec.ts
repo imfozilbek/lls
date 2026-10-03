@@ -60,31 +60,30 @@ test("catalog: add a product with a photo; customers see it at once", async ({ p
 test("catalog: edit price, take off for today, hide, show again, delete", async ({ page }) => {
     await openOwner(page)
     await page.getByRole("tab", { name: "Menyu" }).click()
-    await page.getByRole("button", { name: /Manti/ }).click()
+    await page.getByRole("button", { name: /^Manti/ }).click()
     await expect(page.getByRole("heading", { name: "Mahsulot" })).toBeVisible()
     await page.getByLabel("Narxi").fill("32000")
     await bottomButton(page).click()
     await expect(page.getByText(/32\s000/)).toBeVisible()
 
-    await page.getByRole("switch", { name: "Sotuvda bor: Manti" }).click()
-    // The sheet sits at the bottom of the screen, over everything (not inside the list row).
-    const sheet = page.getByRole("dialog")
-    const box = await sheet.getByRole("heading", { name: "Sotuvdan olish" }).boundingBox()
-    const height = page.viewportSize()?.height ?? 0
-    expect(box?.y ?? 0).toBeGreaterThan(height / 2)
     // The switch ignores taps while a save is on its way: wait for each save, as a person would.
     const saved = (): Promise<unknown> =>
         page.waitForResponse(
             (r) => r.url().includes("/owner/products/") && r.request().method() === "PATCH",
         )
-    await Promise.all([saved(), page.getByRole("button", { name: /Faqat bugunga/ }).click()])
+    const onSale = page.getByRole("switch", { name: "Sotuvda bor: Manti" })
+    // One tap: off for today, and it says so.
+    await Promise.all([saved(), onSale.click()])
     await expect(page.getByText("Bugun yo'q")).toBeVisible()
-    await Promise.all([saved(), page.getByRole("switch", { name: "Sotuvda bor: Manti" }).click()])
-    await expect(page.getByRole("switch", { name: "Sotuvda bor: Manti" })).toHaveAttribute(
-        "aria-checked",
-        "true",
-    )
-    await page.getByRole("switch", { name: "Sotuvda bor: Manti" }).click()
+    await expect(page.getByText("Manti bugunga sotuvdan olindi")).toBeVisible()
+    await Promise.all([saved(), onSale.click()])
+    await expect(onSale).toHaveAttribute("aria-checked", "true")
+    // For good: from «⋯». The sheet sits at the bottom of the screen, over everything.
+    await page.getByRole("button", { name: "Boshqa: Manti" }).click()
+    const sheet = page.getByRole("dialog")
+    const box = await sheet.getByRole("heading", { name: "Sotuvdan olish" }).boundingBox()
+    const height = page.viewportSize()?.height ?? 0
+    expect(box?.y ?? 0).toBeGreaterThan(height / 2)
     await Promise.all([saved(), page.getByRole("button", { name: "Butunlay yashirish" }).click()])
     await expect(page.getByText("Yashirilgan")).toBeVisible()
 
@@ -95,7 +94,10 @@ test("catalog: edit price, take off for today, hide, show again, delete", async 
     }
     expect(catalog.data.map((p) => p.name)).not.toContain("Manti")
 
-    await page.getByRole("button", { name: /Manti/ }).click()
+    await page
+        .getByRole("listitem")
+        .getByRole("button", { name: /^Manti/ })
+        .click()
     await page.getByRole("button", { name: "O'chirish" }).click()
     await expect(page.getByRole("tab", { name: "Menyu" })).toBeVisible()
     await expect(page.getByText("Manti")).toBeHidden()

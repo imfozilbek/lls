@@ -315,7 +315,7 @@ test("the day adds up to the sum; the CSV report arrives in the owner's chat", a
     const since = await lastSeq()
     await openMoney(page)
     await expect(page.getByText(/100\s000/).first()).toBeVisible()
-    await expect(page.getByText("O'tkazmalar orqali olindi")).toBeVisible()
+    await expect(page.getByText("Yetkazilgan va kartangizga to'langan buyurtmalar")).toBeVisible()
     await expect(page.getByText(/Naqd/)).toHaveCount(0)
     await page.getByRole("tab", { name: "Shu oy" }).click()
     await page.getByRole("button", { name: "Excel uchun hisobot" }).click()
