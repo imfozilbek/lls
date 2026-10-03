@@ -20,7 +20,8 @@ Please **do not** open a public issue. Use GitHub's private report instead:
 ## How the repository protects them
 
 - Pull requests and forks run CI with a read-only token and **no secrets**.
-- The deploy job runs only for a push to `main` of this repository, after green checks, in the
+- The deploy job runs only for `main` of this repository (a push, a manual run or the `deploy`
+  dispatch event, which only someone with write access can send), after green checks, in the
   `production` environment. Only the deploy step receives the secrets.
 - GitHub Actions are pinned to exact commits.
 - `scripts/check-secrets.sh` runs in CI and as a git pre-commit hook: it blocks `.dev.vars`,
@@ -29,7 +30,8 @@ Please **do not** open a public issue. Use GitHub's private report instead:
 ## If a key leaks
 
 1. Revoke it at once: Zumda bot — `@BotFather` → `/revoke`; Cloudflare — roll the API token.
-2. Put the new value into GitHub secrets and run **Actions → CI → Run workflow** on `main`.
+2. Put the new value into GitHub secrets and run **Actions → CI → Run workflow** on `main` (or ask
+   Claude: it sends the `deploy` event).
 3. Removing the commit is not enough: a pushed key is public forever; only revoking helps.
 
 ## Encryption key

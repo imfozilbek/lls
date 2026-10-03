@@ -274,6 +274,7 @@ bunx wrangler d1 migrations apply zumda --remote # Apply D1 migrations in produc
 bunx wrangler types                            # Regenerate Env types after wrangler.jsonc changes
 bunx wrangler deploy                           # Deploy Worker
 scripts/check-access.sh                        # Launch keys work? (Cloudflare, bots; read-only)
+gh api -X POST repos/imfozilbek/lls/dispatches -f event_type=deploy  # Deploy main again (Claude)
 ```
 
 ## Architecture (DDD + Clean Architecture)
@@ -497,8 +498,8 @@ document.innerHTML = x                 // XSS
 
 **Public repository (GitHub, free CI):** the code is public, the keys never are.
 - Workflows: `permissions: contents: read`; actions pinned to a commit SHA; `persist-credentials: false`.
-- Secrets only in the deploy job, only in the step that needs them, only for a push to `main` of
-  this repository. **NEVER** `pull_request_target` or `workflow_run` with secrets or with
+- Secrets only in the deploy job, only in the step that needs them, only for `main` of this
+  repository (a push, a manual run or the `deploy` dispatch event). **NEVER** `pull_request_target` or `workflow_run` with secrets or with
   checked-out PR code. Never `${{ github.event.* }}` text inside `run:` (script injection).
 - `scripts/check-secrets.sh` runs in CI and as the git pre-commit hook; fake test keys carry a
   `secret-scan: fake` comment. Details and the leak playbook: `SECURITY.md`.

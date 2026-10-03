@@ -1,11 +1,17 @@
 name: CI
 
 # Public repository: forks and pull requests run the checks with a read-only token and never see
-# secrets. Only a push to main of THIS repository, after green checks, reaches the deploy job.
+# secrets. Only main of THIS repository (a push, a manual run or the `deploy` event), after green
+# checks, reaches the deploy job.
 on:
     push:
     pull_request:
     workflow_dispatch:
+    # The `deploy` event deploys main again: `gh api -X POST repos/imfozilbek/lls/dispatches
+    # -f event_type=deploy`. Only someone with write access can send it, and it always runs the
+    # code of main. Its payload is never read.
+    repository_dispatch:
+        types: [deploy]
 
 permissions:
     contents: read
@@ -86,11 +92,13 @@ jobs:
 
     deploy:
         needs: [quality-gates, e2e]
-        # Never for pull requests or forks: only main of this repository, pushed or run by hand.
+        # Never for pull requests or forks: only main of this repository, pushed, run by hand or
+        # by the `deploy` event.
         if: >-
             github.repository == 'imfozilbek/lls' &&
             github.ref == 'refs/heads/main' &&
-            (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+            (github.event_name == 'push' || github.event_name == 'workflow_dispatch' ||
+            github.event_name == 'repository_dispatch')
         runs-on: ubuntu-latest
         timeout-minutes: 20
         environment: production
