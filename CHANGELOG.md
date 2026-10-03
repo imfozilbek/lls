@@ -21,7 +21,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Changed:** the product and the company are **Zumda** (company: Zumda Shop); the former name
   LLS is gone from the bots, the app, the QR poster («powered by Zumda»), the docs and the code:
   packages `@zumda/*`, Cloudflare names `zumda-worker`, `zumda`, `zumda-media`, `zumda-app`;
-  the deploy runs for `imfozilbek/zumda`. Bots: `@zumdashop_bot`, `@zumdashop_kuryer_bot`.
+  the GitHub repository keeps the name `imfozilbek/lls`, and the deploy runs for it. Bots:
+  `@zumdashop_bot`, `@zumdashop_kuryer_bot`.
 
 ### Many cards, Uzbek only, light only (owner's decisions)
 - **Added (core):** `PayoutCardBook`: a shop keeps up to 20 cards, chooses the payment card

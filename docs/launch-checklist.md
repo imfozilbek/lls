@@ -93,8 +93,6 @@ D1, Pages, Workers и обоих ботов и пишет `OK` / `FAIL` с по�
 Эти настройки Claude через API недоступны (среда не пускает к настройкам Actions), поэтому их
 делаете вы.
 
-- [ ] **Переименование** (после слияния открытого PR): **Settings → General → Repository name** →
-      `zumda` → **Rename**. Деплой запускается только для `imfozilbek/zumda`.
 - [ ] **Окружение деплоя:** **Settings → Environments → New environment** → `production`.
   - **Deployment branches and tags** → **Selected branches and tags** → правило `main`.
   - **Environment secrets** → **Add environment secret** — те же 5 имён и значений, что в шаге 5.

@@ -154,7 +154,7 @@ Pilot: **food, water and grocery at the same time.**
 ### M4i. Name: Zumda ✅ (owner's decision, October 2026)
 - [x] Zumda everywhere: bots, app, QR poster, packages `@zumda/*`, Cloudflare names, docs
 - [x] Domain `zumda.shop` bought; bots `@zumdashop_bot` and `@zumdashop_kuryer_bot` created
-- [ ] Owner: rename the GitHub repository to `zumda` (the deploy runs only for `imfozilbek/zumda`)
+- [x] The GitHub repository keeps the name `imfozilbek/lls` (owner's decision); the deploy runs for it
 - [x] Look: green house mark (scheme "Bog'"), brand kit in `brand/`, the mark in the storefront
       line, showcase, courier screen and QR poster; a new shop is green
 - [x] Zumda sets the shop bot's picture (logo or name + the mark) and description

@@ -13,6 +13,7 @@ The old NestJS + MongoDB code is kept only at git tag `legacy-v0`. Reuse ideas f
 
 Zumda — local delivery platform for small businesses (Uzbek *zumda*, "in a moment").
 Company name, where a full one is needed: **Zumda Shop**. Domain: `zumda.shop`.
+GitHub repository: `imfozilbek/lls` — it keeps this name (owner's decision); do not rename it.
 TypeScript monorepo (Bun workspaces). Bun 1.3.
 
 **Target market:** small businesses in regions and districts of Uzbekistan, where aggregators
