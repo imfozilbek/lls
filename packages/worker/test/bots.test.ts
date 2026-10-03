@@ -72,7 +72,7 @@ describe("platform bot", () => {
         const [welcome] = client.telegram.sent
         expect(welcome?.chatId).toBe(OWNER.id)
         expect(welcome?.options?.keyboard?.inline_keyboard[1]?.[0]?.web_app?.url).toBe(
-            "https://lls-app.pages.dev/?mode=onboarding",
+            "https://zumda-app.pages.dev/?mode=onboarding",
         )
     })
 
@@ -130,7 +130,7 @@ describe("platform bot", () => {
             },
         ])
         expect(client.telegram.menuButtons[0]?.url).toBe(
-            "https://lls-app.pages.dev/?shop=osh-markaz",
+            "https://zumda-app.pages.dev/?shop=osh-markaz",
         )
         const link = client.telegram.sent.at(-1)
         expect(link?.chatId).toBe(OWNER.id)
@@ -241,7 +241,7 @@ describe("shop bot", () => {
         expect(welcome?.html).toContain("Osh Markaz")
         expect(welcome?.html).toContain("Assalomu alaykum")
         expect(welcome?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
-            `https://lls-app.pages.dev/?shop=${slug}`,
+            `https://zumda-app.pages.dev/?shop=${slug}`,
         )
     })
 

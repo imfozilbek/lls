@@ -16,7 +16,8 @@ import { Notifier, inBackground } from "../telegram/notifier.js"
 import type { AppEnv } from "../env.js"
 
 /**
- * "Мои доставки", opened from the LLS courier bot: the courier's orders across all their shops.
+ * "Мои доставки", opened from the Zumda courier bot: the courier's orders across all their
+ * shops.
  * Who they deliver for is checked by their approved links, order by order.
  */
 export const courierRoutes = new Hono<AppEnv>()

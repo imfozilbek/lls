@@ -357,7 +357,7 @@ async function handleMarketCommand(services: Services, message: IncomingMessage)
     }
 }
 
-/** The LLS bot: welcome with the showcase and onboarding buttons, phones, admin commands. */
+/** The Zumda bot: welcome with the showcase and onboarding buttons, phones, admin commands. */
 async function handlePlatformMessage(
     services: Services,
     message: IncomingMessage,
@@ -427,7 +427,7 @@ export const webhookRoutes = new Hono<AppEnv>()
         return c.json({ ok: true })
     })
 
-    /** The LLS courier bot: invites, phones, and the buttons on order cards of every shop. */
+    /** The Zumda courier bot: invites, phones, and the buttons on order cards of every shop. */
     .post("/courier", async (c) => {
         const secret = c.req.header(SECRET_HEADER) ?? ""
         if (!timingSafeEqual(secret, c.env.COURIER_WEBHOOK_SECRET)) {

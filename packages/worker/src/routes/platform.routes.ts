@@ -25,11 +25,11 @@ async function verifyBot(telegram: TelegramGateway, token: string): Promise<BotI
     }
 }
 
-/** Onboarding through the LLS platform bot (no `X-Shop`). */
+/** Onboarding through the Zumda platform bot (no `X-Shop`). */
 export const platformRoutes = new Hono<AppEnv>()
     .use(async (c, next) => {
         if (c.get("auth").business) {
-            throw new ApiError(400, "PLATFORM_ONLY", "Open this from the LLS bot")
+            throw new ApiError(400, "PLATFORM_ONLY", "Open this from the Zumda bot")
         }
         await next()
     })
@@ -48,7 +48,7 @@ export const platformRoutes = new Hono<AppEnv>()
             const auth = c.get("auth")
             const { botToken, ...shop } = c.req.valid("json")
             const bot = await verifyBot(services.telegram, botToken)
-            // The LLS bot signed this: remember the owner's name and language for the bots.
+            // The Zumda bot signed this: remember the owner's name and language for the bots.
             await services.useCases.resolveCustomer.execute(auth.user, auth.scope)
             const registered = await services.useCases.registerShop.execute({
                 ...shop,

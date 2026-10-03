@@ -54,13 +54,13 @@ const BASE = {
         openMenu: "🛒 Katalogni ochish",
         phoneSaved: "✅ Telefon raqamingiz saqlandi.",
         platformWelcome:
-            "LLS — tumaningiz do'konlari bir joyda. Mahsulotni qidiring va do'kondan buyurtma bering.\n\nDo'kon egasimisiz? O'z buyurtma botingizni ulang.",
+            "Zumda — tumaningiz do'konlari bir joyda. Mahsulotni qidiring va do'kondan buyurtma bering.\n\nDo'kon egasimisiz? O'z buyurtma botingizni ulang.",
         connectShop: "🏪 Do'konni ulash",
         openShowcase: "🔍 Do'konlar va mahsulotlar",
-        showcaseOrder: "🛍 LLS vitrinasidan · komissiya {rate}%: {sum}",
+        showcaseOrder: "🛍 Zumda vitrinasidan · komissiya {rate}%: {sum}",
         showcaseJoined:
-            "🛍 {shop} LLS vitrinasiga qo'shildi. Mijozlar uni LLS botida topadi.\nKomissiya: vitrina orqali sotilgan tovarlarning {rate}%. O'z botingiz orqali sotuvdan komissiya olinmaydi.",
-        showcaseLeft: "{shop} LLS vitrinasidan olindi.",
+            "🛍 {shop} Zumda vitrinasiga qo'shildi. Mijozlar uni Zumda botida topadi.\nKomissiya: vitrina orqali sotilgan tovarlarning {rate}%. O'z botingiz orqali sotuvdan komissiya olinmaydi.",
+        showcaseLeft: "{shop} Zumda vitrinasidan olindi.",
         showcaseUsage:
             "Buyruq: /market <slug> <foiz>, masalan /market osh-markaz 5\nO'chirish: /market <slug> off",
         showcaseSet: "✅ {shop}: vitrinada, komissiya {rate}%",
@@ -70,8 +70,8 @@ const BASE = {
         botConnected: "✅ {shop}: bot ulandi.",
         reconnectUsage: "Buyruq: /reconnect <slug>, masalan /reconnect osh-markaz",
         shopNotActive: "{shop} hali tasdiqlanmagan.",
-        alertServerError: "🚨 LLS serverida xato",
-        alertNotificationFailed: "🚨 LLS: xabar yuborilmadi",
+        alertServerError: "🚨 Zumda serverida xato",
+        alertNotificationFailed: "🚨 Zumda: xabar yuborilmadi",
         alertQuiet: "Shu turdagi keyingi ogohlantirish {minutes} daqiqadan keyin.",
         applicationReceived: "✅ {shop} arizasi qabul qilindi. Tekshiruvdan so'ng xabar beramiz.",
         shopApproved: "🎉 {shop} ishga tushdi! Mijozlaringizga ushbu havolani yuboring:",
@@ -94,7 +94,7 @@ const BASE = {
         callbackOutdated: "Holat allaqachon o'zgargan",
         callbackForbidden: "Bu amal siz uchun emas",
         courierBotWelcome:
-            "👋 Bu LLS kuryer boti: do'konlar buyurtmalari shu yerga keladi. Ishni boshlash uchun do'kon egasidan taklif havolasini so'rang.",
+            "👋 Bu Zumda kuryer boti: do'konlar buyurtmalari shu yerga keladi. Ishni boshlash uchun do'kon egasidan taklif havolasini so'rang.",
         courierBotHome:
             "🚚 Siz kuryersiz: {shops}. Smenaga chiqing — buyurtmalar shu yerga keladi.",
         courierPending:
@@ -180,7 +180,7 @@ const BASE = {
                 "To'langan vaqt",
                 "Kuryer",
                 "Kanal",
-                "LLS komissiyasi",
+                "Zumda komissiyasi",
             ],
             payment: {
                 unpaid: "to'lanmagan",
@@ -189,7 +189,7 @@ const BASE = {
                 refund_due: "qaytarish kerak",
                 refunded: "qaytarildi",
             },
-            channel: { shop_bot: "do'kon boti", marketplace: "LLS vitrinasi" },
+            channel: { shop_bot: "do'kon boti", marketplace: "Zumda vitrinasi" },
         },
         posterCaption: "🖨 {shop} uchun QR-kod. Chop eting yoki Instagramga joylang.",
         courierRemoved: "↩️ {shop}: #{n} buyurtma boshqa kuryerga berildi.",

@@ -117,7 +117,7 @@ export function formatNewOrderForOwner(order: OrderDTO, reader: Reader): string 
 }
 
 /**
- * The courier's card in the LLS courier bot: which shop, where to go, whom to call, how many
+ * The courier's card in the Zumda courier bot: which shop, where to go, whom to call, how many
  * bottles to take. The customer paid before the shop started: the courier takes no money.
  * A courier may work for several shops, so the shop comes first.
  */

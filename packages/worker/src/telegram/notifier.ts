@@ -39,7 +39,7 @@ export function shopAppUrl(appOrigin: string, slug: string): string {
     return `${appOrigin}/?shop=${encodeURIComponent(slug)}`
 }
 
-/** The courier's screen across all their shops, opened from the LLS courier bot. */
+/** The courier's screen across all their shops, opened from the Zumda courier bot. */
 export function courierAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=courier`
 }
@@ -48,7 +48,7 @@ export function onboardingAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=onboarding`
 }
 
-/** The LLS showcase: search across shops, opened from the LLS bot. */
+/** The Zumda showcase: search across shops, opened from the Zumda bot. */
 export function showcaseAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=market`
 }
@@ -334,7 +334,7 @@ export class Notifier {
         })
     }
 
-    /** The owner approved or declined: the courier hears it in the LLS courier bot. */
+    /** The owner approved or declined: the courier hears it in the Zumda courier bot. */
     async courierReviewed(
         business: Business,
         courier: CourierDTO,
@@ -382,7 +382,7 @@ export class Notifier {
         )
     }
 
-    /** Tells the owner (in the LLS bot, where they applied) that the showcase deal changed. */
+    /** Tells the owner (in the Zumda bot, where they applied) that the showcase deal changed. */
     async showcaseChanged(shop: ShopOwnerDTO): Promise<void> {
         const t = textsFor(await this.languageOf(shop.ownerTelegramId))
         const name = `<b>${escapeHtml(shop.name)}</b>`
@@ -482,7 +482,7 @@ export class Notifier {
     }
 
     /**
-     * Sends or edits the courier's card in the LLS courier bot. A card edit makes no sound, so
+     * Sends or edits the courier's card in the Zumda courier bot. A card edit makes no sound, so
      * "ready" also pings.
      */
     private async refreshCourierCard(
@@ -546,7 +546,7 @@ export class Notifier {
         )
     }
 
-    /** Writes the customer in their language; a showcase customer hears from the LLS bot. */
+    /** Writes the customer in their language; a showcase customer hears from the Zumda bot. */
     private async tellCustomer(
         token: string,
         business: Business,
@@ -561,7 +561,7 @@ export class Notifier {
         if (!text) {
             return
         }
-        // A showcase customer started only the LLS bot, so the LLS bot writes, naming the shop.
+        // A showcase customer started only the Zumda bot, so the Zumda bot writes, naming the shop.
         if (order.channel === OrderChannel.MARKETPLACE) {
             const shop = `<b>${escapeHtml(business.name)}</b>`
             await this.services.telegram.sendMessage(

@@ -151,7 +151,7 @@ export const ownerRoutes = new Hono<AppEnv>()
         return c.json(couriers)
     })
 
-    /** A one-time link to the LLS courier bot: `t.me/<courier_bot>?start=c_<code>`. */
+    /** A one-time link to the Zumda courier bot: `t.me/<courier_bot>?start=c_<code>`. */
     .post("/couriers/invites", async (c) => {
         const services = c.get("services")
         const invite = await services.useCases.createCourierInvite.execute({

@@ -143,17 +143,17 @@ export interface TestClient {
     request(path: string, init?: RequestInit): Promise<Response>
     /**
      * Request as `user` inside the Mini App opened from `botToken` (X-Shop = slug), or from the
-     * LLS courier bot (`courierBot`).
+     * Zumda courier bot (`courierBot`).
      */
     as(
         user: object,
         options: { botToken?: string; shop?: string; via?: "marketplace"; courierBot?: boolean },
     ): (path: string, init?: RequestInit & { json?: unknown }) => Promise<Response>
-    /** An update from Telegram to the LLS courier bot's webhook. */
+    /** An update from Telegram to the Zumda courier bot's webhook. */
     courierBot(update: object): Promise<Response>
 }
 
-export const COURIER_BOT: BotInfo = { id: 100100, username: "lls_kuryer_bot", firstName: "LLS" }
+export const COURIER_BOT: BotInfo = { id: 100100, username: "zumda_kuryer_bot", firstName: "Zumda" }
 
 export function testClient(
     options: { bots?: Record<string, BotInfo>; clock?: Clock } = {},
@@ -253,7 +253,7 @@ export async function createActiveShop(
 }
 
 /**
- * The whole hiring path: the owner makes an invite, the person accepts it in the LLS courier bot
+ * The whole hiring path: the owner makes an invite, the person accepts it in the Zumda courier bot
  * and shares a phone, the owner approves, the courier starts a shift. Returns the courier id.
  */
 export async function hireCourier(

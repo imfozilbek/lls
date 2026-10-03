@@ -12,7 +12,7 @@ export function seed(): void {
     execFileSync("bun", ["scripts/seed-dev.ts"], {
         cwd: WORKER_DIR,
         stdio: "pipe",
-        env: { ...process.env, LLS_PERSIST_TO: STATE_DIR },
+        env: { ...process.env, ZUMDA_PERSIST_TO: STATE_DIR },
     })
 }
 

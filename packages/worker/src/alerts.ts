@@ -32,7 +32,7 @@ export function describeError(error: unknown): string {
 }
 
 /**
- * Tells the platform admins through the LLS bot. Never throws: an alert must not break the
+ * Tells the platform admins through the Zumda bot. Never throws: an alert must not break the
  * request, and a broken database or Telegram only leaves the error in the Worker log.
  */
 export async function alertAdmins(

@@ -45,11 +45,13 @@ describe("auth", () => {
         const allowed = await client.request("/api/me", {
             method: "OPTIONS",
             headers: {
-                Origin: "https://lls-app.pages.dev",
+                Origin: "https://zumda-app.pages.dev",
                 "Access-Control-Request-Method": "GET",
             },
         })
-        expect(allowed.headers.get("Access-Control-Allow-Origin")).toBe("https://lls-app.pages.dev")
+        expect(allowed.headers.get("Access-Control-Allow-Origin")).toBe(
+            "https://zumda-app.pages.dev",
+        )
         const denied = await client.request("/api/me", {
             method: "OPTIONS",
             headers: { Origin: "https://evil.example", "Access-Control-Request-Method": "GET" },

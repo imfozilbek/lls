@@ -108,14 +108,14 @@ describe("shop couriers, verticals and channels", () => {
         const response = await as(OWNER)("/api/owner/couriers/invites", { method: "POST" })
         expect(response.status).toBe(201)
         const { link } = await json<{ link: string }>(response)
-        expect(link).toMatch(/^https:\/\/t\.me\/lls_kuryer_bot\?start=c_[A-Za-z0-9_-]{16}$/)
+        expect(link).toMatch(/^https:\/\/t\.me\/zumda_kuryer_bot\?start=c_[A-Za-z0-9_-]{16}$/)
         const code = link.split("start=")[1]
 
         await client.courierBot({
             message: { from: COURIER, chat: { id: COURIER.id }, text: `/start ${code}` },
         })
         const [waiting, toOwner] = client.telegram.sent.slice(-2)
-        // The courier hears from the LLS courier bot; the owner from their own shop bot.
+        // The courier hears from the Zumda courier bot; the owner from their own shop bot.
         expect(waiting).toMatchObject({ chatId: COURIER.id, token: env.COURIER_BOT_TOKEN })
         expect(waiting?.options?.askContact).toBeTruthy()
         expect(toOwner).toMatchObject({ chatId: OWNER.id, token: SHOP_BOT_TOKEN })
@@ -163,7 +163,7 @@ describe("shop couriers, verticals and channels", () => {
         const [approved, invite] = client.telegram.sent.slice(-2)
         expect(approved).toMatchObject({ chatId: COURIER.id, token: env.COURIER_BOT_TOKEN })
         expect(approved?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
-            "https://lls-app.pages.dev/?mode=courier",
+            "https://zumda-app.pages.dev/?mode=courier",
         )
         // Once, right after the first approval: the district network is offered.
         expect(invite).toMatchObject({ chatId: COURIER.id, token: env.COURIER_BOT_TOKEN })

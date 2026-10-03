@@ -21,7 +21,7 @@ export default defineConfig(async () => {
                         PLATFORM_ADMIN_IDS: "9999",
                         COURIER_BOT_TOKEN: "100100:courier-bot-token-for-tests-only-xxxxxx",
                         COURIER_WEBHOOK_SECRET: "courier-webhook-secret",
-                        APP_ORIGIN: "https://lls-app.pages.dev",
+                        APP_ORIGIN: "https://zumda-app.pages.dev",
                     },
                     // Tests sign up and search many times as the same user; the limit itself is
                     // checked in rate-limit.test.ts with its own tight limiter.
