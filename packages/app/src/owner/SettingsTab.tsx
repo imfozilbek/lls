@@ -528,7 +528,10 @@ const JUMPS = ["logo", "delivery", "hours", "card", "courier"] as const
 function SettingsNav(): React.JSX.Element {
     const s = useT().owner.settings
     return (
-        <nav aria-label={s.jumpTo} className="-mx-4 overflow-x-auto px-4">
+        <nav
+            aria-label={s.jumpTo}
+            className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)]"
+        >
             <ul className="flex gap-2">
                 {JUMPS.map((id) => (
                     <li key={id}>

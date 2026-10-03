@@ -31,6 +31,7 @@ function TabBar({
     onChange(tab: OwnerTab): void
 }): React.JSX.Element {
     const t = useT()
+    const activeOrders = useOwner((state) => state.activeOrders) ?? 0
     return (
         <nav
             className="sticky top-0 z-sticky grid grid-cols-4 gap-1 bg-tg-bg/95 px-3 py-2 backdrop-blur"
@@ -51,8 +52,13 @@ function TabBar({
                         item.id === tab ? "bg-brand/15 text-tg-text" : "text-tg-hint",
                     )}
                 >
-                    <span className={item.id === tab ? "text-brand" : undefined}>
+                    <span className={cn("relative", item.id === tab && "text-brand")}>
                         {item.icon(22)}
+                        {item.id === "orders" && activeOrders > 0 ? (
+                            <span className="absolute -right-3 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-xs font-bold tabular-nums text-brand-ink ring-2 ring-tg-bg">
+                                {activeOrders}
+                            </span>
+                        ) : null}
                     </span>
                     {t.owner.tabs[item.id]}
                 </button>

@@ -47,7 +47,8 @@ test("catalog: add a product with a photo; customers see it at once", async ({ p
     await expect(page.getByText("Manti")).toBeVisible()
 
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
-    const tile = page.locator("article").filter({ hasText: "Manti" })
+    // Most products of this shop have no photo: the storefront shows them as a list.
+    const tile = page.locator("li").filter({ hasText: "Manti" })
     await expect(tile).toContainText("5 dona, qovoqli")
     await expect(tile.locator("img")).toHaveAttribute("src", /\/img\//)
     // The photo is served, as WebP or the original type.

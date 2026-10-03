@@ -30,30 +30,75 @@ const POLL_MS = 20_000
 function SentReceipt({
     order,
     onReplace,
+    onChange,
 }: {
     order: OrderDTO
     onReplace(): void
+    onChange(order: OrderDTO): void
 }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     const sentAt = order.payment.receipt?.at
     return (
-        <div className="flex animate-fade-in gap-3 rounded-control bg-tg-secondary p-3">
-            <ReceiptThumb orderId={order.id} sentAt={sentAt} />
-            <div className="flex min-w-0 flex-1 flex-col justify-center">
-                {sentAt ? (
-                    <p className="font-medium">
-                        {fill(t.pay.sentAt, { time: formatTime(sentAt, language) })}
-                    </p>
-                ) : null}
-                <button
-                    type="button"
-                    onClick={onReplace}
-                    className="tap -ml-1 mt-1 min-h-11 rounded-control px-1 text-sm font-semibold text-brand"
-                >
-                    {t.pay.replace}
-                </button>
+        <div className="flex flex-col gap-2">
+            <div className="flex animate-fade-in gap-3 rounded-control bg-tg-secondary p-3">
+                <ReceiptThumb orderId={order.id} sentAt={sentAt} />
+                <div className="flex min-w-0 flex-1 flex-col justify-center">
+                    {sentAt ? (
+                        <p className="font-medium">
+                            {fill(t.pay.sentAt, { time: formatTime(sentAt, language) })}
+                        </p>
+                    ) : null}
+                    <button
+                        type="button"
+                        onClick={onReplace}
+                        className="tap -ml-1 mt-1 min-h-11 rounded-control px-1 text-sm font-semibold text-brand"
+                    >
+                        {t.pay.replace}
+                    </button>
+                </div>
             </div>
+            <RemindShop order={order} onChange={onChange} />
+        </div>
+    )
+}
+
+/**
+ * The shop is quiet longer than it usually is: one tap asks the owner again. Shown only once the
+ * pause has passed (`payment.remindableAt`); the list refresh brings it back after the next one.
+ */
+function RemindShop({
+    order,
+    onChange,
+}: {
+    order: OrderDTO
+    onChange(order: OrderDTO): void
+}): React.JSX.Element | null {
+    const t = useT()
+    const [busy, setBusy] = useState(false)
+    const at = order.payment.remindableAt
+    if (!at || Date.parse(at) > Date.now()) {
+        return null
+    }
+    const remind = async (): Promise<void> => {
+        setBusy(true)
+        try {
+            onChange(await api.remindTransfer(order.id))
+            haptic.success()
+            toast(t.pay.reminded, "success")
+        } catch (caught) {
+            haptic.error()
+            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+        } finally {
+            setBusy(false)
+        }
+    }
+    return (
+        <div className="flex animate-rise flex-col gap-2 rounded-control bg-warning/15 p-3">
+            <p className="text-sm font-medium">{t.pay.remindAsk}</p>
+            <Button variant="surface" loading={busy} onClick={(): void => void remind()}>
+                {t.pay.remind}
+            </Button>
         </div>
     )
 }
@@ -73,6 +118,7 @@ function Payment({
     const t = useT()
     // The card this order was shown: the owner may have switched the payment card since.
     const shopCard = useSession((state) => state.shop?.payoutCard)
+    const shopName = useSession((state) => state.shop?.name)
     const card = order.payment.card ?? shopCard
     const [sheet, setSheet] = useState(false)
     const open = order.status !== OrderStatus.CANCELLED
@@ -89,7 +135,9 @@ function Payment({
                     className="rounded-control bg-tg-secondary px-4 py-3 text-base"
                 />
             )}
-            {unpaid && card ? <CardBlock card={card} total={order.total} /> : null}
+            {unpaid && card ? (
+                <CardBlock card={card} total={order.total} shopName={shopName} />
+            ) : null}
             {unpaid ? (
                 <Button
                     size="lg"
@@ -106,6 +154,7 @@ function Payment({
             {checking ? (
                 <SentReceipt
                     order={order}
+                    onChange={onChange}
                     onReplace={(): void => {
                         haptic.tap()
                         setSheet(true)
@@ -246,7 +295,7 @@ function heroText(
     t: Dictionary,
     justPlaced: boolean,
     sum: string,
-): { title?: string; hint?: string } {
+): { title?: string; hint?: string; mood?: "pay" | "problem" } {
     if (order.status !== OrderStatus.PENDING) {
         return {}
     }
@@ -254,11 +303,12 @@ function heroText(
         return { title: t.pay.checkingTitle, hint: t.pay.checkingTime }
     }
     if (order.payment.rejections > 0) {
-        return { title: t.pay.rejectedTitle, hint: t.pay.rejectedText }
+        return { title: t.pay.rejectedTitle, hint: t.pay.rejectedText, mood: "problem" }
     }
     return {
         title: justPlaced ? t.order.placedTitle : t.pay.waitingTitle,
         hint: fill(t.pay.waitingSum, { sum }),
+        mood: "pay",
     }
 }
 
@@ -299,7 +349,12 @@ export function OrderScreen({
     const hero = heroText(order, t, justPlaced, formatMoney(order.total, language))
     return (
         <main className="flex flex-col gap-6 px-4">
-            <StatusHero status={order.status} title={hero.title} hint={hero.hint} />
+            <StatusHero
+                status={order.status}
+                title={hero.title}
+                hint={hero.hint}
+                mood={hero.mood}
+            />
 
             <div className="flex items-baseline justify-between px-1">
                 <h2 className="text-lg font-bold">{fill(t.order.title, { n: order.number })}</h2>
@@ -310,7 +365,7 @@ export function OrderScreen({
 
             {order.status !== "cancelled" ? (
                 <div className="px-1">
-                    <StatusTimeline status={order.status} />
+                    <StatusTimeline status={order.status} payment={order.payment.status} />
                 </div>
             ) : order.cancelReason ? (
                 <p className="rounded-control bg-danger/10 px-4 py-3 text-sm">

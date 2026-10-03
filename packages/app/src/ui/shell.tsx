@@ -68,7 +68,8 @@ export function ToastHost(): React.JSX.Element {
     const dismiss = useToasts((state) => state.dismiss)
     return (
         <div
-            className="pointer-events-none fixed inset-x-0 top-0 z-toast flex flex-col items-center gap-2 px-4 pt-3"
+            // Near the thumb, above the bottom button: never over the header or a banner.
+            className="pointer-events-none fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-toast flex flex-col-reverse items-center gap-2 px-4"
             aria-live="polite"
         >
             {toasts.map((toast) => (

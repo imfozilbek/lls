@@ -82,6 +82,14 @@ function Totals({ report }: { report: MoneyReportDTO }): React.JSX.Element {
             <p className="font-semibold">{m.received}</p>
             <p className="text-3xl font-bold tabular-nums">{sum(totals.goods + totals.delivery)}</p>
             <p className="text-sm text-tg-subtitle">{m.receivedHint}</p>
+            {/* Orders still on their way: money that is coming, so «0 so'm» never looks wrong. */}
+            {totals.placed - totals.delivered - totals.cancelled > 0 ? (
+                <p className="mt-1 text-sm font-medium">
+                    {fill(m.inProgress, {
+                        n: totals.placed - totals.delivered - totals.cancelled,
+                    })}
+                </p>
+            ) : null}
             <div className="mt-3 rounded-control bg-tg-bg px-3 py-2 text-sm">
                 <Row label={m.goods} value={sum(totals.goods)} />
                 <Row label={m.delivery} value={sum(totals.delivery)} />

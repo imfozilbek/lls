@@ -269,7 +269,7 @@ function CategoryChips({
         </button>
     )
     return (
-        <nav className="sticky top-0 z-sticky flex gap-2 overflow-x-auto bg-tg-bg/95 px-4 py-2.5 backdrop-blur [scrollbar-width:none]">
+        <nav className="sticky top-0 z-sticky flex gap-2 overflow-x-auto bg-tg-bg/95 px-4 py-2.5 backdrop-blur [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)]">
             {chip(null, t.shop.all)}
             {categories.map((c) => chip(c, (t.categories as Record<string, string>)[c] ?? c))}
         </nav>
@@ -340,6 +340,67 @@ function ProductTile({
     )
 }
 
+/**
+ * A catalog mostly without photos reads better as a list: name and price at a glance, no wall of
+ * letter tiles. One row per product, the same «+» and stepper.
+ */
+function ProductListRow({ product }: { product: ProductDTO }): React.JSX.Element {
+    const t = useT()
+    const language = useLanguage()
+    const quantity = useCart((state) => state.lines[product.id] ?? 0)
+    const add = useCart((state) => state.add)
+    const remove = useCart((state) => state.remove)
+    const unit = (t.units as Record<string, string>)[product.unit] ?? product.unit
+    return (
+        <li className="flex animate-rise items-center gap-3 py-3">
+            <ProductImage
+                imageKey={product.imageKey}
+                category={product.category}
+                alt={product.name}
+                iconSize={22}
+                className="h-14 w-14 shrink-0 rounded-control"
+            />
+            <div className="min-w-0 flex-1">
+                <h3 className="line-clamp-2 font-medium leading-snug">{product.name}</h3>
+                {product.description ? (
+                    <p className="line-clamp-1 text-sm text-tg-hint">{product.description}</p>
+                ) : null}
+                <p className="text-sm">
+                    <span className="font-semibold">{formatMoney(product.price, language)}</span>
+                    <span className="text-tg-hint"> / {unit}</span>
+                </p>
+            </div>
+            {quantity === 0 ? (
+                <button
+                    type="button"
+                    onClick={(): void => {
+                        haptic.tap()
+                        add(product.id, product.step)
+                    }}
+                    aria-label={`${t.shop.add}: ${product.name}`}
+                    className="tap grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand/10 text-brand"
+                >
+                    <PlusIcon size={22} strokeWidth={2.25} />
+                </button>
+            ) : (
+                <Stepper
+                    quantity={quantity}
+                    display={formatQuantity(quantity, product.unit, t.units.kg)}
+                    onAdd={(): void => add(product.id, product.step)}
+                    onRemove={(): void => remove(product.id, product.step)}
+                    label={product.name}
+                />
+            )}
+        </li>
+    )
+}
+
+/** Fewer than half of the products have a photo: the list reads better than tiles. */
+function prefersList(catalog: readonly ProductDTO[]): boolean {
+    const withPhoto = catalog.filter((product) => product.imageKey).length
+    return withPhoto * 2 < catalog.length
+}
+
 export function MenuScreen(): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -388,6 +449,12 @@ export function MenuScreen(): React.JSX.Element {
                     title={t.shop.nothingFound}
                     text={t.shop.nothingFoundText}
                 />
+            ) : prefersList(catalog) ? (
+                <ul className="divide-y divide-tg-separator px-4 pt-1">
+                    {visible.map((product) => (
+                        <ProductListRow key={product.id} product={product} />
+                    ))}
+                </ul>
             ) : (
                 <div className="grid grid-cols-2 gap-x-3 gap-y-5 px-4 pt-3">
                     {visible.map((product, index) => (

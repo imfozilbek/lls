@@ -178,7 +178,7 @@ function LocationButton({
             onClick={onLocate}
             className={cn(
                 "tap flex h-12 items-center justify-center gap-2 rounded-control font-medium text-tg-text transition-colors duration-200",
-                saved ? "bg-success/15" : "bg-brand/10",
+                saved ? "bg-success/15" : "bg-tg-secondary",
             )}
         >
             {saved ? (

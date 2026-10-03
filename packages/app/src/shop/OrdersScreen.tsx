@@ -6,7 +6,7 @@ import { haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { ChevronIcon, ReceiptIcon, WifiOffIcon } from "../ui/icons.js"
 import { LoadMore } from "../ui/load-more.js"
-import { StatusBadge } from "../ui/order-status.js"
+import { OrderBadge } from "../ui/order-status.js"
 import { Button, EmptyState, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
@@ -40,7 +40,7 @@ function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.J
                         <span className="font-semibold">
                             {fill(t.order.title, { n: order.number })}
                         </span>
-                        <StatusBadge status={order.status} />
+                        <OrderBadge order={order} />
                     </div>
                     <p className="mt-1 truncate text-sm text-tg-hint">{preview}</p>
                     <p className="mt-2 flex justify-between text-sm">

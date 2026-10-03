@@ -36,7 +36,15 @@ export interface PaymentProps {
     receipt?: TransferReceipt
     /** «Pul kelmadi»: how many times the owner did not find this order's transfer. */
     rejections?: number
+    /** The last time the customer asked the owner to look at the transfer again. */
+    remindedAt?: Date
 }
+
+/**
+ * A shop usually checks a transfer in 5-10 minutes: after this long without an answer the
+ * customer may remind the owner, and then again after the same pause, never more often.
+ */
+export const TRANSFER_REMIND_AFTER_MS = 10 * 60 * 1000
 
 /**
  * The money side of an order: a transfer to the shop's card, made before the shop starts.
@@ -78,6 +86,28 @@ export class Payment {
     }
     get rejections(): number {
         return this.props.rejections ?? 0
+    }
+    get remindedAt(): Date | undefined {
+        return this.props.remindedAt
+    }
+
+    /** When the customer may next remind the owner, or undefined while nothing is awaited. */
+    remindableAt(): Date | undefined {
+        const sentAt = this.props.receipt?.at
+        if (this.props.status !== PaymentStatus.AWAITING || !sentAt) {
+            return undefined
+        }
+        const last = Math.max(sentAt.getTime(), this.props.remindedAt?.getTime() ?? 0)
+        return new Date(last + TRANSFER_REMIND_AFTER_MS)
+    }
+
+    /** «Do'konga eslatish»: the shop has not answered the transfer for a while. */
+    remind(now: Date): Payment {
+        const at = this.remindableAt()
+        if (!at || at.getTime() > now.getTime()) {
+            throw BusinessRuleViolationError.remindTooSoon(at?.toISOString())
+        }
+        return new Payment({ ...this.props, remindedAt: now })
     }
 
     isPaid(): boolean {

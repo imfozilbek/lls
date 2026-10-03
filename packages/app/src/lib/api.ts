@@ -269,6 +269,9 @@ export const api = {
     /** «O'tkazdim» with the screenshot of the transfer: the owner gets it to check the card. */
     transferSent: (id: string, receipt: Blob): Promise<OrderDTO> =>
         request("POST", `/api/orders/${id}/transfer-sent`, receipt),
+    /** «Do'konga eslatish»: no answer about the transfer for a while. */
+    remindTransfer: (id: string): Promise<OrderDTO> =>
+        request("POST", `/api/orders/${id}/transfer-reminder`),
     /** The screenshot sent with «O'tkazdim»: only the order's customer and the shop's owner. */
     orderReceipt: (id: string): Promise<Blob> => requestBlob(`/api/orders/${id}/receipt`),
 

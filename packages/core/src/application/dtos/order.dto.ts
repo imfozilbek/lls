@@ -70,6 +70,8 @@ export interface OrderPaymentDTO {
     receipt?: { at: string; reusedFrom?: number; customerRejections: number }
     /** «Pul kelmadi» on this order so far. */
     rejections: number
+    /** From when the customer may remind the owner about the transfer; absent unless awaited. */
+    remindableAt?: string
 }
 
 export function toOrderDTO(order: Order): OrderDTO {
@@ -125,6 +127,7 @@ export function toOrderDTO(order: Order): OrderDTO {
                 customerRejections: order.payment.receipt.customerRejections,
             },
             rejections: order.payment.rejections,
+            remindableAt: order.payment.remindableAt()?.toISOString(),
         },
         deliveredAt: order.deliveredAt?.toISOString(),
         createdAt: order.createdAt.toISOString(),

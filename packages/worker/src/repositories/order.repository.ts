@@ -74,6 +74,7 @@ interface OrderRow {
     receipt_reused_from: number | null
     customer_rejections: number
     transfer_rejections: number
+    transfer_reminded_at: number | null
 }
 
 interface ItemRow {
@@ -96,7 +97,8 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     cancel_reason, cancelled_by, payment_method, payment_status, paid_at, cash_courier_id,
     delivered_at, created_at, updated_at, network_requested_at, network_alerted_at,
     delivery_fee_to, payment_card_number, payment_card_holder, receipt_key, receipt_hash,
-    receipt_at, receipt_reused_from, customer_rejections, transfer_rejections`
+    receipt_at, receipt_reused_from, customer_rejections, transfer_rejections,
+    transfer_reminded_at`
 
 /** A courier can still take the order: from accepted until pickup. */
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
@@ -175,6 +177,7 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
                     : PayoutCard.create(row.payment_card_number, row.payment_card_holder),
             receipt: toReceipt(row),
             rejections: row.transfer_rejections,
+            remindedAt: dateOrUndefined(row.transfer_reminded_at),
         }),
         deliveredAt: row.delivered_at === null ? undefined : new Date(row.delivered_at),
         networkRequestedAt: dateOrUndefined(row.network_requested_at),
@@ -255,6 +258,7 @@ function receiptValues(order: Order): (string | number | null)[] {
         receipt?.reusedFrom ?? null,
         receipt?.customerRejections ?? 0,
         order.payment.rejections,
+        order.payment.remindedAt?.getTime() ?? null,
     ]
 }
 
@@ -345,7 +349,7 @@ export class D1OrderRepository implements OrderRepository {
                     cash_courier_id = ?, delivered_at = ?, updated_at = ?,
                     network_requested_at = ?, network_alerted_at = ?, delivery_fee_to = ?,
                     receipt_key = ?, receipt_hash = ?, receipt_at = ?, receipt_reused_from = ?,
-                    customer_rejections = ?, transfer_rejections = ?
+                    customer_rejections = ?, transfer_rejections = ?, transfer_reminded_at = ?
                  WHERE id = ?${guard}`,
             )
             .bind(

@@ -315,6 +315,12 @@ export class Order {
         this.touch()
     }
 
+    /** «Do'konga eslatish»: the customer asks the owner to look at the transfer again. */
+    remindTransfer(now: Date): void {
+        this.props.payment = this.props.payment.remind(now)
+        this.touch()
+    }
+
     /** «Pul kelmadi»: the owner did not find the transfer; the customer is asked again. */
     rejectTransfer(): void {
         this.props.payment = this.props.payment.reject()
