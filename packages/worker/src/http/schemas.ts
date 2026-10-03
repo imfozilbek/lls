@@ -123,7 +123,7 @@ export const courierOrderBody = z.object({
  * «Деньги пришли, принять»: the transfer arrived (a new order is accepted in the same tap);
  * or «Вернул»: the money of a cancelled order went back.
  */
-export const paymentBody = z.object({ action: z.enum(["paid", "refunded"]) })
+export const paymentBody = z.object({ action: z.enum(["paid", "refunded", "rejected"]) })
 
 export const moneyQuery = z.object({ period: z.enum(MONEY_PERIODS).default("today") })
 

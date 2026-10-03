@@ -28,6 +28,7 @@ import type {
     OrderRepository,
     Page,
     PageRequest,
+    TransferReceipt,
 } from "@zumda/core"
 
 interface OrderRow {
@@ -67,6 +68,12 @@ interface OrderRow {
     delivery_fee_to: string
     payment_card_number: string | null
     payment_card_holder: string | null
+    receipt_key: string | null
+    receipt_hash: string | null
+    receipt_at: number | null
+    receipt_reused_from: number | null
+    customer_rejections: number
+    transfer_rejections: number
 }
 
 interface ItemRow {
@@ -88,7 +95,8 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     address, landmark, latitude, longitude, comment, customer_name, customer_phone,
     cancel_reason, cancelled_by, payment_method, payment_status, paid_at, cash_courier_id,
     delivered_at, created_at, updated_at, network_requested_at, network_alerted_at,
-    delivery_fee_to, payment_card_number, payment_card_holder`
+    delivery_fee_to, payment_card_number, payment_card_holder, receipt_key, receipt_hash,
+    receipt_at, receipt_reused_from, customer_rejections, transfer_rejections`
 
 /** A courier can still take the order: from accepted until pickup. */
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
@@ -165,6 +173,8 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
                 row.payment_card_number === null || row.payment_card_holder === null
                     ? undefined
                     : PayoutCard.create(row.payment_card_number, row.payment_card_holder),
+            receipt: toReceipt(row),
+            rejections: row.transfer_rejections,
         }),
         deliveredAt: row.delivered_at === null ? undefined : new Date(row.delivered_at),
         networkRequestedAt: dateOrUndefined(row.network_requested_at),
@@ -174,6 +184,19 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         updatedAt: new Date(row.updated_at),
     })
     return versions.remember(order, row.updated_at)
+}
+
+function toReceipt(row: OrderRow): TransferReceipt | undefined {
+    if (row.receipt_key === null || row.receipt_hash === null || row.receipt_at === null) {
+        return undefined
+    }
+    return {
+        key: row.receipt_key,
+        hash: row.receipt_hash,
+        at: new Date(row.receipt_at),
+        reusedFrom: optional(row.receipt_reused_from),
+        customerRejections: row.customer_rejections,
+    }
 }
 
 function dateOrUndefined(value: number | null): Date | undefined {
@@ -219,6 +242,19 @@ function orderValues(order: Order): (string | number | null)[] {
         order.updatedAt.getTime(),
         ...networkValues(order),
         ...cardValues(order),
+        ...receiptValues(order),
+    ]
+}
+
+function receiptValues(order: Order): (string | number | null)[] {
+    const { receipt } = order.payment
+    return [
+        receipt?.key ?? null,
+        receipt?.hash ?? null,
+        receipt?.at.getTime() ?? null,
+        receipt?.reusedFrom ?? null,
+        receipt?.customerRejections ?? 0,
+        order.payment.rejections,
     ]
 }
 
@@ -307,7 +343,9 @@ export class D1OrderRepository implements OrderRepository {
                 `UPDATE orders SET status = ?, courier_id = ?, courier_name = ?, cancel_reason = ?,
                     cancelled_by = ?, payment_method = ?, payment_status = ?, paid_at = ?,
                     cash_courier_id = ?, delivered_at = ?, updated_at = ?,
-                    network_requested_at = ?, network_alerted_at = ?, delivery_fee_to = ?
+                    network_requested_at = ?, network_alerted_at = ?, delivery_fee_to = ?,
+                    receipt_key = ?, receipt_hash = ?, receipt_at = ?, receipt_reused_from = ?,
+                    customer_rejections = ?, transfer_rejections = ?
                  WHERE id = ?${guard}`,
             )
             .bind(
@@ -319,6 +357,7 @@ export class D1OrderRepository implements OrderRepository {
                 ...paymentValues(order),
                 version,
                 ...networkValues(order),
+                ...receiptValues(order),
                 order.id,
                 ...(expected === undefined ? [] : [expected]),
             )
@@ -348,6 +387,37 @@ export class D1OrderRepository implements OrderRepository {
             )
             .run()
         return result.meta.changes === 1
+    }
+
+    async findReceiptReuse(input: {
+        hash: string
+        orderId: string
+        businessId: string
+        customerId: string
+    }): Promise<number | undefined> {
+        const row = await this.db
+            .prepare(
+                `SELECT business_id, number FROM orders
+                 WHERE receipt_hash = ? AND id != ? AND (business_id = ? OR customer_id = ?)
+                 ORDER BY created_at LIMIT 1`,
+            )
+            .bind(input.hash, input.orderId, input.businessId, input.customerId)
+            .first<{ business_id: string; number: number }>()
+        if (!row) {
+            return undefined
+        }
+        return row.business_id === input.businessId ? row.number : 0
+    }
+
+    async countTransferRejections(customerId: string, exceptOrderId: string): Promise<number> {
+        const row = await this.db
+            .prepare(
+                `SELECT COALESCE(SUM(transfer_rejections), 0) AS total FROM orders
+                 WHERE customer_id = ? AND id != ?`,
+            )
+            .bind(customerId, exceptOrderId)
+            .first<{ total: number }>()
+        return row?.total ?? 0
     }
 
     async markNetworkAlerted(orderId: string, at: Date): Promise<boolean> {

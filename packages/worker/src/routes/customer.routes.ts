@@ -2,6 +2,7 @@ import { zValidator } from "@hono/zod-validator"
 import { Hono } from "hono"
 
 import { shopOf } from "../auth.js"
+import { readReceipt } from "../http/images.js"
 import {
     customerCancelBody,
     idParam,
@@ -108,20 +109,46 @@ export const customerRoutes = new Hono<AppEnv>()
         },
     )
 
-    /** «Я перевёл»: the customer sent the transfer; the owner checks the card and accepts. */
+    /**
+     * «Я перевёл» with the screenshot of the transfer as the body: the owner checks the card and
+     * accepts. Without a picture it is refused (RECEIPT_REQUIRED).
+     */
     .post("/orders/:id/transfer-sent", zValidator("param", idParam, onInvalid), async (c) => {
         const services = c.get("services")
+        const receipt = await readReceipt(c.req.raw)
         const { order, changed } = await services.useCases.markTransferSent.execute({
             telegramId: c.get("auth").user.id,
             businessId: shopOf(c).id,
             orderId: c.req.valid("param").id,
+            receipt,
         })
         if (changed) {
             inBackground(
                 c.executionCtx,
                 services,
-                new Notifier(services).transferSent(shopOf(c), order),
+                new Notifier(services).transferSent(shopOf(c), order, receipt),
             )
         }
         return c.json(order)
+    })
+
+    /** The transfer screenshot: only the order's customer and the shop's owner, never cached. */
+    .get("/orders/:id/receipt", zValidator("param", idParam, onInvalid), async (c) => {
+        const services = c.get("services")
+        const key = await services.useCases.getTransferReceipt.execute({
+            telegramId: c.get("auth").user.id,
+            businessId: shopOf(c).id,
+            orderId: c.req.valid("param").id,
+        })
+        const object = await services.env.BUCKET.get(key)
+        if (!object) {
+            return c.json({ error: { code: "NOT_FOUND", message: "No receipt" } }, 404)
+        }
+        return new Response(object.body, {
+            headers: {
+                "Content-Type": object.httpMetadata?.contentType ?? "application/octet-stream",
+                "Cache-Control": "private, no-store",
+                "X-Content-Type-Options": "nosniff",
+            },
+        })
     })

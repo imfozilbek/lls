@@ -164,11 +164,21 @@ export function formatStatusForCustomer(order: OrderDTO, reader: Reader): string
 }
 
 // Callback data (≤ 64 bytes): "a:<orderId>:<status>" advance, "x:<orderId>" cancel,
-// "p:<orderId>" «Деньги пришли, принять».
+// "p:<orderId>" «Деньги пришли, принять» (asks first), "pc:<orderId>" yes, the money is here,
+// "pn:<orderId>" «Pul kelmadi».
 export type OrderCallback =
     | { kind: "advance"; orderId: string; to: OrderStatus }
     | { kind: "cancel"; orderId: string }
+    | { kind: "askPaid"; orderId: string }
     | { kind: "paid"; orderId: string }
+    | { kind: "notPaid"; orderId: string }
+
+const SIMPLE_CALLBACKS: Record<string, "cancel" | "askPaid" | "paid" | "notPaid"> = {
+    x: "cancel",
+    p: "askPaid",
+    pc: "paid",
+    pn: "notPaid",
+}
 
 const ORDER_STATUS_VALUES = new Set<string>(Object.values(OrderStatus))
 
@@ -177,11 +187,9 @@ export function parseOrderCallback(data: string): OrderCallback | null {
     if (!orderId || extra !== undefined) {
         return null
     }
-    if (kind === "x" && status === undefined) {
-        return { kind: "cancel", orderId }
-    }
-    if (kind === "p" && status === undefined) {
-        return { kind: "paid", orderId }
+    const simple = kind === undefined ? undefined : SIMPLE_CALLBACKS[kind]
+    if (simple && status === undefined) {
+        return { kind: simple, orderId }
     }
     if (kind !== "a" || !status || !ORDER_STATUS_VALUES.has(status)) {
         return null
@@ -204,6 +212,41 @@ export function orderKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard {
         ? { text: t.paidAccept, callback_data: `p:${order.id}` }
         : { text: t.actions[next] ?? next, callback_data: `a:${order.id}:${next}` }
     return { inline_keyboard: [[step], [{ text: t.cancel, callback_data: `x:${order.id}` }]] }
+}
+
+/** «Pul keldi»: the owner answers after looking at the bank app, never by reflex. */
+export function confirmPaidKeyboard(order: OrderDTO, t: BotTexts, sum: string): InlineKeyboard {
+    const rows: InlineButton[][] = [
+        [{ text: fill(t.confirmPaidYes, { sum }), callback_data: `pc:${order.id}` }],
+    ]
+    if (order.payment.status === PaymentStatus.AWAITING) {
+        rows.push([{ text: t.confirmPaidNo, callback_data: `pn:${order.id}` }])
+    }
+    return { inline_keyboard: rows }
+}
+
+/** The receipt's warnings for the owner: the same picture again, earlier transfers not found. */
+export function receiptWarnings(order: OrderDTO, t: BotTexts): string[] {
+    const receipt = order.payment.receipt
+    const lines: string[] = []
+    if (receipt?.reusedFrom !== undefined) {
+        lines.push(
+            receipt.reusedFrom > 0
+                ? fill(t.receiptReusedHere, { n: receipt.reusedFrom })
+                : t.receiptReusedElsewhere,
+        )
+    }
+    const rejected = (receipt?.customerRejections ?? 0) + order.payment.rejections
+    if (rejected > 0) {
+        lines.push(fill(t.customerRejected, { count: rejected }))
+    }
+    return lines
+}
+
+/** "•••• 9012": the card the money should be on. */
+export function cardTail(order: OrderDTO): string {
+    const number = order.payment.card?.number
+    return number ? `•••• ${number.slice(-4)}` : ""
 }
 
 function isPaid(order: OrderDTO): boolean {

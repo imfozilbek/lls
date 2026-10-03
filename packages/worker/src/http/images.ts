@@ -70,6 +70,24 @@ export function looksLike(type: string, body: ArrayBuffer): boolean {
     }
 }
 
+/**
+ * A transfer screenshot from the app. An empty body means no receipt: the use case refuses it
+ * with its own words (RECEIPT_REQUIRED); a non-image is refused here.
+ */
+export async function readReceipt(
+    request: Request,
+): Promise<{ bytes: Uint8Array; contentType: string }> {
+    const type = request.headers.get("Content-Type")?.split(";")[0]?.trim().toLowerCase() ?? ""
+    const body = await readImageBody(request)
+    if (body.byteLength === 0) {
+        return { bytes: new Uint8Array(0), contentType: type }
+    }
+    if (!EXTENSIONS[type] || !looksLike(type, body)) {
+        throw new ApiError(415, "UNSUPPORTED_IMAGE", "Upload a JPEG, PNG or WebP picture")
+    }
+    return { bytes: new Uint8Array(body), contentType: type }
+}
+
 /** A JPEG made by the app (a bot picture): anything else is refused before Telegram sees it. */
 export async function readJpeg(request: Request): Promise<Uint8Array> {
     const type = request.headers.get("Content-Type")?.split(";")[0]?.trim().toLowerCase()

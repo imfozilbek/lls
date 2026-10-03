@@ -6,6 +6,7 @@ import {
     OWNER,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
+    STRANGER,
     TEST_CARD as CARD,
     createActiveShop,
     hireCourier,
@@ -32,6 +33,9 @@ interface Order {
 // A second card of the shop: a valid Luhn number, not a real card. secret-scan: fake
 const SECOND_CARD = { number: "5614 6812 3456 7893", holder: "Malika Karimova" }
 
+/** A JPEG as the app sends it: the transfer screenshot. */
+const RECEIPT = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 1, 2])
+
 async function json<T = Json>(response: Response): Promise<T> {
     return (await response.json()) as T
 }
@@ -55,11 +59,19 @@ describe("money: transfer before the shop starts, report, files", () => {
     const setStatus = (id: string, status: string): Promise<Response> =>
         as(OWNER)(`/api/owner/orders/${id}`, { method: "PATCH", json: { status } })
 
-    const payment = (id: string, action: "paid" | "refunded"): Promise<Response> =>
+    const payment = (id: string, action: "paid" | "refunded" | "rejected"): Promise<Response> =>
         as(OWNER)(`/api/owner/orders/${id}/payment`, { method: "PATCH", json: { action } })
 
-    const transferSent = (id: string, user: object = CUSTOMER): Promise<Response> =>
-        as(user)(`/api/orders/${id}/transfer-sent`, { method: "POST" })
+    const transferSent = (
+        id: string,
+        user: object = CUSTOMER,
+        picture: Uint8Array = RECEIPT,
+    ): Promise<Response> =>
+        as(user)(`/api/orders/${id}/transfer-sent`, {
+            method: "POST",
+            headers: { "Content-Type": "image/jpeg" },
+            body: picture,
+        })
 
     const courierApp = (path: string, init?: RequestInit & { json?: unknown }): Promise<Response> =>
         client.as(COURIER, { courierBot: true })(path, init)
@@ -160,7 +172,7 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect((await as(CUSTOMER)("/api/owner/shop/cards")).status).toBe(403)
     })
 
-    it("«Я перевёл» pings the owner once; «Деньги пришли, принять» starts the shop", async () => {
+    it("«Я перевёл» brings the owner the screenshot; «Деньги пришли, принять» starts the shop", async () => {
         const order = await json<Order>(await place())
         expect(order.payment).toMatchObject({ method: "card_transfer", status: "unpaid" })
         // The customer has the card and the sum in the chat right away.
@@ -172,12 +184,21 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect((await transferSent(order.id, OWNER)).status).toBe(403)
         const sent = await transferSent(order.id)
         expect(await json<Order>(sent)).toMatchObject({ payment: { status: "awaiting" } })
-        const ping = client.telegram.sent.at(-1)
+        // The owner gets the screenshot itself, the sum and the card it should be on.
+        const ping = client.telegram.photoFiles.at(-1)
         expect(ping).toMatchObject({ chatId: OWNER.id, token: SHOP_BOT_TOKEN })
         expect(ping?.html).toContain("80 000")
-        const before = client.telegram.sent.length
-        await transferSent(order.id)
-        expect(client.telegram.sent.length).toBe(before)
+        expect(ping?.html).toContain("•••• 1111")
+        expect(ping?.html).not.toContain("⚠️")
+        const asks = ping?.options?.keyboard?.inline_keyboard.flat() ?? []
+        expect(asks.map((b) => b.callback_data).filter(Boolean)).toEqual([
+            `pc:${order.id}`,
+            `pn:${order.id}`,
+        ])
+        // A new screenshot replaces the old one while the money is not confirmed.
+        const before = client.telegram.photoFiles.length
+        expect((await transferSent(order.id)).status).toBe(200)
+        expect(client.telegram.photoFiles.length).toBe(before + 1)
         expect((await money()).awaiting.map((o) => o.id)).toEqual([order.id])
 
         // Not by hand: the shop starts only after the money.
@@ -189,6 +210,50 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect((await money()).awaiting).toEqual([])
         // Pressed again: nothing left to confirm.
         expect((await payment(order.id, "paid")).status).toBe(422)
+    })
+
+    it("the screenshot: required, private; a reused one and refused transfers warn", async () => {
+        const first = await json<Order>(await place())
+        const empty = await transferSent(first.id, CUSTOMER, new Uint8Array())
+        expect(empty.status).toBe(422)
+        expect(await json(empty)).toMatchObject({ error: { code: "RECEIPT_REQUIRED" } })
+        expect((await as(CUSTOMER)(`/api/orders/${first.id}/receipt`)).status).toBe(404)
+        const text = await as(CUSTOMER)(`/api/orders/${first.id}/transfer-sent`, {
+            method: "POST",
+            headers: { "Content-Type": "text/html" },
+            body: "<script>",
+        })
+        expect(text.status).toBe(415)
+
+        expect((await transferSent(first.id)).status).toBe(200)
+        for (const user of [CUSTOMER, OWNER]) {
+            const shown = await as(user)(`/api/orders/${first.id}/receipt`)
+            expect(shown.status).toBe(200)
+            expect(shown.headers.get("Cache-Control")).toBe("private, no-store")
+            expect(new Uint8Array(await shown.arrayBuffer())).toEqual(RECEIPT)
+        }
+        const stranger = await as(STRANGER)(`/api/orders/${first.id}/receipt`)
+        expect([403, 404]).toContain(stranger.status)
+        // The order says when, never where the file lies.
+        const dto = await json<Json>(await as(CUSTOMER)(`/api/orders/${first.id}`))
+        expect(dto).toMatchObject({ payment: { receipt: { customerRejections: 0 } } })
+        expect(JSON.stringify(dto)).not.toContain("receipts/")
+
+        // «Pul kelmadi»: unpaid again, the customer hears it; only from «awaiting».
+        const rejected = await json<Order & { payment: Json }>(await payment(first.id, "rejected"))
+        expect(rejected.payment).toMatchObject({ status: "unpaid", rejections: 1 })
+        const told = client.telegram.sent.filter((m) => m.chatId === CUSTOMER.id).at(-1)
+        expect(told?.html).toContain("pulni topmadi")
+        const twice = await payment(first.id, "rejected")
+        expect(twice.status).toBe(422)
+        expect(await json(twice)).toMatchObject({ error: { code: "PAYMENT_NOT_REJECTABLE" } })
+
+        // The same screenshot for another order: the owner is warned twice over.
+        const second = await json<Order>(await place())
+        await transferSent(second.id)
+        const warned = client.telegram.photoFiles.at(-1)?.html
+        expect(warned).toContain(`avval #${first.number} buyurtmada`)
+        expect(warned).toContain("1 ta o'tkazmasi avval topilmagan")
     })
 
     it("one «Доставил» for the courier, nothing to collect; the report adds up", async () => {

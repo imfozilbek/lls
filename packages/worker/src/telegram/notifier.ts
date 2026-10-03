@@ -1,4 +1,4 @@
-import { Language, OrderChannel, OrderStatus, toNetworkOrderDTO } from "@zumda/core"
+import { Language, OrderChannel, OrderStatus, PaymentStatus, toNetworkOrderDTO } from "@zumda/core"
 
 import { alertAdmins, describeError, isRecipientProblem } from "../alerts.js"
 import { platformAdminIds } from "../env.js"
@@ -14,6 +14,8 @@ import {
     withAppButton,
 } from "./app-links.js"
 import {
+    cardTail,
+    confirmPaidKeyboard,
     courierKeyboard,
     courierReviewKeyboard,
     formatNetworkOffer,
@@ -26,6 +28,7 @@ import {
     networkInviteKeyboard,
     networkOfferKeyboard,
     orderKeyboard,
+    receiptWarnings,
 } from "./format.js"
 import { TelegramApiError, escapeHtml } from "./gateway.js"
 import { refreshManagedBotToken } from "./managed-token.js"
@@ -118,16 +121,80 @@ export class Notifier {
     }
 
     /** «Я перевёл»: the owner's card shows it, and a ping says to check the card. */
-    async transferSent(business: Business, order: OrderDTO): Promise<void> {
+    /**
+     * «Я перевёл» with the screenshot: the owner gets the picture itself in the shop bot, with
+     * what to check (the sum, the card) and any warning, and the two answers.
+     */
+    async transferSent(
+        business: Business,
+        order: OrderDTO,
+        receipt: { bytes: Uint8Array; contentType: string },
+    ): Promise<void> {
         const token = await this.shopToken(business.id)
         await this.orderChangedForOwner(token, business, order)
         const ownerId = business.ownerTelegramId.value
-        const { language } = await this.readerFor(ownerId, business)
-        const text = fill(textsFor(language).transferSentOwner, {
-            n: order.number,
-            sum: `<b>${formatMoney(order.total, language)}</b>`,
+        const reader = await this.readerFor(ownerId, business)
+        const t = textsFor(reader.language, business.type)
+        const sum = formatMoney(order.total, reader.language)
+        const caption = [
+            fill(t.receiptCaption, {
+                n: order.number,
+                sum: `<b>${sum}</b>`,
+                name: escapeHtml(order.customerName),
+                card: cardTail(order),
+            }),
+            ...receiptWarnings(order, t),
+        ].join("\n")
+        const url = shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value, order.id)
+        await this.services.telegram.sendPhotoFile(
+            token,
+            ownerId,
+            {
+                name: `chek-${order.number}`,
+                contentType: receipt.contentType,
+                bytes: receipt.bytes,
+            },
+            caption,
+            {
+                keyboard: withAppButton(
+                    confirmPaidKeyboard(order, t, sum),
+                    appButton(t.openOrder, url),
+                ),
+            },
+        )
+    }
+
+    /** «Pul keldi» pressed in the chat: ask once, with the sum and the card to look at. */
+    async askPaymentConfirm(business: Business, order: OrderDTO): Promise<void> {
+        const token = await this.shopToken(business.id)
+        const ownerId = business.ownerTelegramId.value
+        const reader = await this.readerFor(ownerId, business)
+        const t = textsFor(reader.language, business.type)
+        const sum = formatMoney(order.total, reader.language)
+        const lines = [
+            fill(t.confirmPaidQuestion, {
+                n: order.number,
+                sum: `<b>${sum}</b>`,
+                card: cardTail(order),
+            }),
+            ...(order.payment.status === PaymentStatus.UNPAID ? [t.confirmPaidNoReceipt] : []),
+            ...receiptWarnings(order, t),
+        ]
+        await this.services.telegram.sendMessage(token, ownerId, lines.join("\n"), {
+            keyboard: confirmPaidKeyboard(order, t, sum),
         })
-        await this.toOwner(token, business, order, text)
+    }
+
+    /** «Pul kelmadi»: the owner's card shows it, the customer is asked to check and send again. */
+    async transferRejected(business: Business, order: OrderDTO): Promise<void> {
+        const token = await this.shopToken(business.id)
+        await everyOne([
+            (): Promise<void> => this.orderChangedForOwner(token, business, order),
+            (): Promise<void> =>
+                this.tellCustomer(token, business, order, (t) =>
+                    fill(t.transferRejectedCustomer, { n: order.number }),
+                ),
+        ])
     }
 
     /** After a status change: refresh the owner's and the courier's cards, tell the customer. */

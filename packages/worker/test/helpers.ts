@@ -173,6 +173,25 @@ export class FakeTelegram implements TelegramGateway {
         }
         this.answered.push(callbackQueryId)
     }
+    readonly photoFiles: {
+        token: string
+        chatId: number
+        file: OutgoingFile
+        html: string
+        options?: MessageOptions
+    }[] = []
+    async sendPhotoFile(
+        token: string,
+        chatId: number,
+        file: OutgoingFile,
+        html: string,
+        options?: MessageOptions,
+    ): Promise<void> {
+        if (this.failReplies) {
+            throw new TelegramApiError("sendPhoto", "Forbidden: bot was blocked by the user")
+        }
+        this.photoFiles.push({ token, chatId, file, html, options })
+    }
     async sendDocument(
         token: string,
         chatId: number,
