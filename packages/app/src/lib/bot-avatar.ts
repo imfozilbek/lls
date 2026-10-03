@@ -6,16 +6,50 @@ import { drawZumdaMark } from "./zumda-canvas.js"
 export const AVATAR_SIZE = 640
 const CENTER = AVATAR_SIZE / 2
 /** The Zumda badge sits inside the visible circle, at the bottom right. */
-const BADGE = 168
-const BADGE_RING = 14
-const BADGE_CENTER = 470
-/** Text stays inside the circle and clear of the badge. */
-const TEXT_WIDTH = 440
+const BADGE = 150
+const BADGE_RING = 12
+const BADGE_CENTER = 462
+/** The name keeps this far from the badge and from the circle's edge. */
+const BADGE_CLEARANCE = 16
+const INNER_RADIUS = 280
+/** A little above the middle: the badge takes the bottom right. */
+const TEXT_CENTER_Y = 296
 const TEXT_MAX = 150
-const TEXT_MIN = 64
+const TEXT_MIN = 56
+const INITIALS_MAX = 220
+const SIZE_STEP = 4
 const LINE_HEIGHT = 1.08
 const JPEG_QUALITY = 0.9
 const FONT = '-apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+
+/** One line of the name on the picture, in canvas pixels. */
+export interface TextBox {
+    left: number
+    top: number
+    right: number
+    bottom: number
+}
+
+function distance(x: number, y: number, cx: number, cy: number): number {
+    return Math.hypot(x - cx, y - cy)
+}
+
+/** Every corner inside the visible circle, and no part under the Zumda badge. */
+export function boxesFit(boxes: TextBox[]): boolean {
+    const keepOut = BADGE / 2 + BADGE_RING + BADGE_CLEARANCE
+    return boxes.every((box) => {
+        const corners: [number, number][] = [
+            [box.left, box.top],
+            [box.right, box.top],
+            [box.left, box.bottom],
+            [box.right, box.bottom],
+        ]
+        const inside = corners.every(([x, y]) => distance(x, y, CENTER, CENTER) <= INNER_RADIUS)
+        const nearestX = Math.min(Math.max(BADGE_CENTER, box.left), box.right)
+        const nearestY = Math.min(Math.max(BADGE_CENTER, box.top), box.bottom)
+        return inside && distance(nearestX, nearestY, BADGE_CENTER, BADGE_CENTER) > keepOut
+    })
+}
 
 export interface BotAvatarInput {
     shopName: string
@@ -45,35 +79,63 @@ export function initials(name: string): string {
         .join("")
 }
 
-/** The largest size at which every line fits, or null when even the smallest is too wide. */
-function fittingSize(ctx: CanvasRenderingContext2D, lines: string[]): number | null {
-    for (let size = TEXT_MAX; size >= TEXT_MIN; size -= 4) {
-        ctx.font = `800 ${size}px ${FONT}`
-        if (lines.every((line) => ctx.measureText(line).width <= TEXT_WIDTH)) {
+/** Where each line lands at `size`, centered around TEXT_CENTER_Y. */
+function layout(ctx: CanvasRenderingContext2D, lines: string[], size: number): TextBox[] {
+    ctx.font = `800 ${size}px ${FONT}`
+    const step = size * LINE_HEIGHT
+    const first = TEXT_CENTER_Y - (step * (lines.length - 1)) / 2
+    return lines.map((line, index) => {
+        const metrics = ctx.measureText(line)
+        const y = first + index * step
+        return {
+            left: CENTER - metrics.width / 2,
+            right: CENTER + metrics.width / 2,
+            top: y - metrics.actualBoundingBoxAscent,
+            bottom: y + metrics.actualBoundingBoxDescent,
+        }
+    })
+}
+
+/** The largest size (from `max`) at which the lines fit, or null when even the smallest does not. */
+function fittingSize(ctx: CanvasRenderingContext2D, lines: string[], max: number): number | null {
+    for (let size = max; size >= TEXT_MIN; size -= SIZE_STEP) {
+        if (boxesFit(layout(ctx, lines, size))) {
             return size
         }
     }
     return null
 }
 
-function drawName(ctx: CanvasRenderingContext2D, name: string, channels: string): void {
-    ctx.fillStyle = `rgb(${channels.split(" ").join(", ")})`
-    ctx.fillRect(0, 0, AVATAR_SIZE, AVATAR_SIZE)
-    ctx.fillStyle = `rgb(${readableInk(channels).split(" ").join(", ")})`
-    ctx.textAlign = "center"
-    ctx.textBaseline = "middle"
+/** The name on one or two lines as large as it fits; a name too long to read becomes initials. */
+function chooseText(
+    ctx: CanvasRenderingContext2D,
+    name: string,
+): { lines: string[]; size: number } {
     let best: { lines: string[]; size: number } | null = null
     for (const lines of avatarLines(name)) {
-        const size = fittingSize(ctx, lines)
+        const size = fittingSize(ctx, lines, TEXT_MAX)
         if (size !== null && (!best || size > best.size)) {
             best = { lines, size }
         }
     }
-    const chosen = best ?? { lines: [initials(name)], size: TEXT_MAX * 1.6 }
-    ctx.font = `800 ${chosen.size}px ${FONT}`
-    const step = chosen.size * LINE_HEIGHT
-    const top = CENTER - (step * (chosen.lines.length - 1)) / 2
-    chosen.lines.forEach((line, index) => ctx.fillText(line, CENTER, top + index * step))
+    if (best) {
+        return best
+    }
+    const short = [initials(name)]
+    return { lines: short, size: fittingSize(ctx, short, INITIALS_MAX) ?? TEXT_MIN }
+}
+
+function drawName(ctx: CanvasRenderingContext2D, name: string, channels: string): void {
+    ctx.fillStyle = `rgb(${channels.split(" ").join(", ")})`
+    ctx.fillRect(0, 0, AVATAR_SIZE, AVATAR_SIZE)
+    ctx.textAlign = "center"
+    ctx.textBaseline = "middle"
+    const { lines, size } = chooseText(ctx, name)
+    ctx.font = `800 ${size}px ${FONT}`
+    ctx.fillStyle = `rgb(${readableInk(channels).split(" ").join(", ")})`
+    const step = size * LINE_HEIGHT
+    const first = TEXT_CENTER_Y - (step * (lines.length - 1)) / 2
+    lines.forEach((line, index) => ctx.fillText(line, CENTER, first + index * step))
 }
 
 async function drawLogo(ctx: CanvasRenderingContext2D, logo: Blob): Promise<void> {

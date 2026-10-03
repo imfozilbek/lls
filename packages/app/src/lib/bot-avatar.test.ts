@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import { ApiError } from "./api.js"
-import { avatarLines, initials } from "./bot-avatar.js"
+import { avatarLines, boxesFit, initials } from "./bot-avatar.js"
 import { BOT_PHOTO_FAILED, updateBotPhoto } from "./bot-photo.js"
 
 vi.mock("./bot-avatar.js", async (load) => ({
@@ -23,6 +23,16 @@ describe("the shop bot's picture from its name", () => {
         expect(initials("osh markaz saroy")).toBe("OM")
         expect(initials("Suv")).toBe("S")
         expect(initials("Ёқимли таом")).toBe("ЁТ")
+    })
+})
+
+describe("the name never hides under the Zumda badge", () => {
+    it("fits a line in the middle, refuses one under the badge or past the circle", () => {
+        expect(boxesFit([{ left: 200, top: 250, right: 440, bottom: 340 }])).toBe(true)
+        // The bottom right is the badge's place.
+        expect(boxesFit([{ left: 200, top: 340, right: 470, bottom: 420 }])).toBe(false)
+        // Corners outside the visible circle are cut off by Telegram.
+        expect(boxesFit([{ left: 40, top: 250, right: 600, bottom: 340 }])).toBe(false)
     })
 })
 
