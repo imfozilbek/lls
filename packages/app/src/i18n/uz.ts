@@ -450,6 +450,8 @@ export const uz = {
         title: "Zumda Business",
         text: "Bizneslaringizni kompyuterdan boshqaring: buyurtmalar, menyu, pul va kuryerlar.",
         hint: "Kirish faqat Telegram orqali: parol kerak emas.",
+        signIn: "Telegram orqali kirish",
+        cancelled: "Kirish yakunlanmadi. Qayta urinib ko'ring.",
         signOut: "Chiqish",
         back: "Orqaga",
     },

@@ -345,9 +345,12 @@ export const api = {
     },
 
     business: {
-        /** The Telegram Login Widget's data in, a session out (business.zumda.shop). */
-        signIn: (login: Record<string, string | number>): Promise<WebSession> =>
-            request("POST", "/api/business/session", login),
+        /** What Telegram's login window needs: the bot's Client ID and our nonce. */
+        login: (): Promise<{ clientId: number; nonce: string }> =>
+            request("GET", "/api/business/login"),
+        /** Telegram Login's `id_token` in, a session out (business.zumda.shop). */
+        signIn: (idToken: string): Promise<WebSession> =>
+            request("POST", "/api/business/session", { idToken }),
     },
 
     platform: {
