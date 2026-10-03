@@ -1,4 +1,4 @@
-import { PayoutCard } from "@lls/core"
+import { PayoutCard } from "@zumda/core"
 
 import { useT } from "../i18n/index.js"
 

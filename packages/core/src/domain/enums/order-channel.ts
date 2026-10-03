@@ -1,5 +1,5 @@
 /**
- * Where an order came from. LLS takes a commission only on `marketplace` orders;
+ * Where an order came from. Zumda takes a commission only on `marketplace` orders;
  * orders through the shop's own bot are the shop's business.
  */
 export enum OrderChannel {

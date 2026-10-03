@@ -1,7 +1,7 @@
-import { UZ_UTC_OFFSET_MINUTES, formatPhone } from "@lls/core"
+import { UZ_UTC_OFFSET_MINUTES, formatPhone } from "@zumda/core"
 
 import type { BotTexts } from "../telegram/texts.js"
-import type { OrderDTO } from "@lls/core"
+import type { OrderDTO } from "@zumda/core"
 
 /** Excel in Uzbek and Russian locales splits CSV on ";". The BOM keeps Cyrillic readable. */
 const SEPARATOR = ";"

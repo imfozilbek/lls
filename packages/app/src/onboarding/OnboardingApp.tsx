@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 import { errorText, useT } from "../i18n/index.js"
 import { ApiError, api, imageUrl } from "../lib/api.js"
-import { applyBrand, readableInk } from "../lib/brand.js"
+import { ZUMDA_BRAND_COLOR, applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
 import { hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
@@ -13,10 +13,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 import { Wizard } from "./Wizard.js"
 
-import type { ShopOwnerDTO } from "@lls/core"
-
-/** LLS's own color: onboarding happens in the platform bot, not in a shop. */
-const PLATFORM_COLOR = "#0ea5e9"
+import type { ShopOwnerDTO } from "@zumda/core"
 
 function ShopRow({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
     const t = useT().onboarding
@@ -104,7 +101,7 @@ export function OnboardingApp(): React.JSX.Element {
         }
     }
     useEffect(() => {
-        applyBrand(PLATFORM_COLOR)
+        applyBrand(ZUMDA_BRAND_COLOR)
         void load()
     }, [])
 

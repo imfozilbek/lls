@@ -36,7 +36,7 @@ export function toCourierDTO(courier: Courier, now: Date): CourierDTO {
     }
 }
 
-/** The courier's own profile in the LLS courier bot. */
+/** The courier's own profile in the Zumda courier bot. */
 export interface CourierProfileDTO {
     name: string
     phone?: string

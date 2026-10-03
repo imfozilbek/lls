@@ -4,7 +4,7 @@ import {
     Language,
     languageFromTelegram,
     toShopOwnerDTO,
-} from "@lls/core"
+} from "@zumda/core"
 import { Hono } from "hono"
 
 import { timingSafeEqual } from "../crypto.js"
@@ -36,7 +36,7 @@ import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
 import type { OrderCallback } from "../telegram/format.js"
 import type { Callback, IncomingMessage } from "../telegram/updates.js"
-import type { Business, OrderDTO, ShopOwnerDTO } from "@lls/core"
+import type { Business, OrderDTO, ShopOwnerDTO } from "@zumda/core"
 
 /**
  * Saves the customer's phone from a shared contact. Only the sender's own contact counts:
@@ -357,7 +357,7 @@ async function handleMarketCommand(services: Services, message: IncomingMessage)
     }
 }
 
-/** The LLS bot: welcome with the showcase and onboarding buttons, phones, admin commands. */
+/** The Zumda bot: welcome with the showcase and onboarding buttons, phones, admin commands. */
 async function handlePlatformMessage(
     services: Services,
     message: IncomingMessage,
@@ -427,7 +427,7 @@ export const webhookRoutes = new Hono<AppEnv>()
         return c.json({ ok: true })
     })
 
-    /** The LLS courier bot: invites, phones, and the buttons on order cards of every shop. */
+    /** The Zumda courier bot: invites, phones, and the buttons on order cards of every shop. */
     .post("/courier", async (c) => {
         const secret = c.req.header(SECRET_HEADER) ?? ""
         if (!timingSafeEqual(secret, c.env.COURIER_WEBHOOK_SECRET)) {

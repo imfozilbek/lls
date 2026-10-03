@@ -7,11 +7,11 @@ import { onInvalid, showcaseQuery } from "../http/schemas.js"
 
 import type { AppEnv } from "../env.js"
 
-/** The LLS showcase: shops and one search across them, opened from the LLS bot. */
+/** The Zumda showcase: shops and one search across them, opened from the Zumda bot. */
 export const showcaseRoutes = new Hono<AppEnv>()
     .use(async (c, next) => {
         if (c.get("auth").business) {
-            throw new ApiError(400, "PLATFORM_ONLY", "Open this from the LLS bot")
+            throw new ApiError(400, "PLATFORM_ONLY", "Open this from the Zumda bot")
         }
         await next()
     })

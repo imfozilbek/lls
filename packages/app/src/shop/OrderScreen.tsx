@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentStatus, isFinalStatus } from "@lls/core"
+import { OrderStatus, PaymentStatus, isFinalStatus } from "@zumda/core"
 import { useCallback, useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -18,7 +18,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 import { useReorder } from "./reorder.js"
 
-import type { OrderDTO } from "@lls/core"
+import type { OrderDTO } from "@zumda/core"
 
 /** Status changes arrive by bot message too, so a calm 20 s refresh is enough (free-tier friendly). */
 const POLL_MS = 20_000

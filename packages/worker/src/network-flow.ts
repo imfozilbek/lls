@@ -1,9 +1,9 @@
-import { OrderStatus } from "@lls/core"
+import { OrderStatus } from "@zumda/core"
 
 import { Notifier } from "./telegram/notifier.js"
 
 import type { Services } from "./services.js"
-import type { Business, NetworkClaim, NetworkRequest, OrderDTO } from "@lls/core"
+import type { Business, NetworkClaim, NetworkRequest, OrderDTO } from "@zumda/core"
 
 /**
  * After the owner's step: an order the shop just accepted goes to the district network when no

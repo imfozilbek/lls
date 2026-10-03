@@ -1,6 +1,6 @@
-import { MAX_PAYOUT_CARDS, PayoutCard } from "@lls/core"
+import { MAX_PAYOUT_CARDS, PayoutCard } from "@zumda/core"
 
-import type { PayoutCardRepository, SavedPayoutCard } from "@lls/core"
+import type { PayoutCardRepository, SavedPayoutCard } from "@zumda/core"
 
 interface CardRow {
     id: string

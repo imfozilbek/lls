@@ -60,10 +60,10 @@ export const DEV_SHOPS: readonly DevShop[] = [
     },
 ]
 
-/** The LLS courier bot of the local stand. Fake token: never a real bot. */
+/** The Zumda courier bot of the local stand. Fake token: never a real bot. */
 export const DEV_COURIER_BOT = {
     id: 100200998,
-    username: "lls_kuryer_dev_bot",
+    username: "zumda_kuryer_dev_bot",
     token: "100200998:DEV-courier-token-not-a-real-bot-x",
     webhookSecret: "dev-courier-secret",
 }

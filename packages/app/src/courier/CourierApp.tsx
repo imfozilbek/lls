@@ -1,9 +1,9 @@
-import { CourierStatus, OrderStatus, PaymentStatus } from "@lls/core"
+import { CourierStatus, OrderStatus, PaymentStatus } from "@zumda/core"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api, setCourierBot } from "../lib/api.js"
-import { LLS_BRAND_COLOR, applyBrand } from "../lib/brand.js"
+import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "../lib/brand.js"
 import { formatMoney } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
@@ -22,6 +22,7 @@ import {
     TextInput,
 } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import type {
     CourierHomeDTO,
@@ -29,7 +30,7 @@ import type {
     CourierShopDTO,
     NetworkOrderDTO,
     OrderDTO,
-} from "@lls/core"
+} from "@zumda/core"
 
 const POLL_MS = 20_000
 const METERS_PER_KM = 1000
@@ -517,15 +518,15 @@ function Deliveries({
 }
 
 /**
- * The courier's screen in the LLS courier bot: the shift, what to deliver now across all their
+ * The courier's screen in the Zumda courier bot: the shift, what to deliver now across all their
  * shops, what is done today, and each shop's cash on their hands.
  */
 export function CourierApp(): React.JSX.Element {
     const t = useT()
     useEffect(() => {
         setCourierBot()
-        applyBrand(LLS_BRAND_COLOR)
-        document.title = "LLS Kuryer"
+        applyBrand(ZUMDA_BRAND_COLOR)
+        document.title = `${ZUMDA_NAME} Kuryer`
     }, [])
     const { home, error, reload, replace, setHome } = useHome()
     useMainAction(null)
@@ -555,7 +556,10 @@ export function CourierApp(): React.JSX.Element {
     return (
         <main className="flex flex-col gap-4 px-4">
             <header className="pb-1 pt-4">
-                <p className="text-sm text-tg-hint">LLS Kuryer</p>
+                <p className="flex items-center gap-1.5 text-sm font-semibold text-tg-hint">
+                    <ZumdaMark size={18} />
+                    {ZUMDA_NAME} Kuryer
+                </p>
                 <h1 className="text-2xl font-bold">{t.courier.title}</h1>
             </header>
             {home === null ? (

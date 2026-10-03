@@ -34,7 +34,7 @@ export interface DeliverySettings {
     radiusMeters?: number
 }
 
-/** The shop's deal with LLS for sales through the marketplace channel. */
+/** The shop's deal with Zumda for sales through the marketplace channel. */
 export interface MarketplaceTerms {
     /** Commission in basis points of the goods subtotal: 1% = 100. */
     commissionBps: number
@@ -368,12 +368,12 @@ export class Business {
         return this.props.bottleDeposit.multiply(Math.max(0, returnableOrdered - bottlesReturned))
     }
 
-    /** Shown in the LLS showcase: an active shop with a signed marketplace deal. */
+    /** Shown in the Zumda showcase: an active shop with a signed marketplace deal. */
     isInShowcase(): boolean {
         return this.isActive() && this.props.marketplace !== undefined
     }
 
-    /** Signs the marketplace deal: the shop appears in the LLS showcase with this commission. */
+    /** Signs the marketplace deal: the shop appears in the Zumda showcase with this commission. */
     joinMarketplace(commissionBps: number, now: Date): void {
         this.props.marketplace = {
             commissionBps: requireInteger("commissionBps", commissionBps, 0, MAX_COMMISSION_BPS),

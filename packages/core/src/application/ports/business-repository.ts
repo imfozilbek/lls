@@ -5,7 +5,7 @@ export interface BusinessRepository {
     findBySlug(slug: string): Promise<Business | null>
     findByBotId(botId: number): Promise<Business | null>
     listByOwner(ownerTelegramId: number): Promise<Business[]>
-    /** Active shops with a marketplace deal: the LLS showcase. */
+    /** Active shops with a marketplace deal: the Zumda showcase. */
     listInShowcase(): Promise<Business[]>
     /** Every shop with a location: their districts are recomputed when a district changes. */
     listWithLocation(): Promise<Business[]>

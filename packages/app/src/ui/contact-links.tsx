@@ -1,10 +1,10 @@
-import { mapUrl } from "@lls/core"
+import { mapUrl } from "@zumda/core"
 
 import { useT } from "../i18n/index.js"
 
 import { PhoneIcon, PinIcon } from "./icons.js"
 
-import type { OrderDTO } from "@lls/core"
+import type { OrderDTO } from "@zumda/core"
 
 const LINK =
     "tap flex h-12 flex-1 items-center justify-center gap-2 rounded-control bg-tg-bg font-semibold"

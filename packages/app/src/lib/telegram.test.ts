@@ -33,7 +33,7 @@ describe("readLaunchParams", () => {
         })
     })
 
-    it("detects the LLS showcase opened from the LLS bot", () => {
+    it("detects the Zumda showcase opened from the Zumda bot", () => {
         const url = new URL("https://x.pages.dev/?mode=market")
         expect(readLaunchParams(url, null)).toMatchObject({ shop: null, market: true })
     })

@@ -1,4 +1,4 @@
-import { Feature, formatPhone } from "@lls/core"
+import { Feature, formatPhone } from "@zumda/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -18,7 +18,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 const CONTACT_POLL_MS = 1500
 const CONTACT_POLL_TRIES = 10
-const LAST_ADDRESS_KEY = "lls:address"
+const LAST_ADDRESS_KEY = "zumda:address"
 /** A customer may hand back a few more empty bottles than they order. */
 const MAX_EXTRA_BOTTLES = 5
 

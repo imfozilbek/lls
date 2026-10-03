@@ -1,5 +1,5 @@
 import type { Services } from "./services.js"
-import type { Business, IdentityScope, OrderChannel, TelegramUser } from "@lls/core"
+import type { Business, IdentityScope, OrderChannel, TelegramUser } from "@zumda/core"
 
 /** Bindings from wrangler.jsonc plus secrets set with `wrangler secret put`. */
 export interface Bindings extends Env {
@@ -7,7 +7,7 @@ export interface Bindings extends Env {
     TOKEN_ENC_KEY: string
     PLATFORM_BOT_TOKEN: string
     PLATFORM_WEBHOOK_SECRET: string
-    /** The LLS courier bot: one bot for every courier of every shop. */
+    /** The Zumda courier bot: one bot for every courier of every shop. */
     COURIER_BOT_TOKEN: string
     COURIER_WEBHOOK_SECRET: string
     /** Comma-separated Telegram ids of platform admins. */
@@ -20,12 +20,12 @@ export interface AuthContext {
     user: TelegramUser
     /** The shop from `X-Shop`, or null when the platform bot opened the app (onboarding). */
     business: Business | null
-    /** Which bot opened the app: the shop's own bot, or the LLS bot (showcase). */
+    /** Which bot opened the app: the shop's own bot, or the Zumda bot (showcase). */
     channel: OrderChannel
     /** How far the identity is trusted: a shop-signed one counts only inside that shop. */
     scope: IdentityScope
     /**
-     * The viewer's role: `owner` or `customer` in a shop; `courier` when the LLS courier bot
+     * The viewer's role: `owner` or `customer` in a shop; `courier` when the Zumda courier bot
      * opened the app (no shop: a courier works for several); `customer` in the showcase.
      */
     role: ViewerRole

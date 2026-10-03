@@ -16,7 +16,7 @@ describe("Business", () => {
     it("registers as pending with safe defaults", () => {
         const business = makeBusiness({ active: false })
         expect(business.status).toBe(BusinessStatus.PENDING)
-        expect(business.brandColor.hex).toBe("#0ea5e9")
+        expect(business.brandColor.hex).toBe("#15803d")
         expect(business.workingHours.toJSON()).toBeNull()
         expect(business.acceptingOrders).toBe(true)
         expect(business.features).toEqual([Feature.REORDER, Feature.STOP_LIST])

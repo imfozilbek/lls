@@ -1,4 +1,4 @@
-import { WEEKDAYS, toLocalTime } from "@lls/core"
+import { WEEKDAYS, toLocalTime } from "@zumda/core"
 import { useMemo, useState } from "react"
 
 import { fill, useLanguage, useT } from "../i18n/index.js"
@@ -18,7 +18,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { Shop } from "../stores/session.js"
-import type { Language, ProductDTO } from "@lls/core"
+import type { Language, ProductDTO } from "@zumda/core"
 
 function ShopAvatar({ shop }: { shop: Shop }): React.JSX.Element {
     const logo = imageUrl(shop.logoKey)

@@ -1,5 +1,5 @@
 {
-    "name": "lls",
+    "name": "zumda",
     "version": "0.0.0",
     "private": true,
     "type": "module",
@@ -11,7 +11,7 @@
         "packages/*"
     ],
     "scripts": {
-        "build": "bun run --filter @lls/core build && bun run --filter '*' build",
+        "build": "bun run --filter @zumda/core build && bun run --filter '*' build",
         "dev": "bun run --filter '*' dev",
         "test": "bun run --filter '*' test",
         "lint": "eslint packages --ext .ts,.tsx",

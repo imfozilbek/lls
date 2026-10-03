@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 
 import { ApiError } from "./api.js"
 
-import type { Page } from "@lls/core"
+import type { Page } from "@zumda/core"
 
 export interface PagedList<T> {
     /** `null` until the first page arrives. */

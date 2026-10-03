@@ -230,7 +230,7 @@ describe("customer use cases", () => {
         const customers = new InMemoryCustomers()
         const contact = new SaveContactUseCase(customers)
         const resolve = new ResolveCustomerUseCase(customers)
-        // Shared with the LLS bot and with shop A.
+        // Shared with the Zumda bot and with shop A.
         await contact.execute({ user, phone: "998901234567", now: NOON_MONDAY_UZ })
         await contact.execute({
             user,

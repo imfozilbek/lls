@@ -5,7 +5,7 @@ export enum DeliveryFeeRecipient {
 
 /**
  * The delivery fee of an order a district network courier delivers.
- * Temporary rule until the owner decides (goal 02): it stays with the shop, as today, and LLS
+ * Temporary rule until the owner decides (goal 02): it stays with the shop, as today, and Zumda
  * takes no share. Changing it here changes new orders only: old ones keep their snapshot.
  */
 export const NETWORK_DELIVERY_FEE_RECIPIENT = DeliveryFeeRecipient.BUSINESS

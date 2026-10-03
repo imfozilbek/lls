@@ -1,6 +1,6 @@
-import { Customer, Phone, TelegramId, toLanguage } from "@lls/core"
+import { Customer, Phone, TelegramId, toLanguage } from "@zumda/core"
 
-import type { CustomerRepository } from "@lls/core"
+import type { CustomerRepository } from "@zumda/core"
 
 interface CustomerRow {
     id: string

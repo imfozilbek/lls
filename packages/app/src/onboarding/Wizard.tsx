@@ -1,8 +1,9 @@
-import { BUSINESS_TYPES, BusinessType } from "@lls/core"
+import { BUSINESS_TYPES, BusinessType } from "@zumda/core"
 import { useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
+import { updateBotPhoto } from "../lib/bot-photo.js"
 import { cn } from "../lib/cn.js"
 import { useBackButton, useMainAction } from "../lib/main-button.js"
 import { haptic, openTelegramLink } from "../lib/telegram.js"
@@ -13,6 +14,7 @@ import { Button, EmptyState, Field, MoneyInput, TextInput } from "../ui/primitiv
 import { BottomSpacer } from "../ui/shell.js"
 
 import type { Dictionary } from "../i18n/index.js"
+import type { ShopOwnerDTO } from "@zumda/core"
 
 /** Same shape the Worker accepts; checked here so the owner sees the mistake at once. */
 const TOKEN_PATTERN = /^\d{5,15}:[A-Za-z0-9_-]{30,64}$/
@@ -228,8 +230,8 @@ function stepAfterError(code: string): Step | null {
     return code === "INVALID_BOT_TOKEN" || code === "CONFLICT" ? 1 : null
 }
 
-async function submit(draft: Draft): Promise<void> {
-    await api.platform.register({
+async function submit(draft: Draft): Promise<ShopOwnerDTO> {
+    return api.platform.register({
         botToken: draft.botToken.trim(),
         name: draft.name.trim(),
         type: draft.type,
@@ -272,9 +274,14 @@ export function Wizard({
         }
         setSending(true)
         try {
-            await submit(draft)
+            const shop = await submit(draft)
             haptic.success()
             setSent(true)
+            // The new bot gets Zumda's picture at once: the shop's name and the Zumda mark.
+            void updateBotPhoto(
+                { shopName: shop.name, brandColor: shop.brandColor, logo: null },
+                (jpeg) => api.platform.setBotPhoto(shop.id, jpeg),
+            ).then((code) => code && toast(errorText(t, code), "error"))
         } catch (caught) {
             haptic.error()
             const code = caught instanceof ApiError ? caught.code : "generic"

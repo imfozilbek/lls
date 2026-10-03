@@ -1,13 +1,13 @@
-import { unitScale } from "@lls/core"
+import { unitScale } from "@zumda/core"
 import { create } from "zustand"
 
-import type { ProductDTO } from "@lls/core"
+import type { ProductDTO } from "@zumda/core"
 
 /** A line holds at most 99 steps: 99 pieces, or 49.5 kg with a 500 g step. */
 export const MAX_STEPS = 99
 /** Upper bound for anything read back from storage (grams of the largest step). */
 const MAX_STORED = 1_000_000
-const STORAGE_PREFIX = "lls:cart:"
+const STORAGE_PREFIX = "zumda:cart:"
 
 /**
  * Only ids and quantities are stored: pieces, or grams for weight items.

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Deploys LLS to Cloudflare. Idempotent: safe to run on every push to main.
+# Deploys Zumda to Cloudflare. Idempotent: safe to run on every push to main.
 #
 # Creates what is missing (D1, R2, Pages project, workers.dev subdomain), applies D1 migrations,
-# deploys the Worker with its secrets, deploys the Mini App to Pages and connects the LLS bot and
-# the LLS courier bot.
+# deploys the Worker with its secrets, deploys the Mini App to Pages and connects the Zumda bot and
+# the Zumda courier bot.
 #
 # Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS,
 # COURIER_BOT_TOKEN.
@@ -12,10 +12,10 @@ set -euo pipefail
 # Temp files (the Worker secrets file) are readable by this user only.
 umask 077
 
-readonly WORKER="lls-worker"
-readonly DATABASE="lls"
-readonly BUCKET="lls-media"
-readonly PAGES_PROJECT="lls-app"
+readonly WORKER="zumda-worker"
+readonly DATABASE="zumda"
+readonly BUCKET="zumda-media"
+readonly PAGES_PROJECT="zumda-app"
 readonly DB_PLACEHOLDER="00000000-0000-0000-0000-000000000000"
 readonly CF_API="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}"
 
@@ -96,7 +96,7 @@ ensure_workers_subdomain() {
     if [[ "$CF_STATUS" == 200 ]]; then sub="$(jq -r '.result.subdomain // empty' <<<"$CF_BODY")"; fi
     if [[ -z "$sub" ]]; then
         # Random, not derived from the account id: the URL is public, the account id is not.
-        sub="lls-$(openssl rand -hex 4)"
+        sub="zumda-$(openssl rand -hex 4)"
         cf_call PUT "/workers/subdomain" "$(jq -n --arg s "$sub" '{subdomain: $s}')"
         [[ "$CF_STATUS" == 200 ]] || fail "Cannot create the workers.dev subdomain (HTTP ${CF_STATUS})."
     fi
@@ -150,8 +150,8 @@ deploy_worker() {
 
     log "Worker"
     # Derived, not stored: the same bot token always gives the same webhook secret.
-    PLATFORM_WEBHOOK_SECRET="$(webhook_secret lls-platform-webhook "$PLATFORM_BOT_TOKEN")"
-    COURIER_WEBHOOK_SECRET="$(webhook_secret lls-courier-webhook "$COURIER_BOT_TOKEN")"
+    PLATFORM_WEBHOOK_SECRET="$(webhook_secret zumda-platform-webhook "$PLATFORM_BOT_TOKEN")"
+    COURIER_WEBHOOK_SECRET="$(webhook_secret zumda-courier-webhook "$COURIER_BOT_TOKEN")"
     echo "::add-mask::${PLATFORM_WEBHOOK_SECRET}"
     echo "::add-mask::${COURIER_WEBHOOK_SECRET}"
 
@@ -194,11 +194,11 @@ connect_platform_bot() {
         --data-urlencode "secret_token=${PLATFORM_WEBHOOK_SECRET}" \
         --data-urlencode 'allowed_updates=["message","callback_query"]'
     telegram "$PLATFORM_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=market" \
-        '{type: "web_app", text: "LLS", web_app: {url: $url}}')"
+        '{type: "web_app", text: "Zumda", web_app: {url: $url}}')"
     echo "webhook and menu button set"
 }
 
-# The LLS courier bot: one bot for every courier; its menu button opens the courier screen.
+# The Zumda courier bot: one bot for every courier; its menu button opens the courier screen.
 connect_courier_bot() {
     log "Courier bot"
     telegram "$COURIER_BOT_TOKEN" setWebhook \

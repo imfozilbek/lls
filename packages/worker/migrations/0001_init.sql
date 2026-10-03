@@ -1,4 +1,4 @@
--- LLS stage 1 schema. Money: INTEGER UZS. Time: INTEGER unix ms (UTC).
+-- Zumda stage 1 schema. Money: INTEGER UZS. Time: INTEGER unix ms (UTC).
 --
 -- ⛔ After the first production deploy this file is FROZEN. Every schema change goes into a NEW
 -- file (0002_*.sql, ...). Migrations run before the new Worker goes live, so they must be
@@ -28,7 +28,7 @@ CREATE TABLE businesses (
     features            TEXT    NOT NULL DEFAULT '[]',
     accepting_orders    INTEGER NOT NULL DEFAULT 1,
     bottle_deposit      INTEGER NOT NULL DEFAULT 0,  -- UZS per kept returnable bottle
-    marketplace_commission_bps INTEGER,             -- NULL = not in the LLS marketplace
+    marketplace_commission_bps INTEGER,             -- NULL = not in the Zumda marketplace
     marketplace_joined_at      INTEGER,
     created_at          INTEGER NOT NULL,
     updated_at          INTEGER NOT NULL
@@ -96,7 +96,7 @@ CREATE TABLE orders (
     bottles_returned  INTEGER NOT NULL DEFAULT 0,
     total             INTEGER NOT NULL,
     commission_bps    INTEGER NOT NULL DEFAULT 0,  -- snapshot of the deal when placed
-    commission        INTEGER NOT NULL DEFAULT 0,  -- LLS share of the goods, UZS
+    commission        INTEGER NOT NULL DEFAULT 0,  -- Zumda share of the goods, UZS
     courier_id        TEXT,
     courier_name      TEXT,
     address           TEXT    NOT NULL,

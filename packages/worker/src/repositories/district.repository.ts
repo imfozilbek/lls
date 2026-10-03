@@ -1,6 +1,6 @@
-import { District, Location } from "@lls/core"
+import { District, Location } from "@zumda/core"
 
-import type { DistrictRepository } from "@lls/core"
+import type { DistrictRepository } from "@zumda/core"
 
 interface DistrictRow {
     id: string

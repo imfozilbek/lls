@@ -3,7 +3,7 @@ import { create } from "zustand"
 import { api, loadCatalog, loadOwnerProducts } from "../lib/api.js"
 import { useSession } from "../stores/session.js"
 
-import type { CourierDTO, ProductDTO } from "@lls/core"
+import type { CourierDTO, ProductDTO } from "@zumda/core"
 
 export type OwnerTab = "orders" | "menu" | "money" | "settings"
 

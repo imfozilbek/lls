@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator"
-import { languageFromTelegram } from "@lls/core"
+import { languageFromTelegram } from "@zumda/core"
 import { Hono } from "hono"
 
 import { requireOwner, shopOf } from "../auth.js"
@@ -12,7 +12,7 @@ import { Notifier, inBackground } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 
 import type { AppEnv } from "../env.js"
-import type { Business, Language } from "@lls/core"
+import type { Business, Language } from "@zumda/core"
 import type { Context } from "hono"
 
 const PNG = "image/png"

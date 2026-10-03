@@ -1,11 +1,27 @@
 # Changelog
 
-All notable changes to LLS (LocalLoopSolutions) will be documented in this file.
+All notable changes to Zumda will be documented in this file.
 
 ## [Unreleased] — new stack (Cloudflare) and white-label stage 1
 
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
+
+### Zumda's look: the green house (owner's decisions)
+- **Added:** brand kit in `brand/` (mark, logo in outlines, bot and group avatars, README).
+- **Changed (core):** a new shop is Zumda green (`#15803d`) until the owner picks a color.
+- **Added (worker):** `PUT /api/owner/shop/bot-photo` and `PUT /api/platform/shops/:id/bot-photo`
+  set the shop bot's picture (`setMyProfilePhoto`); approval and a new name set its description
+  and profile line with «Zumda asosida ishlaydi» (`setMyDescription`, `setMyShortDescription`).
+- **Added (app):** the Zumda mark (`ui/zumda-mark.tsx`) in the storefront line, the showcase,
+  the courier screen, the showcase badge and the QR poster («Zumda asosida ishlaydi»); the bot
+  picture is drawn from the logo or the name with the mark (`lib/bot-avatar.ts`).
+
+### Name: Zumda (owner's decision)
+- **Changed:** the product and the company are **Zumda** (company: Zumda Shop); the former name
+  LLS is gone from the bots, the app, the QR poster («powered by Zumda»), the docs and the code:
+  packages `@zumda/*`, Cloudflare names `zumda-worker`, `zumda`, `zumda-media`, `zumda-app`;
+  the deploy runs for `imfozilbek/zumda`. Bots: `@zumdashop_bot`, `@zumdashop_kuryer_bot`.
 
 ### Many cards, Uzbek only, light only (owner's decisions)
 - **Added (core):** `PayoutCardBook`: a shop keeps up to 20 cards, chooses the payment card
@@ -59,21 +75,21 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   network order is a snapshot (`deliveryFeeTo`), temporarily the shop's.
 - **Added (worker):** migration `0004_district_network.sql` (additive); «Новый заказ рядом»
   with «Беру» in the courier bot, «Уже взяли» for the others, the network offer after the first
-  approval; `/district` and `/network` in the LLS bot; `PUT /api/owner/orders/:id/network`,
+  approval; `/district` and `/network` in the Zumda bot; `PUT /api/owner/orders/:id/network`,
   `PUT /api/courier/network`, `GET /api/courier/network/orders`, `POST …/:id/claim`
 - **Added (app):** «Беру заказы района» and «Заказы рядом» for couriers; «Сеть района» switch,
   «Доставщик сети района» and the order's network status for owners
 - **Added (e2e):** the network spec: two couriers race, cash back to the shop, the switch,
   leaving the network, the 10-minute alert; demo district and two network couriers in the seed
 
-### LLS courier bot (goal 05)
+### Zumda courier bot (goal 05)
 - **Added (core):** `CourierProfile` — one per person (name, phone, vehicle, shift until
   midnight); a `Courier` is now the person's link to one shop with status pending / active /
   removed, working days and "not today"; an order goes only to a courier who is approved, works
   today and is on shift (`COURIER_NOT_AVAILABLE` with the reason); the courier's home across
   shops with cash per shop
 - **Added (worker):** migration `0003_courier_profiles.sql` (additive, moves today's couriers);
-  the LLS courier bot (`/tg/courier`, `COURIER_BOT_TOKEN`): invites, phone, order cards with the
+  the Zumda courier bot (`/tg/courier`, `COURIER_BOT_TOKEN`): invites, phone, order cards with the
   shop's name and their buttons; owner approval from the shop bot or the app; `X-Bot: courier`
   auth; `/api/courier/home`, `/shift`, `/profile`; owner `PATCH /couriers/:id` and
   `POST /couriers/:id/review`; the deploy connects the courier bot
@@ -99,13 +115,13 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Added (e2e):** 8 money scenarios; the fake Telegram accepts files
 
 ### Stack
-- **Removed:** `@lls/api` (NestJS, MongoDB, Redis), `@lls/bot`, `@lls/admin`, `deploy/`, `.gitea/`
-- **Added:** `@lls/worker` — Cloudflare Worker (Hono + zod), D1 database, R2 for photos
-- **Added:** `@lls/app` — one Telegram Mini App (React + Vite + Tailwind) for customers,
+- **Removed:** `@zumda/api` (NestJS, MongoDB, Redis), `@zumda/bot`, `@zumda/admin`, `deploy/`, `.gitea/`
+- **Added:** `@zumda/worker` — Cloudflare Worker (Hono + zod), D1 database, R2 for photos
+- **Added:** `@zumda/app` — one Telegram Mini App (React + Vite + Tailwind) for customers,
   owners ("Мой магазин") and shop onboarding
 - **Changed:** Bun 1.3, Vitest 4.1, GitHub Actions CI and an idempotent Cloudflare deploy
 
-### @lls/core
+### @zumda/core
 - **Changed:** domain rebuilt for white-label shops: one bot and brand per shop, integer UZS money,
   working hours in UTC+5 (night shifts supported), shared category taxonomy and units
 - **Changed:** one status table; the owner moves `pending → … → delivered`, the customer can
@@ -114,7 +130,7 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Security:** prices, totals and the customer are always taken from the server, never the client
 - **Removed:** couriers, domain events, analytics charts (stage 3 / unused)
 
-### @lls/worker
+### @zumda/worker
 - **Added:** Telegram initData check with the token of the bot that opened the app
 - **Added:** AES-GCM encryption of shop bot tokens
 - **Added:** shop bot webhook (`/start`, contact, owner status buttons) and platform bot webhook
@@ -124,7 +140,7 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Fixed:** a failed reply to Telegram no longer returns 500, so Telegram does not resend updates
 - **Added:** `bun run seed:dev` and `bun run init-data:dev` for local end-to-end runs
 
-### @lls/app
+### @zumda/app
 - **Added:** storefront with a two-column menu, categories, Uzbek and Russian texts
 - **Added:** per-shop cart, checkout with Telegram contact, location and landmark, cash on delivery
 - **Added:** order tracking (20 s refresh) and order history with "show more"
@@ -172,8 +188,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Security (worker):** photo uploads are capped while reading (1.5 MB), must really be JPEG, PNG
   or WebP, and are served with `X-Content-Type-Options: nosniff`
 - **Added (worker):** if a shop bot fails to connect on approval, the admin is told why;
-  `/reconnect <slug>` in the LLS bot retries
-- **Added (worker):** alerts to platform admins through the LLS bot on server errors and failed
+  `/reconnect <slug>` in the Zumda bot retries
+- **Added (worker):** alerts to platform admins through the Zumda bot on server errors and failed
   notifications, one per kind per 10 minutes, bot tokens masked
 - **Fixed (deploy):** the deploy never makes a new `TOKEN_ENC_KEY` while shops exist; an optional
   saved key (GitHub secret) restores it. The bot is connected only after the Worker answers
@@ -181,16 +197,16 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Docs:** encryption key, backups and restore (`SECURITY.md`); frozen migrations after the first
   production deploy (`CLAUDE.md`); launch checklist fixes
 
-### LLS showcase
+### Zumda showcase
 - **Added (core):** `searchText` — one spelling for Latin/Cyrillic Uzbek and Russian; showcase search
   across shops with a marketplace deal; `SetMarketplaceTerms` for platform admins
-- **Added (worker):** `X-Via: marketplace` — a shop opened from the showcase is verified with the LLS
+- **Added (worker):** `X-Via: marketplace` — a shop opened from the showcase is verified with the Zumda
   bot token and its orders get the `marketplace` channel and commission; `/api/showcase/shops`,
-  `/api/showcase/products`; the LLS bot saves contacts, answers `/market <slug> <percent|off>`,
+  `/api/showcase/products`; the Zumda bot saves contacts, answers `/market <slug> <percent|off>`,
   writes showcase customers about status changes; the owner card shows the commission
-- **Added (app):** showcase screen in the LLS bot (search, categories, shops); a tap opens the shop's
-  storefront there; owners see an "LLS" mark on showcase orders and the deal in settings
-- **Changed:** the LLS bot's menu button opens the showcase; onboarding stays a `/start` button
+- **Added (app):** showcase screen in the Zumda bot (search, categories, shops); a tap opens the shop's
+  storefront there; owners see an "Zumda" mark on showcase orders and the deal in settings
+- **Changed:** the Zumda bot's menu button opens the showcase; onboarding stays a `/start` button
 
 ### Three verticals, own couriers, marketplace-ready data
 - **Security (core, worker):** an order is found only inside the shop from `X-Shop`; before, a
@@ -219,11 +235,11 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 
 This release completes Phase 6 (Production Readiness) with security hardening, error handling, and deployment configurations.
 
-### @lls/core v0.4.0
+### @zumda/core v0.4.0
 - **Improved:** Order status rules with better `calculateProgress()` implementation
 - **Improved:** Test coverage for order status transitions
 
-### @lls/api v0.6.0
+### @zumda/api v0.6.0
 - **Security:** CORS restricted to specific origins (no wildcard)
 - **Security:** WebSocket CORS configured with specific origin
 - **Security:** Helmet security headers registered globally
@@ -238,7 +254,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 - **Improved:** ForbiddenException in courier service for proper error handling
 - **Improved:** Filter inactive businesses from public list
 
-### @lls/bot v0.6.0
+### @zumda/bot v0.6.0
 - **Added:** `.env.example` configuration template
 - **Added:** Error screens (404, 500, network error)
 - **Added:** Production logger service
@@ -249,7 +265,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 - **Improved:** Pagination handling in API client
 - **Improved:** Checkout form disabled during submission
 
-### @lls/admin v0.5.0
+### @zumda/admin v0.5.0
 - **Added:** `.env.example` configuration template
 - **Added:** Logout functionality in Settings page
 - **Added:** Logout navigation in Header
@@ -265,7 +281,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 
 ## [0.3.6] - 2026-01-23
 
-### @lls/core v0.3.0
+### @zumda/core v0.3.0
 - **Added:** Domain events infrastructure (`src/domain/events/`)
 - **Added:** `DomainEvent` base class with `eventId`, `occurredOn`, and `eventName`
 - **Added:** `OrderCreatedEvent` for order creation notification
@@ -283,7 +299,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 - **Added:** Unit tests for all new modules (83 new tests)
 - **Improved:** Total tests now at 271 (was 188)
 
-### @lls/api v0.4.0
+### @zumda/api v0.4.0
 - **Added:** Rate limiting with @nestjs/throttler (`src/middleware/rate-limiter.ts`)
 - **Added:** `RateLimiterGuard` with IP extraction from Fastify request
 - **Added:** Rate limit presets: general, auth, createOrder
@@ -298,7 +314,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 - **Added:** `RolesGuard` with permission checking
 - **Dependencies:** Added @nestjs/throttler, @fastify/helmet
 
-### @lls/bot v0.4.0 (via @lls/api)
+### @zumda/bot v0.4.0 (via @zumda/api)
 - **Added:** Telegram notification service (`src/notifications/telegram-notification.service.ts`)
 - **Added:** `sendOrderConfirmation()` - order placed notification
 - **Added:** `sendStatusChangeNotification()` - order status updates
@@ -312,7 +328,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 
 ## [0.3.5] - 2026-01-23
 
-### @lls/api
+### @zumda/api
 - **Added:** WebSocket gateway for real-time events (`packages/api/src/gateway/`)
 - **Added:** `EventsGateway` with room-based event broadcasting
 - **Added:** WebSocket events: `order_created`, `order_status_changed`, `order_cancelled`, `courier_assigned`, `new_order_available`
@@ -320,7 +336,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 - **Changed:** `OrderService` now emits WebSocket events on order creation, status updates, and cancellation
 - **Changed:** `CourierService` now emits WebSocket events when courier takes or completes an order
 
-### @lls/bot
+### @zumda/bot
 - **Added:** WebSocket client for real-time updates (`src/lib/websocket.ts`)
 - **Added:** `useOrderUpdates` hook for real-time order status tracking
 - **Added:** `useNewOrders` hook for courier new order notifications
@@ -331,7 +347,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 
 ## [0.3.4] - 2026-01-22
 
-### @lls/bot
+### @zumda/bot
 - **Added:** Toast notification system with success/error/warning/info variants
 - **Added:** ErrorBoundary component for graceful error handling
 - **Added:** SearchInput component for filtering content
@@ -340,7 +356,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 - **Added:** Toast notifications for cart actions, order creation, courier actions
 - **Improved:** User feedback for all critical actions
 
-### @lls/admin
+### @zumda/admin
 - **Added:** Toast notification system with title/message support
 - **Added:** Toast notifications for product CRUD operations
 - **Added:** Toast notifications for order status changes
@@ -349,7 +365,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 
 ## [0.3.3] - 2026-01-22
 
-### @lls/api
+### @zumda/api
 - **Added:** BusinessAuthGuard for protecting business-specific endpoints
 - **Added:** BusinessAuthMode decorator for specifying auth mode (business/product/order)
 - **Added:** Input validation DTOs: CreateProductDto, UpdateProductDto, CreateOrderDto, UpdateOrderStatusDto, UpdateCustomerDto
@@ -359,18 +375,18 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 
 ## [0.3.2] - 2026-01-22
 
-### @lls/core
+### @zumda/core
 - **Added:** Analytics use case tests (GetBusinessAnalyticsUseCase, GetSalesChartUseCase, GetTopProductsUseCase)
 - **Added:** Date range utility tests (getDateRangeForPeriod, parseDateRange)
 - **Improved:** Test coverage now at 188 tests (was 166)
 
-### @lls/api
+### @zumda/api
 - **Added:** Analytics controller tests (getDashboard, getSales, getTopProducts)
 - **Improved:** Test coverage now at 37 tests (was 32)
 
 ## [0.3.1] - 2026-01-22
 
-### @lls/core
+### @zumda/core
 - **Added:** GetCustomerByTelegramIdUseCase for authenticated customer endpoints
 - **Added:** GetCourierByTelegramIdUseCase for authenticated courier endpoints
 - **Added:** EntityNotFoundError.customerByTelegramId() factory method
@@ -378,7 +394,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 - **Added:** Unit tests for GetCustomerByTelegramIdUseCase
 - **Added:** Unit tests for GetCourierByTelegramIdUseCase
 
-### @lls/api
+### @zumda/api
 - **Added:** GET /customers/me endpoint with Telegram auth
 - **Added:** PATCH /customers/me endpoint with Telegram auth
 - **Added:** GET /orders/my endpoint for customer's orders with Telegram auth
@@ -386,25 +402,25 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 - **Fixed:** POST /orders/:orderId/take now uses Telegram auth instead of throwing error
 - **Security:** TelegramAuthGuard now validates HMAC-SHA256 signature of initData
 
-### @lls/bot
+### @zumda/bot
 - **Changed:** orderApi now uses getMyOrders() instead of getByCustomer()
 - **Changed:** customerApi now uses getMe() and updateMe() methods
 - **Changed:** courierApi now uses takeOrder(orderId) without courierId parameter
 - **Changed:** courierApi now uses getMyOrders() instead of getOrders()
 - **Removed:** Unnecessary courierId state from courier store
 
-### @lls/admin
+### @zumda/admin
 - **Fixed:** productApi.create now uses correct /businesses/:businessId/products path
 - **Fixed:** productApi.toggleAvailability now uses PATCH instead of POST
 
 ## [0.3.0] - 2026-01-22
 
-### @lls/core
+### @zumda/core
 - **Added:** GetBusinessByTelegramIdUseCase for authenticating businesses by Telegram ID
 - **Added:** EntityNotFoundError.businessByTelegramId() factory method
 - **Added:** Unit tests for GetBusinessByTelegramIdUseCase
 
-### @lls/api
+### @zumda/api
 - **Added:** TelegramAuthService with HMAC-SHA256 signature validation
 - **Added:** POST /api/v1/businesses/auth/telegram endpoint for OAuth
 - **Added:** GET /api/v1/businesses/telegram/:telegramId endpoint
@@ -412,7 +428,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 - **Changed:** TELEGRAM_BOT_TOKEN is now required (was optional)
 - **Added:** Unit tests for TelegramAuthService
 
-### @lls/admin
+### @zumda/admin
 - **Added:** TelegramLoginButton component with Telegram Login Widget
 - **Changed:** Login page now uses Telegram OAuth instead of manual ID entry
 - **Added:** businessApi.authenticateWithTelegram() API method
@@ -420,14 +436,14 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 
 ## [0.2.0] - 2026-01-22
 
-### @lls/core
+### @zumda/core
 - **Added:** Analytics DTOs: BusinessStatsDTO, DailySalesDTO, SalesChartDTO, TopProductDTO, OrderStatusBreakdownDTO, AnalyticsDashboardDTO
 - **Added:** Analytics repository port interface
 - **Added:** Analytics use cases: GetBusinessAnalyticsUseCase, GetSalesChartUseCase, GetTopProductsUseCase
 - **Added:** Date range utilities for analytics periods (day, week, month)
 - **Added:** Comprehensive unit tests - 157 tests covering all domain logic
 
-### @lls/api
+### @zumda/api
 - **Added:** NestJS REST API with Fastify adapter
 - **Added:** MongoDB repositories for all entities
 - **Added:** Redis caching module
@@ -436,14 +452,14 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 - **Added:** Analytics endpoints: GET /api/v1/analytics/business/:businessId
 - **Added:** Controller unit tests - 24 tests covering all endpoints
 
-### @lls/bot
+### @zumda/bot
 - **Added:** Telegram Mini App for customers and couriers
 - **Added:** Customer screens: Home, Business, Cart, Checkout, Orders, OrderTracking
 - **Added:** Courier screens: AvailableOrders, ActiveDelivery, DeliveryHistory
 - **Added:** Zustand stores for state management
 - **Added:** API client with TypeScript types
 
-### @lls/admin
+### @zumda/admin
 - **Added:** React admin panel for businesses
 - **Added:** Dashboard with analytics charts
 - **Added:** Products management (CRUD)
@@ -452,7 +468,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 
 ## [0.1.1] - 2026-01-12
 
-### @lls/core
+### @zumda/core
 - **Added:** Unit tests for use cases: update-business, complete-delivery, get-available-orders, get-courier-orders, get-or-create-customer, update-customer
 - **Added:** Additional tests for order use cases: cancel-order, get-business-orders, get-customer-orders, get-order, update-order-status
 - **Added:** Product use case tests: create-product, list-products, update-product, delete-product, toggle-availability
@@ -462,7 +478,7 @@ This release completes Phase 6 (Production Readiness) with security hardening, e
 
 ### Initial Release
 
-#### @lls/core
+#### @zumda/core
 - Domain entities: Business, Product, Customer, Courier, Order, OrderItem
 - Value objects: Money, Address, Phone, TelegramId
 - Enums: OrderStatus, BusinessType

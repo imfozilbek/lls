@@ -113,7 +113,7 @@ export class PlaceOrderUseCase {
             throw BusinessRuleViolationError.tooManyItems(MAX_ORDER_LINES)
         }
 
-        // Through the showcase the LLS bot signed the user; through a shop bot only that shop's
+        // Through the showcase the Zumda bot signed the user; through a shop bot only that shop's
         // owner did, so the phone must have been sent to this very shop.
         const channel = input.channel ?? OrderChannel.SHOP_BOT
         const scope: IdentityScope =

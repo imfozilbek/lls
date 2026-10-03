@@ -50,7 +50,7 @@ import {
     RequestNetworkCourierUseCase,
     SetDistrictUseCase,
     SetNetworkMembershipUseCase,
-} from "@lls/core"
+} from "@zumda/core"
 
 import { platformAdminIds } from "./env.js"
 import { D1BusinessRepository } from "./repositories/business.repository.js"
@@ -64,7 +64,7 @@ import { D1ProductRepository } from "./repositories/product.repository.js"
 
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
-import type { Clock } from "@lls/core"
+import type { Clock } from "@zumda/core"
 
 export interface ServiceDeps {
     telegram: TelegramGateway

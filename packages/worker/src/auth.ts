@@ -4,7 +4,7 @@ import {
     OrderChannel,
     TRUSTED_SCOPE,
     shopScope,
-} from "@lls/core"
+} from "@zumda/core"
 import { createMiddleware } from "hono/factory"
 
 import { verifyInitData } from "./crypto.js"
@@ -12,14 +12,14 @@ import { ApiError, unauthorized } from "./http/errors.js"
 
 import type { AppEnv, ViewerRole } from "./env.js"
 import type { Services } from "./services.js"
-import type { Business } from "@lls/core"
+import type { Business } from "@zumda/core"
 
 export const INIT_DATA_HEADER = "X-Telegram-Init-Data"
 export const SHOP_HEADER = "X-Shop"
-/** `marketplace`: a shop opened from the LLS showcase, inside the LLS bot. */
+/** `marketplace`: a shop opened from the Zumda showcase, inside the Zumda bot. */
 export const VIA_HEADER = "X-Via"
 export const VIA_MARKETPLACE = "marketplace"
-/** `courier`: the LLS courier bot opened the app (the courier's screen across their shops). */
+/** `courier`: the Zumda courier bot opened the app (the courier's screen across their shops). */
 export const BOT_HEADER = "X-Bot"
 export const BOT_COURIER = "courier"
 
@@ -55,9 +55,9 @@ async function signerOf(
 /**
  * Verifies Telegram initData with the token of the bot that opened the Mini App:
  * - `X-Shop` alone: the shop's own bot;
- * - `X-Shop` + `X-Via: marketplace`: the LLS bot, and the shop must be in the showcase;
- * - `X-Bot: courier`: the LLS courier bot (the courier's screen, no shop);
- * - nothing: the LLS bot (onboarding, showcase search).
+ * - `X-Shop` + `X-Via: marketplace`: the Zumda bot, and the shop must be in the showcase;
+ * - `X-Bot: courier`: the Zumda courier bot (the courier's screen, no shop);
+ * - nothing: the Zumda bot (onboarding, showcase search).
  * The token that verified the signature fixes the order channel, so the client cannot pick it.
  */
 export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
@@ -136,7 +136,9 @@ export const requireOwner = createMiddleware<AppEnv>(async (c, next) => {
     await next()
 })
 
-/** Opened from the LLS courier bot. Whether they really deliver for a shop, the use cases check. */
+/**
+ * Opened from the Zumda courier bot. Whether they really deliver for a shop, the use cases check.
+ */
 export const requireCourier = createMiddleware<AppEnv>(async (c, next) => {
     if (c.get("auth").role !== "courier") {
         throw ForbiddenError.notACourier()

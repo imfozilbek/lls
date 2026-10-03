@@ -1,4 +1,4 @@
-import { CourierStatus, WEEKDAYS, formatPhone } from "@lls/core"
+import { CourierStatus, WEEKDAYS, formatPhone } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
@@ -12,7 +12,7 @@ import { Button, Section, Skeleton, Switch } from "../ui/primitives.js"
 import { useOwner } from "./store.js"
 
 import type { CourierInvite } from "../lib/api.js"
-import type { CourierDTO, ShopOwnerDTO, Weekday } from "@lls/core"
+import type { CourierDTO, ShopOwnerDTO, Weekday } from "@zumda/core"
 
 function failToast(t: ReturnType<typeof useT>, caught: unknown): void {
     haptic.error()

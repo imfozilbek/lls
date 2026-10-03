@@ -12,7 +12,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 import { useReorder } from "./reorder.js"
 
-import type { OrderDTO } from "@lls/core"
+import type { OrderDTO } from "@zumda/core"
 
 function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.JSX.Element {
     const t = useT()

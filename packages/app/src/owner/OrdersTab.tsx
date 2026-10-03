@@ -1,8 +1,9 @@
-import { OrderChannel, OrderStatus, PaymentStatus, formatPhone, isFinalStatus } from "@lls/core"
+import { OrderChannel, OrderStatus, PaymentStatus, formatPhone, isFinalStatus } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
+import { ZUMDA_NAME } from "../lib/brand.js"
 import { formatMoney, formatQuantity, formatTime } from "../lib/format.js"
 import { usePagedList } from "../lib/paged.js"
 import { haptic } from "../lib/telegram.js"
@@ -15,12 +16,13 @@ import { PaymentLine } from "../ui/payment.js"
 import { Button, EmptyState, Field, Segmented, Skeleton, TextInput } from "../ui/primitives.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import { useOwner } from "./store.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { PagedList } from "../lib/paged.js"
-import type { OrderDTO } from "@lls/core"
+import type { OrderDTO } from "@zumda/core"
 
 type Filter = "active" | "done"
 
@@ -290,8 +292,9 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
             ) : null}
             {order.channel === OrderChannel.MARKETPLACE ? (
                 <p className="mt-2 flex items-center gap-2 text-sm text-tg-subtitle">
-                    <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs font-bold text-tg-text">
-                        LLS
+                    <span className="flex items-center gap-1 rounded-full bg-tg-secondary py-0.5 pl-0.5 pr-2 text-xs font-bold text-tg-text">
+                        <ZumdaMark size={16} />
+                        {ZUMDA_NAME}
                     </span>
                     {fill(t.owner.showcaseOrder, { sum: formatMoney(order.commission, language) })}
                 </p>

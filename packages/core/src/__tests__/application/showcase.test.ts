@@ -57,7 +57,7 @@ describe("searchText", () => {
     })
 })
 
-describe("LLS showcase", () => {
+describe("Zumda showcase", () => {
     let businesses: InMemoryBusinesses
     let products: InMemoryProducts
     let search: SearchShowcaseUseCase

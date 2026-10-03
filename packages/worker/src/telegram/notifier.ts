@@ -1,4 +1,4 @@
-import { Language, OrderChannel, OrderStatus, toNetworkOrderDTO } from "@lls/core"
+import { Language, OrderChannel, OrderStatus, toNetworkOrderDTO } from "@zumda/core"
 
 import { alertAdmins, describeError, isRecipientProblem } from "../alerts.js"
 import { platformAdminIds } from "../env.js"
@@ -32,14 +32,14 @@ import type {
     OrderDTO,
     OverdueNetworkOrder,
     ShopOwnerDTO,
-} from "@lls/core"
+} from "@zumda/core"
 
 /** Mini App URL for a shop: the shop bot's menu button and /start button open this. */
 export function shopAppUrl(appOrigin: string, slug: string): string {
     return `${appOrigin}/?shop=${encodeURIComponent(slug)}`
 }
 
-/** The courier's screen across all their shops, opened from the LLS courier bot. */
+/** The courier's screen across all their shops, opened from the Zumda courier bot. */
 export function courierAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=courier`
 }
@@ -48,7 +48,7 @@ export function onboardingAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=onboarding`
 }
 
-/** The LLS showcase: search across shops, opened from the LLS bot. */
+/** The Zumda showcase: search across shops, opened from the Zumda bot. */
 export function showcaseAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=market`
 }
@@ -334,7 +334,7 @@ export class Notifier {
         })
     }
 
-    /** The owner approved or declined: the courier hears it in the LLS courier bot. */
+    /** The owner approved or declined: the courier hears it in the Zumda courier bot. */
     async courierReviewed(
         business: Business,
         courier: CourierDTO,
@@ -382,7 +382,7 @@ export class Notifier {
         )
     }
 
-    /** Tells the owner (in the LLS bot, where they applied) that the showcase deal changed. */
+    /** Tells the owner (in the Zumda bot, where they applied) that the showcase deal changed. */
     async showcaseChanged(shop: ShopOwnerDTO): Promise<void> {
         const t = textsFor(await this.languageOf(shop.ownerTelegramId))
         const name = `<b>${escapeHtml(shop.name)}</b>`
@@ -430,6 +430,34 @@ export class Notifier {
         }
     }
 
+    /** Zumda's picture on the shop bot: the shop's logo (or name) with the Zumda mark. */
+    async shopBotPhoto(shopId: string, jpeg: Uint8Array): Promise<void> {
+        const credentials = await this.services.businesses.getBotCredentials(shopId)
+        if (!credentials) {
+            throw new Error(`No bot credentials for shop ${shopId}`)
+        }
+        await this.services.telegram.setProfilePhoto(credentials.token, jpeg)
+    }
+
+    /** The shop bot's description and profile line, always with «Zumda asosida ishlaydi». */
+    async shopBotDescriptions(shop: ShopOwnerDTO): Promise<void> {
+        const credentials = await this.services.businesses.getBotCredentials(shop.id)
+        if (!credentials) {
+            throw new Error(`No bot credentials for shop ${shop.id}`)
+        }
+        const texts = textsFor(Language.UZ, shop.type)
+        await this.services.telegram.setDescriptions(credentials.token, {
+            description: fitShopName(texts.shopBotDescription, shop.name, BOT_DESCRIPTION_MAX, {
+                openMenu: texts.openMenu,
+            }),
+            shortDescription: fitShopName(
+                texts.shopBotShortDescription,
+                shop.name,
+                BOT_SHORT_DESCRIPTION_MAX,
+            ),
+        })
+    }
+
     /** Approve: connect the shop bot (webhook + menu button) and send the owner their link. */
     async shopReviewed(shop: ShopOwnerDTO, workerOrigin: string): Promise<void> {
         const platformToken = this.services.env.PLATFORM_BOT_TOKEN
@@ -465,6 +493,10 @@ export class Notifier {
             shop.ownerTelegramId,
             `${fill(texts.shopApproved, { shop: name })}\n${link}`,
         )
+        // The shop already works: a description Telegram refused only reaches the admins.
+        await this.shopBotDescriptions(shop).catch((error: unknown) =>
+            alertAdmins(this.services, "notification_failed", error),
+        )
     }
 
     private async orderChangedForOwner(
@@ -482,7 +514,7 @@ export class Notifier {
     }
 
     /**
-     * Sends or edits the courier's card in the LLS courier bot. A card edit makes no sound, so
+     * Sends or edits the courier's card in the Zumda courier bot. A card edit makes no sound, so
      * "ready" also pings.
      */
     private async refreshCourierCard(
@@ -546,7 +578,7 @@ export class Notifier {
         )
     }
 
-    /** Writes the customer in their language; a showcase customer hears from the LLS bot. */
+    /** Writes the customer in their language; a showcase customer hears from the Zumda bot. */
     private async tellCustomer(
         token: string,
         business: Business,
@@ -561,7 +593,7 @@ export class Notifier {
         if (!text) {
             return
         }
-        // A showcase customer started only the LLS bot, so the LLS bot writes, naming the shop.
+        // A showcase customer started only the Zumda bot, so the Zumda bot writes, naming the shop.
         if (order.channel === OrderChannel.MARKETPLACE) {
             const shop = `<b>${escapeHtml(business.name)}</b>`
             await this.services.telegram.sendMessage(
@@ -597,6 +629,24 @@ export class Notifier {
  * Run a notification after the response; a failure never breaks the request. It is logged, and
  * the admins hear about it unless the recipient simply blocked the bot.
  */
+/** Bot API limits for `setMyDescription` and `setMyShortDescription`. */
+const BOT_DESCRIPTION_MAX = 512
+const BOT_SHORT_DESCRIPTION_MAX = 120
+const ELLIPSIS = "…"
+
+/** Fills `{shop}`, shortening a long shop name so the text stays within Telegram's limit. */
+function fitShopName(
+    template: string,
+    shopName: string,
+    max: number,
+    values: Record<string, string> = {},
+): string {
+    const rest = fill(template, { ...values, shop: "" }).length
+    const room = max - rest
+    const shop = shopName.length <= room ? shopName : `${shopName.slice(0, room - 1)}${ELLIPSIS}`
+    return fill(template, { ...values, shop })
+}
+
 export function inBackground(
     ctx: { waitUntil(promise: Promise<unknown>): void },
     services: Services,

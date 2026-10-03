@@ -5,12 +5,13 @@ import { createApp } from "../src/app.js"
 import { TelegramApiError } from "../src/telegram/gateway.js"
 
 import type {
+    BotDescriptions,
     BotInfo,
     MessageOptions,
     OutgoingFile,
     TelegramGateway,
 } from "../src/telegram/gateway.js"
-import type { Clock } from "@lls/core"
+import type { Clock } from "@zumda/core"
 
 export const OWNER = { id: 1001, first_name: "Rustam", language_code: "uz" }
 export const CUSTOMER = { id: 2002, first_name: "Aziz", last_name: "Karimov", language_code: "ru" }
@@ -70,6 +71,10 @@ export class FakeTelegram implements TelegramGateway {
     readonly webhooks: { token: string; url: string; secret: string }[] = []
     readonly menuButtons: { token: string; url: string }[] = []
     readonly answered: string[] = []
+    readonly photos: { token: string; jpeg: Uint8Array }[] = []
+    readonly descriptions: ({ token: string } & BotDescriptions)[] = []
+    /** Simulates Telegram refusing a new bot picture. */
+    failPhotos = false
     readonly documents: { token: string; chatId: number; file: OutgoingFile; caption?: string }[] =
         []
     /** Simulates a blocked bot or Telegram outage: replies to users fail. */
@@ -136,6 +141,15 @@ export class FakeTelegram implements TelegramGateway {
     async setMenuButton(token: string, _text: string, url: string): Promise<void> {
         this.menuButtons.push({ token, url })
     }
+    async setProfilePhoto(token: string, jpeg: Uint8Array): Promise<void> {
+        if (this.failPhotos) {
+            throw new TelegramApiError("setMyProfilePhoto", "Bad Request: PHOTO_INVALID")
+        }
+        this.photos.push({ token, jpeg })
+    }
+    async setDescriptions(token: string, texts: BotDescriptions): Promise<void> {
+        this.descriptions.push({ token, ...texts })
+    }
 }
 
 export interface TestClient {
@@ -143,17 +157,17 @@ export interface TestClient {
     request(path: string, init?: RequestInit): Promise<Response>
     /**
      * Request as `user` inside the Mini App opened from `botToken` (X-Shop = slug), or from the
-     * LLS courier bot (`courierBot`).
+     * Zumda courier bot (`courierBot`).
      */
     as(
         user: object,
         options: { botToken?: string; shop?: string; via?: "marketplace"; courierBot?: boolean },
     ): (path: string, init?: RequestInit & { json?: unknown }) => Promise<Response>
-    /** An update from Telegram to the LLS courier bot's webhook. */
+    /** An update from Telegram to the Zumda courier bot's webhook. */
     courierBot(update: object): Promise<Response>
 }
 
-export const COURIER_BOT: BotInfo = { id: 100100, username: "lls_kuryer_bot", firstName: "LLS" }
+export const COURIER_BOT: BotInfo = { id: 100100, username: "zumda_kuryer_bot", firstName: "Zumda" }
 
 export function testClient(
     options: { bots?: Record<string, BotInfo>; clock?: Clock } = {},
@@ -253,7 +267,7 @@ export async function createActiveShop(
 }
 
 /**
- * The whole hiring path: the owner makes an invite, the person accepts it in the LLS courier bot
+ * The whole hiring path: the owner makes an invite, the person accepts it in the Zumda courier bot
  * and shares a phone, the owner approves, the courier starts a shift. Returns the courier id.
  */
 export async function hireCourier(

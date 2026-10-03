@@ -1,5 +1,5 @@
 {
-    "name": "@lls/app",
+    "name": "@zumda/app",
     "version": "0.1.0",
     "private": true,
     "type": "module",
@@ -11,7 +11,7 @@
         "test:watch": "vitest"
     },
     "dependencies": {
-        "@lls/core": "*",
+        "@zumda/core": "*",
         "clsx": "^2",
         "react": "~19.2.3",
         "react-dom": "~19.2.3",

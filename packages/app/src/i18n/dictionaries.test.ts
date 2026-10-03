@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { BusinessType, LANGUAGES, Language } from "@lls/core"
+import { BusinessType, LANGUAGES, Language } from "@zumda/core"
 
 import { dictionaryFor } from "./index.js"
 import { uz } from "./uz.js"

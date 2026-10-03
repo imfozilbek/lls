@@ -45,7 +45,7 @@ const config: Config = {
                     subtitle: uiColor("--ui-subtitle"),
                 },
                 brand: {
-                    DEFAULT: "rgb(var(--brand-rgb, 14 165 233) / <alpha-value>)",
+                    DEFAULT: "rgb(var(--brand-rgb, 21 128 61) / <alpha-value>)",
                     ink: "rgb(var(--brand-ink-rgb, 255 255 255) / <alpha-value>)",
                 },
                 success: "rgb(16 185 129 / <alpha-value>)",

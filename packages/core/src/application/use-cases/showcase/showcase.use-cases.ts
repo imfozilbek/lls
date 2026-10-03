@@ -14,7 +14,7 @@ import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
 import type { ProductRepository } from "../../ports/product-repository.js"
 
-/** Shops of the LLS showcase: open ones first, then by name. */
+/** Shops of the Zumda showcase: open ones first, then by name. */
 export class ListShowcaseShopsUseCase {
     constructor(
         private readonly businesses: BusinessRepository,

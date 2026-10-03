@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { readableInk } from "./brand.js"
 import { formatMoney, formatQuantity, formatTime, hexToRgbChannels } from "./format.js"
 
-import type { Language } from "@lls/core"
+import type { Language } from "@zumda/core"
 
 const UZ = "uz" as Language
 

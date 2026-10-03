@@ -85,6 +85,15 @@ export interface TelegramGateway {
     sendDocument(token: string, chatId: number, file: OutgoingFile, caption?: string): Promise<void>
     setWebhook(token: string, url: string, secretToken: string): Promise<void>
     setMenuButton(token: string, text: string, webAppUrl: string): Promise<void>
+    /** The bot's own picture: Zumda sets it on shop bots (the shop's logo or name + the mark). */
+    setProfilePhoto(token: string, jpeg: Uint8Array): Promise<void>
+    /** The empty-chat description (≤512) and the profile line (≤120). */
+    setDescriptions(token: string, texts: BotDescriptions): Promise<void>
+}
+
+export interface BotDescriptions {
+    description: string
+    shortDescription: string
 }
 
 export class TelegramApiError extends Error {
@@ -174,6 +183,20 @@ export class HttpTelegramGateway implements TelegramGateway {
     async setMenuButton(token: string, text: string, webAppUrl: string): Promise<void> {
         await this.call(token, "setChatMenuButton", {
             menu_button: { type: "web_app", text, web_app: { url: webAppUrl } },
+        })
+    }
+
+    async setProfilePhoto(token: string, jpeg: Uint8Array): Promise<void> {
+        const form = new FormData()
+        form.set("photo", JSON.stringify({ type: "static", photo: "attach://avatar" }))
+        form.set("avatar", new Blob([jpeg], { type: "image/jpeg" }), "avatar.jpg")
+        await this.send(token, "setMyProfilePhoto", { body: form })
+    }
+
+    async setDescriptions(token: string, texts: BotDescriptions): Promise<void> {
+        await this.call(token, "setMyDescription", { description: texts.description })
+        await this.call(token, "setMyShortDescription", {
+            short_description: texts.shortDescription,
         })
     }
 

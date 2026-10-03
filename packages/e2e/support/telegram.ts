@@ -110,6 +110,24 @@ export async function waitForMessage(
     return found
 }
 
+/** Waits for a Bot API call of `method` made with `token` after `since`; returns it. */
+export async function waitForCall(method: string, token: string, since = 0): Promise<BotCall> {
+    let found: BotCall | undefined
+    await expect
+        .poll(
+            async () => {
+                found = (await callsOf(method, since)).findLast((c) => c.token === token)
+                return found !== undefined
+            },
+            { message: `${method} by ${token.split(":")[0] ?? ""}`, timeout: 10_000 },
+        )
+        .toBe(true)
+    if (!found) {
+        throw new Error("unreachable")
+    }
+    return found
+}
+
 /** Bot API calls of one method after `since` (setWebhook, setChatMenuButton, …). */
 export async function callsOf(method: string, since = 0): Promise<BotCall[]> {
     return (await botCalls()).filter((c) => c.method === method && c.seq > since)
@@ -128,7 +146,7 @@ async function postUpdate(path: string, secret: string, update: object): Promise
     })
 }
 
-/** A chat with one bot: the shop's own bot, the LLS bot or the LLS courier bot. */
+/** A chat with one bot: the shop's own bot, the Zumda bot or the Zumda courier bot. */
 export interface Chat {
     send(from: TgUser, text: string): Promise<Response>
     shareContact(from: TgUser, phone: string, userId?: number): Promise<Response>
@@ -182,11 +200,11 @@ export function shopChat(slug: string): Chat {
     return chat(`/tg/${shop.bot.id}`, shop.bot.webhookSecret)
 }
 
-export function llsChat(): Chat {
+export function platformChat(): Chat {
     return chat("/tg/platform", platformBot().secret)
 }
 
-/** The LLS courier bot: invites, the phone, order cards and their buttons. */
+/** The Zumda courier bot: invites, the phone, order cards and their buttons. */
 export function courierChat(): Chat {
     return chat("/tg/courier", courierBot().secret)
 }

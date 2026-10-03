@@ -1,4 +1,4 @@
-import type { TelegramUser } from "@lls/core"
+import type { TelegramUser } from "@zumda/core"
 
 const encoder = new TextEncoder()
 const decoder = new TextDecoder()

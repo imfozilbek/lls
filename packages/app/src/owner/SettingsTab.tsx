@@ -1,8 +1,9 @@
-import { FEATURES, Feature } from "@lls/core"
+import { FEATURES, Feature } from "@zumda/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api, imageUrl } from "../lib/api.js"
+import { updateBotPhoto } from "../lib/bot-photo.js"
 import { BRAND_SWATCHES, applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
 import { hexToRgbChannels } from "../lib/format.js"
@@ -32,7 +33,8 @@ import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 
 import type { Hours } from "./hours.js"
 import type { ShopPatch } from "../lib/api.js"
-import type { ShopOwnerDTO } from "@lls/core"
+import type { BotAvatarInput } from "../lib/bot-avatar.js"
+import type { ShopOwnerDTO } from "@zumda/core"
 
 interface Form {
     name: string
@@ -165,6 +167,13 @@ function AcceptingCard({
     )
 }
 
+/** Zumda's picture on the shop bot; a refusal is only a toast, the shop is already saved. */
+async function syncBotPhoto(t: ReturnType<typeof useT>, input: BotAvatarInput): Promise<void> {
+    const code = await updateBotPhoto(input, api.owner.setBotPhoto)
+    if (code) {
+        toast(errorText(t, code), "error")
+    }
+}
 function LogoPicker({
     shop,
     onSaved,
@@ -183,8 +192,11 @@ function LogoPicker({
         }
         setBusy(true)
         try {
-            onSaved(await api.owner.uploadLogo(await compressImage(file, 512)))
+            const logo = await compressImage(file, 512)
+            const saved = await api.owner.uploadLogo(logo)
+            onSaved(saved)
             haptic.success()
+            void syncBotPhoto(t, { shopName: saved.name, brandColor: saved.brandColor, logo })
         } catch (caught) {
             failToast(t, caught)
         } finally {
@@ -433,6 +445,17 @@ function SettingsForm({
         try {
             const saved = await api.owner.updateShop(patchOf(form))
             onSaved(saved)
+            // Without a logo the bot's picture is the name on the shop's color: keep it current.
+            if (
+                !saved.logoKey &&
+                (saved.name !== shop.name || saved.brandColor !== shop.brandColor)
+            ) {
+                void syncBotPhoto(t, {
+                    shopName: saved.name,
+                    brandColor: saved.brandColor,
+                    logo: null,
+                })
+            }
             setForm(formOf(saved))
             haptic.success()
             toast(s.saved, "success")
@@ -458,6 +481,7 @@ function SettingsForm({
         <>
             <Section title={s.shop}>
                 <LogoPicker shop={shop} onSaved={onSaved} />
+                <p className="-mt-1 px-1 text-sm text-tg-hint">{s.botPhotoHint}</p>
                 <Field label={s.name} htmlFor="shop-name">
                     <TextInput
                         id="shop-name"

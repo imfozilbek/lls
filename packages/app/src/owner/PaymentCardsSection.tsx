@@ -1,4 +1,4 @@
-import { MAX_PAYOUT_CARDS } from "@lls/core"
+import { MAX_PAYOUT_CARDS } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, useT } from "../i18n/index.js"
@@ -10,7 +10,7 @@ import { PayoutCardFields, payoutCardIsValid } from "../ui/card-fields.js"
 import { CardIcon, CheckIcon, PlusIcon, TrashIcon } from "../ui/icons.js"
 import { Button, Section, Skeleton } from "../ui/primitives.js"
 
-import type { PayoutCardsDTO, SavedPayoutCardDTO, ShopOwnerDTO } from "@lls/core"
+import type { PayoutCardsDTO, SavedPayoutCardDTO, ShopOwnerDTO } from "@zumda/core"
 
 type Cards = PayoutCardsDTO
 

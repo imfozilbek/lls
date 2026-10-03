@@ -1,5 +1,5 @@
 /**
- * A new owner connects a shop through the LLS bot; the platform admin approves or rejects;
+ * A new owner connects a shop through the Zumda bot; the platform admin approves or rejects;
  * a failed bot connection is retried with /reconnect; failures reach the admin as alerts.
  */
 import { expect, test } from "@playwright/test"
@@ -10,8 +10,9 @@ import {
     chatWithSecret,
     controlTelegram,
     lastSeq,
-    llsChat,
+    platformChat,
     messagesTo,
+    waitForCall,
     waitForMessage,
 } from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
@@ -56,6 +57,17 @@ async function apply(page: Page, token: string, name: string): Promise<void> {
     await bottomButton(page).click()
 }
 
+/** Zumda writes the bot's description: the shop's name and «Zumda asosida ishlaydi». */
+async function expectZumdaDescriptions(token: string, shop: string, since: number): Promise<void> {
+    const [about] = await callsOf("setMyShortDescription", since)
+    expect(about?.token).toBe(token)
+    expect(about?.body["short_description"]).toBe(
+        `${shop}: uyga buyurtma bering. Zumda asosida ishlaydi`,
+    )
+    const [description] = await callsOf("setMyDescription", since)
+    expect(String(description?.body["description"])).toContain("Zumda asosida ishlaydi")
+}
+
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
@@ -86,6 +98,9 @@ test("the application reaches the admin; the pending shop opens only for its own
     await expect(page.getByText("Tekshiruvda")).toBeVisible()
 
     await waitForMessage(PEOPLE.newOwner.id, "arizasi qabul qilindi", since)
+    // The new bot at once wears Zumda's picture: the shop's name and the Zumda mark, as a JPEG.
+    const photo = await waitForCall("setMyProfilePhoto", NEW_BOT.token, since)
+    expect(photo.body["avatar"]).toMatchObject({ contentType: "image/jpeg" })
     const card = await waitForMessage(PEOPLE.admin.id, "Yangi do'kon", since)
     expect(card.text).toContain("Yangi Non")
     expect(card.buttons.map((b) => b.text)).toEqual(["✅ Tasdiqlash", "❌ Rad etish"])
@@ -125,11 +140,11 @@ test("a stranger cannot approve; the admin approves: webhook, menu button, owner
 }) => {
     const card = await waitForMessage(PEOPLE.admin.id, "Yangi do'kon")
     const approve = card.buttons.find((b) => b.text === "✅ Tasdiqlash")?.callback_data ?? ""
-    await llsChat().press(PEOPLE.stranger, approve)
+    await platformChat().press(PEOPLE.stranger, approve)
     expect((await myShops())[0]?.status).toBe("pending")
 
     const since = await lastSeq()
-    await llsChat().press(PEOPLE.admin, approve)
+    await platformChat().press(PEOPLE.admin, approve)
     await waitForMessage(PEOPLE.newOwner.id, "ishga tushdi", since)
     const [hook] = await callsOf("setWebhook", since)
     expect(hook?.token).toBe(NEW_BOT.token)
@@ -138,6 +153,7 @@ test("a stranger cannot approve; the admin approves: webhook, menu button, owner
     const shop = (await myShops())[0]
     expect(JSON.stringify(menu?.body)).toContain(`?shop=${shop?.slug ?? ""}`)
     expect(shop?.status).toBe("active")
+    await expectZumdaDescriptions(NEW_BOT.token, "Yangi Non", since)
 
     // The new shop bot answers through its own webhook.
     const secret = String(hook?.body["secret_token"])
@@ -158,14 +174,14 @@ test("a failed connection warns the admin; /reconnect fixes it", async () => {
     await openAndApply(SECOND_OWNER, SECOND_BOT.token, "Ikkinchi Do'kon")
     const card = await waitForMessage(PEOPLE.admin.id, "Ikkinchi", since)
     await controlTelegram({ failWebhooks: true })
-    await llsChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
+    await platformChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
     const warning = await waitForMessage(PEOPLE.admin.id, "bot ulanmadi", since)
     const slug = /\/reconnect ([a-z0-9-]+)/.exec(warning.text)?.[1] ?? ""
     expect(slug).not.toBe("")
 
     await controlTelegram({ failWebhooks: false })
-    await llsChat().send(PEOPLE.stranger, `/reconnect ${slug}`)
-    await llsChat().send(PEOPLE.admin, `/reconnect ${slug}`)
+    await platformChat().send(PEOPLE.stranger, `/reconnect ${slug}`)
+    await platformChat().send(PEOPLE.admin, `/reconnect ${slug}`)
     await waitForMessage(PEOPLE.admin.id, "bot ulandi", since)
 })
 
@@ -174,7 +190,7 @@ test("a rejected shop is told and never opens", async ({ page }) => {
     const third = "777100202:NEW-e2e-onboarding-token-uvwxyzabcd" // secret-scan: fake
     await openAndApply(THIRD_OWNER, third, "Uchinchi")
     const card = await waitForMessage(PEOPLE.admin.id, "Uchinchi", since)
-    await llsChat().press(PEOPLE.admin, card.buttons[1]?.callback_data ?? "")
+    await platformChat().press(PEOPLE.admin, card.buttons[1]?.callback_data ?? "")
     await waitForMessage(THIRD_OWNER.id, "arizasi rad etildi", since)
     const rejected = (await myShops(THIRD_OWNER)).find((s) => s.name === "Uchinchi")
     expect(rejected?.status).toBe("disabled")

@@ -16,7 +16,7 @@ import type {
     MoneyReportDTO,
     ShopPublicDTO,
     ShowcaseProductDTO,
-} from "@lls/core"
+} from "@zumda/core"
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8787"
 
@@ -42,7 +42,7 @@ let courierBot = false
 
 /**
  * Every request carries the shop, so the Worker verifies with the right bot token: the shop's own
- * bot, or the LLS bot when the shop was opened from the showcase (`viaShowcase`).
+ * bot, or the Zumda bot when the shop was opened from the showcase (`viaShowcase`).
  */
 export function setShop(slug: string | null, options: { viaShowcase?: boolean } = {}): void {
     currentShop = slug
@@ -50,7 +50,7 @@ export function setShop(slug: string | null, options: { viaShowcase?: boolean } 
     courierBot = false
 }
 
-/** Opened from the LLS courier bot: no shop; the courier bot's token signed the request. */
+/** Opened from the Zumda courier bot: no shop; the courier bot's token signed the request. */
 export function setCourierBot(): void {
     currentShop = null
     viaShowcase = false
@@ -202,6 +202,9 @@ export const api = {
             request("PATCH", "/api/owner/shop", patch),
         uploadLogo: (image: Blob): Promise<ShopOwnerDTO> =>
             request("PUT", "/api/owner/shop/logo", image),
+        /** Zumda's picture on the shop bot (`lib/bot-avatar.ts`). */
+        setBotPhoto: (jpeg: Blob): Promise<void> =>
+            request("PUT", "/api/owner/shop/bot-photo", jpeg),
         money: (period: MoneyPeriod): Promise<MoneyReportDTO> =>
             request("GET", `/api/owner/money${query({ period })}`),
         /** The bot sends the period's orders to the owner's chat as a CSV file. */
@@ -264,7 +267,7 @@ export const api = {
         ): Promise<CourierDTO> => request("PATCH", `/api/owner/couriers/${id}`, patch),
     },
 
-    /** The LLS courier bot's screen (`setCourierBot`): every shop the courier works for. */
+    /** The Zumda courier bot's screen (`setCourierBot`): every shop the courier works for. */
     courier: {
         home: (): Promise<CourierHomeDTO> => request("GET", "/api/courier/home"),
         setStatus: (id: string, status: "picked_up" | "delivered"): Promise<OrderDTO> =>
@@ -301,6 +304,9 @@ export const api = {
         myShops: (): Promise<ShopOwnerDTO[]> => request("GET", "/api/platform/shops"),
         register: (body: RegisterShopBody): Promise<ShopOwnerDTO> =>
             request("POST", "/api/platform/shops", body),
+        /** The new bot's first picture: the shop's name with the Zumda mark. */
+        setBotPhoto: (shopId: string, jpeg: Blob): Promise<void> =>
+            request("PUT", `/api/platform/shops/${shopId}/bot-photo`, jpeg),
     },
 }
 

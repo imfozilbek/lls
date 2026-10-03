@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { MAX_STEPS, deliveryFee, lineTotal, summarize, useCart } from "./cart.js"
 
-import type { ProductDTO } from "@lls/core"
+import type { ProductDTO } from "@zumda/core"
 
 function product(id: string, price: number, isAvailable = true): ProductDTO {
     return {
@@ -77,10 +77,10 @@ describe("cart store", () => {
     })
 
     it("ignores broken stored data", () => {
-        localStorage.setItem("lls:cart:bad", '{"p1":"x","p2":-1,"p3":2}')
+        localStorage.setItem("zumda:cart:bad", '{"p1":"x","p2":-1,"p3":2}')
         useCart.getState().load("bad")
         expect(useCart.getState().lines).toEqual({ p3: 2 })
-        localStorage.setItem("lls:cart:worse", "not json")
+        localStorage.setItem("zumda:cart:worse", "not json")
         useCart.getState().load("worse")
         expect(useCart.getState().lines).toEqual({})
     })

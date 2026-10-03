@@ -14,7 +14,7 @@ import {
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
-import type { Clock } from "@lls/core"
+import type { Clock } from "@zumda/core"
 
 describe("admin alerts", () => {
     let client: TestClient
@@ -54,7 +54,7 @@ describe("admin alerts", () => {
         slug = (await createActiveShop(client)).slug
     })
 
-    it("a server error reaches the admins through the LLS bot, once per quiet period", async () => {
+    it("a server error reaches the admins through the Zumda bot, once per quiet period", async () => {
         await breakTheShop()
         const as = client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug })
         expect((await as("/api/shop")).status).toBe(500)

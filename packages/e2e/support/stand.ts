@@ -59,15 +59,15 @@ export async function resetStand(): Promise<void> {
 export interface ApiOptions {
     shop?: string
     via?: "marketplace"
-    /** Inside the app opened from the LLS courier bot (no shop). */
+    /** Inside the app opened from the Zumda courier bot (no shop). */
     courierBot?: boolean
     method?: string
     json?: unknown
 }
 
 /**
- * Calls the Worker API as `user` inside the app opened from a shop bot, the LLS bot or the
- * LLS courier bot.
+ * Calls the Worker API as `user` inside the app opened from a shop bot, the Zumda bot or the
+ * Zumda courier bot.
  */
 export async function apiAs(
     user: TgUser,

@@ -5,14 +5,14 @@
  *
  *   bun run seed:dev
  *
- * `LLS_PERSIST_TO=<dir>` keeps this data in a separate local state (the e2e stand uses it).
+ * `ZUMDA_PERSIST_TO=<dir>` keeps this data in a separate local state (the e2e stand uses it).
  */
 import { execFileSync } from "node:child_process"
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-import { searchText } from "@lls/core"
+import { searchText } from "@zumda/core"
 
 import { encryptSecret } from "../src/crypto.js"
 
@@ -81,7 +81,7 @@ const FEATURES: Record<DevShop["type"], string[]> = {
 
 const BOTTLE_DEPOSIT = 30_000
 
-/** Showcase deals (basis points): food and grocery are in the LLS showcase, water is not. */
+/** Showcase deals (basis points): food and grocery are in the Zumda showcase, water is not. */
 const SHOWCASE_BPS: Record<DevShop["type"], number | null> = {
     food: 500,
     water: null,
@@ -232,14 +232,14 @@ async function main(): Promise<void> {
     if (!key) {
         throw new Error(".dev.vars has no TOKEN_ENC_KEY")
     }
-    const file = join(mkdtempSync(join(tmpdir(), "lls-seed-")), "seed.sql")
+    const file = join(mkdtempSync(join(tmpdir(), "zumda-seed-")), "seed.sql")
     writeFileSync(file, await seedSql(key))
     const wrangler = ["wrangler", "d1"]
-    const persist = process.env["LLS_PERSIST_TO"]
+    const persist = process.env["ZUMDA_PERSIST_TO"]
     const local = persist ? ["--local", "--persist-to", persist] : ["--local"]
     const cwd = { cwd: ROOT, stdio: "inherit" } as const
-    execFileSync("bunx", [...wrangler, "migrations", "apply", "lls", ...local], cwd)
-    execFileSync("bunx", [...wrangler, "execute", "lls", ...local, `--file=${file}`], cwd)
+    execFileSync("bunx", [...wrangler, "migrations", "apply", "zumda", ...local], cwd)
+    execFileSync("bunx", [...wrangler, "execute", "zumda", ...local, `--file=${file}`], cwd)
     for (const shop of DEV_SHOPS) {
         console.warn(`Seeded ${shop.type} shop: open the app with ?shop=${shop.slug}`)
     }

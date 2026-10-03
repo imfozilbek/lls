@@ -1,6 +1,6 @@
 # Security
 
-LLS is developed in the open. The code is public; keys and customer data are not.
+Zumda is developed in the open. The code is public; keys and customer data are not.
 
 ## Reporting a vulnerability
 
@@ -12,7 +12,7 @@ Please **do not** open a public issue. Use GitHub's private report instead:
 | Secret | Where | Never in |
 |--------|-------|----------|
 | Cloudflare API token, account id | GitHub Actions secrets | code, logs, issues |
-| LLS bot token, admin ids | GitHub Actions secrets → Worker secrets | code, logs |
+| Zumda bot token, admin ids | GitHub Actions secrets → Worker secrets | code, logs |
 | `TOKEN_ENC_KEY` (encrypts shop bot tokens) | Worker secrets; optional saved copy in GitHub secrets and offline | code, chats, logs |
 | Shop bot tokens | D1, encrypted with AES-GCM | API responses, logs |
 | Local development | `packages/worker/.dev.vars` (git-ignored, fake tokens) | commits |
@@ -28,7 +28,7 @@ Please **do not** open a public issue. Use GitHub's private report instead:
 
 ## If a key leaks
 
-1. Revoke it at once: LLS bot — `@BotFather` → `/revoke`; Cloudflare — roll the API token.
+1. Revoke it at once: Zumda bot — `@BotFather` → `/revoke`; Cloudflare — roll the API token.
 2. Put the new value into GitHub secrets and run **Actions → CI → Run workflow** on `main`.
 3. Removing the commit is not enough: a pushed key is public forever; only revoking helps.
 
@@ -59,8 +59,8 @@ upload them again if they are lost.
 ```bash
 cd packages/worker
 bunx wrangler login                                   # once, in the browser
-bunx wrangler d1 time-travel info lls                 # current bookmark
-bunx wrangler d1 time-travel restore lls --timestamp=2026-10-01T09:00:00+05:00
+bunx wrangler d1 time-travel info zumda                 # current bookmark
+bunx wrangler d1 time-travel restore zumda --timestamp=2026-10-01T09:00:00+05:00
 ```
 The restore replaces the whole database. It prints a bookmark to undo it.
 
@@ -68,16 +68,16 @@ The restore replaces the whole database. It prints a bookmark to undo it.
 ```bash
 cd packages/worker
 mkdir -p ../../backups
-bunx wrangler d1 export lls --remote --output=../../backups/lls-$(date +%F).sql
+bunx wrangler d1 export zumda --remote --output=../../backups/zumda-$(date +%F).sql
 ```
 - `backups/` is git-ignored. The file holds customer names and phones: keep it on an encrypted
   disk or in an encrypted archive, delete copies older than 3 months.
 - **Never in CI:** artifacts and logs of a public repository are public.
 - To load a copy into a new, empty database:
-  `bunx wrangler d1 execute lls --remote --file=../../backups/lls-<date>.sql`.
+  `bunx wrangler d1 execute zumda --remote --file=../../backups/zumda-<date>.sql`.
 
 ## Alerts
 
-Server errors (5xx) and failed Telegram notifications reach the platform admins through the LLS
+Server errors (5xx) and failed Telegram notifications reach the platform admins through the Zumda
 bot, at most one of each kind per 10 minutes. Alerts carry the error text only; bot tokens are
 masked. "The customer blocked the bot" is normal and not reported.

@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process"
 
 import { STATE_DIR, WORKER_DIR } from "./config.js"
 
-/** `@lls/core` is used by the seed script and the Worker. */
+/** `@zumda/core` is used by the seed script and the Worker. */
 export function buildCore(): void {
     execFileSync("bun", ["run", "core"], { cwd: WORKER_DIR, stdio: "inherit" })
 }
@@ -12,7 +12,7 @@ export function seed(): void {
     execFileSync("bun", ["scripts/seed-dev.ts"], {
         cwd: WORKER_DIR,
         stdio: "pipe",
-        env: { ...process.env, LLS_PERSIST_TO: STATE_DIR },
+        env: { ...process.env, ZUMDA_PERSIST_TO: STATE_DIR },
     })
 }
 
@@ -24,7 +24,7 @@ export function runSql(command: string): void {
             "wrangler",
             "d1",
             "execute",
-            "lls",
+            "zumda",
             "--local",
             "--persist-to",
             STATE_DIR,

@@ -1,18 +1,24 @@
 ---
 name: brand-guidelines
-description: LLS white-label UI rules - the shop's brand leads, the app is always light and speaks Uzbek, LLS stays in the background
+description: Zumda white-label UI rules - the shop's brand leads, the app is always light and speaks Uzbek, Zumda stays in the background
 ---
 
-# LLS Brand Guidelines (white-label)
+# Zumda Brand Guidelines (white-label)
 
 Read this before any UI work in `packages/app`. Product context: `PRODUCT.md`.
 
 ## Who the brand belongs to
 
-- **The shop is the hero.** Customers see the shop's name, logo and color. LLS appears only as a
-  small "LLS asosida ishlaydi / Работает на LLS" line at the bottom of the storefront.
-- **LLS's own color** (#0EA5E9, sky blue) is used only where no shop exists yet: onboarding in the
-  platform bot, and as the fallback when a shop has no color.
+- **The shop is the hero.** Customers see the shop's name, logo and color. Zumda appears only as a
+  small "Zumda asosida ishlaydi" line with the Zumda mark at the bottom of the storefront.
+- **The Zumda mark** (`ui/zumda-mark.tsx`, files in `brand/`): a green pin with a house on mint.
+  It keeps its own colors on every shop and is never recolored. It signs the storefront line, the
+  showcase header, the showcase badge on an owner's order, the courier screen and the QR poster.
+- **Zumda's own color** (#15803D, green "Bog'") is used where no shop leads: the showcase,
+  onboarding, the courier screen; it is also a new shop's color until the owner picks one.
+- **The shop bot's picture and description are Zumda's work:** the picture is the shop's logo (or
+  its name on its color) with the mark in a white circle at the bottom right; the description ends
+  with "Zumda asosida ishlaydi · zumda.shop".
 - **Three business types** share one design: food, water, grocery. Only words and a few icons
   change per type (see "Words per business type").
 

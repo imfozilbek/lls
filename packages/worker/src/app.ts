@@ -1,4 +1,4 @@
-import { systemClock } from "@lls/core"
+import { systemClock } from "@zumda/core"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 

@@ -1,11 +1,11 @@
-import { OrderChannel, OrderStatus, PaymentStatus, Unit, formatPhone, mapUrl } from "@lls/core"
+import { OrderChannel, OrderStatus, PaymentStatus, Unit, formatPhone, mapUrl } from "@zumda/core"
 
 import { escapeHtml } from "./gateway.js"
 import { fill, textsFor } from "./texts.js"
 
 import type { InlineButton, InlineKeyboard } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
-import type { BusinessType, Language, NetworkOrderDTO, OrderDTO, OrderItemDTO } from "@lls/core"
+import type { BusinessType, Language, NetworkOrderDTO, OrderDTO, OrderItemDTO } from "@zumda/core"
 
 /** Who reads a message: their language and the kind of shop the order is from. */
 export interface Reader {
@@ -117,7 +117,7 @@ export function formatNewOrderForOwner(order: OrderDTO, reader: Reader): string 
 }
 
 /**
- * The courier's card in the LLS courier bot: which shop, where to go, whom to call, how many
+ * The courier's card in the Zumda courier bot: which shop, where to go, whom to call, how many
  * bottles to take. The customer paid before the shop started: the courier takes no money.
  * A courier may work for several shops, so the shop comes first.
  */

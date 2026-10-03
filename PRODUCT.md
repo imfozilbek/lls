@@ -17,22 +17,23 @@ product
   order card in the shop's bot and press "Забрал" / "Доставил". They need the address, the
   landmark and the customer's phone — nothing else. They take no money: every order is paid
   to the shop's card before cooking. Next: people with a
-  car in the district who deliver for several points through one LLS courier bot and earn more.
+  car in the district who deliver for several points through one Zumda courier bot and earn more.
 
 ## Product Purpose
 
 Every offline point within 20–30 km of one district becomes an online point: today the customer
-has to come and pick it up; with LLS they order from home and a courier brings it. A point
+has to come and pick it up; with Zumda they order from home and a courier brings it. A point
 without its own courier is served by the district's courier network.
 
-LLS gives each small shop its own ordering bot and Mini App under the shop's own brand
-("powered by LLS"). Customers order without calls and voice messages; owners get every order as
-one clear card with one button for the next step. Success: real orders at the three pilot
-shops (food, water, grocery), owners stop taking orders by phone, and customers come back to reorder.
+Zumda gives each small shop its own ordering bot and Mini App under the shop's own brand
+(«Zumda asosida ishlaydi» with the green house mark). Customers order without calls and voice
+messages; owners get every order as one clear card with one button for the next step. Success:
+real orders at the three pilot shops (food, water, grocery), owners stop taking orders by phone,
+and customers come back to reorder.
 
-The LLS bot is the showcase of the district: one search across the products of every shop that
-signed a marketplace deal. A tap opens that shop's storefront inside the LLS bot; the order goes
-to that one shop. LLS earns on volume: a small service fee that the customer pays on every order
+The Zumda bot is the showcase of the district: one search across the products of every shop that
+signed a marketplace deal. A tap opens that shop's storefront inside the Zumda bot; the order goes
+to that one shop. Zumda earns on volume: a small service fee that the customer pays on every order
 (a separate line; the shop's prices never change), plus a commission on showcase orders. Later the showcase grows into a marketplace with one cart from several shops.
 
 ## Brand Personality
@@ -48,7 +49,7 @@ corporation. Short, plain sentences. Big touch targets, very little text, friend
 
 ## Design Principles
 
-1. **The shop is the hero.** Its name, color and products come first; LLS stays a quiet footer.
+1. **The shop is the hero.** Its name, color and products come first; Zumda stays a quiet footer.
 2. **One obvious next step.** Every screen has one primary action, placed where the thumb is
    (Telegram MainButton).
 3. **Native to Telegram.** Always light (owner's decision), Telegram's frame painted to match, and

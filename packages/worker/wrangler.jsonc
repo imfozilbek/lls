@@ -1,6 +1,6 @@
 {
     "$schema": "node_modules/wrangler/config-schema.json",
-    "name": "lls-worker",
+    "name": "zumda-worker",
     "main": "src/index.ts",
     "compatibility_date": "2026-09-01",
     "observability": { "enabled": true },
@@ -10,12 +10,12 @@
     "d1_databases": [
         {
             "binding": "DB",
-            "database_name": "lls",
+            "database_name": "zumda",
             "database_id": "00000000-0000-0000-0000-000000000000",
             "migrations_dir": "migrations",
         },
     ],
-    "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "lls-media" }],
+    "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "zumda-media" }],
     // Per-user limits for calls that cost D1 reads or ping admins (free tier counts rows read).
     "ratelimits": [
         {

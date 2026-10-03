@@ -1,7 +1,7 @@
 -- District delivery, part 2: the district network (goal 06).
 -- Additive only: the old Worker keeps working on this schema.
 
--- A district of the network: a circle around its center. The admin sets it in the LLS bot.
+-- A district of the network: a circle around its center. The admin sets it in the Zumda bot.
 CREATE TABLE districts (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,

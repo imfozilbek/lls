@@ -91,7 +91,7 @@ export interface SaveContactInput {
     /** The sender of a Telegram `contact` message; only their own contact counts. */
     user: TelegramUser
     phone: string
-    /** The shop whose bot received the contact; none for the LLS bot. */
+    /** The shop whose bot received the contact; none for the Zumda bot. */
     businessId?: string
     now: Date
 }

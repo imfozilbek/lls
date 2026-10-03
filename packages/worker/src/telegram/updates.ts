@@ -1,11 +1,11 @@
-import { BusinessRuleViolationError, DomainError, ForbiddenError } from "@lls/core"
+import { BusinessRuleViolationError, DomainError, ForbiddenError } from "@zumda/core"
 import { z } from "zod"
 
 import { TelegramApiError } from "./gateway.js"
 
 import type { InlineKeyboard } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
-import type { TelegramUser } from "@lls/core"
+import type { TelegramUser } from "@zumda/core"
 
 /** What every bot webhook shares: the update shape, the secret header, safe handling. */
 export const SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"

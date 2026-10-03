@@ -2,13 +2,13 @@
 
 Qisqa va oddiy: do'konni ulash, katalogni to'ldirish, kuryerlarni qo'shish, buyurtmani yetkazish.
 
-> `@LLS_BOT` o'rniga platforma botining haqiqiy manzili yoziladi (ishga tushirilgandan keyin).
+> `@zumdashop_bot` o'rniga platforma botining haqiqiy manzili yoziladi (ishga tushirilgandan keyin).
 
 ---
 
 ### 1. Do'konni ulash (5 daqiqa)
 
-1. Telegram'da **@LLS_BOT** ni oching va **Start** ni bosing.
+1. Telegram'da **@zumdashop_bot** ni oching va **Start** ni bosing.
 2. **🏪 Do'konni ulash** tugmasini bosing. Ilova ochiladi.
 3. **1-qadam — Bot yarating:**
    - **@BotFather'ni ochish** tugmasini bosing, `/newbot` yuboring;
@@ -39,7 +39,7 @@ Mijozlar sizning botingizni, nomingizni va rangingizni ko'radi.
 
 1. **Mening do'konim → Sozlamalar → Kuryerlar → Kuryerni taklif qilish.**
 2. **Telegram'da yuborish** ni bosing va kuryeringizni tanlang (yoki havolani nusxa oling).
-3. Kuryer havolani ochadi — u **LLS kuryer botida** ochiladi. **Start** ni bosib, telefon raqamini
+3. Kuryer havolani ochadi — u **Zumda kuryer botida** ochiladi. **Start** ni bosib, telefon raqamini
    yuboradi.
 4. Bot sizga yozadi: «… kuryer bo'lish taklifini qabul qildi». **✅ Tasdiqlash** ni bosing
    (yoki ilovada **Kuryerlar → Tasdiqlashni kutmoqda → Tasdiqlash**).
@@ -81,7 +81,7 @@ Keyin har bir bosishda mijozga xabar boradi:
 
 Keyin ilovada **Mening do'konim → Buyurtmalar → Kuryer tayinlash** ni bosing va kuryerni tanlang.
 
-- Kuryerga LLS kuryer botidan buyurtma kartasi keladi (sarlavhada do'kon nomi): manzil, xarita,
+- Kuryerga Zumda kuryer botidan buyurtma kartasi keladi (sarlavhada do'kon nomi): manzil, xarita,
   mijoz telefoni va **«Oldindan to'langan — mijozdan pul olmang»**.
 - Buyurtma tayyor bo'lganda kuryer **🚚 Oldim**, eshik oldida **🏁 Yetkazdim** ni bosadi.
 - Mijoz kuryer ismini ko'radi: «Buyurtmangizni Jasur olib kelmoqda».
@@ -109,6 +109,11 @@ Bekor qilish: **❌ Bekor qilish** (ilovada sababini yozish mumkin).
 **Mening do'konim → Sozlamalar → Buyurtma qabul qilish** — o'chiring. Keyin yana yoqing.
 Shu yerda nom, logotip, rang, yetkazish narxi va radiusni ham o'zgartirasiz.
 
+**Bot rasmi va tavsifi avtomatik.** Botingiz rasmini Zumda o'zi qo'yadi: logotipingiz (logotip
+bo'lmasa — do'kon nomi rangingizda) va burchakda Zumda belgisi. Logotip, nom yoki rangni
+o'zgartirsangiz, rasm ham yangilanadi. Bot tavsifi ham avtomatik: do'kon nomi va «Zumda asosida
+ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
+
 **Ish vaqti** har kun uchun alohida: kunning tugmasi — ishlaymiz yoki dam olish, yonida soat.
 **Hamma kunlarga dushanbadagidek** — dushanba vaqtini barcha kunlarga ko'chiradi.
 
@@ -118,17 +123,17 @@ Shu yerda nom, logotip, rang, yetkazish narxi va radiusni ham o'zgartirasiz.
 - **Sozlamalar → Chop etish uchun QR-kod**: bot sizga do'kon nomi, logotipi va QR-kodli plakatni
   PNG fayl qilib yuboradi. Chop etib peshtaxtaga, eshikka yopishtiring yoki Instagram'ga joylang.
 - Mijoz faqat **kartangizga o'tkazma** bilan to'laydi (10-bo'limga qarang).
-- O'z botingiz orqali sotuvdan LLS komissiya olmaydi.
+- O'z botingiz orqali sotuvdan Zumda komissiya olmaydi.
 
-### 9. LLS vitrinasi (ixtiyoriy)
+### 9. Zumda vitrinasi (ixtiyoriy)
 
-- LLS botida tumaningiz do'konlari bo'yicha umumiy qidiruv bor. Mijoz mahsulotni topadi va
+- Zumda botida tumaningiz do'konlari bo'yicha umumiy qidiruv bor. Mijoz mahsulotni topadi va
   **sizning do'koningizdan** buyurtma beradi.
-- Vitrinaga qo'shilish — LLS bilan alohida kelishuv. Komissiya faqat vitrina orqali kelgan
+- Vitrinaga qo'shilish — Zumda bilan alohida kelishuv. Komissiya faqat vitrina orqali kelgan
   buyurtmadagi tovarlardan olinadi. O'z botingiz orqali sotuv — komissiyasiz.
-- Vitrinadan kelgan buyurtmada **LLS** belgisi va komissiya summasi ko'rinadi. Buyurtma, kuryer
+- Vitrinadan kelgan buyurtmada **Zumda** belgisi va komissiya summasi ko'rinadi. Buyurtma, kuryer
   va holatlar — odatdagidek.
-- Holatingiz: **Sozlamalar → LLS vitrinasi**.
+- Holatingiz: **Sozlamalar → Zumda vitrinasi**.
 
 
 ### 10. Pul
@@ -146,7 +151,7 @@ Click/Payme yo'q — pul to'g'ridan-to'g'ri sizga.
 
 **Mening do'konim → Pul** (bugun, 7 kun, shu oy):
 - **Tushum**: tovarlar va yetkazish alohida, **o'tkazmalar orqali olingan** summa. Idish garovi —
-  alohida, tushum emas. Vitrina buyurtmalaridan LLS komissiyasi.
+  alohida, tushum emas. Vitrina buyurtmalaridan Zumda komissiyasi.
 - **Mijozlar o'tkazdi — kartani tekshiring** — mijoz **O'tkazdim** ni bosgan buyurtmalar. Pul
   kelgach **Pul keldi — qabul qilish** ni bosing.
 - **Mijozlarga qaytarish** — to'langan, keyin bekor qilingan buyurtma. Qaytarganda **Qaytardim**.
@@ -157,7 +162,7 @@ Click/Payme yo'q — pul to'g'ridan-to'g'ri sizga.
 
 ## Kuryer uchun eslatma
 
-1. Do'kondan olingan havolani oching → **LLS kuryer boti** → **Start** → **📱 Raqamni yuborish**.
+1. Do'kondan olingan havolani oching → **Zumda kuryer boti** → **Start** → **📱 Raqamni yuborish**.
 2. Do'kon tasdiqlashini kuting: bot yozadi.
 3. Ishga chiqqanda **🚚 Yetkazishlarim** → **Smenadaman** ni yoqing. Smena yarim tunda tugaydi.
 4. Buyurtma kartasi botga keladi. Tayyor bo'lganda **🚚 Oldim**, eshik oldida — **🏁 Yetkazdim**.

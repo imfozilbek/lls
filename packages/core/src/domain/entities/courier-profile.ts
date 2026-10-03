@@ -24,7 +24,7 @@ export interface CourierProfileProps {
 }
 
 /**
- * One delivery person, whatever shops they work for: the profile in the LLS courier bot.
+ * One delivery person, whatever shops they work for: the profile in the Zumda courier bot.
  * Their work for each shop is a separate `Courier` link.
  */
 export class CourierProfile {

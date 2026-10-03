@@ -25,16 +25,16 @@ async function json<T = Json>(response: Response): Promise<T> {
     return (await response.json()) as T
 }
 
-describe("LLS showcase", () => {
+describe("Zumda showcase", () => {
     let client: TestClient
     let slug: string
 
     const inShop = (user: object): ReturnType<TestClient["as"]> =>
         client.as(user, { botToken: SHOP_BOT_TOKEN, shop: slug })
-    /** The shop's storefront opened from the showcase, inside the LLS bot. */
+    /** The shop's storefront opened from the showcase, inside the Zumda bot. */
     const viaShowcase = (user: object): ReturnType<TestClient["as"]> =>
         client.as(user, { shop: slug, via: "marketplace" })
-    const lls = (user: object): ReturnType<TestClient["as"]> => client.as(user, {})
+    const viaPlatform = (user: object): ReturnType<TestClient["as"]> => client.as(user, {})
 
     async function platformUpdate(message: object): Promise<Response> {
         return client.request("/tg/platform", {
@@ -68,7 +68,7 @@ describe("LLS showcase", () => {
 
     it("a shop without a deal is not in the showcase and cannot be opened through it", async () => {
         const found = await json<{ data: unknown[] }>(
-            await lls(CUSTOMER)("/api/showcase/products?q=osh"),
+            await viaPlatform(CUSTOMER)("/api/showcase/products?q=osh"),
         )
         expect(found.data).toHaveLength(0)
         expect((await viaShowcase(CUSTOMER)("/api/shop")).status).toBe(404)
@@ -93,24 +93,24 @@ describe("LLS showcase", () => {
     it("search finds products in any alphabet, lists shops, hides stop-listed items", async () => {
         await market(`${slug} 5`)
         const shops = await json<{ data: { slug: string }[] }>(
-            await lls(CUSTOMER)("/api/showcase/shops"),
+            await viaPlatform(CUSTOMER)("/api/showcase/shops"),
         )
         expect(shops.data.map((s) => s.slug)).toEqual([slug])
 
         const cyrillic = await json<{ data: { name: string; shop: { slug: string } }[] }>(
-            await lls(CUSTOMER)(`/api/showcase/products?q=${encodeURIComponent("лагмон")}`),
+            await viaPlatform(CUSTOMER)(`/api/showcase/products?q=${encodeURIComponent("лагмон")}`),
         )
         expect(cyrillic.data.map((p) => p.name)).toEqual(["Lag'mon"])
         expect(cyrillic.data[0]?.shop.slug).toBe(slug)
 
         const byCategory = await json<{ data: unknown[] }>(
-            await lls(CUSTOMER)("/api/showcase/products?category=meals"),
+            await viaPlatform(CUSTOMER)("/api/showcase/products?category=meals"),
         )
         expect(byCategory.data).toHaveLength(1)
 
         const [product] = (
             await json<{ data: { id: string }[] }>(
-                await lls(CUSTOMER)("/api/showcase/products?q=osh"),
+                await viaPlatform(CUSTOMER)("/api/showcase/products?q=osh"),
             )
         ).data
         await inShop(OWNER)(`/api/owner/products/${product?.id ?? ""}`, {
@@ -118,11 +118,11 @@ describe("LLS showcase", () => {
             json: { stopForToday: true },
         })
         const after = await json<{ data: unknown[] }>(
-            await lls(CUSTOMER)("/api/showcase/products?q=osh"),
+            await viaPlatform(CUSTOMER)("/api/showcase/products?q=osh"),
         )
         expect(after.data).toHaveLength(0)
 
-        // The showcase lives only in the LLS bot.
+        // The showcase lives only in the Zumda bot.
         expect((await inShop(CUSTOMER)("/api/showcase/shops")).status).toBe(400)
     })
 
@@ -133,7 +133,7 @@ describe("LLS showcase", () => {
         expect(shop).toMatchObject({ viewerRole: "customer" })
         expect((await viaShowcase(OWNER)("/api/owner/orders")).status).toBe(403)
 
-        // The phone comes as a contact to the LLS bot.
+        // The phone comes as a contact to the Zumda bot.
         await platformUpdate({
             from: CUSTOMER,
             chat: { id: CUSTOMER.id },
@@ -199,7 +199,7 @@ describe("LLS showcase", () => {
         expect(await json(own)).toMatchObject({ channel: "shop_bot", commission: 0 })
     })
 
-    it("the LLS bot welcomes with the showcase and onboarding buttons", async () => {
+    it("the Zumda bot welcomes with the showcase and onboarding buttons", async () => {
         await platformUpdate({ from: CUSTOMER, text: "/start" })
         const buttons = client.telegram.sent.at(-1)?.options?.keyboard?.inline_keyboard
         expect(buttons?.[0]?.[0]?.web_app?.url).toContain("mode=market")

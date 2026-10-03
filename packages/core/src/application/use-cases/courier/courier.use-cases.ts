@@ -121,7 +121,7 @@ export class JoinAsCourierUseCase {
     constructor(private readonly deps: CourierDeps) {}
 
     /**
-     * Whoever opens the invite in the LLS courier bot asks to become a courier of that shop.
+     * Whoever opens the invite in the Zumda courier bot asks to become a courier of that shop.
      * One profile per person; the shop's owner approves the new link.
      */
     async execute(input: { code: string; user: TelegramUser }): Promise<JoinedCourier> {

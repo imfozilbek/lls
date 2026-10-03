@@ -1,9 +1,9 @@
-import { languageFromTelegram } from "@lls/core"
+import { languageFromTelegram } from "@zumda/core"
 import { Suspense, lazy, useCallback, useEffect, useState } from "react"
 
 import { dictionaryFor, errorText, fill, useLanguageStore, useT } from "./i18n/index.js"
 import { ApiError, api, loadCatalog, setShop } from "./lib/api.js"
-import { LLS_BRAND_COLOR, applyBrand } from "./lib/brand.js"
+import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "./lib/brand.js"
 import { useBackButton } from "./lib/main-button.js"
 import { webApp } from "./lib/telegram.js"
 import { CartScreen } from "./shop/CartScreen.js"
@@ -144,7 +144,7 @@ function ShopApp({
     onExit,
 }: {
     slug: string
-    /** Opened from the LLS showcase: "back" on the first screen returns to the search. */
+    /** Opened from the Zumda showcase: "back" on the first screen returns to the search. */
     onExit?: () => void
 }): React.JSX.Element {
     const t = useT()
@@ -190,14 +190,14 @@ function ShopApp({
     )
 }
 
-/** The LLS bot: the showcase search, and a shop opened from it. */
+/** The Zumda bot: the showcase search, and a shop opened from it. */
 function ShowcaseApp(): React.JSX.Element {
     const [slug, setSlug] = useState<string | null>(null)
     useEffect(() => {
         if (slug === null) {
             setShop(null)
-            applyBrand(LLS_BRAND_COLOR)
-            document.title = "LLS"
+            applyBrand(ZUMDA_BRAND_COLOR)
+            document.title = ZUMDA_NAME
         }
     }, [slug])
     if (slug) {
@@ -235,7 +235,7 @@ export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
             </Suspense>
         )
     } else if (launch.courier) {
-        // The LLS courier bot: one screen across every shop the courier delivers for.
+        // The Zumda courier bot: one screen across every shop the courier delivers for.
         content = (
             <Suspense fallback={<MenuSkeleton />}>
                 <CourierApp />

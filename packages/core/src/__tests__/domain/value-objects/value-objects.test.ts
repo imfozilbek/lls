@@ -117,7 +117,7 @@ describe("Slug", () => {
 describe("BrandColor", () => {
     it("normalizes hex colors", () => {
         expect(BrandColor.create(" #0EA5E9 ").hex).toBe("#0ea5e9")
-        expect(BrandColor.default().hex).toBe("#0ea5e9")
+        expect(BrandColor.default().hex).toBe("#15803d")
         expect(() => BrandColor.create("blue")).toThrow(ValidationError)
         expect(() => BrandColor.create("#fff")).toThrow(ValidationError)
     })
