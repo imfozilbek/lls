@@ -136,7 +136,7 @@ function BotPreview({ name, bot }: { name: string; bot: ManagedBot | null }): Re
             <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{name.trim()}</span>
                 {bot ? (
-                    <span className="block animate-fade-in break-all text-sm font-medium text-tg-text">
+                    <span className="block animate-fade-in text-sm font-medium text-tg-text [overflow-wrap:anywhere]">
                         {fill(t.botCreated, { bot: `@${bot.username}` })}
                     </span>
                 ) : (
@@ -203,18 +203,45 @@ function TokenFields({
                 {t.openBotFather}
             </Button>
             <Field label={t.token} htmlFor="bot-token">
-                <TextInput
-                    id="bot-token"
-                    value={token}
-                    placeholder={t.tokenPlaceholder}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    className="font-mono text-sm"
-                    onChange={(e): void => onToken(e.target.value.trim())}
-                />
+                <div className="flex gap-2">
+                    <TextInput
+                        id="bot-token"
+                        value={token}
+                        placeholder={t.tokenPlaceholder}
+                        autoComplete="off"
+                        autoCapitalize="off"
+                        spellCheck={false}
+                        className="min-w-0 flex-1 font-mono text-sm"
+                        onChange={(e): void => onToken(e.target.value.trim())}
+                    />
+                    <PasteButton onPaste={onToken} />
+                </div>
             </Field>
         </>
+    )
+}
+
+/** The token comes from another chat: one tap pastes it, where the phone allows reading it. */
+function PasteButton({ onPaste }: { onPaste(text: string): void }): React.JSX.Element {
+    const t = useT().onboarding
+    const paste = async (): Promise<void> => {
+        try {
+            const text = (await navigator.clipboard.readText()).trim()
+            if (text) {
+                haptic.success()
+                onPaste(text)
+                return
+            }
+        } catch {
+            // Telegram on some phones does not let a page read the clipboard: say how by hand.
+        }
+        haptic.error()
+        toast(t.pasteFailed)
+    }
+    return (
+        <Button variant="secondary" className="shrink-0" onClick={(): void => void paste()}>
+            {t.paste}
+        </Button>
     )
 }
 

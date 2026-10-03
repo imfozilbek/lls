@@ -1,8 +1,8 @@
-import { WEEKDAYS, toLocalTime } from "@zumda/core"
-import { useMemo, useState } from "react"
+import { WEEKDAYS, isFinalStatus, searchText, searchWords, toLocalTime } from "@zumda/core"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { fill, useLanguage, useT } from "../i18n/index.js"
-import { imageUrl } from "../lib/api.js"
+import { api, imageUrl } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, formatQuantity } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
@@ -10,7 +10,7 @@ import { haptic } from "../lib/telegram.js"
 import { summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
-import { BagIcon, PlusIcon, ReceiptIcon, StoreIcon } from "../ui/icons.js"
+import { BagIcon, CloseIcon, PlusIcon, ReceiptIcon, SearchIcon, StoreIcon } from "../ui/icons.js"
 import { LanguageSwitch } from "../ui/language-switch.js"
 import { EmptyState, PoweredBy, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
@@ -70,36 +70,122 @@ function shopFacts(shop: Shop, t: Dictionary, language: Language): string[] {
     return facts
 }
 
+/** A catalog this long gets a search field; a short one is faster to scroll. */
+const SEARCH_FROM = 20
+
 function HeaderAction({
     icon,
     label,
     onClick,
     accent = false,
+    badge,
 }: {
     icon: React.JSX.Element
     label: string
     onClick(): void
     accent?: boolean
+    /** A dot on the button, and these words for screen readers. */
+    badge?: string
 }): React.JSX.Element {
     return (
         <button
             type="button"
             onClick={onClick}
             className={cn(
-                "tap flex h-11 shrink-0 items-center gap-1.5 rounded-full px-4 font-medium",
+                "tap relative flex h-11 shrink-0 items-center gap-1.5 rounded-full px-4 font-medium",
                 accent ? "bg-brand/15 text-tg-text" : "bg-tg-secondary",
             )}
         >
             {icon}
             {label}
+            {badge ? (
+                <>
+                    <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-brand ring-2 ring-tg-bg" />
+                    <span className="sr-only">, {badge}</span>
+                </>
+            ) : null}
         </button>
     )
+}
+
+/** Whether the customer has an order on its way here: «Buyurtmalarim» then wears a dot. */
+function useHasActiveOrder(shopId: string | undefined): boolean {
+    const [active, setActive] = useState(false)
+    useEffect(() => {
+        if (!shopId) {
+            return undefined
+        }
+        let alive = true
+        api.myOrders()
+            .then((page) => {
+                if (alive) {
+                    setActive(page.data.some((order) => !isFinalStatus(order.status)))
+                }
+            })
+            .catch(() => undefined)
+        return (): void => {
+            alive = false
+        }
+    }, [shopId])
+    return active
+}
+
+function CatalogSearch({
+    value,
+    onChange,
+}: {
+    value: string
+    onChange(value: string): void
+}): React.JSX.Element {
+    const t = useT()
+    const input = useRef<HTMLInputElement>(null)
+    return (
+        <div className="relative px-4 pt-1">
+            <SearchIcon
+                size={20}
+                className="pointer-events-none absolute left-8 top-1/2 mt-0.5 -translate-y-1/2 text-tg-hint"
+            />
+            <input
+                ref={input}
+                type="text"
+                inputMode="search"
+                enterKeyHint="search"
+                value={value}
+                maxLength={60}
+                placeholder={t.shop.search}
+                aria-label={t.shop.search}
+                onChange={(e): void => onChange(e.target.value)}
+                className="field h-12 pl-12 pr-12"
+            />
+            {value ? (
+                <button
+                    type="button"
+                    aria-label={t.shop.clearSearch}
+                    onClick={(): void => {
+                        haptic.select()
+                        onChange("")
+                        input.current?.focus()
+                    }}
+                    className="tap absolute right-5 top-1/2 mt-0.5 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full text-tg-hint"
+                >
+                    <CloseIcon size={18} />
+                </button>
+            ) : null}
+        </div>
+    )
+}
+
+/** Each word must start a word of the name or description, Latin or Cyrillic alike. */
+function matches(product: ProductDTO, words: readonly string[]): boolean {
+    const text = ` ${searchText(product.name, product.description)}`
+    return words.every((word) => text.includes(` ${word}`))
 }
 
 function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     const push = useRouter((state) => state.push)
+    const hasActiveOrder = useHasActiveOrder(shop.id)
     const status = shop.opensSoon
         ? t.shop.opensSoon
         : !shop.hasPayoutCard
@@ -136,6 +222,7 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                 <HeaderAction
                     icon={<ReceiptIcon size={16} />}
                     label={t.shop.myOrders}
+                    badge={hasActiveOrder ? t.shop.activeOrder : undefined}
                     onClick={(): void => push({ name: "orders" })}
                 />
                 {shop.viewerRole === "owner" ? (
@@ -212,6 +299,7 @@ function ProductTile({
                     imageKey={product.imageKey}
                     category={product.category}
                     alt={product.name}
+                    name={product.name}
                     className="aspect-[4/3] rounded-tile"
                 />
                 {quantity === 0 ? (
@@ -260,9 +348,13 @@ export function MenuScreen(): React.JSX.Element {
     const lines = useCart((state) => state.lines)
     const push = useRouter((state) => state.push)
     const [category, setCategory] = useState<string | null>(null)
+    const [query, setQuery] = useState("")
 
     const categories = useMemo(() => [...new Set(catalog.map((p) => p.category))], [catalog])
-    const visible = category ? catalog.filter((p) => p.category === category) : catalog
+    const words = searchWords(query)
+    const visible = catalog.filter(
+        (p) => (!category || p.category === category) && (words.length === 0 || matches(p, words)),
+    )
     const cart = summarize(lines, catalog)
 
     useMainAction(
@@ -280,12 +372,21 @@ export function MenuScreen(): React.JSX.Element {
     return (
         <main>
             <ShopHeader shop={shop} />
+            {catalog.length > SEARCH_FROM ? (
+                <CatalogSearch value={query} onChange={setQuery} />
+            ) : null}
             <CategoryChips categories={categories} active={category} onChange={setCategory} />
             {catalog.length === 0 ? (
                 <EmptyState
                     art={<BagIcon size={44} />}
                     title={t.shop.emptyTitle}
                     text={t.shop.emptyText}
+                />
+            ) : visible.length === 0 ? (
+                <EmptyState
+                    art={<SearchIcon size={44} />}
+                    title={t.shop.nothingFound}
+                    text={t.shop.nothingFoundText}
                 />
             ) : (
                 <div className="grid grid-cols-2 gap-x-3 gap-y-5 px-4 pt-3">

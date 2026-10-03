@@ -18,6 +18,10 @@ import { BottomSpacer } from "../ui/shell.js"
 const CONTACT_POLL_MS = 1500
 const CONTACT_POLL_TRIES = 10
 const LAST_ADDRESS_KEY = "zumda:address"
+const CHECKOUT_PHONE = "checkout-phone"
+const CHECKOUT_ADDRESS = "checkout-address"
+/** How long a missing field glows after a tap on the not-yet-ready button. */
+const FLASH_MS = 1400
 /** A customer may hand back a few more empty bottles than they order. */
 const MAX_EXTRA_BOTTLES = 5
 
@@ -133,16 +137,21 @@ function AddressSection({
         }
     }
     return (
-        <Section title={t.checkout.address}>
-            <TextInput
-                aria-label={t.checkout.address}
-                value={value.address}
-                onChange={(e): void => onChange({ address: e.target.value })}
-                placeholder={t.checkout.addressPlaceholder}
-                maxLength={200}
-                autoComplete="street-address"
-            />
-            <Field label={t.checkout.landmark} htmlFor="landmark">
+        <Section title={t.checkout.address} id={CHECKOUT_ADDRESS}>
+            {/* The pin first: one tap, and the courier finds the door even without words. */}
+            <LocationButton saved={value.location !== null} onLocate={(): void => void locate()} />
+            <Field label={t.checkout.street} htmlFor="street">
+                <TextInput
+                    id="street"
+                    aria-label={t.checkout.address}
+                    value={value.address}
+                    onChange={(e): void => onChange({ address: e.target.value })}
+                    placeholder={t.checkout.addressPlaceholder}
+                    maxLength={200}
+                    autoComplete="street-address"
+                />
+            </Field>
+            <Field label={`${t.checkout.landmark} (${t.checkout.optional})`} htmlFor="landmark">
                 <TextInput
                     id="landmark"
                     value={value.landmark}
@@ -151,22 +160,34 @@ function AddressSection({
                     maxLength={200}
                 />
             </Field>
-            <button
-                type="button"
-                onClick={(): void => void locate()}
-                className={cn(
-                    "tap flex h-12 items-center justify-center gap-2 rounded-control font-medium text-tg-text transition-colors duration-200",
-                    value.location ? "bg-success/15" : "bg-brand/10",
-                )}
-            >
-                {value.location ? (
-                    <CheckIcon size={20} className="text-success" />
-                ) : (
-                    <PinIcon size={20} className="text-brand" />
-                )}
-                {value.location ? t.checkout.locationSaved : t.checkout.shareLocation}
-            </button>
         </Section>
+    )
+}
+
+function LocationButton({
+    saved,
+    onLocate,
+}: {
+    saved: boolean
+    onLocate(): void
+}): React.JSX.Element {
+    const t = useT()
+    return (
+        <button
+            type="button"
+            onClick={onLocate}
+            className={cn(
+                "tap flex h-12 items-center justify-center gap-2 rounded-control font-medium text-tg-text transition-colors duration-200",
+                saved ? "bg-success/15" : "bg-brand/10",
+            )}
+        >
+            {saved ? (
+                <CheckIcon size={20} className="text-success" />
+            ) : (
+                <PinIcon size={20} className="text-brand" />
+            )}
+            {saved ? t.checkout.locationSaved : t.checkout.shareLocation}
+        </button>
     )
 }
 
@@ -233,7 +254,8 @@ function BottlesField({
     const deposit = useSession((state) => state.shop?.bottleDeposit ?? 0)
     return (
         <Section title={t.checkout.bottles}>
-            <div className="flex items-center justify-between gap-3 rounded-control bg-tg-secondary px-4 py-3">
+            {/* The question on top, the answer under it: the long hint never squeezes the stepper. */}
+            <div className="flex flex-col items-start gap-3 rounded-control bg-tg-secondary px-4 py-3">
                 <p className="text-sm text-tg-subtitle">
                     {fill(t.checkout.bottlesHint, { sum: formatMoney(deposit, language) })}
                 </p>
@@ -299,19 +321,73 @@ function Totals({ rows }: { rows: [string, number | string, boolean?][] }): Reac
     )
 }
 
-/** A phone, an address, something in the cart, and a shop card to transfer to. */
-function canPlace(input: {
-    phone: string | undefined
-    hasCard: boolean | undefined
-    address: string
-    count: number
-}): boolean {
-    return (
-        Boolean(input.phone) &&
-        Boolean(input.hasCard) &&
-        input.address.trim().length > 0 &&
-        input.count > 0
-    )
+/** What still stops the order, first thing first: the place to show and the words to say. */
+function missingStep(
+    t: ReturnType<typeof useT>,
+    input: { phone: string | undefined; hasCard: boolean; address: string; count: number },
+): { id: string | null; text: string } | null {
+    if (input.count === 0) {
+        return { id: null, text: t.cart.emptyText }
+    }
+    if (!input.hasCard) {
+        return { id: null, text: errorText(t, "NO_PAYOUT_CARD") }
+    }
+    if (!input.phone) {
+        return { id: CHECKOUT_PHONE, text: t.checkout.needPhone }
+    }
+    if (input.address.trim().length === 0) {
+        return { id: CHECKOUT_ADDRESS, text: t.checkout.needAddress }
+    }
+    return null
+}
+
+/**
+ * The main button: never dead. A tap before everything is there says what is missing, scrolls
+ * to it and makes it glow for a moment. Returns the glow class for a section by its id.
+ */
+function useOrderButton(input: {
+    missing: { id: string | null; text: string } | null
+    placing: boolean
+    place(): Promise<void>
+    text: string
+}): (id: string) => string {
+    const { missing, placing, place, text } = input
+    const [flash, setFlash] = useState<string | null>(null)
+    useEffect(() => {
+        if (!flash) {
+            return undefined
+        }
+        const timer = window.setTimeout(() => setFlash(null), FLASH_MS)
+        return (): void => window.clearTimeout(timer)
+    }, [flash])
+
+    useMainAction({
+        text,
+        onClick: (): void => {
+            if (placing) {
+                return
+            }
+            if (!missing) {
+                void place()
+                return
+            }
+            haptic.error()
+            toast(missing.text, "error")
+            if (missing.id) {
+                document
+                    .getElementById(missing.id)
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                setFlash(missing.id)
+            }
+        },
+        loading: placing,
+    })
+    return (id: string): string =>
+        cn(
+            "rounded-tile transition-shadow duration-300",
+            flash === id &&
+                "shadow-[0_0_0_3px_color-mix(in_srgb,var(--ui-destructive)_35%,transparent)]",
+        )
 }
 
 export function CheckoutScreen(): React.JSX.Element {
@@ -337,42 +413,39 @@ export function CheckoutScreen(): React.JSX.Element {
         ? (shop?.bottleDeposit ?? 0) * Math.max(0, cart.returnable - delivery.bottlesReturned)
         : 0
     const total = cart.subtotal + fee + deposit
-    const ready = canPlace({
+    const missing = missingStep(t, {
         phone: me?.phone,
         // Waiting for Zumda's approval: the storefront opens, orders do not yet.
         hasCard: shop?.hasPayoutCard === true && !shop.opensSoon,
         address: delivery.address,
         count: cart.count,
     })
-
-    useMainAction({
+    const glow = useOrderButton({
+        missing,
+        placing,
+        place,
         text: placing
             ? t.checkout.placing
             : `${t.checkout.place} · ${formatMoney(total, language)}`,
-        onClick: (): void => {
-            if (ready && !placing) {
-                void place()
-            }
-        },
-        loading: placing,
-        disabled: !ready,
     })
 
     return (
         <main className="flex flex-col gap-6 px-4 pt-4">
             <h1 className="text-2xl font-bold">{t.checkout.title}</h1>
 
-            <Section title={t.checkout.phone}>
+            <Section title={t.checkout.phone} id={CHECKOUT_PHONE} className={glow(CHECKOUT_PHONE)}>
                 <PhoneRow />
                 <p className="px-1 text-sm text-tg-hint">{t.checkout.phoneHint}</p>
             </Section>
 
-            <AddressSection
-                value={delivery}
-                onChange={(change): void => setDelivery((d) => ({ ...d, ...change }))}
-            />
+            <div className={glow(CHECKOUT_ADDRESS)}>
+                <AddressSection
+                    value={delivery}
+                    onChange={(change): void => setDelivery((d) => ({ ...d, ...change }))}
+                />
+            </div>
 
-            <Field label={t.checkout.comment} htmlFor="comment">
+            <Field label={`${t.checkout.comment} (${t.checkout.optional})`} htmlFor="comment">
                 <TextArea
                     id="comment"
                     value={delivery.comment}

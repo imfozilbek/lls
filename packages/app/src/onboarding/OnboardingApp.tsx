@@ -77,10 +77,30 @@ function ShopRow({
     )
 }
 
+/** What the application asks, before it asks: three short steps, the rest later. */
 function Intro({ onStart }: { onStart(): void }): React.JSX.Element {
     const t = useT().onboarding
     useMainAction({ text: t.start, onClick: onStart })
-    return <EmptyState art={<BotIcon size={44} />} title={t.title} text={t.subtitle} />
+    return (
+        <div className="flex flex-col">
+            <EmptyState art={<BotIcon size={44} />} title={t.title} text={t.subtitle} />
+            <ol className="-mt-6 flex flex-col gap-3 px-6">
+                {t.introSteps.map((text, index) => (
+                    <li
+                        key={text}
+                        className="flex animate-rise items-center gap-3 rounded-tile bg-tg-secondary p-3"
+                        style={{ animationDelay: `${index * 60}ms` }}
+                    >
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand text-sm font-bold text-brand-ink">
+                            {index + 1}
+                        </span>
+                        <span className="font-medium">{text}</span>
+                    </li>
+                ))}
+            </ol>
+            <p className="mt-4 px-6 text-center text-sm text-tg-subtitle">{t.introAfter}</p>
+        </div>
+    )
 }
 
 /** Platform admins only: «Platforma» above their own businesses. */

@@ -19,7 +19,9 @@ function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.J
     const language = useLanguage()
     const push = useRouter((state) => state.push)
     const reorder = useReorder(order)
-    const preview = order.items.map((item) => item.name).join(", ")
+    const preview = `${fill(t.order.itemsCount, { n: order.items.length })} · ${order.items
+        .map((item) => item.name)
+        .join(", ")}`
     return (
         <li
             className="flex animate-rise flex-col gap-1.5"
