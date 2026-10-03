@@ -322,6 +322,14 @@ export class InMemoryOrders implements OrderRepository {
         this.items.set(order.id, order)
         return true
     }
+    async markNetworkAlerted(orderId: string, at: Date): Promise<boolean> {
+        const stored = this.items.get(orderId)
+        if (!stored || stored.networkAlertedAt || !stored.isWaitingForNetwork()) {
+            return false
+        }
+        stored.markNetworkAlerted(at)
+        return true
+    }
     async listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]> {
         return [...this.items.values()]
             .filter(
@@ -434,6 +442,16 @@ export class InMemoryCouriers implements CourierRepository {
     }
     async saveInvite(invite: CourierInvite): Promise<void> {
         this.invites.set(invite.code, invite)
+    }
+    /** Set to N to let the next N claims lose a race to someone faster. */
+    inviteRaces = 0
+    async claimInvite(invite: CourierInvite): Promise<boolean> {
+        if (this.inviteRaces > 0) {
+            this.inviteRaces--
+            return false
+        }
+        this.invites.set(invite.code, invite)
+        return true
     }
     async findInvite(code: string): Promise<CourierInvite | null> {
         return this.invites.get(code) ?? null

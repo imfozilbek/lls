@@ -163,6 +163,13 @@ describe("shop couriers and vertical features", () => {
             await expect(join.execute({ code: "unknown-code", user: courierUser })).rejects.toThrow(
                 EntityNotFoundError,
             )
+            // Someone opened the same link a moment earlier: this one does not get in.
+            const raced = await create.execute({ actorTelegramId: OWNER_TG, businessId: "biz-1" })
+            couriers.inviteRaces = 1
+            await expect(join.execute({ code: raced.code, user: courierUser })).rejects.toThrow(
+                BusinessRuleViolationError,
+            )
+            expect(await couriers.findByTelegramId("biz-1", courierUser.id)).toBeNull()
             const joined = await join.execute({ code: invite.code, user: courierUser })
             // The shop comes from the invite; the courier bot asks for the phone once.
             expect(joined.business.id).toBe("biz-1")

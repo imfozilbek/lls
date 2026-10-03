@@ -126,6 +126,13 @@ describe("money: transfer before the shop starts, report, files", () => {
         list = await json<Cards>(added)
         const second = list.cards[1]?.id ?? ""
         expect(list.paymentCardId).toBe(first)
+        // The owner hears of a new card from Zumda | Business, not from the shop bot.
+        const fromZumda = (): string | undefined =>
+            client.telegram.sent
+                .filter((m) => m.chatId === OWNER.id && m.token === env.BUSINESS_BOT_TOKEN)
+                .at(-1)?.html
+        expect(fromZumda()).toContain("•••• 7893")
+        expect(fromZumda()).toContain("yangi karta")
         const twice = await cards("", { method: "POST", json: SECOND_CARD })
         expect(await json(twice)).toMatchObject({ error: { code: "CARD_EXISTS" } })
 
@@ -134,6 +141,7 @@ describe("money: transfer before the shop starts, report, files", () => {
 
         list = await json<Cards>(await cards(`/${second}/payment`, { method: "PUT" }))
         expect(list.paymentCardId).toBe(second)
+        expect(fromZumda()).toContain("mijozlar endi •••• 7893")
         const shop = await json<{ payoutCard?: Json }>(await as(CUSTOMER)("/api/shop"))
         expect(shop.payoutCard).toEqual({ number: "5614681234567893", holder: "Malika Karimova" })
         const after = await json<Order>(await place())
@@ -286,6 +294,41 @@ describe("money: transfer before the shop starts, report, files", () => {
             body: new TextEncoder().encode("<html>"),
         })
         expect(fake.status).toBe(415)
+    })
+
+    it("a month of more than 100 orders exports; text never runs as a formula", async () => {
+        for (let i = 0; i < 101; i++) {
+            expect((await place()).status).toBe(201)
+        }
+        await env.DB.prepare("UPDATE orders SET address = '=HYPERLINK(\"http://x\")'").run()
+        await env.DB.prepare("UPDATE businesses SET name = 'Tom & Jerry'").run()
+        const sent = await as(OWNER)("/api/owner/money/export?period=month", { method: "POST" })
+        expect(await json(sent)).toEqual({ sent: 101 })
+        const csv = client.telegram.documents.at(-1)
+        // The shop's name is escaped in the HTML caption, or Telegram refuses the file.
+        expect(csv?.caption).toContain("Tom &amp; Jerry")
+        const rows = new TextDecoder().decode(csv?.file.bytes).split("\r\n").slice(1)
+        expect(rows.filter((row) => row.length > 0)).toHaveLength(101)
+        expect(rows[0]).toContain(`"'=HYPERLINK(""http://x"")"`)
+    })
+
+    it("the owner deleted the order card: a new one comes, the customer still hears", async () => {
+        const order = await json<Order>(await place())
+        const card = await env.DB.prepare("SELECT owner_message_id FROM orders WHERE id = ?")
+            .bind(order.id)
+            .first<{ owner_message_id: number }>()
+        client.telegram.deletedMessages.add(card?.owner_message_id ?? -1)
+        const before = client.telegram.sent.length
+        expect((await payment(order.id, "paid")).status).toBe(200)
+        const after = client.telegram.sent.slice(before)
+        expect(after.some((m) => m.chatId === CUSTOMER.id)).toBe(true)
+        expect(
+            after.some((m) => m.chatId === OWNER.id && m.html.includes(`#${order.number}`)),
+        ).toBe(true)
+        const fresh = await env.DB.prepare("SELECT owner_message_id FROM orders WHERE id = ?")
+            .bind(order.id)
+            .first<{ owner_message_id: number }>()
+        expect(fresh?.owner_message_id).not.toBe(card?.owner_message_id)
     })
 
     it("only the owner sees the shop's money", async () => {

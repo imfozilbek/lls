@@ -28,7 +28,7 @@ export const NETWORK_ORDERS_LIMIT = 30
  * How many couriers get one network order in their chat: each message is a subrequest, and a
  * Worker request may make 50.
  */
-export const NETWORK_FANOUT_LIMIT = 30
+export const NETWORK_FANOUT_LIMIT = 20
 /** The admin's network report counts the last week. */
 const STATS_DAYS = 7
 const METERS_PER_KM = 1000
@@ -384,8 +384,11 @@ export class OverdueNetworkOrdersUseCase {
             if (!business || !district || now < district.overdueAt(order.networkRequestedAt)) {
                 continue
             }
+            // Never a full save from this copy: a «Беру» or a cancel may have landed meanwhile.
+            if (!(await this.deps.orders.markNetworkAlerted(order.id, now))) {
+                continue
+            }
             order.markNetworkAlerted(now)
-            await this.deps.orders.save(order)
             overdue.push({ order: toOrderDTO(order), business, district })
         }
         return overdue

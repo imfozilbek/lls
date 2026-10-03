@@ -11,6 +11,8 @@ export type OwnerTab = "orders" | "menu" | "money" | "settings"
 export type ReadySection = "card" | "location" | "hours" | "logo" | "courier"
 
 interface OwnerState {
+    /** The business this state belongs to: «Mening bizneslarim» switches between several. */
+    shopId: string | null
     tab: OwnerTab
     /** The order a bot message opened: shown first in «Buyurtmalar» until put away. */
     focusOrderId: string | null
@@ -20,6 +22,8 @@ interface OwnerState {
     products: ProductDTO[] | null
     /** The shop's couriers, waiting for approval first. `null` until the first load. */
     couriers: CourierDTO[] | null
+    /** Another business opened: nothing of the previous one may show or be edited. */
+    bindShop(id: string): void
     setTab(tab: OwnerTab): void
     focusOrder(id: string | null): void
     goToSection(section: ReadySection | null): void
@@ -39,11 +43,18 @@ function refreshStorefront(): void {
 }
 
 export const useOwner = create<OwnerState>((set, get) => ({
+    shopId: null,
     tab: "orders",
     focusOrderId: null,
     focusSection: null,
     products: null,
     couriers: null,
+    bindShop: (id): void => {
+        if (get().shopId !== id) {
+            // The order a bot message asked for stays: it belongs to the shop opening now.
+            set({ shopId: id, tab: "orders", focusSection: null, products: null, couriers: null })
+        }
+    },
     setTab: (tab): void => set({ tab }),
     focusOrder: (id): void => set({ focusOrderId: id, tab: "orders" }),
     goToSection: (section): void =>

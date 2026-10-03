@@ -210,6 +210,7 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
                         variant="surface"
                         className="grow whitespace-nowrap"
                         icon={<ScooterIcon size={18} />}
+                        disabled={busy}
                         onClick={(): void => setSheet("courier")}
                     >
                         {order.courierName ? t.owner.reassign : t.owner.assign}
@@ -218,6 +219,7 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
                 <Button
                     variant="danger"
                     className="grow whitespace-nowrap"
+                    disabled={busy}
                     onClick={(): void => setSheet("cancel")}
                 >
                     {t.owner.cancelOrder}
@@ -323,8 +325,12 @@ function FocusedOrder({
     useEffect(() => {
         api.order(id)
             .then(setOrder)
-            .catch(() => focusOrder(null))
-    }, [id, focusOrder])
+            .catch((caught: unknown) => {
+                // Say why the order from the message is not here instead of dropping it silently.
+                toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+                focusOrder(null)
+            })
+    }, [id, focusOrder, t])
     if (!order) {
         return <Skeleton className="h-64 rounded-tile" />
     }
@@ -352,7 +358,12 @@ function FocusedOrder({
                 <OrderCard
                     order={order}
                     onChange={change}
-                    onStale={(): void => void api.order(id).then(setOrder)}
+                    onStale={(): void =>
+                        void api
+                            .order(id)
+                            .then(setOrder)
+                            .catch(() => focusOrder(null))
+                    }
                 />
             </ul>
         </section>

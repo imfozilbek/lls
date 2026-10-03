@@ -105,6 +105,9 @@ export function WebSignIn({
         const login = telegramLogin()
         // The window must open in this very tap, or the browser blocks it: setup is ready.
         if (!login || !setup || Date.now() - setup.at > NONCE_MAX_AGE_MS) {
+            // A failed start or an old nonce: this tap prepares again (the spinner shows).
+            setSetup(null)
+            setError(null)
             void prepare()
             return
         }
@@ -131,7 +134,8 @@ export function WebSignIn({
                 <Button
                     size="lg"
                     className="mt-8 w-full max-w-xs"
-                    loading={busy || setup === null}
+                    // After a failed start the button stays pressable: a tap tries again.
+                    loading={busy || (setup === null && error === null)}
                     disabled={setup === null && error === null}
                     onClick={signIn}
                     icon={<TelegramIcon />}

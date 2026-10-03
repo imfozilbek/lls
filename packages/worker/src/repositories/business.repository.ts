@@ -1,4 +1,5 @@
 import {
+    ConflictError,
     BOT_SOURCES,
     BUSINESS_STATUSES,
     BUSINESS_TYPES,
@@ -16,7 +17,7 @@ import {
 
 import { decryptSecret, encryptSecret, randomToken } from "../crypto.js"
 
-import { bool, flag, oneOf, optional } from "./rows.js"
+import { Versions, bool, flag, oneOf, optional } from "./rows.js"
 
 import type { BusinessRepository, WeeklySchedule } from "@zumda/core"
 
@@ -69,7 +70,13 @@ export interface BotCredentials {
     webhookSecret: string
 }
 
+const versions = new Versions<Business>()
+
 function toBusiness(row: BusinessRow): Business {
+    return versions.remember(reconstitute(row), row.updated_at)
+}
+
+function reconstitute(row: BusinessRow): Business {
     const features = (JSON.parse(row.features) as string[]).map((f) =>
         oneOf(f, FEATURES, "feature"),
     )
@@ -252,6 +259,7 @@ export class D1BusinessRepository implements BusinessRepository {
                 business.botSource,
             )
             .run()
+        versions.remember(business, business.updatedAt.getTime())
     }
 
     async replaceBotToken(businessId: string, botToken: string): Promise<void> {
@@ -261,8 +269,12 @@ export class D1BusinessRepository implements BusinessRepository {
             .run()
     }
 
+    /** Writes only over the version this copy was loaded with: a newer change wins, 409 here. */
     async save(business: Business): Promise<void> {
-        await this.db
+        const { expected, version } = versions.next(business, business.updatedAt)
+        const guard = expected === undefined ? "" : " AND updated_at = ?"
+        const values = [...mutableValues(business).slice(0, -1), version]
+        const result = await this.db
             .prepare(
                 `UPDATE businesses SET name = ?, status = ?, brand_color = ?, logo_key = ?,
                     address = ?, latitude = ?, longitude = ?, delivery_fee = ?,
@@ -272,10 +284,14 @@ export class D1BusinessRepository implements BusinessRepository {
                     payout_card_number = ?, payout_card_holder = ?, district_id = ?,
                     network_delivery = ?, payment_card_id = ?, rejected_at = ?, review_note = ?,
                     updated_at = ?
-                 WHERE id = ?`,
+                 WHERE id = ?${guard}`,
             )
-            .bind(...mutableValues(business), business.id)
+            .bind(...values, business.id, ...(expected === undefined ? [] : [expected]))
             .run()
+        if (result.meta.changes === 0) {
+            throw ConflictError.stale("business", business.id)
+        }
+        versions.remember(business, version)
     }
 
     /** Decrypted bot token and webhook secret. Never return these from the API. */

@@ -25,6 +25,11 @@ describe("verifyInitData", () => {
         })
     })
 
+    it("an unset bot token verifies nobody", async () => {
+        const forged = await signInitData(CUSTOMER, "")
+        expect(await verifyInitData(forged, "", new Date())).toBeNull()
+    })
+
     it("rejects data signed by another bot", async () => {
         const initData = await signInitData(CUSTOMER, OTHER_BOT_TOKEN)
         expect(await verifyInitData(initData, SHOP_BOT_TOKEN, new Date())).toBeNull()
@@ -77,5 +82,7 @@ describe("secrets", () => {
         expect(timingSafeEqual("abc", "abd")).toBe(false)
         expect(timingSafeEqual("abc", "abcd")).toBe(false)
         expect(timingSafeEqual("abc", "")).toBe(false)
+        // An unset secret never matches a missing header.
+        expect(timingSafeEqual("", "")).toBe(false)
     })
 })

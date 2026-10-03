@@ -149,10 +149,20 @@ export class D1ProductRepository implements ProductRepository {
             )
             .bind(...params, page.limit, offsetOf(page))
             .all<ProductRow & { total: number }>()
+        const total = results[0]?.total ?? (offsetOf(page) > 0 ? await this.count(from, params) : 0)
         return {
             data: results.map(toProduct),
-            meta: { page: page.page, limit: page.limit, total: results[0]?.total ?? 0 },
+            meta: { page: page.page, limit: page.limit, total },
         }
+    }
+
+    /** Only for a page past the end: the window count above has no row to ride on. */
+    private async count(from: string, params: (string | number)[]): Promise<number> {
+        const row = await this.db
+            .prepare(`SELECT COUNT(*) AS total ${from}`)
+            .bind(...params)
+            .first<{ total: number }>()
+        return row?.total ?? 0
     }
 
     async save(product: Product): Promise<void> {

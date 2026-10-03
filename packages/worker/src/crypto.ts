@@ -43,6 +43,10 @@ export async function sha256Hex(value: string): Promise<string> {
 export function timingSafeEqual(a: string, b: string): boolean {
     const left = encoder.encode(a)
     const right = encoder.encode(b)
+    // An unset secret must never match an absent header.
+    if (left.length === 0 || right.length === 0) {
+        return false
+    }
     let diff = left.length ^ right.length
     for (let i = 0; i < left.length; i++) {
         diff |= (left[i] ?? 0) ^ (right[i % right.length] ?? 0)
@@ -94,7 +98,8 @@ export async function verifyInitData(
 ): Promise<VerifiedInitData | null> {
     const params = new URLSearchParams(initData)
     const hash = params.get("hash")
-    if (!hash) {
+    // Without a token anyone could sign: an unset bot token verifies nobody.
+    if (!hash || !botToken) {
         return null
     }
     params.delete("hash")

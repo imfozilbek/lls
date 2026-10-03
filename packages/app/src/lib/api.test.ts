@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { API_URL, ApiError, api, fetchAll, setShop } from "./api.js"
+import {
+    API_URL,
+    ApiError,
+    api,
+    fetchAll,
+    onWebSessionExpired,
+    setShop,
+    setWebSession,
+} from "./api.js"
 
 function reply(status: number, body?: unknown): Response {
     return new Response(body === undefined ? null : JSON.stringify(body), {
@@ -21,6 +29,19 @@ describe("api client", () => {
     afterEach(() => {
         fetchMock.mockReset()
         vi.unstubAllGlobals()
+    })
+
+    it("an expired browser session sends the owner back to sign in", async () => {
+        const expired = vi.fn()
+        onWebSessionExpired(expired)
+        fetchMock.mockResolvedValue(reply(401, { error: { code: "UNAUTHORIZED", message: "" } }))
+        await expect(api.me()).rejects.toBeInstanceOf(ApiError)
+        expect(expired).not.toHaveBeenCalled()
+        setWebSession("session-token")
+        await expect(api.me()).rejects.toBeInstanceOf(ApiError)
+        expect(expired).toHaveBeenCalledOnce()
+        setWebSession(null)
+        onWebSessionExpired(null)
     })
 
     it("sends initData and the shop with every request", async () => {

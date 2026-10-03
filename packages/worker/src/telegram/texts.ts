@@ -16,6 +16,7 @@ const BASE = {
         free: "bepul",
         total: "Jami",
         landmark: "mo'ljal",
+        moreItems: "… va yana {n} ta",
         map: "Xaritada ochish",
         status: "Holat",
         courier: "Kuryer",
@@ -62,6 +63,10 @@ const BASE = {
         openBusinesses: "🏪 Mening bizneslarim",
         openShowcase: "🔍 Qidirish va buyurtma berish",
         showcaseOrder: "🛍 Zumda vitrinasidan · komissiya {rate}%: {sum}",
+        cardAddedOwner:
+            "💳 {shop}: yangi karta qo'shildi, {card}.\nBuni siz qilmagan bo'lsangiz, darhol Zumda'ga yozing.",
+        paymentCardOwner:
+            "💳 {shop}: mijozlar endi {card} kartasiga to'laydi.\nBuni siz qilmagan bo'lsangiz, darhol Zumda'ga yozing.",
         showcaseJoined:
             "🛍 {shop} Zumda vitrinasiga qo'shildi. Mijozlar uni Zumda botida topadi.\nKomissiya: vitrina orqali sotilgan tovarlarning {rate}%. O'z botingiz orqali sotuvdan komissiya olinmaydi.",
         showcaseLeft: "{shop} Zumda vitrinasidan olindi.",

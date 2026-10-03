@@ -404,6 +404,17 @@ describe("district network", () => {
             )
         })
 
+        it("two checks at the same moment report a late order once", async () => {
+            const order = await place("o-1")
+            await new AutoRequestNetworkUseCase(deps()).execute({ orderId: order.id })
+            now = new Date(now.getTime() + 10 * 60_000)
+            const [first, second] = await Promise.all([
+                new OverdueNetworkOrdersUseCase(deps()).execute(),
+                new OverdueNetworkOrdersUseCase(deps()).execute(),
+            ])
+            expect(first.length + second.length).toBe(1)
+        })
+
         it("nobody took it in 10 minutes: reported once", async () => {
             const overdue = new OverdueNetworkOrdersUseCase(deps())
             const order = await place("o-1")

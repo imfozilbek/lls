@@ -8,6 +8,7 @@ import { ApiError } from "../http/errors.js"
 import { looksLike, readImageBody } from "../http/images.js"
 import { idParam, moneyQuery, onInvalid, paymentBody } from "../http/schemas.js"
 import { networkAfterStep, notifyPaymentConfirmed } from "../network-flow.js"
+import { escapeHtml } from "../telegram/gateway.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 
@@ -49,7 +50,7 @@ export const moneyRoutes = new Hono<AppEnv>()
         const day = (date: Date): string => localDateTime(date.toISOString()).slice(0, 10)
         const lastDay = new Date(to.getTime() - 1)
         const caption = fill(t.reportCaption, {
-            shop: business.name,
+            shop: escapeHtml(business.name),
             from: day(from),
             to: day(lastDay),
         })
@@ -113,7 +114,7 @@ export const moneyRoutes = new Hono<AppEnv>()
                 contentType: PNG,
                 bytes: new Uint8Array(body),
             },
-            fill(t.posterCaption, { shop: business.name }),
+            fill(t.posterCaption, { shop: escapeHtml(business.name) }),
         )
         return c.json({ sent: true })
     })

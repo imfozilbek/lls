@@ -1,3 +1,5 @@
+import { useLayoutEffect } from "react"
+
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
@@ -80,9 +82,20 @@ function NoCardBanner({ onOpen }: { onOpen(): void }): React.JSX.Element {
 /** "Мой магазин": the owner's side of the same Mini App. Loaded only when an owner opens it. */
 export function OwnerApp(): React.JSX.Element {
     const shop = useSession((state) => state.shop)
+    const boundTo = useOwner((state) => state.shopId)
+    const bindShop = useOwner((state) => state.bindShop)
     const tab = useOwner((state) => state.tab)
     const setTab = useOwner((state) => state.setTab)
     const goToSection = useOwner((state) => state.goToSection)
+    // Before the first paint: the previous business's products and couriers never show here.
+    useLayoutEffect(() => {
+        if (shop) {
+            bindShop(shop.id)
+        }
+    }, [shop, bindShop])
+    if (!shop || boundTo !== shop.id) {
+        return <div />
+    }
     return (
         <div>
             <header className="px-4 pt-4">

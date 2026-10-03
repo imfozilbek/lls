@@ -27,7 +27,7 @@ import {
     networkOfferKeyboard,
     orderKeyboard,
 } from "./format.js"
-import { escapeHtml } from "./gateway.js"
+import { TelegramApiError, escapeHtml } from "./gateway.js"
 import { refreshManagedBotToken } from "./managed-token.js"
 import { fill, textsFor } from "./texts.js"
 
@@ -50,6 +50,36 @@ import type {
  * Sends Telegram messages about orders and shops.
  * Callers run these after the response (waitUntil); failures are logged, never thrown to users.
  */
+/** Telegram's answers when the card to edit was deleted or can no longer be edited. */
+function cardIsGone(error: unknown): boolean {
+    return (
+        error instanceof TelegramApiError &&
+        /message to edit not found|message can't be edited/.test(error.description)
+    )
+}
+
+/** The card already says exactly this: nothing to do. */
+function unchanged(error: unknown): boolean {
+    return (
+        error instanceof TelegramApiError && error.description.includes("message is not modified")
+    )
+}
+
+/** Runs every step even if one fails; the first failure is reported after all of them ran. */
+async function everyOne(steps: readonly (() => Promise<void>)[]): Promise<void> {
+    const failures: unknown[] = []
+    for (const step of steps) {
+        try {
+            await step()
+        } catch (error) {
+            failures.push(error)
+        }
+    }
+    if (failures.length > 0) {
+        throw failures[0]
+    }
+}
+
 export class Notifier {
     constructor(private readonly services: Services) {}
 
@@ -106,21 +136,23 @@ export class Notifier {
         const messages = await this.services.orders.getMessageIds(order.id)
         const ownerId = business.ownerTelegramId.value
         const owner = await this.readerFor(ownerId, business)
-        await this.upsertCard(token, ownerId, messages.owner, {
-            text: formatOrderForOwner(order, owner),
-            keyboard: this.ownerKeyboard(business, order, owner),
-        })
-        await this.refreshCourierCard(business, order, messages.courier)
-        if (order.status === OrderStatus.CANCELLED) {
-            await this.closeNetworkOffers(business, order)
-        }
-
-        if (order.status === OrderStatus.CANCELLED && order.cancelledBy === "customer") {
-            const text = `${textsFor(owner.language).cancelledByCustomer}: #${order.number}`
-            await this.toOwner(token, business, order, text)
-            return
-        }
-        await this.notifyCustomer(token, business, order)
+        const cancelled = order.status === OrderStatus.CANCELLED
+        // Each one hears it even if another's message fails (a deleted card, a blocked bot).
+        await everyOne([
+            (): Promise<void> => this.orderChangedForOwner(token, business, order),
+            (): Promise<void> => this.refreshCourierCard(business, order, messages.courier),
+            (): Promise<void> =>
+                cancelled ? this.closeNetworkOffers(business, order) : Promise.resolve(),
+            (): Promise<void> =>
+                cancelled && order.cancelledBy === "customer"
+                    ? this.toOwner(
+                          token,
+                          business,
+                          order,
+                          `${textsFor(owner.language).cancelledByCustomer}: #${order.number}`,
+                      )
+                    : this.notifyCustomer(token, business, order),
+        ])
     }
 
     /** The owner assigned (or reassigned) a courier: send the card, tell the previous one. */
@@ -232,21 +264,24 @@ export class Notifier {
      */
     async networkClaimed(claim: NetworkClaim): Promise<void> {
         const { business, order } = claim
-        await this.closeNetworkOffers(business, order, claim.courierTelegramId)
-        await this.refreshCourierCard(business, order, null)
         const token = await this.shopToken(business.id)
         const ownerId = business.ownerTelegramId.value
         const t = textsFor(await this.languageOf(ownerId), business.type)
-        await this.orderChangedForOwner(token, business, order)
-        await this.toOwner(
-            token,
-            business,
-            order,
-            fill(t.networkClaimedOwner, {
-                n: order.number,
-                name: escapeHtml(order.courierName ?? ""),
-            }),
-        )
+        await everyOne([
+            (): Promise<void> => this.closeNetworkOffers(business, order, claim.courierTelegramId),
+            (): Promise<void> => this.refreshCourierCard(business, order, null),
+            (): Promise<void> => this.orderChangedForOwner(token, business, order),
+            (): Promise<void> =>
+                this.toOwner(
+                    token,
+                    business,
+                    order,
+                    fill(t.networkClaimedOwner, {
+                        n: order.number,
+                        name: escapeHtml(order.courierName ?? ""),
+                    }),
+                ),
+        ])
     }
 
     /** Edits the open offers of an order once, then forgets them. */
@@ -310,8 +345,10 @@ export class Notifier {
     async paymentChanged(business: Business, order: OrderDTO): Promise<void> {
         const token = await this.shopToken(business.id)
         const messages = await this.services.orders.getMessageIds(order.id)
-        await this.orderChangedForOwner(token, business, order)
-        await this.refreshCourierCard(business, order, messages.courier)
+        await everyOne([
+            (): Promise<void> => this.orderChangedForOwner(token, business, order),
+            (): Promise<void> => this.refreshCourierCard(business, order, messages.courier),
+        ])
     }
 
     /** A file for the owner in the shop bot's chat: the CSV report or the QR poster. */
@@ -393,6 +430,28 @@ export class Notifier {
         await this.services.telegram.sendMessage(
             this.services.env.BUSINESS_BOT_TOKEN,
             shop.ownerTelegramId,
+            text,
+            { keyboard: this.businessesKeyboard(t) },
+        )
+    }
+
+    /**
+     * A card was added or customers now pay another one: the owner hears it from Zumda | Business,
+     * never from the shop bot, so a card changed by someone else does not go unnoticed.
+     */
+    async cardChanged(
+        business: Business,
+        change: { kind: "added" | "payment"; number: string },
+    ): Promise<void> {
+        const ownerId = business.ownerTelegramId.value
+        const t = textsFor(await this.languageOf(ownerId))
+        const text = fill(change.kind === "added" ? t.cardAddedOwner : t.paymentCardOwner, {
+            shop: `<b>${escapeHtml(business.name)}</b>`,
+            card: `•••• ${change.number.slice(-4)}`,
+        })
+        await this.services.telegram.sendMessage(
+            this.services.env.BUSINESS_BOT_TOKEN,
+            ownerId,
             text,
             { keyboard: this.businessesKeyboard(t) },
         )
@@ -587,10 +646,13 @@ export class Notifier {
         const { owner: messageId } = await this.services.orders.getMessageIds(order.id)
         const ownerId = business.ownerTelegramId.value
         const owner = await this.readerFor(ownerId, business)
-        await this.upsertCard(token, ownerId, messageId, {
+        const sent = await this.upsertCard(token, ownerId, messageId, {
             text: formatOrderForOwner(order, owner),
             keyboard: this.ownerKeyboard(business, order, owner),
         })
+        if (sent !== null) {
+            await this.services.orders.setMessageId(order.id, "owner", sent)
+        }
     }
 
     /**
@@ -641,16 +703,26 @@ export class Notifier {
         card: { text: string; keyboard: InlineKeyboard },
     ): Promise<number | null> {
         const telegram = this.services.telegram
-        if (messageId === null) {
-            const sent = await telegram.sendMessage(token, chatId, card.text, {
-                keyboard: card.keyboard,
-            })
-            return sent.messageId
+        if (messageId !== null) {
+            try {
+                await telegram.editMessage(token, chatId, messageId, card.text, {
+                    keyboard: card.keyboard,
+                })
+                return null
+            } catch (error) {
+                if (unchanged(error)) {
+                    return null
+                }
+                if (!cardIsGone(error)) {
+                    throw error
+                }
+                // The person deleted the card: a fresh one carries the order on.
+            }
         }
-        await telegram.editMessage(token, chatId, messageId, card.text, {
+        const sent = await telegram.sendMessage(token, chatId, card.text, {
             keyboard: card.keyboard,
         })
-        return null
+        return sent.messageId
     }
 
     private async notifyCustomer(

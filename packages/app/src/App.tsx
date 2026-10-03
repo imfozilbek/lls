@@ -1,9 +1,16 @@
 import { languageFromTelegram } from "@zumda/core"
-import { Suspense, lazy, useCallback, useEffect, useState } from "react"
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 
 import { clearSession, loadSession, saveSession } from "./business/web-session.js"
 import { dictionaryFor, errorText, fill, useLanguageStore, useT } from "./i18n/index.js"
-import { ApiError, api, loadCatalog, setShop, setWebSession } from "./lib/api.js"
+import {
+    ApiError,
+    api,
+    loadCatalog,
+    onWebSessionExpired,
+    setShop,
+    setWebSession,
+} from "./lib/api.js"
 import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "./lib/brand.js"
 import { useBackButton } from "./lib/main-button.js"
 import { webApp } from "./lib/telegram.js"
@@ -88,11 +95,18 @@ function NotInTelegram(): React.JSX.Element {
 function useShopBootstrap(slug: string, via?: ShopVia): { state: LoadState; retry(): void } {
     const [state, setState] = useState<LoadState>({ kind: "loading" })
     const setLanguage = useLanguageStore((s) => s.setLanguage)
+    // Only the latest load may touch the screen: a slow answer for the shop left behind must not
+    // empty this shop's cart or paint its brand.
+    const latest = useRef(0)
 
     const load = useCallback(async (): Promise<void> => {
+        const attempt = ++latest.current
         setState({ kind: "loading" })
         try {
             const [shop, me, products] = await Promise.all([api.shop(), api.me(), loadCatalog()])
+            if (attempt !== latest.current) {
+                return
+            }
             applyBrand(shop.brandColor)
             setLanguage(me.language)
             const session = useSession.getState()
@@ -106,7 +120,12 @@ function useShopBootstrap(slug: string, via?: ShopVia): { state: LoadState; retr
             document.title = shop.name
             setState({ kind: "ready" })
         } catch (caught) {
-            setState({ kind: "error", code: caught instanceof ApiError ? caught.code : "generic" })
+            if (attempt === latest.current) {
+                setState({
+                    kind: "error",
+                    code: caught instanceof ApiError ? caught.code : "generic",
+                })
+            }
         }
     }, [setLanguage])
 
@@ -114,6 +133,9 @@ function useShopBootstrap(slug: string, via?: ShopVia): { state: LoadState; retr
         setShop(slug, { via })
         useCart.getState().load(slug)
         void load()
+        return (): void => {
+            latest.current++
+        }
     }, [slug, via, load])
 
     return { state, retry: (): void => void load() }
@@ -160,10 +182,12 @@ function useOpenOrder(ready: boolean, orderId: string | undefined): void {
         setDone(true)
         const router = useRouter.getState()
         if (useSession.getState().shop?.viewerRole === "owner") {
-            void import("./owner/store.js").then(({ useOwner }) => {
-                useOwner.getState().focusOrder(orderId)
-                router.start({ name: "owner" })
-            })
+            void import("./owner/store.js")
+                .then(({ useOwner }) => {
+                    useOwner.getState().focusOrder(orderId)
+                })
+                .catch(() => undefined)
+                .finally(() => router.start({ name: "owner" }))
             return
         }
         router.start({ name: "menu" })
@@ -336,6 +360,14 @@ function BusinessesApp({
 function WebBusinessApp({ adminTarget }: { adminTarget: AdminTarget | null }): React.JSX.Element {
     const [session, setSession] = useState<WebSession | null>(() => loadSession())
     setWebSession(session?.token ?? null)
+    useEffect(() => {
+        onWebSessionExpired((): void => {
+            clearSession()
+            setWebSession(null)
+            setSession(null)
+        })
+        return (): void => onWebSessionExpired(null)
+    }, [])
     if (!session) {
         return (
             <Suspense fallback={<MenuSkeleton />}>

@@ -242,6 +242,16 @@ export class D1CourierRepository implements CourierRepository {
             .run()
     }
 
+    async claimInvite(invite: CourierInvite): Promise<boolean> {
+        const result = await this.db
+            .prepare(
+                "UPDATE courier_invites SET used_at = ? WHERE code_hash = ? AND used_at IS NULL",
+            )
+            .bind(invite.usedAt?.getTime() ?? Date.now(), await sha256Hex(invite.code))
+            .run()
+        return result.meta.changes === 1
+    }
+
     async findInvite(code: string): Promise<CourierInvite | null> {
         const row = await this.db
             .prepare(

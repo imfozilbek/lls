@@ -1,5 +1,5 @@
 import { MONEY_PERIODS, OrderStatus } from "@zumda/core"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
@@ -254,12 +254,20 @@ function useReport(period: MoneyPeriod): {
 } {
     const [report, setReport] = useState<MoneyReportDTO | null>(null)
     const [error, setError] = useState<string | null>(null)
+    // A slow answer for the period left behind never shows under the new one.
+    const latest = useRef(period)
+    latest.current = period
     const load = useCallback(async (): Promise<void> => {
         setError(null)
         try {
-            setReport(await api.owner.money(period))
+            const next = await api.owner.money(period)
+            if (latest.current === period) {
+                setReport(next)
+            }
         } catch (caught) {
-            setError(caught instanceof ApiError ? caught.code : "generic")
+            if (latest.current === period) {
+                setError(caught instanceof ApiError ? caught.code : "generic")
+            }
         }
     }, [period])
     useEffect(() => {
