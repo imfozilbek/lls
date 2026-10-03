@@ -3,10 +3,10 @@
 #
 # Creates what is missing (D1, R2, Pages project, the addresses api.zumda.shop and app.zumda.shop),
 # applies D1 migrations, deploys the Worker with its secrets, deploys the Mini App to Pages and
-# connects the Zumda bot and the Zumda courier bot.
+# connects the three Zumda bots: Shop (customers), Business (owners, admins) and Kuryer.
 #
 # Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS,
-# COURIER_BOT_TOKEN.
+# COURIER_BOT_TOKEN, BUSINESS_BOT_TOKEN.
 # Optional: TOKEN_ENC_KEY, a saved copy of the encryption key, used only when the Worker has none.
 set -euo pipefail
 # Temp files (the Worker secrets file) are readable by this user only.
@@ -175,8 +175,10 @@ deploy_worker() {
     # Derived, not stored: the same bot token always gives the same webhook secret.
     PLATFORM_WEBHOOK_SECRET="$(webhook_secret zumda-platform-webhook "$PLATFORM_BOT_TOKEN")"
     COURIER_WEBHOOK_SECRET="$(webhook_secret zumda-courier-webhook "$COURIER_BOT_TOKEN")"
+    BUSINESS_WEBHOOK_SECRET="$(webhook_secret zumda-business-webhook "$BUSINESS_BOT_TOKEN")"
     echo "::add-mask::${PLATFORM_WEBHOOK_SECRET}"
     echo "::add-mask::${COURIER_WEBHOOK_SECRET}"
+    echo "::add-mask::${BUSINESS_WEBHOOK_SECRET}"
 
     SECRETS_FILE="$(mktemp)"
     chmod 600 "$SECRETS_FILE"
@@ -184,9 +186,11 @@ deploy_worker() {
     local secrets_file="$SECRETS_FILE"
     jq -n --arg bot "$PLATFORM_BOT_TOKEN" --arg admins "$PLATFORM_ADMIN_IDS" \
         --arg hook "$PLATFORM_WEBHOOK_SECRET" --arg courier "$COURIER_BOT_TOKEN" \
-        --arg courier_hook "$COURIER_WEBHOOK_SECRET" \
+        --arg courier_hook "$COURIER_WEBHOOK_SECRET" --arg business "$BUSINESS_BOT_TOKEN" \
+        --arg business_hook "$BUSINESS_WEBHOOK_SECRET" \
         '{PLATFORM_BOT_TOKEN: $bot, PLATFORM_ADMIN_IDS: $admins, PLATFORM_WEBHOOK_SECRET: $hook,
-          COURIER_BOT_TOKEN: $courier, COURIER_WEBHOOK_SECRET: $courier_hook}' \
+          COURIER_BOT_TOKEN: $courier, COURIER_WEBHOOK_SECRET: $courier_hook,
+          BUSINESS_BOT_TOKEN: $business, BUSINESS_WEBHOOK_SECRET: $business_hook}' \
         >"$secrets_file"
     if needs_encryption_key; then
         encryption_key
@@ -223,8 +227,6 @@ Zumda: tumaningizdagi do'konlar, oshxonalar va xizmatlar bir joyda.
 🔎 Kerakli narsani qidiring
 🛒 Buyurtma bering
 🚚 Kuryer eshigingizgacha olib keladi
-
-Biznesingiz bormi? O'z buyurtma botingizni Zumda orqali ulang.
 TEXT
 readonly PLATFORM_DESCRIPTION
 readonly PLATFORM_SHORT_DESCRIPTION="Tumaningizdagi do'konlar, oshxonalar va xizmatlar bir joyda. Buyurtma bering, eshigingizgacha yetkazamiz."
@@ -238,7 +240,32 @@ Zumda kuryer boti.
 Kuryer bo'lish uchun biznes yuborgan havolani oching.
 TEXT
 readonly COURIER_DESCRIPTION
+read -r -d '' BUSINESS_DESCRIPTION <<'TEXT' || true
+Zumda Business: do'kon, oshxona va xizmatlar uchun.
+
+🤖 O'z buyurtma botingizni bir tugma bilan yarating: token kerak emas
+📋 Menyu, buyurtmalar, pul va kuryerlar bir joyda
+🏪 Bir nechta biznesingiz bo'lsa ham, hammasi shu yerda
+TEXT
+readonly BUSINESS_DESCRIPTION
+readonly BUSINESS_SHORT_DESCRIPTION="Biznesingiz uchun o'z buyurtma boti: yarating va boshqaring. Menyu, buyurtmalar, pul, kuryerlar."
 readonly COURIER_SHORT_DESCRIPTION="Zumda kuryerlari uchun: do'kon, oshxona va xizmatlar buyurtmalarini yetkazing."
+
+# The bots' names, the owner's choice (October 2026).
+readonly PLATFORM_NAME="Zumda | Shop"
+readonly BUSINESS_NAME="Zumda | Business"
+readonly COURIER_NAME="Zumda | Kuryer"
+
+# `set_profile <token> <name> <description> <short description>`: setMyName only when it differs
+# (Telegram limits how often a name may change).
+set_profile() {
+    local current
+    current="$(curl -sS "https://api.telegram.org/bot${1}/getMyName" | jq -r '.result.name // empty')"
+    if [[ "$current" != "$2" ]]; then
+        telegram "$1" setMyName --data-urlencode "name=$2"
+    fi
+    set_descriptions "$1" "$3" "$4"
+}
 
 # `set_descriptions <token> <description> <short description>`
 set_descriptions() {
@@ -251,11 +278,25 @@ connect_platform_bot() {
     telegram "$PLATFORM_BOT_TOKEN" setWebhook \
         --data-urlencode "url=${WORKER_URL}/tg/platform" \
         --data-urlencode "secret_token=${PLATFORM_WEBHOOK_SECRET}" \
-        --data-urlencode 'allowed_updates=["message","callback_query","managed_bot"]'
+        --data-urlencode 'allowed_updates=["message","callback_query"]'
     telegram "$PLATFORM_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=market" \
         '{type: "web_app", text: "Zumda", web_app: {url: $url}}')"
-    set_descriptions "$PLATFORM_BOT_TOKEN" "$PLATFORM_DESCRIPTION" "$PLATFORM_SHORT_DESCRIPTION"
-    echo "webhook, menu button and descriptions set"
+    set_profile "$PLATFORM_BOT_TOKEN" "$PLATFORM_NAME" "$PLATFORM_DESCRIPTION" "$PLATFORM_SHORT_DESCRIPTION"
+    echo "webhook, menu button, name and descriptions set"
+}
+
+# Zumda Business: owners' «Mening bizneslarim», applications, admins' commands. It creates and
+# manages the shops' bots, so it hears `managed_bot`.
+connect_business_bot() {
+    log "Business bot"
+    telegram "$BUSINESS_BOT_TOKEN" setWebhook \
+        --data-urlencode "url=${WORKER_URL}/tg/business" \
+        --data-urlencode "secret_token=${BUSINESS_WEBHOOK_SECRET}" \
+        --data-urlencode 'allowed_updates=["message","callback_query","managed_bot"]'
+    telegram "$BUSINESS_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=business" \
+        '{type: "web_app", text: "Bizneslarim", web_app: {url: $url}}')"
+    set_profile "$BUSINESS_BOT_TOKEN" "$BUSINESS_NAME" "$BUSINESS_DESCRIPTION" "$BUSINESS_SHORT_DESCRIPTION"
+    echo "webhook, menu button, name and descriptions set"
 }
 
 # The Zumda courier bot: one bot for every courier; its menu button opens the courier screen.
@@ -267,8 +308,8 @@ connect_courier_bot() {
         --data-urlencode 'allowed_updates=["message","callback_query"]'
     telegram "$COURIER_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=courier" \
         '{type: "web_app", text: "Kuryer", web_app: {url: $url}}')"
-    set_descriptions "$COURIER_BOT_TOKEN" "$COURIER_DESCRIPTION" "$COURIER_SHORT_DESCRIPTION"
-    echo "webhook, menu button and descriptions set"
+    set_profile "$COURIER_BOT_TOKEN" "$COURIER_NAME" "$COURIER_DESCRIPTION" "$COURIER_SHORT_DESCRIPTION"
+    echo "webhook, menu button, name and descriptions set"
 }
 
 # Waits until `url` answers 200: a new address can take a few minutes to go live.
@@ -298,7 +339,7 @@ smoke_test() {
 }
 
 main() {
-    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN PLATFORM_ADMIN_IDS COURIER_BOT_TOKEN; do
+    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN PLATFORM_ADMIN_IDS COURIER_BOT_TOKEN BUSINESS_BOT_TOKEN; do
         [[ -n "${!name:-}" ]] || fail "Secret ${name} is not set."
     done
     ensure_d1
@@ -309,6 +350,7 @@ main() {
     deploy_app
     smoke_test
     connect_platform_bot
+    connect_business_bot
     connect_courier_bot
 }
 
