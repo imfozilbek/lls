@@ -1,3 +1,4 @@
+import { BotSource } from "../enums/bot-source.js"
 import { DEFAULT_FEATURES } from "../enums/business-profile.js"
 import { BusinessStatus } from "../enums/business-status.js"
 import { Feature } from "../enums/feature.js"
@@ -49,6 +50,8 @@ export interface BusinessProps {
     ownerTelegramId: TelegramId
     status: BusinessStatus
     bot: ShopBot
+    /** Unset in shops connected before Managed Bots: they pasted a token. */
+    botSource?: BotSource
     brandColor: BrandColor
     logoKey?: string
     address?: string
@@ -85,6 +88,7 @@ export interface RegisterBusinessInput {
     type: BusinessType
     ownerTelegramId: TelegramId
     bot: ShopBot
+    botSource?: BotSource
     delivery: DeliverySettings
     address?: string
     location?: Location
@@ -121,6 +125,7 @@ export class Business {
             ownerTelegramId: input.ownerTelegramId,
             status: BusinessStatus.PENDING,
             bot: { ...input.bot },
+            botSource: input.botSource ?? BotSource.TOKEN,
             brandColor: BrandColor.default(),
             address: optionalText("address", input.address, ADDRESS_MAX),
             location: input.location,
@@ -158,6 +163,9 @@ export class Business {
     }
     get bot(): ShopBot {
         return { ...this.props.bot }
+    }
+    get botSource(): BotSource {
+        return this.props.botSource ?? BotSource.TOKEN
     }
     get brandColor(): BrandColor {
         return this.props.brandColor

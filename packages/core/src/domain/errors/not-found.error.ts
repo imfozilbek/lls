@@ -34,6 +34,11 @@ export class EntityNotFoundError extends DomainError {
         return new EntityNotFoundError("PayoutCard", id)
     }
 
+    /** Not created from the Zumda bot by this owner, or already taken by a shop. */
+    static managedBot(botId: number): EntityNotFoundError {
+        return new EntityNotFoundError("ManagedBot", String(botId))
+    }
+
     static order(id: string): EntityNotFoundError {
         return new EntityNotFoundError("Order", id)
     }

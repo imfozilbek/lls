@@ -9,6 +9,10 @@ import type { Clock } from "../application/ports/clock.js"
 import type { CourierRepository } from "../application/ports/courier-repository.js"
 import type { CustomerRepository } from "../application/ports/customer-repository.js"
 import type { DistrictRepository } from "../application/ports/district-repository.js"
+import type {
+    ManagedBotRecord,
+    ManagedBotRepository,
+} from "../application/ports/managed-bot-repository.js"
 import type { PayoutCardRepository } from "../application/ports/payout-card-repository.js"
 import type { MoneyTotals, OrderRepository } from "../application/ports/order-repository.js"
 import type {
@@ -76,6 +80,37 @@ export class InMemoryBusinesses implements BusinessRepository {
     }
     async save(business: Business): Promise<void> {
         this.items.set(business.id, business)
+    }
+    async replaceBotToken(businessId: string, botToken: string): Promise<void> {
+        this.tokens.set(businessId, botToken)
+    }
+}
+
+export class InMemoryManagedBots implements ManagedBotRepository {
+    readonly items = new Map<number, ManagedBotRecord>()
+    readonly tokens = new Map<number, string>()
+
+    async find(botId: number): Promise<ManagedBotRecord | null> {
+        const bot = this.items.get(botId)
+        return bot ? { ...bot } : null
+    }
+    async record(bot: ManagedBotRecord, token: string): Promise<void> {
+        this.items.set(bot.botId, { ...bot })
+        this.tokens.set(bot.botId, token)
+    }
+    async token(botId: number): Promise<string | null> {
+        return this.tokens.get(botId) ?? null
+    }
+    async listUnclaimed(ownerTelegramId: number): Promise<ManagedBotRecord[]> {
+        return [...this.items.values()].filter(
+            (bot) => bot.ownerTelegramId === ownerTelegramId && bot.businessId === undefined,
+        )
+    }
+    async claim(botId: number, businessId: string): Promise<void> {
+        const bot = this.items.get(botId)
+        if (bot) {
+            this.items.set(botId, { ...bot, businessId })
+        }
     }
 }
 

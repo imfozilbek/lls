@@ -1,4 +1,5 @@
 import {
+    BOT_SOURCES,
     BUSINESS_STATUSES,
     BUSINESS_TYPES,
     BusinessStatus,
@@ -28,6 +29,7 @@ interface BusinessRow {
     status: string
     bot_id: number
     bot_username: string
+    bot_source: string
     brand_color: string
     logo_key: string | null
     address: string | null
@@ -52,7 +54,8 @@ interface BusinessRow {
     updated_at: number
 }
 
-const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_username, brand_color,
+const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_username, bot_source,
+    brand_color,
     logo_key, address, latitude, longitude, delivery_fee, free_delivery_from, min_order,
     delivery_radius_m, working_hours, features, accepting_orders, bottle_deposit,
     marketplace_commission_bps, marketplace_joined_at, payout_card_number, payout_card_holder,
@@ -76,6 +79,7 @@ function toBusiness(row: BusinessRow): Business {
         ownerTelegramId: TelegramId.create(row.owner_telegram_id),
         status: oneOf(row.status, BUSINESS_STATUSES, "business status"),
         bot: { id: row.bot_id, username: row.bot_username },
+        botSource: oneOf(row.bot_source, BOT_SOURCES, "bot source"),
         brandColor: BrandColor.create(row.brand_color),
         logoKey: optional(row.logo_key),
         address: optional(row.address),
@@ -207,9 +211,9 @@ export class D1BusinessRepository implements BusinessRepository {
                     marketplace_commission_bps, marketplace_joined_at, payout_card_number,
                     payout_card_holder, district_id, network_delivery, payment_card_id, updated_at,
                     id, slug, type, owner_telegram_id, bot_id, bot_username, bot_token_enc,
-                    webhook_secret, created_at)
+                    webhook_secret, created_at, bot_source)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             )
             .bind(
                 ...mutableValues(business),
@@ -222,7 +226,15 @@ export class D1BusinessRepository implements BusinessRepository {
                 tokenEncrypted,
                 randomToken(),
                 business.createdAt.getTime(),
+                business.botSource,
             )
+            .run()
+    }
+
+    async replaceBotToken(businessId: string, botToken: string): Promise<void> {
+        await this.db
+            .prepare("UPDATE businesses SET bot_token_enc = ? WHERE id = ?")
+            .bind(await encryptSecret(botToken, this.encryptionKey), businessId)
             .run()
     }
 
