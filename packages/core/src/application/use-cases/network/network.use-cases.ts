@@ -393,7 +393,11 @@ export class OverdueNetworkOrdersUseCase {
 }
 
 export interface DistrictStats {
+    id: string
     name: string
+    center: { latitude: number; longitude: number }
+    /** Shops whose location is inside the circle. */
+    shops: number
     radiusKm: number
     waitMinutes: number
     freeCouriers: number
@@ -409,12 +413,21 @@ export class NetworkStatsUseCase {
         private readonly platformAdminIds: readonly number[],
     ) {}
 
-    /** `/network` for the admin: per district, who is free now and the network's share. */
+    /** «Tumanlar» for the admin: per district, who is free now and the network's share. */
     async execute(input: { actorTelegramId: number }): Promise<DistrictStats[]> {
         requireAdmin(this.platformAdminIds, input.actorTelegramId)
         const now = this.deps.clock.now()
         const from = addDays(now, -STATS_DAYS)
-        const districts = await this.deps.districts.list()
+        const [districts, located] = await Promise.all([
+            this.deps.districts.list(),
+            this.deps.businesses.listWithLocation(),
+        ])
+        const shops = new Map<string, number>()
+        for (const shop of located) {
+            if (shop.districtId) {
+                shops.set(shop.districtId, (shops.get(shop.districtId) ?? 0) + 1)
+            }
+        }
         return Promise.all(
             districts.map(async (district) => {
                 const [free, waiting, share] = await Promise.all([
@@ -427,7 +440,13 @@ export class NetworkStatsUseCase {
                     this.deps.orders.networkShare(district.id, from, now),
                 ])
                 return {
+                    id: district.id,
                     name: district.name,
+                    center: {
+                        latitude: district.center.latitude,
+                        longitude: district.center.longitude,
+                    },
+                    shops: shops.get(district.id) ?? 0,
                     radiusKm: district.radiusMeters / METERS_PER_KM,
                     waitMinutes: district.waitMinutes,
                     freeCouriers: free.length,

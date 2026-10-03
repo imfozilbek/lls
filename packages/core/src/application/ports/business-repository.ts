@@ -1,4 +1,5 @@
 import type { Business } from "../../domain/entities/business.js"
+import type { BusinessStatus } from "../../domain/enums/business-status.js"
 
 export interface BusinessRepository {
     findById(id: string): Promise<Business | null>
@@ -7,6 +8,8 @@ export interface BusinessRepository {
     listByOwner(ownerTelegramId: number): Promise<Business[]>
     /** Active shops with a marketplace deal: the Zumda showcase. */
     listInShowcase(): Promise<Business[]>
+    /** The platform admin's lists: applications, live shops, turned-off ones. Newest first. */
+    listByStatus(status: BusinessStatus, limit: number): Promise<Business[]>
     /** Every shop with a location: their districts are recomputed when a district changes. */
     listWithLocation(): Promise<Business[]>
     /** Insert a new shop together with its bot token. The adapter encrypts the token. */

@@ -13,6 +13,7 @@ interface CustomerRow {
 }
 
 const COLUMNS = "id, telegram_id, name, phone, language, created_at, updated_at"
+const IN_CHUNK = 90
 
 function toCustomer(row: CustomerRow): Customer {
     return Customer.reconstitute({
@@ -59,6 +60,23 @@ export class D1CustomerRepository implements CustomerRepository {
 
     async findByTelegramId(telegramId: number): Promise<Customer | null> {
         return this.findOne("telegram_id = ?", telegramId)
+    }
+
+    async findManyByTelegramIds(telegramIds: readonly number[]): Promise<Customer[]> {
+        const found: Customer[] = []
+        // D1 binds at most 100 values per statement.
+        for (let start = 0; start < telegramIds.length; start += IN_CHUNK) {
+            const chunk = telegramIds.slice(start, start + IN_CHUNK)
+            const { results } = await this.db
+                .prepare(
+                    `SELECT ${COLUMNS} FROM customers
+                     WHERE telegram_id IN (${chunk.map(() => "?").join(", ")})`,
+                )
+                .bind(...chunk)
+                .all<CustomerRow>()
+            found.push(...results.map(toCustomer))
+        }
+        return found
     }
 
     async save(customer: Customer): Promise<void> {

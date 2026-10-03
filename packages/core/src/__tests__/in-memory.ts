@@ -21,6 +21,7 @@ import type {
     ShowcaseSearch,
 } from "../application/ports/product-repository.js"
 import type { Business } from "../domain/entities/business.js"
+import type { BusinessStatus } from "../domain/enums/business-status.js"
 import type { Courier, CourierInvite } from "../domain/entities/courier.js"
 import type { CourierProfile } from "../domain/entities/courier-profile.js"
 import type { Customer } from "../domain/entities/customer.js"
@@ -70,6 +71,12 @@ export class InMemoryBusinesses implements BusinessRepository {
     }
     async listInShowcase(): Promise<Business[]> {
         return [...this.items.values()].filter((b) => b.isInShowcase())
+    }
+    async listByStatus(status: BusinessStatus, limit: number): Promise<Business[]> {
+        return [...this.items.values()]
+            .filter((b) => b.status === status)
+            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            .slice(0, limit)
     }
     async listWithLocation(): Promise<Business[]> {
         return [...this.items.values()].filter((b) => b.location !== undefined)
@@ -176,6 +183,9 @@ export class InMemoryCustomers implements CustomerRepository {
     }
     async findByTelegramId(telegramId: number): Promise<Customer | null> {
         return [...this.items.values()].find((c) => c.telegramId.value === telegramId) ?? null
+    }
+    async findManyByTelegramIds(telegramIds: readonly number[]): Promise<Customer[]> {
+        return [...this.items.values()].filter((c) => telegramIds.includes(c.telegramId.value))
     }
     async save(customer: Customer): Promise<void> {
         this.items.set(customer.id, customer)

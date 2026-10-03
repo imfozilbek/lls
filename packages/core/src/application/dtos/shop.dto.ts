@@ -1,6 +1,7 @@
 import { BotSource } from "../../domain/enums/bot-source.js"
 
 import type { Business } from "../../domain/entities/business.js"
+import type { Customer } from "../../domain/entities/customer.js"
 import type { PayoutCardBook } from "../../domain/entities/payout-card-book.js"
 import type { BusinessStatus } from "../../domain/enums/business-status.js"
 import type { BusinessType } from "../../domain/enums/business-type.js"
@@ -117,6 +118,23 @@ export function toShopOwnerDTO(business: Business, now: Date): ShopOwnerDTO {
         inDistrict: business.districtId !== undefined,
         createdAt: business.createdAt.toISOString(),
     }
+}
+
+/**
+ * A shop in the admin's «Platforma»: the owner's view without the card, plus who the owner is
+ * (name and phone, when they shared it with Zumda).
+ */
+export interface PlatformShopDTO extends Omit<ShopOwnerDTO, "payoutCard"> {
+    owner: { name?: string; phone?: string }
+}
+
+export function toPlatformShopDTO(
+    business: Business,
+    owner: Customer | undefined,
+    now: Date,
+): PlatformShopDTO {
+    const { payoutCard: _card, ...shop } = toShopOwnerDTO(business, now)
+    return { ...shop, owner: { name: owner?.name, phone: owner?.phone?.number } }
 }
 
 /** The owner's cards: all of them, and which one customers are shown. */

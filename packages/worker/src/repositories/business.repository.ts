@@ -194,6 +194,17 @@ export class D1BusinessRepository implements BusinessRepository {
         return results.map(toBusiness)
     }
 
+    async listByStatus(status: BusinessStatus, limit: number): Promise<Business[]> {
+        const { results } = await this.db
+            .prepare(
+                `SELECT ${COLUMNS} FROM businesses WHERE status = ?
+                 ORDER BY created_at DESC LIMIT ?`,
+            )
+            .bind(status, limit)
+            .all<BusinessRow>()
+        return results.map(toBusiness)
+    }
+
     async listWithLocation(): Promise<Business[]> {
         const { results } = await this.db
             .prepare(`SELECT ${COLUMNS} FROM businesses WHERE latitude IS NOT NULL ORDER BY id`)
