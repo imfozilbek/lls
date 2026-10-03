@@ -7,6 +7,23 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Customer, courier, application and search (UX phase 4)
+- **Added (app):** a shop with more than 20 products gets a search over its catalog (Latin or
+  Cyrillic, like the showcase), with «Hech narsa topilmadi» and a clear button.
+- **Changed (app):** «Buyurtmalarim» wears a dot while an order is on its way; a product without
+  a photo shows the first letter of its name on a tint of its section, with the section's mark.
+- **Changed (app):** checkout puts «Joylashuvni yuborish» first, labels every field the same way
+  and marks the optional ones; the order button is never dead: a tap says what is missing,
+  scrolls to it and makes it glow. The bottle question stands over its stepper.
+- **Changed (app):** the order shows four stages for the customer (paid, being made, on the way,
+  delivered) instead of the shop's six steps; history rows say how many products.
+- **Changed (app):** the courier's «nothing to deliver» hides while network orders wait nearby;
+  «Pozitsiyalar» is «Mahsulotlar».
+- **Changed (app):** the application opens with its three steps listed; the token field has
+  «Qo'yish» (paste); a long bot name no longer breaks mid-word; «/newbot» is in quotes.
+- **Changed (app):** «Rasmiylashtirish» is «Buyurtma berish»; the showcase's clear button says
+  «Qidiruvni tozalash».
+
 ### The owner's workplace (UX phase 3)
 - **Changed (app):** with orders waiting, «Ishga tayyor» folds into one line («4/6 · Keyingi: …»)
   so the order comes first; a done step keeps its words with a tick, no strike-through.
