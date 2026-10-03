@@ -231,6 +231,10 @@ function ShiftCard({
     const t = useT()
     const [busy, setBusy] = useState(false)
     const toggle = async (onShift: boolean): Promise<void> => {
+        // One press at a time: a second one would race the first.
+        if (busy) {
+            return
+        }
         setBusy(true)
         try {
             const profile = await api.courier.shift(onShift)
@@ -274,7 +278,12 @@ function NetworkCard({
     onChange(home: CourierHomeDTO): void
 }): React.JSX.Element {
     const t = useT()
+    const [busy, setBusy] = useState(false)
     const toggle = async (inNetwork: boolean): Promise<void> => {
+        if (busy) {
+            return
+        }
+        setBusy(true)
         try {
             const profile = await api.courier.network(inNetwork)
             onChange({ ...home, profile, network: inNetwork ? home.network : [] })
@@ -282,10 +291,15 @@ function NetworkCard({
         } catch (caught) {
             haptic.error()
             toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+        } finally {
+            setBusy(false)
         }
     }
     return (
-        <div className="flex items-center gap-3 rounded-tile bg-tg-secondary p-4">
+        <div
+            className="flex items-center gap-3 rounded-tile bg-tg-secondary p-4"
+            aria-busy={busy || undefined}
+        >
             <span className="flex-1">
                 <span className="block font-semibold">{t.courier.network}</span>
                 <span className="text-sm text-tg-hint">{t.courier.networkHint}</span>

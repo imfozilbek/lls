@@ -178,7 +178,11 @@ export function PaymentCardsSection({
     /** The storefront shows the payment card: keep "Мой магазин" and it in sync. */
     const changed = async (next: Cards): Promise<void> => {
         setCards(next)
-        onSaved(await api.owner.shop())
+        // The card is saved already: a failed refresh of the shop must not read as a failure.
+        await api.owner
+            .shop()
+            .then(onSaved)
+            .catch(() => undefined)
     }
 
     const choose = async (id: string): Promise<void> => {

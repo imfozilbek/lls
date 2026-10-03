@@ -78,7 +78,9 @@ export function CardBlock({
             haptic.success()
             toast(t.pay.copied, "success")
         } catch {
+            // No clipboard here: the number in a toast, to copy by hand.
             haptic.error()
+            toast(groupCard(card.number))
         }
     }
     return (

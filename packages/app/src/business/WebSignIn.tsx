@@ -72,6 +72,7 @@ export function WebSignIn({
             const [login] = await Promise.all([api.business.login(), loadLibrary()])
             const next = { ...login, at: Date.now() }
             setSetup(next)
+            setError(null)
             return next
         } catch (caught) {
             setError(errorText(t, caught instanceof ApiError ? caught.code : "NETWORK"))
@@ -131,7 +132,8 @@ export function WebSignIn({
                 <Button
                     size="lg"
                     className="mt-8 w-full max-w-xs"
-                    loading={busy || setup === null}
+                    // After a failed start the button stays pressable: a tap tries again.
+                    loading={busy || (setup === null && error === null)}
                     disabled={setup === null && error === null}
                     onClick={signIn}
                     icon={<TelegramIcon />}

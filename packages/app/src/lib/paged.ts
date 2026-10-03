@@ -17,6 +17,19 @@ export interface PagedList<T> {
     update(change: (items: T[]) => T[]): void
 }
 
+function idOf(item: unknown): unknown {
+    return (item as { id?: unknown }).id ?? item
+}
+
+/** The fresh first page, then what «Yana» had opened beyond it (without repeats). */
+export function keepOpenedPages<T>(list: T[] | null, first: Page<T>): T[] {
+    if (!list || list.length <= first.meta.limit) {
+        return first.data
+    }
+    const fresh = new Set(first.data.map(idOf))
+    return [...first.data, ...list.slice(first.meta.limit).filter((item) => !fresh.has(idOf(item)))]
+}
+
 function codeOf(error: unknown): string {
     return error instanceof ApiError ? error.code : "generic"
 }
@@ -46,9 +59,9 @@ export function usePagedList<T>(
             if (current.current !== requested) {
                 return
             }
-            setItems(result.data)
+            // A timer refresh keeps the pages the person already opened with «Yana».
+            setItems((list) => keepOpenedPages(list, result))
             setTotal(result.meta.total)
-            setPage(1)
             setError(null)
         } catch (caught) {
             if (current.current === requested) {
@@ -59,6 +72,7 @@ export function usePagedList<T>(
 
     useEffect(() => {
         setItems(null)
+        setPage(1)
         setError(null)
         void reload()
     }, [reload])

@@ -52,9 +52,16 @@ let courierBot = false
 /** Zumda | Business in a browser: the session from the Telegram Login Widget. */
 let webSession: string | null = null
 
+let onSessionExpired: (() => void) | null = null
+
 /** Outside Telegram: every request carries the session instead of initData. */
 export function setWebSession(token: string | null): void {
     webSession = token
+}
+
+/** The browser session ran out (30 days): back to «Telegram orqali kirish». */
+export function onWebSessionExpired(handler: (() => void) | null): void {
+    onSessionExpired = handler
 }
 
 /**
@@ -115,6 +122,9 @@ async function request<T>(method: string, path: string, body?: BodyInit | object
         return undefined as T
     }
     const data = (await response.json().catch(() => null)) as T | ErrorBody | null
+    if (response.status === 401 && webSession) {
+        onSessionExpired?.()
+    }
     if (!response.ok) {
         const error = (data as ErrorBody | null)?.error
         throw new ApiError(
