@@ -33,6 +33,9 @@ interface Order {
 // A second card of the shop: a valid Luhn number, not a real card. secret-scan: fake
 const SECOND_CARD = { number: "5614 6812 3456 7893", holder: "Malika Karimova" }
 
+/** Placing 101 orders one by one takes a few seconds, more with coverage on. */
+const MANY_ORDERS_TIMEOUT_MS = 30_000
+
 /** A JPEG as the app sends it: the transfer screenshot. */
 const RECEIPT = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 1, 2])
 
@@ -372,21 +375,26 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect(fake.status).toBe(415)
     })
 
-    it("a month of more than 100 orders exports; text never runs as a formula", async () => {
-        for (let i = 0; i < 101; i++) {
-            expect((await place()).status).toBe(201)
-        }
-        await env.DB.prepare("UPDATE orders SET address = '=HYPERLINK(\"http://x\")'").run()
-        await env.DB.prepare("UPDATE businesses SET name = 'Tom & Jerry'").run()
-        const sent = await as(OWNER)("/api/owner/money/export?period=month", { method: "POST" })
-        expect(await json(sent)).toEqual({ sent: 101 })
-        const csv = client.telegram.documents.at(-1)
-        // The shop's name is escaped in the HTML caption, or Telegram refuses the file.
-        expect(csv?.caption).toContain("Tom &amp; Jerry")
-        const rows = new TextDecoder().decode(csv?.file.bytes).split("\r\n").slice(1)
-        expect(rows.filter((row) => row.length > 0)).toHaveLength(101)
-        expect(rows[0]).toContain(`"'=HYPERLINK(""http://x"")"`)
-    })
+    it(
+        "a month of more than 100 orders exports; text never runs as a formula",
+        async () => {
+            for (let i = 0; i < 101; i++) {
+                expect((await place()).status).toBe(201)
+            }
+            await env.DB.prepare("UPDATE orders SET address = '=HYPERLINK(\"http://x\")'").run()
+            await env.DB.prepare("UPDATE businesses SET name = 'Tom & Jerry'").run()
+            const sent = await as(OWNER)("/api/owner/money/export?period=month", { method: "POST" })
+            expect(await json(sent)).toEqual({ sent: 101 })
+            const csv = client.telegram.documents.at(-1)
+            // The shop's name is escaped in the HTML caption, or Telegram refuses the file.
+            expect(csv?.caption).toContain("Tom &amp; Jerry")
+            const rows = new TextDecoder().decode(csv?.file.bytes).split("\r\n").slice(1)
+            expect(rows.filter((row) => row.length > 0)).toHaveLength(101)
+            expect(rows[0]).toContain(`"'=HYPERLINK(""http://x"")"`)
+            // 101 real orders through the API: slow under coverage, never stuck.
+        },
+        MANY_ORDERS_TIMEOUT_MS,
+    )
 
     it("the owner deleted the order card: a new one comes, the customer still hears", async () => {
         const order = await json<Order>(await place())
