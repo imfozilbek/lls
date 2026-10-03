@@ -47,7 +47,7 @@ describe("updateBotPhoto", () => {
     it("returns the Worker's code, or its own, instead of throwing", async () => {
         const input = { shopName: "Osh", brandColor: "#15803d", logo: null }
         const refused = (): Promise<void> =>
-            Promise.reject(new ApiError(502, "BOT_PHOTO_FAILED", "Telegram said no"))
+            Promise.reject(new ApiError(422, "BOT_PHOTO_FAILED", "Telegram said no"))
         expect(await updateBotPhoto(input, refused)).toBe("BOT_PHOTO_FAILED")
         const broken = (): Promise<void> => Promise.reject(new Error("canvas"))
         expect(await updateBotPhoto(input, broken)).toBe(BOT_PHOTO_FAILED)
