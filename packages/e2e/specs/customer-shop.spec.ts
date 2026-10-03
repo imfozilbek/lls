@@ -144,6 +144,10 @@ test.describe("customer of a food shop: order and status", () => {
         expect(accept?.text).toBe("💳 Pul keldi, qabul qilish")
         const since = await lastSeq()
         await shopChat(FOOD).press(PEOPLE.foodOwner, accept?.callback_data ?? "")
+        // «Pul keldi» asks first, with the sum and the card; «Ha» confirms.
+        const question = await waitForMessage(PEOPLE.foodOwner.id, "keldimi?", since)
+        const yes = question.buttons.find((b) => b.callback_data?.startsWith("pc:"))
+        await shopChat(FOOD).press(PEOPLE.foodOwner, yes?.callback_data ?? "")
         await waitForMessage(
             PEOPLE.customer.id,
             "To'lov keldi, #1 buyurtmangiz qabul qilindi",

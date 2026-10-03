@@ -2,6 +2,7 @@
 import { WORKER_URL, businessBot, courierBot, platformBot, shopBySlug } from "../stand/config.js"
 import { seed } from "../stand/seed.js"
 
+import { pngImage } from "./images.js"
 import { resetTelegram, shopChat } from "./telegram.js"
 import { signInitData } from "./webapp.js"
 
@@ -70,6 +71,8 @@ export interface ApiOptions {
     businessBot?: boolean
     method?: string
     json?: unknown
+    /** A PNG body instead of JSON (the transfer screenshot). */
+    png?: Buffer
 }
 
 /** The bot whose token signs: the courier bot, Zumda Business, the shop's own bot or the Zumda bot. */
@@ -110,13 +113,18 @@ export async function apiAs(
     if (options.via) {
         headers["X-Via"] = options.via
     }
-    if (options.json !== undefined) {
+    let body: BodyInit | undefined
+    if (options.png) {
+        headers["Content-Type"] = "image/png"
+        body = new Uint8Array(options.png)
+    } else if (options.json !== undefined) {
         headers["Content-Type"] = "application/json"
+        body = JSON.stringify(options.json)
     }
     return fetch(`${WORKER_URL}/api${path}`, {
         method: options.method ?? "GET",
         headers,
-        body: options.json === undefined ? undefined : JSON.stringify(options.json),
+        body,
     })
 }
 
@@ -149,6 +157,20 @@ export async function placeOrder(
         throw new Error(`Order failed: ${response.status} ${await response.text()}`)
     }
     return (await response.json()) as PlacedOrder
+}
+
+/** «O'tkazdim» with the screenshot of the transfer, as the app sends it. */
+export async function sendReceipt(
+    customer: TgUser,
+    shop: string,
+    orderId: string,
+    picture: Buffer = pngImage(32),
+): Promise<Response> {
+    return apiAs(customer, `/orders/${orderId}/transfer-sent`, {
+        shop,
+        method: "POST",
+        png: picture,
+    })
 }
 
 /**

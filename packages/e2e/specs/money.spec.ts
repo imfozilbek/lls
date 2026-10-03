@@ -8,6 +8,7 @@ import jsQR from "jsqr"
 import { PNG } from "pngjs"
 
 import { runSql } from "../stand/seed.js"
+import { pngImage } from "../support/images.js"
 import {
     FOOD,
     GROCERY,
@@ -16,6 +17,7 @@ import {
     payAndAccept,
     placeOrder,
     resetStand,
+    sendReceipt,
 } from "../support/stand.js"
 import {
     callsOf,
@@ -73,7 +75,11 @@ async function documentsTo(chatId: number, since: number): Promise<RecordedFile[
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
-test("checkout shows the card; «Я перевёл»; the owner «Деньги пришли, принять»", async ({
+/** The «Pul keldi» sheet: the sum, the card, the screenshot and any warning, then yes or no. */
+const checkSheet = (page: Page): ReturnType<Page["locator"]> =>
+    page.getByRole("dialog").filter({ hasText: "keldimi?" })
+
+test("checkout tells the sum; the order screen gives the card; «O'tkazdim» with the screenshot", async ({
     page,
     context,
 }) => {
@@ -85,22 +91,22 @@ test("checkout shows the card; «Я перевёл»; the owner «Деньги �
     await bottomButton(page).click()
     await page.getByRole("textbox", { name: "Manzil" }).fill("Mustaqillik 5")
 
-    // No choice to make: only a transfer to the shop's card.
+    // No choice to make: only a transfer to the shop's card, and the card waits for the order.
     await expect(page.getByRole("radio")).toHaveCount(0)
     await expect(page.getByRole("heading", { name: "O'tkazma orqali to'lov" })).toBeVisible()
-    await expect(page.getByText(CARD)).toBeVisible()
-    await expect(page.getByText("RUSTAM KARIMOV")).toBeVisible()
-    await page.getByRole("button", { name: "Raqamni nusxalash" }).click()
-    await expect(page.getByText("Karta raqami nusxalandi")).toBeVisible()
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("8600123456789012")
-    await expect(page.getByText(/55\s000\sso'm ni shu kartaga o'tkazing/)).toBeVisible()
+    await expect(page.getByText(/kartasiga 55\s000\sso'm o'tkazasiz/)).toBeVisible()
+    await expect(page.getByText(CARD)).toBeHidden()
 
     const placed = await lastSeq()
     await bottomButton(page).click()
     await expect(page.getByRole("heading", { name: "Buyurtma yuborildi!" })).toBeVisible()
     await expect(page.getByText("O'tkazma kutilmoqda")).toBeVisible()
-    // The card stays at hand on the order screen, and the bot sends it too.
+    // The card on the order screen, and in the bot too.
     await expect(page.getByText(CARD)).toBeVisible()
+    await expect(page.getByText("RUSTAM KARIMOV")).toBeVisible()
+    await page.getByRole("button", { name: "Raqamni nusxalash" }).click()
+    await expect(page.getByText("Karta raqami nusxalandi")).toBeVisible()
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("8600123456789012")
     const toPay = await waitForMessage(PEOPLE.customer.id, "o'tkazing", placed)
     expect(toPay.text).toContain(CARD)
     expect(toPay.text).toMatch(/55\s000/)
@@ -111,11 +117,37 @@ test("checkout shows the card; «Я перевёл»; the owner «Деньги �
         "📱 Buyurtmani ochish",
     ])
 
+    // «O'tkazdim» asks for the screenshot: nothing goes without it.
     const sent = await lastSeq()
     await page.getByRole("button", { name: "O'tkazdim" }).click()
-    await expect(page.getByText("Do'kon o'tkazmani tekshirmoqda").first()).toBeVisible()
+    const sheet = page.getByRole("dialog").filter({ hasText: "O'tkazma cheki" })
+    await expect(sheet.getByRole("button", { name: "Chekni yuborish" })).toBeDisabled()
+    await sheet.locator('input[type="file"]').setInputFiles({
+        name: "chek.png",
+        mimeType: "image/png",
+        buffer: pngImage(240, [240, 240, 240]),
+    })
+    await expect(sheet.getByRole("img", { name: "O'tkazma cheki" })).toBeVisible()
+    await sheet.getByRole("button", { name: "Chekni yuborish" }).click()
+    await expect(sheet).toBeHidden()
+    await expect(page.getByRole("heading", { name: "Do'kon pulni tekshirmoqda" })).toBeVisible()
+    await expect(page.getByText("Odatda 5-10 daqiqa").first()).toBeVisible()
     await expect(page.getByRole("button", { name: "O'tkazdim" })).toBeHidden()
-    await waitForMessage(PEOPLE.foodOwner.id, /<b>55\s000[^<]*<\/b> o'tkazdi/, sent)
+    await expect(page.getByRole("button", { name: "Chekni ko'rish" })).toBeVisible()
+
+    // The owner gets the screenshot itself, the sum, the card to look at, and the two answers.
+    const photo = (await messagesTo(PEOPLE.foodOwner.id, sent)).find(
+        (m) => m.method === "sendPhoto",
+    )
+    expect(photo?.text).toMatch(/<b>55\s000[^<]*<\/b>/)
+    expect(photo?.text).toContain("•••• 9012")
+    expect(photo?.text).toContain("bank ilovangizda")
+    expect(photo?.buttons.map((b) => b.callback_data).filter(Boolean)).toEqual([
+        expect.stringMatching(/^pc:/),
+        expect.stringMatching(/^pn:/),
+    ])
+    const upload = (await callsOf("sendPhoto", sent)).at(-1)?.body["photo"] as RecordedFile
+    expect(upload.contentType).toBe("image/jpeg")
 
     expect((await report()).awaiting).toHaveLength(1)
     const accepted = await lastSeq()
@@ -123,12 +155,18 @@ test("checkout shows the card; «Я перевёл»; the owner «Деньги �
     const check = block(page, "Mijozlar o'tkazdi, kartani tekshiring")
     await expect(check).toContainText(/55\s000/)
     await check.getByRole("button", { name: "Pul keldi, qabul qilish" }).click()
+    // Never one tap: the sheet asks, with the card and the screenshot.
+    const confirm = checkSheet(page)
+    await expect(confirm).toContainText("•••• 9012")
+    await expect(confirm.getByRole("button", { name: "Chekni ko'rish" })).toBeVisible()
+    await expect(confirm.getByRole("listitem")).toHaveCount(0)
+    await confirm.getByRole("button", { name: /^Ha, 55\s000/ }).click()
     await expect(check).toBeHidden()
     await waitForMessage(PEOPLE.customer.id, "To'lov keldi", accepted)
     expect((await report()).awaiting).toEqual([])
 })
 
-test("not paid, not started: «Принять» is refused; the order card accepts with the money", async ({
+test("not paid, not started: «Принять» is refused; the order card asks before accepting", async ({
     page,
 }) => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
@@ -143,17 +181,80 @@ test("not paid, not started: «Принять» is refused; the order card accep
     await expect(card).toContainText("O'tkazma kutilmoqda")
     await expect(card.getByRole("button", { name: "Qabul qilish", exact: true })).toHaveCount(0)
     await card.getByRole("button", { name: "Pul keldi, qabul qilish" }).click()
+    // The customer never said they paid: the sheet says so, and «Pul kelmadi» is not offered.
+    const confirm = checkSheet(page)
+    await expect(confirm).toContainText("Mijoz o'tkazganini hali bildirmagan")
+    await expect(confirm.getByRole("button", { name: "Yo'q, pul kelmadi" })).toHaveCount(0)
+    await confirm.getByRole("button", { name: /^Ha, 55\s000/ }).click()
     await expect(card).toContainText("To'langan")
     await expect(card.getByRole("button", { name: "Tayyorlashni boshlash" })).toBeVisible()
 })
 
-test("from the bot: «Деньги пришли, принять», then one «Доставил» for the courier", async () => {
+test("«Pul kelmadi»: the customer sends again; a screenshot seen before warns the owner", async ({
+    page,
+}) => {
+    const first = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
+    expect((await sendReceipt(PEOPLE.customer, FOOD, first.id)).status).toBe(200)
+    // Only the order's customer and the shop's owner see the screenshot.
+    expect(
+        (await apiAs(PEOPLE.foodOwner, `/orders/${first.id}/receipt`, { shop: FOOD })).status,
+    ).toBe(200)
+    const stranger = await apiAs(PEOPLE.stranger, `/orders/${first.id}/receipt`, { shop: FOOD })
+    expect([403, 404]).toContain(stranger.status)
+
+    const since = await lastSeq()
+    await openOwner(page)
+    const card = page
+        .locator("li")
+        .filter({ has: page.getByText(`Buyurtma #${first.number}`, { exact: true }) })
+    await card.getByRole("button", { name: "Pul keldi, qabul qilish" }).click()
+    await checkSheet(page).getByRole("button", { name: "Yo'q, pul kelmadi" }).click()
+    await expect(page.getByText("Mijozdan chekni qayta so'radik")).toBeVisible()
+    await expect(card).toContainText("O'tkazma kutilmoqda")
+    await waitForMessage(PEOPLE.customer.id, "pulni topmadi", since)
+
+    // The same screenshot for another order: both warnings, in the app and in the chat.
+    const second = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
+    const resent = await lastSeq()
+    expect((await sendReceipt(PEOPLE.customer, FOOD, second.id)).status).toBe(200)
+    const photo = await waitForMessage(PEOPLE.foodOwner.id, `#${first.number} buyurtmada`, resent)
+    expect(photo.text).toContain("1 ta o'tkazmasi avval topilmagan")
+    await page.getByRole("tab", { name: "Yakunlangan" }).click()
+    await page.getByRole("tab", { name: "Faol" }).click()
+    const next = page
+        .locator("li")
+        .filter({ has: page.getByText(`Buyurtma #${second.number}`, { exact: true }) })
+    await next.getByRole("button", { name: "Pul keldi, qabul qilish" }).click()
+    const warned = checkSheet(page)
+    await expect(warned).toContainText(`Bu chek avval #${first.number} buyurtmada yuborilgan`)
+    await expect(warned).toContainText("1 ta o'tkazmasi avval topilmagan")
+    await warned.getByRole("button", { name: "Yo'q, pul kelmadi" }).click()
+    await expect(warned).toBeHidden()
+
+    // The customer's screen: why, and the way to send it again.
+    await openApp(page, {
+        user: PEOPLE.customer,
+        shop: FOOD,
+        query: `?shop=${FOOD}&order=${first.id}`,
+    })
+    await expect(page.getByRole("heading", { name: "Do'kon pulni topmadi" })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Chekni qayta yuborish" })).toBeVisible()
+    await expect(page.getByText(CARD)).toBeVisible()
+})
+
+test("from the bot: «Pul keldi» asks first, then one «Доставил» for the courier", async () => {
     const since = await lastSeq()
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 2 }])
     const card = await waitForMessage(PEOPLE.foodOwner.id, `#${order.number}`, since)
     const paid = card.buttons.find((b) => b.callback_data === `p:${order.id}`)
     expect(paid?.text).toBe("💳 Pul keldi, qabul qilish")
+    const asked = await lastSeq()
     await shopChat(FOOD).press(PEOPLE.foodOwner, paid?.callback_data ?? "", card.seq)
+    const question = await waitForMessage(PEOPLE.foodOwner.id, "keldimi?", asked)
+    expect(question.text).toContain("•••• 9012")
+    const yes = question.buttons.find((b) => b.callback_data === `pc:${order.id}`)
+    expect(yes?.text).toMatch(/^✅ Ha, [\d\s]+so'm keldi$/)
+    await shopChat(FOOD).press(PEOPLE.foodOwner, yes?.callback_data ?? "", question.seq)
     await expect
         .poll(async () => {
             const read = await apiAs(PEOPLE.customer, `/orders/${order.id}`, { shop: FOOD })
@@ -206,9 +307,9 @@ test("a paid order cancelled: owed back until «Вернул»", async ({ page }
 
 test("the day adds up to the sum; the CSV report arrives in the owner's chat", async ({ page }) => {
     const today = await report()
-    // Delivered today: one order for 100 000, paid by transfer before cooking. The other two
-    // are paid and accepted but not delivered: money counts on delivery.
-    expect(today.totals).toMatchObject({ placed: 3, delivered: 1, cancelled: 1, paid: 100_000 })
+    // Delivered today: one order for 100 000, paid by transfer before cooking. Two more are paid
+    // and accepted but not delivered, two still wait for the money: money counts on delivery.
+    expect(today.totals).toMatchObject({ placed: 5, delivered: 1, cancelled: 1, paid: 100_000 })
     expect((today.totals["goods"] ?? 0) + (today.totals["delivery"] ?? 0)).toBe(100_000)
 
     const since = await lastSeq()
@@ -224,8 +325,8 @@ test("the day adds up to the sum; the CSV report arrives in the owner's chat", a
     const bytes = Buffer.from(csv?.base64 ?? "", "base64")
     expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf])
     const lines = bytes.toString("utf8").slice(1).trim().split("\r\n")
-    // Header + the 4 orders of this file, the cancelled one too.
-    expect(lines).toHaveLength(5)
+    // Header + the 6 orders of this file, the cancelled one too.
+    expect(lines).toHaveLength(7)
     expect(lines[0]).toContain("To'lov holati")
     expect(lines[0]).not.toContain("To'lov usuli")
 })

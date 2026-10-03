@@ -63,6 +63,10 @@ test("empty orders, then a new order: card, every step from the app, customer to
     for (const [button, told] of steps) {
         const since = await lastSeq()
         await one.getByRole("button", { name: button, exact: true }).click()
+        if (button.startsWith("Pul keldi")) {
+            // The money is never one tap: the sheet asks with the sum.
+            await page.getByRole("dialog").getByRole("button", { name: /^Ha, / }).click()
+        }
         // Paid before cooking: «Доставлен» asks nothing more.
         await expect(page.getByRole("dialog")).toBeHidden()
         await waitForMessage(PEOPLE.customer.id, told, since)
@@ -111,6 +115,10 @@ test("bot chat buttons: «Деньги пришли, принять»; old butto
     expect(((await order1.json()) as { status: string }).status).toBe("pending")
 
     await shopChat(FOOD).press(PEOPLE.foodOwner, accept?.callback_data ?? "")
+    // «Pul keldi» asks first; «Ha» confirms.
+    const question = await waitForMessage(PEOPLE.foodOwner.id, "keldimi?", since)
+    const yes = question.buttons.find((b) => b.callback_data === `pc:${order.id}`)
+    await shopChat(FOOD).press(PEOPLE.foodOwner, yes?.callback_data ?? "")
     // The card is edited in place with the next step.
     await expect
         .poll(async () =>
@@ -121,7 +129,7 @@ test("bot chat buttons: «Деньги пришли, принять»; old butto
         )
         .toContain("👨‍🍳 Tayyorlashni boshlash")
     // The old button again: the money is confirmed already, nothing changes.
-    await shopChat(FOOD).press(PEOPLE.foodOwner, accept?.callback_data ?? "")
+    await shopChat(FOOD).press(PEOPLE.foodOwner, yes?.callback_data ?? "")
     const after = await apiAs(PEOPLE.customer, `/orders/${order.id}`, { shop: FOOD })
     expect(((await after.json()) as { status: string }).status).toBe("accepted")
 
