@@ -56,7 +56,7 @@ const BASE = {
         platformWelcome:
             "<b>Zumda: tumaningizdagi do'konlar, oshxonalar va xizmatlar bir joyda.</b>\n\nQidiring, buyurtma bering: eshigingizgacha olib kelamiz.",
         businessWelcome:
-            "<b>Zumda Biznes: do'koningiz, oshxonangiz yoki xizmatingiz uchun o'z buyurtma boti.</b>\n\nBotni shu yerda bir tugma bilan yarating: token kerak emas. Menyu, buyurtmalar, pul va kuryerlar: hammasi «Mening bizneslarim»da.",
+            "<b>Zumda Business: do'koningiz, oshxonangiz yoki xizmatingiz uchun o'z buyurtma boti.</b>\n\nBotni shu yerda bir tugma bilan yarating: token kerak emas. Menyu, buyurtmalar, pul va kuryerlar: hammasi «Mening bizneslarim»da.",
         openBusinesses: "🏪 Mening bizneslarim",
         openShowcase: "🔍 Qidirish va buyurtma berish",
         showcaseOrder: "🛍 Zumda vitrinasidan · komissiya {rate}%: {sum}",

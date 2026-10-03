@@ -208,14 +208,14 @@ export interface TestClient {
             shop?: string
             via?: "marketplace"
             courierBot?: boolean
-            /** Opened from the Zumda Biznes bot («Mening bizneslarim»). */
+            /** Opened from the Zumda Business bot («Mening bizneslarim»). */
             businessBot?: boolean
             authDate?: Date
         },
     ): (path: string, init?: RequestInit & { json?: unknown }) => Promise<Response>
     /** An update from Telegram to the Zumda courier bot's webhook. */
     courierBot(update: object): Promise<Response>
-    /** An update from Telegram to the Zumda Biznes bot's webhook. */
+    /** An update from Telegram to the Zumda Business bot's webhook. */
     businessBot(update: object): Promise<Response>
 }
 

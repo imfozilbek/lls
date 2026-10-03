@@ -38,7 +38,7 @@ interface ErrorBody {
 
 /**
  * Which Zumda bot opened the app around the shop: the customers' Zumda bot (`marketplace`, the
- * showcase), or Zumda Biznes (`business`: «Mening bizneslarim», and an owner's own shop).
+ * showcase), or Zumda Business (`business`: «Mening bizneslarim», and an owner's own shop).
  * Absent: the shop's own bot.
  */
 export type ShopVia = "marketplace" | "business"
@@ -49,7 +49,7 @@ let courierBot = false
 
 /**
  * Every request carries the shop, so the Worker verifies with the right bot token: the shop's own
- * bot, or the Zumda bot that opened it (`via`). Zumda Biznes also works with no shop (`null`).
+ * bot, or the Zumda bot that opened it (`via`). Zumda Business also works with no shop (`null`).
  */
 export function setShop(slug: string | null, options: { via?: ShopVia } = {}): void {
     currentShop = slug

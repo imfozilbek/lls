@@ -47,7 +47,7 @@ describe("Zumda showcase", () => {
         })
     }
 
-    /** Admins' commands live in the Zumda Biznes bot. */
+    /** Admins' commands live in the Zumda Business bot. */
     async function market(args: string, from: object = ADMIN): Promise<void> {
         await client.businessBot({ message: { chat: { id: 1 }, from, text: `/market ${args}` } })
     }
@@ -207,7 +207,7 @@ describe("Zumda showcase", () => {
         expect(welcome?.html).toContain("do'konlar, oshxonalar va xizmatlar")
         const buttons = welcome?.options?.keyboard?.inline_keyboard
         expect(buttons?.[0]?.[0]?.web_app?.url).toContain("mode=market")
-        // Businesses connect in Zumda Biznes: customers see no «connect a business» here.
+        // Businesses connect in Zumda Business: customers see no «connect a business» here.
         expect(buttons).toHaveLength(1)
     })
 

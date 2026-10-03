@@ -22,12 +22,12 @@ const MANAGED_TOKEN = "555000:managed-bot-token-for-tests-only-xxxxxx"
 const NEW_MANAGED_TOKEN = "555000:managed-bot-token-replaced-in-tests-xxx"
 const DAY_MS = 24 * 60 * 60 * 1000
 
-/** The bots are created by, and report to, Zumda Biznes. */
+/** The bots are created by, and report to, Zumda Business. */
 function platformUpdate(client: TestClient, body: object): Promise<Response> {
     return client.businessBot(body)
 }
 
-/** Telegram tells Zumda Biznes that `user` created (or changed) the managed bot. */
+/** Telegram tells Zumda Business that `user` created (or changed) the managed bot. */
 async function managedBotUpdate(
     client: TestClient,
     user: object,
@@ -77,7 +77,7 @@ describe("suggested @username of a new shop bot", () => {
     })
 })
 
-describe("a bot created from Zumda Biznes (Managed Bots)", () => {
+describe("a bot created from Zumda Business (Managed Bots)", () => {
     let client: TestClient
 
     beforeEach(() => {
@@ -108,7 +108,7 @@ describe("a bot created from Zumda Biznes (Managed Bots)", () => {
         expect(prepared?.button.requestId).toBeGreaterThan(0)
     })
 
-    it("prepare is for Zumda Biznes only, and validates the name", async () => {
+    it("prepare is for Zumda Business only, and validates the name", async () => {
         const shop = await createActiveShop(client)
         const fromShopBot = await client.as(OWNER, { botToken: SHOP_BOT_TOKEN, shop: shop.slug })(
             "/api/platform/managed-bot/prepare",
@@ -270,7 +270,7 @@ describe("a bot created from Zumda Biznes (Managed Bots)", () => {
     })
 })
 
-describe("«Mening bizneslarim»: the owner's shop from Zumda Biznes (X-Bot: business)", () => {
+describe("«Mening bizneslarim»: the owner's shop from Zumda Business (X-Bot: business)", () => {
     let client: TestClient
     let slug: string
 
@@ -279,7 +279,7 @@ describe("«Mening bizneslarim»: the owner's shop from Zumda Biznes (X-Bot: bus
         slug = (await createActiveShop(client)).slug
     })
 
-    it("the owner gets the owner section, signed by Zumda Biznes", async () => {
+    it("the owner gets the owner section, signed by Zumda Business", async () => {
         const response = await client.as(OWNER, { shop: slug, businessBot: true })(
             "/api/owner/shop",
         )

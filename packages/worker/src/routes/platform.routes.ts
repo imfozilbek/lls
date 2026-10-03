@@ -47,17 +47,17 @@ async function chosenBot(
 }
 
 /**
- * «Mening bizneslarim» and applications: only from the Zumda Biznes bot (`X-Bot: business`,
+ * «Mening bizneslarim» and applications: only from the Zumda Business bot (`X-Bot: business`,
  * no `X-Shop`). The customers' Zumda bot cannot open them.
  */
 export const platformRoutes = new Hono<AppEnv>()
     .use(async (c, next) => {
         const { business, role } = c.get("auth")
         if (business) {
-            throw new ApiError(400, "PLATFORM_ONLY", "Open this from the Zumda Biznes bot")
+            throw new ApiError(400, "PLATFORM_ONLY", "Open this from the Zumda Business bot")
         }
         if (role !== "business") {
-            throw new ApiError(403, "BUSINESS_BOT_ONLY", "Open this from the Zumda Biznes bot")
+            throw new ApiError(403, "BUSINESS_BOT_ONLY", "Open this from the Zumda Business bot")
         }
         await next()
     })
@@ -95,7 +95,7 @@ export const platformRoutes = new Hono<AppEnv>()
     /**
      * Step «Bot»: a prepared button the app opens with `WebApp.requestChat(preparedId)`. Telegram
      * shows its «new bot» window with the shop's name; the bot is created in the owner's own
-     * account and managed by the Zumda Biznes bot, and `managed_bot` brings us its token. `link` opens
+     * account and managed by the Zumda Business bot, and `managed_bot` brings us its token. `link` opens
      * the same window from Telegram apps that cannot do `requestChat`.
      */
     .post(

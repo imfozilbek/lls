@@ -146,7 +146,7 @@ function ShopApp({
     onExit,
 }: {
     slug: string
-    /** Opened inside a Zumda bot: the showcase, or «Mening bizneslarim» in Zumda Biznes. */
+    /** Opened inside a Zumda bot: the showcase, or «Mening bizneslarim» in Zumda Business. */
     via?: ShopVia
     /** Inside a Zumda bot: "back" on the first screen returns to the search or the list. */
     onExit?: () => void
@@ -231,7 +231,7 @@ function ShowcaseApp(): React.JSX.Element {
 }
 
 /**
- * The Zumda Biznes bot's «Mening bizneslarim»: every shop of the owner, and the owner section of one of
+ * The Zumda Business bot's «Mening bizneslarim»: every shop of the owner, and the owner section of one of
  * them right here, without opening that shop's own bot.
  */
 function BusinessesApp(): React.JSX.Element {

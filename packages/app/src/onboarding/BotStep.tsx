@@ -38,7 +38,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Step «Bot» without a token: Zumda Biznes prepares Telegram's «create a bot» window, the bot is
+ * Step «Bot» without a token: Zumda Business prepares Telegram's «create a bot» window, the bot is
  * created in the owner's own account, and Zumda gets its token by itself.
  */
 export function useManagedBot(name: string, onBot: (bot: ManagedBot) => void): ManagedBotFlow {

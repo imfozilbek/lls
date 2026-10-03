@@ -29,7 +29,7 @@ describe("readLaunchParams", () => {
         expect(readLaunchParams(url, app("evil<script>")).shop).toBeNull()
     })
 
-    it("detects «Mening bizneslarim» opened from Zumda Biznes, and the old onboarding link", () => {
+    it("detects «Mening bizneslarim» opened from Zumda Business, and the old onboarding link", () => {
         for (const mode of ["business", "onboarding"]) {
             const url = new URL(`https://x.pages.dev/?mode=${mode}`)
             expect(readLaunchParams(url, null)).toEqual({

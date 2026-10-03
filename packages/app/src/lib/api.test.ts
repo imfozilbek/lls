@@ -33,7 +33,7 @@ describe("api client", () => {
         expect(headers.get("X-Shop")).toBe("osh-markaz")
     })
 
-    it("Zumda Biznes signs «Mening bizneslarim» and an owner's shop opened from it", async () => {
+    it("Zumda Business signs «Mening bizneslarim» and an owner's shop opened from it", async () => {
         fetchMock.mockResolvedValue(reply(200, []))
         setShop(null, { via: "business" })
         await api.platform.myShops()

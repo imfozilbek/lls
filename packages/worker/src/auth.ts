@@ -21,7 +21,7 @@ export const VIA_HEADER = "X-Via"
 export const VIA_MARKETPLACE = "marketplace"
 /**
  * `courier`: the Zumda courier bot opened the app (the courier's screen across their shops).
- * `business`: the Zumda Biznes bot opened it («Mening bizneslarim», and an owner's own shop).
+ * `business`: the Zumda Business bot opened it («Mening bizneslarim», and an owner's own shop).
  */
 export const BOT_HEADER = "X-Bot"
 export const BOT_COURIER = "courier"
@@ -75,7 +75,7 @@ async function signerOf(
  * Verifies Telegram initData with the token of the bot that opened the Mini App:
  * - `X-Shop` alone: the shop's own bot;
  * - `X-Shop` + `X-Via: marketplace`: the Zumda bot, and the shop must be in the showcase;
- * - `X-Bot: business`: the Zumda Biznes bot: «Mening bizneslarim» without `X-Shop`; with it,
+ * - `X-Bot: business`: the Zumda Business bot: «Mening bizneslarim» without `X-Shop`; with it,
  *   only the shop's owner gets in (else 403);
  * - `X-Bot: courier`: the Zumda courier bot (the courier's screen, no shop);
  * - nothing: the Zumda bot (showcase search).
@@ -137,11 +137,11 @@ function accessIn(
 ): Pick<AuthContext, "role" | "channel" | "scope"> {
     const viaShowcase = entry === VIA_MARKETPLACE
     if (!business) {
-        // Zumda Biznes without a shop: «Mening bizneslarim» and applications.
+        // Zumda Business without a shop: «Mening bizneslarim» and applications.
         const role = entry === BOT_BUSINESS ? "business" : "customer"
         return { role, channel: OrderChannel.SHOP_BOT, scope: TRUSTED_SCOPE }
     }
-    // The owner screen opens from the shop's own bot, or from Zumda Biznes for the owner only.
+    // The owner screen opens from the shop's own bot, or from Zumda Business for the owner only.
     const role = viaShowcase ? "customer" : roleIn(business, telegramId)
     if (entry === BOT_BUSINESS && role !== "owner") {
         throw ForbiddenError.notOwner(business.id)

@@ -60,7 +60,7 @@ describe("auth", () => {
     })
 })
 
-describe("onboarding through the Zumda Biznes bot", () => {
+describe("onboarding through the Zumda Business bot", () => {
     it("registers a pending shop and never stores the token in plain text", async () => {
         const client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
         const owner = client.as(OWNER, { businessBot: true })

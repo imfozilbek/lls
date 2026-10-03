@@ -68,7 +68,7 @@ export const DEV_COURIER_BOT = {
     webhookSecret: "dev-courier-secret",
 }
 
-/** The Zumda Biznes bot of the local stand (owners, admins, Managed Bots). secret-scan: fake */
+/** The Zumda Business bot of the local stand (owners, admins, Managed Bots). secret-scan: fake */
 export const DEV_BUSINESS_BOT = {
     id: 100200997,
     username: "zumda_biznes_dev_bot",

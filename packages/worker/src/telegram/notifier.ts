@@ -44,7 +44,7 @@ export function courierAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=courier`
 }
 
-/** «Mening bizneslarim»: the owner's businesses, opened from the Zumda Biznes bot. */
+/** «Mening bizneslarim»: the owner's businesses, opened from the Zumda Business bot. */
 export function businessAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=business`
 }
@@ -383,7 +383,7 @@ export class Notifier {
         )
     }
 
-    /** Tells the owner (in Zumda Biznes, where they applied) that the showcase deal changed. */
+    /** Tells the owner (in Zumda Business, where they applied) that the showcase deal changed. */
     async showcaseChanged(shop: ShopOwnerDTO): Promise<void> {
         const t = textsFor(await this.languageOf(shop.ownerTelegramId))
         const name = `<b>${escapeHtml(shop.name)}</b>`
@@ -478,7 +478,7 @@ export class Notifier {
         )
     }
 
-    /** The owner created a bot from Zumda Biznes: back to the application, no token to copy. */
+    /** The owner created a bot from Zumda Business: back to the application, no token to copy. */
     async managedBotCreated(ownerTelegramId: number, botUsername: string): Promise<void> {
         const texts = textsFor(await this.languageOf(ownerTelegramId))
         await this.services.telegram.sendMessage(

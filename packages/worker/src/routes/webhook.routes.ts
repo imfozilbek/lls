@@ -239,7 +239,7 @@ export const webhookRoutes = new Hono<AppEnv>()
         if (message) {
             await handleSafely(() => handlePlatformMessage(services, message))
         }
-        // Approval cards an admin got from this bot before Zumda Biznes took them over.
+        // Approval cards an admin got from this bot before Zumda Business took them over.
         const callback = update?.callback_query
         if (callback) {
             const origin = new URL(c.req.url).origin
@@ -250,7 +250,7 @@ export const webhookRoutes = new Hono<AppEnv>()
         return c.json({ ok: true })
     })
 
-    /** The Zumda Biznes bot: owners, applications, admins' commands, bots it manages. */
+    /** The Zumda Business bot: owners, applications, admins' commands, bots it manages. */
     .post("/business", async (c) => {
         const secret = c.req.header(SECRET_HEADER) ?? ""
         if (!timingSafeEqual(secret, c.env.BUSINESS_WEBHOOK_SECRET)) {

@@ -32,7 +32,7 @@ function update(body: object, secret: string): RequestInit {
     }
 }
 
-describe("Zumda Biznes bot", () => {
+describe("Zumda Business bot", () => {
     let client: TestClient
 
     beforeEach(() => {
@@ -150,7 +150,7 @@ describe("Zumda Biznes bot", () => {
     })
 })
 
-describe("Zumda Biznes bot: a failed connection on approval", () => {
+describe("Zumda Business bot: a failed connection on approval", () => {
     let client: TestClient
 
     const platform = (body: object): Promise<Response> =>
@@ -215,7 +215,7 @@ describe("the Zumda bot is for customers only", () => {
         expect(response.status).toBe(401)
     })
 
-    it("admins' commands do nothing here: they live in Zumda Biznes", async () => {
+    it("admins' commands do nothing here: they live in Zumda Business", async () => {
         const { slug } = await createActiveShop(client)
         const before = client.telegram.sent.length
         await zumdaShop({
@@ -230,7 +230,7 @@ describe("the Zumda bot is for customers only", () => {
         expect(row?.bps).toBeNull()
     })
 
-    it("an approval card it sent before Zumda Biznes still works", async () => {
+    it("an approval card it sent before Zumda Business still works", async () => {
         const registered = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: {

@@ -1,5 +1,5 @@
 /**
- * The Zumda Biznes bot (webhook `/tg/business`): owners open «Mening bizneslarim» here; platform
+ * The Zumda Business bot (webhook `/tg/business`): owners open «Mening bizneslarim» here; platform
  * admins approve applications and run `/reconnect`, `/market`, `/district`, `/network`.
  */
 import { DomainError, Language, languageFromTelegram, toShopOwnerDTO } from "@zumda/core"
@@ -20,7 +20,7 @@ import type { ShopOwnerDTO } from "@zumda/core"
 
 /**
  * An admin's «Tasdiqlash / Rad etish» on an application card. `token` is the bot the card came
- * from: Zumda Biznes, or the customers' Zumda bot for cards sent before Zumda Biznes existed.
+ * from: Zumda Business, or the customers' Zumda bot for cards sent before Zumda Business existed.
  */
 export async function handleReviewCallback(
     services: Services,
@@ -175,7 +175,7 @@ async function handleMarketCommand(services: Services, message: IncomingMessage)
     }
 }
 
-/** Zumda Biznes: the welcome with «Mening bizneslarim», and the admins' commands. */
+/** Zumda Business: the welcome with «Mening bizneslarim», and the admins' commands. */
 export async function handleBusinessMessage(
     services: Services,
     message: IncomingMessage,

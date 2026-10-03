@@ -66,7 +66,7 @@ describe("district network", () => {
     const courierApp = (user: object): ReturnType<TestClient["as"]> =>
         client.as(user, { courierBot: true })
 
-    /** Admins' commands live in the Zumda Biznes bot. */
+    /** Admins' commands live in the Zumda Business bot. */
     async function platform(text: string, from = ADMIN): Promise<void> {
         await client.businessBot({
             update_id: 1,

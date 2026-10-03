@@ -121,7 +121,7 @@ export const haptic = {
 export interface LaunchParams {
     /** Shop slug from `?shop=` or `startapp=shop_<slug>`. */
     shop: string | null
-    /** `?mode=business` (old buttons: `?mode=onboarding`): «Mening bizneslarim», Zumda Biznes. */
+    /** `?mode=business` (old buttons: `?mode=onboarding`): «Mening bizneslarim», Zumda Business. */
     business: boolean
     /** `?mode=courier`: the courier's deliveries across shops, opened from the Zumda courier bot. */
     courier: boolean

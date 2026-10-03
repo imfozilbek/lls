@@ -11,7 +11,7 @@ export interface Bindings extends Env {
     COURIER_BOT_TOKEN: string
     COURIER_WEBHOOK_SECRET: string
     /**
-     * The Zumda Biznes bot: owners' «Mening bizneslarim», applications, admins' commands; it
+     * The Zumda Business bot: owners' «Mening bizneslarim», applications, admins' commands; it
      * creates and manages the shops' bots (Telegram Managed Bots).
      */
     BUSINESS_BOT_TOKEN: string
@@ -33,12 +33,12 @@ export interface AuthContext {
     /**
      * The viewer's role: `owner` or `customer` in a shop; `courier` when the Zumda courier bot
      * opened the app (no shop: a courier works for several); `customer` in the showcase;
-     * `business` in Zumda Biznes before a shop is opened.
+     * `business` in Zumda Business before a shop is opened.
      */
     role: ViewerRole
 }
 
-/** `business`: a person in the Zumda Biznes bot without a shop open («Mening bizneslarim»). */
+/** `business`: a person in the Zumda Business bot without a shop open («Mening bizneslarim»). */
 export type ViewerRole = "owner" | "courier" | "customer" | "business"
 
 export interface AppEnv {
