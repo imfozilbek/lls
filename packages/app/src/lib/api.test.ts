@@ -33,6 +33,22 @@ describe("api client", () => {
         expect(headers.get("X-Shop")).toBe("osh-markaz")
     })
 
+    it("Zumda Business signs «Mening bizneslarim» and an owner's shop opened from it", async () => {
+        fetchMock.mockResolvedValue(reply(200, []))
+        setShop(null, { via: "business" })
+        await api.platform.myShops()
+        setShop("osh-markaz", { via: "business" })
+        await api.me()
+        setShop("osh-markaz", { via: "marketplace" })
+        await api.me()
+        const headers = fetchMock.mock.calls.map(([, init]) => new Headers(init?.headers))
+        expect(headers.map((h) => [h.get("X-Bot"), h.get("X-Shop"), h.get("X-Via")])).toEqual([
+            ["business", null, null],
+            ["business", "osh-markaz", null],
+            [null, "osh-markaz", "marketplace"],
+        ])
+    })
+
     it("sends only product ids and quantities when ordering", async () => {
         fetchMock.mockResolvedValue(reply(201, { id: "o1" }))
         await api.placeOrder({

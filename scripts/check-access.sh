@@ -3,7 +3,7 @@
 #
 #   scripts/check-access.sh
 #
-# Reads CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, COURIER_BOT_TOKEN and
+# Reads CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, BUSINESS_BOT_TOKEN, COURIER_BOT_TOKEN and
 # PLATFORM_ADMIN_IDS from the environment (Claude's cloud environment, or your shell). It never
 # prints their values: only OK / FAIL per check and what to do about a FAIL.
 # Steps to create the keys: docs/launch-checklist.md.
@@ -14,6 +14,8 @@ readonly TG_API="https://api.telegram.org"
 readonly ZONE="zumda.shop"
 readonly PLATFORM_BOT="zumdashop_bot"
 readonly COURIER_BOT="zumdashop_kuryer_bot"
+# Zumda | Business: its @username is whatever the owner picked; the check names it.
+readonly BUSINESS_BOT=""
 
 failures=0
 
@@ -35,7 +37,7 @@ cf_error() { jq -r '[.errors[]?.message] | join("; ") | if . == "" then "unknown
 
 check_variables() {
     local missing=0
-    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN COURIER_BOT_TOKEN PLATFORM_ADMIN_IDS; do
+    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN COURIER_BOT_TOKEN BUSINESS_BOT_TOKEN PLATFORM_ADMIN_IDS; do
         if [[ -n "${!name:-}" ]]; then
             ok "variable ${name} is set"
         else
@@ -116,21 +118,22 @@ check_bot() {
     username="$(jq -r '.result.username // empty' <<<"$body" 2>/dev/null)"
     if [[ -z "$username" ]]; then
         bad "$label" "Telegram does not accept the token: copy it again from @BotFather"
-    elif [[ "$username" != "$expected" ]]; then
+    elif [[ -n "$expected" && "$username" != "$expected" ]]; then
         bad "$label" "the token belongs to @${username}, expected @${expected}"
     else
         ok "${label} is @${username}"
     fi
 }
 
-# Goal 14: the Zumda bot creates shop bots for owners (Telegram Managed Bots).
+# Goal 14: Zumda | Business creates shop bots for owners (Telegram Managed Bots).
 check_bot_management() {
-    local body
-    body="$(curl -sS -m 20 "${TG_API}/bot${PLATFORM_BOT_TOKEN}/getMe" 2>/dev/null || echo '{"ok":false}')"
+    local body username
+    body="$(curl -sS -m 20 "${TG_API}/bot${BUSINESS_BOT_TOKEN}/getMe" 2>/dev/null || echo '{"ok":false}')"
+    username="$(jq -r '.result.username // "the Zumda | Business bot"' <<<"$body" 2>/dev/null)"
     if [[ "$(jq -r '.result.can_manage_bots // false' <<<"$body" 2>/dev/null)" == "true" ]]; then
-        ok "@${PLATFORM_BOT} can create bots for owners (can_manage_bots)"
+        ok "@${username} can create bots for owners (can_manage_bots)"
     else
-        bad "Bot Management Mode" "@BotFather → @${PLATFORM_BOT} → Bot Settings → Bot Management Mode → On"
+        bad "Bot Management Mode" "@BotFather → @${username} → Bot Settings → Bot Management Mode → On"
     fi
 }
 
@@ -142,6 +145,7 @@ if check_variables; then
         check_account_products
     fi
     check_bot "PLATFORM_BOT_TOKEN" "$PLATFORM_BOT_TOKEN" "$PLATFORM_BOT"
+    check_bot "BUSINESS_BOT_TOKEN" "$BUSINESS_BOT_TOKEN" "$BUSINESS_BOT"
     check_bot_management
     check_bot "COURIER_BOT_TOKEN" "$COURIER_BOT_TOKEN" "$COURIER_BOT"
 fi

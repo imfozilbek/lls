@@ -11,7 +11,7 @@ import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../su
 import {
     courierChat,
     lastSeq,
-    platformChat,
+    businessChat,
     messagesTo,
     waitForMessage,
 } from "../support/telegram.js"
@@ -219,12 +219,12 @@ test("nobody took it in 10 minutes: the shop and the admin hear it once", async 
     runSql(
         `UPDATE orders SET network_requested_at = network_requested_at - 11 * 60000 WHERE id = '${order.id}'`,
     )
-    await platformChat().send(PEOPLE.admin, "/network")
+    await businessChat().send(PEOPLE.admin, "/network")
     await waitForMessage(PEOPLE.admin.id, "Tuman tarmog'i, 7 kun", since)
     await waitForMessage(PEOPLE.admin.id, `#${order.number} buyurtma 10 daqiqa`, since)
     await waitForMessage(PEOPLE.foodOwner.id, `#${order.number} buyurtma 10 daqiqadan beri`, since)
     const again = await lastSeq()
-    await platformChat().send(PEOPLE.admin, "/network")
+    await businessChat().send(PEOPLE.admin, "/network")
     await waitForMessage(PEOPLE.admin.id, "Tuman tarmog'i, 7 kun", again)
     const owners = await messagesTo(PEOPLE.foodOwner.id, again)
     expect(owners.filter((m) => m.text.includes("10 daqiqadan beri"))).toEqual([])

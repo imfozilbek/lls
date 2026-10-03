@@ -17,7 +17,7 @@ describe("readLaunchParams", () => {
     it("reads the shop from the menu button URL", () => {
         expect(readLaunchParams(new URL("https://x.pages.dev/?shop=osh"), null)).toEqual({
             shop: "osh",
-            onboarding: false,
+            business: false,
             courier: false,
             market: false,
         })
@@ -29,14 +29,16 @@ describe("readLaunchParams", () => {
         expect(readLaunchParams(url, app("evil<script>")).shop).toBeNull()
     })
 
-    it("detects the onboarding mode of the platform bot", () => {
-        const url = new URL("https://x.pages.dev/?mode=onboarding")
-        expect(readLaunchParams(url, null)).toEqual({
-            shop: null,
-            onboarding: true,
-            courier: false,
-            market: false,
-        })
+    it("detects «Mening bizneslarim» opened from Zumda Business, and the old onboarding link", () => {
+        for (const mode of ["business", "onboarding"]) {
+            const url = new URL(`https://x.pages.dev/?mode=${mode}`)
+            expect(readLaunchParams(url, null)).toEqual({
+                shop: null,
+                business: true,
+                courier: false,
+                market: false,
+            })
+        }
     })
 
     it("detects the Zumda showcase opened from the Zumda bot", () => {
@@ -48,7 +50,7 @@ describe("readLaunchParams", () => {
         const url = new URL("https://x.pages.dev/?shop=osh&mode=courier")
         expect(readLaunchParams(url, null)).toEqual({
             shop: "osh",
-            onboarding: false,
+            business: false,
             courier: true,
             market: false,
         })

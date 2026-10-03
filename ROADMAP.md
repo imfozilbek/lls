@@ -173,8 +173,10 @@ Pilot: **food, water and grocery at the same time.**
 - [x] First production deploy; Claude deploys `main` again with the `deploy` event
 - [x] Goal 14: «Mening bizneslarim» and a shop bot created from the Zumda bot without a token
       (Telegram Managed Bots); the token path stays
-- [ ] Goal 14 in production: create a bot with «Bot yaratish», approve it, answer the practice
-      questions (token change, owner change, turning management off, the limit)
+- [x] Three Zumda bots by role: «Zumda | Shop» (customers), «Zumda | Business» (owners, admins,
+      Managed Bots), «Zumda | Kuryer» (couriers)
+- [ ] Goal 14 in production: create a bot with «Bot yaratish» in Zumda | Business, approve it,
+      answer the practice questions (token change, owner change, turning management off, the limit)
 - [ ] Production check: connect a test shop → order → statuses → notifications
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**

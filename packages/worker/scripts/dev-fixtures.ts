@@ -68,6 +68,14 @@ export const DEV_COURIER_BOT = {
     webhookSecret: "dev-courier-secret",
 }
 
+/** The Zumda Business bot of the local stand (owners, admins, Managed Bots). secret-scan: fake */
+export const DEV_BUSINESS_BOT = {
+    id: 100200997,
+    username: "zumda_biznes_dev_bot",
+    token: "100200997:DEV-business-token-not-a-real-bot",
+    webhookSecret: "dev-business-secret",
+}
+
 /** One courier who works for all three shops: a person may deliver for several. */
 export const DEV_COURIER = { id: 3003, first_name: "Jasur", language_code: "uz" }
 /** The demo district of the delivery network: 30 km around Gulistan. */

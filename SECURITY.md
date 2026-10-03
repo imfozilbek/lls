@@ -12,7 +12,7 @@ Please **do not** open a public issue. Use GitHub's private report instead:
 | Secret | Where | Never in |
 |--------|-------|----------|
 | Cloudflare API token, account id | GitHub Actions secrets | code, logs, issues |
-| Zumda bot token, admin ids | GitHub Actions secrets → Worker secrets | code, logs |
+| Zumda bots' tokens (Shop, Business, Kuryer), admin ids | GitHub Actions secrets → Worker secrets | code, logs |
 | `TOKEN_ENC_KEY` (encrypts shop bot tokens) | Worker secrets; optional saved copy in GitHub secrets and offline | code, chats, logs |
 | Shop bot tokens | D1, encrypted with AES-GCM | API responses, logs |
 | Local development | `packages/worker/.dev.vars` (git-ignored, fake tokens) | commits |

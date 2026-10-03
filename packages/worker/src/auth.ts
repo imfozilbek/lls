@@ -19,16 +19,20 @@ export const SHOP_HEADER = "X-Shop"
 /** `marketplace`: a shop opened from the Zumda showcase, inside the Zumda bot. */
 export const VIA_HEADER = "X-Via"
 export const VIA_MARKETPLACE = "marketplace"
-/** `admin`: the owner's own shop opened from «Mening bizneslarim» inside the Zumda bot. */
-export const VIA_ADMIN = "admin"
-/** `courier`: the Zumda courier bot opened the app (the courier's screen across their shops). */
+/**
+ * `courier`: the Zumda courier bot opened the app (the courier's screen across their shops).
+ * `business`: the Zumda Business bot opened it («Mening bizneslarim», and an owner's own shop).
+ */
 export const BOT_HEADER = "X-Bot"
 export const BOT_COURIER = "courier"
+export const BOT_BUSINESS = "business"
 
-type Via = "shop" | typeof VIA_MARKETPLACE | typeof VIA_ADMIN
+/** Which bot opened the app, so which token must have signed it. */
+type Entry = "shop" | typeof VIA_MARKETPLACE | typeof BOT_BUSINESS
 
-function viaOf(header: string | undefined): Via {
-    return header === VIA_MARKETPLACE || header === VIA_ADMIN ? header : "shop"
+interface EntryTokens {
+    platform: string
+    business: string
 }
 
 interface SignedBy {
@@ -39,25 +43,26 @@ interface SignedBy {
 /** The shop from `X-Shop` and the token of the bot that must have signed the request. */
 async function signerOf(
     services: Services,
-    platformToken: string,
+    tokens: EntryTokens,
     slug: string | undefined,
-    via: Via,
+    entry: Entry,
 ): Promise<SignedBy> {
+    const zumdaToken = entry === BOT_BUSINESS ? tokens.business : tokens.platform
     if (!slug) {
-        return { business: null, botToken: platformToken }
+        return { business: null, botToken: zumdaToken }
     }
     const business = await services.businesses.findBySlug(slug)
-    if (via === VIA_MARKETPLACE) {
+    if (entry === VIA_MARKETPLACE) {
         if (!business?.isInShowcase()) {
             throw EntityNotFoundError.businessBySlug(slug)
         }
-        return { business, botToken: platformToken }
+        return { business, botToken: zumdaToken }
     }
-    if (via === VIA_ADMIN) {
+    if (entry === BOT_BUSINESS) {
         if (!business) {
             throw EntityNotFoundError.businessBySlug(slug)
         }
-        return { business, botToken: platformToken }
+        return { business, botToken: zumdaToken }
     }
     const credentials = business ? await services.businesses.getBotCredentials(business.id) : null
     if (!business || !credentials) {
@@ -70,9 +75,10 @@ async function signerOf(
  * Verifies Telegram initData with the token of the bot that opened the Mini App:
  * - `X-Shop` alone: the shop's own bot;
  * - `X-Shop` + `X-Via: marketplace`: the Zumda bot, and the shop must be in the showcase;
- * - `X-Shop` + `X-Via: admin`: the Zumda bot, and only the shop's owner gets in (else 403);
+ * - `X-Bot: business`: the Zumda Business bot: «Mening bizneslarim» without `X-Shop`; with it,
+ *   only the shop's owner gets in (else 403);
  * - `X-Bot: courier`: the Zumda courier bot (the courier's screen, no shop);
- * - nothing: the Zumda bot (onboarding, showcase search).
+ * - nothing: the Zumda bot (showcase search).
  * The token that verified the signature fixes the order channel, so the client cannot pick it.
  */
 export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
@@ -101,43 +107,55 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
         await next()
         return
     }
-    const via = viaOf(c.req.header(VIA_HEADER))
+    const entry = entryOf(c.req.header(BOT_HEADER), c.req.header(VIA_HEADER))
     const { business, botToken } = await signerOf(
         services,
-        c.env.PLATFORM_BOT_TOKEN,
+        { platform: c.env.PLATFORM_BOT_TOKEN, business: c.env.BUSINESS_BOT_TOKEN },
         c.req.header(SHOP_HEADER),
-        via,
+        entry,
     )
     const verified = await verifyInitData(initData, botToken, services.clock.now())
     if (!verified) {
         throw unauthorized()
     }
-    c.set("auth", { user: verified.user, business, ...accessIn(business, via, verified.user.id) })
+    c.set("auth", { user: verified.user, business, ...accessIn(business, entry, verified.user.id) })
     await next()
 })
+
+function entryOf(bot: string | undefined, via: string | undefined): Entry {
+    if (bot === BOT_BUSINESS) {
+        return BOT_BUSINESS
+    }
+    return via === VIA_MARKETPLACE ? VIA_MARKETPLACE : "shop"
+}
 
 /** The role, channel and trust of a verified user in the shop they opened (if any). */
 function accessIn(
     business: Business | null,
-    via: Via,
+    entry: Entry,
     telegramId: number,
 ): Pick<AuthContext, "role" | "channel" | "scope"> {
-    const viaShowcase = via === VIA_MARKETPLACE
-    // The owner screen opens from the shop's own bot, or from the Zumda bot for the owner only.
-    const role = business && !viaShowcase ? roleIn(business, telegramId) : "customer"
-    if (business && via === VIA_ADMIN && role !== "owner") {
+    const viaShowcase = entry === VIA_MARKETPLACE
+    if (!business) {
+        // Zumda Business without a shop: «Mening bizneslarim» and applications.
+        const role = entry === BOT_BUSINESS ? "business" : "customer"
+        return { role, channel: OrderChannel.SHOP_BOT, scope: TRUSTED_SCOPE }
+    }
+    // The owner screen opens from the shop's own bot, or from Zumda Business for the owner only.
+    const role = viaShowcase ? "customer" : roleIn(business, telegramId)
+    if (entry === BOT_BUSINESS && role !== "owner") {
         throw ForbiddenError.notOwner(business.id)
     }
     // A shop that is not live yet is open to its owner only; a turned-off shop to nobody.
-    if (business && !business.isActive() && (role !== "owner" || !business.isPending())) {
+    if (!business.isActive() && (role !== "owner" || !business.isPending())) {
         throw EntityNotFoundError.businessBySlug(business.slug.value)
     }
     return {
         role,
         channel: viaShowcase ? OrderChannel.MARKETPLACE : OrderChannel.SHOP_BOT,
         // The shop owner holds the shop bot token and could sign any user id with it; the Zumda
-        // bot's signature is trusted everywhere.
-        scope: business && via === "shop" ? shopScope(business.id) : TRUSTED_SCOPE,
+        // bots' signatures are trusted everywhere.
+        scope: entry === "shop" ? shopScope(business.id) : TRUSTED_SCOPE,
     }
 }
 

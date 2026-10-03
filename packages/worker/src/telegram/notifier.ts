@@ -44,8 +44,9 @@ export function courierAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=courier`
 }
 
-export function onboardingAppUrl(appOrigin: string): string {
-    return `${appOrigin}/?mode=onboarding`
+/** «Mening bizneslarim»: the owner's businesses, opened from the Zumda Business bot. */
+export function businessAppUrl(appOrigin: string): string {
+    return `${appOrigin}/?mode=business`
 }
 
 /** The Zumda showcase: search across shops, opened from the Zumda bot. */
@@ -291,7 +292,7 @@ export class Notifier {
             for (const adminId of platformAdminIds(this.services.env)) {
                 const admin = textsFor(await this.languageOf(adminId))
                 await this.services.telegram.sendMessage(
-                    this.services.env.PLATFORM_BOT_TOKEN,
+                    this.services.env.BUSINESS_BOT_TOKEN,
                     adminId,
                     fill(admin.networkOverdueAdmin, {
                         shop: escapeHtml(business.name),
@@ -382,7 +383,7 @@ export class Notifier {
         )
     }
 
-    /** Tells the owner (in the Zumda bot, where they applied) that the showcase deal changed. */
+    /** Tells the owner (in Zumda Business, where they applied) that the showcase deal changed. */
     async showcaseChanged(shop: ShopOwnerDTO): Promise<void> {
         const t = textsFor(await this.languageOf(shop.ownerTelegramId))
         const name = `<b>${escapeHtml(shop.name)}</b>`
@@ -393,14 +394,14 @@ export class Notifier {
               })
             : fill(t.showcaseLeft, { shop: name })
         await this.services.telegram.sendMessage(
-            this.services.env.PLATFORM_BOT_TOKEN,
+            this.services.env.BUSINESS_BOT_TOKEN,
             shop.ownerTelegramId,
             text,
         )
     }
 
     async shopRegistered(shop: ShopOwnerDTO): Promise<void> {
-        const token = this.services.env.PLATFORM_BOT_TOKEN
+        const token = this.services.env.BUSINESS_BOT_TOKEN
         const ownerLanguage = await this.languageOf(shop.ownerTelegramId)
         const name = escapeHtml(shop.name)
         await this.services.telegram.sendMessage(
@@ -477,11 +478,11 @@ export class Notifier {
         )
     }
 
-    /** The owner created a bot from the Zumda bot: back to the application, no token to copy. */
+    /** The owner created a bot from Zumda Business: back to the application, no token to copy. */
     async managedBotCreated(ownerTelegramId: number, botUsername: string): Promise<void> {
         const texts = textsFor(await this.languageOf(ownerTelegramId))
         await this.services.telegram.sendMessage(
-            this.services.env.PLATFORM_BOT_TOKEN,
+            this.services.env.BUSINESS_BOT_TOKEN,
             ownerTelegramId,
             fill(texts.managedBotCreated, { bot: `@${escapeHtml(botUsername)}` }),
             {
@@ -490,7 +491,7 @@ export class Notifier {
                         [
                             {
                                 text: texts.continueSetup,
-                                web_app: { url: onboardingAppUrl(this.services.env.APP_ORIGIN) },
+                                web_app: { url: businessAppUrl(this.services.env.APP_ORIGIN) },
                             },
                         ],
                     ],
@@ -501,7 +502,7 @@ export class Notifier {
 
     /** Someone else owns a shop's managed bot now: the admins decide, nothing moves silently. */
     async managedBotOwnerChanged(shop: ShopOwnerDTO, newOwnerTelegramId: number): Promise<void> {
-        const token = this.services.env.PLATFORM_BOT_TOKEN
+        const token = this.services.env.BUSINESS_BOT_TOKEN
         for (const adminId of platformAdminIds(this.services.env)) {
             const t = textsFor(await this.languageOf(adminId))
             await this.services.telegram.sendMessage(
@@ -518,12 +519,12 @@ export class Notifier {
 
     /** Approve: connect the shop bot (webhook + menu button) and send the owner their link. */
     async shopReviewed(shop: ShopOwnerDTO, workerOrigin: string): Promise<void> {
-        const platformToken = this.services.env.PLATFORM_BOT_TOKEN
+        const businessToken = this.services.env.BUSINESS_BOT_TOKEN
         const texts = textsFor(await this.languageOf(shop.ownerTelegramId), shop.type)
         const name = `<b>${escapeHtml(shop.name)}</b>`
         if (shop.status !== "active") {
             await this.services.telegram.sendMessage(
-                platformToken,
+                businessToken,
                 shop.ownerTelegramId,
                 fill(texts.shopRejected, { shop: name }),
             )
@@ -532,7 +533,7 @@ export class Notifier {
         await this.connectShopBot(shop, workerOrigin)
         const link = `https://t.me/${shop.botUsername}`
         await this.services.telegram.sendMessage(
-            platformToken,
+            businessToken,
             shop.ownerTelegramId,
             `${fill(texts.shopApproved, { shop: name })}\n${link}`,
         )

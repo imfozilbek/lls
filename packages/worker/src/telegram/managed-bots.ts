@@ -80,7 +80,7 @@ export function randomRequestId(): number {
 }
 
 /**
- * `managed_bot` in the Zumda bot: a bot was created for us to manage, or its token or its owner
+ * `managed_bot` in the Zumda Business bot: a bot was created for us to manage, or its token or its owner
  * changed. The token is fetched here and goes straight to the encrypted store.
  */
 export async function handleManagedBot(
@@ -89,7 +89,7 @@ export async function handleManagedBot(
     workerOrigin: string,
 ): Promise<void> {
     const token = await services.telegram.getManagedBotToken(
-        services.env.PLATFORM_BOT_TOKEN,
+        services.env.BUSINESS_BOT_TOKEN,
         update.bot.id,
     )
     const change = await services.useCases.managedBotChanged.execute({

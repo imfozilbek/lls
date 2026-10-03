@@ -206,17 +206,41 @@ export interface TestClient {
         options: {
             botToken?: string
             shop?: string
-            via?: "marketplace" | "admin"
+            via?: "marketplace"
             courierBot?: boolean
+            /** Opened from the Zumda Business bot («Mening bizneslarim»). */
+            businessBot?: boolean
             authDate?: Date
         },
     ): (path: string, init?: RequestInit & { json?: unknown }) => Promise<Response>
     /** An update from Telegram to the Zumda courier bot's webhook. */
     courierBot(update: object): Promise<Response>
+    /** An update from Telegram to the Zumda Business bot's webhook. */
+    businessBot(update: object): Promise<Response>
 }
 
 export const COURIER_BOT: BotInfo = { id: 100100, username: "zumda_kuryer_bot", firstName: "Zumda" }
+export const BUSINESS_BOT: BotInfo = {
+    id: 100200,
+    username: "zumda_biznes_bot",
+    firstName: "Zumda",
+}
 export const PLATFORM_BOT: BotInfo = { id: 100000, username: "zumdashop_bot", firstName: "Zumda" }
+
+/** The token that signs: a forged one if given, else the bot the app was opened from. */
+function signerToken(from: {
+    botToken?: string
+    courierBot?: boolean
+    businessBot?: boolean
+}): string {
+    if (from.botToken) {
+        return from.botToken
+    }
+    if (from.courierBot) {
+        return env.COURIER_BOT_TOKEN
+    }
+    return from.businessBot ? env.BUSINESS_BOT_TOKEN : env.PLATFORM_BOT_TOKEN
+}
 
 export function testClient(
     options: { bots?: Record<string, BotInfo>; clock?: Clock } = {},
@@ -224,6 +248,7 @@ export function testClient(
     const telegram = new FakeTelegram({
         [env.COURIER_BOT_TOKEN]: COURIER_BOT,
         [env.PLATFORM_BOT_TOKEN]: PLATFORM_BOT,
+        [env.BUSINESS_BOT_TOKEN]: BUSINESS_BOT,
         ...options.bots,
     })
     const app = createApp({ telegram, clock: options.clock })
@@ -235,25 +260,31 @@ export function testClient(
         return response
     }
 
+    function webhook(path: string, secret: string, update: object): Promise<Response> {
+        return request(path, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Telegram-Bot-Api-Secret-Token": secret,
+            },
+            body: JSON.stringify(update),
+        })
+    }
+
     return {
         telegram,
         request,
-        courierBot: (update) =>
-            request("/tg/courier", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-Telegram-Bot-Api-Secret-Token": env.COURIER_WEBHOOK_SECRET,
-                },
-                body: JSON.stringify(update),
-            }),
-        as(user, { botToken = env.PLATFORM_BOT_TOKEN, shop, via, courierBot, authDate }) {
+        courierBot: (update) => webhook("/tg/courier", env.COURIER_WEBHOOK_SECRET, update),
+        businessBot: (update) => webhook("/tg/business", env.BUSINESS_WEBHOOK_SECRET, update),
+        as(user, { botToken, shop, via, courierBot, businessBot, authDate }) {
             return async (path, init = {}) => {
                 const headers = new Headers(init.headers)
-                const signer = courierBot ? env.COURIER_BOT_TOKEN : botToken
+                const signer = signerToken({ botToken, courierBot, businessBot })
                 headers.set("X-Telegram-Init-Data", await signInitData(user, signer, authDate))
                 if (courierBot) {
                     headers.set("X-Bot", "courier")
+                } else if (businessBot) {
+                    headers.set("X-Bot", "business")
                 }
                 if (shop) {
                     headers.set("X-Shop", shop)
@@ -296,7 +327,7 @@ export async function createActiveShop(
     client: TestClient,
     shop: { botToken?: string; name?: string; owner?: object } = {},
 ): Promise<{ id: string; slug: string }> {
-    const owner = client.as(shop.owner ?? OWNER, {})
+    const owner = client.as(shop.owner ?? OWNER, { businessBot: true })
     const response = await owner("/api/platform/shops", {
         method: "POST",
         json: {

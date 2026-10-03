@@ -10,7 +10,7 @@ import {
     callsOf,
     lastSeq,
     managedBotUpdate,
-    platformChat,
+    businessChat,
     waitForCall,
     waitForMessage,
 } from "../support/telegram.js"
@@ -33,7 +33,7 @@ interface MyShop {
 }
 
 async function myShops(owner: TgUser): Promise<MyShop[]> {
-    return (await (await apiAs(owner, "/platform/shops")).json()) as MyShop[]
+    return (await (await apiAs(owner, "/platform/shops", { businessBot: true })).json()) as MyShop[]
 }
 
 /** Step 1: the business. */
@@ -63,7 +63,7 @@ test("«Bot yaratish»: the bot is created in Telegram's window, no token anywhe
 }) => {
     const app = await openApp(page, {
         user: OWNER,
-        query: "?mode=onboarding",
+        businessBot: true,
         version: "9.6",
         createsBot: BOT_ID,
     })
@@ -86,7 +86,7 @@ test("«Bot yaratish»: the bot is created in Telegram's window, no token anywhe
     expect(request?.args[0]).toBe(`prepared-${prepared?.seq ?? 0}`)
     // The owner also hears it in the Zumda bot, with the way back to the application.
     const told = await waitForMessage(OWNER.id, "yaratildi", since)
-    expect(told.buttons[0]?.web_app?.url).toContain("mode=onboarding")
+    expect(told.buttons[0]?.web_app?.url).toContain("mode=business")
     await expect(page.locator("body")).not.toContainText("NEW-managed")
 
     await finishApplication(page)
@@ -99,7 +99,7 @@ test("«Bot yaratish»: the bot is created in Telegram's window, no token anywhe
 test("approval connects the created bot like any other", async () => {
     const card = await waitForMessage(PEOPLE.admin.id, "Kamola Somsa")
     const since = await lastSeq()
-    await platformChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
+    await businessChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
     await waitForMessage(OWNER.id, "ishga tushdi", since)
     const hook = await waitForCall("setWebhook", managedBotToken(BOT_ID, 1), since)
     expect(hook.body["url"]).toBe(`http://localhost:8787/tg/${BOT_ID}`)
@@ -109,7 +109,7 @@ test("approval connects the created bot like any other", async () => {
 test("«Mening bizneslarim» opens the shop's owner section right in the Zumda bot", async ({
     page,
 }) => {
-    const app = await openApp(page, { user: OWNER, query: "?mode=onboarding" })
+    const app = await openApp(page, { user: OWNER, businessBot: true })
     await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
     await page.getByRole("button", { name: /Kamola Somsa/ }).click()
     await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
@@ -123,10 +123,10 @@ test("someone else's shop is closed to them from the Zumda bot (403)", async () 
     const [shop] = await myShops(OWNER)
     const stranger = await apiAs(PEOPLE.stranger, "/owner/shop", {
         shop: shop?.slug,
-        via: "admin",
+        businessBot: true,
     })
     expect(stranger.status).toBe(403)
-    const owner = await apiAs(OWNER, "/owner/shop", { shop: shop?.slug, via: "admin" })
+    const owner = await apiAs(OWNER, "/owner/shop", { shop: shop?.slug, businessBot: true })
     expect(owner.status).toBe(200)
 })
 
@@ -150,7 +150,7 @@ test("a new owner of the bot alerts the admins; the shop stays put", async () =>
 test("older Telegram: «Bot yaratish» opens the t.me/newbot link; the app notices the bot", async ({
     page,
 }) => {
-    const app = await openApp(page, { user: LINK_OWNER, query: "?mode=onboarding" })
+    const app = await openApp(page, { user: LINK_OWNER, businessBot: true })
     await describeBusiness(page, "Ulug'bek Choyxona")
     await bottomButton(page).click() // «Bot yaratish»
     await expect
@@ -158,7 +158,7 @@ test("older Telegram: «Bot yaratish» opens the t.me/newbot link; the app notic
         .toBeTruthy()
     const link = (await app.calls()).find((c) => c.method === "openTelegramLink")?.args[0]
     expect(link).toBe(
-        "https://t.me/newbot/zumda_dev_bot/ulugbek_choyxona_bot?name=Ulug%27bek+Choyxona",
+        "https://t.me/newbot/zumda_biznes_dev_bot/ulugbek_choyxona_bot?name=Ulug%27bek+Choyxona",
     )
     // The owner creates it in Telegram and comes back.
     await managedBotUpdate(LINK_OWNER, LINK_BOT_ID)

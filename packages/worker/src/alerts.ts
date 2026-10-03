@@ -32,7 +32,7 @@ export function describeError(error: unknown): string {
 }
 
 /**
- * Tells the platform admins through the Zumda bot. Never throws: an alert must not break the
+ * Tells the platform admins through the Zumda Business bot. Never throws: an alert must not break the
  * request, and a broken database or Telegram only leaves the error in the Worker log.
  */
 export async function alertAdmins(
@@ -52,7 +52,7 @@ export async function alertAdmins(
                 kind === "server_error" ? texts.alertServerError : texts.alertNotificationFailed
             const quiet = fill(texts.alertQuiet, { minutes: ALERT_QUIET_MS / 60_000 })
             await services.telegram.sendMessage(
-                services.env.PLATFORM_BOT_TOKEN,
+                services.env.BUSINESS_BOT_TOKEN,
                 adminId,
                 `<b>${title}</b>\n<code>${detail}</code>\n\n${quiet}`,
             )

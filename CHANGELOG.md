@@ -7,6 +7,19 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Three bots by role: Zumda | Shop, Zumda | Business, Zumda | Kuryer (owner's decision)
+- **Added (worker):** the Zumda | Business bot (`BUSINESS_BOT_TOKEN`, webhook `/tg/business`):
+  «Mening bizneslarim», applications, the admins' approval buttons and commands, `managed_bot`
+  updates; it is the manager of the shops' bots (Managed Bots). Owners' and admins' messages and
+  alerts come from it. `X-Bot: business` replaces `X-Via: admin`; `/api/platform/*` accept only
+  its signature (`BUSINESS_BOT_ONLY`).
+- **Changed:** `@zumdashop_bot` (Zumda | Shop) is for customers only: its welcome and description
+  no longer offer to connect a business; approval cards it sent before still work.
+- **Added (app):** `?mode=business` opens «Mening bizneslarim» (old `?mode=onboarding` buttons too).
+- **Added:** the deploy sets the bots' names «Zumda | Shop», «Zumda | Business», «Zumda | Kuryer»,
+  connects Zumda | Business (webhook, menu «Bizneslarim», descriptions); `check-access.sh` checks
+  its token and `can_manage_bots`; `brand/zumda-business-avatar.png`.
+
 ### Goal 14: «Mening bizneslarim» and a bot without a token
 - **Added (core):** `Business.botSource` (`managed` | `token`), `ManagedBotRepository`,
   `ManagedBotChangedUseCase`, `ListMyManagedBotsUseCase`; an application takes a managed bot by

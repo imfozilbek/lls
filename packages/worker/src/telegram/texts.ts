@@ -54,8 +54,10 @@ const BASE = {
         openMenu: "🛒 Katalogni ochish",
         phoneSaved: "✅ Telefon raqamingiz saqlandi.",
         platformWelcome:
-            "<b>Zumda: tumaningizdagi do'konlar, oshxonalar va xizmatlar bir joyda.</b>\n\nQidiring, buyurtma bering: eshigingizgacha olib kelamiz.\n\nBiznesingiz bormi? O'z buyurtma botingizni ulang.",
-        connectShop: "🏪 Biznesimni ulash",
+            "<b>Zumda: tumaningizdagi do'konlar, oshxonalar va xizmatlar bir joyda.</b>\n\nQidiring, buyurtma bering: eshigingizgacha olib kelamiz.",
+        businessWelcome:
+            "<b>Zumda Business: do'koningiz, oshxonangiz yoki xizmatingiz uchun o'z buyurtma boti.</b>\n\nBotni shu yerda bir tugma bilan yarating: token kerak emas. Menyu, buyurtmalar, pul va kuryerlar: hammasi «Mening bizneslarim»da.",
+        openBusinesses: "🏪 Mening bizneslarim",
         openShowcase: "🔍 Qidirish va buyurtma berish",
         showcaseOrder: "🛍 Zumda vitrinasidan · komissiya {rate}%: {sum}",
         showcaseJoined:

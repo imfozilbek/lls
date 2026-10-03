@@ -66,9 +66,17 @@ Claude, и деплоем; перед подключением настоящи�
 - [ ] Старого бота с прежним названием удалите: @BotFather → `/deletebot` (его токен когда-то
       попал в чат).
 
-- [x] Bot Management Mode для `@zumdashop_bot` (цель 14: бот бизнеса создаётся без токена):
-      @BotFather → `/mybots` → `@zumdashop_bot` → **Bot Settings** → **Bot Management Mode** →
-      **On**. Проверка: `scripts/check-access.sh` → «can create bots for owners».
+- [x] Третий бот **Zumda | Business** (решение владельца, 3 октября 2026): владельцы и админы.
+      @BotFather → `/newbot`; токен в переменные окружения Claude (`BUSINESS_BOT_TOKEN`) и в
+      секреты окружения `production` в GitHub.
+- [ ] Bot Management Mode для **Zumda | Business** (цель 14: бот бизнеса создаётся без токена):
+      @BotFather → `/mybots` → бот Zumda | Business → **Bot Settings** → **Bot Management Mode**
+      → **On**. Проверка: `scripts/check-access.sh` → «can create bots for owners».
+- [ ] Аватар Zumda | Business: @BotFather → `/setuserpic` → `brand/zumda-business-avatar.png`.
+- [ ] Каждый админ один раз нажимает **Start** в Zumda | Business: иначе бот не сможет писать
+      ему заявки и оповещения.
+
+Имена ботов («Zumda | Shop», «Zumda | Business», «Zumda | Kuryer») ставит деплой.
 
 Аватары, описания, кнопки меню и вебхуки ботов Zumda настроит Claude и деплой.
 
@@ -86,6 +94,7 @@ CLOUDFLARE_API_TOKEN=…        токен из шага 3
 CLOUDFLARE_ACCOUNT_ID=…       Account ID из шага 3
 PLATFORM_BOT_TOKEN=…          токен @zumdashop_bot
 COURIER_BOT_TOKEN=…           токен @zumdashop_kuryer_bot
+BUSINESS_BOT_TOKEN=…          токен бота Zumda | Business
 PLATFORM_ADMIN_IDS=…          ваш Telegram ID; несколько админов: через запятую
 ```
 
@@ -122,7 +131,7 @@ D1, Pages, Workers и обоих ботов и пишет `OK` / `FAIL` с по�
 - [ ] Удалите старые секреты от прошлого проекта, если они есть: `SSH_HOST`, `SSH_USER`,
       `SSH_PRIVATE_KEY`, `DISCORD_WEBHOOK`.
 
-**Проверка:** в окружении `production` 5 секретов (значения GitHub не показывает, это нормально).
+**Проверка:** в окружении `production` 6 секретов (с `BUSINESS_BOT_TOKEN`) (значения GitHub не показывает, это нормально).
 
 **Ключ шифрования `TOKEN_ENC_KEY`** пока не нужен: первый деплой создаст его сам. Перед
 подключением настоящих магазинов сделаем сохранённую копию (`SECURITY.md`, «Encryption key»):

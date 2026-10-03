@@ -37,10 +37,11 @@ interface ErrorBody {
 }
 
 /**
- * How a shop was opened inside the Zumda bot: from the showcase (`marketplace`, a customer), or
- * from «Mening bizneslarim» (`admin`, its owner). Absent: from the shop's own bot.
+ * Which Zumda bot opened the app around the shop: the customers' Zumda bot (`marketplace`, the
+ * showcase), or Zumda Business (`business`: «Mening bizneslarim», and an owner's own shop).
+ * Absent: the shop's own bot.
  */
-export type ShopVia = "marketplace" | "admin"
+export type ShopVia = "marketplace" | "business"
 
 let currentShop: string | null = null
 let currentVia: ShopVia | null = null
@@ -48,7 +49,7 @@ let courierBot = false
 
 /**
  * Every request carries the shop, so the Worker verifies with the right bot token: the shop's own
- * bot, or the Zumda bot when the shop was opened inside it (`via`).
+ * bot, or the Zumda bot that opened it (`via`). Zumda Business also works with no shop (`null`).
  */
 export function setShop(slug: string | null, options: { via?: ShopVia } = {}): void {
     currentShop = slug
@@ -67,11 +68,13 @@ function authHeaders(): Headers {
     const headers = new Headers({ "X-Telegram-Init-Data": webApp()?.initData ?? "" })
     if (courierBot) {
         headers.set("X-Bot", "courier")
+    } else if (currentVia === "business") {
+        headers.set("X-Bot", "business")
     }
     if (currentShop) {
         headers.set("X-Shop", currentShop)
-        if (currentVia) {
-            headers.set("X-Via", currentVia)
+        if (currentVia === "marketplace") {
+            headers.set("X-Via", "marketplace")
         }
     }
     return headers

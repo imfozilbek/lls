@@ -7,6 +7,7 @@ import { join } from "node:path"
 
 import {
     DEV_ADMIN_ID,
+    DEV_BUSINESS_BOT,
     DEV_COURIER,
     DEV_COURIER_BOT,
     DEV_CUSTOMER,
@@ -79,6 +80,18 @@ export function courierBot(): { id: number; username: string; token: string; sec
         username: DEV_COURIER_BOT.username,
         token,
         secret: vars["COURIER_WEBHOOK_SECRET"] ?? DEV_COURIER_BOT.webhookSecret,
+    }
+}
+
+/** The Zumda Business bot: owners, applications, admins' commands, Managed Bots. */
+export function businessBot(): { id: number; username: string; token: string; secret: string } {
+    const vars = devVars()
+    const token = vars["BUSINESS_BOT_TOKEN"] ?? DEV_BUSINESS_BOT.token
+    return {
+        id: Number(token.split(":")[0]),
+        username: DEV_BUSINESS_BOT.username,
+        token,
+        secret: vars["BUSINESS_WEBHOOK_SECRET"] ?? DEV_BUSINESS_BOT.webhookSecret,
     }
 }
 

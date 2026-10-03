@@ -16,25 +16,18 @@ import {
 
 import type { TestClient } from "./helpers.js"
 
-const SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
 /** The bot the owner creates in Telegram's window; Zumda manages it. secret-scan: fake */
 const MANAGED_BOT = { id: 555000, username: "osh_markaz_bot" }
 const MANAGED_TOKEN = "555000:managed-bot-token-for-tests-only-xxxxxx"
 const NEW_MANAGED_TOKEN = "555000:managed-bot-token-replaced-in-tests-xxx"
 const DAY_MS = 24 * 60 * 60 * 1000
 
+/** The bots are created by, and report to, Zumda Business. */
 function platformUpdate(client: TestClient, body: object): Promise<Response> {
-    return client.request("/tg/platform", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            [SECRET_HEADER]: env.PLATFORM_WEBHOOK_SECRET,
-        },
-        body: JSON.stringify(body),
-    })
+    return client.businessBot(body)
 }
 
-/** Telegram tells the Zumda bot that `user` created (or changed) the managed bot. */
+/** Telegram tells Zumda Business that `user` created (or changed) the managed bot. */
 async function managedBotUpdate(
     client: TestClient,
     user: object,
@@ -53,7 +46,7 @@ const APPLICATION = {
 }
 
 async function applyWithManagedBot(client: TestClient, user: object = OWNER): Promise<Response> {
-    return client.as(user, {})("/api/platform/shops", {
+    return client.as(user, { businessBot: true })("/api/platform/shops", {
         method: "POST",
         json: { ...APPLICATION, managedBotId: MANAGED_BOT.id },
     })
@@ -84,7 +77,7 @@ describe("suggested @username of a new shop bot", () => {
     })
 })
 
-describe("a bot created from the Zumda bot (Managed Bots)", () => {
+describe("a bot created from Zumda Business (Managed Bots)", () => {
     let client: TestClient
 
     beforeEach(() => {
@@ -92,17 +85,20 @@ describe("a bot created from the Zumda bot (Managed Bots)", () => {
     })
 
     it("prepare gives the button for requestChat and the t.me/newbot link", async () => {
-        const response = await client.as(OWNER, {})("/api/platform/managed-bot/prepare", {
-            method: "POST",
-            json: { name: "Osh Markaz" },
-        })
+        const response = await client.as(OWNER, { businessBot: true })(
+            "/api/platform/managed-bot/prepare",
+            {
+                method: "POST",
+                json: { name: "Osh Markaz" },
+            },
+        )
         expect(response.status).toBe(200)
         expect(await response.json()).toEqual({
             preparedId: "prepared-1",
-            link: "https://t.me/newbot/zumdashop_bot/osh_markaz_bot?name=Osh+Markaz",
+            link: "https://t.me/newbot/zumda_biznes_bot/osh_markaz_bot?name=Osh+Markaz",
         })
         const [prepared] = client.telegram.preparedButtons
-        expect(prepared?.token).toBe(env.PLATFORM_BOT_TOKEN)
+        expect(prepared?.token).toBe(env.BUSINESS_BOT_TOKEN)
         expect(prepared?.userId).toBe(OWNER.id)
         expect(prepared?.button).toMatchObject({
             text: "🤖 Bot yaratish",
@@ -112,17 +108,27 @@ describe("a bot created from the Zumda bot (Managed Bots)", () => {
         expect(prepared?.button.requestId).toBeGreaterThan(0)
     })
 
-    it("prepare is for the Zumda bot only, and validates the name", async () => {
+    it("prepare is for Zumda Business only, and validates the name", async () => {
         const shop = await createActiveShop(client)
         const fromShopBot = await client.as(OWNER, { botToken: SHOP_BOT_TOKEN, shop: shop.slug })(
             "/api/platform/managed-bot/prepare",
             { method: "POST", json: { name: "Osh" } },
         )
         expect(fromShopBot.status).toBe(400)
-        const empty = await client.as(OWNER, {})("/api/platform/managed-bot/prepare", {
+        // The customers' Zumda bot cannot create bots or apply.
+        const fromShowcaseBot = await client.as(OWNER, {})("/api/platform/managed-bot/prepare", {
             method: "POST",
-            json: { name: " " },
+            json: { name: "Osh" },
         })
+        expect(fromShowcaseBot.status).toBe(403)
+        expect((await client.as(OWNER, {})("/api/platform/shops")).status).toBe(403)
+        const empty = await client.as(OWNER, { businessBot: true })(
+            "/api/platform/managed-bot/prepare",
+            {
+                method: "POST",
+                json: { name: " " },
+            },
+        )
         expect(empty.status).toBe(400)
     })
 
@@ -138,18 +144,20 @@ describe("a bot created from the Zumda bot (Managed Bots)", () => {
         expect(row?.token_enc).not.toContain(MANAGED_TOKEN)
         const message = client.telegram.sent.at(-1)
         expect(message?.chatId).toBe(OWNER.id)
-        expect(message?.token).toBe(env.PLATFORM_BOT_TOKEN)
+        expect(message?.token).toBe(env.BUSINESS_BOT_TOKEN)
         expect(message?.html).toContain("@osh_markaz_bot yaratildi")
         expect(message?.html).not.toContain(MANAGED_TOKEN)
         expect(message?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
-            "https://zumda-app.pages.dev/?mode=onboarding",
+            "https://zumda-app.pages.dev/?mode=business",
         )
 
-        const mine = await client.as(OWNER, {})("/api/platform/managed-bots")
+        const mine = await client.as(OWNER, { businessBot: true })("/api/platform/managed-bots")
         expect(await mine.json()).toEqual({
             data: [{ botId: MANAGED_BOT.id, username: MANAGED_BOT.username }],
         })
-        const theirs = await client.as(STRANGER, {})("/api/platform/managed-bots")
+        const theirs = await client.as(STRANGER, { businessBot: true })(
+            "/api/platform/managed-bots",
+        )
         expect(await theirs.json()).toEqual({ data: [] })
     })
 
@@ -176,7 +184,7 @@ describe("a bot created from the Zumda bot (Managed Bots)", () => {
         expect(shop.botUsername).toBe(MANAGED_BOT.username)
         expect(shop.managedBot).toBe(true)
         // Taken: the list of waiting bots is empty, and a second application cannot reuse it.
-        const mine = await client.as(OWNER, {})("/api/platform/managed-bots")
+        const mine = await client.as(OWNER, { businessBot: true })("/api/platform/managed-bots")
         expect(await mine.json()).toEqual({ data: [] })
         expect((await applyWithManagedBot(client)).status).toBe(404)
 
@@ -191,7 +199,7 @@ describe("a bot created from the Zumda bot (Managed Bots)", () => {
     it("someone else's managed bot, or an unknown one, cannot be taken", async () => {
         await managedBotUpdate(client, OWNER)
         expect((await applyWithManagedBot(client, STRANGER)).status).toBe(404)
-        const unknown = await client.as(OWNER, {})("/api/platform/shops", {
+        const unknown = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: { ...APPLICATION, managedBotId: 42 },
         })
@@ -200,12 +208,12 @@ describe("a bot created from the Zumda bot (Managed Bots)", () => {
 
     it("the application sends a token or a managed bot, exactly one", async () => {
         await managedBotUpdate(client, OWNER)
-        const both = await client.as(OWNER, {})("/api/platform/shops", {
+        const both = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: { ...APPLICATION, managedBotId: MANAGED_BOT.id, botToken: SHOP_BOT_TOKEN },
         })
         expect(both.status).toBe(400)
-        const none = await client.as(OWNER, {})("/api/platform/shops", {
+        const none = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: APPLICATION,
         })
@@ -262,7 +270,7 @@ describe("a bot created from the Zumda bot (Managed Bots)", () => {
     })
 })
 
-describe("«Mening bizneslarim»: the owner's shop from the Zumda bot (X-Via: admin)", () => {
+describe("«Mening bizneslarim»: the owner's shop from Zumda Business (X-Bot: business)", () => {
     let client: TestClient
     let slug: string
 
@@ -271,14 +279,16 @@ describe("«Mening bizneslarim»: the owner's shop from the Zumda bot (X-Via: ad
         slug = (await createActiveShop(client)).slug
     })
 
-    it("the owner gets the owner section, signed by the Zumda bot", async () => {
-        const response = await client.as(OWNER, { shop: slug, via: "admin" })("/api/owner/shop")
+    it("the owner gets the owner section, signed by Zumda Business", async () => {
+        const response = await client.as(OWNER, { shop: slug, businessBot: true })(
+            "/api/owner/shop",
+        )
         expect(response.status).toBe(200)
         expect(((await response.json()) as { slug: string }).slug).toBe(slug)
     })
 
     it("anyone else gets 403, not the customer view", async () => {
-        const response = await client.as(STRANGER, { shop: slug, via: "admin" })("/api/shop")
+        const response = await client.as(STRANGER, { shop: slug, businessBot: true })("/api/shop")
         expect(response.status).toBe(403)
     })
 
@@ -286,7 +296,7 @@ describe("«Mening bizneslarim»: the owner's shop from the Zumda bot (X-Via: ad
         const response = await client.as(OWNER, {
             botToken: SHOP_BOT_TOKEN,
             shop: slug,
-            via: "admin",
+            businessBot: true,
         })("/api/owner/shop")
         expect(response.status).toBe(401)
     })
@@ -294,7 +304,7 @@ describe("«Mening bizneslarim»: the owner's shop from the Zumda bot (X-Via: ad
     it("old initData is refused", async () => {
         const response = await client.as(OWNER, {
             shop: slug,
-            via: "admin",
+            businessBot: true,
             authDate: new Date(Date.now() - 2 * DAY_MS),
         })("/api/owner/shop")
         expect(response.status).toBe(401)
@@ -311,13 +321,17 @@ describe("«Mening bizneslarim»: the owner's shop from the Zumda bot (X-Via: ad
     })
 
     it("an unknown shop is 404", async () => {
-        const response = await client.as(OWNER, { shop: "nope", via: "admin" })("/api/owner/shop")
+        const response = await client.as(OWNER, { shop: "nope", businessBot: true })(
+            "/api/owner/shop",
+        )
         expect(response.status).toBe(404)
     })
 
     it("a pending shop opens to its owner too", async () => {
         await env.DB.prepare("UPDATE businesses SET status = 'pending'").run()
-        const response = await client.as(OWNER, { shop: slug, via: "admin" })("/api/owner/shop")
+        const response = await client.as(OWNER, { shop: slug, businessBot: true })(
+            "/api/owner/shop",
+        )
         expect(response.status).toBe(200)
     })
 })

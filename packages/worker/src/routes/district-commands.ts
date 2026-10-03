@@ -54,7 +54,7 @@ export async function handleDistrictCommand(
     if (!from || !isAdmin(services, message)) {
         return
     }
-    const token = services.env.PLATFORM_BOT_TOKEN
+    const token = services.env.BUSINESS_BOT_TOKEN
     const t = textsFor(languageFromTelegram(from.language_code))
     const command = parseDistrictCommand(message.text?.trim() ?? "")
     if (!command) {
@@ -112,7 +112,7 @@ export async function handleNetworkCommand(
                   ),
               ]
     await services.telegram.sendMessage(
-        services.env.PLATFORM_BOT_TOKEN,
+        services.env.BUSINESS_BOT_TOKEN,
         message.chat.id,
         lines.join("\n"),
     )

@@ -36,19 +36,26 @@ money, showcase) and **district delivery** (Zumda courier bot, couriers for many
 
 Zumda is the platform brand. Customers see the **shop's brand**; the app shows a small "powered by Zumda".
 
+- **Three Zumda bots, one per role (owner's decision, October 2026), named «Zumda | Shop»,
+  «Zumda | Business», «Zumda | Kuryer» (the deploy sets the names):**
+  - **Zumda | Shop (`@zumdashop_bot`, `PLATFORM_BOT_TOKEN`):** customers only: the showcase,
+    search, and messages about showcase orders.
+  - **Zumda | Business (`BUSINESS_BOT_TOKEN`):** owners and platform admins: «Mening bizneslarim»
+    (`?mode=business`), applications, all messages to owners and admins about their businesses
+    (application, approval, showcase deal, alerts), the admins' approval buttons and commands
+    (`/reconnect`, `/market`, `/district`, `/network`). It creates and manages the shops' bots
+    (Bot Management Mode on).
+  - **Zumda | Kuryer (`@zumdashop_kuryer_bot`):** one bot for every courier of every shop.
 - **One bot per shop.** The chat, name and avatar are the shop's. The owner creates it with one
-  button in the Zumda Mini App («Bot yaratish», Telegram **Managed Bots**, goal 14): the bot lives
-  in the owner's own Telegram account, Zumda manages it and gets its token by itself
+  button in Zumda | Business («Bot yaratish», Telegram **Managed Bots**, goal 14): the bot lives
+  in the owner's own Telegram account, Zumda | Business manages it and gets its token by itself
   (`managed_bot` → `getManagedBotToken`); the owner never sees a token. A bot from BotFather still
-  connects by pasting its token («Menda bot bor»).
-- **«Mening bizneslarim».** The Zumda Mini App (`?mode=onboarding`) lists all of the owner's
-  businesses and opens the full owner section of any of them right there (`X-Via: admin`).
-- **Platform bot (Zumda, `@zumdashop_bot`).** Owners connect their shop through it (self-serve
-  onboarding); customers search the showcase. Platform admins (`PLATFORM_ADMIN_IDS`) approve new
-  shops with a button.
-- **Courier bot (Zumda Kuryer, `@zumdashop_kuryer_bot`).** One bot for every courier of every shop.
-- **One Worker serves all bots:** webhook `/tg/:botId` for shop bots, `/tg/platform` for the Zumda bot,
-  `/tg/courier` for the Zumda courier bot.
+  connects by pasting its token («Menda bot bor»). Order messages to the owner come from the
+  shop's own bot.
+- **«Mening bizneslarim».** Zumda | Business opens the Mini App with `?mode=business`: all of the
+  owner's businesses, and the full owner section of any of them right there (`X-Bot: business`).
+- **One Worker serves all bots:** webhook `/tg/:botId` for shop bots, `/tg/platform` for
+  Zumda | Shop, `/tg/business` for Zumda | Business, `/tg/courier` for Zumda | Kuryer.
 - **One Mini App for all shops.** The shop bot's menu button opens it with `?shop=<slug>`.
 - **Per-shop branding:** name, logo, brand color. Everything else is shared.
 - **Zumda's look (owner's decision, October 2026):** the mark is a green pin with a house
@@ -424,10 +431,12 @@ the rule id (e.g. `PHONE_REQUIRED`, `SHOP_CLOSED`) so the app can show a transla
 
 **Which token verifies initData:** Telegram signs initData with the token of the bot that opened
 the Mini App. The app sends `X-Shop: <slug>` → Worker loads that shop's bot token → verifies.
-No `X-Shop` → verify with the platform bot token (onboarding, showcase search).
+No `X-Shop` → verify with the platform bot token (showcase search).
 `X-Shop` + `X-Via: marketplace` → verify with the **platform** bot token; the shop must be active
-and in the marketplace. `X-Shop` + `X-Via: admin` («Mening bizneslarim») → verify with the
-**platform** bot token; only the shop's owner gets in (role `owner`), anyone else 403.
+and in the marketplace. `X-Bot: business` → verify with `BUSINESS_BOT_TOKEN`: without `X-Shop`
+the role is `business` («Mening bizneslarim», applications: `/api/platform/*` accept only this,
+anyone else 403 `BUSINESS_BOT_ONLY`); with `X-Shop` only the shop's owner gets in (role `owner`),
+anyone else 403.
 The token that verified the signature decides the order channel
 (`shop_bot` or `marketplace`); the client can never choose it.
 
@@ -443,8 +452,9 @@ bot alerts the admins and never moves the shop.
 `courier`; which shops and orders they may touch, the use cases check by the links.
 
 **Entry:** the shop bot's menu button opens `?shop=<slug>`. The Zumda courier bot opens
-`?mode=courier` (all the courier's shops in one screen). Onboarding: the platform bot opens `?mode=onboarding`.
-Showcase: the platform bot opens `?mode=market`.
+`?mode=courier` (all the courier's shops in one screen). «Mening bizneslarim»: Zumda | Business
+opens `?mode=business` (old buttons: `?mode=onboarding`). Showcase: Zumda | Shop opens
+`?mode=market`.
 
 **Courier invite:** the owner creates a one-time link `t.me/<courier_bot>?start=c_<code>` (48 h).
 `/start c_<code>` in the Zumda courier bot (webhook `/tg/courier`) makes the sender a **pending**
@@ -735,11 +745,12 @@ CI/CD: GitHub Actions. **⛔ Docker is PROHIBITED. No VPS.**
 
 ```
 Telegram ─► Mini App (Pages, app.zumda.shop) ─► Worker (api.zumda.shop, /api) ─► D1 / R2
-Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
+Telegram Bot API ─► /tg/:botId, /tg/platform, /tg/business, /tg/courier ─► Worker
 ```
 
 **Worker secrets:** `TOKEN_ENC_KEY`, `PLATFORM_BOT_TOKEN`, `PLATFORM_WEBHOOK_SECRET`, `PLATFORM_ADMIN_IDS`,
-`COURIER_BOT_TOKEN`, `COURIER_WEBHOOK_SECRET`.
+`COURIER_BOT_TOKEN`, `COURIER_WEBHOOK_SECRET`, `BUSINESS_BOT_TOKEN`, `BUSINESS_WEBHOOK_SECRET`
+(both webhook secrets of the Zumda bots are derived from their tokens by the deploy).
 **Worker vars:** `APP_ORIGIN` (`https://app.zumda.shop`).
 
 - Addresses: `api.zumda.shop` (Worker, Custom Domain) and `app.zumda.shop` (Pages); the deploy

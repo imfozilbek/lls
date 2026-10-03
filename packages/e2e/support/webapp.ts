@@ -5,9 +5,9 @@
  */
 import { createHmac } from "node:crypto"
 
-import { APP_URL, courierBot, platformBot, shopBySlug } from "../stand/config.js"
+import { APP_URL, businessBot, courierBot, platformBot, shopBySlug } from "../stand/config.js"
 
-import { courierChat, managedBotUpdate, platformChat, shopChat } from "./telegram.js"
+import { businessChat, courierChat, managedBotUpdate, platformChat, shopChat } from "./telegram.js"
 
 import type { Chat, TgUser } from "./telegram.js"
 import type { Page } from "@playwright/test"
@@ -56,6 +56,8 @@ export interface OpenOptions {
     shop?: string
     /** Opened from the Zumda courier bot (`?mode=courier`), whatever `shop` says. */
     courierBot?: boolean
+    /** Opened from the Zumda Business bot (`?mode=business`, «Mening bizneslarim»). */
+    businessBot?: boolean
     /** Query string after `/`, e.g. `?mode=market`. Default: `?shop=<shop>`. */
     query?: string
     /** Sign with this token instead (forged identities, wrong bots). */
@@ -264,6 +266,9 @@ const opened = new WeakMap<
 function openedFrom(options: OpenOptions): { token: string; chat: Chat; query: string } {
     if (options.courierBot) {
         return { token: courierBot().token, chat: courierChat(), query: "?mode=courier" }
+    }
+    if (options.businessBot) {
+        return { token: businessBot().token, chat: businessChat(), query: "?mode=business" }
     }
     if (options.shop) {
         const shop = shopBySlug(options.shop)

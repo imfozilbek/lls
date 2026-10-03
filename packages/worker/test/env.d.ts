@@ -10,6 +10,8 @@ declare global {
             PLATFORM_ADMIN_IDS: string
             COURIER_BOT_TOKEN: string
             COURIER_WEBHOOK_SECRET: string
+            BUSINESS_BOT_TOKEN: string
+            BUSINESS_WEBHOOK_SECRET: string
         }
     }
 }
