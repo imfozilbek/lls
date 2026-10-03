@@ -184,6 +184,14 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    static notRejected(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "SHOP_NOT_REJECTED",
+            "Only a rejected application can be sent again",
+            { businessId },
+        )
+    }
+
     static paymentNotRefundable(status: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "PAYMENT_NOT_REFUNDABLE",

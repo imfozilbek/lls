@@ -79,6 +79,8 @@ async function main(): Promise<void> {
             STATE_DIR,
             "--var",
             `TELEGRAM_API_BASE:${FAKE_TELEGRAM_URL}`,
+            "--var",
+            `TELEGRAM_OAUTH_BASE:${FAKE_TELEGRAM_URL}`,
         ],
         WORKER_DIR,
     )

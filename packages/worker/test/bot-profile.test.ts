@@ -81,6 +81,8 @@ describe("the shop bot's picture and description are Zumda's", () => {
         const { slug } = await createActiveShop(client)
         const owner = client.as(OWNER, { botToken: SHOP_BOT_TOKEN, shop: slug })
 
+        // The application set the first descriptions; only a new name changes them.
+        client.telegram.descriptions.splice(0)
         await owner("/api/owner/shop", { method: "PATCH", json: { deliveryFee: 5_000 } })
         expect(client.telegram.descriptions).toHaveLength(0)
 

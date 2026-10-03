@@ -36,6 +36,7 @@ import {
     ListMyManagedBotsUseCase,
     ResolveCustomerUseCase,
     SaveContactUseCase,
+    ResubmitShopUseCase,
     ReviewShopUseCase,
     SearchShowcaseUseCase,
     SetMarketplaceTermsUseCase,
@@ -68,11 +69,14 @@ import { D1ProductRepository } from "./repositories/product.repository.js"
 
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
+import type { LoginKeys } from "./telegram-login.js"
 import type { Clock } from "@zumda/core"
 
 export interface ServiceDeps {
     telegram: TelegramGateway
     clock: Clock
+    /** Telegram Login's public keys (tests and the stand bring their own). */
+    loginKeys?: LoginKeys
 }
 
 export interface UseCases {
@@ -84,6 +88,7 @@ export interface UseCases {
     choosePaymentCard: ChoosePaymentCardUseCase
     removePayoutCard: RemovePayoutCardUseCase
     reviewShop: ReviewShopUseCase
+    resubmitShop: ResubmitShopUseCase
     getShopBySlug: GetShopBySlugUseCase
     listMyShops: ListMyShopsUseCase
     updateShop: UpdateShopUseCase
@@ -167,6 +172,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         env,
         clock,
         telegram,
+        loginKeys: deps.loginKeys,
         businesses,
         products,
         customers,
@@ -176,7 +182,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         networkOffers: new D1NetworkOfferRepository(env.DB),
         managedBots,
         useCases: {
-            registerShop: new RegisterShopUseCase(businesses, clock, cards, managedBots),
+            registerShop: new RegisterShopUseCase(businesses, clock, cards, managedBots, districts),
             managedBotChanged: new ManagedBotChangedUseCase(businesses, managedBots, clock),
             listMyManagedBots: new ListMyManagedBotsUseCase(managedBots),
             listPayoutCards: new ListPayoutCardsUseCase(cardBook),
@@ -184,6 +190,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             choosePaymentCard: new ChoosePaymentCardUseCase(cardBook),
             removePayoutCard: new RemovePayoutCardUseCase(cardBook),
             reviewShop: new ReviewShopUseCase(businesses, admins, clock),
+            resubmitShop: new ResubmitShopUseCase(businesses, clock),
             getShopBySlug: new GetShopBySlugUseCase(businesses, clock),
             listMyShops: new ListMyShopsUseCase(businesses, clock),
             updateShop: new UpdateShopUseCase(businesses, clock, districts),

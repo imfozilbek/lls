@@ -7,6 +7,7 @@ import { BagIcon, CardIcon, CashIcon, GearIcon, ListIcon } from "../ui/icons.js"
 import { MenuTab } from "./MenuTab.js"
 import { MoneyTab } from "./MoneyTab.js"
 import { OrdersTab } from "./OrdersTab.js"
+import { ReadyCard, StatusBanner } from "./ReadyCard.js"
 import { SettingsTab } from "./SettingsTab.js"
 import { useOwner } from "./store.js"
 
@@ -81,13 +82,17 @@ export function OwnerApp(): React.JSX.Element {
     const shop = useSession((state) => state.shop)
     const tab = useOwner((state) => state.tab)
     const setTab = useOwner((state) => state.setTab)
+    const goToSection = useOwner((state) => state.goToSection)
     return (
         <div>
             <header className="px-4 pt-4">
                 <h1 className="truncate text-xl font-bold">{shop?.name}</h1>
             </header>
-            {shop && !shop.hasPayoutCard ? (
-                <NoCardBanner onOpen={(): void => setTab("settings")} />
+            <StatusBanner />
+            {/* «Buyurtmalar» shows the whole «Ishga tayyor»; other tabs only the card it lacks. */}
+            {tab === "orders" ? <ReadyCard /> : null}
+            {shop && !shop.hasPayoutCard && tab !== "orders" ? (
+                <NoCardBanner onOpen={(): void => goToSection("card")} />
             ) : null}
             <TabBar tab={tab} onChange={setTab} />
             <div key={tab} className="animate-fade-in">

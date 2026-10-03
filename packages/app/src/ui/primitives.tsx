@@ -303,13 +303,16 @@ export function Section({
     title,
     children,
     className,
+    id,
 }: {
     title?: string
     children: ReactNode
     className?: string
+    /** A place «Ishga tayyor» can scroll to. */
+    id?: string
 }): React.JSX.Element {
     return (
-        <section className={cn("flex flex-col gap-3", className)}>
+        <section id={id} className={cn("flex scroll-mt-24 flex-col gap-3", className)}>
             {title ? (
                 <h2 className="px-1 text-sm font-semibold text-tg-subtitle">{title}</h2>
             ) : null}

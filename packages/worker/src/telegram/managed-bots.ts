@@ -102,8 +102,9 @@ export async function handleManagedBot(
         await notifier.managedBotCreated(update.user.id, change.botUsername)
         return
     }
-    // A live shop answers through the new token at once; a pending one connects on approval.
-    if (change.shop.status === BusinessStatus.ACTIVE) {
+    // The bot answers from the application on: a live or pending shop moves to the new token at
+    // once; a turned-off one stays quiet.
+    if (change.shop.status !== BusinessStatus.DISABLED) {
         await notifier.connectShopBot(change.shop, workerOrigin)
     }
     if (change.kind === "ownerChanged") {

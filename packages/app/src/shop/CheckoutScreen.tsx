@@ -332,7 +332,8 @@ export function CheckoutScreen(): React.JSX.Element {
     const total = cart.subtotal + fee + deposit
     const ready = canPlace({
         phone: me?.phone,
-        hasCard: shop?.hasPayoutCard,
+        // Waiting for Zumda's approval: the storefront opens, orders do not yet.
+        hasCard: shop?.hasPayoutCard === true && !shop.opensSoon,
         address: delivery.address,
         count: cart.count,
     })

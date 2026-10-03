@@ -7,6 +7,19 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Onboarding review; Telegram Login in the browser (owner's decisions)
+- **Changed (core, worker, app):** the application is three short steps: name and kind → bot →
+  where the business is (location and address). The card, hours, products, logo and courier move
+  to «Ishga tayyor», the owner's checklist; a shop without a card still takes no orders.
+- **Changed (worker):** the shop's bot is connected at the application (webhook, menu button,
+  `/start`, descriptions): customers see a pending shop as «Tez orada ochiladi», no orders.
+- **Added (core, worker, app):** rejection with a reason (migration `0009`), seen only by the
+  owner; «Tuzatib qayta yuborish» (`POST /api/owner/shop/resubmit`) sends it to the admins again.
+- **Fixed (worker, app):** Telegram deprecated the old Login Widget («Bot domain invalid» on
+  business.zumda.shop). Sign-in uses the new Telegram Login (OpenID Connect): `GET
+  /api/business/login` gives the Client ID and a nonce, `POST /api/business/session` checks the
+  `id_token` against Telegram's published keys. @BotFather needs Trusted Origin and Redirect URI.
+
 ### Bots notify, the Mini App acts (owner's decision)
 - **Changed (worker):** every bot has `/start` only; any other message gets one line and the
   button to the app. The admins' `/market`, `/district`, `/network` and `/reconnect` are gone;

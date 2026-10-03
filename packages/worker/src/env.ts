@@ -22,6 +22,8 @@ export interface Bindings extends Env {
     PLATFORM_ADMIN_IDS: string
     /** Local stand only: a fake Bot API on localhost. Never set in production. */
     TELEGRAM_API_BASE?: string
+    /** Local stand only: a fake Telegram Login (its keys) on localhost. Never set in production. */
+    TELEGRAM_OAUTH_BASE?: string
 }
 
 export interface AuthContext {

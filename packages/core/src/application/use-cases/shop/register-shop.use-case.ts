@@ -9,11 +9,14 @@ import { PayoutCard } from "../../../domain/value-objects/payout-card.js"
 import { Slug } from "../../../domain/value-objects/slug.js"
 import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
 import { toShopOwnerDTO } from "../../dtos/shop.dto.js"
+import { districtIdFor } from "../network/network.use-cases.js"
 
+import type { SavedPayoutCard } from "../../../domain/entities/payout-card-book.js"
 import type { BusinessType } from "../../../domain/enums/business-type.js"
 import type { LocationDTO, ShopOwnerDTO } from "../../dtos/shop.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
+import type { DistrictRepository } from "../../ports/district-repository.js"
 import type { ManagedBotRepository } from "../../ports/managed-bot-repository.js"
 import type { PayoutCardRepository } from "../../ports/payout-card-repository.js"
 
@@ -38,11 +41,15 @@ export interface RegisterShopInput {
     type: BusinessType
     address?: string
     location?: LocationDTO
-    deliveryFee: number
+    /** Zero until the owner sets it in «Ishga tayyor». */
+    deliveryFee?: number
     freeDeliveryFrom?: number
     minOrder?: number
-    /** Customers pay only by transfer: the card comes with the application. */
-    payoutCard: { number: string; holder: string }
+    /**
+     * Customers pay only by transfer, but the card may come later («Ishga tayyor»): until then
+     * the shop takes no orders (`NO_PAYOUT_CARD`).
+     */
+    payoutCard?: { number: string; holder: string }
 }
 
 /** Self-serve onboarding: the owner connects their own bot. The shop waits for admin approval. */
@@ -52,6 +59,7 @@ export class RegisterShopUseCase {
         private readonly clock: Clock,
         private readonly cards: PayoutCardRepository,
         private readonly managedBots: ManagedBotRepository,
+        private readonly districts: DistrictRepository,
     ) {}
 
     async execute(input: RegisterShopInput): Promise<ShopOwnerDTO> {
@@ -60,6 +68,9 @@ export class RegisterShopUseCase {
             throw ConflictError.botAlreadyConnected(bot.id)
         }
 
+        const location = input.location
+            ? Location.create(input.location.latitude, input.location.longitude)
+            : undefined
         const business = Business.register({
             id: crypto.randomUUID(),
             slug: await this.freeSlug(Slug.fromBotUsername(bot.username)),
@@ -69,29 +80,37 @@ export class RegisterShopUseCase {
             bot: { id: bot.id, username: bot.username },
             botSource: bot.source,
             address: input.address,
-            location: input.location
-                ? Location.create(input.location.latitude, input.location.longitude)
-                : undefined,
+            location,
             delivery: {
-                fee: Money.of(input.deliveryFee),
+                fee: Money.of(input.deliveryFee ?? 0),
                 freeFrom: Money.optional(input.freeDeliveryFrom),
                 minOrder: Money.optional(input.minOrder),
             },
         })
 
-        // The first card is a required step: customers pay only by transfer.
-        const book = new PayoutCardBook(business, [])
-        const card = book.add({
-            id: crypto.randomUUID(),
-            card: PayoutCard.create(input.payoutCard.number, input.payoutCard.holder),
-            now: this.clock.now(),
-        })
+        // A shop with a location belongs to its district at once: the network can serve it.
+        business.setDistrict(await districtIdFor(this.districts, location))
+        const card = input.payoutCard && this.firstCard(business, input.payoutCard)
         await this.businesses.insert(business, bot.token)
-        await this.cards.insert(business.id, card)
+        if (card) {
+            await this.cards.insert(business.id, card)
+        }
         if (bot.source === BotSource.MANAGED) {
             await this.managedBots.claim(bot.id, business.id)
         }
         return toShopOwnerDTO(business, this.clock.now())
+    }
+
+    /** The card the application came with: it becomes the payment card customers see. */
+    private firstCard(
+        business: Business,
+        card: { number: string; holder: string },
+    ): SavedPayoutCard {
+        return new PayoutCardBook(business, []).add({
+            id: crypto.randomUUID(),
+            card: PayoutCard.create(card.number, card.holder),
+            now: this.clock.now(),
+        })
     }
 
     /** A managed bot must be this owner's own and not taken by a shop yet. */

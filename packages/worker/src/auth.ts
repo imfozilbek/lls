@@ -175,8 +175,9 @@ function accessIn(
     if (entry === BOT_BUSINESS && role !== "owner") {
         throw ForbiddenError.notOwner(business.id)
     }
-    // A shop that is not live yet is open to its owner only; a turned-off shop to nobody.
-    if (!business.isActive() && (role !== "owner" || !business.isPending())) {
+    // A shop waiting for approval opens to everyone (no orders yet); a turned-off or rejected
+    // one only to its owner, who fixes it there.
+    if (!business.isVisibleTo(telegramId)) {
         throw EntityNotFoundError.businessBySlug(business.slug.value)
     }
     return {

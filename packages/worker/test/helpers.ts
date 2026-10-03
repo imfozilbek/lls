@@ -13,6 +13,7 @@ import type {
     OutgoingFile,
     TelegramGateway,
 } from "../src/telegram/gateway.js"
+import type { LoginKeys } from "../src/telegram-login.js"
 import type { Clock } from "@zumda/core"
 
 export const OWNER = { id: 1001, first_name: "Rustam", language_code: "uz" }
@@ -248,7 +249,7 @@ function signerToken(from: {
 }
 
 export function testClient(
-    options: { bots?: Record<string, BotInfo>; clock?: Clock } = {},
+    options: { bots?: Record<string, BotInfo>; clock?: Clock; loginKeys?: LoginKeys } = {},
 ): TestClient {
     const telegram = new FakeTelegram({
         [env.COURIER_BOT_TOKEN]: COURIER_BOT,
@@ -256,7 +257,11 @@ export function testClient(
         [env.BUSINESS_BOT_TOKEN]: BUSINESS_BOT,
         ...options.bots,
     })
-    const app = createApp({ telegram, clock: options.clock })
+    const app = createApp({
+        telegram,
+        clock: options.clock,
+        loginKeys: options.loginKeys ?? ((): Promise<JsonWebKey[]> => Promise.resolve([])),
+    })
 
     async function request(path: string, init: RequestInit = {}): Promise<Response> {
         const ctx = createExecutionContext()

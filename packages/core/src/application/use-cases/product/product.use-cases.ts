@@ -130,7 +130,7 @@ export class ListProductsUseCase {
             await requireOwnedBusiness(this.businesses, input.businessId, input.actorTelegramId)
         } else {
             const business = await requireBusiness(this.businesses, input.businessId)
-            if (!business.isActive() && !business.isOwnedBy(input.actorTelegramId)) {
+            if (!business.isVisibleTo(input.actorTelegramId)) {
                 throw EntityNotFoundError.business(input.businessId)
             }
         }

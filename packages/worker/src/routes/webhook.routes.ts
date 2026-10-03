@@ -89,10 +89,12 @@ async function handleShopMessage(
         await services.telegram.sendMessage(token, message.chat.id, texts.onlyInApp, { keyboard })
         return
     }
+    // Waiting for approval: the bot already answers, the shop opens soon.
+    const welcome = business.isPending() ? texts.shopOpensSoon : texts.shopWelcome
     await services.telegram.sendMessage(
         token,
         message.chat.id,
-        fill(texts.shopWelcome, { shop: `<b>${escapeHtml(business.name)}</b>` }),
+        fill(welcome, { shop: `<b>${escapeHtml(business.name)}</b>` }),
         { keyboard },
     )
 }

@@ -50,6 +50,8 @@ interface BusinessRow {
     payment_card_id: string | null
     district_id: string | null
     network_delivery: number
+    rejected_at: number | null
+    review_note: string | null
     created_at: number
     updated_at: number
 }
@@ -59,7 +61,7 @@ const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_us
     logo_key, address, latitude, longitude, delivery_fee, free_delivery_from, min_order,
     delivery_radius_m, working_hours, features, accepting_orders, bottle_deposit,
     marketplace_commission_bps, marketplace_joined_at, payout_card_number, payout_card_holder,
-    district_id, network_delivery, payment_card_id, created_at, updated_at`
+    district_id, network_delivery, payment_card_id, rejected_at, review_note, created_at, updated_at`
 
 export interface BotCredentials {
     botId: number
@@ -113,6 +115,8 @@ function toBusiness(row: BusinessRow): Business {
         paymentCardId: optional(row.payment_card_id),
         districtId: optional(row.district_id),
         networkDelivery: bool(row.network_delivery),
+        rejectedAt: row.rejected_at === null ? undefined : new Date(row.rejected_at),
+        reviewNote: optional(row.review_note),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -130,6 +134,12 @@ function optionalValues(b: Business): (string | number | null)[] {
         minOrder?.amount ?? null,
         radiusMeters ?? null,
     ]
+}
+
+/** `rejected_at`, `review_note`: set only for a rejected application. */
+function rejectionValues(b: Business): (string | number | null)[] {
+    const rejection = b.rejection
+    return [rejection?.at.getTime() ?? null, rejection?.reason ?? null]
 }
 
 /** Values for every mutable column, in the order used by INSERT and UPDATE. */
@@ -151,6 +161,7 @@ function mutableValues(b: Business): (string | number | null)[] {
         b.districtId ?? null,
         flag(b.networkDelivery),
         b.paymentCardId ?? null,
+        ...rejectionValues(b),
         b.updatedAt.getTime(),
     ]
 }
@@ -220,11 +231,12 @@ export class D1BusinessRepository implements BusinessRepository {
                     longitude, delivery_fee, free_delivery_from, min_order, delivery_radius_m,
                     working_hours, features, accepting_orders, bottle_deposit,
                     marketplace_commission_bps, marketplace_joined_at, payout_card_number,
-                    payout_card_holder, district_id, network_delivery, payment_card_id, updated_at,
+                    payout_card_holder, district_id, network_delivery, payment_card_id,
+                    rejected_at, review_note, updated_at,
                     id, slug, type, owner_telegram_id, bot_id, bot_username, bot_token_enc,
                     webhook_secret, created_at, bot_source)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             )
             .bind(
                 ...mutableValues(business),
@@ -258,7 +270,8 @@ export class D1BusinessRepository implements BusinessRepository {
                     working_hours = ?, features = ?, accepting_orders = ?, bottle_deposit = ?,
                     marketplace_commission_bps = ?, marketplace_joined_at = ?,
                     payout_card_number = ?, payout_card_holder = ?, district_id = ?,
-                    network_delivery = ?, payment_card_id = ?, updated_at = ?
+                    network_delivery = ?, payment_card_id = ?, rejected_at = ?, review_note = ?,
+                    updated_at = ?
                  WHERE id = ?`,
             )
             .bind(...mutableValues(business), business.id)

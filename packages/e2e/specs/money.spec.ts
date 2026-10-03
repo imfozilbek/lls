@@ -290,15 +290,21 @@ test("no card, no orders: the storefront waits; the owner adds the card from the
     await expect(page.getByText("Tez orada buyurtma qabul qila boshlaydi")).toBeVisible()
 
     await openOwner(page, GROCERY, PEOPLE.groceryOwner)
-    const banner = page.getByRole("button", { name: /O'tkazmalar uchun karta qo'shing/ })
-    await expect(banner).toBeVisible()
+    // «Ishga tayyor» leads to the card first: without it there are no orders.
+    const ready = page.getByRole("region", { name: "Ishga tayyor" })
+    const banner = ready.getByRole("button", { name: /To'lov kartasi/ })
+    await expect(banner).toBeEnabled()
     await banner.click()
     // No card yet: the form is already open.
     await page.getByLabel("Karta raqami").fill("5614681234567893")
     await page.getByLabel("Kartadagi ism").fill("Sardor Yusupov")
     await page.getByRole("button", { name: "Kartani saqlash" }).click()
     await expect(page.getByText("Karta qo'shildi")).toBeVisible()
-    await expect(banner).toBeHidden()
+    await page.getByRole("tab", { name: "Buyurtmalar" }).click()
+    // The card row is ticked (or the whole list is done and gone).
+    await expect(
+        page.getByText("Mijozlar shu kartaga o'tkazadi: kartasiz buyurtma yo'q"),
+    ).toBeHidden()
     const shop = (await (await apiAs(PEOPLE.customer, "/shop", { shop: GROCERY })).json()) as {
         hasPayoutCard: boolean
     }

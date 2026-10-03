@@ -51,6 +51,8 @@ const BASE = {
         courierOnTheWay: "🚚 #{n} buyurtmangizni {courier} olib kelmoqda.",
         shopWelcome:
             "Assalomu alaykum! {shop} katalogini oching va bir necha bosishda buyurtma bering.",
+        shopOpensSoon:
+            "Assalomu alaykum! {shop} tez orada ochiladi. Katalogni hozir ko'rib chiqishingiz mumkin, buyurtmalar ochilgandan keyin.",
         openMenu: "🛒 Katalogni ochish",
         phoneSaved: "✅ Telefon raqamingiz saqlandi.",
         platformWelcome:
@@ -85,7 +87,12 @@ const BASE = {
             "{shop}: buyurtmalarni shu yerda qabul qilamiz.\nPastdagi «{openMenu}» tugmasini bosing: tanlang, buyurtma bering, eshigingizgacha olib kelamiz.\n\nZumda asosida ishlaydi · zumda.shop",
         shopBotShortDescription: "{shop}: uyga buyurtma bering. Zumda asosida ishlaydi",
         shopApproved: "🎉 {shop} ishga tushdi! Mijozlaringizga ushbu havolani yuboring:",
-        shopRejected: "😔 {shop} arizasi rad etildi. Savollar bo'lsa, bizga yozing.",
+        shopApprovedNeedsCard:
+            "Mijozlar buyurtma berishi uchun to'lov kartasini qo'shing: «Ishga tayyor» ro'yxatida.",
+        shopRejected: "😔 {shop} arizasi rad etildi.",
+        shopRejectedReason: "Sabab: {reason}",
+        shopRejectedNext: "Tuzating va «Mening bizneslarim»da arizani qayta yuboring.",
+        openShop: "🏪 Biznesni ochish",
         newShop: "🏪 Yangi biznes",
         shopTypes: {
             [BusinessType.GROCERY]: "oziq-ovqat do'koni",

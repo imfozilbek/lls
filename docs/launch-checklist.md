@@ -72,8 +72,11 @@ Claude, и деплоем; перед подключением настоящи�
 - [ ] Bot Management Mode для **Zumda | Business** (цель 14: бот бизнеса создаётся без токена):
       @BotFather → `/mybots` → `@zumdashop_business_bot` → **Bot Settings** → **Bot Management Mode**
       → **On**. Проверка: `scripts/check-access.sh` → «can create bots for owners».
-- [ ] Веб-вход на business.zumda.shop: @BotFather → `/setdomain` → `@zumdashop_business_bot` →
-      `business.zumda.shop`. Без этого кнопка «Telegram orqali kirish» не появится.
+- [ ] Веб-вход на business.zumda.shop (новый Telegram Login, старый виджет и `/setdomain`
+      Telegram отключил): @BotFather → `/mybots` → `@zumdashop_business_bot` → **Bot Settings** →
+      **Login Widget**: **Trusted Origins** → `https://business.zumda.shop`, **Redirect URIs** →
+      `https://business.zumda.shop/`. Client Secret не нужен, никуда его не вставляйте. Проверка:
+      на business.zumda.shop «Telegram orqali kirish» открывает окно Telegram и впускает.
 - [ ] Картинки «Что умеет этот бот?» (Description Picture, через API не ставится): @BotFather →
       `/mybots` → бот → **Edit Bot** → **Edit Description Picture**: `brand/welcome/zumda-640.png`
       для `@zumdashop_bot`, `biznes-640.png` для `@zumdashop_business_bot`, `kuryer-640.png` для

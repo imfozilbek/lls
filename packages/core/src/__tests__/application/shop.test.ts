@@ -9,17 +9,24 @@ import {
     ManagedBotChangedUseCase,
 } from "../../application/use-cases/shop/managed-bot.use-case.js"
 import { RegisterShopUseCase } from "../../application/use-cases/shop/register-shop.use-case.js"
-import { ReviewShopUseCase } from "../../application/use-cases/shop/review-shop.use-case.js"
+import {
+    ResubmitShopUseCase,
+    ReviewShopUseCase,
+} from "../../application/use-cases/shop/review-shop.use-case.js"
+import { District } from "../../domain/entities/district.js"
 import { UpdateShopUseCase } from "../../application/use-cases/shop/update-shop.use-case.js"
 import { BotSource } from "../../domain/enums/bot-source.js"
 import { BusinessStatus } from "../../domain/enums/business-status.js"
 import { BusinessType } from "../../domain/enums/business-type.js"
+import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../domain/errors/conflict.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../domain/errors/not-found.error.js"
+import { Location } from "../../domain/value-objects/location.js"
 import { NOON_MONDAY_UZ, OWNER_TG, STRANGER_TG, TEST_CARD, makeBusiness } from "../fixtures.js"
 import {
     InMemoryBusinesses,
+    InMemoryDistricts,
     InMemoryManagedBots,
     InMemoryPayoutCards,
     fixedClock,
@@ -50,11 +57,13 @@ describe("shop use cases", () => {
     let businesses: InMemoryBusinesses
     let cards: InMemoryPayoutCards
     let managedBots: InMemoryManagedBots
+    let districts: InMemoryDistricts
 
     beforeEach(() => {
         businesses = new InMemoryBusinesses()
         cards = new InMemoryPayoutCards()
         managedBots = new InMemoryManagedBots()
+        districts = new InMemoryDistricts()
     })
 
     describe("RegisterShop", () => {
@@ -64,6 +73,7 @@ describe("shop use cases", () => {
                 clock,
                 cards,
                 managedBots,
+                districts,
             ).execute(registration())
             expect(shop.status).toBe(BusinessStatus.PENDING)
             expect(shop.slug).toBe("osh-markaz")
@@ -81,7 +91,13 @@ describe("shop use cases", () => {
         })
 
         it("adds a suffix when the slug is taken", async () => {
-            const useCase = new RegisterShopUseCase(businesses, clock, cards, managedBots)
+            const useCase = new RegisterShopUseCase(
+                businesses,
+                clock,
+                cards,
+                managedBots,
+                districts,
+            )
             await useCase.execute(registration())
             const second = await useCase.execute(
                 registration({ bot: { id: 556, username: "osh_markaz_bot", token: "x" } }),
@@ -90,9 +106,50 @@ describe("shop use cases", () => {
         })
 
         it("rejects a bot that is already connected", async () => {
-            const useCase = new RegisterShopUseCase(businesses, clock, cards, managedBots)
+            const useCase = new RegisterShopUseCase(
+                businesses,
+                clock,
+                cards,
+                managedBots,
+                districts,
+            )
             await useCase.execute(registration())
             await expect(useCase.execute(registration())).rejects.toThrow(ConflictError)
+        })
+
+        it("a short application: no card and no fee yet, the district from the location", async () => {
+            const tashkent = District.create({
+                id: "d-1",
+                name: "Toshkent",
+                center: Location.create(41.31, 69.24),
+                radiusMeters: 20_000,
+                now: new Date(),
+            })
+            await districts.save(tashkent)
+            const shop = await new RegisterShopUseCase(
+                businesses,
+                clock,
+                cards,
+                managedBots,
+                districts,
+            ).execute(registration({ payoutCard: undefined, deliveryFee: undefined }))
+            expect(shop.delivery.fee).toBe(0)
+            expect(shop.hasPayoutCard).toBe(false)
+            expect(shop.inDistrict).toBe(true)
+            expect(await cards.listByBusiness(shop.id)).toEqual([])
+            const far = await new RegisterShopUseCase(
+                businesses,
+                clock,
+                cards,
+                managedBots,
+                districts,
+            ).execute(
+                registration({
+                    bot: { id: 600, username: "Uzoq_bot", token: "600:x" },
+                    location: undefined,
+                }),
+            )
+            expect(far.inDistrict).toBe(false)
         })
 
         it("a pasted token makes a `token` shop", async () => {
@@ -101,6 +158,7 @@ describe("shop use cases", () => {
                 clock,
                 cards,
                 managedBots,
+                districts,
             ).execute(registration())
             expect(shop.managedBot).toBe(false)
         })
@@ -129,7 +187,13 @@ describe("shop use cases", () => {
 
         it("the owner applies with it: the token never comes from the client", async () => {
             await created()
-            const register = new RegisterShopUseCase(businesses, clock, cards, managedBots)
+            const register = new RegisterShopUseCase(
+                businesses,
+                clock,
+                cards,
+                managedBots,
+                districts,
+            )
             const shop = await register.execute(registration({ bot: { managedBotId: 777 } }))
             expect(shop.managedBot).toBe(true)
             expect(shop.botUsername).toBe("Osh_Saroy_bot")
@@ -144,7 +208,13 @@ describe("shop use cases", () => {
 
         it("nobody applies with a bot they did not create, or one that does not exist", async () => {
             await created()
-            const register = new RegisterShopUseCase(businesses, clock, cards, managedBots)
+            const register = new RegisterShopUseCase(
+                businesses,
+                clock,
+                cards,
+                managedBots,
+                districts,
+            )
             await expect(
                 register.execute(
                     registration({ ownerTelegramId: STRANGER_TG, bot: { managedBotId: 777 } }),
@@ -162,6 +232,7 @@ describe("shop use cases", () => {
                 clock,
                 cards,
                 managedBots,
+                districts,
             ).execute(registration({ bot: { managedBotId: 777 } }))
             const changed = new ManagedBotChangedUseCase(businesses, managedBots, clock)
 
@@ -217,13 +288,56 @@ describe("shop use cases", () => {
                 decision: "reject",
             })
             expect(rejected.status).toBe(BusinessStatus.DISABLED)
+            // A live shop turned off is not a rejected application.
+            expect(rejected.rejection).toBeUndefined()
+        })
+
+        it("a rejected application carries the reason; the owner fixes it and applies again", async () => {
+            const business = makeBusiness({ active: false })
+            await businesses.save(business)
+            const review = new ReviewShopUseCase(businesses, [ADMIN_TG], clock)
+            const rejected = await review.execute({
+                actorTelegramId: ADMIN_TG,
+                businessId: business.id,
+                decision: "reject",
+                reason: "  Manzil yo'q  ",
+            })
+            expect(rejected.status).toBe(BusinessStatus.DISABLED)
+            expect(rejected.rejection).toEqual({ at: expect.any(String), reason: "Manzil yo'q" })
+
+            const resubmit = new ResubmitShopUseCase(businesses, clock)
+            await expect(
+                resubmit.execute({ ownerTelegramId: STRANGER_TG, businessId: business.id }),
+            ).rejects.toThrow(ForbiddenError)
+            const again = await resubmit.execute({
+                ownerTelegramId: OWNER_TG,
+                businessId: business.id,
+            })
+            expect(again.status).toBe(BusinessStatus.PENDING)
+            expect(again.rejection).toBeUndefined()
+            // Only a rejected application goes back: a pending or live one cannot.
+            await expect(
+                resubmit.execute({ ownerTelegramId: OWNER_TG, businessId: business.id }),
+            ).rejects.toThrow(BusinessRuleViolationError)
+
+            const approved = await review.execute({
+                actorTelegramId: ADMIN_TG,
+                businessId: business.id,
+                decision: "approve",
+            })
+            expect(approved.rejection).toBeUndefined()
         })
     })
 
     describe("GetShopBySlug and ListMyShops", () => {
-        it("hides inactive shops from customers but not from the owner", async () => {
-            await businesses.save(makeBusiness({ active: false }))
+        it("a shop waiting for approval opens soon; a turned-off one only to its owner", async () => {
+            const waiting = makeBusiness({ active: false })
+            await businesses.save(waiting)
             const getShop = new GetShopBySlugUseCase(businesses, clock)
+            const soon = await getShop.execute("osh-markaz", STRANGER_TG)
+            expect(soon.opensSoon).toBe(true)
+            waiting.disable()
+            await businesses.save(waiting)
             await expect(getShop.execute("osh-markaz", STRANGER_TG)).rejects.toThrow(
                 EntityNotFoundError,
             )

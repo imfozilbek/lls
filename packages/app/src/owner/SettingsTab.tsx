@@ -30,8 +30,10 @@ import { HoursEditor } from "./HoursEditor.js"
 import { PaymentCardsSection } from "./PaymentCardsSection.js"
 import { PosterSection } from "./PosterSection.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
+import { useOwner } from "./store.js"
 
 import type { Hours } from "./hours.js"
+import type { ReadySection } from "./store.js"
 import type { ShopPatch } from "../lib/api.js"
 import type { BotAvatarInput } from "../lib/bot-avatar.js"
 import type { ShopOwnerDTO } from "@zumda/core"
@@ -93,6 +95,10 @@ function patchOf(form: Form): ShopPatch {
 }
 
 /** Keeps the storefront (and the brand color) in sync with what the owner just saved. */
+export function sectionId(section: ReadySection): string {
+    return `ready-${section}`
+}
+
 function publish(shop: ShopOwnerDTO): void {
     applyBrand(shop.brandColor)
     useSession.getState().setShop({ ...shop, viewerRole: "owner" })
@@ -365,7 +371,7 @@ function LocationFields({
         }
     }
     return (
-        <Section title={s.address}>
+        <Section title={s.address} id={sectionId("location")}>
             <TextInput
                 aria-label={s.address}
                 value={form.address}
@@ -479,7 +485,7 @@ function SettingsForm({
 
     return (
         <>
-            <Section title={s.shop}>
+            <Section title={s.shop} id={sectionId("logo")}>
                 <LogoPicker shop={shop} onSaved={onSaved} />
                 <p className="-mt-1 px-1 text-sm text-tg-hint">{s.botPhotoHint}</p>
                 <Field label={s.name} htmlFor="shop-name">
@@ -498,7 +504,7 @@ function SettingsForm({
                 </Field>
             </Section>
             <DeliveryFields form={form} patch={patch} />
-            <Section title={s.hours}>
+            <Section title={s.hours} id={sectionId("hours")}>
                 <HoursEditor hours={form.hours} onChange={(hours): void => patch({ hours })} />
             </Section>
             <LocationFields form={form} patch={patch} />
@@ -507,9 +513,23 @@ function SettingsForm({
     )
 }
 
+/** «Ishga tayyor» opened «Sozlamalar» for one part of it: bring that part into view, once. */
+function useFocusSection(ready: boolean): void {
+    const section = useOwner((state) => state.focusSection)
+    const goToSection = useOwner((state) => state.goToSection)
+    useEffect(() => {
+        if (!ready || !section) {
+            return
+        }
+        document.getElementById(sectionId(section))?.scrollIntoView({ behavior: "smooth" })
+        goToSection(null)
+    }, [ready, section, goToSection])
+}
+
 export function SettingsTab(): React.JSX.Element {
     const t = useT()
     const { shop, error, reload, setShop } = useOwnerShop()
+    useFocusSection(shop !== null)
     if (error) {
         return (
             <EmptyState
@@ -535,8 +555,12 @@ export function SettingsTab(): React.JSX.Element {
         <div className="flex flex-col gap-6 px-4 pt-2">
             <AcceptingCard shop={shop} onSaved={setShop} />
             <SettingsForm shop={shop} onSaved={setShop} />
-            <PaymentCardsSection onSaved={setShop} />
-            <CouriersSection shopName={shop.name} />
+            <div id={sectionId("card")} className="scroll-mt-24">
+                <PaymentCardsSection onSaved={setShop} />
+            </div>
+            <div id={sectionId("courier")} className="scroll-mt-24">
+                <CouriersSection shopName={shop.name} />
+            </div>
             <NetworkSection shop={shop} onSaved={setShop} />
             <Section title={t.owner.settings.link}>
                 <ShopLink shop={shop} />

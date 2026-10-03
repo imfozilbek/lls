@@ -40,24 +40,23 @@ async function myShops(owner: TgUser = PEOPLE.newOwner): Promise<MyShop[]> {
     return (await response.json()) as MyShop[]
 }
 
-/** The BotFather way: step «Bot» → «Menda bot bor» → the token. */
+/**
+ * Three short steps: the business, the bot (the BotFather way: «Menda bot bor» → the token),
+ * where it is. The card and the fee wait in «Ishga tayyor».
+ */
 async function apply(page: Page, token: string, name: string): Promise<void> {
     await page.getByLabel("Biznes nomi").fill(name)
     await page.getByRole("radio", { name: "Oziq-ovqat do'koni" }).click()
-    await page.getByLabel(/Manzil/).fill("Guliston, Navoiy 20")
     await bottomButton(page).click()
     await expect(page.getByText("2/3-qadam")).toBeVisible()
     await page.getByRole("button", { name: "Menda bot bor" }).click()
     await page.getByLabel("Bot tokeni").fill(token)
     await bottomButton(page).click()
-    await page.getByLabel("Yetkazish narxi").fill("5000")
-    // Customers pay only by transfer: no card, no «Отправить заявку».
-    await expect(bottomButton(page)).toBeDisabled()
-    await page.getByLabel("Karta raqami").fill("4111 1111 1111 1112")
-    await expect(page.getByText("Raqamda xato bor: tekshirib qayta kiriting.")).toBeVisible()
-    await page.getByLabel("Karta raqami").fill("4111 1111 1111 1111")
-    await page.getByLabel("Kartadagi ism").fill("Sardor Aliyev")
-    await bottomButton(page).click()
+    await expect(page.getByText("3/3-qadam")).toBeVisible()
+    await page.getByRole("button", { name: "Joylashuvni yuborish" }).click()
+    await expect(page.getByText("Joylashuv olindi")).toBeVisible()
+    await page.getByLabel(/Manzil/).fill("Guliston, Navoiy 20")
+    await bottomButton(page).click() // «Ariza yuborish»
 }
 
 /** Zumda writes the bot's description: the shop's name and «Zumda asosida ishlaydi». */
@@ -91,12 +90,16 @@ test("a wrong token is refused and the wizard returns to the bot step", async ({
 test("the application reaches the admin; the pending shop opens only for its owner", async ({
     page,
 }) => {
-    await openApp(page, { user: PEOPLE.newOwner, businessBot: true })
+    const app = await openApp(page, { user: PEOPLE.newOwner, businessBot: true })
     await bottomButton(page).click()
     const since = await lastSeq()
     await apply(page, NEW_BOT.token, "Yangi Non")
-    await expect(page.getByRole("heading", { name: "Ariza yuborildi!" })).toBeVisible()
-    await bottomButton(page).click() // «Готово»
+    // Straight into the new business: under review, and what is left before the first order.
+    await expect(page.getByText("Ariza tekshirilmoqda")).toBeVisible()
+    const ready = page.getByRole("region", { name: "Ishga tayyor" })
+    await expect(ready).toContainText("To'lov kartasi")
+    await expect(ready).toContainText("1/6") // the location came with the application
+    await app.back()
     await expect(page.getByText("Yangi Non")).toBeVisible()
     await expect(page.getByText("Tekshiruvda")).toBeVisible()
 
@@ -124,8 +127,9 @@ test("the application reaches the admin; the pending shop opens only for its own
         query: `?shop=${shop?.slug ?? ""}`,
         signWith: NEW_BOT.token,
     })
+    // Customers already see it: the bot answers, the storefront opens, orders come later.
     await expect(page.getByRole("button", { name: "Mening do'konim" })).toBeHidden()
-    await expect(page.getByRole("heading", { name: "Do'kon topilmadi" })).toBeVisible()
+    await expect(page.getByText("Tez orada ochiladi").first()).toBeVisible()
 })
 
 test("the same bot cannot be connected twice", async () => {
@@ -205,7 +209,9 @@ test("a failed connection warns the admin; «Botni qayta ulash» in «Platforma�
     await waitForCall("setWebhook", SECOND_BOT.token, before)
 })
 
-test("a rejected shop is told and never opens", async ({ page }) => {
+test("a rejected application: customers never see it; its owner fixes it and applies again", async ({
+    page,
+}) => {
     const since = await lastSeq()
     const third = "777100202:NEW-e2e-onboarding-token-uvwxyzabcd" // secret-scan: fake
     await openAndApply(THIRD_OWNER, third, "Uchinchi")
@@ -215,11 +221,25 @@ test("a rejected shop is told and never opens", async ({ page }) => {
     const rejected = (await myShops(THIRD_OWNER)).find((s) => s.name === "Uchinchi")
     expect(rejected?.status).toBe("disabled")
     await openApp(page, {
+        user: PEOPLE.customer,
+        query: `?shop=${rejected?.slug ?? ""}`,
+        signWith: third,
+    })
+    await expect(page.getByRole("heading", { name: "Do'kon topilmadi" })).toBeVisible()
+
+    await openApp(page, {
         user: THIRD_OWNER,
         query: `?shop=${rejected?.slug ?? ""}`,
         signWith: third,
     })
-    await expect(page.getByRole("button", { name: "Mening do'konim" })).toBeHidden()
+    await page.getByRole("button", { name: "Mening do'konim" }).click()
+    await expect(page.getByText("Ariza rad etildi")).toBeVisible()
+    const again = await lastSeq()
+    await page.getByRole("button", { name: "Tuzatib qayta yuborish" }).click()
+    await expect(page.getByText("Ariza qayta yuborildi")).toBeVisible()
+    await expect(page.getByText("Ariza tekshirilmoqda")).toBeVisible()
+    const card2 = await waitForMessage(PEOPLE.admin.id, "Uchinchi", again)
+    expect(card2.buttons[0]?.text).toBe("✅ Tasdiqlash")
 })
 
 test("admins hear about failures: a notification that did not go out", async () => {

@@ -28,8 +28,10 @@
    - CORS ровно для трёх адресов;
    - `zumda.shop` стал Custom Domain Worker'а и отвечает 302 в `t.me/zumdashop_bot`.
 3. **Веб-вход:**
-   - Telegram Login Widget бота `@zumdashop_business_bot`;
-   - `POST /api/business/session` проверяет подпись виджета (SHA-256 от токена, HMAC, сутки);
+   - Telegram Login бота `@zumdashop_business_bot` (OpenID Connect: старый виджет Telegram
+     отключил в октябре 2026);
+   - `POST /api/business/session` проверяет `id_token` (ключ Telegram из JWKS, `iss`, `aud`,
+     `exp`, наш nonce);
    - сессия на 30 дней в `Authorization: Bearer` с теми же правами, что `X-Bot: business`;
    - в браузере есть «Orqaga» и «Chiqish», истёкшая сессия возвращает на вход.
 4. **Профили ботов через CI** (`deploy.sh`):
@@ -45,7 +47,8 @@
    - e2e: `business-web.spec.ts`, бизнес услуг.
 
 ## Что нужно от владельца (вручную, Telegram не даёт API)
-- [ ] @BotFather → `/setdomain` → `@zumdashop_business_bot` → `business.zumda.shop`.
+- [ ] @BotFather → `@zumdashop_business_bot` → **Bot Settings** → **Login Widget**: Trusted Origin
+      `https://business.zumda.shop`, Redirect URI `https://business.zumda.shop/`.
 - [ ] Description Picture трём ботам: `brand/welcome/zumda-640.png`, `biznes-640.png`,
       `kuryer-640.png`.
 

@@ -174,11 +174,12 @@ export const registerShopBody = z
         type: z.enum(BUSINESS_TYPES),
         address: z.string().trim().max(200).optional(),
         location: locationSchema.optional(),
-        deliveryFee: money,
+        /** Set later in «Ishga tayyor»: zero until then. */
+        deliveryFee: money.optional(),
         freeDeliveryFrom: money.optional(),
         minOrder: money.optional(),
-        /** Customers pay only by transfer: no card, no orders. */
-        payoutCard: payoutCardBody,
+        /** Customers pay only by transfer: no card, no orders. It may come later. */
+        payoutCard: payoutCardBody.optional(),
     })
     .refine((body) => (body.botToken === undefined) !== (body.managedBotId === undefined), {
         message: "Send botToken or managedBotId, not both",
@@ -189,12 +190,12 @@ export const registerShopBody = z
  * The Telegram Login Widget's data: every field it sends goes into the signature, so unknown
  * fields are kept (as text or numbers), not dropped.
  */
-export const widgetLoginBody = z
-    .record(z.string().max(32), z.union([z.string().max(512), z.number()]))
-    .refine((fields) => Object.keys(fields).length <= 12, { message: "Too many fields" })
-    .refine((fields) => typeof fields["hash"] === "string" && fields["id"] !== undefined, {
-        message: "Send the widget's data as it came",
-    })
+export const loginBody = z.object({
+    idToken: z
+        .string()
+        .max(8192)
+        .regex(/^[\w-]+\.[\w-]+\.[\w-]+$/),
+})
 
 /** Step «Bot» of the application: the name suggested for the new bot. */
 export const prepareManagedBotBody = z.object({ name: text(60) })
@@ -202,7 +203,11 @@ export const prepareManagedBotBody = z.object({ name: text(60) })
 /** «Platforma»: which list of shops the admin opens. */
 export const adminShopsQuery = z.object({ status: z.enum(BUSINESS_STATUSES) })
 
-export const reviewShopBody = z.object({ decision: z.enum(["approve", "reject"]) })
+/** A rejection may say why: the owner reads it and fixes the application. */
+export const reviewShopBody = z.object({
+    decision: z.enum(["approve", "reject"]),
+    reason: z.string().trim().max(300).optional(),
+})
 
 /** A showcase deal: the commission on goods in percent (5 or 2.5), or `null` to end it. */
 export const marketplaceBody = z.object({

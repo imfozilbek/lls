@@ -102,10 +102,13 @@ export const platformRoutes = new Hono<AppEnv>()
                 ownerTelegramId: auth.user.id,
                 bot,
             })
+            const notifier = new Notifier(services)
+            inBackground(c.executionCtx, services, notifier.shopRegistered(registered))
+            // The shop's bot answers from the application on: «Tez orada ochiladi».
             inBackground(
                 c.executionCtx,
                 services,
-                new Notifier(services).shopRegistered(registered),
+                notifier.connectApplied(registered, new URL(c.req.url).origin),
             )
             return c.json(registered, 201)
         },
