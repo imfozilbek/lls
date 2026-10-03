@@ -81,6 +81,14 @@ export interface TelegramGateway {
         options?: MessageOptions,
     ): Promise<void>
     answerCallback(token: string, callbackQueryId: string, text?: string): Promise<void>
+    /** A picture by URL (Telegram downloads it) with an HTML caption: the bots' welcome. */
+    sendPhoto(
+        token: string,
+        chatId: number,
+        photoUrl: string,
+        captionHtml: string,
+        options?: MessageOptions,
+    ): Promise<void>
     /** A file in the chat: the owner's CSV report or the QR poster. */
     sendDocument(token: string, chatId: number, file: OutgoingFile, caption?: string): Promise<void>
     setWebhook(token: string, url: string, secretToken: string): Promise<void>
@@ -164,6 +172,22 @@ export class HttpTelegramGateway implements TelegramGateway {
             parse_mode: "HTML",
             link_preview_options: { is_disabled: true },
             reply_markup: options.keyboard ?? { inline_keyboard: [] },
+        })
+    }
+
+    async sendPhoto(
+        token: string,
+        chatId: number,
+        photoUrl: string,
+        captionHtml: string,
+        options: MessageOptions = {},
+    ): Promise<void> {
+        await this.call(token, "sendPhoto", {
+            chat_id: chatId,
+            photo: photoUrl,
+            caption: captionHtml,
+            parse_mode: "HTML",
+            reply_markup: replyMarkup(options),
         })
     }
 

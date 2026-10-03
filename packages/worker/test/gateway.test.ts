@@ -72,6 +72,26 @@ describe("HttpTelegramGateway", () => {
         })
     })
 
+    it("sends a picture by URL with an HTML caption and buttons", async () => {
+        const { fetcher, calls } = fakeFetch({ message_id: 7 })
+        const keyboard = { inline_keyboard: [[{ text: "Open", web_app: { url: "https://a" } }]] }
+        await new HttpTelegramGateway(fetcher).sendPhoto(
+            "t",
+            1,
+            "https://app.zumda.shop/welcome/zumda.jpg",
+            "<b>Hi</b>",
+            { keyboard },
+        )
+        expect(calls[0]?.url).toBe("https://api.telegram.org/bott/sendPhoto")
+        expect(calls[0]?.body).toMatchObject({
+            chat_id: 1,
+            photo: "https://app.zumda.shop/welcome/zumda.jpg",
+            caption: "<b>Hi</b>",
+            parse_mode: "HTML",
+            reply_markup: keyboard,
+        })
+    })
+
     it("edits, answers callbacks, sets webhook and menu button", async () => {
         const { fetcher, calls } = fakeFetch(true)
         const gateway = new HttpTelegramGateway(fetcher)

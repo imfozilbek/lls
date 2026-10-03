@@ -73,6 +73,9 @@ export class FakeTelegram implements TelegramGateway {
     readonly answered: string[] = []
     readonly photos: { token: string; jpeg: Uint8Array }[] = []
     readonly descriptions: ({ token: string } & BotDescriptions)[] = []
+    readonly pictures: (SentMessage & { photoUrl: string })[] = []
+    /** Simulates Telegram failing to fetch a picture by URL. */
+    failPictures = false
     /** Simulates Telegram refusing a new bot picture. */
     failPhotos = false
     readonly documents: { token: string; chatId: number; file: OutgoingFile; caption?: string }[] =
@@ -117,6 +120,21 @@ export class FakeTelegram implements TelegramGateway {
         options?: MessageOptions,
     ): Promise<void> {
         this.edited.push({ token, chatId, html, options, messageId })
+    }
+    async sendPhoto(
+        token: string,
+        chatId: number,
+        photoUrl: string,
+        html: string,
+        options?: MessageOptions,
+    ): Promise<void> {
+        if (this.failReplies) {
+            throw new TelegramApiError("sendPhoto", "Forbidden: bot was blocked by the user")
+        }
+        if (this.failPictures) {
+            throw new TelegramApiError("sendPhoto", "Bad Request: wrong file identifier/HTTP URL")
+        }
+        this.pictures.push({ token, chatId, html, options, photoUrl })
     }
     async answerCallback(_token: string, callbackQueryId: string): Promise<void> {
         if (this.failReplies) {
