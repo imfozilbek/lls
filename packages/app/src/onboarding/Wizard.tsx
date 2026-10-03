@@ -215,7 +215,7 @@ function LocationStep({
 
 /** A bot problem sends the owner back to step «Bot». */
 function stepAfterError(code: string): Step | null {
-    return ["INVALID_BOT_TOKEN", "CONFLICT", "ENTITY_NOT_FOUND"].includes(code) ? 2 : null
+    return ["INVALID_BOT_TOKEN", "BOT_TAKEN", "ENTITY_NOT_FOUND"].includes(code) ? 2 : null
 }
 
 function chosenBot(draft: Draft): RegisterShopBot {

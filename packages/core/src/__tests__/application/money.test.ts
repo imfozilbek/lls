@@ -22,10 +22,14 @@ import {
 } from "../../application/use-cases/order/order.use-cases.js"
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
 import { GetShopBySlugUseCase } from "../../application/use-cases/shop/get-shop.use-case.js"
+import { Customer } from "../../domain/entities/customer.js"
+import { Language } from "../../domain/enums/language.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
 import { PaymentMethod, PaymentStatus } from "../../domain/enums/payment.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
+import { Phone } from "../../domain/value-objects/phone.js"
+import { TelegramId } from "../../domain/value-objects/telegram-id.js"
 import {
     CUSTOMER_TG,
     OWNER_TG,
@@ -191,6 +195,38 @@ describe("money: transfer before the shop starts, report", () => {
         expect(today.awaiting).toEqual([])
         // Confirmed already: nothing to confirm again.
         await expect(confirm(order)).rejects.toThrow(BusinessRuleViolationError)
+    })
+
+    it("the owner testing his own shop presses «Я перевёл» as its customer", async () => {
+        await customers.save(
+            Customer.register({
+                id: "cust-owner",
+                telegramId: TelegramId.create(OWNER_TG),
+                name: "Rustam",
+                language: Language.UZ,
+            }),
+        )
+        const stored = await customers.findByTelegramId(OWNER_TG)
+        stored?.setPhone(Phone.create("+998901112233"))
+        if (stored) {
+            await customers.save(stored)
+        }
+        await customers.sharePhoneWith("cust-owner", "biz-1", new Date())
+        const order = await new PlaceOrderUseCase({
+            businesses,
+            products,
+            customers,
+            orders,
+            clock,
+        }).execute({
+            user: { id: OWNER_TG, firstName: "Rustam" },
+            businessId: "biz-1",
+            items: [{ productId: "prod-1", quantity: 1 }],
+            address: "Navoiy 12",
+        })
+        expect((await sent(order, OWNER_TG)).payment.status).toBe(PaymentStatus.AWAITING)
+        // Someone else's order stays closed to him as a customer action.
+        await expect(sent(await place(), OWNER_TG)).rejects.toThrow(ForbiddenError)
     })
 
     it("the owner may confirm a transfer the customer did not announce", async () => {

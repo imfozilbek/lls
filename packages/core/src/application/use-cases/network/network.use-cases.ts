@@ -384,8 +384,11 @@ export class OverdueNetworkOrdersUseCase {
             if (!business || !district || now < district.overdueAt(order.networkRequestedAt)) {
                 continue
             }
+            // Never a full save from this copy: a «Беру» or a cancel may have landed meanwhile.
+            if (!(await this.deps.orders.markNetworkAlerted(order.id, now))) {
+                continue
+            }
             order.markNetworkAlerted(now)
-            await this.deps.orders.save(order)
             overdue.push({ order: toOrderDTO(order), business, district })
         }
         return overdue

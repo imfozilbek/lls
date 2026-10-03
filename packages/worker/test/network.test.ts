@@ -1,6 +1,8 @@
 import { env } from "cloudflare:workers"
 import { beforeEach, describe, expect, it } from "vitest"
 
+import { D1OrderRepository } from "../src/repositories/order.repository.js"
+
 import {
     ADMIN,
     CUSTOMER,
@@ -307,6 +309,25 @@ describe("district network", () => {
                 )
             ).data,
         ).toEqual([])
+    })
+
+    it("a late report never undoes a «Беру» that landed first", async () => {
+        const order = await placeAndAccept()
+        now += 10 * MINUTE
+        const claimed = await courierApp(BOBUR)(`/api/courier/network/orders/${order.id}/claim`, {
+            method: "POST",
+        })
+        expect(claimed.status).toBe(200)
+        // A check that loaded the order before the claim comes to write its report now.
+        const orders = new D1OrderRepository(env.DB)
+        expect(await orders.markNetworkAlerted(order.id, new Date(now))).toBe(false)
+        const row = await env.DB.prepare(
+            "SELECT courier_id, network_alerted_at FROM orders WHERE id = ?",
+        )
+            .bind(order.id)
+            .first<{ courier_id: string | null; network_alerted_at: number | null }>()
+        expect(row?.courier_id).not.toBeNull()
+        expect(row?.network_alerted_at).toBeNull()
     })
 
     it("nobody took it in 10 minutes: the shop and the admins hear it once", async () => {

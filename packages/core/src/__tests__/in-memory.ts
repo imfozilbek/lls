@@ -322,6 +322,14 @@ export class InMemoryOrders implements OrderRepository {
         this.items.set(order.id, order)
         return true
     }
+    async markNetworkAlerted(orderId: string, at: Date): Promise<boolean> {
+        const stored = this.items.get(orderId)
+        if (!stored || stored.networkAlertedAt || !stored.isWaitingForNetwork()) {
+            return false
+        }
+        stored.markNetworkAlerted(at)
+        return true
+    }
     async listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]> {
         return [...this.items.values()]
             .filter(

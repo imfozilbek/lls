@@ -150,8 +150,9 @@ export class MarkTransferSentUseCase {
         orderId: string
     }): Promise<{ order: OrderDTO; changed: boolean }> {
         const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
-        const { role } = await participantOf(this.deps, order, input.telegramId)
-        if (role !== "customer") {
+        // The customer of this very order, even when it is the owner testing his own shop.
+        const customer = await this.deps.customers.findByTelegramId(input.telegramId)
+        if (!customer || !order.isPlacedBy(customer.id)) {
             throw ForbiddenError.notOrderParticipant(order.id)
         }
         const before = order.payment.status

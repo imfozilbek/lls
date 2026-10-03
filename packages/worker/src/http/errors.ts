@@ -1,4 +1,4 @@
-import { BusinessRuleViolationError, DomainError } from "@zumda/core"
+import { BusinessRuleViolationError, ConflictError, DomainError } from "@zumda/core"
 import { HTTPException } from "hono/http-exception"
 
 import type { ContentfulStatusCode } from "hono/utils/http-status"
@@ -33,8 +33,13 @@ export function unauthorized(): ApiError {
 /** Maps any thrown value to an HTTP status and the standard error body. */
 export function toErrorResponse(error: unknown): { status: ContentfulStatusCode; body: ErrorBody } {
     if (error instanceof DomainError) {
-        // Business rules use their rule id as the code, so the app can show a translated message.
-        const code = error instanceof BusinessRuleViolationError ? error.rule : error.code
+        // Business rules and conflicts carry their own id as the code: the app shows its words.
+        const code =
+            error instanceof BusinessRuleViolationError
+                ? error.rule
+                : error instanceof ConflictError
+                  ? error.reason
+                  : error.code
         return {
             status: STATUS_BY_CODE[error.code] ?? 400,
             body: { error: { code, message: error.message, details: error.details } },

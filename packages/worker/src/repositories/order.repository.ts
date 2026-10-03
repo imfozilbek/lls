@@ -337,6 +337,18 @@ export class D1OrderRepository implements OrderRepository {
         return result.meta.changes === 1
     }
 
+    async markNetworkAlerted(orderId: string, at: Date): Promise<boolean> {
+        const result = await this.db
+            .prepare(
+                `UPDATE orders SET network_alerted_at = ?
+                 WHERE id = ? AND network_alerted_at IS NULL AND network_requested_at IS NOT NULL
+                    AND courier_id IS NULL AND status IN (${placeholders(TAKEABLE.length)})`,
+            )
+            .bind(at.getTime(), orderId, ...TAKEABLE)
+            .run()
+        return result.meta.changes === 1
+    }
+
     async listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]> {
         if (districtIds.length === 0) {
             return []

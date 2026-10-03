@@ -121,6 +121,16 @@ describe("a short application: name, kind, bot and where the business is", () =>
         expect(await json(order)).toMatchObject({ error: { code: "SHOP_NOT_ACTIVE" } })
     })
 
+    it("the same bot twice: 409 with its own code, so the app says why", async () => {
+        await apply()
+        const again = await business()("/api/platform/shops", {
+            method: "POST",
+            json: { botToken: SHOP_BOT_TOKEN, name: "Osh Markaz 2", type: "food" },
+        })
+        expect(again.status).toBe(409)
+        expect(await json(again)).toMatchObject({ error: { code: "BOT_TAKEN" } })
+    })
+
     it("approved without a card: the owner is told to add one", async () => {
         const shop = await apply()
         await business(ADMIN)(`/api/admin/shops/${shop.id}`, {

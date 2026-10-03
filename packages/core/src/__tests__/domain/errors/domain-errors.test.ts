@@ -67,6 +67,22 @@ describe("domain errors", () => {
         expect(ForbiddenError.notOrderParticipant("o").details).toEqual({ orderId: "o" })
         expect(ForbiddenError.notPlatformAdmin().code).toBe("FORBIDDEN")
         expect(ConflictError.botAlreadyConnected(7).details).toEqual({ botId: 7 })
+        // Each conflict tells the app what happened; the HTTP code stays 409 for all.
+        expect(
+            [
+                ConflictError.botAlreadyConnected(7),
+                ConflictError.slugTaken("osh"),
+                ConflictError.courierAlreadyReviewed("c"),
+                ConflictError.stale("order", "o"),
+                new ConflictError("busy"),
+            ].map((e) => [e.code, e.reason]),
+        ).toEqual([
+            ["CONFLICT", "BOT_TAKEN"],
+            ["CONFLICT", "SLUG_TAKEN"],
+            ["CONFLICT", "COURIER_ALREADY_REVIEWED"],
+            ["CONFLICT", "STALE"],
+            ["CONFLICT", "CONFLICT"],
+        ])
     })
 
     it("serializes to JSON", () => {

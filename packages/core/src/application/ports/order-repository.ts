@@ -34,6 +34,11 @@ export interface OrderRepository {
      */
     claimForNetwork(order: Order): Promise<boolean>
     /** Orders of shops in these districts waiting for a network courier, oldest first. */
+    /**
+     * Marks a network order reported as late, only if it still waits and nobody reported it:
+     * one conditional write, so a «Беру» or a cancel at the same moment is never undone.
+     */
+    markNetworkAlerted(orderId: string, at: Date): Promise<boolean>
     listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]>
     /** Delivered orders of a district in [from, to): all, and those a network courier took. */
     networkShare(districtId: string, from: Date, to: Date): Promise<NetworkShare>
