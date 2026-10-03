@@ -7,6 +7,20 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Bots notify, the Mini App acts (owner's decision)
+- **Changed (worker):** every bot has `/start` only; any other message gets one line and the
+  button to the app. The admins' `/market`, `/district`, `/network` and `/reconnect` are gone;
+  the deploy clears their command list. Shop bots get the `/start`-only list on connecting.
+- **Added (core, worker):** «Platforma» API for platform admins (`/api/admin/*`: applications and
+  shops with their owners, approve and turn off, «Botni qayta ulash», the showcase deal,
+  districts with network stats), `GET /api/platform/me`; migration `0008` (shops by status).
+- **Added (worker):** every message carries a button to the Mini App: the order (owner, courier,
+  customer; showcase customers too), the application or the shop in «Platforma», «Mening
+  bizneslarim».
+- **Added (app):** «Platforma» in Zumda | Business (admins only, its own chunk): «Arizalar»,
+  «Bizneslar», «Tumanlar»; a message's «Buyurtmani ochish» opens that order first in the owner's
+  «Buyurtmalar», or the customer's tracking.
+
 ### Goal 14 closed; a managed bot's token is always fresh
 - **Fixed (worker):** Telegram may not send `managed_bot` when an owner changes the token in
   @BotFather, so Zumda asks for the current token (`getManagedBotToken`) before it uses a managed

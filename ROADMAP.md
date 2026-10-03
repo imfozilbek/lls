@@ -18,7 +18,7 @@ marketplace on top of both.
 | Part | Status | Notes |
 |------|--------|-------|
 | `@zumda/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search, district network, transfer-only payments, many cards; 195 tests |
-| `@zumda/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or Zumda bot), roles, bot webhooks, `/market`, `/reconnect`, `/district`, alerts, money routes («O'tkazdim», «Pul keldi, qabul qilish»), cards, CSV and poster files; Uzbek texts; 87 tests |
+| `@zumda/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or Zumda bot), roles, bot webhooks (bots have `/start` only), «Platforma» admin API, alerts, money routes («O'tkazdim», «Pul keldi, qabul qilish»), cards, CSV and poster files; Uzbek texts; 87 tests |
 | `@zumda/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, Zumda showcase, onboarding, «Pul», cards, QR poster; Uzbek, light only; 43 tests; 86 KB gzip JS |
 | CI | ✅ Done | format, lint, build, test, coverage, 84 e2e scenarios on every push |
 | Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
@@ -162,6 +162,13 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Own addresses `app.zumda.shop` / `api.zumda.shop`; the Worker has no workers.dev address
 - [x] Bots' `/start` welcome with the street picture; Description Pictures set in @BotFather
 
+### M4j. Bots notify, the Mini App acts ✅ (owner's decision, October 2026)
+- [x] Every bot has `/start` only; any other text gets the button to the app
+- [x] Every message opens the app on what it is about (an order, «Platforma», «Mening bizneslarim»)
+- [x] «Platforma» for admins in Zumda | Business: applications, shops (showcase deal, «Botni qayta
+      ulash», off and on), districts with network stats; `/market`, `/district`, `/network`,
+      `/reconnect` removed
+
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)
 - [x] `scripts/check-access.sh`: checks the Cloudflare token, account, zone, R2, D1, Pages,
@@ -203,7 +210,7 @@ Pilot: **food, water and grocery at the same time.**
 
 ### M8. Service fee ⏳
 - [ ] Decide (owner): the fee base (goods, or goods + delivery; deposits never count) and the pilots' rate
-- [ ] Rate per business: `/fee <slug> <percent>` in the Zumda bot (0 allowed)
+- [ ] Rate per business in «Platforma» (0 allowed)
 - [ ] "Сервис" line in the cart, checkout, order screen and bot messages; snapshot in every order
 - [ ] The fee in «Деньги» and the CSV
 - [ ] Monthly per-shop report "to pay Zumda" (fees + showcase commission); admin report for all shops
