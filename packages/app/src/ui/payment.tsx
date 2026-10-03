@@ -6,7 +6,7 @@ import { formatMoney } from "../lib/format.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 
-import { CardIcon, CopyIcon } from "./icons.js"
+import { CardIcon, CopyIcon, ShieldIcon } from "./icons.js"
 import { Button } from "./primitives.js"
 
 import type { OrderDTO } from "@zumda/core"
@@ -66,9 +66,12 @@ function groupCard(number: string): string {
 export function CardBlock({
     card,
     total,
+    shopName,
 }: {
     card: { number: string; holder: string }
     total: number
+    /** Whose card this is: the shop's name next to a person's, so it never looks like a stranger. */
+    shopName?: string
 }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -90,6 +93,12 @@ export function CardBlock({
                 {groupCard(card.number)}
             </p>
             <p className="font-medium uppercase text-tg-subtitle">{card.holder}</p>
+            {shopName ? (
+                <p className="mt-1 flex items-center gap-1.5 text-sm font-medium">
+                    <ShieldIcon size={16} className="shrink-0 text-success" />
+                    {fill(t.pay.cardOwner, { shop: shopName })}
+                </p>
+            ) : null}
             <Button
                 variant="surface"
                 className="mt-3 w-full"

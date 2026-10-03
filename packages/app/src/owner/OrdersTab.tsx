@@ -4,14 +4,22 @@ import { useEffect, useState } from "react"
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { ZUMDA_NAME } from "../lib/brand.js"
+import { cn } from "../lib/cn.js"
 import { formatMoney, formatQuantity, formatTime } from "../lib/format.js"
 import { usePagedList } from "../lib/paged.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
-import { CardIcon, CloseIcon, ReceiptIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import {
+    AlertIcon,
+    CardIcon,
+    CloseIcon,
+    ReceiptIcon,
+    ScooterIcon,
+    WifiOffIcon,
+} from "../ui/icons.js"
 import { LoadMore } from "../ui/load-more.js"
-import { StatusBadge } from "../ui/order-status.js"
+import { OrderBadge } from "../ui/order-status.js"
 import { PaymentLine } from "../ui/payment.js"
 import { Button, EmptyState, Field, Segmented, Skeleton, TextInput } from "../ui/primitives.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
@@ -265,16 +273,26 @@ function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
     )
 }
 
+/** The customer said they transferred: the owner's next move is the bank app. */
+function needsCheck(order: OrderDTO): boolean {
+    return order.status === OrderStatus.PENDING && order.payment.status === PaymentStatus.AWAITING
+}
+
 function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     return (
-        <li className="animate-rise rounded-tile bg-tg-secondary p-4">
+        <li
+            className={cn(
+                "animate-rise rounded-tile bg-tg-secondary p-4",
+                needsCheck(order) && "ring-2 ring-warning/60",
+            )}
+        >
             <div className="flex items-center justify-between gap-2">
                 <span className="text-lg font-bold">
                     {fill(t.order.title, { n: order.number })}
                 </span>
-                <StatusBadge status={order.status} />
+                <OrderBadge order={order} forOwner />
             </div>
             <p className="text-sm text-tg-hint">
                 {formatTime(order.createdAt, language)} · {order.customerName}
@@ -395,12 +413,33 @@ function useShopOrders(filter: Filter): PagedList<OrderDTO> {
     return list
 }
 
+/** Transfers to check come first: at rush hour they are what holds a customer back. */
+function ownerQueue(items: readonly OrderDTO[], focusId: string | null): OrderDTO[] {
+    return items
+        .filter((order) => order.id !== focusId)
+        .sort((a, b) => Number(needsCheck(b)) - Number(needsCheck(a)))
+}
+
+function ToCheckBanner({ count }: { count: number }): React.JSX.Element | null {
+    const t = useT()
+    if (count === 0) {
+        return null
+    }
+    return (
+        <p className="flex animate-rise items-center gap-2 rounded-control bg-warning/15 px-4 py-3 font-semibold">
+            <AlertIcon size={20} className="shrink-0 text-warning" />
+            {fill(t.owner.toCheck, { n: count })}
+        </p>
+    )
+}
+
 export function OrdersTab(): React.JSX.Element {
     const t = useT()
     const [filter, setFilter] = useState<Filter>("active")
     const focusId = useOwner((state) => state.focusOrderId)
     const list = useShopOrders(filter)
-    const orders = list.items?.filter((order) => order.id !== focusId) ?? null
+    const orders = list.items ? ownerQueue(list.items, focusId) : null
+    const toCheck = orders?.filter(needsCheck).length ?? 0
     const replace = (order: OrderDTO): void =>
         list.update((items) => items.map((o) => (o.id === order.id ? order : o)))
     const refresh = (): void => void list.reload()
@@ -471,6 +510,7 @@ export function OrdersTab(): React.JSX.Element {
                     { value: "done", label: t.owner.done },
                 ]}
             />
+            {filter === "active" ? <ToCheckBanner count={toCheck} /> : null}
             {body}
             <BottomSpacer />
         </section>

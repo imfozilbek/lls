@@ -494,6 +494,7 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
                     id="product-name"
                     value={draft.name}
                     maxLength={80}
+                    placeholder={t.owner.product.namePlaceholder}
                     onChange={(e): void => {
                         const name = e.target.value
                         // A new product follows its name until the owner picks a category.

@@ -1,10 +1,12 @@
-import { BusinessType, OrderStatus } from "@zumda/core"
+import { BusinessType, OrderStatus, PaymentStatus } from "@zumda/core"
 
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
 import { useSession } from "../stores/session.js"
 
 import {
+    AlertIcon,
+    CardIcon,
     ToolIcon,
     BoxIcon,
     ChefIcon,
@@ -15,6 +17,8 @@ import {
     ScooterIcon,
 } from "./icons.js"
 
+import type { Dictionary } from "../i18n/index.js"
+import type { OrderDTO } from "@zumda/core"
 import type { ReactNode } from "react"
 
 const ICONS: Record<OrderStatus, (size: number) => ReactNode> = {
@@ -71,19 +75,62 @@ export function StatusBadge({ status }: { status: OrderStatus }): React.JSX.Elem
     )
 }
 
+/**
+ * In a list, a new order is about its money: «O'tkazma kutilmoqda», then «Tekshirilmoqda» (the
+ * owner reads «Tekshiring»). After that, the order's own step.
+ */
+export function OrderBadge({
+    order,
+    forOwner = false,
+}: {
+    order: OrderDTO
+    forOwner?: boolean
+}): React.JSX.Element {
+    const t = useT()
+    const payment = order.payment.status
+    if (order.status !== OrderStatus.PENDING || payment === PaymentStatus.PAID) {
+        return <StatusBadge status={order.status} />
+    }
+    const awaiting = payment === PaymentStatus.AWAITING
+    const label = awaiting
+        ? forOwner
+            ? t.owner.checkBadge
+            : t.pay.checkingShort
+        : t.pay.status.unpaid
+    return (
+        <span
+            className={cn(
+                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-tg-text",
+                awaiting && forOwner ? "bg-warning/20" : "bg-tg-hint/15",
+            )}
+        >
+            <span className={awaiting && forOwner ? "text-warning" : "text-tg-subtitle"}>
+                {awaiting && forOwner ? <AlertIcon size={14} /> : <CardIcon size={14} />}
+            </span>
+            {label}
+        </span>
+    )
+}
+
 /** The big status circle. Active orders breathe with a soft ring; finished ones sit still. */
 export function StatusHero({
     status,
     title,
     hint,
+    mood = "normal",
 }: {
     status: OrderStatus
     title?: string
     hint?: string
+    /**
+     * `pay`: waiting for the transfer (a card, not a clock); `problem`: the shop did not find the
+     * money, so it must not look like ordinary waiting.
+     */
+    mood?: "normal" | "pay" | "problem"
 }): React.JSX.Element {
     const t = useT()
     const icon = useIcon()
-    const active = status !== "delivered" && status !== "cancelled"
+    const active = status !== "delivered" && status !== "cancelled" && mood !== "problem"
     return (
         <div className="flex flex-col items-center py-6 text-center">
             <div className="relative mb-4 grid h-24 w-24 place-items-center">
@@ -94,14 +141,22 @@ export function StatusHero({
                     key={status}
                     className={cn(
                         "relative grid h-24 w-24 animate-pop place-items-center rounded-full",
-                        status === "cancelled"
-                            ? "bg-danger/10 text-tg-destructive"
-                            : status === "delivered"
-                              ? "bg-success/15 text-success"
-                              : "bg-brand text-brand-ink",
+                        mood === "problem"
+                            ? "bg-warning/20 text-warning"
+                            : status === "cancelled"
+                              ? "bg-danger/10 text-tg-destructive"
+                              : status === "delivered"
+                                ? "bg-success/15 text-success"
+                                : "bg-brand text-brand-ink",
                     )}
                 >
-                    {icon(status, 40)}
+                    {mood === "problem" ? (
+                        <AlertIcon size={40} />
+                    ) : mood === "pay" ? (
+                        <CardIcon size={40} />
+                    ) : (
+                        icon(status, 40)
+                    )}
                 </span>
             </div>
             <h1 className="text-2xl font-bold">{title ?? t.order.steps[status]}</h1>
@@ -115,8 +170,11 @@ export function StatusHero({
  * are one wait for the customer), on the way, delivered.
  */
 const STAGES: readonly { key: OrderStatus; covers: readonly OrderStatus[] }[] = [
-    { key: OrderStatus.ACCEPTED, covers: [OrderStatus.ACCEPTED] },
-    { key: OrderStatus.PREPARING, covers: [OrderStatus.PREPARING, OrderStatus.READY] },
+    { key: OrderStatus.PENDING, covers: [OrderStatus.PENDING] },
+    {
+        key: OrderStatus.PREPARING,
+        covers: [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY],
+    },
     { key: OrderStatus.PICKED_UP, covers: [OrderStatus.PICKED_UP] },
     { key: OrderStatus.DELIVERED, covers: [OrderStatus.DELIVERED] },
 ]
@@ -145,8 +203,22 @@ const LABEL: Record<StageState, string> = {
     todo: "text-tg-hint",
 }
 
+/** The first stage is the money: waiting, being checked, then paid. */
+function moneyStage(state: StageState, payment: PaymentStatus, t: Dictionary): string {
+    if (state === "done") {
+        return t.order.paidStage
+    }
+    return payment === PaymentStatus.AWAITING ? t.pay.checkingShort : t.pay.status.unpaid
+}
+
 /** Vertical progress: done stages filled, the current one highlighted, the rest quiet. */
-export function StatusTimeline({ status }: { status: OrderStatus }): React.JSX.Element {
+export function StatusTimeline({
+    status,
+    payment,
+}: {
+    status: OrderStatus
+    payment: PaymentStatus
+}): React.JSX.Element {
     const t = useT()
     const icon = useIcon()
     const current = STAGES.findIndex((stage) => stage.covers.includes(status))
@@ -155,7 +227,8 @@ export function StatusTimeline({ status }: { status: OrderStatus }): React.JSX.E
             {STAGES.map(({ key }, index) => {
                 const state = stageState(index, current, status)
                 const done = state === "done"
-                const label = key === OrderStatus.ACCEPTED ? t.order.paidStage : t.order.steps[key]
+                const label =
+                    key === OrderStatus.PENDING ? moneyStage(state, payment, t) : t.order.steps[key]
                 return (
                     <li key={key} className="flex gap-3">
                         <div className="flex flex-col items-center">
@@ -165,7 +238,13 @@ export function StatusTimeline({ status }: { status: OrderStatus }): React.JSX.E
                                     DOT[state],
                                 )}
                             >
-                                {done ? <CheckIcon size={15} strokeWidth={2.5} /> : icon(key, 15)}
+                                {done ? (
+                                    <CheckIcon size={15} strokeWidth={2.5} />
+                                ) : key === OrderStatus.PENDING ? (
+                                    <CardIcon size={15} />
+                                ) : (
+                                    icon(key, 15)
+                                )}
                             </span>
                             {index < STAGES.length - 1 ? (
                                 <span

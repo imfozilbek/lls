@@ -121,7 +121,8 @@ function ReadyRow({
     extra?: ReactNode
 }): React.JSX.Element {
     return (
-        <li className="flex items-center gap-2">
+        // The extra button sits under the words: beside them it squeezed «Kuryer» word by word.
+        <li className="flex flex-col">
             <button
                 type="button"
                 disabled={item.done}
@@ -159,7 +160,7 @@ function ReadyRow({
                 </span>
                 {item.done ? null : <ChevronIcon size={18} className="text-tg-hint" />}
             </button>
-            {extra}
+            {extra ? <div className="pb-2 pl-14">{extra}</div> : null}
         </li>
     )
 }

@@ -131,7 +131,7 @@ function CategoryChips({
     }
     const names = t.categories as Record<string, string>
     return (
-        <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+        <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)]">
             {categories.map((category) => (
                 <button
                     key={category}
