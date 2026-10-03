@@ -160,6 +160,9 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Changed:** the workers.dev subdomain is random instead of derived from the account id
 - **Added:** Claude deploys `main` again with the `deploy` dispatch event (`repository_dispatch`):
   no Actions permission needed; only someone with write access can send it
+- **Changed:** production addresses are Zumda's own: `api.zumda.shop` (Worker Custom Domain) and
+  `app.zumda.shop` (Pages); the deploy adds them and their DNS records. The Worker has no
+  workers.dev address any more, so the Cloudflare account's subdomain never shows
 
 ### Local stand and end-to-end checks
 - **Added (e2e):** `bun run stand` — local D1 with three demo shops, `wrangler dev`, the Mini App and

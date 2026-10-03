@@ -158,18 +158,18 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Look: green house mark (scheme "Bog'"), brand kit in `brand/`, the mark in the storefront
       line, showcase, courier screen and QR poster; a new shop is green
 - [x] Zumda sets the shop bot's picture (logo or name + the mark) and description
-- [ ] Owner: set `brand/zumda-bot-avatar.png` and `zumda-kuryer-avatar.png` in BotFather
+- [x] Bot pictures `brand/zumda-bot-avatar.png` and `zumda-kuryer-avatar.png` set through the Bot API
 - [ ] Own addresses `app.zumda.shop` / `api.zumda.shop` once the domain is active in Cloudflare
 
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)
 - [x] `scripts/check-access.sh`: checks the Cloudflare token, account, zone, R2, D1, Pages,
       Workers and both bots, never printing a key
-- [ ] Owner: R2, Cloudflare token, bot tokens → Claude's environment variables and GitHub
+- [x] Owner: R2, Cloudflare token, bot tokens → Claude's environment variables and GitHub
       `production` secrets; Actions settings, secret scanning, `main` ruleset
       (`docs/launch-checklist.md`, steps 2–6)
-- [ ] Access checked (`scripts/check-access.sh` all OK)
-- [ ] First production deploy
+- [x] Access checked (`scripts/check-access.sh` all OK); SSL Full (strict) and Always HTTPS on
+- [x] First production deploy; Claude deploys `main` again with the `deploy` event
 - [ ] Production check: connect a test shop → order → statuses → notifications
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**

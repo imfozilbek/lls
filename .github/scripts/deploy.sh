@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Deploys Zumda to Cloudflare. Idempotent: safe to run on every push to main.
 #
-# Creates what is missing (D1, R2, Pages project, workers.dev subdomain), applies D1 migrations,
-# deploys the Worker with its secrets, deploys the Mini App to Pages and connects the Zumda bot and
-# the Zumda courier bot.
+# Creates what is missing (D1, R2, Pages project, the addresses api.zumda.shop and app.zumda.shop),
+# applies D1 migrations, deploys the Worker with its secrets, deploys the Mini App to Pages and
+# connects the Zumda bot and the Zumda courier bot.
 #
 # Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS,
 # COURIER_BOT_TOKEN.
@@ -17,7 +17,14 @@ readonly DATABASE="zumda"
 readonly BUCKET="zumda-media"
 readonly PAGES_PROJECT="zumda-app"
 readonly DB_PLACEHOLDER="00000000-0000-0000-0000-000000000000"
-readonly CF_API="https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}"
+# Zumda's own addresses. The Worker has no workers.dev address (wrangler.jsonc).
+readonly DOMAIN="zumda.shop"
+readonly API_HOST="api.${DOMAIN}"
+readonly APP_HOST="app.${DOMAIN}"
+readonly WORKER_URL="https://${API_HOST}"
+readonly APP_ORIGIN="https://${APP_HOST}"
+readonly CF_ROOT="https://api.cloudflare.com/client/v4"
+readonly CF_API="${CF_ROOT}/accounts/${CLOUDFLARE_ACCOUNT_ID}"
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 readonly ROOT
@@ -28,13 +35,15 @@ log() { printf '\n==> %s\n' "$*"; }
 fail() { printf '::error::%s\n' "$*"; exit 1; }
 wrangler() { (cd "$WORKER_DIR" && bunx wrangler "$@"); }
 
-# GET/POST/PUT to the Cloudflare API. Prints the body; returns non-zero on HTTP errors.
+# GET/POST/PUT to the Cloudflare API: account paths (/d1/...) or zone paths (/zones/...).
+# Prints the body; returns non-zero on HTTP errors.
 cf() {
-    local method="$1" path="$2" body="${3:-}"
+    local method="$1" path="$2" body="${3:-}" base="$CF_API"
+    if [[ "$path" == /zones* ]]; then base="$CF_ROOT"; fi
     local args=(-sS -X "$method" -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}"
         -H "Content-Type: application/json" -w '\n%{http_code}')
     if [[ -n "$body" ]]; then args+=(--data "$body"); fi
-    curl "${args[@]}" "${CF_API}${path}"
+    curl "${args[@]}" "${base}${path}"
 }
 
 # Splits "body\nstatus" from cf(): sets CF_BODY and CF_STATUS.
@@ -82,26 +91,40 @@ ensure_pages() {
     elif [[ "$CF_STATUS" != 200 ]]; then
         fail "Cannot read Pages project (HTTP ${CF_STATUS}). Check the API token has Pages Edit."
     fi
-    APP_ORIGIN="https://$(jq -r '.result.subdomain' <<<"$CF_BODY")"
-    echo "$APP_ORIGIN"
+    PAGES_HOST="$(jq -r '.result.subdomain' <<<"$CF_BODY")"
+    echo "$PAGES_HOST"
 }
 
-ensure_workers_subdomain() {
-    SECRETS_FILE="$(mktemp)"
-    chmod 600 "$SECRETS_FILE"
-    trap 'rm -f "$SECRETS_FILE" "${SECRETS_FILE}.new"' EXIT
-    log "workers.dev subdomain"
-    cf_call GET "/workers/subdomain"
-    local sub=""
-    if [[ "$CF_STATUS" == 200 ]]; then sub="$(jq -r '.result.subdomain // empty' <<<"$CF_BODY")"; fi
-    if [[ -z "$sub" ]]; then
-        # Random, not derived from the account id: the URL is public, the account id is not.
-        sub="zumda-$(openssl rand -hex 4)"
-        cf_call PUT "/workers/subdomain" "$(jq -n --arg s "$sub" '{subdomain: $s}')"
-        [[ "$CF_STATUS" == 200 ]] || fail "Cannot create the workers.dev subdomain (HTTP ${CF_STATUS})."
+# app.zumda.shop: the Pages custom domain plus its DNS record. A domain added through the API gets
+# no DNS record by itself.
+ensure_app_domain() {
+    log "Mini App address '${APP_HOST}'"
+    cf_call GET "/pages/projects/${PAGES_PROJECT}/domains/${APP_HOST}"
+    if [[ "$CF_STATUS" == 404 ]]; then
+        cf_call POST "/pages/projects/${PAGES_PROJECT}/domains" "$(jq -n --arg n "$APP_HOST" '{name: $n}')"
+        [[ "$CF_STATUS" == 2?? ]] || fail "Cannot add ${APP_HOST} to Pages (HTTP ${CF_STATUS})."
+        echo "added"
+    elif [[ "$CF_STATUS" == 200 ]]; then
+        echo "exists, $(jq -r '.result.status' <<<"$CF_BODY")"
+    else
+        fail "Cannot read the Pages domains (HTTP ${CF_STATUS}). Check the API token has Pages Edit."
     fi
-    WORKER_URL="https://${WORKER}.${sub}.workers.dev"
-    echo "$WORKER_URL"
+
+    cf_call GET "/zones?name=${DOMAIN}"
+    [[ "$CF_STATUS" == 200 ]] || fail "Cannot read the zone ${DOMAIN} (HTTP ${CF_STATUS}). Check the API token has Zone Read."
+    local zone
+    zone="$(jq -r '.result[0].id // empty' <<<"$CF_BODY")"
+    [[ -n "$zone" ]] || fail "The zone ${DOMAIN} is not in this Cloudflare account."
+    cf_call GET "/zones/${zone}/dns_records?name=${APP_HOST}"
+    [[ "$CF_STATUS" == 200 ]] || fail "Cannot read DNS records (HTTP ${CF_STATUS}). Check the API token has DNS Edit."
+    if [[ "$(jq '.result | length' <<<"$CF_BODY")" == 0 ]]; then
+        cf_call POST "/zones/${zone}/dns_records" "$(jq -n --arg n "$APP_HOST" --arg c "$PAGES_HOST" \
+            '{type: "CNAME", name: $n, content: $c, proxied: true}')"
+        [[ "$CF_STATUS" == 2?? ]] || fail "Cannot create the DNS record ${APP_HOST} (HTTP ${CF_STATUS})."
+        echo "DNS record created: ${APP_HOST} → ${PAGES_HOST}"
+    else
+        echo "DNS record exists"
+    fi
 }
 
 # TOKEN_ENC_KEY encrypts shop bot tokens. It is set ONCE and never replaced:
@@ -155,6 +178,9 @@ deploy_worker() {
     echo "::add-mask::${PLATFORM_WEBHOOK_SECRET}"
     echo "::add-mask::${COURIER_WEBHOOK_SECRET}"
 
+    SECRETS_FILE="$(mktemp)"
+    chmod 600 "$SECRETS_FILE"
+    trap 'rm -f "$SECRETS_FILE" "${SECRETS_FILE}.new"' EXIT
     local secrets_file="$SECRETS_FILE"
     jq -n --arg bot "$PLATFORM_BOT_TOKEN" --arg admins "$PLATFORM_ADMIN_IDS" \
         --arg hook "$PLATFORM_WEBHOOK_SECRET" --arg courier "$COURIER_BOT_TOKEN" \
@@ -168,7 +194,9 @@ deploy_worker() {
         jq --arg key "$ENC_KEY" '. + {TOKEN_ENC_KEY: $key}' "$secrets_file" >"${secrets_file}.new"
         mv "${secrets_file}.new" "$secrets_file"
     fi
-    wrangler deploy --var "APP_ORIGIN:${APP_ORIGIN}" --secrets-file "$secrets_file"
+    # The custom domain gets its DNS record and certificate from Cloudflare.
+    wrangler deploy --domain "$API_HOST" --var "APP_ORIGIN:${APP_ORIGIN}" \
+        --secrets-file "$secrets_file"
 }
 
 deploy_app() {
@@ -210,18 +238,23 @@ connect_courier_bot() {
     echo "webhook and menu button set"
 }
 
-# A new workers.dev subdomain can take a few minutes to go live. The bot is connected only
-# after the Worker answers, so Telegram never gets a dead webhook.
-smoke_test() {
-    log "Smoke test"
-    local status=""
+# Waits until `url` answers 200: a new address can take a few minutes to go live.
+wait_for() {
+    local url="$1" status=""
     for _ in $(seq 1 30); do
-        status="$(curl -s -o /dev/null -w '%{http_code}' "${WORKER_URL}/health" || true)"
-        if [[ "$status" == 200 ]]; then break; fi
+        status="$(curl -s -o /dev/null -w '%{http_code}' "$url" || true)"
+        if [[ "$status" == 200 ]]; then return 0; fi
         sleep 10
     done
-    [[ "$status" == 200 ]] \
-        || fail "${WORKER_URL}/health answered ${status} after 5 minutes. On the very first deploy the address may need more time: run the deploy again in 10 minutes."
+    fail "${url} answered ${status} after 5 minutes. A new address may need more time: run the deploy again in 10 minutes (the deploy event, or Actions → CI → Run workflow)."
+}
+
+# The bots are connected only after both addresses answer, so Telegram never gets a dead webhook
+# or a dead menu button.
+smoke_test() {
+    log "Smoke test"
+    wait_for "${WORKER_URL}/health"
+    wait_for "${APP_ORIGIN}/"
     echo "Worker:   ${WORKER_URL}"
     echo "Mini App: ${APP_ORIGIN}"
     {
@@ -238,7 +271,7 @@ main() {
     ensure_d1
     ensure_r2
     ensure_pages
-    ensure_workers_subdomain
+    ensure_app_domain
     deploy_worker
     deploy_app
     smoke_test
