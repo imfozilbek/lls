@@ -133,23 +133,38 @@ test("orders through the shop's own bot carry no commission", async () => {
     expect(await response.json()).toMatchObject({ channel: "shop_bot", commission: 0 })
 })
 
-test("the admin adds and removes a shop; others cannot", async ({ page }) => {
+test("the admin adds and removes a shop in «Platforma»; others cannot", async ({ page }) => {
     const since = await lastSeq()
-    await businessChat().send(PEOPLE.stranger, `/market ${WATER} 3`)
-    await businessChat().send(PEOPLE.admin, `/market ${WATER} 3`)
-    await waitForMessage(PEOPLE.admin.id, "3%", since)
+    const live = (await (
+        await apiAs(PEOPLE.admin, "/admin/shops?status=active", { businessBot: true })
+    ).json()) as { data: { id: string; slug: string }[] }
+    const water = live.data.find((shop) => shop.slug === WATER)?.id ?? ""
+    const forged = await apiAs(PEOPLE.waterOwner, `/admin/shops/${water}/marketplace`, {
+        businessBot: true,
+        method: "PUT",
+        json: { percent: 0 },
+    })
+    expect(forged.status).toBe(403)
+
+    await openApp(page, { user: PEOPLE.admin, businessBot: true })
+    await page.getByRole("button", { name: /Platforma/ }).click()
+    await page.getByRole("tab", { name: "Bizneslar" }).click()
+    const card = page.getByRole("listitem").filter({ hasText: "Toza Suv" })
+    await card.getByRole("switch", { name: "Zumda vitrinasida" }).click()
+    await card.getByLabel("Vitrina komissiyasi, %").fill("3")
+    await card.getByRole("button", { name: "Saqlash" }).click()
+    await expect(page.getByText("Vitrina saqlandi")).toBeVisible()
     await waitForMessage(PEOPLE.waterOwner.id, "tovarlarning 3%", since)
-    expect((await apiAs(PEOPLE.stranger, "/showcase/shops")).status).toBe(200)
 
-    await openApp(page, { user: PEOPLE.customer, query: "?mode=market" })
-    await expect(page.getByText("Do'konlar · 3")).toBeVisible()
-    await businessChat().send(PEOPLE.admin, `/market ${WATER} off`)
+    const shopper = await page.context().newPage()
+    await openApp(shopper, { user: PEOPLE.customer, query: "?mode=market" })
+    await expect(shopper.getByText("Do'konlar · 3")).toBeVisible()
+
+    await card.getByRole("switch", { name: "Zumda vitrinasida" }).click()
+    await expect(page.getByText("Vitrinadan olindi")).toBeVisible()
     await waitForMessage(PEOPLE.waterOwner.id, "vitrinasidan olindi", since)
-    await page.reload()
-    await expect(page.getByText("Do'konlar · 2")).toBeVisible()
-
-    await businessChat().send(PEOPLE.admin, "/market nonsense")
-    await waitForMessage(PEOPLE.admin.id, "/market <slug>", since)
+    await shopper.reload()
+    await expect(shopper.getByText("Do'konlar · 2")).toBeVisible()
 })
 
 test("search is rate-limited per person", async ({ page }) => {

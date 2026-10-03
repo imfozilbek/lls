@@ -130,7 +130,7 @@ jobs:
                     - money.spec.ts
                     - visual.spec.ts
                     - customer-shop.spec.ts
-                    - showcase.spec.ts managed-bots.spec.ts business-web.spec.ts
+                    - showcase.spec.ts managed-bots.spec.ts business-web.spec.ts platform.spec.ts
                     - customer-edges.spec.ts onboarding-admin.spec.ts
                     - courier.spec.ts network.spec.ts
         steps:

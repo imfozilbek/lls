@@ -108,6 +108,7 @@ test("checkout shows the card; «Я перевёл»; the owner «Деньги �
     expect(card.buttons.map((b) => b.text)).toEqual([
         "💳 Pul keldi, qabul qilish",
         "❌ Bekor qilish",
+        "📱 Buyurtmani ochish",
     ])
 
     const sent = await lastSeq()

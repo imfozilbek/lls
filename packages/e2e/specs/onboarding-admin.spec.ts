@@ -1,6 +1,6 @@
 /**
  * A new owner connects a shop through the Zumda bot; the platform admin approves or rejects;
- * a failed bot connection is retried with /reconnect; failures reach the admin as alerts.
+ * a failed bot connection is retried from «Platforma»; failures reach the admin as alerts.
  */
 import { expect, test } from "@playwright/test"
 
@@ -15,7 +15,7 @@ import {
     waitForCall,
     waitForMessage,
 } from "../support/telegram.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { appQueryOf, bottomButton, openApp } from "../support/webapp.js"
 
 import type { TgUser } from "../support/telegram.js"
 import type { Page } from "@playwright/test"
@@ -106,7 +106,11 @@ test("the application reaches the admin; the pending shop opens only for its own
     expect(photo.body["avatar"]).toMatchObject({ contentType: "image/jpeg" })
     const card = await waitForMessage(PEOPLE.admin.id, "Yangi biznes", since)
     expect(card.text).toContain("Yangi Non")
-    expect(card.buttons.map((b) => b.text)).toEqual(["✅ Tasdiqlash", "❌ Rad etish"])
+    expect(card.buttons.map((b) => b.text)).toEqual([
+        "✅ Tasdiqlash",
+        "❌ Rad etish",
+        "📋 Arizani ochish",
+    ])
 
     const [shop] = await myShops()
     await openApp(page, {
@@ -173,20 +177,32 @@ test("a stranger cannot approve; the admin approves: webhook, menu button, owner
     await expect(page.getByText("Katalog hali bo'sh")).toBeVisible()
 })
 
-test("a failed connection warns the admin; /reconnect fixes it", async () => {
+test("a failed connection warns the admin; «Botni qayta ulash» in «Platforma» fixes it", async ({
+    page,
+}) => {
     const since = await lastSeq()
     await openAndApply(SECOND_OWNER, SECOND_BOT.token, "Ikkinchi Do'kon")
     const card = await waitForMessage(PEOPLE.admin.id, "Ikkinchi", since)
     await controlTelegram({ failWebhooks: true })
     await businessChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
     const warning = await waitForMessage(PEOPLE.admin.id, "bot ulanmadi", since)
-    const slug = /\/reconnect ([a-z0-9-]+)/.exec(warning.text)?.[1] ?? ""
-    expect(slug).not.toBe("")
+    const query = appQueryOf(warning.buttons)
+    const shopId = /admin=shop_([\w-]+)/.exec(query)?.[1] ?? ""
+    expect(shopId).not.toBe("")
 
     await controlTelegram({ failWebhooks: false })
-    await businessChat().send(PEOPLE.stranger, `/reconnect ${slug}`)
-    await businessChat().send(PEOPLE.admin, `/reconnect ${slug}`)
-    await waitForMessage(PEOPLE.admin.id, "bot ulandi", since)
+    const stranger = await apiAs(PEOPLE.stranger, `/admin/shops/${shopId}/reconnect`, {
+        businessBot: true,
+        method: "POST",
+    })
+    expect(stranger.status).toBe(403)
+
+    const before = await lastSeq()
+    await openApp(page, { user: PEOPLE.admin, businessBot: true, query })
+    const shop = page.getByRole("listitem").filter({ hasText: "Ikkinchi Do'kon" })
+    await shop.getByRole("button", { name: "Botni qayta ulash" }).click()
+    await expect(page.getByText("Bot ulandi")).toBeVisible()
+    await waitForCall("setWebhook", SECOND_BOT.token, before)
 })
 
 test("a rejected shop is told and never opens", async ({ page }) => {
