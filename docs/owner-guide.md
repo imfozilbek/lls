@@ -109,6 +109,11 @@ Bekor qilish: **❌ Bekor qilish** (ilovada sababini yozish mumkin).
 **Mening do'konim → Sozlamalar → Buyurtma qabul qilish** — o'chiring. Keyin yana yoqing.
 Shu yerda nom, logotip, rang, yetkazish narxi va radiusni ham o'zgartirasiz.
 
+**Bot rasmi va tavsifi avtomatik.** Botingiz rasmini Zumda o'zi qo'yadi: logotipingiz (logotip
+bo'lmasa — do'kon nomi rangingizda) va burchakda Zumda belgisi. Logotip, nom yoki rangni
+o'zgartirsangiz, rasm ham yangilanadi. Bot tavsifi ham avtomatik: do'kon nomi va «Zumda asosida
+ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
+
 **Ish vaqti** har kun uchun alohida: kunning tugmasi — ishlaymiz yoki dam olish, yonida soat.
 **Hamma kunlarga dushanbadagidek** — dushanba vaqtini barcha kunlarga ko'chiradi.
 

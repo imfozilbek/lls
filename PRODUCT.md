@@ -26,9 +26,10 @@ has to come and pick it up; with Zumda they order from home and a courier brings
 without its own courier is served by the district's courier network.
 
 Zumda gives each small shop its own ordering bot and Mini App under the shop's own brand
-("powered by Zumda"). Customers order without calls and voice messages; owners get every order as
-one clear card with one button for the next step. Success: real orders at the three pilot
-shops (food, water, grocery), owners stop taking orders by phone, and customers come back to reorder.
+(«Zumda asosida ishlaydi» with the green house mark). Customers order without calls and voice
+messages; owners get every order as one clear card with one button for the next step. Success:
+real orders at the three pilot shops (food, water, grocery), owners stop taking orders by phone,
+and customers come back to reorder.
 
 The Zumda bot is the showcase of the district: one search across the products of every shop that
 signed a marketplace deal. A tap opens that shop's storefront inside the Zumda bot; the order goes

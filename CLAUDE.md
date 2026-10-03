@@ -44,6 +44,14 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   `/tg/courier` for the Zumda courier bot.
 - **One Mini App for all shops.** The shop bot's menu button opens it with `?shop=<slug>`.
 - **Per-shop branding:** name, logo, brand color. Everything else is shared.
+- **Zumda's look (owner's decision, October 2026):** the mark is a green pin with a house
+  (`brand/`, scheme "Bog'": `#15803D`, `#14532D`, mint `#DCFCE7`); a new shop is green until the
+  owner picks a color.
+- **Zumda sets the shop bot's picture and description** (`setMyProfilePhoto`, `setMyDescription`,
+  `setMyShortDescription` with the shop's token): the picture is the shop's logo, or its name on
+  its color when there is no logo, with the Zumda mark at the bottom right. The app draws it
+  (canvas) on connecting, on a new logo, and on a new name or color while there is no logo; the
+  descriptions are set on approval and on a new name, always with «Zumda asosida ishlaydi».
 
 ## Product Stages
 

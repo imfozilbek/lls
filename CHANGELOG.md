@@ -7,6 +7,16 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Zumda's look: the green house (owner's decisions)
+- **Added:** brand kit in `brand/` (mark, logo in outlines, bot and group avatars, README).
+- **Changed (core):** a new shop is Zumda green (`#15803d`) until the owner picks a color.
+- **Added (worker):** `PUT /api/owner/shop/bot-photo` and `PUT /api/platform/shops/:id/bot-photo`
+  set the shop bot's picture (`setMyProfilePhoto`); approval and a new name set its description
+  and profile line with «Zumda asosida ishlaydi» (`setMyDescription`, `setMyShortDescription`).
+- **Added (app):** the Zumda mark (`ui/zumda-mark.tsx`) in the storefront line, the showcase,
+  the courier screen, the showcase badge and the QR poster («Zumda asosida ishlaydi»); the bot
+  picture is drawn from the logo or the name with the mark (`lib/bot-avatar.ts`).
+
 ### Name: Zumda (owner's decision)
 - **Changed:** the product and the company are **Zumda** (company: Zumda Shop); the former name
   LLS is gone from the bots, the app, the QR poster («powered by Zumda»), the docs and the code:
