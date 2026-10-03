@@ -10,21 +10,33 @@ Qisqa va oddiy: do'konni ulash, katalogni to'ldirish, kuryerlarni qo'shish, buyu
 
 1. Telegram'da **Zumda | Business** botini (**@zumdashop_business_bot**) oching va **Start** ni bosing.
 2. **Mening bizneslarim** tugmasini bosing, keyin **Yangi biznes**. Ilova ochiladi.
-3. **1-qadam: Biznes haqida:** nomi, faoliyat turi (Oziq-ovqat do'koni / Restoran / Xizmat
-   ko'rsatish), manzil. Suv sotasizmi? «Oziq-ovqat do'koni»ni tanlang, keyin sozlamalarda
-   «Idish qaytarish va garov»ni yoqing.
+3. **1-qadam: Biznes haqida:** nomi va faoliyat turi (Oziq-ovqat do'koni / Restoran / Xizmat
+   ko'rsatish). Suv sotasizmi? «Oziq-ovqat do'koni»ni tanlang, keyin sozlamalarda «Idish
+   qaytarish va garov»ni yoqing.
 4. **2-qadam: Bot:** **Bot yaratish** ni bosing. Telegram oynasida bot nomi va manzili tayyor
    turadi: kerak bo'lsa o'zgartiring va tasdiqlang. Bot **sizning** Telegram akkauntingizda
    bo'ladi, Zumda uni boshqaradi: tokenni hech qayerga ko'chirish shart emas.
    - Oyna ochilmasa: **Havola orqali yaratish**.
    - BotFather'da botingiz bor bo'lsa: **Menda bot bor** → tokenni qo'ying.
-5. **3-qadam: Yetkazib berish va karta:** yetkazish narxi, bepul yetkazish chegarasi, minimal
-   buyurtma va **to'lov uchun karta** (raqam va egasining ismi). Mijozlar faqat shu kartaga
-   o'tkazma qiladi: kartasiz ariza yuborilmaydi.
-6. **Ariza yuborish** ni bosing. Tekshirib, shu chatga xabar beramiz.
+5. **3-qadam: Biznes qayerda?:** biznes turgan joyda **Joylashuvni yuborish** ni bosing va
+   manzilni yozing. Hozir imkon bo'lmasa, keyin qo'shasiz.
+6. **Ariza yuborish** ni bosing. Tekshirib, xabar beramiz.
 
-Tasdiqlangandan keyin bot sizga do'koningiz havolasini yuboradi: `t.me/osh_markaz_bot`.
-Mijozlar sizning botingizni, nomingizni va rangingizni ko'radi.
+**Bot darhol ishlaydi.** Ariza yuborilgan zahoti botingiz javob beradi: mijozlar do'koningizni
+«Tez orada ochiladi» deb ko'radi, lekin hali buyurtma bera olmaydi.
+
+**Ishga tayyor.** Tekshiruv paytida ilovada «Ishga tayyor» ro'yxati turadi. Har bir qatorni
+bosing, u kerakli joyni ochadi:
+- **To'lov kartasi:** mijozlar faqat shu kartaga o'tkazadi. Kartasiz buyurtma qabul qilinmaydi.
+- **Joylashuv**, **Ish vaqti**, **Kamida 3 ta mahsulot**, **Logotip** (botingiz rasmi ham shu
+  bo'ladi).
+- **Kuryer:** kuryer taklif qiling yoki **O'zim yetkazaman** ni bosing.
+
+**Tasdiqlandi:** bot sizga do'koningiz havolasini yuboradi: `t.me/osh_markaz_bot`. Mijozlar
+sizning botingizni, nomingizni va rangingizni ko'radi.
+
+**Rad etildi:** xabarda sabab yoziladi. Ilovada kamchilikni tuzating va **Tuzatib qayta
+yuborish** ni bosing: ariza yana tekshiruvga boradi.
 
 **Mening bizneslarim:** Zumda | Business ilovasida barcha bizneslaringiz turadi. Birini
 bossangiz, shu yerning o'zida buyurtmalar, katalog, pul va sozlamalar ochiladi. Mijozlar esa

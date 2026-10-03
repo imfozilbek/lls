@@ -187,6 +187,9 @@ Pilot: **food, water and grocery at the same time.**
       browser, the bots' profiles set by CI
 - [x] Goal 14 closed (owner's decision): a bot created in production with «Bot yaratish» in
       Zumda | Business; the application and approval move to the business onboarding review
+- [x] Onboarding review (owner's decisions): a three-step application, the bot works before
+      approval, «Ishga tayyor» checklist, rejection with a reason and a resubmit
+- [x] Zumda | Business in a browser signs in with the new Telegram Login (OpenID Connect)
 - [ ] Production check: connect a test shop → order → statuses → notifications
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**

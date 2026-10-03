@@ -97,8 +97,16 @@ cover each one's whole process; what exactly comes from the meeting with them.
   **payment card** customers are shown; it switches it at any moment (owner's decision). Every
   order keeps the card it was shown (`payment_card_*` snapshot). The payment card is never
   removed.
-- **No card, no orders.** The first card is a required onboarding step; a shop without one
-  shows «Tez orada buyurtma qabul qila boshlaydi» and refuses orders (`NO_PAYOUT_CARD`).
+- **No card, no orders.** The card is the first step of «Ishga tayyor» (the owner's checklist
+  after the application); a shop without one shows «Tez orada buyurtma qabul qila boshlaydi» and
+  refuses orders (`NO_PAYOUT_CARD`).
+- **Onboarding (owner's decision, October 2026):** a short application in three steps (name and
+  kind → bot → where the business is: location and address); the card, hours, products, logo
+  and courier come after it in «Ishga tayyor». The shop's bot works from the application on: a
+  pending shop is seen by customers as «Tez orada ochiladi» and takes no orders
+  (`SHOP_NOT_ACTIVE`). An admin approves or rejects with a reason; a rejected application is seen
+  only by its owner, who fixes it and sends it again («Tuzatib qayta yuborish»,
+  `POST /api/owner/shop/resubmit`).
 - **Zumda service fee (plan: not in code yet):** a small percentage on **every** order through Zumda,
   in any channel (shop bot, showcase, district delivery). The **customer** pays it as a separate
   "Сервис" line in the cart, the order and the messages. The shop's prices never change: the shop
@@ -534,10 +542,14 @@ document.innerHTML = x                 // XSS
 - Frontend NEVER talks to D1/R2 directly. Only through the Worker
 - CORS: allow only the Mini App's three addresses (`APP_ORIGIN`, `BUSINESS_APP_ORIGIN`,
   `COURIER_APP_ORIGIN`)
-- Zumda | Business in a browser (business.zumda.shop): Telegram Login Widget → `POST
-  /api/business/session` checks the widget's signature with the bot token → a 30-day session
-  (`BUSINESS_SESSION_SECRET`) in `Authorization: Bearer`, the same rights as `X-Bot: business`.
-  No cookies; the widget's domain is set once in @BotFather (`/setdomain`)
+- Zumda | Business in a browser (business.zumda.shop): Telegram Login (OpenID Connect; the old
+  widget is deprecated). `GET /api/business/login` gives the bot's Client ID and a nonce (HMAC,
+  10 min) → `telegram-login.js` opens Telegram's window → `POST /api/business/session` checks the
+  `id_token` (Telegram's JWKS key by `kid`, `iss`, `aud` = bot id, `exp`, our nonce) → a 30-day
+  session (`BUSINESS_SESSION_SECRET`) in `Authorization: Bearer`, the same rights as
+  `X-Bot: business`. No cookies, no Client Secret; @BotFather → Login Widget of
+  `@zumdashop_business_bot` keeps Trusted Origin `https://business.zumda.shop` and Redirect URI
+  `https://business.zumda.shop/`
 - Check `git diff` before commit
 
 **Public repository (GitHub, free CI):** the code is public, the keys never are.
@@ -767,7 +779,7 @@ CI/CD: GitHub Actions. **⛔ Docker is PROHIBITED. No VPS.**
 
 ```
 Telegram ─► Mini App (Pages: app., business., delivery.zumda.shop) ─► Worker (api.zumda.shop) ─► D1 / R2
-Browser ─► business.zumda.shop (Telegram Login Widget) ─► Worker ─► D1 / R2
+Browser ─► business.zumda.shop (Telegram Login) ─► Worker ─► D1 / R2
 zumda.shop ─► Worker ─► 302 to t.me/zumdashop_bot (until the landing page)
 Telegram Bot API ─► /tg/:botId, /tg/platform, /tg/business, /tg/courier ─► Worker
 ```
@@ -783,7 +795,7 @@ picks its mode by address (`business.`, `delivery.`), locally by `?mode=`.
 «Zumda | Kuryer», descriptions, the command list (`/start` only), menu buttons,
 avatars (`brand/*-avatar.jpg`, set only when the file changed: its hash is in D1
 `platform_settings`), the `/start` pictures (`brand/welcome/`). Only the Description Picture and
-`/setdomain` are manual (no Bot API method).
+the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method).
 
 - Addresses: `api.zumda.shop` and `zumda.shop` (Worker, Custom Domains); `app.`, `business.`,
   `delivery.zumda.shop` (one Pages project); the deploy adds them and their DNS records. The Worker has no workers.dev address.
