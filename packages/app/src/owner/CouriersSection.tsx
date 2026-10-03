@@ -6,7 +6,7 @@ import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { confirm, haptic, openTelegramLink } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
-import { CheckIcon, CopyIcon, PlusIcon, ScooterIcon, TrashIcon } from "../ui/icons.js"
+import { AlertIcon, CheckIcon, CopyIcon, PlusIcon, ScooterIcon, TrashIcon } from "../ui/icons.js"
 import { Button, Section, Skeleton, Switch } from "../ui/primitives.js"
 
 import { useOwner } from "./store.js"
@@ -96,7 +96,7 @@ function DayChips({
                         aria-pressed={on}
                         onClick={toggle}
                         className={cn(
-                            "tap h-9 min-w-0 flex-1 rounded-control text-sm font-semibold transition-colors duration-200 ease-out-quart",
+                            "tap h-11 min-w-0 flex-1 rounded-control text-sm font-semibold transition-colors duration-200 ease-out-quart",
                             on ? "bg-brand text-brand-ink" : "bg-tg-bg text-tg-hint",
                         )}
                     >
@@ -128,13 +128,23 @@ function CourierContacts({ courier }: { courier: CourierDTO }): React.JSX.Elemen
             <span className="block truncate font-medium">{courier.name}</span>
             <span className="flex flex-wrap gap-x-2 text-sm text-tg-hint">
                 {courier.phone ? (
-                    <a href={`tel:${courier.phone}`} className="text-tg-link">
+                    <a
+                        href={`tel:${courier.phone}`}
+                        className="-my-2 inline-flex items-center py-2 font-medium text-tg-link active:opacity-70"
+                    >
                         {formatPhone(courier.phone)}
                     </a>
                 ) : null}
                 {courier.vehicle ? <span className="truncate">{courier.vehicle}</span> : null}
                 {courier.isActive ? (
-                    <span className={courier.onShift ? "text-success" : undefined}>
+                    <span className="inline-flex items-center gap-1">
+                        <span
+                            aria-hidden
+                            className={cn(
+                                "h-2 w-2 rounded-full",
+                                courier.onShift ? "bg-success" : "bg-tg-hint/50",
+                            )}
+                        />
                         {courier.onShift ? s.onShift : s.notOnShift}
                     </span>
                 ) : null}
@@ -325,7 +335,10 @@ export function NetworkSection({
                     />
                 </label>
                 {shop.inDistrict ? null : (
-                    <p className="text-sm font-medium text-warning">{s.notInDistrict}</p>
+                    <p className="flex gap-2 text-sm font-medium">
+                        <AlertIcon size={18} className="shrink-0 text-warning" />
+                        {s.notInDistrict}
+                    </p>
                 )}
             </div>
         </Section>

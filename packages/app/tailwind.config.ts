@@ -48,9 +48,17 @@ const config: Config = {
                     DEFAULT: "rgb(var(--brand-rgb, 21 128 61) / <alpha-value>)",
                     ink: "rgb(var(--brand-ink-rgb, 255 255 255) / <alpha-value>)",
                 },
-                success: "rgb(16 185 129 / <alpha-value>)",
-                warning: "rgb(245 158 11 / <alpha-value>)",
+                // Icons and marks: ≥3:1 on white. Status words stay in the text color.
+                success: "rgb(5 150 105 / <alpha-value>)",
+                warning: "rgb(217 119 6 / <alpha-value>)",
                 danger: "rgb(239 68 68 / <alpha-value>)",
+            },
+            // Brand-colored words use a shade that reads on white and gray (`lib/brand.ts`).
+            textColor: {
+                brand: {
+                    DEFAULT: "rgb(var(--brand-text-rgb, 21 128 61) / <alpha-value>)",
+                    ink: "rgb(var(--brand-ink-rgb, 255 255 255) / <alpha-value>)",
+                },
             },
             fontFamily: {
                 sans: [
@@ -64,6 +72,7 @@ const config: Config = {
             },
             fontSize: {
                 // Body never below 15px: many customers read on small, bright-sunlit screens.
+                xs: ["0.8125rem", { lineHeight: "1.1rem" }],
                 sm: ["0.875rem", { lineHeight: "1.25rem" }],
                 base: ["0.9375rem", { lineHeight: "1.4rem" }],
                 lg: ["1.0625rem", { lineHeight: "1.5rem" }],

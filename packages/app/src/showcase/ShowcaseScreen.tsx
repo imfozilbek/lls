@@ -63,7 +63,9 @@ function ShopMark({
         )
     }
     return (
+        // The shop's name stands next to it: the letter is a picture, not words to read.
         <span
+            aria-hidden="true"
             className={cn(size, "grid shrink-0 place-items-center rounded-[0.8rem] font-bold")}
             style={{
                 backgroundColor: shop.brandColor,

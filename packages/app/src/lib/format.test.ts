@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { readableInk } from "./brand.js"
+import { readableInk, readableText } from "./brand.js"
 import { formatMoney, formatQuantity, formatTime, hexToRgbChannels } from "./format.js"
 
 import type { Language } from "@zumda/core"
@@ -33,6 +33,25 @@ describe("colors", () => {
     it("picks readable text on the brand color", () => {
         expect(readableInk("220 38 38")).toBe("255 255 255")
         expect(readableInk("245 158 11")).toBe("17 24 39")
+        // A mid-tone blue: neither white nor gray-ink reaches AA, black does.
+        expect(readableInk("2 132 199")).toBe("0 0 0")
+    })
+
+    it("brand words darken only as much as they must to read on gray", () => {
+        const luminance = (channels: string): number => {
+            const [r, g, b] = channels.split(" ").map((c) => {
+                const v = Number(c) / 255
+                return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+            })
+            return 0.2126 * (r ?? 0) + 0.7152 * (g ?? 0) + 0.0722 * (b ?? 0)
+        }
+        const onGray = (channels: string): number =>
+            (luminance("243 244 246") + 0.05) / (luminance(channels) + 0.05)
+        for (const amber of ["245 158 11", "217 119 6", "14 165 233", "21 128 61"]) {
+            expect(onGray(readableText(amber))).toBeGreaterThanOrEqual(4.5)
+        }
+        // Already dark enough: kept as it is.
+        expect(readableText("17 24 39")).toBe("17 24 39")
     })
 })
 

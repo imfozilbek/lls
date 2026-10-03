@@ -134,7 +134,7 @@ export const uz = {
         freeDeliveryLeft: "Bepul yetkazishgacha yana {sum}",
         removed: "Savatdagi {n} ta mahsulot tugab qoldi, ularni olib tashladik.",
         unavailable: "Tugagan",
-        clear: "Tozalash",
+        clear: "Savatni tozalash",
     },
     checkout: {
         title: "Buyurtma",

@@ -216,8 +216,8 @@ export function ReadyCard(): React.JSX.Element | null {
                 aria-hidden="true"
             >
                 <div
-                    className="h-full rounded-full bg-brand transition-[width] duration-500 ease-out-quart"
-                    style={{ width: `${(done / items.length) * 100}%` }}
+                    className="h-full origin-left rounded-full bg-brand transition-transform duration-500 ease-out-quart"
+                    style={{ transform: `scaleX(${done / items.length})` }}
                 />
             </div>
             <ul className="flex flex-col">

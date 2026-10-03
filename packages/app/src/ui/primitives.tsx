@@ -48,9 +48,12 @@ export function Button({
             type="button"
             className={cn(
                 "tap inline-flex items-center justify-center gap-2 rounded-control font-semibold",
-                "disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
+                "disabled:cursor-not-allowed disabled:active:scale-100",
                 size === "lg" ? "h-[52px] px-5 text-lg" : "h-11 px-4 text-base",
-                VARIANTS[variant],
+                // Not available: a calm gray, readable; busy keeps its own color and a spinner.
+                disabled && !loading
+                    ? "bg-tg-secondary text-tg-hint shadow-none"
+                    : VARIANTS[variant],
                 className,
             )}
             disabled={disabled || loading}
@@ -225,17 +228,22 @@ export function Switch({
                 haptic.select()
                 onChange(!checked)
             }}
-            className={cn(
-                "relative h-8 w-[52px] shrink-0 rounded-full transition-colors duration-200 ease-out-quart",
-                checked ? "bg-brand" : "bg-tg-hint/30",
-            )}
+            className="group relative -my-1.5 grid h-11 w-[60px] shrink-0 place-items-center"
         >
+            {/* The track is 52×32; the button around it is the 44 px a thumb needs. */}
             <span
                 className={cn(
-                    "absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow transition-transform duration-200 ease-out-quart",
-                    checked && "translate-x-5",
+                    "relative h-8 w-[52px] rounded-full transition-[background-color,transform] duration-200 ease-out-quart group-active:scale-95",
+                    checked ? "bg-brand" : "bg-tg-hint/35",
                 )}
-            />
+            >
+                <span
+                    className={cn(
+                        "absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow transition-transform duration-200 ease-out-quart",
+                        checked && "translate-x-5",
+                    )}
+                />
+            </span>
         </button>
     )
 }
@@ -250,7 +258,7 @@ export function Segmented<T extends string>({
     onChange(value: T): void
 }): React.JSX.Element {
     return (
-        <div className="flex rounded-control bg-tg-secondary p-1" role="tablist">
+        <div className="flex min-h-12 rounded-control bg-tg-secondary p-1" role="tablist">
             {options.map((option) => (
                 <button
                     key={option.value}
@@ -262,7 +270,7 @@ export function Segmented<T extends string>({
                         onChange(option.value)
                     }}
                     className={cn(
-                        "tap h-9 flex-1 rounded-[0.625rem] text-sm font-semibold transition-colors duration-200",
+                        "tap min-h-10 flex-1 rounded-[0.625rem] px-2 text-sm font-semibold transition-colors duration-200",
                         option.value === value
                             ? "bg-tg-bg text-tg-text shadow-sm"
                             : "text-tg-subtitle",
