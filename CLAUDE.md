@@ -36,7 +36,13 @@ money, showcase) and **district delivery** (Zumda courier bot, couriers for many
 
 Zumda is the platform brand. Customers see the **shop's brand**; the app shows a small "powered by Zumda".
 
-- **One bot per shop.** The owner creates it in BotFather. The chat, name and avatar are the shop's.
+- **One bot per shop.** The chat, name and avatar are the shop's. The owner creates it with one
+  button in the Zumda Mini App («Bot yaratish», Telegram **Managed Bots**, goal 14): the bot lives
+  in the owner's own Telegram account, Zumda manages it and gets its token by itself
+  (`managed_bot` → `getManagedBotToken`); the owner never sees a token. A bot from BotFather still
+  connects by pasting its token («Menda bot bor»).
+- **«Mening bizneslarim».** The Zumda Mini App (`?mode=onboarding`) lists all of the owner's
+  businesses and opens the full owner section of any of them right there (`X-Via: admin`).
 - **Platform bot (Zumda, `@zumdashop_bot`).** Owners connect their shop through it (self-serve
   onboarding); customers search the showcase. Platform admins (`PLATFORM_ADMIN_IDS`) approve new
   shops with a button.
@@ -420,11 +426,16 @@ the rule id (e.g. `PHONE_REQUIRED`, `SHOP_CLOSED`) so the app can show a transla
 the Mini App. The app sends `X-Shop: <slug>` → Worker loads that shop's bot token → verifies.
 No `X-Shop` → verify with the platform bot token (onboarding, showcase search).
 `X-Shop` + `X-Via: marketplace` → verify with the **platform** bot token; the shop must be active
-and in the marketplace. The token that verified the signature decides the order channel
+and in the marketplace. `X-Shop` + `X-Via: admin` («Mening bizneslarim») → verify with the
+**platform** bot token; only the shop's owner gets in (role `owner`), anyone else 403.
+The token that verified the signature decides the order channel
 (`shop_bot` or `marketplace`); the client can never choose it.
 
 **Bot tokens:** stored in D1 encrypted with AES-GCM (key: secret `TOKEN_ENC_KEY`). Never logged,
-never returned by the API. Validate a new token with `getMe` before saving.
+never returned by the API. Validate a new token with `getMe` before saving. A managed bot's token
+comes from `getManagedBotToken` on its `managed_bot` update (table `managed_bots` until an
+application takes it); a new token of a live shop's bot reconnects it at once; a new owner of the
+bot alerts the admins and never moves the shop.
 
 **Roles** (per shop, one app, one auth): `customer` (default), `owner`
 (`business.owner_telegram_id`). Through the showcase (`X-Via: marketplace`) the role is always
