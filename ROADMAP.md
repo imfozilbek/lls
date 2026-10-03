@@ -163,7 +163,12 @@ Pilot: **food, water and grocery at the same time.**
 
 ### M5. Deploy and pilot ⏳
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)
-- [ ] Owner: Cloudflare account, API token, platform bot, GitHub secrets (+ saved `TOKEN_ENC_KEY`)
+- [x] `scripts/check-access.sh`: checks the Cloudflare token, account, zone, R2, D1, Pages,
+      Workers and both bots, never printing a key
+- [ ] Owner: R2, Cloudflare token, bot tokens → Claude's environment variables and GitHub
+      `production` secrets; Actions settings, secret scanning, `main` ruleset
+      (`docs/launch-checklist.md`, steps 2–6)
+- [ ] Access checked (`scripts/check-access.sh` all OK)
 - [ ] First production deploy
 - [ ] Production check: connect a test shop → order → statuses → notifications
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers

@@ -272,6 +272,7 @@ bunx wrangler d1 migrations apply zumda --local  # Apply D1 migrations locally (
 bunx wrangler d1 migrations apply zumda --remote # Apply D1 migrations in production
 bunx wrangler types                            # Regenerate Env types after wrangler.jsonc changes
 bunx wrangler deploy                           # Deploy Worker
+scripts/check-access.sh                        # Launch keys work? (Cloudflare, bots; read-only)
 ```
 
 ## Architecture (DDD + Clean Architecture)
