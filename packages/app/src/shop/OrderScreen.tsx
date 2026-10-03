@@ -9,7 +9,7 @@ import { confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { CheckIcon, PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import { PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusHero, StatusTimeline } from "../ui/order-status.js"
 import { CardBlock, PaymentLine } from "../ui/payment.js"
@@ -111,20 +111,21 @@ function RemindShop({
 function Payment({
     order,
     onChange,
+    onOpenSheet,
 }: {
     order: OrderDTO
     onChange(order: OrderDTO): void
+    /** «O'tkazdim» itself is the big bottom button; here only «Boshqa chek yuborish». */
+    onOpenSheet(): void
 }): React.JSX.Element {
     const t = useT()
     // The card this order was shown: the owner may have switched the payment card since.
     const shopCard = useSession((state) => state.shop?.payoutCard)
     const shopName = useSession((state) => state.shop?.name)
     const card = order.payment.card ?? shopCard
-    const [sheet, setSheet] = useState(false)
     const open = order.status !== OrderStatus.CANCELLED
     const unpaid = open && order.payment.status === PaymentStatus.UNPAID
     const checking = open && order.payment.status === PaymentStatus.AWAITING
-    const rejected = unpaid && order.payment.rejections > 0
 
     return (
         <Section title={t.pay.title}>
@@ -138,34 +139,14 @@ function Payment({
             {unpaid && card ? (
                 <CardBlock card={card} total={order.total} shopName={shopName} />
             ) : null}
-            {unpaid ? (
-                <Button
-                    size="lg"
-                    className="w-full"
-                    icon={<CheckIcon size={20} />}
-                    onClick={(): void => {
-                        haptic.tap()
-                        setSheet(true)
-                    }}
-                >
-                    {rejected ? t.pay.resend : t.pay.sent}
-                </Button>
-            ) : null}
             {checking ? (
                 <SentReceipt
                     order={order}
                     onChange={onChange}
                     onReplace={(): void => {
                         haptic.tap()
-                        setSheet(true)
+                        onOpenSheet()
                     }}
-                />
-            ) : null}
-            {sheet ? (
-                <ReceiptSheet
-                    order={order}
-                    onSent={onChange}
-                    onClose={(): void => setSheet(false)}
                 />
             ) : null}
         </Section>
@@ -250,7 +231,8 @@ function OrderActions({
     const [cancelling, setCancelling] = useState(false)
 
     const cancel = async (): Promise<void> => {
-        if (!(await confirm(t.order.cancelConfirm))) {
+        const sent = order.payment.status === PaymentStatus.AWAITING
+        if (!(await confirm(sent ? t.order.cancelAfterTransfer : t.order.cancelConfirm))) {
             return
         }
         setCancelling(true)
@@ -312,50 +294,42 @@ function heroText(
     }
 }
 
-export function OrderScreen({
-    id,
-    justPlaced = false,
-}: {
-    id: string
-    justPlaced?: boolean
-}): React.JSX.Element {
+/**
+ * Unpaid: the big button is «O'tkazdim» (the one thing to do now). After that, right after
+ * placing, it leads back to the menu; the order stays in "My orders".
+ */
+function useOrderMainAction(
+    order: OrderDTO | null,
+    justPlaced: boolean,
+    openSheet: () => void,
+): void {
+    const t = useT()
+    const reset = useRouter((state) => state.reset)
+    const toPay =
+        order !== null &&
+        order.status !== OrderStatus.CANCELLED &&
+        order.payment.status === PaymentStatus.UNPAID
+    useMainAction(
+        toPay
+            ? {
+                  text: order.payment.rejections > 0 ? t.pay.resend : t.pay.sent,
+                  onClick: (): void => {
+                      haptic.tap()
+                      openSheet()
+                  },
+              }
+            : justPlaced && order
+              ? { text: t.cart.toMenu, onClick: (): void => reset() }
+              : null,
+    )
+}
+
+/** Number and time, the stages (or why it was cancelled), the courier, items and address. */
+function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
-    const reset = useRouter((state) => state.reset)
-    const { order, error, reload, setOrder } = useOrder(id)
-
-    // After placing, the big button leads back to the menu; the order stays in "My orders".
-    useMainAction(
-        justPlaced && order ? { text: t.cart.toMenu, onClick: (): void => reset() } : null,
-    )
-
-    if (!order) {
-        if (!error) {
-            return <OrderSkeleton />
-        }
-        return (
-            <EmptyState
-                art={<WifiOffIcon size={44} />}
-                title={errorText(t, error)}
-                action={
-                    <Button variant="secondary" onClick={(): void => void reload()}>
-                        {t.common.retry}
-                    </Button>
-                }
-            />
-        )
-    }
-
-    const hero = heroText(order, t, justPlaced, formatMoney(order.total, language))
     return (
-        <main className="flex flex-col gap-6 px-4">
-            <StatusHero
-                status={order.status}
-                title={hero.title}
-                hint={hero.hint}
-                mood={hero.mood}
-            />
-
+        <>
             <div className="flex items-baseline justify-between px-1">
                 <h2 className="text-lg font-bold">{fill(t.order.title, { n: order.number })}</h2>
                 <span className="text-sm text-tg-hint">
@@ -386,7 +360,66 @@ export function OrderScreen({
             <Section title={t.order.address}>
                 <Address order={order} />
             </Section>
-            <Payment order={order} onChange={setOrder} />
+        </>
+    )
+}
+
+export function OrderScreen({
+    id,
+    justPlaced = false,
+}: {
+    id: string
+    justPlaced?: boolean
+}): React.JSX.Element {
+    const t = useT()
+    const language = useLanguage()
+    const { order, error, reload, setOrder } = useOrder(id)
+    const [sheet, setSheet] = useState(false)
+    useOrderMainAction(order, justPlaced, (): void => setSheet(true))
+
+    if (!order) {
+        if (!error) {
+            return <OrderSkeleton />
+        }
+        return (
+            <EmptyState
+                art={<WifiOffIcon size={44} />}
+                title={errorText(t, error)}
+                action={
+                    <Button variant="secondary" onClick={(): void => void reload()}>
+                        {t.common.retry}
+                    </Button>
+                }
+            />
+        )
+    }
+
+    const hero = heroText(order, t, justPlaced, formatMoney(order.total, language))
+    // While the money is open, the card and the screenshot come right under the hero.
+    const moneyFirst =
+        order.status === OrderStatus.PENDING && order.payment.status !== PaymentStatus.PAID
+    const payment = (
+        <Payment order={order} onChange={setOrder} onOpenSheet={(): void => setSheet(true)} />
+    )
+    return (
+        <main className="flex flex-col gap-6 px-4">
+            <StatusHero
+                status={order.status}
+                title={hero.title}
+                hint={hero.hint}
+                mood={hero.mood}
+            />
+            {moneyFirst ? payment : null}
+
+            <OrderDetails order={order} />
+            {moneyFirst ? null : payment}
+            {sheet ? (
+                <ReceiptSheet
+                    order={order}
+                    onSent={setOrder}
+                    onClose={(): void => setSheet(false)}
+                />
+            ) : null}
 
             <OrderActions order={order} onChange={setOrder} onStale={reload} />
             <BottomSpacer />

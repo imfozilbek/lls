@@ -435,6 +435,32 @@ function KindFields({
     )
 }
 
+/** Never a dead button: a tap says what is missing (the name first, then the price). */
+function useSaveAction(input: {
+    valid: boolean
+    saving: boolean
+    name: string
+    save(): Promise<void>
+}): void {
+    const t = useT()
+    const { valid, saving, name, save } = input
+    useMainAction({
+        text: saving ? t.common.saving : t.common.save,
+        onClick: (): void => {
+            if (valid) {
+                void save()
+                return
+            }
+            haptic.error()
+            toast(
+                name.trim().length === 0 ? t.owner.product.needName : t.owner.product.needPrice,
+                "error",
+            )
+        },
+        loading: saving,
+    })
+}
+
 function EditorForm({ product: initial }: { product: ProductDTO | undefined }): React.JSX.Element {
     const t = useT()
     const back = useRouter((state) => state.back)
@@ -472,12 +498,7 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
         }
     }
 
-    useMainAction({
-        text: saving ? t.common.saving : t.common.save,
-        onClick: (): void => void save(),
-        loading: saving,
-        disabled: !valid,
-    })
+    useSaveAction({ valid, saving, name: draft.name, save })
 
     return (
         <main className="flex flex-col gap-6 px-4 pt-4">

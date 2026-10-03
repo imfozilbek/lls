@@ -25,6 +25,9 @@ interface OwnerState {
     /** Active orders on the first page of «Buyurtmalar»: `null` until it loads. */
     activeOrders: number | null
     setActiveOrders(count: number): void
+    /** «Sozlamalar» has edits not saved yet: leaving the tab asks first. */
+    settingsDirty: boolean
+    setSettingsDirty(dirty: boolean): void
     /** Another business opened: nothing of the previous one may show or be edited. */
     bindShop(id: string): void
     setTab(tab: OwnerTab): void
@@ -54,6 +57,8 @@ export const useOwner = create<OwnerState>((set, get) => ({
     couriers: null,
     activeOrders: null,
     setActiveOrders: (count): void => set({ activeOrders: count }),
+    settingsDirty: false,
+    setSettingsDirty: (dirty): void => set({ settingsDirty: dirty }),
     bindShop: (id): void => {
         if (get().shopId !== id) {
             // The order a bot message asked for stays: it belongs to the shop opening now.

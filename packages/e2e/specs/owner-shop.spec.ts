@@ -29,7 +29,9 @@ test("catalog: add a product with a photo; customers see it at once", async ({ p
     await expect(page.getByText("To'y oshi")).toBeVisible()
     await bottomButton(page).click() // «Добавить товар»
     await expect(page.getByRole("heading", { name: "Yangi mahsulot" })).toBeVisible()
-    await expect(bottomButton(page)).toBeDisabled()
+    // No dead button: an empty form says what to write first.
+    await bottomButton(page).click()
+    await expect(page.getByText("Mahsulot nomini yozing")).toBeVisible()
 
     await page.locator('input[type="file"]').setInputFiles({
         name: "manti.png",

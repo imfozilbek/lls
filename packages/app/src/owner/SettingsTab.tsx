@@ -453,6 +453,11 @@ function SettingsForm({
     const [saving, setSaving] = useState(false)
     const patch = (change: Partial<Form>): void => setForm((f) => ({ ...f, ...change }))
     const dirty = JSON.stringify(patchOf(form)) !== JSON.stringify(patchOf(formOf(shop)))
+    const setSettingsDirty = useOwner((state) => state.setSettingsDirty)
+    useEffect(() => {
+        setSettingsDirty(dirty)
+        return (): void => setSettingsDirty(false)
+    }, [dirty, setSettingsDirty])
     const valid = form.name.trim().length > 0 && hasOpenDay(form.hours)
 
     const save = async (): Promise<void> => {

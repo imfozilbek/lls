@@ -145,6 +145,7 @@ export function ReceiptSheet({
     return (
         <Sheet title={t.receipt.title} onClose={onClose}>
             <p className="text-sm text-tg-subtitle">{t.receipt.hint}</p>
+            <p className="text-sm text-tg-subtitle">{t.receipt.howTo}</p>
             <ReceiptPicker picked={picked} onPicked={setPicked} />
             <Button
                 size="lg"

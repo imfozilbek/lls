@@ -7,6 +7,19 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The money first, no dead buttons (UX phase 6, from the third critique)
+- **Changed (app):** while an order is unpaid, the big bottom button is «O'tkazdim» (not «back to
+  the catalog»), and the card with «Raqam» and «Summa» copy buttons stands right under the
+  status; the receipt sheet says how to take a screenshot.
+- **Changed (app):** one word for the act everywhere: «O'tkazma kutilmoqda / tekshirilmoqda»;
+  cancelling after «O'tkazdim» says the shop returns the money.
+- **Changed (app):** the application and the product editor never show a dead button: a tap
+  says what is missing; leaving «Sozlamalar» with unsaved edits asks first.
+- **Changed (app):** the owner's «Pul keldi» is quiet for an order without a screenshot; «Pulni
+  tekshirish kerak» jumps to the first transfer to check; history rows say «N xil mahsulot».
+- **Not done (owner's decision kept):** a way to say «paid» without a screenshot; the screenshot
+  stays required.
+
 ### Trust at the money moment, a queue for rush hour (UX phase 5, from the second critique)
 - **Added (core, worker, app):** «Do'konga eslatish»: when the shop has not answered a transfer
   for 10 minutes, the customer asks the owner again with one tap (the bot repeats «Ha, … keldi» /

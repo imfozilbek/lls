@@ -322,9 +322,16 @@ export function Wizard({
             ? createAction(t, flow)
             : {
                   text: actionText(t, step, sending),
-                  onClick: (): void => void next(),
+                  // Never a dead button: a tap says what the step still needs.
+                  onClick: (): void => {
+                      if (canContinue(step, draft)) {
+                          void next()
+                          return
+                      }
+                      haptic.error()
+                      toast(step === 1 ? t.onboarding.needName : t.onboarding.needBot, "error")
+                  },
                   loading: sending,
-                  disabled: !canContinue(step, draft),
               },
     )
 
