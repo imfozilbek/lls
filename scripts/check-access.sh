@@ -18,9 +18,9 @@ readonly COURIER_BOT="zumdashop_kuryer_bot"
 failures=0
 
 ok() { printf 'OK    %s\n' "$1"; }
-warn() { printf 'WARN  %s — %s\n' "$1" "$2"; }
+warn() { printf 'WARN  %s: %s\n' "$1" "$2"; }
 bad() {
-    printf 'FAIL  %s — %s\n' "$1" "$2"
+    printf 'FAIL  %s: %s\n' "$1" "$2"
     failures=$((failures + 1))
 }
 
@@ -61,14 +61,14 @@ check_cloudflare_token() {
     if cf_ok "$body" && [[ "$(jq -r '.result.status' <<<"$body")" == "active" ]]; then
         ok "Cloudflare token is active"
     else
-        bad "Cloudflare token" "$(cf_error "$body") — create it again (checklist, step 3)"
+        bad "Cloudflare token" "$(cf_error "$body"): create it again (checklist, step 3)"
         return 1
     fi
     body="$(cf "/accounts/${CLOUDFLARE_ACCOUNT_ID}")"
     if cf_ok "$body"; then
         ok "Cloudflare account is reachable"
     else
-        bad "Cloudflare account" "$(cf_error "$body") — check CLOUDFLARE_ACCOUNT_ID and the token's account"
+        bad "Cloudflare account" "$(cf_error "$body"): check CLOUDFLARE_ACCOUNT_ID and the token's account"
     fi
 }
 
@@ -101,13 +101,13 @@ check_zone() {
 check_account_products() {
     local base="/accounts/${CLOUDFLARE_ACCOUNT_ID}" body
     body="$(cf "${base}/r2/buckets")"
-    if cf_ok "$body"; then ok "R2 is enabled"; else bad "R2" "$(cf_error "$body") — enable R2 (checklist, step 2)"; fi
+    if cf_ok "$body"; then ok "R2 is enabled"; else bad "R2" "$(cf_error "$body"): enable R2 (checklist, step 2)"; fi
     body="$(cf "${base}/d1/database")"
-    if cf_ok "$body"; then ok "D1 is reachable"; else bad "D1" "$(cf_error "$body") — add Account → D1 → Edit"; fi
+    if cf_ok "$body"; then ok "D1 is reachable"; else bad "D1" "$(cf_error "$body"): add Account → D1 → Edit"; fi
     body="$(cf "${base}/pages/projects")"
-    if cf_ok "$body"; then ok "Pages is reachable"; else bad "Pages" "$(cf_error "$body") — add Account → Cloudflare Pages → Edit"; fi
+    if cf_ok "$body"; then ok "Pages is reachable"; else bad "Pages" "$(cf_error "$body"): add Account → Cloudflare Pages → Edit"; fi
     body="$(cf "${base}/workers/scripts")"
-    if cf_ok "$body"; then ok "Workers are reachable"; else bad "Workers" "$(cf_error "$body") — add Account → Workers Scripts → Edit"; fi
+    if cf_ok "$body"; then ok "Workers are reachable"; else bad "Workers" "$(cf_error "$body"): add Account → Workers Scripts → Edit"; fi
 }
 
 check_bot() {
@@ -115,7 +115,7 @@ check_bot() {
     body="$(curl -sS -m 20 "${TG_API}/bot${token}/getMe" 2>/dev/null || echo '{"ok":false}')"
     username="$(jq -r '.result.username // empty' <<<"$body" 2>/dev/null)"
     if [[ -z "$username" ]]; then
-        bad "$label" "Telegram does not accept the token — copy it again from @BotFather"
+        bad "$label" "Telegram does not accept the token: copy it again from @BotFather"
     elif [[ "$username" != "$expected" ]]; then
         bad "$label" "the token belongs to @${username}, expected @${expected}"
     else

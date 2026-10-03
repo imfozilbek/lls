@@ -68,7 +68,7 @@ kuryer olib keladi. Kuryeri yoʻq nuqtaga tuman kuryerlari tarmogʻi yordam bera
 
 ---
 
-## Jasur — milliy taomlar
+## Jasur: milliy taomlar
 
 1. Menyuda nechta taom bor? Menyu har kuni oʻzgaradimi?
 2. Osh va boshqa taomlar porsiyada sotiladimi yoki kilogrammda?
@@ -79,7 +79,7 @@ kuryer olib keladi. Kuryeri yoʻq nuqtaga tuman kuryerlari tarmogʻi yordam bera
 7. Taomni tayyorlash va yetkazish qancha vaqt oladi?
 8. Non, salat, ichimlik alohida sotiladimi yoki taom bilan birgami?
 
-## Jasur — avto va gilam yuvish
+## Jasur: avto va gilam yuvish
 
 **Gilam yuvish**
 1. Mijoz qanday buyurtma beradi: qoʻngʻiroq qiladimi, keyin kim borib gilamni oladi?
@@ -97,7 +97,7 @@ kuryer olib keladi. Kuryeri yoʻq nuqtaga tuman kuryerlari tarmogʻi yordam bera
 11. Qanday xizmatlar bor: tashqi yuvish, salon, kimyoviy tozalash? Har biri qancha turadi?
 12. Bir vaqtda nechta mashina yuviladi?
 
-## Maqsudbek — burger va kofe
+## Maqsudbek: burger va kofe
 
 **Burgerlar**
 1. Menyuda nechta pozitsiya bor? Kombo (burger + kartoshka + ichimlik) bormi?
@@ -116,7 +116,7 @@ kuryer olib keladi. Kuryeri yoʻq nuqtaga tuman kuryerlari tarmogʻi yordam bera
 10. Ofis va universitetlarga koʻp buyurtma boʻladimi?
 11. Aksiyalar bormi: “5-kofe bepul”, “happy hour”?
 
-## Zoir — suv ishlab chiqarish va yetkazish (20 l)
+## Zoir: suv ishlab chiqarish va yetkazish (20 l)
 
 1. 20 litrlik suvning narxi qancha? Boshqa hajmlar ham bormi (10 l, 5 l, 1,5 l)?
 2. Idish uchun garov olinadimi? Qancha? Mijozning oʻz idishi boʻlsa nima boʻladi?
@@ -125,7 +125,7 @@ kuryer olib keladi. Kuryeri yoʻq nuqtaga tuman kuryerlari tarmogʻi yordam bera
 5. Ofis va tashkilotlar bormi? Ular pul oʻtkazmasi bilan, shartnoma va hisob-faktura orqali toʻlaydimi?
 6. Pompa, kuler yoki dispenser sotasizmi yoki ijaraga berasizmi?
 7. Kuryer bir chiqishda nechta idish oladi? Mashinada nechta joy bor?
-8. Marshrutni kim tuzadi? Hudud boʻyicha kunlar bormi (masalan, dushanba — bir mahalla)?
+8. Marshrutni kim tuzadi? Hudud boʻyicha kunlar bormi (masalan, dushanba: bir mahalla)?
 9. Bir kunda qancha idish ishlab chiqarasiz? Yozda yetishmay qoladimi?
 10. Qavatga koʻtarib berish alohida pullikmi?
 11. Buyurtma qancha vaqtda yetkaziladi: shu kuniyoqmi yoki ertagami?
@@ -145,12 +145,12 @@ kuryer olib keladi. Kuryeri yoʻq nuqtaga tuman kuryerlari tarmogʻi yordam bera
 | Самовывоз (общие 18, сеть 7, Maqsudbek 7–8) | Самовывоз (ROADMAP M7), небольшая доработка |
 | Каталог вносим мы (сеть 8) | Готовим импорт из Excel или вносим вручную (ROADMAP M7) |
 | Соседние точки и водители (сеть 9–10) | Первые кандидаты на подключение в районе |
-| Несколько человек принимают заказы (общие 9) | Роль «менеджер» — заметная доработка |
-| Варианты и добавки (Maqsudbek 2–3, 5–6) | Варианты товара — нужно до запуска Maqsudbek |
+| Несколько человек принимают заказы (общие 9) | Роль «менеджер»: заметная доработка |
+| Варианты и добавки (Maqsudbek 2–3, 5–6) | Варианты товара: нужно до запуска Maqsudbek |
 | Заказ ко времени или на дату (Jasur 5, Maqsudbek 8) | Отдельная функция |
-| Вода по расписанию, офисы по перечислению (Zoir 4–5) | Подписка; счёт-фактура — отдельное решение |
+| Вода по расписанию, офисы по перечислению (Zoir 4–5) | Подписка; счёт-фактура: отдельное решение |
 | Единица 20 л (Zoir 1) | Маленькая правка: сейчас «19 л» |
 | Цена доставки по расстоянию (общие 16) | Небольшая доработка |
 | Узбекский на кириллице (общие 7) | Третий словарь |
 | Учёт расходов (общие 22) | Отдельная функция, сейчас отчёт показывает только деньги, которые пришли |
-| Ковры и автомойка (весь блок) | Тип «услуга»: забрать → почистить → вернуть, цена после замера; автомойка — запись на время |
+| Ковры и автомойка (весь блок) | Тип «услуга»: забрать → почистить → вернуть, цена после замера; автомойка: запись на время |

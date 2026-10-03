@@ -29,7 +29,7 @@ Please **do not** open a public issue. Use GitHub's private report instead:
 
 ## If a key leaks
 
-1. Revoke it at once: Zumda bot — `@BotFather` → `/revoke`; Cloudflare — roll the API token.
+1. Revoke it at once. Zumda bot: `@BotFather` → `/revoke`; Cloudflare: roll the API token.
 2. Put the new value into GitHub secrets and run **Actions → CI → Run workflow** on `main` (or ask
    Claude: it sends the `deploy` event).
 3. Removing the commit is not enough: a pushed key is public forever; only revoking helps.

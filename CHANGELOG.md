@@ -2,7 +2,7 @@
 
 All notable changes to Zumda will be documented in this file.
 
-## [Unreleased] — new stack (Cloudflare) and white-label stage 1
+## [Unreleased]: new stack (Cloudflare) and white-label stage 1
 
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
@@ -44,7 +44,7 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 
 ### Transfer only, before cooking (owner's decision)
 - **Changed (core):** customers pay only by transfer to the shop's card: every order starts
-  unpaid; «Я перевёл» marks it sent; the owner's «Деньги пришли — принять» confirms the money and
+  unpaid; «Я перевёл» marks it sent; the owner's «Деньги пришли, принять» confirms the money and
   accepts in one step; `pending → accepted` is refused while unpaid (`PAYMENT_REQUIRED`). A shop
   without a card takes no orders (`NO_PAYOUT_CARD`) and is not open; the card is required when a
   shop registers. The money report: placed, delivered, cancelled, goods, delivery, deposits,
@@ -56,22 +56,22 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Added (worker):** `POST /api/orders/:id/transfer-sent` (the customer only; the owner is
   pinged once); `PATCH /api/owner/orders/:id/payment` `{ action: "paid" }` accepts as well and
   hands the order to the district network if no own courier is free; the owner's card «💳 Ждём
-  перевод» with «💳 Деньги пришли — принять» (`p:<id>`); the customer gets the card and the sum
-  after placing; the courier card says «Оплачено заранее — денег с клиента не брать» and has one
+  перевод» with «💳 Деньги пришли, принять» (`p:<id>`); the customer gets the card and the sum
+  after placing; the courier card says «Оплачено заранее: денег с клиента не брать» and has one
   «Доставил»; the CSV has no payment method column.
 - **Added (app):** «Оплата переводом» at checkout (the card, copy, the sum); «Я перевёл» and
   «Магазин проверяет перевод» on the order; «Скоро начнёт принимать заказы» for a shop without a
-  card; owners: «Деньги пришли — принять» on the order, a banner without a card, the card field
+  card; owners: «Деньги пришли, принять» on the order, a banner without a card, the card field
   in onboarding (required) and in settings (never removed from there); «Деньги» without couriers'
   cash and debts; couriers: one «Доставил», no «На руках».
 - **Changed (e2e):** the money spec follows the transfer path; a shop without a card; every
-  accept is «Деньги пришли — принять»; the demo grocery shop has a card.
+  accept is «Деньги пришли, принять»; the demo grocery shop has a card.
 
 ### District network (goal 06)
 - **Added (core):** `District` (center + radius, waiting time); a shop's district from its
   location; network delivery per shop, on by default; the courier's own network consent; a link
   status `network`; network orders: requested after «Принять» when no own courier is free (or by
-  hand), «Беру» — the first wins, one network order at a time, cash goes back to the shop;
+  hand), «Беру»: the first wins, one network order at a time, cash goes back to the shop;
   "nobody took it" after 10 minutes; the network's share for the admin. The delivery fee of a
   network order is a snapshot (`deliveryFeeTo`), temporarily the shop's.
 - **Added (worker):** migration `0004_district_network.sql` (additive); «Новый заказ рядом»
@@ -84,7 +84,7 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   leaving the network, the 10-minute alert; demo district and two network couriers in the seed
 
 ### Zumda courier bot (goal 05)
-- **Added (core):** `CourierProfile` — one per person (name, phone, vehicle, shift until
+- **Added (core):** `CourierProfile`: one per person (name, phone, vehicle, shift until
   midnight); a `Courier` is now the person's link to one shop with status pending / active /
   removed, working days and "not today"; an order goes only to a courier who is approved, works
   today and is on shift (`COURIER_NOT_AVAILABLE` with the reason); the courier's home across
@@ -102,7 +102,7 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Added (e2e):** courier bot scenarios: two shops, approval, days, shift, cash per shop
 
 ### Money, hours per day, QR poster
-- **Added (core):** `Payment` per order — cash or a transfer to the shop's card; statuses
+- **Added (core):** `Payment` per order: cash or a transfer to the shop's card; statuses
   unpaid / awaiting / paid / refund due / refunded; the courier says how the customer paid at the
   door (cash, transfer, later = debt); cash a courier holds and handovers to the owner; money
   report by period; `PayoutCard` (16 digits, Luhn). No payment gateways.
@@ -117,8 +117,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 
 ### Stack
 - **Removed:** `@zumda/api` (NestJS, MongoDB, Redis), `@zumda/bot`, `@zumda/admin`, `deploy/`, `.gitea/`
-- **Added:** `@zumda/worker` — Cloudflare Worker (Hono + zod), D1 database, R2 for photos
-- **Added:** `@zumda/app` — one Telegram Mini App (React + Vite + Tailwind) for customers,
+- **Added:** `@zumda/worker`: Cloudflare Worker (Hono + zod), D1 database, R2 for photos
+- **Added:** `@zumda/app`: one Telegram Mini App (React + Vite + Tailwind) for customers,
   owners ("Мой магазин") and shop onboarding
 - **Changed:** Bun 1.3, Vitest 4.1, GitHub Actions CI and an idempotent Cloudflare deploy
 
@@ -158,6 +158,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   `production` environment, `scripts/check-secrets.sh` in CI and as a git pre-commit hook,
   Dependabot, `SECURITY.md`, `CODEOWNERS`
 - **Changed:** the workers.dev subdomain is random instead of derived from the account id
+- **Changed:** no em dash anywhere (owner's decision): product texts, code and docs use a colon,
+  a comma, a period or a hyphen; `scripts/check-dashes.sh` checks it in CI and pre-commit
 - **Added:** Claude deploys `main` again with the `deploy` dispatch event (`repository_dispatch`):
   no Actions permission needed; only someone with write access can send it
 - **Changed:** production addresses are Zumda's own: `api.zumda.shop` (Worker Custom Domain) and
@@ -165,8 +167,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   workers.dev address any more, so the Cloudflare account's subdomain never shows
 
 ### Local stand and end-to-end checks
-- **Added (e2e):** `bun run stand` — local D1 with three demo shops, `wrangler dev`, the Mini App and
-  a fake Telegram Bot API; `bun run e2e` — 67 Playwright scenarios for every role (customer,
+- **Added (e2e):** `bun run stand`: local D1 with three demo shops, `wrangler dev`, the Mini App and
+  a fake Telegram Bot API; `bun run e2e`: 67 Playwright scenarios for every role (customer,
   showcase customer, owner, courier, new owner, admin, attacker) and every main screen at 360 px in
   light and dark themes. Runs in CI as the `e2e` job; the deploy waits for it
 - **Added (worker):** `TELEGRAM_API_BASE` for the local stand only; any address except
@@ -204,9 +206,9 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   production deploy (`CLAUDE.md`); launch checklist fixes
 
 ### Zumda showcase
-- **Added (core):** `searchText` — one spelling for Latin/Cyrillic Uzbek and Russian; showcase search
+- **Added (core):** `searchText`: one spelling for Latin/Cyrillic Uzbek and Russian; showcase search
   across shops with a marketplace deal; `SetMarketplaceTerms` for platform admins
-- **Added (worker):** `X-Via: marketplace` — a shop opened from the showcase is verified with the Zumda
+- **Added (worker):** `X-Via: marketplace`: a shop opened from the showcase is verified with the Zumda
   bot token and its orders get the `marketplace` channel and commission; `/api/showcase/shops`,
   `/api/showcase/products`; the Zumda bot saves contacts, answers `/market <slug> <percent|off>`,
   writes showcase customers about status changes; the owner card shows the commission
@@ -218,8 +220,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **Security (core, worker):** an order is found only inside the shop from `X-Shop`; before, a
   customer or an owner of two shops could reach an order through the wrong bot
 - **Added (core):** `Courier` and one-time `CourierInvite` (48 h, only a hash is stored);
-  `canActorMove` next to the one status table: owner — every step, courier — only
-  `ready → picked_up → delivered` of their own order, customer — cancel while `pending`
+  `canActorMove` next to the one status table: owner: every step; courier: only
+  `ready → picked_up → delivered` of their own order; customer: cancel while `pending`
 - **Added (core):** order `channel` (`shop_bot` / `marketplace`) with a commission snapshot on the
   goods subtotal; always 0 for the shop's own bot. `Business.marketplace` holds the future deal
 - **Added (core):** weight items (quantity in grams, selling step), returnable bottles with a

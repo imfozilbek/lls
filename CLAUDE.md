@@ -11,9 +11,9 @@ The old NestJS + MongoDB code is kept only at git tag `legacy-v0`. Reuse ideas f
 
 ## Project Overview
 
-Zumda — local delivery platform for small businesses (Uzbek *zumda*, "in a moment").
+Zumda: local delivery platform for small businesses (Uzbek *zumda*, "in a moment").
 Company name, where a full one is needed: **Zumda Shop**. Domain: `zumda.shop`.
-GitHub repository: `imfozilbek/lls` — it keeps this name (owner's decision); do not rename it.
+GitHub repository: `imfozilbek/lls`: it keeps this name (owner's decision); do not rename it.
 TypeScript monorepo (Bun workspaces). Bun 1.3.
 
 **Target market:** small businesses in regions and districts of Uzbekistan, where aggregators
@@ -69,7 +69,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 **Money rules of the platform** (Zumda earns on volume):
 - **Customers pay only by transfer to the shop's card, before the shop starts** (owner's
   decision, October 2026). The order is placed unpaid → the customer transfers and presses
-  «Я перевёл» → the owner sees the money and presses «Деньги пришли — принять» (paid and
+  «Я перевёл» → the owner sees the money and presses «Деньги пришли, принять» (paid and
   accepted in one tap). An order is never accepted unpaid (`PAYMENT_REQUIRED`). No cash: couriers
   carry no money, there is no courier cash, no handovers, no debts.
 - **Many cards, one shown.** A shop keeps as many cards as it needs (up to 20) and chooses the
@@ -78,7 +78,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
   removed.
 - **No card, no orders.** The first card is a required onboarding step; a shop without one
   shows «Tez orada buyurtma qabul qila boshlaydi» and refuses orders (`NO_PAYOUT_CARD`).
-- **Zumda service fee (plan — not in code yet):** a small percentage on **every** order through Zumda,
+- **Zumda service fee (plan: not in code yet):** a small percentage on **every** order through Zumda,
   in any channel (shop bot, showcase, district delivery). The **customer** pays it as a separate
   "Сервис" line in the cart, the order and the messages. The shop's prices never change: the shop
   gets its price in full.
@@ -112,7 +112,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - **Done:** when the shop accepts an order and none of its own couriers can take it now, the
   order goes to the free network couriers of the district (in the network, on shift, carrying no
   other network order): «Новый заказ рядом» without the customer, «Беру»; the first press wins
-  (one conditional UPDATE). The shop switch «Если мои заняты — отдавать сети района» is **on by
+  (one conditional UPDATE). The shop switch «Если мои заняты, отдавать сети района» is **on by
   default** (owner's decision); the owner may also hand an order over by hand. The customer paid
   that point's card before cooking: the network courier carries no money. Nobody took it in
   `wait` minutes (default 10):
@@ -124,7 +124,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 **⛔ RULES:**
 - Build ONLY stage 1 now: the online point and district delivery. Money is in: only a transfer to
   the shop's card, before the shop starts (unpaid → «Я перевёл» → paid by the owner's
-  «Деньги пришли — принять»; refund due / refunded after a cancel), money report and CSV export.
+  «Деньги пришли, принять»; refund due / refunded after a cancel), money report and CSV export.
   **No cash, no payment gateways (Click, Payme)**: the owner confirms transfers by hand.
 - Services (carpet and car cleaning) join stage 1 as their own business type once their process
   is agreed with the client.
@@ -147,7 +147,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
   - geo: business location + delivery zone, customer location
   - every order stores its **channel** (`shop_bot` | `marketplace`) and a **commission snapshot**
     (rate + amount, integer UZS, 0 for `shop_bot`), fixed when the order is placed
-  - every order stores a **service fee snapshot** (rate + amount, integer UZS) — plan, see
+  - every order stores a **service fee snapshot** (rate + amount, integer UZS): plan, see
     "Money rules"
   - couriers: one global profile per `telegram_id` (`courier_profiles`) + courier↔business
     links (`couriers` rows, their ids stay in orders)
@@ -155,15 +155,15 @@ cover each one's whole process; what exactly comes from the meeting with them.
 ## SLC Rules (MANDATORY)
 
 **⛔ SLC, NOT MVP.** We build **SLC (Simple, Lovable, Complete)**:
-- **Simple** — easy to use, no unnecessary complexity
-- **Lovable** — delightful UX, polished design
-- **Complete** — fully working, no "coming soon" placeholders
+- **Simple**: easy to use, no unnecessary complexity
+- **Lovable**: delightful UX, polished design
+- **Complete**: fully working, no "coming soon" placeholders
 
 | Rule | Requirement |
 |------|-------------|
 | **v1.0 scope** | Stage 1: orders, status tracking, money, shop couriers, district delivery, vertical toggles |
 | **Quality** | Must be PERFECT, not "good enough" |
-| **No scope creep** | Shared cart, algorithmic dispatch, routing, multi-city, payment gateways — NOT in v1.0 |
+| **No scope creep** | Shared cart, algorithmic dispatch, routing, multi-city, payment gateways: NOT in v1.0 |
 | **UX** | Order in 3 taps |
 | **Cost** | $0/month until real usage requires more |
 
@@ -190,7 +190,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 | Assumption made | State the assumption explicitly |
 
 **⛔ FORBIDDEN:**
-- Silent failures — always report errors
+- Silent failures: always report errors
 - Skipping without explanation
 - Guessing instead of asking
 - Hiding problems hoping they resolve
@@ -208,7 +208,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 | 4 | Ask user to approve the change |
 
 **⛔ RULES:**
-- If error repeats twice — rule MUST be updated
+- If error repeats twice: rule MUST be updated
 - Never ignore systematic errors
 - Fix the root cause, not symptoms
 
@@ -218,7 +218,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 
 | Rule | Requirement |
 |------|-------------|
-| **Context limits** | IGNORE — autocompact handles it |
+| **Context limits** | IGNORE: autocompact handles it |
 | **Long tasks** | Do ALL steps, never cut short |
 | **Many files** | Edit ALL files, not "and so on..." |
 | **Repetitive work** | Do it fully, no shortcuts |
@@ -274,13 +274,14 @@ bunx wrangler d1 migrations apply zumda --remote # Apply D1 migrations in produc
 bunx wrangler types                            # Regenerate Env types after wrangler.jsonc changes
 bunx wrangler deploy                           # Deploy Worker
 scripts/check-access.sh                        # Launch keys work? (Cloudflare, bots; read-only)
+scripts/check-dashes.sh --all                  # No em dash anywhere (CI and pre-commit too)
 gh api -X POST repos/imfozilbek/lls/dispatches -f event_type=deploy  # Deploy main again (Claude)
 ```
 
 ## Architecture (DDD + Clean Architecture)
 
 ```
-Domain (inner)     → Entities, Value Objects, Errors — NO framework imports
+Domain (inner)     → Entities, Value Objects, Errors: NO framework imports
 Application        → Use Cases, Ports (interfaces), DTOs
 Infrastructure     → Routes, Repositories, Adapters (@zumda/worker)
 ```
@@ -333,11 +334,11 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through t
 | Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required to take orders), service fee rate (bps; plan), district_id, network_delivery (on by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
-| CustomerBusiness | customer_id, business_id, first_order_at — whose customer this is |
-| District | id, name, center (lat, lng), radius, wait_minutes — a circle of the delivery network |
-| CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at — the person |
-| Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until — the person's link to one shop (`network`: took a network order of it) |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer — `cash` only in old rows; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown — snapshot; cash courier — history only), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
+| CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
+| District | id, name, center (lat, lng), radius, wait_minutes: a circle of the delivery network |
+| CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
+| Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until: the person's link to one shop (`network`: took a network order of it) |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer: `cash` only in old rows; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; cash courier: history only), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), no code uses it since payments became transfer-only |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
@@ -350,7 +351,7 @@ pending → accepted → preparing → ready → picked_up → delivered
 cancelled  cancelled  cancelled  cancelled  cancelled
 ```
 - `pending → ready` = shop part. `picked_up → delivered` = delivery part.
-- `pending → accepted` only when paid: the owner's «Деньги пришли — принять» confirms the transfer
+- `pending → accepted` only when paid: the owner's «Деньги пришли, принять» confirms the transfer
   and accepts in one step (`Order.advanceTo` refuses an unpaid accept).
 - Owner moves every step and may cancel. The assigned courier moves only
   `ready → picked_up → delivered` and never cancels. The customer cancels only while `pending`.
@@ -364,7 +365,7 @@ cancelled  cancelled  cancelled  cancelled  cancelled
 **D1 (SQLite):**
 ```typescript
 // Schema changes ONLY via SQL migrations: packages/worker/migrations/*.sql
-// Always: parameterized queries — db.prepare(sql).bind(...)
+// Always: parameterized queries, db.prepare(sql).bind(...)
 // Always: index every WHERE / ORDER BY column (free tier counts ROWS READ, not queries)
 // Index: business_id, customer_id, status, created_at, telegram_id, slug
 // Multi-statement writes: db.batch([...]) (runs as one transaction)
@@ -440,11 +441,11 @@ courier of that shop and asks for the phone; the owner gets "Подтверди�
 shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин".
 
 **Notifications (no WebSockets):**
-- New order → message to the owner «💳 Ждём перевод» with «Деньги пришли — принять» + «Отменить»;
+- New order → message to the owner «💳 Ждём перевод» with «Деньги пришли, принять» + «Отменить»;
   the customer gets the shop's card and the sum. «Я перевёл» → the owner hears «Клиент перевёл».
   After that the owner's button is the **next allowed status**.
 - Courier assigned → order card from the Zumda courier bot, titled with the shop's name (address,
-  landmark, map, phone, «Оплачено заранее — денег не брать», empty bottles) with "Забрал", then
+  landmark, map, phone, «Оплачено заранее: денег не брать», empty bottles) with "Забрал", then
   one "Доставил".
 - Status change → message to the customer (courier name, never the courier's phone). Showcase
   orders: the Zumda bot writes to the customer (with the shop name); the owner still gets messages
@@ -463,12 +464,12 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 - Phone: Telegram "share contact" button, never typed by hand
 - Payment: only a transfer to the shop's card, shown at checkout with a copy button and the sum;
   the customer transfers after placing and presses «Я перевёл»; the owner confirms by hand
-  («Деньги пришли — принять»), then the shop starts
+  («Деньги пришли, принять»), then the shop starts
 
 **User Flow:**
 - Customer: Open shop link → Browse → Cart → Order → Transfer → «Я перевёл» → Track
 - Showcase customer: Zumda bot → Search → Shop → Cart → Order → Track
-- Owner: New order message → the transfer arrives → «Деньги пришли — принять» → Next status →
+- Owner: New order message → the transfer arrives → «Деньги пришли, принять» → Next status →
   assign courier; catalog, couriers and the card in "Мой магазин"
 - Courier: Invite link → Zumda courier bot → phone → approved → "on shift" → assigned order card →
   Picked up → Delivered
@@ -482,7 +483,7 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 eval(userInput)                        // Code injection
 new Function(userInput)                // Code injection
 document.innerHTML = x                 // XSS
-`SELECT ... WHERE id = ${userInput}`   // SQL injection — use D1 .bind()
+`SELECT ... WHERE id = ${userInput}`   // SQL injection: use D1 .bind()
 ```
 
 **REQUIRED:**
@@ -515,9 +516,9 @@ document.innerHTML = x                 // XSS
 | Mini App initial JS | ≤ 100 KB gzip (regional mobile internet is slow) |
 
 **AVOID:**
-- N+1 queries — use JOIN or `db.batch`
+- N+1 queries: use JOIN or `db.batch`
 - Missing indexes
-- `SELECT *` — select needed columns
+- `SELECT *`: select needed columns
 - No pagination
 - Heavy libraries in the Worker or the customer bundle
 
@@ -529,7 +530,7 @@ document.innerHTML = x                 // XSS
 | D1 | 500 MB per database, 5M rows read/day, 100k rows written/day, 7-day Time Travel | DB > 400 MB or reads near limit |
 | R2 | 10 GB storage, free egress | > 8 GB |
 | Pages | Static hosting, `*.pages.dev` | Not needed |
-| Cron Triggers | 5 per account | — |
+| Cron Triggers | 5 per account | - |
 
 **⛔ Design to stay free:** no polling faster than 15 s, paginate lists, index queries.
 
@@ -538,6 +539,11 @@ document.innerHTML = x                 // XSS
 ```
 4 spaces | no semicolons | double quotes | 100 chars max | trailing commas
 ```
+
+**⛔ No em dash (U+2014) anywhere** (owner's decision, October 2026): code, comments, product texts
+(Uzbek), docs, commit messages, PRs, bot descriptions. Use a colon, a comma, a period or a hyphen
+" - " instead, whichever reads naturally. `scripts/check-dashes.sh` runs in CI and in the git
+pre-commit hook (generated `worker-configuration.d.ts` is skipped).
 
 ## ESLint Rules (MUST FIX ALL)
 
@@ -551,7 +557,7 @@ document.innerHTML = x                 // XSS
 | `eqeqeq` | Use `===` and `!==` |
 | `curly` | Always use braces |
 | `no-console` | Only `console.warn` / `console.error` |
-| `max-params` | Max 5. Need more — pass one object |
+| `max-params` | Max 5. Need more: pass one object |
 | `max-lines-per-function` | Max 100 |
 | `complexity` | Max 15 |
 | `max-depth` | Max 4 |
@@ -562,7 +568,7 @@ document.innerHTML = x                 // XSS
 any                    // Use proper type
 as any                 // Fix the type
 // @ts-ignore          // Fix the error
-x!.y                   // Non-null assertion — use a null check
+x!.y                   // Non-null assertion: use a null check
 var                    // Use const/let
 ==                     // Use ===
 console.log            // Use logger
@@ -583,7 +589,7 @@ console.log            // Use logger
 **⛔ WORKFLOW for any UI task:**
 1. Read `.skills/brand-guidelines/SKILL.md` first
 2. Plan screens with animations and micro-interactions
-3. Result must NOT look "AI-generated" — must feel human-crafted
+3. Result must NOT look "AI-generated": must feel human-crafted
 
 **UI Stack:**
 | Task | Stack |
@@ -594,7 +600,7 @@ console.log            // Use logger
 | Owner section ("Мой магазин") | Same Mini App, lazy-loaded chunk (customers never download it) |
 
 **⛔ FORBIDDEN:**
-- Arbitrary colors — only the brand palette and the light palette
+- Arbitrary colors: only the brand palette and the light palette
 - Interactive elements without pressed (`active`) and focus states
 - Colors outside the light palette (`--ui-*` in `packages/app/src/index.css`, shown as `tg-*`
   classes)
@@ -607,7 +613,7 @@ console.log            // Use logger
 
 | Skill | When to Use | Status |
 |-------|-------------|--------|
-| `brand-guidelines` | Before any UI work — colors, typography, spacing | In repo: `.skills/brand-guidelines/` |
+| `brand-guidelines` | Before any UI work: colors, typography, spacing | In repo: `.skills/brand-guidelines/` |
 | `ddd` (plugin) | New features, refactoring, architecture decisions | Use if installed |
 | `tdd` (plugin) | Writing or updating tests | Use if installed |
 
@@ -630,7 +636,7 @@ console.log            // Use logger
 
 **Tooling:** Vitest 4.1 (required by `@cloudflare/vitest-plugin`).
 - `@zumda/core`, `@zumda/app`: plain Vitest (node environment).
-- `@zumda/worker`: `@cloudflare/vitest-plugin` — tests run in workerd with real D1; migrations are
+- `@zumda/worker`: `@cloudflare/vitest-plugin`: tests run in workerd with real D1; migrations are
   applied in `test/setup.ts`. Telegram calls go through a `TelegramGateway` interface, faked in tests.
 
 Measure with `vitest run --coverage` (core: `@vitest/coverage-v8`, worker: `@vitest/coverage-istanbul`).
@@ -670,7 +676,7 @@ When user types `закоммить` or `commit`:
    git diff                # Staged and unstaged changes
    git log --oneline -5    # Recent commits for style reference
    ```
-2. Write the message: `<type>(<package>): <subject>` — imperative mood, no period, focus on "why".
+2. Write the message: `<type>(<package>): <subject>`: imperative mood, no period, focus on "why".
 3. Commit:
    ```bash
    git add <relevant-files>
@@ -744,7 +750,7 @@ Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 - [ ] Customer order placement (contact + location + landmark)
 - [ ] Owner notification with buttons
 - [ ] Order status updates → customer notification
-- [ ] Money: card at checkout → «Я перевёл» → «Деньги пришли — принять» → one «Доставил»;
+- [ ] Money: card at checkout → «Я перевёл» → «Деньги пришли, принять» → one «Доставил»;
       cancel after paid → «Вернул»; a shop without a card takes no orders
 - [ ] Courier invite → assign → picked up → delivered
 - [ ] District delivery: invite → accept in the courier bot → join the network → an order of a
@@ -771,7 +777,7 @@ Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 
 ```
 MUST: Return types | await promises | const | curly braces | ===
-NEVER: any | console.log | floating promises | var | secrets in code | Docker
+NEVER: any | console.log | floating promises | var | secrets in code | Docker | em dash
 NEVER: frontend → DB directly | prices or customerId from client
 LIMITS: 5 params | 100 lines | 4 depth | 15 complexity
 STACK: Cloudflare Pages + Workers (Hono) + D1 + R2 | React + Vite | Telegram Bot API

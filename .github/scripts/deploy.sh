@@ -7,7 +7,7 @@
 #
 # Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS,
 # COURIER_BOT_TOKEN.
-# Optional: TOKEN_ENC_KEY — a saved copy of the encryption key, used only when the Worker has none.
+# Optional: TOKEN_ENC_KEY, a saved copy of the encryption key, used only when the Worker has none.
 set -euo pipefail
 # Temp files (the Worker secrets file) are readable by this user only.
 umask 077

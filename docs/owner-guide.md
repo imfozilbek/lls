@@ -10,15 +10,15 @@ Qisqa va oddiy: do'konni ulash, katalogni to'ldirish, kuryerlarni qo'shish, buyu
 
 1. Telegram'da **@zumdashop_bot** ni oching va **Start** ni bosing.
 2. **🏪 Do'konni ulash** tugmasini bosing. Ilova ochiladi.
-3. **1-qadam — Bot yarating:**
+3. **1-qadam: Bot yarating:**
    - **@BotFather'ni ochish** tugmasini bosing, `/newbot` yuboring;
    - bot nomini yozing (masalan, `Osh Markaz`);
    - bot manzilini yozing, u `bot` bilan tugashi kerak (masalan, `osh_markaz_bot`);
    - BotFather bergan **tokenni** nusxa oling va ilovaga qo'ying.
-4. **2-qadam — Do'kon haqida:** nomi, faoliyat turi (Taomlar / Suv / Oziq-ovqat), manzil.
-5. **3-qadam — Yetkazib berish va karta:** yetkazish narxi, bepul yetkazish chegarasi, minimal
+4. **2-qadam: Do'kon haqida:** nomi, faoliyat turi (Taomlar / Suv / Oziq-ovqat), manzil.
+5. **3-qadam: Yetkazib berish va karta:** yetkazish narxi, bepul yetkazish chegarasi, minimal
    buyurtma va **to'lov uchun karta** (raqam va egasining ismi). Mijozlar faqat shu kartaga
-   o'tkazma qiladi — kartasiz ariza yuborilmaydi.
+   o'tkazma qiladi: kartasiz ariza yuborilmaydi.
 6. **Ariza yuborish** ni bosing. Tekshirib, shu chatga xabar beramiz.
 
 Tasdiqlangandan keyin bot sizga do'koningiz havolasini yuboradi: `t.me/osh_markaz_bot`.
@@ -30,8 +30,8 @@ Mijozlar sizning botingizni, nomingizni va rangingizni ko'radi.
 2. Yuqorida **Mening do'konim** → **Menyu** / **Katalog** → pastda **Mahsulot qo'shish**.
 3. Rasm, nom, narx (faqat butun so'm), o'lchov va bo'limni tanlang → **Saqlash**.
 4. Mahsulot tugasa, uni o'chirmang: ro'yxatdagi tugmani o'chiring. Ikki variant chiqadi:
-   - **Faqat bugunga** — ertaga o'zi qaytadi (Toshkent vaqti bilan yarim tunda);
-   - **Butunlay yashirish** — o'zingiz yoqmaguningizcha yashirin.
+   - **Faqat bugunga**: ertaga o'zi qaytadi (Toshkent vaqti bilan yarim tunda);
+   - **Butunlay yashirish**: o'zingiz yoqmaguningizcha yashirin.
 
 **Maslahat:** rasm juda muhim. Mahsulotni kunduzi, deraza yonida suratga oling.
 
@@ -39,7 +39,7 @@ Mijozlar sizning botingizni, nomingizni va rangingizni ko'radi.
 
 1. **Mening do'konim → Sozlamalar → Kuryerlar → Kuryerni taklif qilish.**
 2. **Telegram'da yuborish** ni bosing va kuryeringizni tanlang (yoki havolani nusxa oling).
-3. Kuryer havolani ochadi — u **Zumda kuryer botida** ochiladi. **Start** ni bosib, telefon raqamini
+3. Kuryer havolani ochadi: u **Zumda kuryer botida** ochiladi. **Start** ni bosib, telefon raqamini
    yuboradi.
 4. Bot sizga yozadi: «… kuryer bo'lish taklifini qabul qildi». **✅ Tasdiqlash** ni bosing
    (yoki ilovada **Kuryerlar → Tasdiqlashni kutmoqda → Tasdiqlash**).
@@ -47,7 +47,7 @@ Mijozlar sizning botingizni, nomingizni va rangingizni ko'radi.
 Havola 48 soat va faqat bir marta ishlaydi. Har bir kuryerga yangi havola yarating.
 
 **Kuryerning ish kunlari.** Ro'yxatda har bir kuryer ostida **Du … Ya** tugmalari bor: dam olish
-kunini bosib o'chiring. **Bugun ishlamaydi** — faqat bugunga o'chiradi, ertaga o'zi qaytadi.
+kunini bosib o'chiring. **Bugun ishlamaydi**: faqat bugunga o'chiradi, ertaga o'zi qaytadi.
 Kuryer ishga chiqqanda o'zi **Smenada** ni yoqadi; ro'yxatda yashil nuqta ko'rinadi.
 Buyurtmani faqat bugun ishlaydigan va smenadagi kuryerga berish mumkin.
 
@@ -57,11 +57,11 @@ pulini ko'rasiz.
 Kuryerni o'chirish: ro'yxatdagi 🗑 tugmasi.
 
 **Tuman tarmog'i.** O'z kuryeringiz bo'sh bo'lmasa (yo'q, dam olishda yoki smenada emas),
-**Pul keldi — qabul qilish** dan keyin buyurtma tumanning bo'sh kuryerlariga yuboriladi. Birinchi bo'lib
+**Pul keldi, qabul qilish** dan keyin buyurtma tumanning bo'sh kuryerlariga yuboriladi. Birinchi bo'lib
 **🙋 Olaman** ni bosgan kuryer oladi, bot sizga uning ismini yozadi. U mijoz manzilini faqat
-buyurtmani olgandan keyin ko'radi. Pul allaqachon sizning kartangizda — kuryer pul olmaydi.
+buyurtmani olgandan keyin ko'radi. Pul allaqachon sizning kartangizda: kuryer pul olmaydi.
 Yetkazish narxi hozircha sizda qoladi.
-- O'chirish: **Sozlamalar → Tuman tarmog'i → Kuryerlarim band bo'lsa — tuman tarmog'iga berish**.
+- O'chirish: **Sozlamalar → Tuman tarmog'i → Kuryerlarim band bo'lsa, tuman tarmog'iga berish**.
 - Qo'lda berish: buyurtmada **Kuryer tayinlash → Tuman tarmog'i kuryeri**.
 - 10 daqiqada hech kim olmasa, bot sizga yozadi: o'z kuryeringizni tayinlang yoki o'zingiz olib boring.
 
@@ -71,8 +71,8 @@ Yangi buyurtma kelganda bot sizga xabar yuboradi: tarkibi, summasi, manzili, mo'
 hamda **💳 Kartaga o'tkazma kutilmoqda**. Mijozga bot kartangiz raqami va summani yozadi.
 
 Mijozlar **faqat kartangizga o'tkazma** bilan, **ish boshlanishidan oldin** to'laydi:
-1. Mijoz pulni o'tkazadi va ilovada **O'tkazdim** ni bosadi — bot sizga «Mijoz o'tkazdi» deb yozadi.
-2. Kartangizni tekshiring. Pul kelgan bo'lsa — **💳 Pul keldi — qabul qilish**. Buyurtma to'langan va
+1. Mijoz pulni o'tkazadi va ilovada **O'tkazdim** ni bosadi: bot sizga «Mijoz o'tkazdi» deb yozadi.
+2. Kartangizni tekshiring. Pul kelgan bo'lsa: **💳 Pul keldi, qabul qilish**. Buyurtma to'langan va
    qabul qilingan bo'ladi, mijozga «To'lov keldi, buyurtmangiz qabul qilindi» boradi.
 3. Pul kelmagan bo'lsa, tayyorlamang. Kerak bo'lsa **❌ Bekor qilish**.
 
@@ -82,7 +82,7 @@ Keyin har bir bosishda mijozga xabar boradi:
 Keyin ilovada **Mening do'konim → Buyurtmalar → Kuryer tayinlash** ni bosing va kuryerni tanlang.
 
 - Kuryerga Zumda kuryer botidan buyurtma kartasi keladi (sarlavhada do'kon nomi): manzil, xarita,
-  mijoz telefoni va **«Oldindan to'langan — mijozdan pul olmang»**.
+  mijoz telefoni va **«Oldindan to'langan, mijozdan pul olmang»**.
 - Buyurtma tayyor bo'lganda kuryer **🚚 Oldim**, eshik oldida **🏁 Yetkazdim** ni bosadi.
 - Mijoz kuryer ismini ko'radi: «Buyurtmangizni Jasur olib kelmoqda».
 
@@ -100,22 +100,22 @@ Bekor qilish: **❌ Bekor qilish** (ilovada sababini yozish mumkin).
 
 ### 6. Oziq-ovqat do'koni uchun
 
-- Tortib sotiladigan mahsulotda o'lchov **kg** ni tanlang, narxi — **1 kg narxi**.
+- Tortib sotiladigan mahsulotda o'lchov **kg** ni tanlang, narxi: **1 kg narxi**.
 - **Sotish qadami**: 100 g, 250 g, 500 g yoki 1 kg. Mijoz shu qadam bilan qo'shadi (1,5 kg va h.k.).
-- Bugun tugagan mahsulot — **Faqat bugunga** (2-bo'limga qarang).
+- Bugun tugagan mahsulot: **Faqat bugunga** (2-bo'limga qarang).
 
 ### 7. Vaqtincha buyurtma olmaslik
 
-**Mening do'konim → Sozlamalar → Buyurtma qabul qilish** — o'chiring. Keyin yana yoqing.
+**Mening do'konim → Sozlamalar → Buyurtma qabul qilish**: o'chiring. Keyin yana yoqing.
 Shu yerda nom, logotip, rang, yetkazish narxi va radiusni ham o'zgartirasiz.
 
 **Bot rasmi va tavsifi avtomatik.** Botingiz rasmini Zumda o'zi qo'yadi: logotipingiz (logotip
-bo'lmasa — do'kon nomi rangingizda) va burchakda Zumda belgisi. Logotip, nom yoki rangni
+bo'lmasa: do'kon nomi rangingizda) va burchakda Zumda belgisi. Logotip, nom yoki rangni
 o'zgartirsangiz, rasm ham yangilanadi. Bot tavsifi ham avtomatik: do'kon nomi va «Zumda asosida
 ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
 
-**Ish vaqti** har kun uchun alohida: kunning tugmasi — ishlaymiz yoki dam olish, yonida soat.
-**Hamma kunlarga dushanbadagidek** — dushanba vaqtini barcha kunlarga ko'chiradi.
+**Ish vaqti** har kun uchun alohida: kunning tugmasi, ishlaymiz yoki dam olish, yonida soat.
+**Hamma kunlarga dushanbadagidek**: dushanba vaqtini barcha kunlarga ko'chiradi.
 
 ### 8. Mijozlarni jalb qilish
 
@@ -129,10 +129,10 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
 
 - Zumda botida tumaningiz do'konlari bo'yicha umumiy qidiruv bor. Mijoz mahsulotni topadi va
   **sizning do'koningizdan** buyurtma beradi.
-- Vitrinaga qo'shilish — Zumda bilan alohida kelishuv. Komissiya faqat vitrina orqali kelgan
-  buyurtmadagi tovarlardan olinadi. O'z botingiz orqali sotuv — komissiyasiz.
+- Vitrinaga qo'shilish: Zumda bilan alohida kelishuv. Komissiya faqat vitrina orqali kelgan
+  buyurtmadagi tovarlardan olinadi. O'z botingiz orqali sotuv: komissiyasiz.
 - Vitrinadan kelgan buyurtmada **Zumda** belgisi va komissiya summasi ko'rinadi. Buyurtma, kuryer
-  va holatlar — odatdagidek.
+  va holatlar: odatdagidek.
 - Holatingiz: **Sozlamalar → Zumda vitrinasi**.
 
 
@@ -144,18 +144,18 @@ do'konni ulashda yoziladi. **Kartasiz buyurtma qabul qilinmaydi**: mijoz «Tez o
 qabul qila boshlaydi» ni ko'radi.
 
 **Kartalar.** **Sozlamalar → Kartalar** da xohlagancha karta qo'shasiz (20 tagacha). Mijozlarga
-faqat **To'lov uchun** belgisi bor karta ko'rsatiladi. Boshqa kartaga o'tish — uning ostidagi
+faqat **To'lov uchun** belgisi bor karta ko'rsatiladi. Boshqa kartaga o'tish: uning ostidagi
 **Shu kartaga to'lansin**; istalgan vaqtda almashtirish mumkin. Oldingi buyurtmalar o'sha paytda
-ko'rsatilgan kartani saqlaydi. To'lov uchun kartani o'chirib bo'lmaydi — avval boshqasini tanlang.
-Click/Payme yo'q — pul to'g'ridan-to'g'ri sizga.
+ko'rsatilgan kartani saqlaydi. To'lov uchun kartani o'chirib bo'lmaydi: avval boshqasini tanlang.
+Click/Payme yo'q: pul to'g'ridan-to'g'ri sizga.
 
 **Mening do'konim → Pul** (bugun, 7 kun, shu oy):
-- **Tushum**: tovarlar va yetkazish alohida, **o'tkazmalar orqali olingan** summa. Idish garovi —
+- **Tushum**: tovarlar va yetkazish alohida, **o'tkazmalar orqali olingan** summa. Idish garovi:
   alohida, tushum emas. Vitrina buyurtmalaridan Zumda komissiyasi.
-- **Mijozlar o'tkazdi — kartani tekshiring** — mijoz **O'tkazdim** ni bosgan buyurtmalar. Pul
-  kelgach **Pul keldi — qabul qilish** ni bosing.
-- **Mijozlarga qaytarish** — to'langan, keyin bekor qilingan buyurtma. Qaytarganda **Qaytardim**.
-- **Excel uchun hisobot** — bot sizga davr buyurtmalarini CSV fayl qilib yuboradi
+- **Mijozlar o'tkazdi, kartani tekshiring**: mijoz **O'tkazdim** ni bosgan buyurtmalar. Pul
+  kelgach **Pul keldi, qabul qilish** ni bosing.
+- **Mijozlarga qaytarish**: to'langan, keyin bekor qilingan buyurtma. Qaytarganda **Qaytardim**.
+- **Excel uchun hisobot**: bot sizga davr buyurtmalarini CSV fayl qilib yuboradi
   (Excel va Google Sheets'da ochiladi).
 
 ---
@@ -165,8 +165,8 @@ Click/Payme yo'q — pul to'g'ridan-to'g'ri sizga.
 1. Do'kondan olingan havolani oching → **Zumda kuryer boti** → **Start** → **📱 Raqamni yuborish**.
 2. Do'kon tasdiqlashini kuting: bot yozadi.
 3. Ishga chiqqanda **🚚 Yetkazishlarim** → **Smenadaman** ni yoqing. Smena yarim tunda tugaydi.
-4. Buyurtma kartasi botga keladi. Tayyor bo'lganda **🚚 Oldim**, eshik oldida — **🏁 Yetkazdim**.
+4. Buyurtma kartasi botga keladi. Tayyor bo'lganda **🚚 Oldim**, eshik oldida: **🏁 Yetkazdim**.
 5. Mijoz do'kon kartasiga oldindan to'lagan: **mijozdan pul olmang**.
 6. **Tuman tarmog'i** (xohishga ko'ra): botda **✅ Ha, tuman uchun** yoki ilovada **Tuman
-   buyurtmalarini olaman**. Smenada bo'lsangiz, yaqindagi buyurtmalar keladi: **🙋 Olaman** —
+   buyurtmalarini olaman**. Smenada bo'lsangiz, yaqindagi buyurtmalar keladi: **🙋 Olaman**,
    birinchi bosgan oladi. Bir vaqtda bitta tarmoq buyurtmasi.
