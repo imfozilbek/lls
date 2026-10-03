@@ -1,6 +1,6 @@
 import { encode } from "uqr"
 
-import { readableInk } from "./brand.js"
+import { ZUMDA_NAME, readableInk } from "./brand.js"
 import { hexToRgbChannels } from "./format.js"
 
 /** 4:5: fits an A4 print and an Instagram post. */
@@ -151,7 +151,7 @@ function drawFooter(ctx: CanvasRenderingContext2D, input: PosterInput, top: numb
     ctx.fillText(`t.me/${input.botUsername}`, WIDTH / 2, top + 110)
     ctx.fillStyle = MUTED
     ctx.font = `500 24px ${FONT}`
-    ctx.fillText("powered by LLS", WIDTH / 2, HEIGHT - 40)
+    ctx.fillText(`powered by ${ZUMDA_NAME}`, WIDTH / 2, HEIGHT - 40)
 }
 
 function render(input: PosterInput, logo: HTMLImageElement | null): HTMLCanvasElement {

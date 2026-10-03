@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-    /** Worker URL, e.g. https://lls-api.<account>.workers.dev. Defaults to wrangler dev. */
+    /** Worker URL, e.g. https://zumda-worker.<account>.workers.dev. Defaults to wrangler dev. */
     readonly VITE_API_URL?: string
 }
 

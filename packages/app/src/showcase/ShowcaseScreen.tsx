@@ -352,7 +352,7 @@ function ShopList({
 }
 
 /**
- * The LLS showcase in the LLS bot: one search across the shops of the district, and the list
+ * The Zumda showcase in the Zumda bot: one search across the shops of the district, and the list
  * of shops. A tap opens that shop's own storefront; the order goes to that one shop.
  */
 export function ShowcaseScreen({ onOpen }: { onOpen(slug: string): void }): React.JSX.Element {

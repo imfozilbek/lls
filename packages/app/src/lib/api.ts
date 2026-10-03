@@ -42,7 +42,7 @@ let courierBot = false
 
 /**
  * Every request carries the shop, so the Worker verifies with the right bot token: the shop's own
- * bot, or the LLS bot when the shop was opened from the showcase (`viaShowcase`).
+ * bot, or the Zumda bot when the shop was opened from the showcase (`viaShowcase`).
  */
 export function setShop(slug: string | null, options: { viaShowcase?: boolean } = {}): void {
     currentShop = slug
@@ -50,7 +50,7 @@ export function setShop(slug: string | null, options: { viaShowcase?: boolean } 
     courierBot = false
 }
 
-/** Opened from the LLS courier bot: no shop; the courier bot's token signed the request. */
+/** Opened from the Zumda courier bot: no shop; the courier bot's token signed the request. */
 export function setCourierBot(): void {
     currentShop = null
     viaShowcase = false
@@ -264,7 +264,7 @@ export const api = {
         ): Promise<CourierDTO> => request("PATCH", `/api/owner/couriers/${id}`, patch),
     },
 
-    /** The LLS courier bot's screen (`setCourierBot`): every shop the courier works for. */
+    /** The Zumda courier bot's screen (`setCourierBot`): every shop the courier works for. */
     courier: {
         home: (): Promise<CourierHomeDTO> => request("GET", "/api/courier/home"),
         setStatus: (id: string, status: "picked_up" | "delivered"): Promise<OrderDTO> =>

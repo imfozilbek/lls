@@ -7,7 +7,7 @@ import type { ProductDTO } from "@zumda/core"
 export const MAX_STEPS = 99
 /** Upper bound for anything read back from storage (grams of the largest step). */
 const MAX_STORED = 1_000_000
-const STORAGE_PREFIX = "lls:cart:"
+const STORAGE_PREFIX = "zumda:cart:"
 
 /**
  * Only ids and quantities are stored: pieces, or grams for weight items.

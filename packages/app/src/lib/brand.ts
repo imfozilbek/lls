@@ -20,8 +20,11 @@ export function readableInk(channels: string): string {
     return contrastWhite >= contrastInk ? WHITE : INK
 }
 
-/** LLS's own color: the showcase and onboarding, where no shop leads. */
-export const LLS_BRAND_COLOR = "#0ea5e9"
+/** The product's name: the showcase, the courier screen, the poster footer. */
+export const ZUMDA_NAME = "Zumda"
+
+/** Zumda's own color: the showcase and onboarding, where no shop leads. */
+export const ZUMDA_BRAND_COLOR = "#0ea5e9"
 
 /** Paints the shop's color into CSS variables and Telegram's chrome. */
 export function applyBrand(hex: string): void {
@@ -46,7 +49,7 @@ export function brandInkHex(): string {
     return channels === WHITE || channels === "" ? "#ffffff" : "#111827"
 }
 
-/** Shop colors owners can pick: the LLS palette, all readable with white or dark text. */
+/** Shop colors owners can pick: the Zumda palette, all readable with white or dark text. */
 export const BRAND_SWATCHES = [
     "#0ea5e9",
     "#0284c7",

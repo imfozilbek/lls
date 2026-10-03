@@ -120,9 +120,9 @@ export interface LaunchParams {
     /** Shop slug from `?shop=` or `startapp=shop_<slug>`. */
     shop: string | null
     onboarding: boolean
-    /** `?mode=courier`: the courier's deliveries across shops, opened from the LLS courier bot. */
+    /** `?mode=courier`: the courier's deliveries across shops, opened from the Zumda courier bot. */
     courier: boolean
-    /** `?mode=market`: the LLS showcase, opened from the LLS bot. */
+    /** `?mode=market`: the Zumda showcase, opened from the Zumda bot. */
     market: boolean
 }
 

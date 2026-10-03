@@ -15,7 +15,7 @@ import { Wizard } from "./Wizard.js"
 
 import type { ShopOwnerDTO } from "@zumda/core"
 
-/** LLS's own color: onboarding happens in the platform bot, not in a shop. */
+/** Zumda's own color: onboarding happens in the platform bot, not in a shop. */
 const PLATFORM_COLOR = "#0ea5e9"
 
 function ShopRow({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {

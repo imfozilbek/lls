@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
+import { ZUMDA_NAME } from "../lib/brand.js"
 import { formatMoney, formatQuantity, formatTime } from "../lib/format.js"
 import { usePagedList } from "../lib/paged.js"
 import { haptic } from "../lib/telegram.js"
@@ -291,7 +292,7 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
             {order.channel === OrderChannel.MARKETPLACE ? (
                 <p className="mt-2 flex items-center gap-2 text-sm text-tg-subtitle">
                     <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs font-bold text-tg-text">
-                        LLS
+                        {ZUMDA_NAME}
                     </span>
                     {fill(t.owner.showcaseOrder, { sum: formatMoney(order.commission, language) })}
                 </p>
