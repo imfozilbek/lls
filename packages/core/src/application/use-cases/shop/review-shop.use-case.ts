@@ -10,6 +10,8 @@ export interface ReviewShopInput {
     actorTelegramId: number
     businessId: string
     decision: "approve" | "reject"
+    /** Why an application is rejected: the owner reads it and fixes the application. */
+    reason?: string
 }
 
 /** A platform admin approves or rejects a new shop. */
@@ -28,8 +30,26 @@ export class ReviewShopUseCase {
         if (input.decision === "approve") {
             business.approve()
         } else {
-            business.disable()
+            business.reject(input.reason, this.clock.now())
         }
+        await this.businesses.save(business)
+        return toShopOwnerDTO(business, this.clock.now())
+    }
+}
+
+/** The owner fixed a rejected application and sends it to the admins again. */
+export class ResubmitShopUseCase {
+    constructor(
+        private readonly businesses: BusinessRepository,
+        private readonly clock: Clock,
+    ) {}
+
+    async execute(input: { ownerTelegramId: number; businessId: string }): Promise<ShopOwnerDTO> {
+        const business = await requireBusiness(this.businesses, input.businessId)
+        if (!business.isOwnedBy(input.ownerTelegramId)) {
+            throw ForbiddenError.notOwner(business.id)
+        }
+        business.resubmit()
         await this.businesses.save(business)
         return toShopOwnerDTO(business, this.clock.now())
     }

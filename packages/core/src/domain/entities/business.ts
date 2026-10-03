@@ -22,6 +22,7 @@ const MAX_RADIUS_METERS = 100_000
 /** A commission above 50% would be a mistake, not a deal. */
 const MAX_COMMISSION_BPS = 5_000
 const MAX_BOTTLE_DEPOSIT = 1_000_000
+const REVIEW_NOTE_MAX = 300
 
 export interface ShopBot {
     id: number
@@ -77,8 +78,17 @@ export interface BusinessProps {
      * On unless the owner switched it off.
      */
     networkDelivery?: boolean
+    /** A platform admin rejected the application: when, and why (the owner sees it). */
+    rejectedAt?: Date
+    reviewNote?: string
     createdAt: Date
     updatedAt: Date
+}
+
+/** Why and when an application was rejected; the owner fixes it and applies again. */
+export interface Rejection {
+    at: Date
+    reason?: string
 }
 
 export interface RegisterBusinessInput {
@@ -188,6 +198,12 @@ export class Business {
     get features(): Feature[] {
         return [...this.props.features]
     }
+    /** Set only for a rejected application, never for a live shop an admin turned off. */
+    get rejection(): Rejection | undefined {
+        return this.props.rejectedAt
+            ? { at: this.props.rejectedAt, reason: this.props.reviewNote }
+            : undefined
+    }
     get districtId(): string | undefined {
         return this.props.districtId
     }
@@ -241,11 +257,37 @@ export class Business {
             throw BusinessRuleViolationError.shopAlreadyActive(this.props.id)
         }
         this.props.status = BusinessStatus.ACTIVE
+        this.props.rejectedAt = undefined
+        this.props.reviewNote = undefined
         this.touch()
     }
 
+    /** An admin turns a live shop off (or a shop back off): not a rejected application. */
     disable(): void {
         this.props.status = BusinessStatus.DISABLED
+        this.touch()
+    }
+
+    /** An admin says no to an application, with a reason the owner reads. */
+    reject(reason: string | undefined, now: Date): void {
+        if (!this.isPending()) {
+            this.disable()
+            return
+        }
+        this.props.status = BusinessStatus.DISABLED
+        this.props.rejectedAt = now
+        this.props.reviewNote = optionalText("reason", reason, REVIEW_NOTE_MAX)
+        this.touch()
+    }
+
+    /** The owner fixed what the admin asked and applies again. */
+    resubmit(): void {
+        if (this.props.status !== BusinessStatus.DISABLED || !this.props.rejectedAt) {
+            throw BusinessRuleViolationError.notRejected(this.props.id)
+        }
+        this.props.status = BusinessStatus.PENDING
+        this.props.rejectedAt = undefined
+        this.props.reviewNote = undefined
         this.touch()
     }
 

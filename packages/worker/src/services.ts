@@ -36,6 +36,7 @@ import {
     ListMyManagedBotsUseCase,
     ResolveCustomerUseCase,
     SaveContactUseCase,
+    ResubmitShopUseCase,
     ReviewShopUseCase,
     SearchShowcaseUseCase,
     SetMarketplaceTermsUseCase,
@@ -84,6 +85,7 @@ export interface UseCases {
     choosePaymentCard: ChoosePaymentCardUseCase
     removePayoutCard: RemovePayoutCardUseCase
     reviewShop: ReviewShopUseCase
+    resubmitShop: ResubmitShopUseCase
     getShopBySlug: GetShopBySlugUseCase
     listMyShops: ListMyShopsUseCase
     updateShop: UpdateShopUseCase
@@ -176,7 +178,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         networkOffers: new D1NetworkOfferRepository(env.DB),
         managedBots,
         useCases: {
-            registerShop: new RegisterShopUseCase(businesses, clock, cards, managedBots),
+            registerShop: new RegisterShopUseCase(businesses, clock, cards, managedBots, districts),
             managedBotChanged: new ManagedBotChangedUseCase(businesses, managedBots, clock),
             listMyManagedBots: new ListMyManagedBotsUseCase(managedBots),
             listPayoutCards: new ListPayoutCardsUseCase(cardBook),
@@ -184,6 +186,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             choosePaymentCard: new ChoosePaymentCardUseCase(cardBook),
             removePayoutCard: new RemovePayoutCardUseCase(cardBook),
             reviewShop: new ReviewShopUseCase(businesses, admins, clock),
+            resubmitShop: new ResubmitShopUseCase(businesses, clock),
             getShopBySlug: new GetShopBySlugUseCase(businesses, clock),
             listMyShops: new ListMyShopsUseCase(businesses, clock),
             updateShop: new UpdateShopUseCase(businesses, clock, districts),

@@ -61,6 +61,8 @@ export interface ShopOwnerDTO extends ShopPublicDTO {
     networkDelivery: boolean
     /** The shop's location is inside a district of the delivery network. */
     inDistrict: boolean
+    /** A rejected application: why, so the owner can fix it and apply again. */
+    rejection?: { at: string; reason?: string }
     createdAt: string
 }
 
@@ -116,6 +118,10 @@ export function toShopOwnerDTO(business: Business, now: Date): ShopOwnerDTO {
         },
         networkDelivery: business.networkDelivery,
         inDistrict: business.districtId !== undefined,
+        rejection: business.rejection && {
+            at: business.rejection.at.toISOString(),
+            reason: business.rejection.reason,
+        },
         createdAt: business.createdAt.toISOString(),
     }
 }

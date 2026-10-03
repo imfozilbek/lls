@@ -324,7 +324,7 @@ describe("inside a shop", () => {
                 min_order, delivery_radius_m, working_hours, features, accepting_orders,
                 bottle_deposit, marketplace_commission_bps, marketplace_joined_at,
                 created_at, updated_at, payout_card_number, payout_card_holder, district_id,
-                network_delivery, payment_card_id, bot_source
+                network_delivery, payment_card_id, bot_source, rejected_at, review_note
              FROM businesses WHERE slug = ?`,
         )
             .bind(slug)
