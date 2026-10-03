@@ -6,6 +6,7 @@ import { escapeHtml } from "../telegram/gateway.js"
 import { Notifier, courierAppUrl } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 import { callbackErrorText, isStart, openButton, toTelegramUser } from "../telegram/updates.js"
+import { sendWelcome, welcomePictureUrl } from "../telegram/welcome.js"
 
 import type { Services } from "../services.js"
 import type { NetworkCallback } from "../telegram/format.js"
@@ -87,27 +88,30 @@ async function savePhone(services: Services, message: IncomingMessage, t: BotTex
 
 /** Plain `/start`: the shops they deliver for and the button to the courier screen. */
 async function greet(services: Services, message: IncomingMessage, t: BotTexts): Promise<void> {
-    const token = services.env.COURIER_BOT_TOKEN
-    const chatId = message.chat.id
+    const origin = services.env.APP_ORIGIN
+    const welcome = {
+        token: services.env.COURIER_BOT_TOKEN,
+        chatId: message.chat.id,
+        pictureUrl: welcomePictureUrl(origin, "courier"),
+    }
     const links = message.from ? await services.couriers.listByPerson(message.from.id) : []
     const active = links.filter((link) => link.isActive)
     if (active.length === 0) {
         const pending = links.find((link) => link.isPending)
         const shop = pending ? await services.businesses.findById(pending.businessId) : null
-        const text = shop
+        const html = shop
             ? fill(t.courierPending, { shop: `<b>${escapeHtml(shop.name)}</b>` })
             : t.courierBotWelcome
-        await services.telegram.sendMessage(token, chatId, text)
+        await sendWelcome(services.telegram, { ...welcome, html })
         return
     }
     const shops = await Promise.all(active.map((l) => services.businesses.findById(l.businessId)))
     const names = shops.flatMap((shop) => (shop ? [`<b>${escapeHtml(shop.name)}</b>`] : []))
-    await services.telegram.sendMessage(
-        token,
-        chatId,
-        fill(t.courierBotHome, { shops: names.join(", ") }),
-        { keyboard: openButton(t.myDeliveries, courierAppUrl(services.env.APP_ORIGIN)) },
-    )
+    await sendWelcome(services.telegram, {
+        ...welcome,
+        html: fill(t.courierBotHome, { shops: names.join(", ") }),
+        options: { keyboard: openButton(t.myDeliveries, courierAppUrl(origin)) },
+    })
 }
 
 export async function handleCourierBotMessage(

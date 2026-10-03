@@ -28,6 +28,7 @@ import {
     readUpdate,
     toTelegramUser,
 } from "../telegram/updates.js"
+import { sendWelcome, welcomePictureUrl } from "../telegram/welcome.js"
 
 import { handleCourierBotCallback, handleCourierBotMessage } from "./courier-bot.js"
 import { handleDistrictCommand, handleNetworkCommand } from "./district-commands.js"
@@ -393,12 +394,18 @@ async function handlePlatformMessage(
     }
     if (isStart(message.text)) {
         const origin = services.env.APP_ORIGIN
-        await services.telegram.sendMessage(token, message.chat.id, texts.platformWelcome, {
-            keyboard: {
-                inline_keyboard: [
-                    [{ text: texts.openShowcase, web_app: { url: showcaseAppUrl(origin) } }],
-                    [{ text: texts.connectShop, web_app: { url: onboardingAppUrl(origin) } }],
-                ],
+        await sendWelcome(services.telegram, {
+            token,
+            chatId: message.chat.id,
+            pictureUrl: welcomePictureUrl(origin, "platform"),
+            html: texts.platformWelcome,
+            options: {
+                keyboard: {
+                    inline_keyboard: [
+                        [{ text: texts.openShowcase, web_app: { url: showcaseAppUrl(origin) } }],
+                        [{ text: texts.connectShop, web_app: { url: onboardingAppUrl(origin) } }],
+                    ],
+                },
             },
         })
     }

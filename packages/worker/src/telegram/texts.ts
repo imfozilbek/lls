@@ -54,9 +54,9 @@ const BASE = {
         openMenu: "🛒 Katalogni ochish",
         phoneSaved: "✅ Telefon raqamingiz saqlandi.",
         platformWelcome:
-            "Zumda: tumaningiz do'konlari bir joyda. Mahsulotni qidiring va do'kondan buyurtma bering.\n\nDo'kon egasimisiz? O'z buyurtma botingizni ulang.",
-        connectShop: "🏪 Do'konni ulash",
-        openShowcase: "🔍 Do'konlar va mahsulotlar",
+            "<b>Zumda: tumaningizdagi do'konlar, oshxonalar va xizmatlar bir joyda.</b>\n\nQidiring, buyurtma bering: eshigingizgacha olib kelamiz.\n\nBiznesingiz bormi? O'z buyurtma botingizni ulang.",
+        connectShop: "🏪 Biznesimni ulash",
+        openShowcase: "🔍 Qidirish va buyurtma berish",
         showcaseOrder: "🛍 Zumda vitrinasidan · komissiya {rate}%: {sum}",
         showcaseJoined:
             "🛍 {shop} Zumda vitrinasiga qo'shildi. Mijozlar uni Zumda botida topadi.\nKomissiya: vitrina orqali sotilgan tovarlarning {rate}%. O'z botingiz orqali sotuvdan komissiya olinmaydi.",
@@ -97,7 +97,7 @@ const BASE = {
         callbackOutdated: "Holat allaqachon o'zgargan",
         callbackForbidden: "Bu amal siz uchun emas",
         courierBotWelcome:
-            "👋 Bu Zumda kuryer boti: do'konlar buyurtmalari shu yerga keladi. Ishni boshlash uchun do'kon egasidan taklif havolasini so'rang.",
+            "<b>Zumda kuryer boti.</b>\n\nTumandagi do'kon, oshxona va xizmatlar buyurtmalari shu yerga keladi. Ishni boshlash uchun biznes egasidan taklif havolasini so'rang.",
         courierBotHome: "🚚 Siz kuryersiz: {shops}. Smenaga chiqing, buyurtmalar shu yerga keladi.",
         courierPending:
             "⏳ {shop} egasi sizni tasdiqlashini kuting. Tasdiqlansa, shu yerga yozamiz.",
