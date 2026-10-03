@@ -9,7 +9,7 @@ import { confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { AlertIcon, CheckIcon, PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import { CheckIcon, PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusHero, StatusTimeline } from "../ui/order-status.js"
 import { CardBlock, PaymentLine } from "../ui/payment.js"
@@ -89,15 +89,6 @@ function Payment({
                     className="rounded-control bg-tg-secondary px-4 py-3 text-base"
                 />
             )}
-            {rejected ? (
-                <div className="flex animate-rise gap-3 rounded-control bg-warning/15 px-4 py-3">
-                    <AlertIcon size={20} className="mt-0.5 shrink-0 text-warning" />
-                    <div>
-                        <p className="font-semibold">{t.pay.rejectedTitle}</p>
-                        <p className="text-sm">{t.pay.rejectedText}</p>
-                    </div>
-                </div>
-            ) : null}
             {unpaid && card ? <CardBlock card={card} total={order.total} /> : null}
             {unpaid ? (
                 <Button
