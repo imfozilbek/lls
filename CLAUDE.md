@@ -50,7 +50,7 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
 - **Bots only notify; the work is done in the Mini App (owner's decision, October 2026).** Every
   bot has exactly one command, `/start` (the deploy sets Zumda's three, `connectShopBot` sets a
   shop bot's); invite links are `/start` payloads. A message may carry buttons that act at once
-  (`p:`, `a:`, `x:`, `k:`, `n:`, `net:`, `r:`) and a button that opens the Mini App on what it is
+  (`p:` asks, `pc:`/`pn:` answer, `a:`, `x:`, `k:`, `n:`, `net:`, `r:`) and a button that opens the Mini App on what it is
   about (`telegram/app-links.ts`: an order `&order=<id>`, «Platforma» `&admin=…`). Any other text
   gets one line («ish esa ilovada») with the button to the app. Never add a bot command: add a
   screen.
@@ -93,6 +93,17 @@ cover each one's whole process; what exactly comes from the meeting with them.
   «Я перевёл» → the owner sees the money and presses «Деньги пришли, принять» (paid and
   accepted in one tap). An order is never accepted unpaid (`PAYMENT_REQUIRED`). No cash: couriers
   carry no money, there is no courier cash, no handovers, no debts.
+- **The transfer screenshot (owner's decision, October 2026).** «O'tkazdim» carries the
+  screenshot of the transfer (`RECEIPT_REQUIRED` without it); it is a hint, never proof: the
+  money on the card is. It is stored privately in R2 (`receipts/`, never under the public
+  `/img`), shown only to the order's customer and the shop's owner
+  (`GET /api/orders/:id/receipt`), and sent to the owner as a photo with the sum and the card
+  tail. Its SHA-256 warns when the same file came before (this shop, or this customer anywhere).
+  «Pul keldi» always asks first (sheet in the app; `p:` → «Ha, … keldi» `pc:` / «Yo'q, kelmadi»
+  `pn:` in the bot). «Pul kelmadi» puts the order back to unpaid, counts it
+  (`transfer_rejections`, shown to the owner on the customer's next transfers) and asks the
+  customer to send again. No AI check of pictures: a fake or edited screenshot cannot be told
+  reliably.
 - **Many cards, one shown.** A shop keeps as many cards as it needs (up to 20) and chooses the
   **payment card** customers are shown; it switches it at any moment (owner's decision). Every
   order keeps the card it was shown (`payment_card_*` snapshot). The payment card is never
@@ -373,7 +384,7 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through Z
 | District | id, name, center (lat, lng), radius, wait_minutes: a circle of the delivery network |
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until: the person's link to one shop (`network`: took a network order of it) |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer: `cash` only in old rows; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; cash courier: history only), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer: `cash` only in old rows; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash courier: history only), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), no code uses it since payments became transfer-only |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
@@ -487,8 +498,9 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 
 **Notifications (no WebSockets):**
 - New order → message to the owner «💳 Ждём перевод» with «Деньги пришли, принять» + «Отменить»;
-  the customer gets the shop's card and the sum. «Я перевёл» → the owner hears «Клиент перевёл».
-  After that the owner's button is the **next allowed status**.
+  the customer gets the shop's card and the sum. «Я перевёл» with the screenshot → the owner gets
+  the picture, the sum, the card tail, warnings and «Ha, … keldi» / «Yo'q, kelmadi». After that
+  the owner's button is the **next allowed status**.
 - Courier assigned → order card from the Zumda courier bot, titled with the shop's name (address,
   landmark, map, phone, «Оплачено заранее: денег не брать», empty bottles) with "Забрал", then
   one "Доставил".
@@ -508,9 +520,10 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   Telegram's `language_code` and old `ru` rows read as Uzbek.
 - Address: Telegram location + "ориентир" (landmark) field
 - Phone: Telegram "share contact" button, never typed by hand
-- Payment: only a transfer to the shop's card, shown at checkout with a copy button and the sum;
-  the customer transfers after placing and presses «Я перевёл»; the owner confirms by hand
-  («Деньги пришли, принять»), then the shop starts
+- Payment: only a transfer to the shop's card; checkout tells the sum, the order screen shows the
+  card with a copy button; the customer transfers after placing and presses «Я перевёл» with the
+  screenshot; the owner confirms by hand («Деньги пришли, принять», asked once more), then the
+  shop starts
 
 **User Flow:**
 - Customer: Open shop link → Browse → Cart → Order → Transfer → «Я перевёл» → Track
@@ -818,8 +831,9 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Customer order placement (contact + location + landmark)
 - [ ] Owner notification with buttons
 - [ ] Order status updates → customer notification
-- [ ] Money: card at checkout → «Я перевёл» → «Деньги пришли, принять» → one «Доставил»;
-      cancel after paid → «Вернул»; a shop without a card takes no orders
+- [ ] Money: card on the order screen → «Я перевёл» with the screenshot → «Деньги пришли,
+      принять» (asked once more) → one «Доставил»; «Pul kelmadi» → sent again; a reused
+      screenshot warns; cancel after paid → «Вернул»; a shop without a card takes no orders
 - [ ] Courier invite → assign → picked up → delivered
 - [ ] District delivery: invite → accept in the courier bot → join the network → an order of a
       point without couriers taken by a network courier → paid before cooking, no cash
