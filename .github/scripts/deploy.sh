@@ -215,6 +215,37 @@ telegram() {
     jq -e '.ok' <<<"$result" >/dev/null || fail "Telegram ${method} failed: $(jq -r '.description' <<<"$result")"
 }
 
+# The empty-chat description (512 max) and the profile line (120 max) of the Zumda bots: Uzbek,
+# no em dash. Zumda serves shops, eateries and services.
+read -r -d '' PLATFORM_DESCRIPTION <<'TEXT' || true
+Zumda: tumaningizdagi do'konlar, oshxonalar va xizmatlar bir joyda.
+
+🔎 Kerakli narsani qidiring
+🛒 Buyurtma bering
+🚚 Kuryer eshigingizgacha olib keladi
+
+Biznesingiz bormi? O'z buyurtma botingizni Zumda orqali ulang.
+TEXT
+readonly PLATFORM_DESCRIPTION
+readonly PLATFORM_SHORT_DESCRIPTION="Tumaningizdagi do'konlar, oshxonalar va xizmatlar bir joyda. Buyurtma bering, eshigingizgacha yetkazamiz."
+read -r -d '' COURIER_DESCRIPTION <<'TEXT' || true
+Zumda kuryer boti.
+
+📦 Do'kon, oshxona va xizmatlar buyurtmalarini oling
+✅ «Oldim» va «Yetkazdim» tugmalari
+💳 Pul olmaysiz: mijoz oldindan to'lagan
+
+Kuryer bo'lish uchun biznes yuborgan havolani oching.
+TEXT
+readonly COURIER_DESCRIPTION
+readonly COURIER_SHORT_DESCRIPTION="Zumda kuryerlari uchun: do'kon, oshxona va xizmatlar buyurtmalarini yetkazing."
+
+# `set_descriptions <token> <description> <short description>`
+set_descriptions() {
+    telegram "$1" setMyDescription --data-urlencode "description=$2"
+    telegram "$1" setMyShortDescription --data-urlencode "short_description=$3"
+}
+
 connect_platform_bot() {
     log "Platform bot"
     telegram "$PLATFORM_BOT_TOKEN" setWebhook \
@@ -223,7 +254,8 @@ connect_platform_bot() {
         --data-urlencode 'allowed_updates=["message","callback_query"]'
     telegram "$PLATFORM_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=market" \
         '{type: "web_app", text: "Zumda", web_app: {url: $url}}')"
-    echo "webhook and menu button set"
+    set_descriptions "$PLATFORM_BOT_TOKEN" "$PLATFORM_DESCRIPTION" "$PLATFORM_SHORT_DESCRIPTION"
+    echo "webhook, menu button and descriptions set"
 }
 
 # The Zumda courier bot: one bot for every courier; its menu button opens the courier screen.
@@ -235,7 +267,8 @@ connect_courier_bot() {
         --data-urlencode 'allowed_updates=["message","callback_query"]'
     telegram "$COURIER_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=courier" \
         '{type: "web_app", text: "Kuryer", web_app: {url: $url}}')"
-    echo "webhook and menu button set"
+    set_descriptions "$COURIER_BOT_TOKEN" "$COURIER_DESCRIPTION" "$COURIER_SHORT_DESCRIPTION"
+    echo "webhook, menu button and descriptions set"
 }
 
 # Waits until `url` answers 200: a new address can take a few minutes to go live.
