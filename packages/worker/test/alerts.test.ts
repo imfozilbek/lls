@@ -61,7 +61,7 @@ describe("admin alerts", () => {
         expect((await as("/api/shop")).status).toBe(500)
 
         expect(alerts()).toHaveLength(1)
-        expect(alerts()[0]?.token).toBe(env.PLATFORM_BOT_TOKEN)
+        expect(alerts()[0]?.token).toBe(env.BUSINESS_BOT_TOKEN)
 
         now += ALERT_QUIET_MS
         await as("/api/shop")

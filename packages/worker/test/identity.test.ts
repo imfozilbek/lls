@@ -38,7 +38,7 @@ describe("a shop owner cannot borrow other shops' customers", () => {
         client.as(user, { botToken: OTHER_BOT_TOKEN, shop: shopB.slug })
 
     async function registerShopB(): Promise<{ id: string; slug: string }> {
-        const response = await client.as(ATTACKER, {})("/api/platform/shops", {
+        const response = await client.as(ATTACKER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: {
                 botToken: OTHER_BOT_TOKEN,

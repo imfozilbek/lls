@@ -47,8 +47,9 @@ describe("Zumda showcase", () => {
         })
     }
 
+    /** Admins' commands live in the Zumda Biznes bot. */
     async function market(args: string, from: object = ADMIN): Promise<void> {
-        await platformUpdate({ from, text: `/market ${args}` })
+        await client.businessBot({ message: { chat: { id: 1 }, from, text: `/market ${args}` } })
     }
 
     async function addProduct(name: string, category = "meals"): Promise<string> {
@@ -84,7 +85,7 @@ describe("Zumda showcase", () => {
         expect(toAdmin?.chatId).toBe(1)
         expect(toAdmin?.html).toContain("5%")
         expect(toOwner?.chatId).toBe(OWNER.id)
-        expect(toOwner?.token).toBe(env.PLATFORM_BOT_TOKEN)
+        expect(toOwner?.token).toBe(env.BUSINESS_BOT_TOKEN)
 
         await market("nonsense")
         expect(client.telegram.sent.at(-1)?.html).toContain("/market")
@@ -199,14 +200,15 @@ describe("Zumda showcase", () => {
         expect(await json(own)).toMatchObject({ channel: "shop_bot", commission: 0 })
     })
 
-    it("the Zumda bot welcomes with the street picture, the showcase and onboarding", async () => {
+    it("the Zumda bot welcomes customers with the street picture and the showcase", async () => {
         await platformUpdate({ from: CUSTOMER, text: "/start" })
         const welcome = client.telegram.pictures.at(-1)
         expect(welcome?.photoUrl).toBe("https://zumda-app.pages.dev/welcome/zumda.jpg")
         expect(welcome?.html).toContain("do'konlar, oshxonalar va xizmatlar")
         const buttons = welcome?.options?.keyboard?.inline_keyboard
         expect(buttons?.[0]?.[0]?.web_app?.url).toContain("mode=market")
-        expect(buttons?.[1]?.[0]?.web_app?.url).toContain("mode=onboarding")
+        // Businesses connect in Zumda Biznes: customers see no «connect a business» here.
+        expect(buttons).toHaveLength(1)
     })
 
     it("when Telegram cannot take the picture, the same welcome goes as text", async () => {
@@ -215,6 +217,6 @@ describe("Zumda showcase", () => {
         expect(client.telegram.pictures).toHaveLength(0)
         const text = client.telegram.sent.at(-1)
         expect(text?.html).toContain("do'konlar, oshxonalar va xizmatlar")
-        expect(text?.options?.keyboard?.inline_keyboard).toHaveLength(2)
+        expect(text?.options?.keyboard?.inline_keyboard).toHaveLength(1)
     })
 })

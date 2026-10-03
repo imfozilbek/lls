@@ -60,10 +60,10 @@ describe("auth", () => {
     })
 })
 
-describe("onboarding through the platform bot", () => {
+describe("onboarding through the Zumda Biznes bot", () => {
     it("registers a pending shop and never stores the token in plain text", async () => {
         const client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
-        const owner = client.as(OWNER, {})
+        const owner = client.as(OWNER, { businessBot: true })
         const response = await owner("/api/platform/shops", {
             method: "POST",
             json: {
@@ -94,7 +94,7 @@ describe("onboarding through the platform bot", () => {
 
     it("rejects a token Telegram does not accept", async () => {
         const client = testClient()
-        const response = await client.as(OWNER, {})("/api/platform/shops", {
+        const response = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: {
                 botToken: OTHER_BOT_TOKEN,
@@ -110,7 +110,7 @@ describe("onboarding through the platform bot", () => {
 
     it("validates the body", async () => {
         const client = testClient()
-        const response = await client.as(OWNER, {})("/api/platform/shops", {
+        const response = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: { botToken: "nope", name: "", type: "cars", deliveryFee: -1 },
         })

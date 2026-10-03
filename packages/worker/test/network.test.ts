@@ -66,17 +66,11 @@ describe("district network", () => {
     const courierApp = (user: object): ReturnType<TestClient["as"]> =>
         client.as(user, { courierBot: true })
 
+    /** Admins' commands live in the Zumda Biznes bot. */
     async function platform(text: string, from = ADMIN): Promise<void> {
-        await client.request("/tg/platform", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Telegram-Bot-Api-Secret-Token": env.PLATFORM_WEBHOOK_SECRET,
-            },
-            body: JSON.stringify({
-                update_id: 1,
-                message: { message_id: 1, from, chat: { id: from.id }, text },
-            }),
+        await client.businessBot({
+            update_id: 1,
+            message: { message_id: 1, from, chat: { id: from.id }, text },
         })
     }
 

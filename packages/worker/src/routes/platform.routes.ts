@@ -46,11 +46,18 @@ async function chosenBot(
     return { id: bot.id, username: bot.username, token }
 }
 
-/** Onboarding through the Zumda platform bot (no `X-Shop`). */
+/**
+ * «Mening bizneslarim» and applications: only from the Zumda Biznes bot (`X-Bot: business`,
+ * no `X-Shop`). The customers' Zumda bot cannot open them.
+ */
 export const platformRoutes = new Hono<AppEnv>()
     .use(async (c, next) => {
-        if (c.get("auth").business) {
-            throw new ApiError(400, "PLATFORM_ONLY", "Open this from the Zumda bot")
+        const { business, role } = c.get("auth")
+        if (business) {
+            throw new ApiError(400, "PLATFORM_ONLY", "Open this from the Zumda Biznes bot")
+        }
+        if (role !== "business") {
+            throw new ApiError(403, "BUSINESS_BOT_ONLY", "Open this from the Zumda Biznes bot")
         }
         await next()
     })
@@ -88,7 +95,7 @@ export const platformRoutes = new Hono<AppEnv>()
     /**
      * Step «Bot»: a prepared button the app opens with `WebApp.requestChat(preparedId)`. Telegram
      * shows its «new bot» window with the shop's name; the bot is created in the owner's own
-     * account and managed by the Zumda bot, and `managed_bot` brings us its token. `link` opens
+     * account and managed by the Zumda Biznes bot, and `managed_bot` brings us its token. `link` opens
      * the same window from Telegram apps that cannot do `requestChat`.
      */
     .post(
@@ -99,10 +106,10 @@ export const platformRoutes = new Hono<AppEnv>()
             const services = c.get("services")
             const { user } = c.get("auth")
             const { name } = c.req.valid("json")
-            const platformToken = services.env.PLATFORM_BOT_TOKEN
+            const managerToken = services.env.BUSINESS_BOT_TOKEN
             const username = suggestBotUsername(name)
             const preparedId = await services.telegram.savePreparedKeyboardButton(
-                platformToken,
+                managerToken,
                 user.id,
                 {
                     text: textsFor(languageFromTelegram(user.languageCode)).managedBotButton,
@@ -111,7 +118,7 @@ export const platformRoutes = new Hono<AppEnv>()
                     suggestedUsername: username,
                 },
             )
-            const manager = await services.telegram.getMe(platformToken)
+            const manager = await services.telegram.getMe(managerToken)
             return c.json({ preparedId, link: newBotLink(manager.username, username, name) })
         },
     )

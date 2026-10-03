@@ -18,6 +18,7 @@ import { encryptSecret } from "../src/crypto.js"
 
 import {
     DEV_ADMIN_ID,
+    DEV_BUSINESS_BOT,
     DEV_COURIER,
     DEV_COURIER_BOT,
     DEV_DISTRICT,
@@ -115,6 +116,8 @@ function defaultDevVars(): Record<string, string> {
         PLATFORM_ADMIN_IDS: String(DEV_ADMIN_ID),
         COURIER_BOT_TOKEN: DEV_COURIER_BOT.token,
         COURIER_WEBHOOK_SECRET: DEV_COURIER_BOT.webhookSecret,
+        BUSINESS_BOT_TOKEN: DEV_BUSINESS_BOT.token,
+        BUSINESS_WEBHOOK_SECRET: DEV_BUSINESS_BOT.webhookSecret,
     }
 }
 

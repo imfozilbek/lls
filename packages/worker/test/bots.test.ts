@@ -32,7 +32,7 @@ function update(body: object, secret: string): RequestInit {
     }
 }
 
-describe("platform bot", () => {
+describe("Zumda Biznes bot", () => {
     let client: TestClient
 
     beforeEach(() => {
@@ -40,13 +40,13 @@ describe("platform bot", () => {
     })
 
     it("rejects updates without the webhook secret", async () => {
-        const response = await client.request("/tg/platform", update({}, "wrong"))
+        const response = await client.request("/tg/business", update({}, "wrong"))
         expect(response.status).toBe(401)
     })
 
     it("the owner hears back in Uzbek, whatever language their Telegram uses", async () => {
         const russian = { ...OWNER, language_code: "ru" }
-        await client.as(russian, {})("/api/platform/shops", {
+        await client.as(russian, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: {
                 botToken: SHOP_BOT_TOKEN,
@@ -60,24 +60,25 @@ describe("platform bot", () => {
         expect(toOwner?.html).toContain("arizasi qabul qilindi")
     })
 
-    it("/start offers to connect a shop through the Mini App", async () => {
+    it("/start opens «Mening bizneslarim» in the Mini App", async () => {
         const response = await client.request(
-            "/tg/platform",
+            "/tg/business",
             update(
                 { message: { from: OWNER, chat: { id: OWNER.id }, text: "/start" } },
-                env.PLATFORM_WEBHOOK_SECRET,
+                env.BUSINESS_WEBHOOK_SECRET,
             ),
         )
         expect(response.status).toBe(200)
         const [welcome] = client.telegram.pictures
         expect(welcome?.chatId).toBe(OWNER.id)
-        expect(welcome?.options?.keyboard?.inline_keyboard[1]?.[0]?.web_app?.url).toBe(
-            "https://zumda-app.pages.dev/?mode=onboarding",
+        expect(welcome?.token).toBe(env.BUSINESS_BOT_TOKEN)
+        expect(welcome?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
+            "https://zumda-app.pages.dev/?mode=business",
         )
     })
 
     it("registration notifies the owner and admins; admin approval connects the shop bot", async () => {
-        const registered = await client.as(OWNER, {})("/api/platform/shops", {
+        const registered = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: {
                 botToken: SHOP_BOT_TOKEN,
@@ -99,17 +100,17 @@ describe("platform bot", () => {
         expect(approve).toBe(`r:${shop.id}:approve`)
 
         const fromStranger = await client.request(
-            "/tg/platform",
+            "/tg/business",
             update(
                 { callback_query: { id: "cb-1", from: STRANGER, data: approve } },
-                env.PLATFORM_WEBHOOK_SECRET,
+                env.BUSINESS_WEBHOOK_SECRET,
             ),
         )
         expect(fromStranger.status).toBe(200)
         expect(client.telegram.webhooks).toHaveLength(0)
 
         await client.request(
-            "/tg/platform",
+            "/tg/business",
             update(
                 {
                     callback_query: {
@@ -119,7 +120,7 @@ describe("platform bot", () => {
                         message: { message_id: 5, chat: { id: ADMIN.id } },
                     },
                 },
-                env.PLATFORM_WEBHOOK_SECRET,
+                env.BUSINESS_WEBHOOK_SECRET,
             ),
         )
         expect(client.telegram.webhooks).toEqual([
@@ -149,18 +150,18 @@ describe("platform bot", () => {
     })
 })
 
-describe("platform bot: a failed connection on approval", () => {
+describe("Zumda Biznes bot: a failed connection on approval", () => {
     let client: TestClient
 
     const platform = (body: object): Promise<Response> =>
-        client.request("/tg/platform", update(body, env.PLATFORM_WEBHOOK_SECRET))
+        client.request("/tg/business", update(body, env.BUSINESS_WEBHOOK_SECRET))
 
     beforeEach(() => {
         client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
     })
 
     it("tells the admin, and /reconnect connects the bot later", async () => {
-        const registered = await client.as(OWNER, {})("/api/platform/shops", {
+        const registered = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: {
                 botToken: SHOP_BOT_TOKEN,
@@ -196,6 +197,56 @@ describe("platform bot: a failed connection on approval", () => {
             client.telegram.sent.some((m) => m.chatId === OWNER.id && m.html.includes("t.me/")),
         ).toBe(true)
         expect(client.telegram.sent.at(-1)?.chatId).toBe(ADMIN.id)
+    })
+})
+
+describe("the Zumda bot is for customers only", () => {
+    let client: TestClient
+
+    const zumdaShop = (body: object): Promise<Response> =>
+        client.request("/tg/platform", update(body, env.PLATFORM_WEBHOOK_SECRET))
+
+    beforeEach(() => {
+        client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
+    })
+
+    it("rejects updates without its webhook secret", async () => {
+        const response = await client.request("/tg/platform", update({}, "wrong"))
+        expect(response.status).toBe(401)
+    })
+
+    it("admins' commands do nothing here: they live in Zumda Biznes", async () => {
+        const { slug } = await createActiveShop(client)
+        const before = client.telegram.sent.length
+        await zumdaShop({
+            message: { from: ADMIN, chat: { id: ADMIN.id }, text: `/market ${slug} 5` },
+        })
+        expect(client.telegram.sent).toHaveLength(before)
+        const row = await env.DB.prepare(
+            "SELECT marketplace_commission_bps AS bps FROM businesses WHERE slug = ?",
+        )
+            .bind(slug)
+            .first<{ bps: number | null }>()
+        expect(row?.bps).toBeNull()
+    })
+
+    it("an approval card it sent before Zumda Biznes still works", async () => {
+        const registered = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
+            method: "POST",
+            json: {
+                botToken: SHOP_BOT_TOKEN,
+                name: "Osh Markaz",
+                type: "food",
+                deliveryFee: 0,
+                payoutCard: TEST_CARD,
+            },
+        })
+        const shop = (await registered.json()) as { id: string }
+        await zumdaShop({
+            callback_query: { id: "cb-old", from: ADMIN, data: `r:${shop.id}:approve` },
+        })
+        expect(client.telegram.webhooks).toHaveLength(1)
+        expect(client.telegram.answered).toContain("cb-old")
     })
 })
 

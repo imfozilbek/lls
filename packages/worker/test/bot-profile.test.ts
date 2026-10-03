@@ -29,7 +29,7 @@ describe("the shop bot's picture and description are Zumda's", () => {
     })
 
     it("right after connecting, the owner's app sets the bot picture", async () => {
-        const registered = await client.as(OWNER, {})("/api/platform/shops", {
+        const registered = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: {
                 botToken: SHOP_BOT_TOKEN,
@@ -41,14 +41,14 @@ describe("the shop bot's picture and description are Zumda's", () => {
         })
         const { id } = (await registered.json()) as { id: string }
 
-        const byStranger = await client.as(STRANGER, {})(
+        const byStranger = await client.as(STRANGER, { businessBot: true })(
             `/api/platform/shops/${id}/bot-photo`,
             picture(JPEG),
         )
         expect(byStranger.status).toBe(404)
         expect(client.telegram.photos).toHaveLength(0)
 
-        const byOwner = await client.as(OWNER, {})(
+        const byOwner = await client.as(OWNER, { businessBot: true })(
             `/api/platform/shops/${id}/bot-photo`,
             picture(JPEG),
         )
