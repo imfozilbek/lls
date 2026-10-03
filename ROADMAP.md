@@ -178,8 +178,8 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Goal 15: kinds of business (grocery store, restaurant, service), own addresses (app.,
       business., delivery.zumda.shop; zumda.shop leads to the bot), Zumda | Business in a
       browser, the bots' profiles set by CI
-- [ ] Goal 14 in production: create a bot with «Bot yaratish» in Zumda | Business, approve it,
-      answer the practice questions (token change, owner change, turning management off, the limit)
+- [x] Goal 14 closed (owner's decision): a bot created in production with «Bot yaratish» in
+      Zumda | Business; the application and approval move to the business onboarding review
 - [ ] Production check: connect a test shop → order → statuses → notifications
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**

@@ -261,6 +261,44 @@ describe("a bot created from Zumda Business (Managed Bots)", () => {
         expect(client.telegram.webhooks).toHaveLength(0)
     })
 
+    it("a token changed in BotFather without an event is fetched fresh for the application", async () => {
+        await managedBotUpdate(client, OWNER)
+        // The owner changes the token in @BotFather; Telegram tells us nothing.
+        client.telegram.managedTokens.set(MANAGED_BOT.id, NEW_MANAGED_TOKEN)
+        const shop = (await (await applyWithManagedBot(client)).json()) as { id: string }
+        await approve(client, shop.id)
+        expect(client.telegram.webhooks.at(-1)?.token).toBe(NEW_MANAGED_TOKEN)
+    })
+
+    it("approval and /reconnect ask Telegram for the current token every time", async () => {
+        await managedBotUpdate(client, OWNER)
+        const shop = (await (await applyWithManagedBot(client)).json()) as {
+            id: string
+            slug: string
+        }
+        client.telegram.managedTokens.set(MANAGED_BOT.id, NEW_MANAGED_TOKEN)
+        await approve(client, shop.id)
+        expect(client.telegram.webhooks.at(-1)?.token).toBe(NEW_MANAGED_TOKEN)
+
+        const third = "555000:managed-bot-token-third-in-tests-xxxxx" // secret-scan: fake
+        client.telegram.managedTokens.set(MANAGED_BOT.id, third)
+        await platformUpdate(client, {
+            message: { from: ADMIN, chat: { id: ADMIN.id }, text: `/reconnect ${shop.slug}` },
+        })
+        expect(client.telegram.webhooks.at(-1)?.token).toBe(third)
+    })
+
+    it("Telegram refusing the token at approval warns the admin; the shop is not lost", async () => {
+        await managedBotUpdate(client, OWNER)
+        const shop = (await (await applyWithManagedBot(client)).json()) as { id: string }
+        // Management turned off, for example: Telegram no longer gives the token.
+        client.telegram.managedTokens.delete(MANAGED_BOT.id)
+        await approve(client, shop.id)
+        expect(client.telegram.webhooks).toHaveLength(0)
+        expect(client.telegram.sent.at(-1)?.chatId).toBe(ADMIN.id)
+        expect(client.telegram.sent.at(-1)?.html).toContain("/reconnect")
+    })
+
     it("the pasted-token path still works", async () => {
         const shop = await createActiveShop(client)
         const row = await env.DB.prepare("SELECT bot_source FROM businesses WHERE id = ?")

@@ -3,10 +3,11 @@
  * (TELEGRAM_API_BASE); tests read what each bot "sent" and switch on failures.
  *
  *   POST /bot<token>/<method>   the Bot API methods Zumda uses (sendPhoto takes a picture URL);
- *                               Managed Bots: a new token on every getManagedBotToken
+ *                               Managed Bots: a token stays until it is revoked or replaced
  *   GET  /__log                 every recorded call, oldest first
  *   POST /__reset               forget calls and failures
- *   POST /__control             { broken?: number[], blocked?: number[], failWebhooks?: boolean }
+ *   POST /__control             { broken?: number[], blocked?: number[], failWebhooks?: boolean,
+ *                                 revokeManagedBot?: number (the owner's «Revoke token») }
  *
  * Files (sendDocument, setMyProfilePhoto) come as multipart: the call body keeps the text
  * fields, and the file as `{ name, contentType, size, base64 }` under its field name.
@@ -169,11 +170,17 @@ function photoAnswer(call: BotCall): [number, unknown] {
         : fail(400, "Bad Request: PHOTO_INVALID")
 }
 
-/** Every fetch gives a new token, as after «revoke token» in BotFather. */
-function nextManagedToken(state: State, botId: number): string {
-    const version = (state.managedTokens.get(botId) ?? 0) + 1
+/** Like Telegram: the bot's current token; a managed bot starts at its first one. */
+function currentManagedToken(state: State, botId: number): string {
+    const version = state.managedTokens.get(botId) ?? 1
     state.managedTokens.set(botId, version)
     return managedBotToken(botId, version)
+}
+
+/** «Revoke token» in BotFather, or `replaceManagedBotToken`: the next token. */
+function rotateManagedToken(state: State, botId: number): string {
+    state.managedTokens.set(botId, (state.managedTokens.get(botId) ?? 1) + 1)
+    return currentManagedToken(state, botId)
 }
 
 function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
@@ -202,10 +209,14 @@ function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
         case "savePreparedKeyboardButton":
             return [200, { ok: true, result: { id: `prepared-${call.seq}` } }]
         case "getManagedBotToken":
+            return [
+                200,
+                { ok: true, result: currentManagedToken(state, Number(call.body["user_id"])) },
+            ]
         case "replaceManagedBotToken":
             return [
                 200,
-                { ok: true, result: nextManagedToken(state, Number(call.body["user_id"])) },
+                { ok: true, result: rotateManagedToken(state, Number(call.body["user_id"])) },
             ]
         default:
             return ALWAYS_OK.has(call.method)
@@ -239,6 +250,10 @@ async function handle(
         state.broken = new Set((body["broken"] as number[] | undefined) ?? [...state.broken])
         state.blocked = new Set((body["blocked"] as number[] | undefined) ?? [...state.blocked])
         state.failWebhooks = (body["failWebhooks"] as boolean | undefined) ?? state.failWebhooks
+        const revoked = body["revokeManagedBot"] as number | undefined
+        if (revoked !== undefined) {
+            rotateManagedToken(state, revoked)
+        }
         send(response, 200, { ok: true })
         return
     }

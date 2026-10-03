@@ -448,7 +448,9 @@ The token that verified the signature decides the order channel
 never returned by the API. Validate a new token with `getMe` before saving. A managed bot's token
 comes from `getManagedBotToken` on its `managed_bot` update (table `managed_bots` until an
 application takes it); a new token of a live shop's bot reconnects it at once; a new owner of the
-bot alerts the admins and never moves the shop.
+bot alerts the admins and never moves the shop. Telegram may not announce a token changed in
+@BotFather, so the current token is fetched again before every use (application, approval,
+`/reconnect`).
 
 **Roles** (per shop, one app, one auth): `customer` (default), `owner`
 (`business.owner_telegram_id`). Through the showcase (`X-Via: marketplace`) the role is always

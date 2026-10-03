@@ -18,6 +18,7 @@ import {
     orderKeyboard,
 } from "./format.js"
 import { escapeHtml } from "./gateway.js"
+import { refreshManagedBotToken } from "./managed-token.js"
 import { fill, textsFor } from "./texts.js"
 
 import type { Reader } from "./format.js"
@@ -463,6 +464,13 @@ export class Notifier {
 
     /** The shop bot answers through this Worker: its webhook and the menu button to the app. */
     async connectShopBot(shop: ShopOwnerDTO, workerOrigin: string): Promise<void> {
+        if (shop.managedBot) {
+            // The owner may have changed the token in @BotFather without Telegram telling us.
+            const current = await this.services.businesses.getBotCredentials(shop.id)
+            if (current) {
+                await refreshManagedBotToken(this.services, current.botId)
+            }
+        }
         const credentials = await this.services.businesses.getBotCredentials(shop.id)
         if (!credentials) {
             throw new Error(`No bot credentials for shop ${shop.id}`)

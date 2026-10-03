@@ -8,6 +8,7 @@ import { rateLimit } from "../http/rate-limit.js"
 import { idParam, onInvalid, prepareManagedBotBody, registerShopBody } from "../http/schemas.js"
 import { TelegramApiError } from "../telegram/gateway.js"
 import { newBotLink, randomRequestId, suggestBotUsername } from "../telegram/managed-bots.js"
+import { refreshManagedBotToken } from "../telegram/managed-token.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
 import { textsFor } from "../telegram/texts.js"
 
@@ -37,8 +38,19 @@ async function verifyBot(telegram: TelegramGateway, token: string): Promise<BotI
 async function chosenBot(
     services: Services,
     choice: { botToken?: string; managedBotId?: number },
+    ownerTelegramId: number,
 ): Promise<RegisterShopInput["bot"]> {
     if (choice.managedBotId !== undefined) {
+        // Only the owner's own bot gets a fresh token here; any other id fails in the use case.
+        const record = await services.managedBots.find(choice.managedBotId)
+        if (record?.ownerTelegramId === ownerTelegramId && !record.businessId) {
+            await refreshManagedBotToken(services, record.botId).catch((error: unknown) => {
+                // Telegram is down for a moment: the saved token is used; approval asks again.
+                if (!(error instanceof TelegramApiError)) {
+                    throw error
+                }
+            })
+        }
         return { managedBotId: choice.managedBotId }
     }
     const token = choice.botToken ?? ""
@@ -75,7 +87,7 @@ export const platformRoutes = new Hono<AppEnv>()
             const services = c.get("services")
             const auth = c.get("auth")
             const { botToken, managedBotId, ...shop } = c.req.valid("json")
-            const bot = await chosenBot(services, { botToken, managedBotId })
+            const bot = await chosenBot(services, { botToken, managedBotId }, auth.user.id)
             // The Zumda bot signed this: remember the owner's name and language for the bots.
             await services.useCases.resolveCustomer.execute(auth.user, auth.scope)
             const registered = await services.useCases.registerShop.execute({

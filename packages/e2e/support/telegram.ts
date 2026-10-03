@@ -57,6 +57,8 @@ export async function controlTelegram(control: {
     broken?: number[]
     blocked?: number[]
     failWebhooks?: boolean
+    /** The owner presses «Revoke token» in @BotFather for this managed bot. */
+    revokeManagedBot?: number
 }): Promise<void> {
     await fetch(`${FAKE_TELEGRAM_URL}/__control`, {
         method: "POST",
