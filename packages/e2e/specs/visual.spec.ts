@@ -5,6 +5,7 @@
 import { expect, test } from "@playwright/test"
 
 import { pngImage } from "../support/images.js"
+import { unreadableText } from "../support/readability.js"
 import {
     FOOD,
     PEOPLE,
@@ -34,6 +35,8 @@ async function snap(page: Page, name: string, theme: string): Promise<void> {
         () => document.documentElement.scrollWidth - window.innerWidth,
     )
     expect(overflow, `${name} is wider than the screen`).toBeLessThanOrEqual(0)
+    // Every word on the screen is readable: AA contrast on its own surface, 13 px or more.
+    expect(await unreadableText(page), `${name} has text that is hard to read`).toEqual([])
     await page.screenshot({ path: `screenshots/${theme}/${name}.png`, fullPage: true })
 }
 
