@@ -300,7 +300,7 @@ describe("shop bot", () => {
         expect(start.status).toBe(200)
     })
 
-    it("new order → card «ждём перевод», the customer gets the card; «Деньги пришли — принять»", async () => {
+    it("new order → card «ждём перевод», the customer gets the card; «Деньги пришли, принять»", async () => {
         const order = await placeOrder()
         const card = client.telegram.sent.find((m) => m.chatId === OWNER.id)
         expect(card?.html).toContain(`#${order.number}`)
@@ -308,7 +308,7 @@ describe("shop bot", () => {
         expect(card?.html).toContain("+998 90 123 45 67")
         expect(card?.html).toContain("o'tkazma kutilmoqda")
         expect(card?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual({
-            text: "💳 Pul keldi — qabul qilish",
+            text: "💳 Pul keldi, qabul qilish",
             callback_data: `p:${order.id}`,
         })
         const toPay = client.telegram.sent.at(-1)

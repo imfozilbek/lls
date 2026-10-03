@@ -217,7 +217,7 @@ export const api = {
         choosePaymentCard: (id: string): Promise<PayoutCardsDTO> =>
             request("PUT", `/api/owner/shop/cards/${id}/payment`),
         removeCard: (id: string): Promise<void> => request("DELETE", `/api/owner/shop/cards/${id}`),
-        /** «Деньги пришли — принять»: paid, and a new order is accepted in the same tap. */
+        /** «Деньги пришли, принять»: paid, and a new order is accepted in the same tap. */
         confirmPayment: (orderId: string): Promise<OrderDTO> =>
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "paid" }),
         markRefunded: (orderId: string): Promise<OrderDTO> =>

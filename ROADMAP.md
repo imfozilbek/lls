@@ -13,19 +13,19 @@ marketplace on top of both.
 > Questions for the pilots' meeting: `docs/pilot-meeting.md`.
 > The path to the full vision, goal by goal: `docs/goals/README.md` («Дай, друг, дай следующую цель»).
 
-## Current status: stage 1 — online point, courier bot, district network and transfer-only payments done; waiting for Cloudflare accounts and the pilots' meeting
+## Current status: stage 1, online point, courier bot, district network and transfer-only payments done; waiting for Cloudflare accounts and the pilots' meeting
 
 | Part | Status | Notes |
 |------|--------|-------|
 | `@zumda/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search, district network, transfer-only payments, many cards; 195 tests |
-| `@zumda/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or Zumda bot), roles, bot webhooks, `/market`, `/reconnect`, `/district`, alerts, money routes («O'tkazdim», «Pul keldi — qabul qilish»), cards, CSV and poster files; Uzbek texts; 87 tests |
+| `@zumda/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or Zumda bot), roles, bot webhooks, `/market`, `/reconnect`, `/district`, alerts, money routes («O'tkazdim», «Pul keldi, qabul qilish»), cards, CSV and poster files; Uzbek texts; 87 tests |
 | `@zumda/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, Zumda showcase, onboarding, «Pul», cards, QR poster; Uzbek, light only; 43 tests; 86 KB gzip JS |
 | CI | ✅ Done | format, lint, build, test, coverage, 84 e2e scenarios on every push |
 | Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
 | Deploy | 🟡 Ready | Deploy job in `ci.yml` waits for GitHub secrets (`docs/launch-checklist.md`); public-repo hardening in `SECURITY.md` |
 | Pilot (food, water, grocery) | ⏳ Next | Three friends' shops, each with its own bot and couriers |
 
-**Blocking:** Cloudflare account, API token and the Zumda platform bot — owner tasks in
+**Blocking:** Cloudflare account, API token and the Zumda platform bot, owner tasks in
 `docs/launch-checklist.md`.
 
 **Owner decisions still open** (never invent them in code or docs):
@@ -128,16 +128,16 @@ Pilot: **food, water and grocery at the same time.**
       admin card, "shop not found"
 
 ### M4f. Money, hours per day, QR poster ✅
-- [x] ~~Cash or transfer to the shop's card; cash on the courier's hands; debts~~ — replaced by
+- [x] ~~Cash or transfer to the shop's card; cash on the courier's hands; debts~~: replaced by
       M4g (owner's decision)
 - [x] «Деньги»: revenue split, transfers to confirm, refunds, CSV report
 - [x] Working hours per day; QR poster as a PNG in the owner's chat
 - [ ] After the meeting with the pilots: service type (carpets, car wash), variants and add-ons,
-      pickup and order time, water subscriptions, staff, expenses — only what they confirm
+      pickup and order time, water subscriptions, staff, expenses: only what they confirm
 
 ### M4g. Transfer only, before cooking ✅ (owner's decision, October 2026)
 - [x] Customers pay only by transfer to the shop's card; the card shows at checkout and in the bot
-- [x] «Я перевёл» → the owner hears it → «Деньги пришли — принять» (paid and accepted in one tap);
+- [x] «Я перевёл» → the owner hears it → «Деньги пришли, принять» (paid and accepted in one tap);
       an unpaid order is never accepted
 - [x] No cash: one «Доставил» for couriers and owners, no courier cash, no handovers, no debts
 - [x] The card is a required onboarding step; a shop without it takes no orders («Скоро начнёт
@@ -174,7 +174,7 @@ Pilot: **food, water and grocery at the same time.**
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
 
-### M6. District delivery 🔨 (stage 1; goal 05 — the courier bot, goal 06 — the network)
+### M6. District delivery 🔨 (stage 1; goal 05: the courier bot; goal 06: the network)
 - [x] Zumda courier bot; one courier profile per person (name, phone, vehicle)
 - [x] Invite from "Мой магазин" → accept in the courier bot → the business approves
 - [x] The business switches a courier on or off by day; the courier marks "on shift"
@@ -189,7 +189,7 @@ Pilot: **food, water and grocery at the same time.**
 
 ### M7. Online point in an hour ⏳
 - [ ] Pickup: order ahead, collect without a queue
-- [ ] We fill the catalog for the point (import from Excel or photos — when a point asks)
+- [ ] We fill the catalog for the point (import from Excel or photos: when a point asks)
 
 ### M8. Service fee ⏳
 - [ ] Decide (owner): the fee base (goods, or goods + delivery; deposits never count) and the pilots' rate
@@ -208,7 +208,7 @@ Pilot: **food, water and grocery at the same time.**
 - [ ] Not paid: pause the shop, as in M8
 
 ### M10. Zumda delivery supplies ⏳ (when the first supplies are in stock)
-- [ ] Decide (owner): range (packaging, bags, disposable dishes — all with the Zumda brand) and prices
+- [ ] Decide (owner): range (packaging, bags, disposable dishes, all with the Zumda brand) and prices
 - [ ] Catalog of Zumda supplies in "Мой магазин"; the shop orders, the order comes to Zumda
 - [ ] Delivered by the district delivery; paid by transfer to Zumda's card
 

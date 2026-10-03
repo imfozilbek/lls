@@ -2,10 +2,10 @@
  * A fake Telegram Bot API for the local stand. The Worker sends every bot call here
  * (TELEGRAM_API_BASE); tests read what each bot "sent" and switch on failures.
  *
- *   POST /bot<token>/<method>   — the Bot API methods Zumda uses
- *   GET  /__log                 — every recorded call, oldest first
- *   POST /__reset               — forget calls and failures
- *   POST /__control             — { broken?: number[], blocked?: number[], failWebhooks?: boolean }
+ *   POST /bot<token>/<method>   the Bot API methods Zumda uses
+ *   GET  /__log                 every recorded call, oldest first
+ *   POST /__reset               forget calls and failures
+ *   POST /__control             { broken?: number[], blocked?: number[], failWebhooks?: boolean }
  *
  * Files (sendDocument, setMyProfilePhoto) come as multipart: the call body keeps the text
  * fields, and the file as `{ name, contentType, size, base64 }` under its field name.

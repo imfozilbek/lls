@@ -135,7 +135,7 @@ async function handleOrderCallback(
     await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
 }
 
-/** The owner's button: the next step, «Деньги пришли — принять», or cancel. */
+/** The owner's button: the next step, «Деньги пришли, принять», or cancel. */
 async function runOrderAction(
     services: Services,
     business: Business,
@@ -230,7 +230,7 @@ async function handleReviewCallback(
                 token,
                 callback.message.chat.id,
                 callback.message.message_id,
-                `🏪 <b>${escapeHtml(shop.name)}</b> — ${status}`,
+                `🏪 <b>${escapeHtml(shop.name)}</b>: ${status}`,
             )
         }
         await services.telegram.answerCallback(token, callback.id, status)

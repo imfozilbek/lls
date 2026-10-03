@@ -52,7 +52,7 @@ Rules:
 |-------|-------|-----|
 | `rounded-tile` | 1.125rem | Product tiles, cards |
 | `rounded-control` | 0.875rem | Inputs, buttons, rows |
-| `rounded-full` | — | Chips, stepper, avatars |
+| `rounded-full` | - | Chips, stepper, avatars |
 | Side padding | 16 px (`px-4`) | Every screen |
 | Touch target | ≥ 44 px | Every tappable element |
 

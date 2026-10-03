@@ -152,7 +152,7 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect((await as(CUSTOMER)("/api/owner/shop/cards")).status).toBe(403)
     })
 
-    it("«Я перевёл» pings the owner once; «Деньги пришли — принять» starts the shop", async () => {
+    it("«Я перевёл» pings the owner once; «Деньги пришли, принять» starts the shop", async () => {
         const order = await json<Order>(await place())
         expect(order.payment).toMatchObject({ method: "card_transfer", status: "unpaid" })
         // The customer has the card and the sum in the chat right away.

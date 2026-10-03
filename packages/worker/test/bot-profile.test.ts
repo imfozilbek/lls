@@ -87,7 +87,7 @@ describe("the shop bot's picture and description are Zumda's", () => {
         await owner("/api/owner/shop", { method: "PATCH", json: { name: "Osh Saroy" } })
         const [texts] = client.telegram.descriptions
         expect(texts?.token).toBe(SHOP_BOT_TOKEN)
-        expect(texts?.description).toContain("Osh Saroy — buyurtmalarni shu yerda qabul qilamiz")
+        expect(texts?.description).toContain("Osh Saroy: buyurtmalarni shu yerda qabul qilamiz")
         expect(texts?.description).toContain("«🍽 Menyuni ochish»")
         expect(texts?.description).toContain("Zumda asosida ishlaydi · zumda.shop")
         expect(texts?.shortDescription).toBe(

@@ -77,7 +77,7 @@ test("no free courier of its own: the order goes to the network, without the cus
         const offer = await offerFor(person.id, order, since)
         expect(offer.text).toContain("Yaqinda yangi buyurtma")
         expect(offer.text).toContain("Osh Markaz")
-        expect(offer.text).toContain("Oldindan to'langan — mijozdan pul olmang")
+        expect(offer.text).toContain("Oldindan to'langan, mijozdan pul olmang")
         expect(offer.text).not.toContain("Navoiy")
         expect(offer.text).not.toContain("bozor yonida")
         expect(offer.text).not.toContain("Aziz")
@@ -123,7 +123,7 @@ test("Otabek delivers in the app with one «Доставил»; the money is alr
     await openApp(page, { user: PEOPLE.networkCourier, courierBot: true })
     await expect(page.getByText("Osh Markaz").first()).toBeVisible()
     await page.getByRole("button", { name: "Oldim" }).click()
-    await expect(page.getByText("Oldindan to'langan — pul olmang").first()).toBeVisible()
+    await expect(page.getByText("Oldindan to'langan, pul olmang").first()).toBeVisible()
     await page.getByRole("button", { name: "Yetkazdim" }).click()
     await expect(page.getByRole("dialog")).toBeHidden()
     const shop = page
@@ -151,7 +151,7 @@ test("the owner: the network switch, «Доставщик сети района�
     await page.getByRole("button", { name: "Mening do'konim" }).click()
     await page.getByRole("tab", { name: "Sozlamalar" }).click()
     const network = page.getByRole("switch", {
-        name: "Kuryerlarim band bo'lsa — tuman tarmog'iga berish",
+        name: "Kuryerlarim band bo'lsa, tuman tarmog'iga berish",
     })
     await expect(network).toHaveAttribute("aria-checked", "true")
     await network.click()

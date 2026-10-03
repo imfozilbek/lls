@@ -317,7 +317,7 @@ export class GetCourierHomeUseCase {
                     businesses.findById(link.businessId),
                     orders.listByCourier(link.id, since),
                 ])
-                const shopName = business?.name ?? "—"
+                const shopName = business?.name ?? "-"
                 const shop: CourierShopDTO = {
                     businessId: link.businessId,
                     shopName,

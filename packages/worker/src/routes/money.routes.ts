@@ -86,7 +86,7 @@ export const moneyRoutes = new Hono<AppEnv>()
                 )
                 return c.json(order)
             }
-            // «Деньги пришли — принять»: paid and accepted; the network if no courier is free.
+            // «Деньги пришли, принять»: paid and accepted; the network if no courier is free.
             const paid = await services.useCases.confirmPayment.execute(ids)
             const step = await networkAfterStep(services, paid)
             inBackground(

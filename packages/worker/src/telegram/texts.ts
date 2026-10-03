@@ -54,7 +54,7 @@ const BASE = {
         openMenu: "🛒 Katalogni ochish",
         phoneSaved: "✅ Telefon raqamingiz saqlandi.",
         platformWelcome:
-            "Zumda — tumaningiz do'konlari bir joyda. Mahsulotni qidiring va do'kondan buyurtma bering.\n\nDo'kon egasimisiz? O'z buyurtma botingizni ulang.",
+            "Zumda: tumaningiz do'konlari bir joyda. Mahsulotni qidiring va do'kondan buyurtma bering.\n\nDo'kon egasimisiz? O'z buyurtma botingizni ulang.",
         connectShop: "🏪 Do'konni ulash",
         openShowcase: "🔍 Do'konlar va mahsulotlar",
         showcaseOrder: "🛍 Zumda vitrinasidan · komissiya {rate}%: {sum}",
@@ -75,7 +75,7 @@ const BASE = {
         alertQuiet: "Shu turdagi keyingi ogohlantirish {minutes} daqiqadan keyin.",
         applicationReceived: "✅ {shop} arizasi qabul qilindi. Tekshiruvdan so'ng xabar beramiz.",
         shopBotDescription:
-            "{shop} — buyurtmalarni shu yerda qabul qilamiz.\nPastdagi «{openMenu}» tugmasini bosing: tanlang, buyurtma bering — eshigingizgacha olib kelamiz.\n\nZumda asosida ishlaydi · zumda.shop",
+            "{shop}: buyurtmalarni shu yerda qabul qilamiz.\nPastdagi «{openMenu}» tugmasini bosing: tanlang, buyurtma bering, eshigingizgacha olib kelamiz.\n\nZumda asosida ishlaydi · zumda.shop",
         shopBotShortDescription: "{shop}: uyga buyurtma bering. Zumda asosida ishlaydi",
         shopApproved: "🎉 {shop} ishga tushdi! Mijozlaringizga ushbu havolani yuboring:",
         shopRejected: "😔 {shop} arizasi rad etildi. Savollar bo'lsa, bizga yozing.",
@@ -98,8 +98,7 @@ const BASE = {
         callbackForbidden: "Bu amal siz uchun emas",
         courierBotWelcome:
             "👋 Bu Zumda kuryer boti: do'konlar buyurtmalari shu yerga keladi. Ishni boshlash uchun do'kon egasidan taklif havolasini so'rang.",
-        courierBotHome:
-            "🚚 Siz kuryersiz: {shops}. Smenaga chiqing — buyurtmalar shu yerga keladi.",
+        courierBotHome: "🚚 Siz kuryersiz: {shops}. Smenaga chiqing, buyurtmalar shu yerga keladi.",
         courierPending:
             "⏳ {shop} egasi sizni tasdiqlashini kuting. Tasdiqlansa, shu yerga yozamiz.",
         courierAskPhone: "📱 Do'kon siz bilan bog'lana olishi uchun telefon raqamingizni yuboring.",
@@ -110,7 +109,7 @@ const BASE = {
         courierApprovedOwner: "✅ {name} endi sizning kuryeringiz.",
         courierDeclinedOwner: "❌ {name} rad etildi.",
         courierApproved:
-            "✅ {shop} sizni kuryer sifatida tasdiqladi. Smenaga chiqing — buyurtmalar shu yerga keladi.",
+            "✅ {shop} sizni kuryer sifatida tasdiqladi. Smenaga chiqing, buyurtmalar shu yerga keladi.",
         courierDeclined: "😔 {shop} sizni kuryer sifatida tasdiqlamadi.",
         courierRemovedFromShop: "↩️ {shop} sizni kuryerlar ro'yxatidan chiqardi.",
         networkSearching: "🔎 Tuman tarmog'idan kuryer qidirilmoqda",
@@ -120,7 +119,7 @@ const BASE = {
         networkDistance: "📍 Mijozgacha ≈ {km} km",
         takeOrder: "🙋 Olaman",
         networkTaken: "✅ {shop}: #{n} buyurtmani boshqa kuryer oldi.",
-        networkYours: "🎉 {shop}: #{n} buyurtma sizniki — karta pastda.",
+        networkYours: "🎉 {shop}: #{n} buyurtma sizniki, karta pastda.",
         networkRequestedOwner:
             "🔎 Bo'sh kuryeringiz yo'q: #{n} buyurtma tuman tarmog'iga berildi. Kim olsa, xabar beramiz.",
         networkClaimedOwner: "🚚 #{n} buyurtmani tuman tarmog'i kuryeri olib boradi: {name}",
@@ -128,11 +127,11 @@ const BASE = {
             "⏰ #{n} buyurtma {min} daqiqadan beri tarmoq kuryerini kutmoqda. O'z kuryeringizni tayinlang yoki o'zingiz olib boring.",
         networkOverdueAdmin: "⏰ {shop}: #{n} buyurtma {min} daqiqa kuryersiz ({district}).",
         networkInvite:
-            "🤝 Tumanning boshqa do'konlari uchun ham yetkazasizmi? Buyurtma shu yerga keladi — qulay bo'lsagina olasiz.",
+            "🤝 Tumanning boshqa do'konlari uchun ham yetkazasizmi? Buyurtma shu yerga keladi, qulay bo'lsagina olasiz.",
         joinNetwork: "✅ Ha, tuman uchun",
         skipNetwork: "Hozir emas",
         networkJoined:
-            "✅ Siz tuman tarmog'idasiz. Smenaga chiqing — yaqindagi buyurtmalar shu yerga keladi.",
+            "✅ Siz tuman tarmog'idasiz. Smenaga chiqing, yaqindagi buyurtmalar shu yerga keladi.",
         networkSkipped: "Yaxshi. «Yetkazishlarim»da yoqish mumkin.",
         callbackTaken: "Bu buyurtmani allaqachon olishdi",
         districtUsage:
@@ -153,20 +152,20 @@ const BASE = {
             [OrderStatus.DELIVERED]: "🏁 Yetkazdim",
         } as StatusTexts,
         courierWait: "⏳ Buyurtma tayyor bo'lganda xabar beramiz.",
-        courierReady: "📦 {shop}: #{n} buyurtma tayyor — olib keting.",
+        courierReady: "📦 {shop}: #{n} buyurtma tayyor, olib keting.",
         payment: {
             unpaid: "💳 Kartaga o'tkazma kutilmoqda",
-            sent: "💳 Mijoz o'tkazdim dedi — kartani tekshiring",
+            sent: "💳 Mijoz o'tkazdim dedi, kartani tekshiring",
             paid: "✅ O'tkazma bilan to'langan",
             refundDue: "↩️ Mijozga qaytarish kerak",
             refunded: "↩️ Qaytarildi",
         },
-        paidAccept: "💳 Pul keldi — qabul qilish",
-        nothingToCollect: "✅ Oldindan to'langan — mijozdan pul olmang",
+        paidAccept: "💳 Pul keldi, qabul qilish",
+        nothingToCollect: "✅ Oldindan to'langan, mijozdan pul olmang",
         transferSentOwner: "💳 Mijoz #{n} buyurtma uchun {sum} o'tkazdi. Kartani tekshiring.",
         payByTransfer:
-            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n<code>{card}</code> ({holder})\nSo'ng ilovada «O'tkazdim» ni bosing — pul kelishi bilan do'kon boshlaydi.",
-        reportCaption: "📊 {shop}: buyurtmalar, {from} — {to}",
+            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n<code>{card}</code> ({holder})\nSo'ng ilovada «O'tkazdim» ni bosing. Pul kelishi bilan do'kon boshlaydi.",
+        reportCaption: "📊 {shop}: buyurtmalar, {from} - {to}",
         csv: {
             headers: [
                 "Raqam",

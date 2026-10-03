@@ -32,7 +32,7 @@ async function owner(orderId: string, json: object, path = "", shop = FOOD): Pro
     })
 }
 
-/** «Деньги пришли — принять»: the shop starts only after the transfer. */
+/** «Деньги пришли, принять»: the shop starts only after the transfer. */
 async function accept(orderId: string, shop = FOOD): Promise<Response> {
     return payAndAccept(shop === FOOD ? PEOPLE.foodOwner : PEOPLE.waterOwner, shop, orderId)
 }
@@ -110,7 +110,7 @@ test("the card comes from the courier bot with the shop's name; no buttons until
     expect(card.text).toContain("Navoiy 12")
     expect(card.text).toContain("+998 90 123 45 67")
     // Paid to the shop's card before cooking: nothing to take at the door.
-    expect(card.text).toContain("Oldindan to'langan — mijozdan pul olmang")
+    expect(card.text).toContain("Oldindan to'langan, mijozdan pul olmang")
     expect(card.text).toContain("bozor yonida")
     expect(card.text).toContain("yandex")
     expect(card.buttons.filter((b) => b.callback_data)).toHaveLength(0)
@@ -143,7 +143,7 @@ test("ready → «Забрал» in the courier bot → «Доставил» in 
 
     await openApp(page, { user: PEOPLE.courier, courierBot: true })
     await expect(page.getByRole("heading", { name: "Yetkazishlarim" })).toBeVisible()
-    await expect(page.getByText("Oldindan to'langan — pul olmang")).toBeVisible()
+    await expect(page.getByText("Oldindan to'langan, pul olmang")).toBeVisible()
     const before = await lastSeq()
     // One «Доставил»: the money is already the shop's, nobody asks how it was paid.
     await page.getByRole("button", { name: "Yetkazdim" }).click()

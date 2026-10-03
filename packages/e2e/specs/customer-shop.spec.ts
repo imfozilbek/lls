@@ -141,7 +141,7 @@ test.describe("customer of a food shop: order and status", () => {
     }) => {
         const card = (await messagesTo(PEOPLE.foodOwner.id)).find((m) => m.text.includes("#1"))
         const accept = card?.buttons.find((b) => b.callback_data?.startsWith("p:"))
-        expect(accept?.text).toBe("💳 Pul keldi — qabul qilish")
+        expect(accept?.text).toBe("💳 Pul keldi, qabul qilish")
         const since = await lastSeq()
         await shopChat(FOOD).press(PEOPLE.foodOwner, accept?.callback_data ?? "")
         await waitForMessage(

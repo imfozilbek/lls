@@ -22,7 +22,7 @@ export const FOOD_UZ = (base: Dictionary): Overrides => ({
         tabs: { ...base.owner.tabs, menu: "Menyu" },
         actions: { ...base.owner.actions, preparing: "Tayyorlashni boshlash" },
         menuEmpty: "Menyu bo'sh",
-        menuEmptyText: "Birinchi taomni qo'shing — mijozlar uni darhol ko'radi.",
+        menuEmptyText: "Birinchi taomni qo'shing: mijozlar uni darhol ko'radi.",
     },
-    courier: { ...base.courier, waitReady: "Taom tayyorlanmoqda — tayyor bo'lganda xabar keladi" },
+    courier: { ...base.courier, waitReady: "Taom tayyorlanmoqda, tayyor bo'lganda xabar keladi" },
 })

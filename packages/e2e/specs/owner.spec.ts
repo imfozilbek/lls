@@ -63,7 +63,7 @@ test("empty orders, then a new order: card, every step from the app, customer to
 
     await expect(one).toContainText("O'tkazma kutilmoqda")
     const steps: [string, string][] = [
-        ["Pul keldi — qabul qilish", "To'lov keldi"],
+        ["Pul keldi, qabul qilish", "To'lov keldi"],
         ["Tayyorlashni boshlash", "tayyorlanmoqda"],
         ["Tayyor bo'ldi", "tayyor"],
         ["Jo'natish", "yo'lda"],
@@ -103,16 +103,16 @@ test("cancel with a reason: the customer sees the reason", async ({ page }) => {
     await expect(page.getByText("Palov tugadi")).toBeVisible()
 })
 
-test("bot chat buttons: «Деньги пришли — принять»; old buttons and strangers are refused", async () => {
+test("bot chat buttons: «Деньги пришли, принять»; old buttons and strangers are refused", async () => {
     const since = await lastSeq()
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
     const newCard = await waitForMessage(PEOPLE.foodOwner.id, `#${order.number}`, since)
-    // A new order waits for the transfer: the step is «Деньги пришли — принять».
+    // A new order waits for the transfer: the step is «Деньги пришли, принять».
     expect(newCard.text).toContain("Kartaga o'tkazma kutilmoqda")
     const accept = newCard.buttons.find((b) => b.callback_data === `p:${order.id}`)
-    expect(accept?.text).toBe("💳 Pul keldi — qabul qilish")
+    expect(accept?.text).toBe("💳 Pul keldi, qabul qilish")
 
     // A stranger who got the button data cannot press it.
     await shopChat(FOOD).press(PEOPLE.stranger, accept?.callback_data ?? "")

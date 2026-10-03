@@ -34,7 +34,7 @@ function quantityLabel(item: OrderItemDTO, t: BotTexts): string {
 function itemLines(order: OrderDTO, t: BotTexts, language: Language): string[] {
     return order.items.map(
         (item) =>
-            `${escapeHtml(item.name)} ${quantityLabel(item, t)} — ${formatMoney(item.total, language)}`,
+            `${escapeHtml(item.name)} ${quantityLabel(item, t)}: ${formatMoney(item.total, language)}`,
     )
 }
 
@@ -157,7 +157,7 @@ export function formatStatusForCustomer(order: OrderDTO, reader: Reader): string
 }
 
 // Callback data (≤ 64 bytes): "a:<orderId>:<status>" advance, "x:<orderId>" cancel,
-// "p:<orderId>" «Деньги пришли — принять».
+// "p:<orderId>" «Деньги пришли, принять».
 export type OrderCallback =
     | { kind: "advance"; orderId: string; to: OrderStatus }
     | { kind: "cancel"; orderId: string }
@@ -184,7 +184,7 @@ export function parseOrderCallback(data: string): OrderCallback | null {
 
 /**
  * Owner: the next step + cancel, or no buttons for a finished order. A new order waits for the
- * transfer: its step is «Деньги пришли — принять».
+ * transfer: its step is «Деньги пришли, принять».
  */
 export function orderKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard {
     const t = textsFor(reader.language, reader.type)
