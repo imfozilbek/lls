@@ -22,6 +22,7 @@ import {
     TextInput,
 } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import type {
     CourierHomeDTO,
@@ -555,7 +556,10 @@ export function CourierApp(): React.JSX.Element {
     return (
         <main className="flex flex-col gap-4 px-4">
             <header className="pb-1 pt-4">
-                <p className="text-sm text-tg-hint">{ZUMDA_NAME} Kuryer</p>
+                <p className="flex items-center gap-1.5 text-sm font-semibold text-tg-hint">
+                    <ZumdaMark size={18} />
+                    {ZUMDA_NAME} Kuryer
+                </p>
                 <h1 className="text-2xl font-bold">{t.courier.title}</h1>
             </header>
             {home === null ? (

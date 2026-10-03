@@ -6,6 +6,7 @@ import { currencyOf } from "../lib/format.js"
 import { haptic } from "../lib/telegram.js"
 
 import { MinusIcon, PlusIcon } from "./icons.js"
+import { ZumdaMark } from "./zumda-mark.js"
 
 import type {
     ButtonHTMLAttributes,
@@ -320,7 +321,8 @@ export function Section({
 export function PoweredBy(): React.JSX.Element {
     const t = useT()
     return (
-        <p className="py-6 text-center text-xs tracking-wide text-tg-hint/80">
+        <p className="flex items-center justify-center gap-1.5 py-6 text-xs tracking-wide text-tg-hint">
+            <ZumdaMark size={16} />
             {t.common.poweredBy}
         </p>
     )

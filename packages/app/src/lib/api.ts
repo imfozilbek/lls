@@ -202,6 +202,9 @@ export const api = {
             request("PATCH", "/api/owner/shop", patch),
         uploadLogo: (image: Blob): Promise<ShopOwnerDTO> =>
             request("PUT", "/api/owner/shop/logo", image),
+        /** Zumda's picture on the shop bot (`lib/bot-avatar.ts`). */
+        setBotPhoto: (jpeg: Blob): Promise<void> =>
+            request("PUT", "/api/owner/shop/bot-photo", jpeg),
         money: (period: MoneyPeriod): Promise<MoneyReportDTO> =>
             request("GET", `/api/owner/money${query({ period })}`),
         /** The bot sends the period's orders to the owner's chat as a CSV file. */
@@ -301,6 +304,9 @@ export const api = {
         myShops: (): Promise<ShopOwnerDTO[]> => request("GET", "/api/platform/shops"),
         register: (body: RegisterShopBody): Promise<ShopOwnerDTO> =>
             request("POST", "/api/platform/shops", body),
+        /** The new bot's first picture: the shop's name with the Zumda mark. */
+        setBotPhoto: (shopId: string, jpeg: Blob): Promise<void> =>
+            request("PUT", `/api/platform/shops/${shopId}/bot-photo`, jpeg),
     },
 }
 

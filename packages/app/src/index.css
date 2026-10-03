@@ -47,7 +47,7 @@
     }
 
     :focus-visible {
-        outline: 2px solid rgb(var(--brand-rgb, 14 165 233));
+        outline: 2px solid rgb(var(--brand-rgb, 21 128 61));
         outline-offset: 2px;
     }
 }

@@ -4,7 +4,7 @@ import { create } from "zustand"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api, imageUrl } from "../lib/api.js"
-import { readableInk } from "../lib/brand.js"
+import { ZUMDA_NAME, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
@@ -16,6 +16,7 @@ import { LoadMore } from "../ui/load-more.js"
 import { Button, EmptyState, Skeleton } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import type { Category, ShopPublicDTO, ShowcaseProductDTO } from "@zumda/core"
 
@@ -407,6 +408,10 @@ export function ShowcaseScreen({ onOpen }: { onOpen(slug: string): void }): Reac
         <main className="flex flex-col gap-4 px-4 pt-4">
             <header className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
+                    <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-tg-hint">
+                        <ZumdaMark size={18} />
+                        {ZUMDA_NAME}
+                    </p>
                     <h1 className="text-2xl font-bold leading-tight">{t.showcase.title}</h1>
                     <p className="mt-1 text-sm text-tg-hint">{t.showcase.subtitle}</p>
                 </div>

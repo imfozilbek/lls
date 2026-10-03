@@ -16,6 +16,7 @@ import { PaymentLine } from "../ui/payment.js"
 import { Button, EmptyState, Field, Segmented, Skeleton, TextInput } from "../ui/primitives.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import { useOwner } from "./store.js"
 
@@ -291,7 +292,8 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
             ) : null}
             {order.channel === OrderChannel.MARKETPLACE ? (
                 <p className="mt-2 flex items-center gap-2 text-sm text-tg-subtitle">
-                    <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs font-bold text-tg-text">
+                    <span className="flex items-center gap-1 rounded-full bg-tg-secondary py-0.5 pl-0.5 pr-2 text-xs font-bold text-tg-text">
+                        <ZumdaMark size={16} />
                         {ZUMDA_NAME}
                     </span>
                     {fill(t.owner.showcaseOrder, { sum: formatMoney(order.commission, language) })}

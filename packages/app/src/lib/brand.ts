@@ -23,12 +23,27 @@ export function readableInk(channels: string): string {
 /** The product's name: the showcase, the courier screen, the poster footer. */
 export const ZUMDA_NAME = "Zumda"
 
-/** Zumda's own color: the showcase and onboarding, where no shop leads. */
-export const ZUMDA_BRAND_COLOR = "#0ea5e9"
+/** Zumda's own color: the showcase and onboarding, where no shop leads; a new shop's color. */
+export const ZUMDA_BRAND_COLOR = "#15803d"
+
+/** The same green as CSS channels: the fallback when a color cannot be read. */
+export const ZUMDA_BRAND_CHANNELS = "21 128 61"
+
+/** The Zumda mark in a 120×120 box (`brand/zumda-mark.svg`): one drawing for React and canvas. */
+export const ZUMDA_MARK = {
+    box: 120,
+    pin: "M60 14C38 14 24 30 24 50C24 76 60 106 60 106C60 106 96 76 96 50C96 30 82 14 60 14Z",
+    roof: "M42 56L60 40L78 56",
+    roofWidth: 6.5,
+    door: { x: 51, y: 55, width: 18, height: 20, radius: 3 },
+    green: "#15803d",
+    mint: "#dcfce7",
+    white: "#ffffff",
+} as const
 
 /** Paints the shop's color into CSS variables and Telegram's chrome. */
 export function applyBrand(hex: string): void {
-    const channels = hexToRgbChannels(hex) ?? "14 165 233"
+    const channels = hexToRgbChannels(hex) ?? ZUMDA_BRAND_CHANNELS
     const root = document.documentElement.style
     root.setProperty("--brand-rgb", channels)
     root.setProperty("--brand-ink-rgb", readableInk(channels))
@@ -38,7 +53,7 @@ export function brandHex(): string {
     const channels = getComputedStyle(document.documentElement)
         .getPropertyValue("--brand-rgb")
         .trim()
-    const [r, g, b] = (channels || "14 165 233").split(" ").map(Number)
+    const [r, g, b] = (channels || ZUMDA_BRAND_CHANNELS).split(" ").map(Number)
     return `#${[r, g, b].map((v) => (v ?? 0).toString(16).padStart(2, "0")).join("")}`
 }
 
@@ -51,6 +66,7 @@ export function brandInkHex(): string {
 
 /** Shop colors owners can pick: the Zumda palette, all readable with white or dark text. */
 export const BRAND_SWATCHES = [
+    ZUMDA_BRAND_COLOR,
     "#0ea5e9",
     "#0284c7",
     "#10b981",

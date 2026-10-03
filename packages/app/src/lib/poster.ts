@@ -1,7 +1,8 @@
 import { encode } from "uqr"
 
-import { ZUMDA_NAME, readableInk } from "./brand.js"
+import { ZUMDA_BRAND_CHANNELS, readableInk } from "./brand.js"
 import { hexToRgbChannels } from "./format.js"
+import { drawZumdaMark } from "./zumda-canvas.js"
 
 /** 4:5: fits an A4 print and an Instagram post. */
 const WIDTH = 1080
@@ -16,6 +17,8 @@ const PAPER = "#ffffff"
 const INK = "#111827"
 const MUTED = "#6b7280"
 const LOGO_TIMEOUT_MS = 4000
+const MARK = 40
+const MARK_GAP = 12
 
 export interface PosterInput {
     shopName: string
@@ -25,6 +28,8 @@ export interface PosterInput {
     logoUrl: string | null
     /** "Telegram orqali buyurtma bering": the product speaks Uzbek only. */
     line: string
+    /** "Zumda asosida ishlaydi": the footer, next to the Zumda mark. */
+    poweredBy: string
 }
 
 /** The link the poster's QR opens: the shop's bot, where the menu button starts the shop. */
@@ -85,7 +90,7 @@ function drawHeader(
     input: PosterInput,
     logo: HTMLImageElement | null,
 ): void {
-    const channels = hexToRgbChannels(input.brandColor) ?? "14 165 233"
+    const channels = hexToRgbChannels(input.brandColor) ?? ZUMDA_BRAND_CHANNELS
     const ink = rgb(readableInk(channels))
     ctx.fillStyle = rgb(channels)
     ctx.fillRect(0, 0, WIDTH, HEADER)
@@ -149,9 +154,19 @@ function drawFooter(ctx: CanvasRenderingContext2D, input: PosterInput, top: numb
     ctx.fillText(input.line, WIDTH / 2, top + 30)
     ctx.font = `600 34px ${FONT}`
     ctx.fillText(`t.me/${input.botUsername}`, WIDTH / 2, top + 110)
+    drawPoweredBy(ctx, input.poweredBy)
+}
+
+/** The Zumda mark and "Zumda asosida ishlaydi", centered together at the bottom. */
+function drawPoweredBy(ctx: CanvasRenderingContext2D, text: string): void {
+    ctx.font = `600 26px ${FONT}`
+    const width = MARK + MARK_GAP + ctx.measureText(text).width
+    const left = (WIDTH - width) / 2
+    const baseline = HEIGHT - 44
+    drawZumdaMark(ctx, { x: left, y: baseline - MARK + 6, size: MARK }, "tile")
     ctx.fillStyle = MUTED
-    ctx.font = `500 24px ${FONT}`
-    ctx.fillText(`powered by ${ZUMDA_NAME}`, WIDTH / 2, HEIGHT - 40)
+    ctx.textAlign = "left"
+    ctx.fillText(text, left + MARK + MARK_GAP, baseline)
 }
 
 function render(input: PosterInput, logo: HTMLImageElement | null): HTMLCanvasElement {
