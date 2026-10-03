@@ -66,11 +66,11 @@ Claude, и деплоем; перед подключением настоящи�
 - [ ] Старого бота с прежним названием удалите: @BotFather → `/deletebot` (его токен когда-то
       попал в чат).
 
-- [x] Третий бот **Zumda | Business** (решение владельца, 3 октября 2026): владельцы и админы.
+- [x] Третий бот **Zumda | Business** (`@zumdashop_business_bot`) (решение владельца, 3 октября 2026): владельцы и админы.
       @BotFather → `/newbot`; токен в переменные окружения Claude (`BUSINESS_BOT_TOKEN`) и в
       секреты окружения `production` в GitHub.
 - [ ] Bot Management Mode для **Zumda | Business** (цель 14: бот бизнеса создаётся без токена):
-      @BotFather → `/mybots` → бот Zumda | Business → **Bot Settings** → **Bot Management Mode**
+      @BotFather → `/mybots` → `@zumdashop_business_bot` → **Bot Settings** → **Bot Management Mode**
       → **On**. Проверка: `scripts/check-access.sh` → «can create bots for owners».
 - [ ] Аватар Zumda | Business: @BotFather → `/setuserpic` → `brand/zumda-business-avatar.png`.
 - [ ] Каждый админ один раз нажимает **Start** в Zumda | Business: иначе бот не сможет писать
@@ -94,7 +94,7 @@ CLOUDFLARE_API_TOKEN=…        токен из шага 3
 CLOUDFLARE_ACCOUNT_ID=…       Account ID из шага 3
 PLATFORM_BOT_TOKEN=…          токен @zumdashop_bot
 COURIER_BOT_TOKEN=…           токен @zumdashop_kuryer_bot
-BUSINESS_BOT_TOKEN=…          токен бота Zumda | Business
+BUSINESS_BOT_TOKEN=…          токен @zumdashop_business_bot
 PLATFORM_ADMIN_IDS=…          ваш Telegram ID; несколько админов: через запятую
 ```
 

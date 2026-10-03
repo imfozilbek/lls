@@ -25,7 +25,7 @@ colors, Zumda stays green.
 | `zumda-logo.svg` / `.png` | Mark + word on light backgrounds |
 | `zumda-logo-on-green.svg` / `.png` | Mark + word on green |
 | `zumda-bot-avatar.png` (640) | `@zumdashop_bot` avatar: BotFather → `/setuserpic` |
-| `zumda-business-avatar.png` (640) | `Zumda \| Business` bot avatar (mark + briefcase) |
+| `zumda-business-avatar.png` (640) | `@zumdashop_business_bot` avatar (mark + briefcase) |
 | `zumda-kuryer-avatar.png` (640) | `@zumdashop_kuryer_bot` avatar (mark + scooter) |
 | `zumda-group-avatar.png` / `-gear.png` | Telegram groups: team, engineers |
 

@@ -8,7 +8,7 @@ Qisqa va oddiy: do'konni ulash, katalogni to'ldirish, kuryerlarni qo'shish, buyu
 
 ### 1. Biznesni ulash (5 daqiqa)
 
-1. Telegram'da **Zumda | Business** botini oching va **Start** ni bosing.
+1. Telegram'da **Zumda | Business** botini (**@zumdashop_business_bot**) oching va **Start** ni bosing.
 2. **Mening bizneslarim** tugmasini bosing, keyin **Yangi biznes**. Ilova ochiladi.
 3. **1-qadam: Biznes haqida:** nomi, faoliyat turi (Ovqat / Suv / Oziq-ovqat), manzil.
 4. **2-qadam: Bot:** **Bot yaratish** ni bosing. Telegram oynasida bot nomi va manzili tayyor

@@ -14,8 +14,7 @@ readonly TG_API="https://api.telegram.org"
 readonly ZONE="zumda.shop"
 readonly PLATFORM_BOT="zumdashop_bot"
 readonly COURIER_BOT="zumdashop_kuryer_bot"
-# Zumda | Business: its @username is whatever the owner picked; the check names it.
-readonly BUSINESS_BOT=""
+readonly BUSINESS_BOT="zumdashop_business_bot"
 
 failures=0
 

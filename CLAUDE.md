@@ -40,7 +40,7 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   «Zumda | Business», «Zumda | Kuryer» (the deploy sets the names):**
   - **Zumda | Shop (`@zumdashop_bot`, `PLATFORM_BOT_TOKEN`):** customers only: the showcase,
     search, and messages about showcase orders.
-  - **Zumda | Business (`BUSINESS_BOT_TOKEN`):** owners and platform admins: «Mening bizneslarim»
+  - **Zumda | Business (`@zumdashop_business_bot`, `BUSINESS_BOT_TOKEN`):** owners and platform admins: «Mening bizneslarim»
     (`?mode=business`), applications, all messages to owners and admins about their businesses
     (application, approval, showcase deal, alerts), the admins' approval buttons and commands
     (`/reconnect`, `/market`, `/district`, `/network`). It creates and manages the shops' bots
