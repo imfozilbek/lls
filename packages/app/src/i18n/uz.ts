@@ -166,13 +166,12 @@ export const uz = {
         beforeCooking:
             "Faqat do'kon kartasiga o'tkazma. Buyurtma bering va summani o'tkazing. Pul kelishi bilan do'kon boshlaydi.",
         sent: "O'tkazdim",
-        waitingHint: "Summani do'kon kartasiga o'tkazing. Pul kelishi bilan do'kon boshlaydi",
-        checkingHint: "Do'kon o'tkazmani tekshirmoqda. Buyurtma qabul qilinishi bilan yozamiz.",
         ownerAwaiting: "Mijoz o'tkazdi, kartani tekshiring",
         afterOrder: "Buyurtmadan keyin do'kon kartasiga {sum} o'tkazasiz",
         afterOrderHint:
             "Karta raqami buyurtma berilgach ko'rinadi. Pul kelishi bilan do'kon boshlaydi.",
         waitingTitle: "To'lov kutilmoqda",
+        waitingSum: "{sum} ni do'kon kartasiga o'tkazing. Pul kelishi bilan do'kon boshlaydi.",
         checkingTitle: "Do'kon pulni tekshirmoqda",
         checkingTime: "Odatda 5-10 daqiqa. Qabul qilinishi bilan botda yozamiz.",
         rejectedTitle: "Do'kon pulni topmadi",
@@ -205,7 +204,6 @@ export const uz = {
     order: {
         title: "Buyurtma #{n}",
         placedTitle: "Buyurtma yuborildi!",
-        placedText: "Summani do'kon kartasiga o'tkazing. Pul kelishi bilan do'kon boshlaydi.",
         cancel: "Buyurtmani bekor qilish",
         cancelConfirm: "Buyurtmani bekor qilasizmi?",
         items: "Tarkibi",
@@ -355,7 +353,7 @@ export const uz = {
         paidAccept: "Pul keldi, qabul qilish",
         check: {
             title: "{sum} keldimi?",
-            toCard: "{card} kartangizga · {name}",
+            toCard: "{card} kartangizga",
             hint: "Bank ilovangizni oching va pul kelganini ko'ring. Chek dalil emas: pul kartada bo'lishi kerak.",
             noReceipt: "Mijoz o'tkazganini hali bildirmagan, chek yo'q.",
             reusedHere: "Bu chek avval #{n} buyurtmada yuborilgan.",

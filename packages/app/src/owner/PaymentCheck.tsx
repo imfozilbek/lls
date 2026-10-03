@@ -89,14 +89,10 @@ export function PaymentCheckSheet({
                     {card ? (
                         <p className="flex items-center gap-2 font-semibold">
                             <CardIcon size={18} className="shrink-0 text-brand" />
-                            <span className="min-w-0">
-                                {fill(c.toCard, {
-                                    card: `•••• ${card.slice(-4)}`,
-                                    name: order.customerName,
-                                })}
-                            </span>
+                            {fill(c.toCard, { card: `•••• ${card.slice(-4)}` })}
                         </p>
                     ) : null}
+                    <p className="truncate text-sm font-medium">{order.customerName}</p>
                     <p className="mt-1 text-sm text-tg-subtitle">{c.hint}</p>
                 </div>
                 <ReceiptThumb orderId={order.id} sentAt={order.payment.receipt?.at} />

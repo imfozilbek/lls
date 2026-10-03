@@ -26,6 +26,38 @@ import type { OrderDTO } from "@zumda/core"
 /** Status changes arrive by bot message too, so a calm 20 s refresh is enough (free-tier friendly). */
 const POLL_MS = 20_000
 
+/** The screenshot already sent, when, and a way to send another while the shop checks. */
+function SentReceipt({
+    order,
+    onReplace,
+}: {
+    order: OrderDTO
+    onReplace(): void
+}): React.JSX.Element {
+    const t = useT()
+    const language = useLanguage()
+    const sentAt = order.payment.receipt?.at
+    return (
+        <div className="flex animate-fade-in gap-3 rounded-control bg-tg-secondary p-3">
+            <ReceiptThumb orderId={order.id} sentAt={sentAt} />
+            <div className="flex min-w-0 flex-1 flex-col justify-center">
+                {sentAt ? (
+                    <p className="font-medium">
+                        {fill(t.pay.sentAt, { time: formatTime(sentAt, language) })}
+                    </p>
+                ) : null}
+                <button
+                    type="button"
+                    onClick={onReplace}
+                    className="tap -ml-1 mt-1 min-h-11 rounded-control px-1 text-sm font-semibold text-brand"
+                >
+                    {t.pay.replace}
+                </button>
+            </div>
+        </div>
+    )
+}
+
 /**
  * Paid before the shop starts: until then the shop's card stays at hand with «O'tkazdim», which
  * asks for the screenshot of the transfer. After it the customer sees that the shop is checking,
@@ -39,7 +71,6 @@ function Payment({
     onChange(order: OrderDTO): void
 }): React.JSX.Element {
     const t = useT()
-    const language = useLanguage()
     // The card this order was shown: the owner may have switched the payment card since.
     const shopCard = useSession((state) => state.shop?.payoutCard)
     const card = order.payment.card ?? shopCard
@@ -48,14 +79,16 @@ function Payment({
     const unpaid = open && order.payment.status === PaymentStatus.UNPAID
     const checking = open && order.payment.status === PaymentStatus.AWAITING
     const rejected = unpaid && order.payment.rejections > 0
-    const sentAt = order.payment.receipt?.at
 
     return (
         <Section title={t.pay.title}>
-            <PaymentLine
-                order={order}
-                className="rounded-control bg-tg-secondary px-4 py-3 text-base"
-            />
+            {/* While the money is open, the hero above already says where it stands. */}
+            {unpaid || checking ? null : (
+                <PaymentLine
+                    order={order}
+                    className="rounded-control bg-tg-secondary px-4 py-3 text-base"
+                />
+            )}
             {rejected ? (
                 <div className="flex animate-rise gap-3 rounded-control bg-warning/15 px-4 py-3">
                     <AlertIcon size={20} className="mt-0.5 shrink-0 text-warning" />
@@ -80,28 +113,13 @@ function Payment({
                 </Button>
             ) : null}
             {checking ? (
-                <div className="flex animate-fade-in gap-3 rounded-control bg-tg-secondary p-3">
-                    <ReceiptThumb orderId={order.id} sentAt={sentAt} />
-                    <div className="min-w-0 flex-1">
-                        <p className="font-semibold">{t.pay.checkingTitle}</p>
-                        <p className="text-sm text-tg-subtitle">{t.pay.checkingTime}</p>
-                        {sentAt ? (
-                            <p className="text-sm text-tg-hint">
-                                {fill(t.pay.sentAt, { time: formatTime(sentAt, language) })}
-                            </p>
-                        ) : null}
-                        <button
-                            type="button"
-                            onClick={(): void => {
-                                haptic.tap()
-                                setSheet(true)
-                            }}
-                            className="tap -ml-1 mt-1 min-h-11 rounded-control px-1 text-sm font-semibold text-brand"
-                        >
-                            {t.pay.replace}
-                        </button>
-                    </div>
-                </div>
+                <SentReceipt
+                    order={order}
+                    onReplace={(): void => {
+                        haptic.tap()
+                        setSheet(true)
+                    }}
+                />
             ) : null}
             {sheet ? (
                 <ReceiptSheet
@@ -248,8 +266,8 @@ function heroText(
         return { title: t.pay.rejectedTitle, hint: t.pay.rejectedText }
     }
     return {
-        title: justPlaced ? t.order.placedTitle : `${t.pay.waitingTitle} · ${sum}`,
-        hint: justPlaced ? t.order.placedText : t.pay.waitingHint,
+        title: justPlaced ? t.order.placedTitle : t.pay.waitingTitle,
+        hint: fill(t.pay.waitingSum, { sum }),
     }
 }
 
