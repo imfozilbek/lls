@@ -100,7 +100,7 @@ test("checkout tells the sum; the order screen gives the card; «O'tkazdim» wit
     const placed = await lastSeq()
     await bottomButton(page).click()
     await expect(page.getByRole("heading", { name: "Buyurtma yuborildi!" })).toBeVisible()
-    await expect(page.getByText("O'tkazma kutilmoqda")).toBeVisible()
+    await expect(page.getByText(/55\s000\sso'm ni do'kon kartasiga o'tkazing/)).toBeVisible()
     // The card on the order screen, and in the bot too.
     await expect(page.getByText(CARD)).toBeVisible()
     await expect(page.getByText("RUSTAM KARIMOV")).toBeVisible()

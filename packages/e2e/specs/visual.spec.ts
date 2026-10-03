@@ -4,6 +4,7 @@
  */
 import { expect, test } from "@playwright/test"
 
+import { pngImage } from "../support/images.js"
 import {
     FOOD,
     PEOPLE,
@@ -51,6 +52,17 @@ for (const theme of ["light"] as const) {
         await snap(page, "04-history", theme)
         await page.getByRole("button", { name: /Buyurtma #1/ }).click()
         await snap(page, "05-order", theme)
+        await page.getByRole("button", { name: "O'tkazdim" }).click()
+        await page.locator('input[type="file"]').setInputFiles({
+            name: "chek.png",
+            mimeType: "image/png",
+            buffer: pngImage(240, [236, 253, 245]),
+        })
+        await expect(page.getByRole("img", { name: "O'tkazma cheki" })).toBeVisible()
+        await snap(page, "07-receipt-sheet", theme)
+        await page.getByRole("button", { name: "Chekni yuborish" }).click()
+        await expect(page.getByRole("heading", { name: "Do'kon pulni tekshirmoqda" })).toBeVisible()
+        await snap(page, "08-order-checking", theme)
         await openApp(page, { user: PEOPLE.customer, shop: WATER, theme })
         await page.getByRole("button", { name: "Qo'shish: Toza suv 19 l" }).click()
         await bottomButton(page).click()
@@ -63,6 +75,17 @@ for (const theme of ["light"] as const) {
         await page.getByRole("button", { name: "Mening do'konim" }).click()
         await expect(page.getByText("Buyurtma #1")).toBeVisible()
         await snap(page, "10-owner-orders", theme)
+        await page.getByRole("button", { name: "Pul keldi, qabul qilish" }).click()
+        await expect(page.getByRole("button", { name: "Chekni ko'rish" })).toBeVisible()
+        await snap(page, "16-owner-check", theme)
+        await page.getByRole("button", { name: "Yo'q, pul kelmadi" }).click()
+        await openApp(page, { user: PEOPLE.customer, shop: FOOD, theme })
+        await page.getByRole("button", { name: "Buyurtmalarim" }).click()
+        await page.getByRole("button", { name: /Buyurtma #1/ }).click()
+        await expect(page.getByRole("heading", { name: "Do'kon pulni topmadi" })).toBeVisible()
+        await snap(page, "09-order-rejected", theme)
+        await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD, theme })
+        await page.getByRole("button", { name: "Mening do'konim" }).click()
         await page.getByRole("tab", { name: "Menyu" }).click()
         await snap(page, "11-owner-menu", theme)
         await page.getByRole("switch", { name: "Sotuvda bor: Lag'mon" }).click()
