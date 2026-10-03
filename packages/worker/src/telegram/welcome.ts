@@ -5,8 +5,8 @@ import type { MessageOptions, TelegramGateway } from "./gateway.js"
 /** The street picture under `packages/app/public/welcome/`, served by the Mini App. */
 export const WELCOME_PICTURE = {
     platform: "/welcome/zumda.jpg",
-    // The same street of eateries, shops and services: the businesses Zumda Business is for.
-    business: "/welcome/zumda.jpg",
+    // The same street, signed «zumda Business»: the bot for the owners of these places.
+    business: "/welcome/biznes.jpg",
     courier: "/welcome/kuryer.jpg",
 } as const
 
