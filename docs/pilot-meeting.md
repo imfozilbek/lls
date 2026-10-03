@@ -44,8 +44,8 @@ kuryer olib keladi. Kuryeri yoʻq nuqtaga tuman kuryerlari tarmogʻi yordam bera
 21. Qanday hisobot kerak: kunlik tushum, kuryerlar boʻyicha, mahsulotlar boʻyicha?
 22. Xarajatlarni (mahsulot, ish haqi, ijara) ham shu yerda yuritish kerakmi yoki faqat tushum yetarlimi?
 
-**LLS va ishga tushirish**
-23. Umumiy LLS vitrinasida boʻlishni xohlaysizmi? Vitrinadan kelgan buyurtmadan necha foiz komissiya toʻgʻri keladi?
+**Zumda va ishga tushirish**
+23. Umumiy Zumda vitrinasida boʻlishni xohlaysizmi? Vitrinadan kelgan buyurtmadan necha foiz komissiya toʻgʻri keladi?
 24. Oʻz botingiz uchun oyiga qancha toʻlashga tayyorsiz? Bepul sinov muddati kerakmi?
 25. Bot nomi, logotip va rang qanday boʻladi?
 26. Sinov buyurtmasini va rasmiy ishga tushirishni qachon qilamiz?
@@ -135,13 +135,13 @@ kuryer olib keladi. Kuryeri yoʻq nuqtaga tuman kuryerlari tarmogʻi yordam bera
 ## По-русски: что запускает каждый ответ
 
 **Уже есть в продукте:** заказ в боте, свои доставщики, статусы, вода с залогом, весовые товары,
-стоп-лист, витрина LLS, оплата только переводом на карту магазина до готовки (решение
+стоп-лист, витрина Zumda, оплата только переводом на карту магазина до готовки (решение
 владельца), отчёт для Excel, часы работы по дням, QR-плакат.
 
 | Ответ «да» на вопрос | Что это значит для нас |
 |---|---|
 | Сеть: водители на своих машинах, готовы возить для соседей (1–3) | Сразу берём в работу доставку района (ROADMAP M6) |
-| Сеть: платят таксистам или водителю за поездку (4–6) | Данные для решения, кому идёт плата за доставку и есть ли доля LLS |
+| Сеть: платят таксистам или водителю за поездку (4–6) | Данные для решения, кому идёт плата за доставку и есть ли доля Zumda |
 | Самовывоз (общие 18, сеть 7, Maqsudbek 7–8) | Самовывоз (ROADMAP M7), небольшая доработка |
 | Каталог вносим мы (сеть 8) | Готовим импорт из Excel или вносим вручную (ROADMAP M7) |
 | Соседние точки и водители (сеть 9–10) | Первые кандидаты на подключение в районе |

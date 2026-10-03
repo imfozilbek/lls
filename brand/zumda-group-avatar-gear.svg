@@ -7,7 +7,7 @@
     </linearGradient>
   </defs>
   <rect width="1024" height="1024" fill="url(#bg)"/>
-  <!-- Local Loop: one delivery route around the district, from the shop and back to it. -->
+  <!-- One delivery route around the district, from the shop and back to it. -->
   <path d="M 683.9 314.3 A 262 262 0 1 1 389.0 280.7"
         fill="none" stroke="#FFFFFF" stroke-width="50" stroke-linecap="round"/>
   <path d="M 343.3 245.8 L 419.0 264.7 L 392.3 338.0"
@@ -17,5 +17,5 @@
   <circle cx="650.8" cy="289.8" r="27" fill="#0EA5E9"/>
   <text x="512" y="578" text-anchor="middle"
         font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="800"
-        font-size="188" letter-spacing="-4" fill="#FFFFFF">LLS</text>
+        font-size="150" letter-spacing="-3" fill="#FFFFFF">Zumda</text>
 </svg>

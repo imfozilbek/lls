@@ -1,17 +1,17 @@
 ---
 name: brand-guidelines
-description: LLS white-label UI rules - the shop's brand leads, the app is always light and speaks Uzbek, LLS stays in the background
+description: Zumda white-label UI rules - the shop's brand leads, the app is always light and speaks Uzbek, Zumda stays in the background
 ---
 
-# LLS Brand Guidelines (white-label)
+# Zumda Brand Guidelines (white-label)
 
 Read this before any UI work in `packages/app`. Product context: `PRODUCT.md`.
 
 ## Who the brand belongs to
 
-- **The shop is the hero.** Customers see the shop's name, logo and color. LLS appears only as a
-  small "LLS asosida ishlaydi / Работает на LLS" line at the bottom of the storefront.
-- **LLS's own color** (#0EA5E9, sky blue) is used only where no shop exists yet: onboarding in the
+- **The shop is the hero.** Customers see the shop's name, logo and color. Zumda appears only as a
+  small "Zumda asosida ishlaydi" line at the bottom of the storefront.
+- **Zumda's own color** (#0EA5E9, sky blue) is used only where no shop exists yet: onboarding in the
   platform bot, and as the fallback when a shop has no color.
 - **Three business types** share one design: food, water, grocery. Only words and a few icons
   change per type (see "Words per business type").

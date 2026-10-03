@@ -47,7 +47,7 @@ coverage/
 # D1 exports hold customer phones: keep them offline, never in git
 backups/
 *.sql.gz
-lls-*.sql
+zumda-*.sql
 .dev.vars
 .dev.vars.*
 

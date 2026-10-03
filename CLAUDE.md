@@ -11,34 +11,37 @@ The old NestJS + MongoDB code is kept only at git tag `legacy-v0`. Reuse ideas f
 
 ## Project Overview
 
-LLS (LocalLoopSolutions) — local delivery platform for small businesses.
+Zumda — local delivery platform for small businesses (Uzbek *zumda*, "in a moment").
+Company name, where a full one is needed: **Zumda Shop**. Domain: `zumda.shop`.
 TypeScript monorepo (Bun workspaces). Bun 1.3.
 
 **Target market:** small businesses in regions and districts of Uzbekistan, where aggregators
 are absent or take 20–30% of each order (Uzum Tezkor has worked in Guliston since April 2025).
 **The goal: every offline point within 20–30 km of one district becomes an online point.** Today
-the customer has to come to the point; with LLS they order from home and a courier brings it.
+the customer has to come to the point; with Zumda they order from home and a courier brings it.
 Start with the three pilots; next to them grow the district's own delivery network, then one
-LLS marketplace on top of both.
+Zumda marketplace on top of both.
 
 | Package | Description |
 |---------|-------------|
-| `@lls/core` | Domain logic (DDD): entities, value objects, use cases, ports. Pure TS, no deps |
-| `@lls/worker` | Cloudflare Worker: HTTP API (Hono) + Telegram bot webhooks |
-| `@lls/app` | Telegram Mini App (React), hosted on Pages: customer storefront, owner section "Мой магазин", courier section, shop onboarding |
+| `@zumda/core` | Domain logic (DDD): entities, value objects, use cases, ports. Pure TS, no deps |
+| `@zumda/worker` | Cloudflare Worker: HTTP API (Hono) + Telegram bot webhooks |
+| `@zumda/app` | Telegram Mini App (React), hosted on Pages: customer storefront, owner section "Мой магазин", courier section, shop onboarding |
 
 Two products on one platform, both in stage 1: the **online point** (a shop's own bot, orders,
-money, showcase) and **district delivery** (LLS courier bot, couriers for many points).
+money, showcase) and **district delivery** (Zumda courier bot, couriers for many points).
 
 ## White-Label Model
 
-LLS is the platform brand. Customers see the **shop's brand**; the app shows a small "powered by LLS".
+Zumda is the platform brand. Customers see the **shop's brand**; the app shows a small "powered by Zumda".
 
 - **One bot per shop.** The owner creates it in BotFather. The chat, name and avatar are the shop's.
-- **Platform bot (LLS).** Owners connect their shop through it (self-serve onboarding).
-  Platform admins (`PLATFORM_ADMIN_IDS`) approve new shops with a button.
-- **One Worker serves all bots:** webhook `/tg/:botId` for shop bots, `/tg/platform` for the LLS bot,
-  `/tg/courier` for the LLS courier bot.
+- **Platform bot (Zumda, `@zumdashop_bot`).** Owners connect their shop through it (self-serve
+  onboarding); customers search the showcase. Platform admins (`PLATFORM_ADMIN_IDS`) approve new
+  shops with a button.
+- **Courier bot (Zumda Kuryer, `@zumdashop_kuryer_bot`).** One bot for every courier of every shop.
+- **One Worker serves all bots:** webhook `/tg/:botId` for shop bots, `/tg/platform` for the Zumda bot,
+  `/tg/courier` for the Zumda courier bot.
 - **One Mini App for all shops.** The shop bot's menu button opens it with `?shop=<slug>`.
 - **Per-shop branding:** name, logo, brand color. Everything else is shared.
 
@@ -46,7 +49,7 @@ LLS is the platform brand. Customers see the **shop's brand**; the app shows a s
 
 | Stage | What | Revenue |
 |-------|------|---------|
-| **1. Online point + district delivery (NOW)** | **Online point:** the pilot shops' whole process: found → order → delivery → **paid**, and the owner sees where the money is. **LLS showcase**: search across shops in the LLS bot, the order goes to one shop. **District delivery** (standalone from the first versions): the LLS courier bot; a courier works for several points; points without couriers are served by the district network | Service fee on every order (paid by the customer) + subscription + commission on showcase orders. Delivery revenue: **not decided** (the owner decides) |
+| **1. Online point + district delivery (NOW)** | **Online point:** the pilot shops' whole process: found → order → delivery → **paid**, and the owner sees where the money is. **Zumda showcase**: search across shops in the Zumda bot, the order goes to one shop. **District delivery** (standalone from the first versions): the Zumda courier bot; a courier works for several points; points without couriers are served by the district network | Service fee on every order (paid by the customer) + subscription + commission on showcase orders. Delivery revenue: **not decided** (the owner decides) |
 | 2. District marketplace | One cart from several shops, district filter | Commission on marketplace sales only |
 | 3. Delivery at scale | Several pickups per trip, routes | Delivery fee + volume terms |
 
@@ -54,7 +57,7 @@ LLS is the platform brand. Customers see the **shop's brand**; the app shows a s
 Zoir (20 l water production and delivery). Each business has its own bot. The first launch must
 cover each one's whole process; what exactly comes from the meeting with them.
 
-**Money rules of the platform** (LLS earns on volume):
+**Money rules of the platform** (Zumda earns on volume):
 - **Customers pay only by transfer to the shop's card, before the shop starts** (owner's
   decision, October 2026). The order is placed unpaid → the customer transfers and presses
   «Я перевёл» → the owner sees the money and presses «Деньги пришли — принять» (paid and
@@ -66,7 +69,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
   removed.
 - **No card, no orders.** The first card is a required onboarding step; a shop without one
   shows «Tez orada buyurtma qabul qila boshlaydi» and refuses orders (`NO_PAYOUT_CARD`).
-- **LLS service fee (plan — not in code yet):** a small percentage on **every** order through LLS,
+- **Zumda service fee (plan — not in code yet):** a small percentage on **every** order through Zumda,
   in any channel (shop bot, showcase, district delivery). The **customer** pays it as a separate
   "Сервис" line in the cart, the order and the messages. The shop's prices never change: the shop
   gets its price in full.
@@ -74,7 +77,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
   Zero is allowed (pilots).
 - Every order stores a **service fee snapshot** (rate + amount, integer UZS), fixed when the
   order is placed; 0 when the rate is 0. Computed only on the server.
-- No payment gateways: the shop receives the fee with the order's transfer and pays LLS the
+- No payment gateways: the shop receives the fee with the order's transfer and pays Zumda the
   month's fees by a monthly per-shop report.
 - Not decided (the owner decides, never invent): the fee base (goods, or goods + delivery; bottle
   deposits never count), and the pilots' rate.
@@ -83,7 +86,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - Subscription for the shop's own bot: a separate deal.
 
 **District delivery (stage 1):**
-- **Done (goal 05):** one LLS courier bot for all couriers. One courier profile per `telegram_id`
+- **Done (goal 05):** one Zumda courier bot for all couriers. One courier profile per `telegram_id`
   (name, phone, vehicle, shift) plus a courier↔business link (`couriers` row: status
   pending/active/removed, working days, "not today").
 - **Done:** only a business invites a courier: an invite from "Мой магазин" → the person accepts
@@ -94,7 +97,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
   order is paid to the shop's card before cooking.
 - **Done (goal 06):** every courier a business approves is **offered** once to deliver for other
   points of the district too (`in_network`, only the courier's own consent).
-- **Done:** a district is a circle (center + radius) the platform admin sets in the LLS bot:
+- **Done:** a district is a circle (center + radius) the platform admin sets in the Zumda bot:
   `/district <name> <lat>,<lng> <km>`, `/district <name> wait <min>`; `/network` shows it.
   A shop belongs to the district its location falls in.
 - **Done:** when the shop accepts an order and none of its own couriers can take it now, the
@@ -106,7 +109,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
   `wait` minutes (default 10):
   the shop and the admins hear it once (no cron: checked on every network event and `/network`).
 - **Temporary rule (owner decides later, goal 02):** the delivery fee of a network order stays
-  with the shop and LLS takes no share. It is a snapshot in the order (`delivery_fee_to`), set in
+  with the shop and Zumda takes no share. It is a snapshot in the order (`delivery_fee_to`), set in
   one place (`NETWORK_DELIVERY_FEE_RECIPIENT`).
 
 **⛔ RULES:**
@@ -116,14 +119,14 @@ cover each one's whole process; what exactly comes from the meeting with them.
   **No cash, no payment gateways (Click, Payme)**: the owner confirms transfers by hand.
 - Services (carpet and car cleaning) join stage 1 as their own business type once their process
   is agreed with the client.
-- The LLS showcase is in: search across shops + shop list in the LLS bot;
-  a tap opens that shop's storefront inside the LLS bot; cart and order stay per shop.
+- The Zumda showcase is in: search across shops + shop list in the Zumda bot;
+  a tap opens that shop's storefront inside the Zumda bot; cart and order stay per shop.
 - Still forbidden: shared cart, algorithmic order dispatch (couriers accept orders themselves),
-  routing, settlements or payouts between businesses through LLS.
+  routing, settlements or payouts between businesses through Zumda.
 - Not decided (ask the owner, never invent): who gets the delivery fee when a network courier
-  delivers, and whether LLS takes a share of it. Until then: the shop keeps it (temporary rule).
+  delivers, and whether Zumda takes a share of it. Until then: the shop keeps it (temporary rule).
 - Only shops with a marketplace deal (`business.marketplace`) appear in the showcase. A platform
-  admin sets the deal in the LLS bot: `/market <slug> <percent>` or `/market <slug> off`.
+  admin sets the deal in the Zumda bot: `/market <slug> <percent>` or `/market <slug> off`.
 - One universal core for all business types. Vertical specifics = feature toggles per business:
   `reorder`, `bottleDeposit` (water), `weightItems` and `stopList` (grocery, food). Defaults come
   from the business type; the owner can switch them.
@@ -255,10 +258,10 @@ bun run test                                   # Test all
 bun run format                                 # Format (4 spaces)
 bun run lint                                   # Lint (0 errors, 0 warnings)
 bun run dev                                    # Dev mode
-bun run --filter @lls/core build               # Build specific package
+bun run --filter @zumda/core build               # Build specific package
 bunx wrangler dev                              # Run Worker locally (in packages/worker)
-bunx wrangler d1 migrations apply lls --local  # Apply D1 migrations locally (default)
-bunx wrangler d1 migrations apply lls --remote # Apply D1 migrations in production
+bunx wrangler d1 migrations apply zumda --local  # Apply D1 migrations locally (default)
+bunx wrangler d1 migrations apply zumda --remote # Apply D1 migrations in production
 bunx wrangler types                            # Regenerate Env types after wrangler.jsonc changes
 bunx wrangler deploy                           # Deploy Worker
 ```
@@ -268,7 +271,7 @@ bunx wrangler deploy                           # Deploy Worker
 ```
 Domain (inner)     → Entities, Value Objects, Errors — NO framework imports
 Application        → Use Cases, Ports (interfaces), DTOs
-Infrastructure     → Routes, Repositories, Adapters (@lls/worker)
+Infrastructure     → Routes, Repositories, Adapters (@zumda/worker)
 ```
 
 **RULES:**
@@ -279,7 +282,7 @@ Infrastructure     → Routes, Repositories, Adapters (@lls/worker)
 - No magic numbers/strings
 - No hardcoded secrets
 
-## Worker Architecture (@lls/worker)
+## Worker Architecture (@zumda/worker)
 
 ```
 src/
@@ -291,20 +294,20 @@ src/
 ├── services.ts       # Wires repositories, gateway and use cases
 ├── http/             # Error mapping, zod schemas, image upload
 ├── routes/           # customer, owner, courier, platform, image, webhook
-├── repositories/     # D1 implementations of @lls/core ports
+├── repositories/     # D1 implementations of @zumda/core ports
 └── telegram/         # Bot API gateway, texts (Uzbek, per business type), notifier
 scripts/              # Local dev only: seed-dev.ts, sign-init-data.ts
 wrangler.jsonc        # Bindings: DB (D1), BUCKET (R2), vars; run `wrangler types` after changes
 migrations/           # D1 SQL migrations
 ```
 No cron: add `scheduled()` only when a real client needs a timed job.
-Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through the LLS bot
+Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through the Zumda bot
 (`src/alerts.ts`, one per kind per 10 min). "Bot blocked by the user" is not an alert.
 ```
 ```
 
 **Worker Rules:**
-- Worker is a thin layer. Business logic lives in `@lls/core` use cases.
+- Worker is a thin layer. Business logic lives in `@zumda/core` use cases.
 - Every body, query and param is validated with zod.
 - Identity (customer, owner, courier) comes ONLY from verified Telegram data, never from the request body.
 - Check ownership on every route that reads or changes business-owned data.
@@ -329,7 +332,7 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through t
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
 items; line total = `round(price × grams / 1000)`.
 
-**Order Status Flow (single source of truth: `@lls/core` enum):**
+**Order Status Flow (single source of truth: `@zumda/core` enum):**
 ```
 pending → accepted → preparing → ready → picked_up → delivered
     ↓         ↓          ↓         ↓         ↓
@@ -416,12 +419,12 @@ never returned by the API. Validate a new token with `getMe` before saving.
 `customer`. `X-Bot: courier` → initData is verified with `COURIER_BOT_TOKEN`, no shop, role
 `courier`; which shops and orders they may touch, the use cases check by the links.
 
-**Entry:** the shop bot's menu button opens `?shop=<slug>`. The LLS courier bot opens
+**Entry:** the shop bot's menu button opens `?shop=<slug>`. The Zumda courier bot opens
 `?mode=courier` (all the courier's shops in one screen). Onboarding: the platform bot opens `?mode=onboarding`.
 Showcase: the platform bot opens `?mode=market`.
 
 **Courier invite:** the owner creates a one-time link `t.me/<courier_bot>?start=c_<code>` (48 h).
-`/start c_<code>` in the LLS courier bot (webhook `/tg/courier`) makes the sender a **pending**
+`/start c_<code>` in the Zumda courier bot (webhook `/tg/courier`) makes the sender a **pending**
 courier of that shop and asks for the phone; the owner gets "Подтвердить / Отклонить" from the
 shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин".
 
@@ -429,16 +432,16 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 - New order → message to the owner «💳 Ждём перевод» with «Деньги пришли — принять» + «Отменить»;
   the customer gets the shop's card and the sum. «Я перевёл» → the owner hears «Клиент перевёл».
   After that the owner's button is the **next allowed status**.
-- Courier assigned → order card from the LLS courier bot, titled with the shop's name (address,
+- Courier assigned → order card from the Zumda courier bot, titled with the shop's name (address,
   landmark, map, phone, «Оплачено заранее — денег не брать», empty bottles) with "Забрал", then
   one "Доставил".
 - Status change → message to the customer (courier name, never the courier's phone). Showcase
-  orders: the LLS bot writes to the customer (with the shop name); the owner still gets messages
+  orders: the Zumda bot writes to the customer (with the shop name); the owner still gets messages
   from the shop bot.
 - Texts depend on the business type (food: «Меню», «Готовится»; water/grocery: «Каталог», «Собираем»).
 - Before the first order, the app calls `requestWriteAccess()` so the shop bot may message the customer.
 - Phone: `requestContact()` → Telegram sends a `contact` message to the bot that opened the app
-  (shop bot or LLS bot) → save it only if `contact.user_id === from.id`.
+  (shop bot or Zumda bot) → save it only if `contact.user_id === from.id`.
 
 **Regional UX (required):**
 - Language: **Uzbek (Latin) only** (owner's decision, October 2026): no Russian anywhere in the
@@ -453,12 +456,12 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 
 **User Flow:**
 - Customer: Open shop link → Browse → Cart → Order → Transfer → «Я перевёл» → Track
-- Showcase customer: LLS bot → Search → Shop → Cart → Order → Track
+- Showcase customer: Zumda bot → Search → Shop → Cart → Order → Track
 - Owner: New order message → the transfer arrives → «Деньги пришли — принять» → Next status →
   assign courier; catalog, couriers and the card in "Мой магазин"
-- Courier: Invite link → LLS courier bot → phone → approved → "on shift" → assigned order card →
+- Courier: Invite link → Zumda courier bot → phone → approved → "on shift" → assigned order card →
   Picked up → Delivered
-- Network courier: approved by a point → «Да, для района» in the LLS courier bot → "on shift" →
+- Network courier: approved by a point → «Да, для района» in the Zumda courier bot → "on shift" →
   «Новый заказ рядом» → «Беру» → full card → Picked up → Delivered
 
 ## Security (MANDATORY)
@@ -559,7 +562,7 @@ console.log            // Use logger
 ```typescript
 // 1. Built-ins
 // 2. External packages
-// 3. @lls/* packages
+// 3. @zumda/* packages
 // 4. Relative (parent first)
 // 5. Type-only imports
 ```
@@ -615,8 +618,8 @@ console.log            // Use logger
 | Routes | 70% |
 
 **Tooling:** Vitest 4.1 (required by `@cloudflare/vitest-plugin`).
-- `@lls/core`, `@lls/app`: plain Vitest (node environment).
-- `@lls/worker`: `@cloudflare/vitest-plugin` — tests run in workerd with real D1; migrations are
+- `@zumda/core`, `@zumda/app`: plain Vitest (node environment).
+- `@zumda/worker`: `@cloudflare/vitest-plugin` — tests run in workerd with real D1; migrations are
   applied in `test/setup.ts`. Telegram calls go through a `TelegramGateway` interface, faked in tests.
 
 Measure with `vitest run --coverage` (core: `@vitest/coverage-v8`, worker: `@vitest/coverage-istanbul`).
@@ -668,9 +671,9 @@ When user types `закоммить` or `commit`:
 
 **⛔ Commit order (dependencies first):**
 ```
-1. @lls/core    (domain, types, use cases)
-2. @lls/worker  (uses core)
-3. @lls/app     (uses core types, calls worker)
+1. @zumda/core    (domain, types, use cases)
+2. @zumda/worker  (uses core)
+3. @zumda/app     (uses core types, calls worker)
 ```
 
 **Atomic commits (one module per commit, tests in the same commit):**
