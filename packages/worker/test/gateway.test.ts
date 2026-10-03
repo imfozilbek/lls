@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
     HttpTelegramGateway,
+    RETRY_AFTER_MAX_SECONDS,
     TELEGRAM_API_BASE,
     TelegramApiError,
     escapeHtml,
@@ -184,5 +185,59 @@ describe("telegramApiBase", () => {
             "x",
         )
         expect(fetcher.mock.calls[0]?.[0]).toBe("http://localhost:8081/bot7:t/sendMessage")
+    })
+
+    it("waits out a short «Too Many Requests» once; a long one fails at once", async () => {
+        const answers = [
+            {
+                status: 429,
+                body: {
+                    ok: false,
+                    description: "Too Many Requests: retry after 1",
+                    parameters: { retry_after: 1 },
+                },
+            },
+            { status: 200, body: { ok: true, result: true } },
+        ]
+        const fetcher = vi.fn(() => {
+            const next = answers.shift() ?? { status: 200, body: { ok: true, result: true } }
+            return Promise.resolve(new Response(JSON.stringify(next.body), { status: next.status }))
+        })
+        const gateway = new HttpTelegramGateway(fetcher as unknown as typeof fetch)
+        await gateway.setProfilePhoto("7:t", new Uint8Array([0xff, 0xd8, 0xff]))
+        expect(fetcher).toHaveBeenCalledTimes(2)
+
+        const long = vi.fn(() =>
+            Promise.resolve(
+                new Response(
+                    JSON.stringify({
+                        ok: false,
+                        description: "Too Many Requests: retry after 60",
+                        parameters: { retry_after: RETRY_AFTER_MAX_SECONDS + 55 },
+                    }),
+                    { status: 429 },
+                ),
+            ),
+        )
+        await expect(
+            new HttpTelegramGateway(long as unknown as typeof fetch).getMe("7:t"),
+        ).rejects.toThrow(TelegramApiError)
+        expect(long).toHaveBeenCalledOnce()
+    })
+
+    it("an outage page or a dropped connection is a Telegram failure, never the token", async () => {
+        const outage = (): Promise<Response> =>
+            Promise.resolve(new Response("<html>Bad Gateway</html>", { status: 502 }))
+        await expect(
+            new HttpTelegramGateway(outage as unknown as typeof fetch).getMe("7:t"),
+        ).rejects.toThrow("HTTP 502, not a Bot API answer")
+
+        const dropped = (): Promise<Response> =>
+            Promise.reject(new TypeError("fetch failed: https://api.telegram.org/bot7:t/getMe"))
+        const failure = await new HttpTelegramGateway(dropped as unknown as typeof fetch)
+            .getMe("7:t")
+            .catch((error: unknown) => error)
+        expect(failure).toBeInstanceOf(TelegramApiError)
+        expect(String(failure)).not.toContain("7:t")
     })
 })

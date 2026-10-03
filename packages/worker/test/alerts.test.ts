@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers"
 import { beforeEach, describe, expect, it } from "vitest"
 
-import { ALERT_QUIET_MS, describeError } from "../src/alerts.js"
+import { ALERT_QUIET_MS, describeError, requestPlace } from "../src/alerts.js"
 import {
     ADMIN,
     CUSTOMER,
@@ -62,6 +62,8 @@ describe("admin alerts", () => {
 
         expect(alerts()).toHaveLength(1)
         expect(alerts()[0]?.token).toBe(env.BUSINESS_BOT_TOKEN)
+        // Where it broke, so the next one is found at once.
+        expect(alerts()[0]?.html).toContain("GET /api/shop")
 
         now += ALERT_QUIET_MS
         await as("/api/shop")
@@ -80,6 +82,15 @@ describe("admin alerts", () => {
         expect((await placeOrder()).status).toBe(201)
         client.telegram.failReplies = false
         expect(alerts()).toHaveLength(1)
+    })
+
+    it("names the request without its query or a shop bot's id", () => {
+        expect(requestPlace("POST", "https://api.zumda.shop/tg/7351234567?x=1")).toBe(
+            "POST /tg/<id>",
+        )
+        expect(requestPlace("GET", "https://api.zumda.shop/api/owner/money?period=week")).toBe(
+            "GET /api/owner/money",
+        )
     })
 
     it("never puts a bot token into the alert", () => {

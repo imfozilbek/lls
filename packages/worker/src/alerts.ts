@@ -25,6 +25,12 @@ export function isRecipientProblem(error: unknown): boolean {
     )
 }
 
+/** `PUT /api/owner/shop/bot-photo`: where it failed, without the query or a shop bot's id. */
+export function requestPlace(method: string, url: string): string {
+    const path = new URL(url).pathname.replace(/^\/tg\/\d+/, "/tg/<id>")
+    return `${method} ${path}`.replace(BOT_TOKEN_PATTERN, "<token>")
+}
+
 /** Short, token-free description of an error for the admins. */
 export function describeError(error: unknown): string {
     const text = error instanceof Error ? `${error.name}: ${error.message}` : String(error)
@@ -39,12 +45,14 @@ export async function alertAdmins(
     services: Services,
     kind: AlertKind,
     error: unknown,
+    where?: string,
 ): Promise<void> {
     try {
         if (!(await claimAlert(services, kind))) {
             return
         }
-        const detail = escapeHtml(describeError(error))
+        const place = where ? `${escapeHtml(where)}\n` : ""
+        const detail = place + escapeHtml(describeError(error))
         for (const adminId of platformAdminIds(services.env)) {
             const customer = await services.customers.findByTelegramId(adminId)
             const texts = textsFor(customer?.language ?? Language.UZ)

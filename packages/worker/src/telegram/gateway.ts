@@ -146,6 +146,21 @@ interface ApiResponse<T> {
     ok: boolean
     result?: T
     description?: string
+    parameters?: { retry_after?: number }
+}
+
+/** Telegram's «Too Many Requests» this short is waited out once; a longer one fails at once. */
+export const RETRY_AFTER_MAX_SECONDS = 5
+const MS_PER_SECOND = 1000
+const TOO_MANY_REQUESTS = 429
+
+async function readApiResponse<T>(response: Response): Promise<ApiResponse<T>> {
+    try {
+        return (await response.json()) as ApiResponse<T>
+    } catch {
+        // A Telegram outage answers with an HTML page: still a Telegram failure, not ours.
+        return { ok: false, description: `HTTP ${response.status}, not a Bot API answer` }
+    }
 }
 
 /** Escapes text for Telegram HTML parse mode. */
@@ -306,15 +321,37 @@ export class HttpTelegramGateway implements TelegramGateway {
         })
     }
 
-    private async send<T>(token: string, method: string, init: RequestInit): Promise<T> {
-        const response = await this.fetcher(`${this.apiBase}/bot${token}/${method}`, {
-            method: "POST",
-            ...init,
-        })
-        const data = (await response.json()) as ApiResponse<T>
-        if (!data.ok || data.result === undefined) {
-            throw new TelegramApiError(method, data.description ?? `HTTP ${response.status}`)
+    private async send<T>(
+        token: string,
+        method: string,
+        init: RequestInit,
+        retried = false,
+    ): Promise<T> {
+        let response: Response
+        try {
+            response = await this.fetcher(`${this.apiBase}/bot${token}/${method}`, {
+                method: "POST",
+                ...init,
+            })
+        } catch (error) {
+            // The message may carry the URL, and with it the token: only the kind of failure.
+            const kind = error instanceof Error ? error.name : "unknown"
+            throw new TelegramApiError(method, `network error (${kind})`)
         }
-        return data.result
+        const data = await readApiResponse<T>(response)
+        if (data.ok && data.result !== undefined) {
+            return data.result
+        }
+        const wait = data.parameters?.retry_after
+        if (
+            !retried &&
+            response.status === TOO_MANY_REQUESTS &&
+            wait !== undefined &&
+            wait <= RETRY_AFTER_MAX_SECONDS
+        ) {
+            await new Promise((resolve) => setTimeout(resolve, wait * MS_PER_SECOND))
+            return this.send<T>(token, method, init, true)
+        }
+        throw new TelegramApiError(method, data.description ?? `HTTP ${response.status}`)
     }
 }
