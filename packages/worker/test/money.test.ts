@@ -256,6 +256,17 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect(warned).toContain("1 ta o'tkazmasi avval topilmagan")
     })
 
+    it("Telegram refuses the picture: the owner still gets the sum and the buttons", async () => {
+        const order = await json<Order>(await place())
+        client.telegram.failPhotos = true
+        expect((await transferSent(order.id)).status).toBe(200)
+        const ping = client.telegram.sent.at(-1)
+        expect(ping).toMatchObject({ chatId: OWNER.id, token: SHOP_BOT_TOKEN })
+        expect(ping?.html).toContain("80 000")
+        const asks = ping?.options?.keyboard?.inline_keyboard.flat() ?? []
+        expect(asks.map((b) => b.callback_data)).toContain(`pc:${order.id}`)
+    })
+
     it("one «Доставил» for the courier, nothing to collect; the report adds up", async () => {
         const order = await json<Order>(await place())
         await payment(order.id, "paid")

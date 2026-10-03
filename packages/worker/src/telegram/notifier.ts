@@ -146,22 +146,26 @@ export class Notifier {
             ...receiptWarnings(order, t),
         ].join("\n")
         const url = shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value, order.id)
-        await this.services.telegram.sendPhotoFile(
-            token,
-            ownerId,
-            {
-                name: `chek-${order.number}`,
-                contentType: receipt.contentType,
-                bytes: receipt.bytes,
-            },
-            caption,
-            {
-                keyboard: withAppButton(
-                    confirmPaidKeyboard(order, t, sum),
-                    appButton(t.openOrder, url),
-                ),
-            },
-        )
+        const options = {
+            keyboard: withAppButton(
+                confirmPaidKeyboard(order, t, sum),
+                appButton(t.openOrder, url),
+            ),
+        }
+        const file = {
+            name: `chek-${order.number}.${receipt.contentType.split("/")[1] ?? "jpg"}`,
+            contentType: receipt.contentType,
+            bytes: receipt.bytes,
+        }
+        try {
+            await this.services.telegram.sendPhotoFile(token, ownerId, file, caption, options)
+        } catch (error) {
+            // Telegram refused the picture itself: the owner still hears it, the picture is in the app.
+            if (!(error instanceof TelegramApiError) || isRecipientProblem(error)) {
+                throw error
+            }
+            await this.services.telegram.sendMessage(token, ownerId, caption, options)
+        }
     }
 
     /** «Pul keldi» pressed in the chat: ask once, with the sum and the card to look at. */
