@@ -7,6 +7,32 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Bug hunt across the platform (four independent audits)
+- **Fixed (core, worker):** a late network report wrote the whole order back and could undo a
+  courier's «Беру» or the owner's cancel; it is now one conditional write, reported once.
+- **Fixed (worker):** orders and shops save only over the version they were loaded with: two
+  requests at once (a cancel and «Деньги пришли», an approval and an owner's edit) can no longer
+  undo each other; the older one gets 409 `STALE`.
+- **Fixed (worker):** the CSV export failed past 100 orders (D1's bound-value limit); a
+  customer's name or address can no longer run as an Excel formula; a shop name with `&` or `<`
+  no longer breaks the report and poster captions; Telegram failures on a request are 502
+  `TELEGRAM_FAILED` instead of 500.
+- **Fixed (worker):** a deleted owner card no longer silences the courier and the customer; it
+  is sent again. A broken contact number no longer makes Telegram resend the update for hours.
+  An unset secret or bot token matches nothing. A courier invite is single-use even when two
+  people open it at once. Long orders fit Telegram's 4096 characters. Reconnecting a bot keeps
+  its update queue. Network offers go to at most 20 couriers (subrequest limit).
+- **Added (worker):** the owner hears from Zumda | Business whenever a card is added or the
+  payment card changes.
+- **Fixed (core):** the owner testing his own shop can press «Men o'tkazdim»; conflicts carry
+  their own code (`BOT_TAKEN`, `SLUG_TAKEN`, `COURIER_ALREADY_REVIEWED`, `STALE`).
+- **Fixed (app):** a slow answer for a shop left behind no longer empties another shop's cart or
+  paints its brand; each business in «Mening bizneslarim» starts clean; the browser sign-in
+  button retries after a failed start; an expired browser session returns to sign-in; clear
+  texts for every conflict and Telegram failure; no silent failures; the money tab never shows
+  the previous period; the order list keeps pages opened with «Yana»; buttons wait for their
+  request.
+
 ### Onboarding review; Telegram Login in the browser (owner's decisions)
 - **Changed (core, worker, app):** the application is three short steps: name and kind → bot →
   where the business is (location and address). The card, hours, products, logo and courier move
