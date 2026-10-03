@@ -111,7 +111,9 @@ D1, Pages, Workers и обоих ботов и пишет `OK` / `FAIL` с по�
 - [ ] **Settings → Rules → Rulesets → New ruleset → New branch ruleset**: имя `main`,
       Enforcement **Active**, Target **Include default branch**, правила:
       **Restrict deletions**, **Block force pushes**, **Require a pull request before merging**
-      (0 одобрений), **Require status checks to pass** → `quality-gates` и `e2e`.
+      (0 одобрений), **Require status checks to pass** → `quality-gates` и `e2e`, и в нём
+      галочка **Require branches to be up to date before merging** (деплой с `main` не
+      перепроверяет код: он проверен в PR на актуальной версии `main`).
       **Bypass list** → Repository admin (вы).
 - [ ] Удалите старые секреты от прошлого проекта, если они есть: `SSH_HOST`, `SSH_USER`,
       `SSH_PRIVATE_KEY`, `DISCORD_WEBHOOK`.

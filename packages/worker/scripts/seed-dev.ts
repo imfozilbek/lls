@@ -238,7 +238,10 @@ async function main(): Promise<void> {
     const persist = process.env["ZUMDA_PERSIST_TO"]
     const local = persist ? ["--local", "--persist-to", persist] : ["--local"]
     const cwd = { cwd: ROOT, stdio: "inherit" } as const
-    execFileSync("bunx", [...wrangler, "migrations", "apply", "zumda", ...local], cwd)
+    // `--data-only`: the schema is already there (the e2e stand resets data before every spec).
+    if (!process.argv.includes("--data-only")) {
+        execFileSync("bunx", [...wrangler, "migrations", "apply", "zumda", ...local], cwd)
+    }
     execFileSync("bunx", [...wrangler, "execute", "zumda", ...local, `--file=${file}`], cwd)
     for (const shop of DEV_SHOPS) {
         console.warn(`Seeded ${shop.type} shop: open the app with ?shop=${shop.slug}`)

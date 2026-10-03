@@ -26,7 +26,13 @@ export default defineConfig({
         trace: "retain-on-failure",
         screenshot: "only-on-failure",
     },
-    projects: [{ name: "telegram-android", use: { browserName: "chromium" } }],
+    // CI uses the Google Chrome already on GitHub's runners: no browser download.
+    projects: [
+        {
+            name: "telegram-android",
+            use: { browserName: "chromium", channel: process.env["CI"] ? "chrome" : undefined },
+        },
+    ],
     webServer: {
         command: "bun stand/run.ts",
         url: APP_URL,

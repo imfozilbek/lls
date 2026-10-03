@@ -66,7 +66,7 @@ async function main(): Promise<void> {
     buildCore()
     // A fresh database on every start: the schema always matches the migrations.
     rmSync(STATE_DIR, { recursive: true, force: true })
-    seed()
+    seed({ migrate: true })
     await startFakeTelegram(FAKE_TELEGRAM_PORT)
     start(
         "bunx",
