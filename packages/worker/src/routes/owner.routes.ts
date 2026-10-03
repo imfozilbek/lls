@@ -35,7 +35,9 @@ export async function setShopBotPhoto(
         await new Notifier(services).shopBotPhoto(shopId, jpeg)
     } catch (error) {
         if (error instanceof TelegramApiError) {
-            throw new ApiError(502, "BOT_PHOTO_FAILED", "Telegram did not accept the bot picture")
+            // Telegram said no (often «Too Many Requests»): the owner tries again; not our outage.
+            console.warn("Bot picture refused", error.description)
+            throw new ApiError(422, "BOT_PHOTO_FAILED", "Telegram did not accept the bot picture")
         }
         throw error
     }

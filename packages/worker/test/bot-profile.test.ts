@@ -71,10 +71,12 @@ describe("the shop bot's picture and description are Zumda's", () => {
         expect((await owner("/api/owner/shop/bot-photo", picture(JPEG))).status).toBe(204)
         expect(client.telegram.photos).toEqual([{ token: SHOP_BOT_TOKEN, jpeg: JPEG }])
 
+        // Telegram saying no is not our outage: the owner is told, the admins get no alarm.
         client.telegram.failPhotos = true
         const refused = await owner("/api/owner/shop/bot-photo", picture(JPEG))
-        expect(refused.status).toBe(502)
+        expect(refused.status).toBe(422)
         expect(await refused.json()).toMatchObject({ error: { code: "BOT_PHOTO_FAILED" } })
+        expect(client.telegram.sent.some((m) => m.html.includes("🚨"))).toBe(false)
     })
 
     it("a new shop name reaches the bot's description, with «Zumda asosida ishlaydi»", async () => {

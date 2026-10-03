@@ -2,7 +2,7 @@ import { systemClock } from "@zumda/core"
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 
-import { alertAdmins } from "./alerts.js"
+import { alertAdmins, requestPlace } from "./alerts.js"
 import {
     AUTHORIZATION_HEADER,
     BOT_HEADER,
@@ -107,7 +107,8 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         const { status, body } = toErrorResponse(error)
         if (status >= 500) {
             console.error(error)
-            c.executionCtx.waitUntil(alertAdmins(c.get("services"), "server_error", error))
+            const where = requestPlace(c.req.method, c.req.url)
+            c.executionCtx.waitUntil(alertAdmins(c.get("services"), "server_error", error, where))
         }
         return c.json(body, status)
     })
