@@ -75,15 +75,16 @@ export function CardBlock({
 }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
-    const copy = async (): Promise<void> => {
+    /** The bank app wants both: the card number and the exact sum, digits only. */
+    const copy = async (text: string, done: string, shown: string): Promise<void> => {
         try {
-            await navigator.clipboard.writeText(card.number)
+            await navigator.clipboard.writeText(text)
             haptic.success()
-            toast(t.pay.copied, "success")
+            toast(done, "success")
         } catch {
-            // No clipboard here: the number in a toast, to copy by hand.
+            // No clipboard here: the value in a toast, to copy by hand.
             haptic.error()
-            toast(groupCard(card.number))
+            toast(shown)
         }
     }
     return (
@@ -99,14 +100,28 @@ export function CardBlock({
                     {fill(t.pay.cardOwner, { shop: shopName })}
                 </p>
             ) : null}
-            <Button
-                variant="surface"
-                className="mt-3 w-full"
-                icon={<CopyIcon size={18} />}
-                onClick={(): void => void copy()}
-            >
-                {t.pay.copy}
-            </Button>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button
+                    variant="surface"
+                    icon={<CopyIcon size={18} />}
+                    aria-label={t.pay.copy}
+                    onClick={(): void =>
+                        void copy(card.number, t.pay.copied, groupCard(card.number))
+                    }
+                >
+                    {t.pay.copyShort}
+                </Button>
+                <Button
+                    variant="surface"
+                    icon={<CopyIcon size={18} />}
+                    aria-label={t.pay.copySum}
+                    onClick={(): void =>
+                        void copy(String(total), t.pay.sumCopied, formatMoney(total, language))
+                    }
+                >
+                    {t.pay.copySumShort}
+                </Button>
+            </div>
             <p className="mt-3 text-sm text-tg-subtitle">
                 {fill(t.pay.transferNote, { sum: formatMoney(total, language) })}
             </p>

@@ -13,6 +13,7 @@ import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
 import {
     AlertIcon,
     CardIcon,
+    ChevronIcon,
     CloseIcon,
     ReceiptIcon,
     ScooterIcon,
@@ -196,7 +197,11 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
     return (
         <div className="mt-4 flex flex-col gap-2">
             {next && waitsForMoney ? (
+                // No screenshot yet: possible, but not the main thing to do.
                 <Button
+                    variant={
+                        order.payment.status === PaymentStatus.AWAITING ? "primary" : "secondary"
+                    }
                     disabled={busy}
                     icon={<CardIcon size={18} />}
                     onClick={(): void => {
@@ -287,6 +292,7 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
                 "animate-rise rounded-tile bg-tg-secondary p-4",
                 needsCheck(order) && "ring-2 ring-warning/60",
             )}
+            data-needs-check={needsCheck(order) || undefined}
         >
             <div className="flex items-center justify-between gap-2">
                 <span className="text-lg font-bold">
@@ -425,11 +431,22 @@ function ToCheckBanner({ count }: { count: number }): React.JSX.Element | null {
     if (count === 0) {
         return null
     }
+    // One tap to the first transfer to check (they come first in the list).
     return (
-        <p className="flex animate-rise items-center gap-2 rounded-control bg-warning/15 px-4 py-3 font-semibold">
+        <button
+            type="button"
+            onClick={(): void => {
+                haptic.tap()
+                document
+                    .querySelector("[data-needs-check]")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }}
+            className="tap flex animate-rise items-center gap-2 rounded-control bg-warning/15 px-4 py-3 text-left font-semibold"
+        >
             <AlertIcon size={20} className="shrink-0 text-warning" />
-            {fill(t.owner.toCheck, { n: count })}
-        </p>
+            <span className="flex-1">{fill(t.owner.toCheck, { n: count })}</span>
+            <ChevronIcon size={18} className="shrink-0 text-tg-subtitle" />
+        </button>
     )
 }
 

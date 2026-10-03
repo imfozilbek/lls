@@ -37,7 +37,7 @@ function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.J
             >
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-2">
-                        <span className="font-semibold">
+                        <span className="whitespace-nowrap font-semibold">
                             {fill(t.order.title, { n: order.number })}
                         </span>
                         <OrderBadge order={order} />
