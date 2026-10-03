@@ -114,17 +114,6 @@ export const platformRoutes = new Hono<AppEnv>()
         },
     )
 
-    /** A rejected application, fixed by its owner, goes to the admins again. */
-    .post("/shops/:id/resubmit", zValidator("param", idParam, onInvalid), async (c) => {
-        const services = c.get("services")
-        const shop = await services.useCases.resubmitShop.execute({
-            ownerTelegramId: c.get("auth").user.id,
-            businessId: c.req.valid("param").id,
-        })
-        inBackground(c.executionCtx, services, new Notifier(services).shopRegistered(shop))
-        return c.json(shop)
-    })
-
     /**
      * Step «Bot»: a prepared button the app opens with `WebApp.requestChat(preparedId)`. Telegram
      * shows its «new bot» window with the shop's name; the bot is created in the owner's own

@@ -47,6 +47,17 @@ export const ownerRoutes = new Hono<AppEnv>()
 
     .get("/shop", (c) => c.json(toShopOwnerDTO(shopOf(c), c.get("services").clock.now())))
 
+    /** A rejected application, fixed right here by its owner, goes to the admins again. */
+    .post("/shop/resubmit", async (c) => {
+        const services = c.get("services")
+        const shop = await services.useCases.resubmitShop.execute({
+            ownerTelegramId: c.get("auth").user.id,
+            businessId: shopOf(c).id,
+        })
+        inBackground(c.executionCtx, services, new Notifier(services).shopRegistered(shop))
+        return c.json(shop)
+    })
+
     .patch("/shop", zValidator("json", shopPatchBody, onInvalid), async (c) => {
         const services = c.get("services")
         const patch = c.req.valid("json")
@@ -55,8 +66,8 @@ export const ownerRoutes = new Hono<AppEnv>()
             businessId: shopOf(c).id,
             patch,
         })
-        // The bot's description carries the shop's name; approval sets it the first time.
-        if (patch.name !== undefined && shop.status === BusinessStatus.ACTIVE) {
+        // The bot's description carries the shop's name; the application sets it the first time.
+        if (patch.name !== undefined && shop.status !== BusinessStatus.DISABLED) {
             inBackground(c.executionCtx, services, new Notifier(services).shopBotDescriptions(shop))
         }
         return c.json(shop)

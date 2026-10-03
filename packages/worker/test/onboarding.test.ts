@@ -157,7 +157,9 @@ describe("a short application: name, kind, bot and where the business is", () =>
         ).toBe(200)
 
         const resubmit = (user: object): Promise<Response> =>
-            business(user)(`/api/platform/shops/${shop.id}/resubmit`, { method: "POST" })
+            client.as(user, { shop: shop.slug, businessBot: true })("/api/owner/shop/resubmit", {
+                method: "POST",
+            })
         expect((await resubmit(STRANGER)).status).toBe(403)
         const before = client.telegram.sent.length
         const again = await resubmit(OWNER)
@@ -184,9 +186,10 @@ describe("a short application: name, kind, bot and where the business is", () =>
             json: { decision: "reject", reason: "ignored" },
         })
         expect((await json<{ shop: Shop }>(off)).shop.rejection).toBeUndefined()
-        const resubmit = await business()(`/api/platform/shops/${shop.id}/resubmit`, {
-            method: "POST",
-        })
+        const resubmit = await client.as(OWNER, { shop: shop.slug, businessBot: true })(
+            "/api/owner/shop/resubmit",
+            { method: "POST" },
+        )
         expect(resubmit.status).toBe(422)
     })
 })
