@@ -12,6 +12,20 @@ const AT = new Date("2026-10-01T10:00:00Z")
 const RECEIPT = { key: "receipts/b/o/1", hash: "h1", at: AT, customerRejections: 0 }
 
 describe("Payment", () => {
+    it("the customer may remind the owner after a pause, never more often", () => {
+        const at = (minutes: number): Date => new Date(AT.getTime() + minutes * 60_000)
+        expect(Payment.start().remindableAt()).toBeUndefined()
+        const sent = Payment.start().markSent(RECEIPT)
+        expect(sent.remindableAt()).toEqual(at(10))
+        expect(() => sent.remind(at(9))).toThrow(BusinessRuleViolationError)
+        const reminded = sent.remind(at(10))
+        expect(reminded.remindedAt).toEqual(at(10))
+        expect(reminded.remindableAt()).toEqual(at(20))
+        expect(() => reminded.remind(at(15))).toThrow(BusinessRuleViolationError)
+        // Settled money needs no reminder.
+        expect(reminded.confirm(at(16), false).remindableAt()).toBeUndefined()
+    })
+
     it("always a transfer to the shop's card; nothing has arrived at checkout", () => {
         const payment = Payment.start()
         expect(payment).toMatchObject({

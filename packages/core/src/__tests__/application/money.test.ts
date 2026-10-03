@@ -20,6 +20,7 @@ import {
     AdvanceOrderUseCase,
     CancelOrderUseCase,
     MarkTransferSentUseCase,
+    RemindTransferUseCase,
 } from "../../application/use-cases/order/order.use-cases.js"
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
 import { GetShopBySlugUseCase } from "../../application/use-cases/shop/get-shop.use-case.js"
@@ -353,5 +354,22 @@ describe("money: transfer before the shop starts, report", () => {
         const week = periodRange("week", now)
         expect(week.to.getTime() - week.from.getTime()).toBe(7 * 24 * 3600 * 1000)
         expect(periodRange("month", now).from.toISOString()).toBe("2026-09-30T19:00:00.000Z")
+    })
+
+    it("«Do'konga eslatish»: only the customer, only after the pause", async () => {
+        const order = await sent(await place())
+        const remind = (telegramId: number, minutes: number): Promise<OrderDTO> =>
+            new RemindTransferUseCase({
+                ...access(),
+                receipts,
+                clock: { now: (): Date => new Date(clock.now().getTime() + minutes * 60_000) },
+            }).execute({ telegramId, businessId: "biz-1", orderId: order.id })
+        await expect(remind(OWNER_TG, 11)).rejects.toBeInstanceOf(ForbiddenError)
+        await expect(remind(CUSTOMER_TG, 5)).rejects.toMatchObject({ rule: "REMIND_TOO_SOON" })
+        const reminded = await remind(CUSTOMER_TG, 11)
+        expect(Date.parse(reminded.payment.remindableAt ?? "")).toBeGreaterThan(
+            clock.now().getTime() + 20 * 60_000,
+        )
+        await expect(remind(CUSTOMER_TG, 12)).rejects.toMatchObject({ rule: "REMIND_TOO_SOON" })
     })
 })

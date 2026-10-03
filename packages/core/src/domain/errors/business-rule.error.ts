@@ -200,6 +200,14 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    static remindTooSoon(at: string | undefined): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "REMIND_TOO_SOON",
+            "The shop was asked a moment ago; it can be asked again later",
+            at ? { at } : undefined,
+        )
+    }
+
     static receiptRequired(): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "RECEIPT_REQUIRED",

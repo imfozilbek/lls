@@ -199,6 +199,29 @@ export class MarkTransferSentUseCase {
     }
 }
 
+/**
+ * «Do'konga eslatish»: the shop has not answered the transfer for a while; only the order's
+ * customer asks, at most once per pause (`TRANSFER_REMIND_AFTER_MS`).
+ */
+export class RemindTransferUseCase {
+    constructor(private readonly deps: TransferDeps) {}
+
+    async execute(input: {
+        telegramId: number
+        businessId: string
+        orderId: string
+    }): Promise<OrderDTO> {
+        const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
+        const customer = await this.deps.customers.findByTelegramId(input.telegramId)
+        if (!customer || !order.isPlacedBy(customer.id)) {
+            throw ForbiddenError.notOrderParticipant(order.id)
+        }
+        order.remindTransfer(this.deps.clock.now())
+        await this.deps.orders.save(order)
+        return toOrderDTO(order)
+    }
+}
+
 /** The screenshot of an order's transfer: only for its customer and the shop's owner. */
 export class GetTransferReceiptUseCase {
     constructor(private readonly deps: OrderAccessDeps) {}
