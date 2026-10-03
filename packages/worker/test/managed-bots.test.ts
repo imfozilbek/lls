@@ -171,10 +171,10 @@ describe("a bot created from the Zumda bot (Managed Bots)", () => {
         const shop = (await response.json()) as {
             id: string
             botUsername: string
-            botSource: string
+            managedBot: boolean
         }
         expect(shop.botUsername).toBe(MANAGED_BOT.username)
-        expect(shop.botSource).toBe("managed")
+        expect(shop.managedBot).toBe(true)
         // Taken: the list of waiting bots is empty, and a second application cannot reuse it.
         const mine = await client.as(OWNER, {})("/api/platform/managed-bots")
         expect(await mine.json()).toEqual({ data: [] })

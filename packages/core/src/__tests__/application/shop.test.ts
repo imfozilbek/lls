@@ -102,7 +102,7 @@ describe("shop use cases", () => {
                 cards,
                 managedBots,
             ).execute(registration())
-            expect(shop.botSource).toBe(BotSource.TOKEN)
+            expect(shop.managedBot).toBe(false)
         })
     })
 
@@ -131,7 +131,7 @@ describe("shop use cases", () => {
             await created()
             const register = new RegisterShopUseCase(businesses, clock, cards, managedBots)
             const shop = await register.execute(registration({ bot: { managedBotId: 777 } }))
-            expect(shop.botSource).toBe(BotSource.MANAGED)
+            expect(shop.managedBot).toBe(true)
             expect(shop.botUsername).toBe("Osh_Saroy_bot")
             expect(shop.slug).toBe("osh-saroy")
             expect(businesses.tokens.get(shop.id)).toBe("777:first")

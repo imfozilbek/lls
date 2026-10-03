@@ -1,6 +1,7 @@
+import { BotSource } from "../../domain/enums/bot-source.js"
+
 import type { Business } from "../../domain/entities/business.js"
 import type { PayoutCardBook } from "../../domain/entities/payout-card-book.js"
-import type { BotSource } from "../../domain/enums/bot-source.js"
 import type { BusinessStatus } from "../../domain/enums/business-status.js"
 import type { BusinessType } from "../../domain/enums/business-type.js"
 import type { Feature } from "../../domain/enums/feature.js"
@@ -50,8 +51,8 @@ export interface PayoutCardDTO {
 export interface ShopOwnerDTO extends ShopPublicDTO {
     status: BusinessStatus
     ownerTelegramId: number
-    /** `managed`: created from the Zumda bot; `token`: connected by pasting a token. */
-    botSource: BotSource
+    /** Created from the Zumda bot (Managed Bots): Zumda holds its token, the owner never did. */
+    managedBot: boolean
     deliveryRadiusMeters?: number
     /** The shop's marketplace deal with Zumda, if signed. */
     marketplace?: { commissionBps: number; joinedAt: string }
@@ -106,7 +107,7 @@ export function toShopOwnerDTO(business: Business, now: Date): ShopOwnerDTO {
         ...toShopPublicDTO(business, now, { withCard: true }),
         status: business.status,
         ownerTelegramId: business.ownerTelegramId.value,
-        botSource: business.botSource,
+        managedBot: business.botSource === BotSource.MANAGED,
         deliveryRadiusMeters: business.delivery.radiusMeters,
         marketplace: business.marketplace && {
             commissionBps: business.marketplace.commissionBps,
