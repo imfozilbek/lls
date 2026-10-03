@@ -139,6 +139,8 @@ export interface Services extends ServiceDeps {
     couriers: D1CourierRepository
     districts: D1DistrictRepository
     networkOffers: D1NetworkOfferRepository
+    /** Bots Zumda | Business created and manages for owners. */
+    managedBots: D1ManagedBotRepository
     useCases: UseCases
 }
 
@@ -170,6 +172,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         couriers,
         districts,
         networkOffers: new D1NetworkOfferRepository(env.DB),
+        managedBots,
         useCases: {
             registerShop: new RegisterShopUseCase(businesses, clock, cards, managedBots),
             managedBotChanged: new ManagedBotChangedUseCase(businesses, managedBots, clock),
