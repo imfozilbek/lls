@@ -458,6 +458,64 @@ export class Notifier {
         })
     }
 
+    /** The shop bot answers through this Worker: its webhook and the menu button to the app. */
+    async connectShopBot(shop: ShopOwnerDTO, workerOrigin: string): Promise<void> {
+        const credentials = await this.services.businesses.getBotCredentials(shop.id)
+        if (!credentials) {
+            throw new Error(`No bot credentials for shop ${shop.id}`)
+        }
+        const texts = textsFor(await this.languageOf(shop.ownerTelegramId), shop.type)
+        await this.services.telegram.setWebhook(
+            credentials.token,
+            `${workerOrigin}/tg/${credentials.botId}`,
+            credentials.webhookSecret,
+        )
+        await this.services.telegram.setMenuButton(
+            credentials.token,
+            texts.openMenu,
+            shopAppUrl(this.services.env.APP_ORIGIN, shop.slug),
+        )
+    }
+
+    /** The owner created a bot from the Zumda bot: back to the application, no token to copy. */
+    async managedBotCreated(ownerTelegramId: number, botUsername: string): Promise<void> {
+        const texts = textsFor(await this.languageOf(ownerTelegramId))
+        await this.services.telegram.sendMessage(
+            this.services.env.PLATFORM_BOT_TOKEN,
+            ownerTelegramId,
+            fill(texts.managedBotCreated, { bot: `@${escapeHtml(botUsername)}` }),
+            {
+                keyboard: {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: texts.continueSetup,
+                                web_app: { url: onboardingAppUrl(this.services.env.APP_ORIGIN) },
+                            },
+                        ],
+                    ],
+                },
+            },
+        )
+    }
+
+    /** Someone else owns a shop's managed bot now: the admins decide, nothing moves silently. */
+    async managedBotOwnerChanged(shop: ShopOwnerDTO, newOwnerTelegramId: number): Promise<void> {
+        const token = this.services.env.PLATFORM_BOT_TOKEN
+        for (const adminId of platformAdminIds(this.services.env)) {
+            const t = textsFor(await this.languageOf(adminId))
+            await this.services.telegram.sendMessage(
+                token,
+                adminId,
+                fill(t.managedBotOwnerChanged, {
+                    shop: `<b>${escapeHtml(shop.name)}</b>`,
+                    bot: `@${escapeHtml(shop.botUsername)}`,
+                    owner: `<a href="tg://user?id=${newOwnerTelegramId}">${newOwnerTelegramId}</a>`,
+                }),
+            )
+        }
+    }
+
     /** Approve: connect the shop bot (webhook + menu button) and send the owner their link. */
     async shopReviewed(shop: ShopOwnerDTO, workerOrigin: string): Promise<void> {
         const platformToken = this.services.env.PLATFORM_BOT_TOKEN
@@ -471,24 +529,9 @@ export class Notifier {
             )
             return
         }
-        const credentials = await this.services.businesses.getBotCredentials(shop.id)
-        if (!credentials) {
-            throw new Error(`No bot credentials for shop ${shop.id}`)
-        }
-        const telegram = this.services.telegram
-        const appOrigin = this.services.env.APP_ORIGIN
-        await telegram.setWebhook(
-            credentials.token,
-            `${workerOrigin}/tg/${credentials.botId}`,
-            credentials.webhookSecret,
-        )
-        await telegram.setMenuButton(
-            credentials.token,
-            texts.openMenu,
-            shopAppUrl(appOrigin, shop.slug),
-        )
+        await this.connectShopBot(shop, workerOrigin)
         const link = `https://t.me/${shop.botUsername}`
-        await telegram.sendMessage(
+        await this.services.telegram.sendMessage(
             platformToken,
             shop.ownerTelegramId,
             `${fill(texts.shopApproved, { shop: name })}\n${link}`,
