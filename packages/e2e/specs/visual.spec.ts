@@ -90,7 +90,7 @@ for (const theme of ["light"] as const) {
         await page.getByRole("textbox", { name: "Mahsulot qidirish" }).fill("ош")
         await expect(page.getByRole("button", { name: /To'y oshi/ })).toBeVisible()
         await snap(page, "22-showcase-search", theme)
-        await openApp(page, { user: PEOPLE.newOwner, query: "?mode=onboarding", theme })
+        await openApp(page, { user: PEOPLE.newOwner, businessBot: true, theme })
         await snap(page, "23-onboarding", theme)
         await bottomButton(page).click()
         await snap(page, "24-onboarding-step1", theme)
@@ -98,7 +98,7 @@ for (const theme of ["light"] as const) {
 
     test(`a business and its bot from the Zumda bot, ${theme}`, async ({ page }) => {
         const owner = { id: 4201, first_name: "Kamola", language_code: "uz" }
-        const app = { user: owner, query: "?mode=onboarding", theme, version: "9.6" }
+        const app = { user: owner, businessBot: true, theme, version: "9.6" }
         await openApp(page, { ...app, createsBot: 777300400 })
         await bottomButton(page).click()
         await page.getByLabel("Biznes nomi").fill("Kamola Somsa")

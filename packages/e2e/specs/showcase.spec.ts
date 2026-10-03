@@ -4,9 +4,9 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { platformBot } from "../stand/config.js"
+import { businessBot, platformBot } from "../stand/config.js"
 import { FOOD, PEOPLE, WATER, apiAs, resetStand, payAndAccept } from "../support/stand.js"
-import { lastSeq, platformChat, waitForMessage } from "../support/telegram.js"
+import { businessChat, lastSeq, platformChat, waitForMessage } from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
@@ -17,7 +17,7 @@ const search = (page: Page): ReturnType<Page["getByRole"]> =>
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
-test("the Zumda bot greets with the street picture, the showcase and «connect a business»", async () => {
+test("the Zumda bot greets customers with the street picture and the showcase", async () => {
     const since = await lastSeq()
     await platformChat().send(PEOPLE.customer, "/start")
     const welcome = await waitForMessage(PEOPLE.customer.id, "oshxonalar va xizmatlar", since)
@@ -28,7 +28,16 @@ test("the Zumda bot greets with the street picture, the showcase and «connect a
     expect(picture.headers.get("content-type")).toBe("image/jpeg")
     expect(welcome.buttons.map((b) => b.web_app?.url)).toEqual([
         "http://localhost:5173/?mode=market",
-        "http://localhost:5173/?mode=onboarding",
+    ])
+})
+
+test("Zumda Business greets owners with «Mening bizneslarim»", async () => {
+    const since = await lastSeq()
+    await businessChat().send(PEOPLE.newOwner, "/start")
+    const welcome = await waitForMessage(PEOPLE.newOwner.id, "Zumda Business", since)
+    expect(welcome.token).toBe(businessBot().token)
+    expect(welcome.buttons.map((b) => b.web_app?.url)).toEqual([
+        "http://localhost:5173/?mode=business",
     ])
 })
 
@@ -126,20 +135,20 @@ test("orders through the shop's own bot carry no commission", async () => {
 
 test("the admin adds and removes a shop; others cannot", async ({ page }) => {
     const since = await lastSeq()
-    await platformChat().send(PEOPLE.stranger, `/market ${WATER} 3`)
-    await platformChat().send(PEOPLE.admin, `/market ${WATER} 3`)
+    await businessChat().send(PEOPLE.stranger, `/market ${WATER} 3`)
+    await businessChat().send(PEOPLE.admin, `/market ${WATER} 3`)
     await waitForMessage(PEOPLE.admin.id, "3%", since)
     await waitForMessage(PEOPLE.waterOwner.id, "tovarlarning 3%", since)
     expect((await apiAs(PEOPLE.stranger, "/showcase/shops")).status).toBe(200)
 
     await openApp(page, { user: PEOPLE.customer, query: "?mode=market" })
     await expect(page.getByText("Do'konlar · 3")).toBeVisible()
-    await platformChat().send(PEOPLE.admin, `/market ${WATER} off`)
+    await businessChat().send(PEOPLE.admin, `/market ${WATER} off`)
     await waitForMessage(PEOPLE.waterOwner.id, "vitrinasidan olindi", since)
     await page.reload()
     await expect(page.getByText("Do'konlar · 2")).toBeVisible()
 
-    await platformChat().send(PEOPLE.admin, "/market nonsense")
+    await businessChat().send(PEOPLE.admin, "/market nonsense")
     await waitForMessage(PEOPLE.admin.id, "/market <slug>", since)
 })
 

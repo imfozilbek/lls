@@ -1,11 +1,12 @@
 /** Test data and direct API access for the stand. */
-import { WORKER_URL, courierBot, platformBot, shopBySlug } from "../stand/config.js"
+import { WORKER_URL, businessBot, courierBot, platformBot, shopBySlug } from "../stand/config.js"
 import { seed } from "../stand/seed.js"
 
 import { resetTelegram, shopChat } from "./telegram.js"
 import { signInitData } from "./webapp.js"
 
 import type { TgUser } from "./telegram.js"
+import type { DevShop } from "../stand/config.js"
 
 export const FOOD = "osh-markaz-dev"
 export const WATER = "toza-suv-dev"
@@ -58,31 +59,48 @@ export async function resetStand(): Promise<void> {
 
 export interface ApiOptions {
     shop?: string
-    via?: "marketplace" | "admin"
+    via?: "marketplace"
     /** Inside the app opened from the Zumda courier bot (no shop). */
     courierBot?: boolean
+    /** Inside the app opened from Zumda Business («Mening bizneslarim», an owner's shop). */
+    businessBot?: boolean
     method?: string
     json?: unknown
 }
 
+/** The bot whose token signs: the courier bot, Zumda Business, the shop's own bot or the Zumda bot. */
+function signerToken(options: ApiOptions, shop: DevShop | null): string {
+    if (options.courierBot) {
+        return courierBot().token
+    }
+    if (options.businessBot) {
+        return businessBot().token
+    }
+    return shop?.bot.token ?? platformBot().token
+}
+
 /**
- * Calls the Worker API as `user` inside the app opened from a shop bot, the Zumda bot or the
- * Zumda courier bot.
+ * Calls the Worker API as `user` inside the app opened from a shop bot, the Zumda bot, Zumda
+ * Biznes or the Zumda courier bot.
  */
 export async function apiAs(
     user: TgUser,
     path: string,
     options: ApiOptions = {},
 ): Promise<Response> {
-    const shop = options.shop && !options.via ? shopBySlug(options.shop) : null
-    const token = options.courierBot ? courierBot().token : (shop?.bot.token ?? platformBot().token)
+    const shop =
+        options.shop && !options.via && !options.businessBot ? shopBySlug(options.shop) : null
+    const token = signerToken(options, shop)
     const headers: Record<string, string> = {
         "X-Telegram-Init-Data": signInitData(user, token),
         Origin: "http://localhost:5173",
     }
     if (options.courierBot) {
         headers["X-Bot"] = "courier"
-    } else if (options.shop) {
+    } else if (options.businessBot) {
+        headers["X-Bot"] = "business"
+    }
+    if (options.shop && !options.courierBot) {
         headers["X-Shop"] = options.shop
     }
     if (options.via) {

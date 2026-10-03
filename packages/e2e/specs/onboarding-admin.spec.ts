@@ -10,7 +10,7 @@ import {
     chatWithSecret,
     controlTelegram,
     lastSeq,
-    platformChat,
+    businessChat,
     messagesTo,
     waitForCall,
     waitForMessage,
@@ -36,7 +36,7 @@ const SECOND_OWNER = { id: 4005, first_name: "Dilnoza", language_code: "ru" }
 const THIRD_OWNER = { id: 4006, first_name: "Jamshid", language_code: "ru" }
 
 async function myShops(owner: TgUser = PEOPLE.newOwner): Promise<MyShop[]> {
-    const response = await apiAs(owner, "/platform/shops")
+    const response = await apiAs(owner, "/platform/shops", { businessBot: true })
     return (await response.json()) as MyShop[]
 }
 
@@ -75,7 +75,7 @@ test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
 test("a wrong token is refused and the wizard returns to the bot step", async ({ page }) => {
-    const app = await openApp(page, { user: PEOPLE.newOwner, query: "?mode=onboarding" })
+    const app = await openApp(page, { user: PEOPLE.newOwner, businessBot: true })
     await expect(page.getByRole("heading", { name: "Biznesingizni ulang" })).toBeVisible()
     await bottomButton(page).click() // «Boshlash»
     await expect(page.getByText("1/3-qadam")).toBeVisible()
@@ -91,7 +91,7 @@ test("a wrong token is refused and the wizard returns to the bot step", async ({
 test("the application reaches the admin; the pending shop opens only for its owner", async ({
     page,
 }) => {
-    await openApp(page, { user: PEOPLE.newOwner, query: "?mode=onboarding" })
+    await openApp(page, { user: PEOPLE.newOwner, businessBot: true })
     await bottomButton(page).click()
     const since = await lastSeq()
     await apply(page, NEW_BOT.token, "Yangi Non")
@@ -126,6 +126,7 @@ test("the application reaches the admin; the pending shop opens only for its own
 
 test("the same bot cannot be connected twice", async () => {
     const response = await apiAs(PEOPLE.newOwner, "/platform/shops", {
+        businessBot: true,
         method: "POST",
         json: {
             botToken: NEW_BOT.token,
@@ -143,11 +144,11 @@ test("a stranger cannot approve; the admin approves: webhook, menu button, owner
 }) => {
     const card = await waitForMessage(PEOPLE.admin.id, "Yangi do'kon")
     const approve = card.buttons.find((b) => b.text === "✅ Tasdiqlash")?.callback_data ?? ""
-    await platformChat().press(PEOPLE.stranger, approve)
+    await businessChat().press(PEOPLE.stranger, approve)
     expect((await myShops())[0]?.status).toBe("pending")
 
     const since = await lastSeq()
-    await platformChat().press(PEOPLE.admin, approve)
+    await businessChat().press(PEOPLE.admin, approve)
     await waitForMessage(PEOPLE.newOwner.id, "ishga tushdi", since)
     const [hook] = await callsOf("setWebhook", since)
     expect(hook?.token).toBe(NEW_BOT.token)
@@ -177,14 +178,14 @@ test("a failed connection warns the admin; /reconnect fixes it", async () => {
     await openAndApply(SECOND_OWNER, SECOND_BOT.token, "Ikkinchi Do'kon")
     const card = await waitForMessage(PEOPLE.admin.id, "Ikkinchi", since)
     await controlTelegram({ failWebhooks: true })
-    await platformChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
+    await businessChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
     const warning = await waitForMessage(PEOPLE.admin.id, "bot ulanmadi", since)
     const slug = /\/reconnect ([a-z0-9-]+)/.exec(warning.text)?.[1] ?? ""
     expect(slug).not.toBe("")
 
     await controlTelegram({ failWebhooks: false })
-    await platformChat().send(PEOPLE.stranger, `/reconnect ${slug}`)
-    await platformChat().send(PEOPLE.admin, `/reconnect ${slug}`)
+    await businessChat().send(PEOPLE.stranger, `/reconnect ${slug}`)
+    await businessChat().send(PEOPLE.admin, `/reconnect ${slug}`)
     await waitForMessage(PEOPLE.admin.id, "bot ulandi", since)
 })
 
@@ -193,7 +194,7 @@ test("a rejected shop is told and never opens", async ({ page }) => {
     const third = "777100202:NEW-e2e-onboarding-token-uvwxyzabcd" // secret-scan: fake
     await openAndApply(THIRD_OWNER, third, "Uchinchi")
     const card = await waitForMessage(PEOPLE.admin.id, "Uchinchi", since)
-    await platformChat().press(PEOPLE.admin, card.buttons[1]?.callback_data ?? "")
+    await businessChat().press(PEOPLE.admin, card.buttons[1]?.callback_data ?? "")
     await waitForMessage(THIRD_OWNER.id, "arizasi rad etildi", since)
     const rejected = (await myShops(THIRD_OWNER)).find((s) => s.name === "Uchinchi")
     expect(rejected?.status).toBe("disabled")
@@ -230,6 +231,7 @@ test("a customer who blocked the bot is not an alert", async () => {
 
 async function openAndApply(owner: TgUser, token: string, name: string): Promise<void> {
     const response = await apiAs(owner, "/platform/shops", {
+        businessBot: true,
         method: "POST",
         json: {
             botToken: token,

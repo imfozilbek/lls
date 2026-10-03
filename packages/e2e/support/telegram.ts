@@ -7,6 +7,7 @@ import { expect } from "@playwright/test"
 import {
     FAKE_TELEGRAM_URL,
     WORKER_URL,
+    businessBot,
     courierBot,
     newBotUsername,
     platformBot,
@@ -210,6 +211,11 @@ export function platformChat(): Chat {
     return chat("/tg/platform", platformBot().secret)
 }
 
+/** The Zumda Business bot: applications, approvals, admins' commands. */
+export function businessChat(): Chat {
+    return chat("/tg/business", businessBot().secret)
+}
+
 /** The Zumda courier bot: invites, the phone, order cards and their buttons. */
 export function courierChat(): Chat {
     return chat("/tg/courier", courierBot().secret)
@@ -221,11 +227,11 @@ export function chatWithSecret(botId: number, secret: string): Chat {
 }
 
 /**
- * Telegram tells the Zumda bot that `owner` created the bot `botId` in the «create a bot» window
+ * Telegram tells Zumda Business that `owner` created the bot `botId` in the «create a bot» window
  * (or that its token changed, or someone else owns it now).
  */
 export function managedBotUpdate(owner: TgUser, botId: number): Promise<Response> {
-    return postUpdate("/tg/platform", platformBot().secret, {
+    return postUpdate("/tg/business", businessBot().secret, {
         managed_bot: {
             user: { ...owner, is_bot: false },
             bot: {
