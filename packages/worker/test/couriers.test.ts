@@ -81,7 +81,7 @@ describe("shop couriers, verticals and channels", () => {
         return json(response)
     }
 
-    /** "accepted" is «Деньги пришли — принять»: the shop starts only after the transfer. */
+    /** "accepted" is «Деньги пришли, принять»: the shop starts only after the transfer. */
     const setStatus = (orderId: unknown, status: string, owner = as(OWNER)): Promise<Response> =>
         status === "accepted"
             ? owner(`/api/owner/orders/${String(orderId)}/payment`, {

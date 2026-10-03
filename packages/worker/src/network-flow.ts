@@ -36,7 +36,7 @@ export async function notifyOwnerStep(
 }
 
 /**
- * After «Деньги пришли — принять»: a new order was accepted in the same tap and reaches everyone
+ * After «Деньги пришли, принять»: a new order was accepted in the same tap and reaches everyone
  * like any owner step. A transfer for a cancelled order only changes the cards (owed back).
  */
 export async function notifyPaymentConfirmed(
