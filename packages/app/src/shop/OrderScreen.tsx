@@ -228,8 +228,8 @@ function OrderActions({
     if (order.status === OrderStatus.PENDING) {
         return (
             <Button
-                variant="ghost"
-                className="mx-auto text-sm font-medium text-tg-destructive"
+                variant="quietDanger"
+                className="mx-auto"
                 loading={cancelling}
                 onClick={(): void => void cancel()}
             >

@@ -60,6 +60,11 @@ export const AlertIcon = (p: IconProps): React.JSX.Element => (
         <path d="M12 10v4M12 17h.01" />
     </Icon>
 )
+export const MoreIcon = (p: IconProps): React.JSX.Element => (
+    <Icon {...p}>
+        <path d="M5 12h.01M12 12h.01M19 12h.01" strokeWidth={3} />
+    </Icon>
+)
 export const StoreIcon = (p: IconProps): React.JSX.Element => (
     <Icon {...p}>
         <path d="M4 10v10h16V10" />

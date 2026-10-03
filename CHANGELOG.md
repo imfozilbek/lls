@@ -7,6 +7,21 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The owner's workplace (UX phase 3)
+- **Changed (app):** with orders waiting, «Ishga tayyor» folds into one line («4/6 · Keyingi: …»)
+  so the order comes first; a done step keeps its words with a tick, no strike-through.
+- **Changed (app):** an order card has one main step; «Kuryer» and «Bekor qilish» are quiet below
+  it; «Tuman tarmog'idan kuryer qidirilmoqda» wraps instead of overflowing.
+- **Changed (app):** the «Sotuvda» switch acts at once (off for today where the shop keeps a
+  stop-list, with a note); «⋯» holds «Faqat bugunga» and «Butunlay yashirish».
+- **Added (app):** the product editor picks the category from the name (osh → Taomlar, suv →
+  Suv, …) until the owner chooses; four likely categories, the rest behind «Boshqa». The form
+  never hides under the bottom button (safe area counted).
+- **Changed (app):** «Sozlamalar» opens with chips to each group; «Buyurtma qabul qilish» turned
+  off is amber with what it means; seven shop colors that never look alike, in one row.
+- **Changed (app):** «Pul» explains «Tushum» (delivered and paid orders) and drops the line that
+  repeated it.
+
 ### Readable everywhere (UX phase 2)
 - **Changed (app):** secondary text, links and the destructive red reach WCAG AA (≥4.5:1) on
   white, gray and tinted surfaces; success and amber marks reach 3:1. Small print is never

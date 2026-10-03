@@ -207,22 +207,24 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
                     {actions[next] ?? next}
                 </Button>
             ) : null}
-            {/* Side by side when both fit; each on its own row in longer languages. */}
-            <div className="flex flex-wrap gap-2">
+            {/* One main step above; the courier and the cancel stay quiet below it. */}
+            <div className="flex flex-wrap items-center justify-between gap-x-2">
                 {ASSIGNABLE.includes(order.status) ? (
                     <Button
-                        variant="surface"
-                        className="grow whitespace-nowrap"
+                        variant="ghost"
+                        className="-ml-2 whitespace-nowrap px-2"
                         icon={<ScooterIcon size={18} />}
                         disabled={busy}
                         onClick={(): void => setSheet("courier")}
                     >
                         {order.courierName ? t.owner.reassign : t.owner.assign}
                     </Button>
-                ) : null}
+                ) : (
+                    <span />
+                )}
                 <Button
-                    variant="danger"
-                    className="grow whitespace-nowrap"
+                    variant="quietDanger"
+                    className="-mr-2 whitespace-nowrap px-2"
                     disabled={busy}
                     onClick={(): void => setSheet("cancel")}
                 >
@@ -241,9 +243,9 @@ function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
     const t = useT()
     if (order.waitingForNetwork) {
         return (
-            <p className="flex items-center gap-2 px-1 font-medium text-tg-subtitle">
-                <ScooterIcon size={18} className="animate-pulse text-brand" />
-                {t.owner.networkSearching}
+            <p className="flex items-start gap-2 px-1 font-medium text-tg-subtitle">
+                <ScooterIcon size={18} className="mt-0.5 shrink-0 animate-pulse text-brand" />
+                <span className="min-w-0">{t.owner.networkSearching}</span>
             </p>
         )
     }
@@ -402,6 +404,14 @@ export function OrdersTab(): React.JSX.Element {
     const replace = (order: OrderDTO): void =>
         list.update((items) => items.map((o) => (o.id === order.id ? order : o)))
     const refresh = (): void => void list.reload()
+    // Orders waiting: «Ishga tayyor» folds into one line so the orders come first.
+    const setActiveOrders = useOwner((state) => state.setActiveOrders)
+    const activeCount = filter === "active" ? list.items?.length : undefined
+    useEffect(() => {
+        if (activeCount !== undefined) {
+            setActiveOrders(activeCount)
+        }
+    }, [activeCount, setActiveOrders])
 
     let body: React.JSX.Element
     if (list.error && orders === null) {

@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react"
 
 import { errorText, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
+import { guessCategory } from "../lib/category-guess.js"
 import { cn } from "../lib/cn.js"
 import { formatQuantity } from "../lib/format.js"
 import { compressImage } from "../lib/image.js"
@@ -54,6 +55,8 @@ interface Draft {
     isAvailable: boolean
     /** New photo picked on this screen, or "remove" to drop the current one. */
     photo: Blob | "remove" | null
+    /** The owner chose the category: the name no longer moves it. */
+    categoryPicked?: boolean
 }
 
 /** A new product starts with the first unit and category that fit the shop, so it rarely needs a tap. */
@@ -325,23 +328,41 @@ function unitOptions(type: BusinessType | undefined, current: Unit): readonly Un
     return suggested.includes(current) ? suggested : [...suggested, current]
 }
 
+/** Four at most: what the name suggests, then the shop's usual ones; the current one stays. */
+const LIKELY_CATEGORIES = 4
+
+function likelyCategories(
+    name: string,
+    suggested: readonly Category[],
+    value: Category,
+): Category[] {
+    const guess = guessCategory(name)
+    const likely = [...new Set([...(guess ? [guess] : []), ...suggested])].slice(
+        0,
+        LIKELY_CATEGORIES,
+    )
+    return likely.includes(value) ? likely : [value, ...likely.slice(0, LIKELY_CATEGORIES - 1)]
+}
+
 function CategoryField({
     value,
+    name,
     onChange,
 }: {
     value: Category
+    name: string
     onChange(category: Category): void
 }): React.JSX.Element {
     const t = useT()
     const type = useSession((state) => state.shop?.type)
     const suggested = type ? SUGGESTED_CATEGORIES[type] : CATEGORIES
-    const [all, setAll] = useState(!suggested.includes(value))
+    const [all, setAll] = useState(false)
     const categories = t.categories as Record<string, string>
     return (
         <Section title={t.owner.product.category}>
             <Chips
                 value={value}
-                options={all ? CATEGORIES : suggested}
+                options={all ? CATEGORIES : likelyCategories(name, suggested, value)}
                 label={(c): string => categories[c] ?? c}
                 onChange={onChange}
             />
@@ -407,7 +428,8 @@ function KindFields({
             ) : null}
             <CategoryField
                 value={draft.category}
-                onChange={(category): void => patch({ category })}
+                name={draft.name}
+                onChange={(category): void => patch({ category, categoryPicked: true })}
             />
         </>
     )
@@ -472,7 +494,12 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
                     id="product-name"
                     value={draft.name}
                     maxLength={80}
-                    onChange={(e): void => patch({ name: e.target.value })}
+                    onChange={(e): void => {
+                        const name = e.target.value
+                        // A new product follows its name until the owner picks a category.
+                        const guess = product || draft.categoryPicked ? null : guessCategory(name)
+                        patch(guess ? { name, category: guess } : { name })
+                    }}
                 />
             </Field>
             <Field

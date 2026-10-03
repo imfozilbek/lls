@@ -1,7 +1,7 @@
 import { Feature, Unit } from "@zumda/core"
 import { useEffect, useState } from "react"
 
-import { errorText, useLanguage, useT } from "../i18n/index.js"
+import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney } from "../lib/format.js"
@@ -10,7 +10,7 @@ import { haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { BagIcon, WifiOffIcon } from "../ui/icons.js"
+import { BagIcon, MoreIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, Skeleton, Switch } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
@@ -56,10 +56,54 @@ function OffSheet({
     )
 }
 
-function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
+/** The photo, the name and the price (or why it is off sale): a tap opens the editor. */
+function ProductSummary({
+    product,
+    onSale,
+    today,
+}: {
+    product: ProductDTO
+    onSale: boolean
+    today: boolean
+}): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     const push = useRouter((state) => state.push)
+    return (
+        <button
+            type="button"
+            onClick={(): void => {
+                haptic.tap()
+                push({ name: "product", id: product.id })
+            }}
+            className="tap flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
+            <ProductImage
+                imageKey={product.imageKey}
+                category={product.category}
+                alt=""
+                iconSize={24}
+                className={cn(
+                    "h-14 w-14 shrink-0 rounded-control transition-opacity duration-200",
+                    !onSale && "opacity-40",
+                )}
+            />
+            <span className="min-w-0">
+                <span className="line-clamp-1 font-medium">{product.name}</span>
+                <span className="block text-sm text-tg-hint">
+                    {onSale
+                        ? `${formatMoney(product.price, language)}${product.unit === Unit.KG ? ` / ${t.units.kg}` : ""}`
+                        : today
+                          ? t.owner.stoppedToday
+                          : t.owner.hidden}
+                </span>
+            </span>
+        </button>
+    )
+}
+
+function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
+    const t = useT()
     const upsert = useOwner((state) => state.upsert)
     const canStop = useSession((state) => state.shop?.features.includes(Feature.STOP_LIST) ?? false)
     const [saving, setSaving] = useState(false)
@@ -67,7 +111,8 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
     const today = stoppedToday(product)
     const onSale = product.isAvailable && !today
 
-    const save = async (patch: ProductPatch): Promise<void> => {
+    /** True once the server has it. */
+    const save = async (patch: ProductPatch): Promise<boolean> => {
         setAsking(false)
         setSaving(true)
         // Optimistic: the switch moves at once, and rolls back if the save fails.
@@ -80,10 +125,12 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
         })
         try {
             upsert(await api.owner.updateProduct(product.id, patch))
+            return true
         } catch (caught) {
             upsert(product)
             haptic.error()
             toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+            return false
         } finally {
             setSaving(false)
         }
@@ -91,35 +138,21 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
 
     return (
         <li className="flex animate-rise items-center gap-3 py-3">
-            <button
-                type="button"
-                onClick={(): void => {
-                    haptic.tap()
-                    push({ name: "product", id: product.id })
-                }}
-                className="tap flex min-w-0 flex-1 items-center gap-3 text-left"
-            >
-                <ProductImage
-                    imageKey={product.imageKey}
-                    category={product.category}
-                    alt=""
-                    iconSize={24}
-                    className={cn(
-                        "h-14 w-14 shrink-0 rounded-control transition-opacity duration-200",
-                        !onSale && "opacity-40",
-                    )}
-                />
-                <span className="min-w-0">
-                    <span className="line-clamp-1 font-medium">{product.name}</span>
-                    <span className="block text-sm text-tg-hint">
-                        {onSale
-                            ? `${formatMoney(product.price, language)}${product.unit === Unit.KG ? ` / ${t.units.kg}` : ""}`
-                            : today
-                              ? t.owner.stoppedToday
-                              : t.owner.hidden}
-                    </span>
-                </span>
-            </button>
+            <ProductSummary product={product} onSale={onSale} today={today} />
+            {canStop ? (
+                <button
+                    type="button"
+                    aria-label={fill(t.owner.moreFor, { name: product.name })}
+                    onClick={(): void => {
+                        haptic.tap()
+                        setAsking(true)
+                    }}
+                    className="tap grid h-11 w-11 shrink-0 place-items-center rounded-full text-tg-subtitle active:bg-tg-secondary"
+                >
+                    <MoreIcon size={22} />
+                </button>
+            ) : null}
+            {/* One tap does the everyday thing: off for today where the shop has a stop-list. */}
             <Switch
                 checked={onSale}
                 onChange={(next): void => {
@@ -127,8 +160,11 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
                         return
                     }
                     if (!next && canStop) {
-                        haptic.tap()
-                        setAsking(true)
+                        void save({ stopForToday: true }).then((saved) => {
+                            if (saved) {
+                                toast(fill(t.owner.stoppedTodayToast, { name: product.name }))
+                            }
+                        })
                         return
                     }
                     void save({ isAvailable: next })

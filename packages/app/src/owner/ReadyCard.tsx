@@ -144,10 +144,11 @@ function ReadyRow({
                     )}
                 </span>
                 <span className="min-w-0 flex-1">
+                    {/* Done reads as done by its tick: the words stay whole, just quieter. */}
                     <span
                         className={cn(
-                            "block font-semibold",
-                            item.done && "text-tg-hint line-through decoration-tg-hint/50",
+                            "block",
+                            item.done ? "font-medium text-tg-subtitle" : "font-semibold",
                         )}
                     >
                         {item.title}
@@ -160,6 +161,41 @@ function ReadyRow({
             </button>
             {extra}
         </li>
+    )
+}
+
+/** With orders waiting, «Ishga tayyor» is one line: the progress and the next step. */
+function FoldedReady({
+    progress,
+    next,
+    onOpen,
+}: {
+    progress: string
+    next: string
+    onOpen(): void
+}): React.JSX.Element {
+    const t = useT().owner.ready
+    return (
+        <button
+            type="button"
+            aria-expanded={false}
+            onClick={(): void => {
+                haptic.tap()
+                onOpen()
+            }}
+            className="tap mx-4 mt-3 flex w-[calc(100%-2rem)] animate-rise items-center gap-3 rounded-tile bg-tg-secondary px-4 py-3 text-left"
+        >
+            <span className="rounded-full bg-brand/15 px-2.5 py-0.5 text-sm font-bold tabular-nums">
+                {progress}
+            </span>
+            <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{t.title}</span>
+                <span className="block truncate text-sm text-tg-subtitle">
+                    {fill(t.next, { item: next })}
+                </span>
+            </span>
+            <ChevronIcon size={18} className="shrink-0 text-tg-hint" />
+        </button>
     )
 }
 
@@ -179,6 +215,10 @@ export function ReadyCard(): React.JSX.Element | null {
     const [selfDelivery, setSelfDelivery] = useState(() =>
         shop ? readSelfDelivery(shop.id) : false,
     )
+    const activeOrders = useOwner((state) => state.activeOrders)
+    const focusOrderId = useOwner((state) => state.focusOrderId)
+    const [expanded, setExpanded] = useState(false)
+    const folded = !expanded && ((activeOrders ?? 0) > 0 || focusOrderId !== null)
     useEffect(() => {
         loadProducts().catch(() => undefined)
         loadCouriers().catch(() => undefined)
@@ -197,6 +237,16 @@ export function ReadyCard(): React.JSX.Element | null {
     const done = items.filter((item) => item.done).length
     if (done === items.length) {
         return null
+    }
+    const next = items.find((item) => !item.done)
+    if (folded && next) {
+        return (
+            <FoldedReady
+                progress={fill(t.progress, { done, all: items.length })}
+                next={next.title}
+                onOpen={(): void => setExpanded(true)}
+            />
+        )
     }
     const open = (item: ReadyItem): void =>
         item.id === "products" ? setTab("menu") : goToSection(item.id)

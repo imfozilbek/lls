@@ -15,7 +15,7 @@ import type {
     TextareaHTMLAttributes,
 } from "react"
 
-type ButtonVariant = "primary" | "secondary" | "surface" | "ghost" | "danger"
+type ButtonVariant = "primary" | "secondary" | "surface" | "ghost" | "danger" | "quietDanger"
 
 const VARIANTS: Record<ButtonVariant, string> = {
     primary: "bg-brand text-brand-ink shadow-[0_6px_16px_-8px_rgb(var(--brand-rgb)/0.8)]",
@@ -24,6 +24,8 @@ const VARIANTS: Record<ButtonVariant, string> = {
     surface: "bg-tg-bg text-tg-text",
     ghost: "bg-transparent text-brand",
     danger: "bg-danger/10 text-tg-destructive",
+    /** A cancel that should not be pressed by mistake: words only, far from the main step. */
+    quietDanger: "bg-transparent text-tg-destructive active:bg-danger/10",
 }
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
