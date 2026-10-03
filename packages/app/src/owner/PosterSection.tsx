@@ -1,4 +1,4 @@
-import { Language } from "@lls/core"
+import { Language } from "@zumda/core"
 import { useState } from "react"
 
 import { dictionaryFor, errorText, useT } from "../i18n/index.js"
@@ -8,7 +8,7 @@ import { toast } from "../stores/toast.js"
 import { QrIcon } from "../ui/icons.js"
 import { Button } from "../ui/primitives.js"
 
-import type { ShopOwnerDTO } from "@lls/core"
+import type { ShopOwnerDTO } from "@zumda/core"
 
 /** A poster with the shop's QR for the counter, the door or Instagram. The bot sends it as a file. */
 export function PosterSection({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {

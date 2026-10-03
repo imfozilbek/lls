@@ -1,4 +1,4 @@
-import { DomainError, languageFromTelegram } from "@lls/core"
+import { DomainError, languageFromTelegram } from "@zumda/core"
 
 import { platformAdminIds } from "../env.js"
 import { reportOverdueNetworkOrders } from "../network-flow.js"

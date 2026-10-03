@@ -8,13 +8,13 @@ import {
     Phone,
     TelegramId,
     WEEKDAYS,
-} from "@lls/core"
+} from "@zumda/core"
 
 import { sha256Hex } from "../crypto.js"
 
 import { flag, oneOf, optional } from "./rows.js"
 
-import type { CourierRepository, Weekday } from "@lls/core"
+import type { CourierRepository, Weekday } from "@zumda/core"
 
 interface ProfileRow {
     telegram_id: number

@@ -10,7 +10,7 @@ import type {
     OutgoingFile,
     TelegramGateway,
 } from "../src/telegram/gateway.js"
-import type { Clock } from "@lls/core"
+import type { Clock } from "@zumda/core"
 
 export const OWNER = { id: 1001, first_name: "Rustam", language_code: "uz" }
 export const CUSTOMER = { id: 2002, first_name: "Aziz", last_name: "Karimov", language_code: "ru" }

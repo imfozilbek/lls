@@ -1,4 +1,4 @@
-import { OrderChannel, OrderStatus, PaymentStatus, formatPhone, isFinalStatus } from "@lls/core"
+import { OrderChannel, OrderStatus, PaymentStatus, formatPhone, isFinalStatus } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -20,7 +20,7 @@ import { useOwner } from "./store.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { PagedList } from "../lib/paged.js"
-import type { OrderDTO } from "@lls/core"
+import type { OrderDTO } from "@zumda/core"
 
 type Filter = "active" | "done"
 

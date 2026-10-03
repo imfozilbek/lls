@@ -16,7 +16,7 @@ import type {
     MoneyReportDTO,
     ShopPublicDTO,
     ShowcaseProductDTO,
-} from "@lls/core"
+} from "@zumda/core"
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8787"
 

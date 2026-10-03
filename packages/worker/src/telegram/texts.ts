@@ -1,4 +1,4 @@
-import { BusinessType, Language, OrderStatus } from "@lls/core"
+import { BusinessType, Language, OrderStatus } from "@zumda/core"
 
 type StatusTexts = Partial<Record<OrderStatus, string>>
 

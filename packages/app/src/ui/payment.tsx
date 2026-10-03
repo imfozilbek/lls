@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentStatus } from "@lls/core"
+import { OrderStatus, PaymentStatus } from "@zumda/core"
 
 import { fill, useLanguage, useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
@@ -9,7 +9,7 @@ import { toast } from "../stores/toast.js"
 import { CardIcon, CopyIcon } from "./icons.js"
 import { Button } from "./primitives.js"
 
-import type { OrderDTO } from "@lls/core"
+import type { OrderDTO } from "@zumda/core"
 
 /** Settled = nothing left to do with this order's money. */
 function toneOf(status: PaymentStatus): string {

@@ -1,4 +1,4 @@
-import type { Language } from "@lls/core"
+import type { Language } from "@zumda/core"
 
 const CURRENCY: Record<Language, string> = { uz: "so'm" }
 

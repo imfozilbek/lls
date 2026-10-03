@@ -1,4 +1,4 @@
-import { DomainError, Phone, TRUSTED_SCOPE, languageFromTelegram } from "@lls/core"
+import { DomainError, Phone, TRUSTED_SCOPE, languageFromTelegram } from "@zumda/core"
 
 import { notifyNetworkClaim } from "../network-flow.js"
 import { parseCourierInvite, parseNetworkCallback, parseOrderCallback } from "../telegram/format.js"
@@ -11,7 +11,7 @@ import type { Services } from "../services.js"
 import type { NetworkCallback } from "../telegram/format.js"
 import type { BotTexts } from "../telegram/texts.js"
 import type { Callback, IncomingMessage } from "../telegram/updates.js"
-import type { Language } from "@lls/core"
+import type { Language } from "@zumda/core"
 
 /** The courier's language: the one they chose in the app, else Telegram's. */
 async function languageOf(

@@ -1,4 +1,4 @@
-import { Feature, isFinalStatus } from "@lls/core"
+import { Feature, isFinalStatus } from "@zumda/core"
 
 import { fill, useT } from "../i18n/index.js"
 import { haptic } from "../lib/telegram.js"
@@ -7,7 +7,7 @@ import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 
-import type { OrderDTO } from "@lls/core"
+import type { OrderDTO } from "@zumda/core"
 
 /**
  * "Order again": the same items at today's prices go to the cart; missing ones are skipped

@@ -4,7 +4,7 @@ import {
     Language,
     languageFromTelegram,
     toShopOwnerDTO,
-} from "@lls/core"
+} from "@zumda/core"
 import { Hono } from "hono"
 
 import { timingSafeEqual } from "../crypto.js"
@@ -36,7 +36,7 @@ import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
 import type { OrderCallback } from "../telegram/format.js"
 import type { Callback, IncomingMessage } from "../telegram/updates.js"
-import type { Business, OrderDTO, ShopOwnerDTO } from "@lls/core"
+import type { Business, OrderDTO, ShopOwnerDTO } from "@zumda/core"
 
 /**
  * Saves the customer's phone from a shared contact. Only the sender's own contact counts:

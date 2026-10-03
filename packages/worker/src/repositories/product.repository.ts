@@ -1,4 +1,4 @@
-import { BusinessStatus, CATEGORIES, Money, Product, UNITS, offsetOf } from "@lls/core"
+import { BusinessStatus, CATEGORIES, Money, Product, UNITS, offsetOf } from "@zumda/core"
 
 import { bool, flag, oneOf, optional, placeholders } from "./rows.js"
 
@@ -8,7 +8,7 @@ import type {
     ProductListQuery,
     ProductRepository,
     ShowcaseSearch,
-} from "@lls/core"
+} from "@zumda/core"
 
 interface ProductRow {
     id: string

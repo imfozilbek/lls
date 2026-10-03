@@ -1,4 +1,4 @@
-import { BusinessType, OrderStatus } from "@lls/core"
+import { BusinessType, OrderStatus } from "@zumda/core"
 
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"

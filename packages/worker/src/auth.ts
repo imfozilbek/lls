@@ -4,7 +4,7 @@ import {
     OrderChannel,
     TRUSTED_SCOPE,
     shopScope,
-} from "@lls/core"
+} from "@zumda/core"
 import { createMiddleware } from "hono/factory"
 
 import { verifyInitData } from "./crypto.js"
@@ -12,7 +12,7 @@ import { ApiError, unauthorized } from "./http/errors.js"
 
 import type { AppEnv, ViewerRole } from "./env.js"
 import type { Services } from "./services.js"
-import type { Business } from "@lls/core"
+import type { Business } from "@zumda/core"
 
 export const INIT_DATA_HEADER = "X-Telegram-Init-Data"
 export const SHOP_HEADER = "X-Shop"

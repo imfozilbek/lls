@@ -1,4 +1,4 @@
-import { Language, OrderChannel, OrderStatus, toNetworkOrderDTO } from "@lls/core"
+import { Language, OrderChannel, OrderStatus, toNetworkOrderDTO } from "@zumda/core"
 
 import { alertAdmins, describeError, isRecipientProblem } from "../alerts.js"
 import { platformAdminIds } from "../env.js"
@@ -32,7 +32,7 @@ import type {
     OrderDTO,
     OverdueNetworkOrder,
     ShopOwnerDTO,
-} from "@lls/core"
+} from "@zumda/core"
 
 /** Mini App URL for a shop: the shop bot's menu button and /start button open this. */
 export function shopAppUrl(appOrigin: string, slug: string): string {

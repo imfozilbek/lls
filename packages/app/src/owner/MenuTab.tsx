@@ -1,4 +1,4 @@
-import { Feature, Unit } from "@lls/core"
+import { Feature, Unit } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, useLanguage, useT } from "../i18n/index.js"
@@ -18,7 +18,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 import { useOwner } from "./store.js"
 
-import type { ProductDTO } from "@lls/core"
+import type { ProductDTO } from "@zumda/core"
 
 /** Until the server answers with the real midnight. */
 const PLACEHOLDER_STOP_MS = 60 * 60 * 1000

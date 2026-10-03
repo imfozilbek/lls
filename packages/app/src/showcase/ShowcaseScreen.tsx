@@ -1,4 +1,4 @@
-import { SUGGESTED_CATEGORIES } from "@lls/core"
+import { SUGGESTED_CATEGORIES } from "@zumda/core"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { create } from "zustand"
 
@@ -17,7 +17,7 @@ import { Button, EmptyState, Skeleton } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
 
-import type { Category, ShopPublicDTO, ShowcaseProductDTO } from "@lls/core"
+import type { Category, ShopPublicDTO, ShowcaseProductDTO } from "@zumda/core"
 
 /** Wait for a pause in typing before asking the server (and D1) again. */
 const TYPING_PAUSE_MS = 300

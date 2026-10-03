@@ -16,7 +16,7 @@ import {
     Phone,
     UNITS,
     offsetOf,
-} from "@lls/core"
+} from "@zumda/core"
 
 import { isUniqueViolation, oneOf, optional, placeholders } from "./rows.js"
 
@@ -27,7 +27,7 @@ import type {
     OrderRepository,
     Page,
     PageRequest,
-} from "@lls/core"
+} from "@zumda/core"
 
 interface OrderRow {
     id: string

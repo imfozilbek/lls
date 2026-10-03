@@ -1,4 +1,4 @@
-import { Feature, formatPhone } from "@lls/core"
+import { Feature, formatPhone } from "@zumda/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"

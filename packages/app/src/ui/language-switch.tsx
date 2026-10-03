@@ -1,11 +1,11 @@
-import { LANGUAGES } from "@lls/core"
+import { LANGUAGES } from "@zumda/core"
 
 import { useLanguage, useLanguageStore } from "../i18n/index.js"
 import { api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
 
-import type { Language } from "@lls/core"
+import type { Language } from "@zumda/core"
 
 /**
  * A pill per language; the choice is saved, so bot messages follow it too. With one language

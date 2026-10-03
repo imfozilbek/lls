@@ -1,5 +1,5 @@
 import { zValidator } from "@hono/zod-validator"
-import { EntityNotFoundError, OrderStatus, toShopOwnerDTO } from "@lls/core"
+import { EntityNotFoundError, OrderStatus, toShopOwnerDTO } from "@zumda/core"
 import { Hono } from "hono"
 
 import { requireOwner, shopOf } from "../auth.js"

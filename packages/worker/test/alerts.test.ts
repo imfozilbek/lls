@@ -14,7 +14,7 @@ import {
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
-import type { Clock } from "@lls/core"
+import type { Clock } from "@zumda/core"
 
 describe("admin alerts", () => {
     let client: TestClient

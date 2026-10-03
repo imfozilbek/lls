@@ -1,4 +1,4 @@
-import { BUSINESS_TYPES, BusinessType } from "@lls/core"
+import { BUSINESS_TYPES, BusinessType } from "@zumda/core"
 import { useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"

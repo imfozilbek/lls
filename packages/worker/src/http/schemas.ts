@@ -8,7 +8,7 @@ import {
     OrderStatus,
     UNITS,
     WEEKDAYS,
-} from "@lls/core"
+} from "@zumda/core"
 import { z } from "zod"
 
 import type { Context } from "hono"

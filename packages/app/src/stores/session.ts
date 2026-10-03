@@ -1,6 +1,6 @@
 import { create } from "zustand"
 
-import type { CustomerDTO, ProductDTO, ShopPublicDTO } from "@lls/core"
+import type { CustomerDTO, ProductDTO, ShopPublicDTO } from "@zumda/core"
 
 /** The viewer's role in this shop, decided by the server from verified Telegram data. */
 export type ViewerRole = "owner" | "customer"

@@ -1,4 +1,4 @@
-import { Language } from "@lls/core"
+import { Language } from "@zumda/core"
 
 import { platformAdminIds } from "./env.js"
 import { TelegramApiError, escapeHtml } from "./telegram/gateway.js"

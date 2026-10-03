@@ -51,10 +51,10 @@ jobs:
               run: bun run test
 
             - name: Core coverage (domain ≥ 90%, use cases ≥ 80%)
-              run: bun run --filter @lls/core test:coverage
+              run: bun run --filter @zumda/core test:coverage
 
             - name: Worker coverage (routes ≥ 70%)
-              run: bun run --filter @lls/worker test:coverage
+              run: bun run --filter @zumda/worker test:coverage
 
     # Every user path in a real browser against the local stand: wrangler dev with local D1,
     # vite, and a fake Telegram Bot API. No secrets: all tokens here are fake.
@@ -138,7 +138,7 @@ jobs:
               if: steps.secrets.outputs.ready == 'true'
               run: |
                   bun install --frozen-lockfile
-                  bun run --filter @lls/core build
+                  bun run --filter @zumda/core build
 
             # The only step that gets the secrets.
             - name: Deploy to Cloudflare

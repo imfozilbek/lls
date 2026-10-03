@@ -12,7 +12,7 @@ import { BottomSpacer } from "../ui/shell.js"
 import type { Dictionary } from "../i18n/index.js"
 import type { CartLine, DeliveryRules } from "../stores/cart.js"
 import type { Shop } from "../stores/session.js"
-import type { Language } from "@lls/core"
+import type { Language } from "@zumda/core"
 
 function Line({ line, faded }: { line: CartLine; faded?: boolean }): React.JSX.Element {
     const t = useT()

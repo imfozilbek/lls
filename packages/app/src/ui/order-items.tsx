@@ -1,7 +1,7 @@
 import { fill, useLanguage, useT } from "../i18n/index.js"
 import { formatMoney, formatQuantity } from "../lib/format.js"
 
-import type { OrderDTO } from "@lls/core"
+import type { OrderDTO } from "@zumda/core"
 
 /** Lines, delivery, bottle deposit and total of an order. Shared by customer, owner and courier. */
 export function OrderItems({ order }: { order: OrderDTO }): React.JSX.Element {

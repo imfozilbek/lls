@@ -13,7 +13,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 import { Wizard } from "./Wizard.js"
 
-import type { ShopOwnerDTO } from "@lls/core"
+import type { ShopOwnerDTO } from "@zumda/core"
 
 /** LLS's own color: onboarding happens in the platform bot, not in a shop. */
 const PLATFORM_COLOR = "#0ea5e9"

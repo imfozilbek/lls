@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { MAX_STEPS, deliveryFee, lineTotal, summarize, useCart } from "./cart.js"
 
-import type { ProductDTO } from "@lls/core"
+import type { ProductDTO } from "@zumda/core"
 
 function product(id: string, price: number, isAvailable = true): ProductDTO {
     return {

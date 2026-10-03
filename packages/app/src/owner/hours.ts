@@ -1,6 +1,6 @@
-import { WEEKDAYS } from "@lls/core"
+import { WEEKDAYS } from "@zumda/core"
 
-import type { WeeklySchedule } from "@lls/core"
+import type { WeeklySchedule } from "@zumda/core"
 
 export interface DayHours {
     open: boolean

@@ -1,4 +1,4 @@
-import { BusinessRuleViolationError, DomainError } from "@lls/core"
+import { BusinessRuleViolationError, DomainError } from "@zumda/core"
 import { HTTPException } from "hono/http-exception"
 
 import type { ContentfulStatusCode } from "hono/utils/http-status"

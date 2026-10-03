@@ -1,4 +1,4 @@
-import { languageFromTelegram } from "@lls/core"
+import { languageFromTelegram } from "@zumda/core"
 import { Suspense, lazy, useCallback, useEffect, useState } from "react"
 
 import { dictionaryFor, errorText, fill, useLanguageStore, useT } from "./i18n/index.js"

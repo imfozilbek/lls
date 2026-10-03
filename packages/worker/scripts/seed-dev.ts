@@ -12,7 +12,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-import { searchText } from "@lls/core"
+import { searchText } from "@zumda/core"
 
 import { encryptSecret } from "../src/crypto.js"
 

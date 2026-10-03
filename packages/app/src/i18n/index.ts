@@ -1,4 +1,4 @@
-import { BusinessType, Language } from "@lls/core"
+import { BusinessType, Language } from "@zumda/core"
 import { create } from "zustand"
 
 import { useSession } from "../stores/session.js"

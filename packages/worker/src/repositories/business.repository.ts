@@ -11,13 +11,13 @@ import {
     Slug,
     TelegramId,
     WorkingHours,
-} from "@lls/core"
+} from "@zumda/core"
 
 import { decryptSecret, encryptSecret, randomToken } from "../crypto.js"
 
 import { bool, flag, oneOf, optional } from "./rows.js"
 
-import type { BusinessRepository, WeeklySchedule } from "@lls/core"
+import type { BusinessRepository, WeeklySchedule } from "@zumda/core"
 
 interface BusinessRow {
     id: string

@@ -7,7 +7,7 @@ import {
     SUGGESTED_UNITS,
     UNITS,
     Unit,
-} from "@lls/core"
+} from "@zumda/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, useT } from "../i18n/index.js"
@@ -37,7 +37,7 @@ import { BottomSpacer } from "../ui/shell.js"
 import { useOwner } from "./store.js"
 
 import type { ProductInput } from "../lib/api.js"
-import type { BusinessType, Category, ProductDTO } from "@lls/core"
+import type { BusinessType, Category, ProductDTO } from "@zumda/core"
 
 /** Selling steps offered for weight items, in grams. */
 const KG_STEPS = [100, 250, 500, GRAMS_PER_KG] as const

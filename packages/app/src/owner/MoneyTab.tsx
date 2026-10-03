@@ -1,4 +1,4 @@
-import { MONEY_PERIODS, OrderStatus } from "@lls/core"
+import { MONEY_PERIODS, OrderStatus } from "@zumda/core"
 import { useCallback, useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -11,7 +11,7 @@ import { Button, EmptyState, Segmented, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
 import type { Dictionary } from "../i18n/index.js"
-import type { MoneyPeriod, MoneyReportDTO, OrderDTO } from "@lls/core"
+import type { MoneyPeriod, MoneyReportDTO, OrderDTO } from "@zumda/core"
 import type { ReactNode } from "react"
 
 function failToast(t: Dictionary, caught: unknown): void {

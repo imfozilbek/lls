@@ -16,10 +16,10 @@
       },
     },
     "packages/app": {
-      "name": "@lls/app",
+      "name": "@zumda/app",
       "version": "0.1.0",
       "dependencies": {
-        "@lls/core": "*",
+        "@zumda/core": "*",
         "clsx": "^2",
         "react": "~19.2.3",
         "react-dom": "~19.2.3",
@@ -39,7 +39,7 @@
       },
     },
     "packages/core": {
-      "name": "@lls/core",
+      "name": "@zumda/core",
       "version": "0.4.0",
       "devDependencies": {
         "@vitest/coverage-v8": "^4.1.0",
@@ -48,7 +48,7 @@
       },
     },
     "packages/e2e": {
-      "name": "@lls/e2e",
+      "name": "@zumda/e2e",
       "version": "0.0.0",
       "devDependencies": {
         "@playwright/test": "1.63.0",
@@ -59,11 +59,11 @@
       },
     },
     "packages/worker": {
-      "name": "@lls/worker",
+      "name": "@zumda/worker",
       "version": "0.1.0",
       "dependencies": {
         "@hono/zod-validator": "^0.9.1",
-        "@lls/core": "*",
+        "@zumda/core": "*",
         "hono": "^4.13.11",
         "zod": "^4.6.5",
       },
@@ -287,14 +287,6 @@
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
-    "@lls/app": ["@lls/app@workspace:packages/app"],
-
-    "@lls/core": ["@lls/core@workspace:packages/core"],
-
-    "@lls/e2e": ["@lls/e2e@workspace:packages/e2e"],
-
-    "@lls/worker": ["@lls/worker@workspace:packages/worker"],
-
     "@nodelib/fs.scandir": ["@nodelib/fs.scandir@2.1.5", "", { "dependencies": { "@nodelib/fs.stat": "2.0.5", "run-parallel": "^1.1.9" } }, "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g=="],
 
     "@nodelib/fs.stat": ["@nodelib/fs.stat@2.0.5", "", {}, "sha512-RkhPPp2zrqDAQA/2jNhnztcPAlv64XdhIp7a7454A5ovI7Bukxgt7MX7udwAu3zg1DcpPU0rz3VV1SeaqvY4+A=="],
@@ -434,6 +426,14 @@
     "@vitest/spy": ["@vitest/spy@4.1.11", "", {}, "sha512-apNa/prQy2qCeywhnixOHPRCgGNhvg7T4Dapfl1GahLp/R+uhBm5cPyFoNVyqsNd2h1nJxL6BqqdIjiABL60YA=="],
 
     "@vitest/utils": ["@vitest/utils@4.1.11", "", { "dependencies": { "@vitest/pretty-format": "4.1.11", "convert-source-map": "^2.0.0", "tinyrainbow": "^3.1.0" } }, "sha512-zTCVGpyFsGWBhllOyKlTw/vnr6D9qxsfSDyfbyZmTyjHw5N/VuvzHpHoQjm2ZJzn4RJgx5w4r7V0er69CmLgPQ=="],
+
+    "@zumda/app": ["@zumda/app@workspace:packages/app"],
+
+    "@zumda/core": ["@zumda/core@workspace:packages/core"],
+
+    "@zumda/e2e": ["@zumda/e2e@workspace:packages/e2e"],
+
+    "@zumda/worker": ["@zumda/worker@workspace:packages/worker"],
 
     "acorn": ["acorn@8.15.0", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg=="],
 

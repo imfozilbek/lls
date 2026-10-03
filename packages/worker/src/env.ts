@@ -1,5 +1,5 @@
 import type { Services } from "./services.js"
-import type { Business, IdentityScope, OrderChannel, TelegramUser } from "@lls/core"
+import type { Business, IdentityScope, OrderChannel, TelegramUser } from "@zumda/core"
 
 /** Bindings from wrangler.jsonc plus secrets set with `wrangler secret put`. */
 export interface Bindings extends Env {

@@ -1,11 +1,11 @@
-import { OrderChannel, OrderStatus, PaymentStatus, Unit, formatPhone, mapUrl } from "@lls/core"
+import { OrderChannel, OrderStatus, PaymentStatus, Unit, formatPhone, mapUrl } from "@zumda/core"
 
 import { escapeHtml } from "./gateway.js"
 import { fill, textsFor } from "./texts.js"
 
 import type { InlineButton, InlineKeyboard } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
-import type { BusinessType, Language, NetworkOrderDTO, OrderDTO, OrderItemDTO } from "@lls/core"
+import type { BusinessType, Language, NetworkOrderDTO, OrderDTO, OrderItemDTO } from "@zumda/core"
 
 /** Who reads a message: their language and the kind of shop the order is from. */
 export interface Reader {

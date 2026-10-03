@@ -1,4 +1,4 @@
-import { CourierStatus, OrderStatus, PaymentStatus } from "@lls/core"
+import { CourierStatus, OrderStatus, PaymentStatus } from "@zumda/core"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -29,7 +29,7 @@ import type {
     CourierShopDTO,
     NetworkOrderDTO,
     OrderDTO,
-} from "@lls/core"
+} from "@zumda/core"
 
 const POLL_MS = 20_000
 const METERS_PER_KM = 1000

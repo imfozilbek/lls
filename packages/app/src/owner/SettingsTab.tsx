@@ -1,4 +1,4 @@
-import { FEATURES, Feature } from "@lls/core"
+import { FEATURES, Feature } from "@zumda/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
@@ -32,7 +32,7 @@ import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 
 import type { Hours } from "./hours.js"
 import type { ShopPatch } from "../lib/api.js"
-import type { ShopOwnerDTO } from "@lls/core"
+import type { ShopOwnerDTO } from "@zumda/core"
 
 interface Form {
     name: string
