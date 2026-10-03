@@ -14,7 +14,6 @@
   `@zumdashop_kuryer_bot`; их токены — в переменные окружения Claude (шаг 5) и в секреты
   GitHub (шаг 6), не в чат; старый бот с прежним названием удалить в @BotFather (его токен был
   показан в чате);
-- переименовать репозиторий GitHub в `zumda` (деплой запускается только для `imfozilbek/zumda`);
 - ваш Telegram ID;
 - те же 5 ключей (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `PLATFORM_BOT_TOKEN`,
   `COURIER_BOT_TOKEN`, `PLATFORM_ADMIN_IDS`) — в переменные облачного окружения Claude (шаг 5) и
