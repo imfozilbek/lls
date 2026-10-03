@@ -210,11 +210,10 @@ export type RegisterShopBody = RegisterShopBot & {
     name: string
     type: string
     address?: string
-    deliveryFee: number
-    freeDeliveryFrom?: number
-    minOrder?: number
-    /** Customers pay only by transfer: the card is a required step. */
-    payoutCard: { number: string; holder: string }
+    location?: { latitude: number; longitude: number }
+    /** The fee and the card come later, in «Ishga tayyor». */
+    deliveryFee?: number
+    payoutCard?: { number: string; holder: string }
 }
 
 export interface CourierInvite {
@@ -241,6 +240,8 @@ export const api = {
 
     owner: {
         shop: (): Promise<ShopOwnerDTO> => request("GET", "/api/owner/shop"),
+        /** A rejected application, fixed, goes to Zumda again. */
+        resubmit: (): Promise<ShopOwnerDTO> => request("POST", "/api/owner/shop/resubmit"),
         updateShop: (patch: ShopPatch): Promise<ShopOwnerDTO> =>
             request("PATCH", "/api/owner/shop", patch),
         uploadLogo: (image: Blob): Promise<ShopOwnerDTO> =>
@@ -384,8 +385,12 @@ export interface DistrictInput {
 export const adminApi = {
     shops: async (status: BusinessStatus): Promise<PlatformShopDTO[]> =>
         (await request<Page<PlatformShopDTO>>("GET", `/api/admin/shops?status=${status}`)).data,
-    review: (id: string, decision: "approve" | "reject"): Promise<AdminShopResult> =>
-        request("PATCH", `/api/admin/shops/${id}`, { decision }),
+    /** `reason`: why an application is rejected; the owner reads it. */
+    review: (
+        id: string,
+        decision: "approve" | "reject",
+        reason?: string,
+    ): Promise<AdminShopResult> => request("PATCH", `/api/admin/shops/${id}`, { decision, reason }),
     reconnect: (id: string): Promise<AdminShopResult> =>
         request("POST", `/api/admin/shops/${id}/reconnect`),
     /** The showcase deal in percent, or `null` to take the shop out. */

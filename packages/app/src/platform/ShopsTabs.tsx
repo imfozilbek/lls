@@ -65,18 +65,40 @@ function ConfirmSheet({
     busy,
     onConfirm,
     onClose,
+    askReason = false,
 }: {
     title: string
     hint: string
     action: string
     busy: boolean
-    onConfirm(): void
+    /** `reason`: what the admin typed when `askReason` is on. */
+    onConfirm(reason?: string): void
     onClose(): void
+    /** A rejected application says why: the owner fixes exactly that. */
+    askReason?: boolean
 }): React.JSX.Element {
+    const p = useT().platform
+    const [reason, setReason] = useState("")
     return (
         <Sheet title={title} onClose={onClose}>
             <p className="px-1 text-tg-subtitle">{hint}</p>
-            <Button variant="danger" size="lg" loading={busy} onClick={onConfirm}>
+            {askReason ? (
+                <Field label={p.rejectReason} htmlFor="reject-reason">
+                    <TextInput
+                        id="reject-reason"
+                        value={reason}
+                        maxLength={300}
+                        placeholder={p.rejectReasonPlaceholder}
+                        onChange={(e): void => setReason(e.target.value)}
+                    />
+                </Field>
+            ) : null}
+            <Button
+                variant="danger"
+                size="lg"
+                loading={busy}
+                onClick={(): void => onConfirm(reason.trim() || undefined)}
+            >
                 {action}
             </Button>
         </Sheet>
@@ -97,9 +119,9 @@ function ApplicationCard({
     const ref = useFocus(focused)
     const { busy, run } = useBusy()
     const [confirming, setConfirming] = useState(false)
-    const review = (decision: "approve" | "reject"): Promise<void> =>
+    const review = (decision: "approve" | "reject", reason?: string): Promise<void> =>
         run(decision, async () => {
-            const result = await adminApi.review(shop.id, decision)
+            const result = await adminApi.review(shop.id, decision, reason)
             const done = decision === "approve" ? t.platform.approved : t.platform.rejected
             botToast(t, result, fill(done, { shop: shop.name }))
             setConfirming(false)
@@ -148,7 +170,8 @@ function ApplicationCard({
                     hint={t.platform.rejectHint}
                     action={t.platform.reject}
                     busy={busy === "reject"}
-                    onConfirm={(): void => void review("reject")}
+                    askReason
+                    onConfirm={(reason): void => void review("reject", reason)}
                     onClose={(): void => setConfirming(false)}
                 />
             ) : null}

@@ -6,11 +6,10 @@ import { ApiError, api } from "../lib/api.js"
 import { updateBotPhoto } from "../lib/bot-photo.js"
 import { cn } from "../lib/cn.js"
 import { useBackButton, useMainAction } from "../lib/main-button.js"
-import { haptic } from "../lib/telegram.js"
+import { getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
-import { PayoutCardFields, payoutCardIsValid } from "../ui/card-fields.js"
-import { CheckIcon, DishIcon, ShopFrontIcon, ToolIcon } from "../ui/icons.js"
-import { EmptyState, Field, MoneyInput, TextInput } from "../ui/primitives.js"
+import { CheckIcon, DishIcon, PinIcon, ShopFrontIcon, ToolIcon } from "../ui/icons.js"
+import { Button, Field, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
 import { BotStep, TOKEN_PATTERN, useManagedBot } from "./BotStep.js"
@@ -38,12 +37,8 @@ interface Draft {
     name: string
     type: ShopType
     address: string
-    fee: number | null
-    freeFrom: number | null
-    minOrder: number | null
-    /** Customers pay only by transfer to this card: a required step. */
-    cardNumber: string
-    cardHolder: string
+    /** Where the business is: its district and the network's couriers come from this. */
+    location: { latitude: number; longitude: number } | null
 }
 
 const EMPTY: Draft = {
@@ -53,11 +48,7 @@ const EMPTY: Draft = {
     name: "",
     type: BusinessType.GROCERY,
     address: "",
-    fee: null,
-    freeFrom: null,
-    minOrder: null,
-    cardNumber: "",
-    cardHolder: "",
+    location: null,
 }
 
 function hasBot(draft: Draft): boolean {
@@ -73,7 +64,8 @@ function canContinue(step: Step, draft: Draft): boolean {
     if (step === 2) {
         return hasBot(draft)
     }
-    return draft.fee !== null && payoutCardIsValid(draft.cardNumber, draft.cardHolder)
+    // «Joylashuv» may wait: «Ishga tayyor» asks for it again.
+    return true
 }
 
 function Progress({ step }: { step: Step }): React.JSX.Element {
@@ -152,71 +144,72 @@ function ShopStep({
                     })}
                 </div>
             </Field>
-            <Field label={`${t.address} (${t.optional})`} htmlFor="shop-address">
-                <TextInput
-                    id="shop-address"
-                    value={draft.address}
-                    maxLength={200}
-                    onChange={(e): void => patch({ address: e.target.value })}
-                />
-            </Field>
         </>
     )
 }
 
-function DeliveryStep({
+function LocationStep({
     draft,
     patch,
 }: {
     draft: Draft
     patch(change: Partial<Draft>): void
 }): React.JSX.Element {
-    const t = useT().onboarding
+    const t = useT()
+    const o = t.onboarding
+    const [busy, setBusy] = useState(false)
+    const locate = async (): Promise<void> => {
+        setBusy(true)
+        const found = await getLocation()
+        setBusy(false)
+        if (!found) {
+            haptic.error()
+            toast(t.checkout.locationFailed, "error")
+            return
+        }
+        haptic.success()
+        patch({ location: { latitude: found.latitude, longitude: found.longitude } })
+    }
     return (
         <>
-            <h1 className="text-2xl font-bold">{t.deliveryTitle}</h1>
-            <Field label={t.fee} htmlFor="fee">
-                <MoneyInput id="fee" value={draft.fee} onChange={(fee): void => patch({ fee })} />
-            </Field>
-            <Field label={`${t.freeFrom} (${t.optional})`} htmlFor="free-from">
-                <MoneyInput
-                    id="free-from"
-                    value={draft.freeFrom}
-                    onChange={(freeFrom): void => patch({ freeFrom })}
+            <h1 className="text-2xl font-bold">{o.locationTitle}</h1>
+            <p className="text-tg-subtitle">{o.locationText}</p>
+            {draft.location ? (
+                <div className="flex animate-pop items-center gap-3 rounded-tile bg-success/15 p-4">
+                    <span className="grid h-10 w-10 place-items-center rounded-full bg-tg-bg text-success">
+                        <CheckIcon size={22} strokeWidth={2.5} />
+                    </span>
+                    <span className="flex-1 font-semibold">{o.locationTaken}</span>
+                    <button
+                        type="button"
+                        onClick={(): void => void locate()}
+                        className="tap rounded-full px-3 py-2 text-sm font-semibold text-tg-subtitle focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                    >
+                        {o.locationAgain}
+                    </button>
+                </div>
+            ) : (
+                <Button
+                    variant="secondary"
+                    size="lg"
+                    loading={busy}
+                    icon={<PinIcon size={20} className="text-brand" />}
+                    onClick={(): void => void locate()}
+                >
+                    {o.locationSend}
+                </Button>
+            )}
+            <Field label={`${o.address} (${o.optional})`} htmlFor="shop-address">
+                <TextInput
+                    id="shop-address"
+                    value={draft.address}
+                    maxLength={200}
+                    placeholder={o.addressPlaceholder}
+                    onChange={(e): void => patch({ address: e.target.value })}
                 />
             </Field>
-            <Field label={`${t.minOrder} (${t.optional})`} htmlFor="min-order">
-                <MoneyInput
-                    id="min-order"
-                    value={draft.minOrder}
-                    onChange={(minOrder): void => patch({ minOrder })}
-                />
-            </Field>
-            <h2 className="pt-2 text-xl font-bold">{t.cardTitle}</h2>
-            <PayoutCardFields
-                number={draft.cardNumber}
-                holder={draft.cardHolder}
-                hint={t.cardHint}
-                onChange={(change): void =>
-                    patch({
-                        ...(change.number === undefined ? {} : { cardNumber: change.number }),
-                        ...(change.holder === undefined ? {} : { cardHolder: change.holder }),
-                    })
-                }
-            />
+            {draft.location ? null : <p className="px-1 text-sm text-tg-hint">{o.locationLater}</p>}
         </>
-    )
-}
-
-/** Success screen. Its "Done" button is declared by <Wizard/>: one screen, one main action. */
-function Sent(): React.JSX.Element {
-    const t = useT()
-    return (
-        <EmptyState
-            art={<CheckIcon size={44} strokeWidth={2.25} />}
-            title={t.onboarding.sentTitle}
-            text={t.onboarding.sentText}
-        />
     )
 }
 
@@ -237,10 +230,7 @@ async function submit(draft: Draft): Promise<ShopOwnerDTO> {
         name: draft.name.trim(),
         type: draft.type,
         address: draft.address.trim() || undefined,
-        deliveryFee: draft.fee ?? 0,
-        freeDeliveryFrom: draft.freeFrom ?? undefined,
-        minOrder: draft.minOrder ?? undefined,
-        payoutCard: { number: draft.cardNumber, holder: draft.cardHolder.trim() },
+        location: draft.location ?? undefined,
     })
 }
 
@@ -267,19 +257,22 @@ function createAction(
     }
 }
 
-/** Three short steps: business → bot → delivery and the card. The platform admin approves it. */
+/**
+ * Three short steps: the business, its bot, where it is. The rest (the card, the fee, hours,
+ * products) waits in «Ishga tayyor», right in the owner section the wizard opens.
+ */
 export function Wizard({
     onDone,
     onCancel,
 }: {
-    onDone(): void
+    /** The application went out: open the new business. */
+    onDone(shop: ShopOwnerDTO): void
     onCancel(): void
 }): React.JSX.Element {
     const t = useT()
     const [step, setStep] = useState<Step>(1)
     const [draft, setDraft] = useState<Draft>(EMPTY)
     const [sending, setSending] = useState(false)
-    const [sent, setSent] = useState(false)
     const patch = (change: Partial<Draft>): void => setDraft((d) => ({ ...d, ...change }))
     const flow = useManagedBot(draft.name, (managedBot) => patch({ managedBot }))
 
@@ -294,7 +287,8 @@ export function Wizard({
         try {
             const shop = await submit(draft)
             haptic.success()
-            setSent(true)
+            toast(t.onboarding.sentTitle, "success")
+            onDone(shop)
             // The new bot gets Zumda's picture at once: the shop's name and the Zumda mark.
             void updateBotPhoto(
                 { shopName: shop.name, brandColor: shop.brandColor, logo: null },
@@ -316,25 +310,20 @@ export function Wizard({
     }
 
     useBackButton(
-        sent || sending ? null : (): void => (step > 1 ? setStep((step - 1) as Step) : onCancel()),
+        sending ? null : (): void => (step > 1 ? setStep((step - 1) as Step) : onCancel()),
     )
 
     useMainAction(
-        sent
-            ? { text: t.common.done, onClick: onDone }
-            : needsBotCreation(step, draft)
-              ? createAction(t, flow)
-              : {
-                    text: actionText(t, step, sending),
-                    onClick: (): void => void next(),
-                    loading: sending,
-                    disabled: !canContinue(step, draft),
-                },
+        needsBotCreation(step, draft)
+            ? createAction(t, flow)
+            : {
+                  text: actionText(t, step, sending),
+                  onClick: (): void => void next(),
+                  loading: sending,
+                  disabled: !canContinue(step, draft),
+              },
     )
 
-    if (sent) {
-        return <Sent />
-    }
     return (
         <main className="flex flex-col gap-5 px-4 pt-4">
             <Progress step={step} />
@@ -353,7 +342,7 @@ export function Wizard({
                         onToken={(botToken): void => patch({ botToken })}
                     />
                 ) : null}
-                {step === 3 ? <DeliveryStep draft={draft} patch={patch} /> : null}
+                {step === 3 ? <LocationStep draft={draft} patch={patch} /> : null}
             </div>
             <BottomSpacer />
         </main>

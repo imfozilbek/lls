@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { errorText, useT } from "../i18n/index.js"
+import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api, imageUrl } from "../lib/api.js"
 import { ZUMDA_BRAND_COLOR, applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
@@ -15,7 +15,10 @@ import { Wizard } from "./Wizard.js"
 
 import type { ShopOwnerDTO } from "@zumda/core"
 
-/** Tapping a shop opens its owner section right here; a turned-off shop opens nowhere. */
+/**
+ * Tapping a shop opens its owner section right here, whatever its status: a rejected application
+ * is fixed and sent again there.
+ */
 function ShopRow({
     shop,
     onOpen,
@@ -26,17 +29,16 @@ function ShopRow({
     const t = useT().onboarding
     const logo = imageUrl(shop.logoKey)
     const active = shop.status === "active"
-    const opens = shop.status !== "disabled"
+    const label = shop.rejection ? t.rejected : t.status[shop.status]
     return (
         <li>
             <button
                 type="button"
-                disabled={!opens}
                 onClick={(): void => {
                     haptic.tap()
                     onOpen(shop.slug)
                 }}
-                className="tap flex w-full items-center gap-3 rounded-tile bg-tg-secondary p-3 text-left disabled:active:scale-100"
+                className="tap flex w-full items-center gap-3 rounded-tile bg-tg-secondary p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
             >
                 {logo ? (
                     <img src={logo} alt="" className="h-12 w-12 rounded-control object-cover" />
@@ -53,17 +55,23 @@ function ShopRow({
                 )}
                 <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{shop.name}</span>
-                    <span className="block truncate text-sm text-tg-hint">@{shop.botUsername}</span>
+                    <span className="block truncate text-sm text-tg-hint">
+                        {shop.rejection?.reason
+                            ? fill(t.rejectedReason, { reason: shop.rejection.reason })
+                            : `@${shop.botUsername}`}
+                    </span>
                 </span>
                 <span
                     className={cn(
                         "rounded-full px-2.5 py-1 text-xs font-semibold",
-                        active ? "bg-success/15" : "bg-warning/15",
+                        active && "bg-success/15",
+                        shop.status === "pending" && "bg-warning/15",
+                        shop.status === "disabled" && "bg-danger/10",
                     )}
                 >
-                    {t.status[shop.status]}
+                    {label}
                 </span>
-                {opens ? <ChevronIcon size={18} className="text-tg-hint" /> : null}
+                <ChevronIcon size={18} className="text-tg-hint" />
             </button>
         </li>
     )
@@ -193,9 +201,10 @@ export function OnboardingApp({
         return (
             <Wizard
                 onCancel={(): void => setWizard(false)}
-                onDone={(): void => {
+                onDone={(shop): void => {
+                    // Straight into the new business: «Ishga tayyor» says what is next.
                     setWizard(false)
-                    void load()
+                    onOpen(shop.slug)
                 }}
             />
         )

@@ -220,10 +220,28 @@ export function requestChat(preparedId: string): Promise<boolean> {
     return callbackPromise((done) => request(preparedId, done), false)
 }
 
+/** business.zumda.shop in a browser: the browser's own location, if the person allows it. */
+function browserLocation(): Promise<LocationData | null> {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+        return Promise.resolve(null)
+    }
+    return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+            (position) =>
+                resolve({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                }),
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 15_000 },
+        )
+    })
+}
+
 export function getLocation(): Promise<LocationData | null> {
     const manager = webApp()?.LocationManager
     if (!manager) {
-        return Promise.resolve(null)
+        return webApp() ? Promise.resolve(null) : browserLocation()
     }
     return callbackPromise<LocationData | null>((done) => {
         const read = (): void => {
