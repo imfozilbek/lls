@@ -493,7 +493,7 @@ document.innerHTML = x                 // XSS
 - Prices, totals, the service fee and `customerId` are computed on the server. Never trust them from the client
 - Check ownership on every route (owner edits only own shop, customer sees only own orders)
 - Frontend NEVER talks to D1/R2 directly. Only through the Worker
-- CORS: allow only `APP_ORIGIN` (the Pages address)
+- CORS: allow only `APP_ORIGIN` (the Mini App address, `https://app.zumda.shop`)
 - Check `git diff` before commit
 
 **Public repository (GitHub, free CI):** the code is public, the keys never are.
@@ -717,15 +717,16 @@ bun run format && bun run lint && bun run test && bun run build
 CI/CD: GitHub Actions. **⛔ Docker is PROHIBITED. No VPS.**
 
 ```
-Telegram ─► Mini App (Pages, *.pages.dev) ─► Worker (*.workers.dev, /api) ─► D1 / R2
+Telegram ─► Mini App (Pages, app.zumda.shop) ─► Worker (api.zumda.shop, /api) ─► D1 / R2
 Telegram Bot API ─► /tg/:botId, /tg/platform ─► Worker
 ```
 
 **Worker secrets:** `TOKEN_ENC_KEY`, `PLATFORM_BOT_TOKEN`, `PLATFORM_WEBHOOK_SECRET`, `PLATFORM_ADMIN_IDS`,
 `COURIER_BOT_TOKEN`, `COURIER_WEBHOOK_SECRET`.
-**Worker vars:** `APP_ORIGIN` (Pages URL).
+**Worker vars:** `APP_ORIGIN` (`https://app.zumda.shop`).
 
-- Custom domain: later, optional.
+- Addresses: `api.zumda.shop` (Worker, Custom Domain) and `app.zumda.shop` (Pages); the deploy
+  adds them and their DNS records. The Worker has no workers.dev address.
 - Deploy only after quality gates pass on `main`.
 
 ## Package Documentation (MANDATORY)

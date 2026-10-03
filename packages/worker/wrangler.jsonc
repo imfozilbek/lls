@@ -4,6 +4,10 @@
     "main": "src/index.ts",
     "compatibility_date": "2026-09-01",
     "observability": { "enabled": true },
+    // Production answers only at api.zumda.shop (the deploy adds it): no workers.dev or preview
+    // address. Local `wrangler dev`, the tests and the e2e stand are not affected.
+    "workers_dev": false,
+    "preview_urls": false,
     "vars": {
         "APP_ORIGIN": "http://localhost:5173",
     },
