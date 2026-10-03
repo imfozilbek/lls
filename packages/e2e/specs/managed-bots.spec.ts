@@ -8,6 +8,7 @@ import { managedBotToken, newBotUsername } from "../stand/config.js"
 import { PEOPLE, apiAs, resetStand } from "../support/stand.js"
 import {
     callsOf,
+    controlTelegram,
     lastSeq,
     managedBotUpdate,
     businessChat,
@@ -132,7 +133,9 @@ test("someone else's shop is closed to them from the Zumda bot (403)", async () 
 
 test("a new token from BotFather is picked up: the bot is connected again", async () => {
     const since = await lastSeq()
-    // Telegram sends `managed_bot` again; Zumda fetches the new token by itself.
+    // The owner revokes the token in BotFather; Telegram sends `managed_bot` again and Zumda
+    // fetches the new token by itself.
+    await controlTelegram({ revokeManagedBot: BOT_ID })
     await managedBotUpdate(OWNER, BOT_ID)
     const hook = await waitForCall("setWebhook", managedBotToken(BOT_ID, 2), since)
     expect(hook.body["url"]).toBe(`http://localhost:8787/tg/${BOT_ID}`)
