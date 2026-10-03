@@ -7,6 +7,18 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Welcome of the Zumda bots: scene "Ko'cha" (owner's choice)
+- **Added (worker):** `/start` in the Zumda bot and the courier bot answers with one picture (a
+  street of eateries, shops and services with a Zumda courier) and the greeting as its caption,
+  with the same buttons; if Telegram cannot take the picture, the same text goes alone
+  (`telegram/welcome.ts`, `TelegramGateway.sendPhoto`).
+- **Changed:** Zumda speaks of shops, eateries and services: «do'konlar, oshxonalar va
+  xizmatlar» in the greeting, the buttons («Qidirish va buyurtma berish», «Biznesimni ulash»)
+  and the bots' descriptions.
+- **Added:** the deploy sets both bots' descriptions and profile lines from the repository.
+- **Added:** `brand/welcome/`: the scene source, 1280×720 pictures and 640×360 Description
+  Pictures for @BotFather; `packages/app/public/welcome/` serves the JPEGs.
+
 ### Zumda's look: the green house (owner's decisions)
 - **Added:** brand kit in `brand/` (mark, logo in outlines, bot and group avatars, README).
 - **Changed (core):** a new shop is Zumda green (`#15803d`) until the owner picks a color.

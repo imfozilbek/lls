@@ -69,7 +69,7 @@ describe("platform bot", () => {
             ),
         )
         expect(response.status).toBe(200)
-        const [welcome] = client.telegram.sent
+        const [welcome] = client.telegram.pictures
         expect(welcome?.chatId).toBe(OWNER.id)
         expect(welcome?.options?.keyboard?.inline_keyboard[1]?.[0]?.web_app?.url).toBe(
             "https://zumda-app.pages.dev/?mode=onboarding",

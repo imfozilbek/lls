@@ -397,6 +397,7 @@ test("the courier bot's /start: shops and the button; a stranger is asked for an
     const since = await lastSeq()
     await courierChat().send(PEOPLE.courier, "/start")
     const greeting = await waitForMessage(PEOPLE.courier.id, "Siz kuryersiz", since)
+    expect(greeting.photo).toBe("http://localhost:5173/welcome/kuryer.jpg")
     expect(greeting.text).toContain("Osh Markaz")
     expect(greeting.text).toContain("Toza Suv")
     expect(greeting.buttons.map((b) => b.web_app?.url)).toEqual([
@@ -404,7 +405,7 @@ test("the courier bot's /start: shops and the button; a stranger is asked for an
     ])
 
     await courierChat().send(PEOPLE.stranger, "/start")
-    await waitForMessage(PEOPLE.stranger.id, "do'kon egasidan taklif havolasini so'rang", since)
+    await waitForMessage(PEOPLE.stranger.id, "biznes egasidan taklif havolasini so'rang", since)
 
     await openApp(page, { user: PEOPLE.stranger, courierBot: true })
     await expect(page.getByText("Siz hali kuryer emassiz")).toBeVisible()

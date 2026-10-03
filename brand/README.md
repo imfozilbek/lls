@@ -37,3 +37,8 @@ PNGs are rendered from the SVGs; change the SVG first.
 - In a shop's storefront the shop leads; Zumda is the small line at the bottom.
 - A shop's bot avatar is set by Zumda: the shop logo (or its name on its color) with the
   mark in a white circle at the bottom right.
+
+## Welcome picture
+
+The bots' `/start` picture and the Description Picture for @BotFather: `welcome/` (scene
+"Ko'cha": eateries, shops and services on one street).

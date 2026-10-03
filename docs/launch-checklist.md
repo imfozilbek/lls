@@ -68,6 +68,10 @@ Claude, и деплоем; перед подключением настоящи�
 
 Аватары, описания, кнопки меню и вебхуки ботов Zumda настроит Claude и деплой.
 
+- [ ] Картинка в блоке «Что умеет этот бот?» (через API её не поставить): @BotFather →
+      `/mybots` → `@zumdashop_bot` → **Edit Bot** → **Edit Description Picture** → отправьте
+      `brand/welcome/zumda-640.png`. Для `@zumdashop_kuryer_bot`: `brand/welcome/kuryer-640.png`.
+
 ## Шаг 5. Доступ для Claude (3 минуты)
 
 - [ ] В Claude: меню облачного окружения в заголовке сессии → **Edit** → переменные окружения.

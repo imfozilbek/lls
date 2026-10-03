@@ -199,10 +199,22 @@ describe("Zumda showcase", () => {
         expect(await json(own)).toMatchObject({ channel: "shop_bot", commission: 0 })
     })
 
-    it("the Zumda bot welcomes with the showcase and onboarding buttons", async () => {
+    it("the Zumda bot welcomes with the street picture, the showcase and onboarding", async () => {
         await platformUpdate({ from: CUSTOMER, text: "/start" })
-        const buttons = client.telegram.sent.at(-1)?.options?.keyboard?.inline_keyboard
+        const welcome = client.telegram.pictures.at(-1)
+        expect(welcome?.photoUrl).toBe("https://zumda-app.pages.dev/welcome/zumda.jpg")
+        expect(welcome?.html).toContain("do'konlar, oshxonalar va xizmatlar")
+        const buttons = welcome?.options?.keyboard?.inline_keyboard
         expect(buttons?.[0]?.[0]?.web_app?.url).toContain("mode=market")
         expect(buttons?.[1]?.[0]?.web_app?.url).toContain("mode=onboarding")
+    })
+
+    it("when Telegram cannot take the picture, the same welcome goes as text", async () => {
+        client.telegram.failPictures = true
+        await platformUpdate({ from: CUSTOMER, text: "/start" })
+        expect(client.telegram.pictures).toHaveLength(0)
+        const text = client.telegram.sent.at(-1)
+        expect(text?.html).toContain("do'konlar, oshxonalar va xizmatlar")
+        expect(text?.options?.keyboard?.inline_keyboard).toHaveLength(2)
     })
 })
