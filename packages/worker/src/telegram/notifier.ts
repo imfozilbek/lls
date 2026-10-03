@@ -169,13 +169,14 @@ export class Notifier {
     }
 
     /** «Pul keldi» pressed in the chat: ask once, with the sum and the card to look at. */
-    async askPaymentConfirm(business: Business, order: OrderDTO): Promise<void> {
+    async askPaymentConfirm(business: Business, order: OrderDTO, reminder = false): Promise<void> {
         const token = await this.shopToken(business.id)
         const ownerId = business.ownerTelegramId.value
         const reader = await this.readerFor(ownerId, business)
         const t = textsFor(reader.language, business.type)
         const sum = formatMoney(order.total, reader.language)
         const lines = [
+            ...(reminder ? [fill(t.transferReminder, { n: order.number })] : []),
             fill(t.confirmPaidQuestion, {
                 n: order.number,
                 sum: `<b>${sum}</b>`,

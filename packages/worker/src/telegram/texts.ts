@@ -181,6 +181,7 @@ const BASE = {
         confirmPaidQuestion:
             "💳 #{n}: {sum} {card} kartangizga keldimi?\nBank ilovangizda tekshirib, javob bering.",
         confirmPaidNoReceipt: "⚠️ Mijoz o'tkazganini hali bildirmagan.",
+        transferReminder: "⏰ #{n}: mijoz o'tkazmani tekshirishingizni kutmoqda.",
         confirmPaidYes: "✅ Ha, {sum} keldi",
         confirmPaidNo: "Yo'q, kelmadi",
         transferRejectedCustomer:

@@ -259,6 +259,36 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect(warned).toContain("1 ta o'tkazmasi avval topilmagan")
     })
 
+    it("«Do'konga eslatish»: not before the pause, then the owner is asked again", async () => {
+        const order = await json<Order>(await place())
+        await transferSent(order.id)
+        const remind = (): Promise<Response> =>
+            as(CUSTOMER)(`/api/orders/${order.id}/transfer-reminder`, { method: "POST" })
+        const early = await remind()
+        expect(early.status).toBe(422)
+        expect(await json(early)).toMatchObject({ error: { code: "REMIND_TOO_SOON" } })
+        // Eleven minutes and no answer from the shop.
+        await env.DB.prepare("UPDATE orders SET receipt_at = ? WHERE id = ?")
+            .bind(Date.now() - 11 * 60_000, order.id)
+            .run()
+        const reminded = await remind()
+        expect(reminded.status).toBe(200)
+        const body = await json<Order & { payment: { remindableAt?: string } }>(reminded)
+        expect(Date.parse(body.payment.remindableAt ?? "")).toBeGreaterThan(Date.now())
+        const ping = client.telegram.sent.at(-1)
+        expect(ping).toMatchObject({ chatId: OWNER.id, token: SHOP_BOT_TOKEN })
+        expect(ping?.html).toContain("tekshirishingizni kutmoqda")
+        expect(ping?.options?.keyboard?.inline_keyboard.flat()[0]?.callback_data).toBe(
+            `pc:${order.id}`,
+        )
+        expect((await remind()).status).toBe(422)
+        // Only the order's customer may remind.
+        const stranger = await as(STRANGER)(`/api/orders/${order.id}/transfer-reminder`, {
+            method: "POST",
+        })
+        expect(stranger.status).toBe(403)
+    })
+
     it("Telegram refuses the picture: the owner still gets the sum and the buttons", async () => {
         const order = await json<Order>(await place())
         client.telegram.failPhotos = true

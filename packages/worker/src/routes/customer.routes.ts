@@ -132,6 +132,25 @@ export const customerRoutes = new Hono<AppEnv>()
         return c.json(order)
     })
 
+    /**
+     * «Do'konga eslatish»: no answer about the transfer for a while; the owner is asked again with
+     * the same «Ha, … keldi» / «Yo'q, kelmadi». At most once per pause (REMIND_TOO_SOON).
+     */
+    .post("/orders/:id/transfer-reminder", zValidator("param", idParam, onInvalid), async (c) => {
+        const services = c.get("services")
+        const order = await services.useCases.remindTransfer.execute({
+            telegramId: c.get("auth").user.id,
+            businessId: shopOf(c).id,
+            orderId: c.req.valid("param").id,
+        })
+        inBackground(
+            c.executionCtx,
+            services,
+            new Notifier(services).askPaymentConfirm(shopOf(c), order, true),
+        )
+        return c.json(order)
+    })
+
     /** The transfer screenshot: only the order's customer and the shop's owner, never cached. */
     .get("/orders/:id/receipt", zValidator("param", idParam, onInvalid), async (c) => {
         const services = c.get("services")
