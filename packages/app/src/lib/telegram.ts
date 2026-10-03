@@ -125,6 +125,19 @@ export const haptic = {
 const BUSINESS_HOST_PREFIX = "business."
 const COURIER_HOST_PREFIX = "delivery."
 
+/** What «Platforma» opens on, from a bot message: the applications, one shop, the districts. */
+export type AdminTarget = "applications" | "districts" | { shopId: string }
+
+const ID = /^[A-Za-z0-9-]{1,64}$/
+
+function readAdminTarget(value: string | null): AdminTarget | null {
+    if (value === "applications" || value === "districts") {
+        return value
+    }
+    const shopId = value?.match(/^shop_([A-Za-z0-9-]{1,64})$/)?.[1]
+    return shopId ? { shopId } : null
+}
+
 export interface LaunchParams {
     /** Shop slug from `?shop=` or `startapp=shop_<slug>`. */
     shop: string | null
@@ -134,6 +147,10 @@ export interface LaunchParams {
     courier: boolean
     /** `?mode=market`: the Zumda showcase, opened from the Zumda bot. */
     market: boolean
+    /** `&order=<id>`: a bot message's «Buyurtmani ochish» opens this order. */
+    order: string | null
+    /** `&admin=…`: an admin's message opens «Platforma» on this. */
+    admin: AdminTarget | null
 }
 
 export function readLaunchParams(url: URL, app: WebApp | null): LaunchParams {
@@ -147,6 +164,8 @@ export function readLaunchParams(url: URL, app: WebApp | null): LaunchParams {
             url.hostname.startsWith(COURIER_HOST_PREFIX) ||
             url.searchParams.get("mode") === "courier",
         market: url.searchParams.get("mode") === "market",
+        order: ID.test(url.searchParams.get("order") ?? "") ? url.searchParams.get("order") : null,
+        admin: readAdminTarget(url.searchParams.get("admin")),
     }
 }
 

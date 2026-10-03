@@ -9,7 +9,7 @@ import { usePagedList } from "../lib/paged.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
-import { CardIcon, ReceiptIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import { CardIcon, CloseIcon, ReceiptIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
 import { LoadMore } from "../ui/load-more.js"
 import { StatusBadge } from "../ui/order-status.js"
 import { PaymentLine } from "../ui/payment.js"
@@ -309,6 +309,56 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
     )
 }
 
+/** The order a bot message opened: first, outlined, until the owner puts it away. */
+function FocusedOrder({
+    id,
+    onChange,
+}: {
+    id: string
+    onChange(order: OrderDTO): void
+}): React.JSX.Element | null {
+    const t = useT()
+    const focusOrder = useOwner((state) => state.focusOrder)
+    const [order, setOrder] = useState<OrderDTO | null>(null)
+    useEffect(() => {
+        api.order(id)
+            .then(setOrder)
+            .catch(() => focusOrder(null))
+    }, [id, focusOrder])
+    if (!order) {
+        return <Skeleton className="h-64 rounded-tile" />
+    }
+    const change = (next: OrderDTO): void => {
+        setOrder(next)
+        onChange(next)
+    }
+    return (
+        <section className="flex flex-col gap-2" aria-label={t.owner.fromMessage}>
+            <div className="flex items-center justify-between px-1">
+                <h2 className="text-sm font-semibold text-tg-subtitle">{t.owner.fromMessage}</h2>
+                <button
+                    type="button"
+                    onClick={(): void => {
+                        haptic.tap()
+                        focusOrder(null)
+                    }}
+                    className="tap flex h-9 items-center gap-1 rounded-full px-3 text-sm font-semibold text-tg-hint focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                >
+                    <CloseIcon size={16} />
+                    {t.owner.hideFocused}
+                </button>
+            </div>
+            <ul className="rounded-tile ring-2 ring-brand">
+                <OrderCard
+                    order={order}
+                    onChange={change}
+                    onStale={(): void => void api.order(id).then(setOrder)}
+                />
+            </ul>
+        </section>
+    )
+}
+
 /** Orders of one filter; the active list refreshes calmly while it is on screen. */
 function useShopOrders(filter: Filter): PagedList<OrderDTO> {
     const list = usePagedList(filter, (page) => api.owner.orders(filter, page))
@@ -330,8 +380,9 @@ function useShopOrders(filter: Filter): PagedList<OrderDTO> {
 export function OrdersTab(): React.JSX.Element {
     const t = useT()
     const [filter, setFilter] = useState<Filter>("active")
+    const focusId = useOwner((state) => state.focusOrderId)
     const list = useShopOrders(filter)
-    const orders = list.items
+    const orders = list.items?.filter((order) => order.id !== focusId) ?? null
     const replace = (order: OrderDTO): void =>
         list.update((items) => items.map((o) => (o.id === order.id ? order : o)))
     const refresh = (): void => void list.reload()
@@ -385,6 +436,7 @@ export function OrdersTab(): React.JSX.Element {
 
     return (
         <section className="flex flex-col gap-4 px-4 pt-2">
+            {focusId ? <FocusedOrder key={focusId} id={focusId} onChange={replace} /> : null}
             <Segmented<Filter>
                 value={filter}
                 onChange={setFilter}

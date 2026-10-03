@@ -7,7 +7,7 @@ import { cn } from "../lib/cn.js"
 import { hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
-import { BotIcon, ChevronIcon, WifiOffIcon } from "../ui/icons.js"
+import { BotIcon, ChevronIcon, ShieldIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, PoweredBy, Section, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
@@ -75,28 +75,62 @@ function Intro({ onStart }: { onStart(): void }): React.JSX.Element {
     return <EmptyState art={<BotIcon size={44} />} title={t.title} text={t.subtitle} />
 }
 
+/** Platform admins only: «Platforma» above their own businesses. */
+function PlatformRow({ onOpen }: { onOpen(): void }): React.JSX.Element {
+    const t = useT().platform
+    return (
+        <button
+            type="button"
+            onClick={(): void => {
+                haptic.tap()
+                onOpen()
+            }}
+            className="tap mb-6 flex w-full animate-rise items-center gap-3 rounded-tile bg-brand/10 p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+        >
+            <span className="grid h-12 w-12 place-items-center rounded-control bg-brand text-brand-ink">
+                <ShieldIcon size={24} />
+            </span>
+            <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{t.title}</span>
+                <span className="block truncate text-sm text-tg-subtitle">{t.entryHint}</span>
+            </span>
+            <ChevronIcon size={18} className="text-tg-hint" />
+        </button>
+    )
+}
+
 function Home({
     shops,
     onAdd,
     onOpen,
     onSignOut,
+    onPlatform,
 }: {
     shops: ShopOwnerDTO[]
     onAdd(): void
     onOpen(slug: string): void
     onSignOut?: () => void
+    /** Set for platform admins. */
+    onPlatform?: () => void
 }): React.JSX.Element {
     const web = useT().web
     const t = useT().onboarding
     useMainAction({ text: t.addShop, onClick: onAdd })
     return (
         <main className="px-4 pt-4">
+            {onPlatform ? <PlatformRow onOpen={onPlatform} /> : null}
             <Section title={t.myShops}>
-                <ul className="flex flex-col gap-3">
-                    {shops.map((shop) => (
-                        <ShopRow key={shop.id} shop={shop} onOpen={onOpen} />
-                    ))}
-                </ul>
+                {shops.length === 0 ? (
+                    <p className="rounded-tile bg-tg-secondary p-4 text-tg-subtitle">
+                        {t.noShopsYet}
+                    </p>
+                ) : (
+                    <ul className="flex flex-col gap-3">
+                        {shops.map((shop) => (
+                            <ShopRow key={shop.id} shop={shop} onOpen={onOpen} />
+                        ))}
+                    </ul>
+                )}
             </Section>
             {onSignOut ? (
                 <button
@@ -120,20 +154,26 @@ function Home({
 export function OnboardingApp({
     onOpen,
     onSignOut,
+    onPlatform,
 }: {
     onOpen(slug: string): void
     /** In a browser (business.zumda.shop): sign out of this computer. */
     onSignOut?: () => void
+    /** «Platforma», shown to platform admins only. */
+    onPlatform(): void
 }): React.JSX.Element {
     const t = useT()
     const [shops, setShops] = useState<ShopOwnerDTO[] | null>(null)
+    const [admin, setAdmin] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [wizard, setWizard] = useState(false)
 
     const load = async (): Promise<void> => {
         setError(null)
         try {
-            setShops(await api.platform.myShops())
+            const [mine, me] = await Promise.all([api.platform.myShops(), api.platform.me()])
+            setAdmin(me.admin)
+            setShops(mine)
         } catch (caught) {
             const code = caught instanceof ApiError ? caught.code : "generic"
             // An expired browser session: back to «sign in with Telegram».
@@ -181,7 +221,7 @@ export function OnboardingApp({
             </div>
         )
     }
-    if (shops.length === 0) {
+    if (shops.length === 0 && !admin) {
         return <Intro onStart={(): void => setWizard(true)} />
     }
     return (
@@ -190,6 +230,7 @@ export function OnboardingApp({
             onAdd={(): void => setWizard(true)}
             onOpen={onOpen}
             onSignOut={onSignOut}
+            onPlatform={admin ? onPlatform : undefined}
         />
     )
 }
