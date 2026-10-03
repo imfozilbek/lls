@@ -106,6 +106,28 @@ export const BoxIcon = (p: IconProps): React.JSX.Element => (
         <path d="M3.5 8L12 12l8.5-4M12 12v8" />
     </Icon>
 )
+/** A wrench: services are done, not cooked or collected. */
+export const ToolIcon = (p: IconProps): React.JSX.Element => (
+    <Icon {...p}>
+        <path d="M14.5 6.5a4 4 0 0 0 5 5L12 19a2.1 2.1 0 0 1-3-3l7.5-7.5a4 4 0 0 1-2-2z" />
+        <path d="M17 3.5l3.5 3.5" />
+    </Icon>
+)
+/** A shop front with an awning: a grocery store. */
+export const ShopFrontIcon = (p: IconProps): React.JSX.Element => (
+    <Icon {...p}>
+        <path d="M4 10v10h16V10" />
+        <path d="M3 10l1.5-5h15L21 10a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" />
+        <path d="M10 20v-5h4v5" />
+    </Icon>
+)
+/** A covered dish: a restaurant. */
+export const DishIcon = (p: IconProps): React.JSX.Element => (
+    <Icon {...p}>
+        <path d="M4 16a8 8 0 0 1 16 0z" />
+        <path d="M3 19h18M12 8V6M10.5 6h3" />
+    </Icon>
+)
 export const ScooterIcon = (p: IconProps): React.JSX.Element => (
     <Icon {...p}>
         <circle cx="6" cy="17" r="2.5" />
@@ -213,6 +235,12 @@ const CATEGORY_PATHS: Record<string, ReactNode> = {
     produce: <path d="M12 8c-4 0-7 3-7 7s3 6 7 6 7-2 7-6-3-7-7-7zM12 8V4M12 6c1-2 3-2 4-2" />,
     groceries: <path d="M3 5h2l2.5 11h11l2-8H7M9 20h.01M17 20h.01" />,
     household: <path d="M9 3h5v4l3 3v11H7V10l2-3zM14 5h3" />,
+    cleaning: <path d="M12 3v9M8 21l1-9h6l1 9zM9.5 16.5h5M18 4l1 1M20 7h1" />,
+    car_care: <path d="M5 16h14v-3l-2-5H7l-2 5zM5 16v2M19 16v2M7.5 13h.01M16.5 13h.01" />,
+    repair: <path d="M14.5 6.5a4 4 0 0 0 5 5L12 19a2.1 2.1 0 0 1-3-3l7.5-7.5a4 4 0 0 1-2-2z" />,
+    beauty: (
+        <path d="M7 4l5 9 5-9M9 20a3 3 0 1 1 0-.01M15 20a3 3 0 1 1 0-.01M10.5 15.5l1.5-2.5 1.5 2.5" />
+    ),
     other: <path d="M4 12l8-8h8v8l-8 8zM15.5 8.5h.01" />,
 }
 

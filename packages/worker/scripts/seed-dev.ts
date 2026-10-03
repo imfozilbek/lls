@@ -24,6 +24,7 @@ import {
     DEV_DISTRICT,
     DEV_NETWORK_COURIERS,
     DEV_SHOPS,
+    typeOf,
 } from "./dev-fixtures.js"
 
 import type { DevShop } from "./dev-fixtures.js"
@@ -50,7 +51,7 @@ const item = (
     extra: Partial<DemoProduct> = {},
 ): DemoProduct => ({ name, price, unit, category, ...extra })
 
-const CATALOGS: Record<DevShop["type"], readonly DemoProduct[]> = {
+const CATALOGS: Record<DevShop["kind"], readonly DemoProduct[]> = {
     food: [
         item("To'y oshi", 45_000, "portion", "meals"),
         item("Lag'mon", 38_000, "portion", "soups"),
@@ -72,35 +73,44 @@ const CATALOGS: Record<DevShop["type"], readonly DemoProduct[]> = {
         item("Non", 4_000, "pcs", "bakery"),
         item("Guruch (lazer)", 18_000, "kg", "groceries", { step: 1000 }),
     ],
+    service: [
+        item("Gilam yuvish (kv. metr)", 12_000, "pcs", "cleaning"),
+        item("Avtomobil yuvish", 60_000, "pcs", "car_care"),
+        item("Divan tozalash", 150_000, "pcs", "cleaning"),
+    ],
 }
 
-const FEATURES: Record<DevShop["type"], string[]> = {
+const FEATURES: Record<DevShop["kind"], string[]> = {
     food: ["reorder", "stopList"],
     water: ["reorder", "bottleDeposit"],
     grocery: ["reorder", "weightItems", "stopList"],
+    service: ["reorder"],
 }
 
 const BOTTLE_DEPOSIT = 30_000
 
 /** Showcase deals (basis points): food and grocery are in the Zumda showcase, water is not. */
-const SHOWCASE_BPS: Record<DevShop["type"], number | null> = {
+const SHOWCASE_BPS: Record<DevShop["kind"], number | null> = {
     food: 500,
     water: null,
     grocery: 300,
+    service: null,
 }
 
 /** Demo cards for transfers (valid checksums, not real accounts): customers pay only by transfer. */
-const PAYOUT_CARDS: Record<DevShop["type"], [string, string] | null> = {
+const PAYOUT_CARDS: Record<DevShop["kind"], [string, string] | null> = {
     food: ["8600123456789012", "RUSTAM KARIMOV"], // secret-scan: fake
     water: ["9860123456789015", "DILSHOD TOSHEV"], // secret-scan: fake
     grocery: ["5614681234567893", "SARDOR YUSUPOV"], // secret-scan: fake
+    service: ["4111111111111111", "JASUR NORMATOV"], // secret-scan: fake
 }
 
 /** Minimum order per kind of shop; one bottle of water is a normal order. */
-const MIN_ORDER: Record<DevShop["type"], number | null> = {
+const MIN_ORDER: Record<DevShop["kind"], number | null> = {
     food: 40_000,
     water: null,
     grocery: 15_000,
+    service: null,
 }
 
 function randomBase64(bytes: number): string {
@@ -118,6 +128,7 @@ function defaultDevVars(): Record<string, string> {
         COURIER_WEBHOOK_SECRET: DEV_COURIER_BOT.webhookSecret,
         BUSINESS_BOT_TOKEN: DEV_BUSINESS_BOT.token,
         BUSINESS_WEBHOOK_SECRET: DEV_BUSINESS_BOT.webhookSecret,
+        BUSINESS_SESSION_SECRET: "dev-business-session-secret",
     }
 }
 
@@ -147,9 +158,9 @@ const quote = (value: string): string => `'${value.replaceAll("'", "''")}'`
 
 async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<string[]> {
     const tokenEnc = await encryptSecret(shop.bot.token, tokenKey)
-    const deposit = shop.type === "water" ? BOTTLE_DEPOSIT : 0
-    const card = PAYOUT_CARDS[shop.type]
-    const products = (CATALOGS[shop.type] ?? []).map(
+    const deposit = shop.kind === "water" ? BOTTLE_DEPOSIT : 0
+    const card = PAYOUT_CARDS[shop.kind]
+    const products = (CATALOGS[shop.kind] ?? []).map(
         (p, index) =>
             `(${quote(`${shop.id}-p${index + 1}`)}, ${quote(shop.id)}, ${quote(p.name)}, ` +
             `${p.price}, ${quote(p.unit)}, ${p.step ?? 1}, ${p.returnable ? 1 : 0}, ` +
@@ -162,13 +173,13 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
             free_delivery_from, min_order, features, bottle_deposit, marketplace_commission_bps,
             marketplace_joined_at, payout_card_number, payout_card_holder, payment_card_id,
             created_at, updated_at)
-         VALUES (${quote(shop.id)}, ${quote(shop.slug)}, ${quote(shop.name)}, ${quote(shop.type)},
+         VALUES (${quote(shop.id)}, ${quote(shop.slug)}, ${quote(shop.name)}, ${quote(typeOf(shop))},
             ${shop.owner.id}, 'active', ${shop.bot.id}, ${quote(shop.bot.username)},
             ${quote(tokenEnc)}, ${quote(shop.bot.webhookSecret)}, ${quote(shop.brandColor)},
             'Guliston, Mustaqillik 12', ${shop.location.latitude}, ${shop.location.longitude},
-            ${quote(DEV_DISTRICT.id)}, 10000, 150000, ${MIN_ORDER[shop.type] ?? "NULL"},
-            ${quote(JSON.stringify(FEATURES[shop.type]))}, ${deposit},
-            ${SHOWCASE_BPS[shop.type] ?? "NULL"}, ${SHOWCASE_BPS[shop.type] === null ? "NULL" : now},
+            ${quote(DEV_DISTRICT.id)}, 10000, 150000, ${MIN_ORDER[shop.kind] ?? "NULL"},
+            ${quote(JSON.stringify(FEATURES[shop.kind]))}, ${deposit},
+            ${SHOWCASE_BPS[shop.kind] ?? "NULL"}, ${SHOWCASE_BPS[shop.kind] === null ? "NULL" : now},
             ${card ? quote(card[0]) : "NULL"}, ${card ? quote(card[1]) : "NULL"},
             ${card ? quote(`${shop.id}-card`) : "NULL"}, ${now}, ${now});`,
         ...(card
@@ -248,7 +259,7 @@ async function main(): Promise<void> {
     }
     execFileSync("bunx", [...wrangler, "execute", "zumda", ...local, `--file=${file}`], cwd)
     for (const shop of DEV_SHOPS) {
-        console.warn(`Seeded ${shop.type} shop: open the app with ?shop=${shop.slug}`)
+        console.warn(`Seeded ${shop.kind} shop: open the app with ?shop=${shop.slug}`)
     }
 }
 

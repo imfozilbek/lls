@@ -9,7 +9,7 @@ import { useBackButton, useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { PayoutCardFields, payoutCardIsValid } from "../ui/card-fields.js"
-import { CheckIcon } from "../ui/icons.js"
+import { CheckIcon, DishIcon, ShopFrontIcon, ToolIcon } from "../ui/icons.js"
 import { EmptyState, Field, MoneyInput, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
@@ -21,6 +21,13 @@ import type { ManagedBot, RegisterShopBot } from "../lib/api.js"
 import type { ShopOwnerDTO } from "@zumda/core"
 
 type ShopType = BusinessType
+
+/** One picture per kind of business in the type choice. */
+const KIND_ICONS: Record<BusinessType, React.JSX.Element> = {
+    [BusinessType.GROCERY]: <ShopFrontIcon size={20} />,
+    [BusinessType.FOOD]: <DishIcon size={20} />,
+    [BusinessType.SERVICE]: <ToolIcon size={20} />,
+}
 type Step = 1 | 2 | 3
 
 interface Draft {
@@ -44,7 +51,7 @@ const EMPTY: Draft = {
     botToken: "",
     managedBot: null,
     name: "",
-    type: BusinessType.FOOD,
+    type: BusinessType.GROCERY,
     address: "",
     fee: null,
     freeFrom: null,
@@ -106,25 +113,43 @@ function ShopStep({
                 />
             </Field>
             <Field label={t.type}>
-                <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t.type}>
-                    {BUSINESS_TYPES.map((type) => (
-                        <button
-                            key={type}
-                            type="button"
-                            role="radio"
-                            aria-checked={draft.type === type}
-                            onClick={(): void => {
-                                haptic.select()
-                                patch({ type })
-                            }}
-                            className={cn(
-                                "tap h-12 rounded-control font-semibold transition-colors duration-200",
-                                draft.type === type ? "bg-brand text-brand-ink" : "bg-tg-secondary",
-                            )}
-                        >
-                            {t.types[type]}
-                        </button>
-                    ))}
+                <div className="flex flex-col gap-2" role="radiogroup" aria-label={t.type}>
+                    {BUSINESS_TYPES.map((type) => {
+                        const picked = draft.type === type
+                        return (
+                            <button
+                                key={type}
+                                type="button"
+                                role="radio"
+                                aria-checked={picked}
+                                onClick={(): void => {
+                                    haptic.select()
+                                    patch({ type })
+                                }}
+                                className={cn(
+                                    "tap flex h-14 items-center gap-3 rounded-control px-3 text-left font-semibold transition-colors duration-200",
+                                    picked ? "bg-brand text-brand-ink" : "bg-tg-secondary",
+                                )}
+                            >
+                                <span
+                                    className={cn(
+                                        "grid h-9 w-9 place-items-center rounded-full transition-colors duration-200",
+                                        picked ? "bg-brand-ink/15" : "bg-brand/10 text-brand",
+                                    )}
+                                >
+                                    {KIND_ICONS[type]}
+                                </span>
+                                <span className="flex-1">{t.types[type]}</span>
+                                {picked ? (
+                                    <CheckIcon
+                                        size={20}
+                                        strokeWidth={2.5}
+                                        className="animate-pop"
+                                    />
+                                ) : null}
+                            </button>
+                        )
+                    })}
                 </div>
             </Field>
             <Field label={`${t.address} (${t.optional})`} htmlFor="shop-address">

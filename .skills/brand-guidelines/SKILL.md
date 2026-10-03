@@ -19,8 +19,9 @@ Read this before any UI work in `packages/app`. Product context: `PRODUCT.md`.
 - **The shop bot's picture and description are Zumda's work:** the picture is the shop's logo (or
   its name on its color) with the mark in a white circle at the bottom right; the description ends
   with "Zumda asosida ishlaydi · zumda.shop".
-- **Three business types** share one design: food, water, grocery. Only words and a few icons
-  change per type (see "Words per business type").
+- **Three kinds of business** share one design: grocery store (water too: a grocery store with
+  the bottle deposit), restaurant, service. Only words and a few icons change per kind (see "Words
+  per business type").
 
 ## Color system
 
@@ -64,11 +65,12 @@ Rules:
 
 ## Words per business type
 
-| Idea | Food | Water / Grocery |
-|------|------|-----------------|
-| Product list | Menyu | Katalog |
-| Status "preparing" | Tayyorlanmoqda (chef icon) | Yig'ilmoqda (box icon) |
-| Delivered hint | Yoqimli ishtaha! | Rahmat! |
+| Idea | Restaurant (`food`) | Grocery store (water too) | Service |
+|------|------|------|------|
+| Product list | Menyu | Katalog | Xizmatlar |
+| Status "preparing" | Tayyorlanmoqda (chef icon) | Yig'ilmoqda (box icon) | Bajarilmoqda (wrench icon) |
+| Delivered hint | Yoqimli ishtaha! | Rahmat! | Bajarildi. Rahmat! |
+| Kind icon (application) | covered dish | shop front | wrench |
 
 Uzbek (Latin) only (owner's decision): no Cyrillic in any dictionary (`dictionaries.test.ts`).
 Another language would be one more dictionary with the same keys.

@@ -184,6 +184,17 @@ export const registerShopBody = z
         path: ["botToken"],
     })
 
+/**
+ * The Telegram Login Widget's data: every field it sends goes into the signature, so unknown
+ * fields are kept (as text or numbers), not dropped.
+ */
+export const widgetLoginBody = z
+    .record(z.string().max(32), z.union([z.string().max(512), z.number()]))
+    .refine((fields) => Object.keys(fields).length <= 12, { message: "Too many fields" })
+    .refine((fields) => typeof fields["hash"] === "string" && fields["id"] !== undefined, {
+        message: "Send the widget's data as it came",
+    })
+
 /** Step «Bot» of the application: the name suggested for the new bot. */
 export const prepareManagedBotBody = z.object({ name: text(60) })
 

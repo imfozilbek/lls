@@ -11,6 +11,8 @@ import type { DevShop } from "../stand/config.js"
 export const FOOD = "osh-markaz-dev"
 export const WATER = "toza-suv-dev"
 export const GROCERY = "baraka-market-dev"
+/** A service business (carpet and car cleaning) of the seed. */
+export const SERVICE = "toza-gilam-dev"
 
 /** People of the stand. Owners and the courier come from the seed (same Telegram ids). */
 export const PEOPLE = {
@@ -20,6 +22,7 @@ export const PEOPLE = {
     foodOwner: { id: 1001, first_name: "Rustam", language_code: "ru" },
     waterOwner: { id: 1002, first_name: "Dilshod", language_code: "ru" },
     groceryOwner: { id: 1003, first_name: "Nodira", language_code: "ru" },
+    serviceOwner: { id: 1004, first_name: "Jasur", language_code: "ru" },
     courier: { id: 3003, first_name: "Jasur", language_code: "ru" },
     newCourier: { id: 3004, first_name: "Bobur", language_code: "ru" },
     /** District network couriers from the seed: Otabek (water shop), Sherzod (grocery). */
@@ -41,6 +44,7 @@ export async function resetStand(): Promise<void> {
         [PEOPLE.foodOwner, FOOD],
         [PEOPLE.waterOwner, WATER],
         [PEOPLE.groceryOwner, GROCERY],
+        [PEOPLE.serviceOwner, SERVICE],
         [PEOPLE.courier, FOOD],
         [PEOPLE.networkCourier, FOOD],
         [PEOPLE.networkCourier2, FOOD],

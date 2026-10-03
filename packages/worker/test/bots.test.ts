@@ -73,7 +73,7 @@ describe("Zumda Business bot", () => {
         expect(welcome?.chatId).toBe(OWNER.id)
         expect(welcome?.token).toBe(env.BUSINESS_BOT_TOKEN)
         expect(welcome?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
-            "https://zumda-app.pages.dev/?mode=business",
+            "https://business.zumda.test/?mode=business",
         )
     })
 
@@ -95,7 +95,7 @@ describe("Zumda Business bot", () => {
         expect(toAdmin?.chatId).toBe(ADMIN.id)
         // The admin sees the owner's name and the kind of shop in words, not raw values.
         expect(toAdmin?.html).toContain(">Rustam</a>")
-        expect(toAdmin?.html).toContain("(ovqat)")
+        expect(toAdmin?.html).toContain("(restoran)")
         const approve = toAdmin?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data
         expect(approve).toBe(`r:${shop.id}:approve`)
 

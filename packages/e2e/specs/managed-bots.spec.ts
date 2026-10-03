@@ -40,7 +40,7 @@ async function myShops(owner: TgUser): Promise<MyShop[]> {
 async function describeBusiness(page: Page, name: string): Promise<void> {
     await bottomButton(page).click() // «Boshlash»
     await page.getByLabel("Biznes nomi").fill(name)
-    await page.getByRole("radio", { name: "Ovqat", exact: true }).click()
+    await page.getByRole("radio", { name: "Restoran" }).click()
     await bottomButton(page).click()
     await expect(page.getByText("2/3-qadam")).toBeVisible()
 }

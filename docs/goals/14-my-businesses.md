@@ -10,7 +10,7 @@
 
 ## Три бота по ролям (решение владельца, 3 октября 2026)
 - **Zumda | Shop** (`@zumdashop_bot`): только покупатели: витрина, поиск, заказы.
-- **Zumda | Business**: владельцы и админы: «Mening bizneslarim» (`?mode=business`), заявки,
+- **Zumda | Business** (`@zumdashop_business_bot`): владельцы и админы: «Mening bizneslarim» (`?mode=business`), заявки,
   одобрение, команды админов (`/reconnect`, `/market`, `/district`, `/network`), все сообщения
   владельцам о бизнесе и оповещения админам; он создаёт боты бизнесов и управляет ими.
 - **Zumda | Kuryer** (`@zumdashop_kuryer_bot`): курьеры.
@@ -29,7 +29,7 @@
 - Mini App открывает окно Telegram: `WebApp.requestChat(id)` (Telegram 9.6+). Владелец
   подтверждает имя и @username, бот создаётся в его аккаунте.
 - Запасной путь для старых приложений Telegram: ссылка
-  `https://t.me/newbot/<бот Zumda | Business>/<username>?name=<имя>`.
+  `https://t.me/newbot/zumdashop_business_bot/<username>?name=<имя>`.
 - Боту Zumda | Business приходит обновление `managed_bot` (`user`: владелец, `bot`: новый бот); Worker
   берёт токен `getManagedBotToken(user_id = id бота)` и сразу шифрует его (AES-GCM).
 - `replaceManagedBotToken` выпускает новый токен (в коде есть, пока не вызывается).

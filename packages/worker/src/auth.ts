@@ -9,12 +9,16 @@ import { createMiddleware } from "hono/factory"
 
 import { verifyInitData } from "./crypto.js"
 import { ApiError, unauthorized } from "./http/errors.js"
+import { bearerOf, readSession } from "./web-session.js"
 
 import type { AppEnv, AuthContext, ViewerRole } from "./env.js"
 import type { Services } from "./services.js"
 import type { Business } from "@zumda/core"
+import type { Context } from "hono"
 
 export const INIT_DATA_HEADER = "X-Telegram-Init-Data"
+/** `Bearer <session>`: Zumda | Business in a browser (business.zumda.shop), after the widget. */
+export const AUTHORIZATION_HEADER = "Authorization"
 export const SHOP_HEADER = "X-Shop"
 /** `marketplace`: a shop opened from the Zumda showcase, inside the Zumda bot. */
 export const VIA_HEADER = "X-Via"
@@ -82,6 +86,12 @@ async function signerOf(
  * The token that verified the signature fixes the order channel, so the client cannot pick it.
  */
 export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
+    const session = bearerOf(c.req.header(AUTHORIZATION_HEADER))
+    if (session) {
+        await authenticateSession(c, session)
+        await next()
+        return
+    }
     const initData = c.req.header(INIT_DATA_HEADER)
     if (!initData) {
         throw unauthorized()
@@ -121,6 +131,25 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
     c.set("auth", { user: verified.user, business, ...accessIn(business, entry, verified.user.id) })
     await next()
 })
+
+/**
+ * Zumda | Business in a browser: the session from the Telegram Login Widget stands for the same
+ * person and the same rights as `X-Bot: business` (no shop: «Mening bizneslarim»; with `X-Shop`:
+ * that shop's owner only).
+ */
+async function authenticateSession(c: Context<AppEnv>, token: string): Promise<void> {
+    const services = c.get("services")
+    const user = await readSession(token, c.env.BUSINESS_SESSION_SECRET, services.clock.now())
+    if (!user) {
+        throw unauthorized()
+    }
+    const slug = c.req.header(SHOP_HEADER)
+    const business = slug ? await services.businesses.findBySlug(slug) : null
+    if (slug && !business) {
+        throw EntityNotFoundError.businessBySlug(slug)
+    }
+    c.set("auth", { user, business, ...accessIn(business, BOT_BUSINESS, user.id) })
+}
 
 function entryOf(bot: string | undefined, via: string | undefined): Entry {
     if (bot === BOT_BUSINESS) {

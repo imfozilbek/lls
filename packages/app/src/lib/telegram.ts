@@ -118,6 +118,13 @@ export const haptic = {
     },
 }
 
+/**
+ * One app, three addresses: business.zumda.shop opens «Mening bizneslarim», delivery.zumda.shop
+ * the courier screen, app.zumda.shop the shops. Locally (one dev server) `?mode=` decides.
+ */
+const BUSINESS_HOST_PREFIX = "business."
+const COURIER_HOST_PREFIX = "delivery."
+
 export interface LaunchParams {
     /** Shop slug from `?shop=` or `startapp=shop_<slug>`. */
     shop: string | null
@@ -133,8 +140,12 @@ export function readLaunchParams(url: URL, app: WebApp | null): LaunchParams {
     const fromStart = app?.initDataUnsafe.start_param?.match(/^shop_([a-z0-9-]{3,40})$/)?.[1]
     return {
         shop: url.searchParams.get("shop") ?? fromStart ?? null,
-        business: ["business", "onboarding"].includes(url.searchParams.get("mode") ?? ""),
-        courier: url.searchParams.get("mode") === "courier",
+        business:
+            url.hostname.startsWith(BUSINESS_HOST_PREFIX) ||
+            ["business", "onboarding"].includes(url.searchParams.get("mode") ?? ""),
+        courier:
+            url.hostname.startsWith(COURIER_HOST_PREFIX) ||
+            url.searchParams.get("mode") === "courier",
         market: url.searchParams.get("mode") === "market",
     }
 }

@@ -5,20 +5,26 @@ export interface DevShop {
     location: { latitude: number; longitude: number }
     slug: string
     name: string
-    type: "food" | "water" | "grocery"
+    /** The demo's own key: the water shop is a grocery store with bottles (`typeOf`). */
+    kind: "food" | "water" | "grocery" | "service"
     brandColor: string
     owner: { id: number; first_name: string; language_code: string }
     bot: { id: number; username: string; token: string; webhookSecret: string }
 }
 
-/** The three pilot kinds of shop, each with its own bot and owner. */
+/** The stored business type of a demo shop: a water shop is a grocery store with bottles. */
+export function typeOf(shop: DevShop): "food" | "grocery" | "service" {
+    return shop.kind === "water" ? "grocery" : shop.kind
+}
+
+/** The pilots' kinds of business, plus a service, each with its own bot and owner. */
 export const DEV_SHOPS: readonly DevShop[] = [
     {
         id: "dev-food",
         location: { latitude: 40.492, longitude: 68.781 },
         slug: "osh-markaz-dev",
         name: "Osh Markaz",
-        type: "food",
+        kind: "food",
         brandColor: "#d97706",
         owner: { id: 1001, first_name: "Rustam", language_code: "uz" },
         bot: {
@@ -33,7 +39,7 @@ export const DEV_SHOPS: readonly DevShop[] = [
         location: { latitude: 40.485, longitude: 68.79 },
         slug: "toza-suv-dev",
         name: "Toza Suv",
-        type: "water",
+        kind: "water",
         brandColor: "#0284c7",
         owner: { id: 1002, first_name: "Dilshod", language_code: "uz" },
         bot: {
@@ -48,7 +54,7 @@ export const DEV_SHOPS: readonly DevShop[] = [
         location: { latitude: 40.496, longitude: 68.775 },
         slug: "baraka-market-dev",
         name: "Baraka Market",
-        type: "grocery",
+        kind: "grocery",
         brandColor: "#059669",
         owner: { id: 1003, first_name: "Nodira", language_code: "uz" },
         bot: {
@@ -56,6 +62,21 @@ export const DEV_SHOPS: readonly DevShop[] = [
             username: "baraka_market_dev_bot",
             token: "100200302:DEV-local-only-token-not-a-real-bot-zz",
             webhookSecret: "dev-webhook-secret-grocery",
+        },
+    },
+    {
+        id: "dev-service",
+        location: { latitude: 40.49, longitude: 68.786 },
+        slug: "toza-gilam-dev",
+        name: "Toza Gilam",
+        kind: "service",
+        brandColor: "#7c3aed",
+        owner: { id: 1004, first_name: "Jasur", language_code: "uz" },
+        bot: {
+            id: 100200303,
+            username: "toza_gilam_dev_bot",
+            token: "100200303:DEV-local-only-token-not-a-real-bot-ww",
+            webhookSecret: "dev-webhook-secret-service",
         },
     },
 ]

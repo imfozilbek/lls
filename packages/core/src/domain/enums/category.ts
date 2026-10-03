@@ -15,6 +15,10 @@ export const CATEGORIES = [
     "produce",
     "groceries",
     "household",
+    "cleaning",
+    "car_care",
+    "repair",
+    "beauty",
     "other",
 ] as const
 

@@ -41,6 +41,22 @@ describe("readLaunchParams", () => {
         }
     })
 
+    it("the address decides on the real hosts: business., delivery., app.", () => {
+        expect(readLaunchParams(new URL("https://business.zumda.shop/"), null)).toMatchObject({
+            business: true,
+            courier: false,
+        })
+        expect(readLaunchParams(new URL("https://delivery.zumda.shop/"), null)).toMatchObject({
+            business: false,
+            courier: true,
+        })
+        expect(readLaunchParams(new URL("https://app.zumda.shop/?shop=osh"), null)).toMatchObject({
+            shop: "osh",
+            business: false,
+            courier: false,
+        })
+    })
+
     it("detects the Zumda showcase opened from the Zumda bot", () => {
         const url = new URL("https://x.pages.dev/?mode=market")
         expect(readLaunchParams(url, null)).toMatchObject({ shop: null, market: true })

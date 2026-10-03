@@ -79,11 +79,14 @@ function Home({
     shops,
     onAdd,
     onOpen,
+    onSignOut,
 }: {
     shops: ShopOwnerDTO[]
     onAdd(): void
     onOpen(slug: string): void
+    onSignOut?: () => void
 }): React.JSX.Element {
+    const web = useT().web
     const t = useT().onboarding
     useMainAction({ text: t.addShop, onClick: onAdd })
     return (
@@ -95,6 +98,15 @@ function Home({
                     ))}
                 </ul>
             </Section>
+            {onSignOut ? (
+                <button
+                    type="button"
+                    onClick={onSignOut}
+                    className="tap mx-auto mt-6 block rounded-control px-3 py-2 text-sm font-semibold text-tg-hint"
+                >
+                    {web.signOut}
+                </button>
+            ) : null}
             <PoweredBy />
             <BottomSpacer />
         </main>
@@ -105,7 +117,14 @@ function Home({
  * The Zumda Business bot's «Mening bizneslarim»: the owner's businesses with their review status, a new
  * one through the wizard, and any of them opened for management (`onOpen`).
  */
-export function OnboardingApp({ onOpen }: { onOpen(slug: string): void }): React.JSX.Element {
+export function OnboardingApp({
+    onOpen,
+    onSignOut,
+}: {
+    onOpen(slug: string): void
+    /** In a browser (business.zumda.shop): sign out of this computer. */
+    onSignOut?: () => void
+}): React.JSX.Element {
     const t = useT()
     const [shops, setShops] = useState<ShopOwnerDTO[] | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -116,7 +135,13 @@ export function OnboardingApp({ onOpen }: { onOpen(slug: string): void }): React
         try {
             setShops(await api.platform.myShops())
         } catch (caught) {
-            setError(caught instanceof ApiError ? caught.code : "generic")
+            const code = caught instanceof ApiError ? caught.code : "generic"
+            // An expired browser session: back to «sign in with Telegram».
+            if (code === "UNAUTHORIZED" && onSignOut) {
+                onSignOut()
+                return
+            }
+            setError(code)
         }
     }
     useEffect(() => {
@@ -159,5 +184,12 @@ export function OnboardingApp({ onOpen }: { onOpen(slug: string): void }): React
     if (shops.length === 0) {
         return <Intro onStart={(): void => setWizard(true)} />
     }
-    return <Home shops={shops} onAdd={(): void => setWizard(true)} onOpen={onOpen} />
+    return (
+        <Home
+            shops={shops}
+            onAdd={(): void => setWizard(true)}
+            onOpen={onOpen}
+            onSignOut={onSignOut}
+        />
+    )
 }

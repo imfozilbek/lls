@@ -13,6 +13,7 @@ Please **do not** open a public issue. Use GitHub's private report instead:
 |--------|-------|----------|
 | Cloudflare API token, account id | GitHub Actions secrets | code, logs, issues |
 | Zumda bots' tokens (Shop, Business, Kuryer), admin ids | GitHub Actions secrets → Worker secrets | code, logs |
+| Browser sessions of Zumda \| Business (`BUSINESS_SESSION_SECRET`) | Derived from the Business bot token by the deploy → Worker secret; a new token signs every browser out | code, logs |
 | `TOKEN_ENC_KEY` (encrypts shop bot tokens) | Worker secrets; optional saved copy in GitHub secrets and offline | code, chats, logs |
 | Shop bot tokens | D1, encrypted with AES-GCM | API responses, logs |
 | Local development | `packages/worker/.dev.vars` (git-ignored, fake tokens) | commits |

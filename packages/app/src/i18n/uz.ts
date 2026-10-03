@@ -94,6 +94,10 @@ export const uz = {
         produce: "Meva va sabzavot",
         groceries: "Oziq-ovqat",
         household: "Xo'jalik mollari",
+        cleaning: "Tozalash",
+        car_care: "Avtoxizmat",
+        repair: "Ta'mirlash",
+        beauty: "Go'zallik",
         other: "Boshqa",
     },
     units: {
@@ -415,6 +419,13 @@ export const uz = {
         noShopsText: "Tez orada tumaningiz do'konlari shu yerda bo'ladi.",
         clear: "Tozalash",
     },
+    web: {
+        title: "Zumda Business",
+        text: "Bizneslaringizni kompyuterdan boshqaring: buyurtmalar, menyu, pul va kuryerlar.",
+        hint: "Kirish faqat Telegram orqali: parol kerak emas.",
+        signOut: "Chiqish",
+        back: "Orqaga",
+    },
     onboarding: {
         title: "Biznesingizni ulang",
         subtitle: "Mijozlar sizning botingiz orqali buyurtma beradi. 3 qadam, 5 daqiqa.",
@@ -449,7 +460,11 @@ export const uz = {
         name: "Biznes nomi",
         namePlaceholder: "Masalan: Toza Suv",
         type: "Faoliyat turi",
-        types: { food: "Ovqat", water: "Suv", grocery: "Oziq-ovqat" },
+        types: {
+            grocery: "Oziq-ovqat do'koni",
+            food: "Restoran",
+            service: "Xizmat ko'rsatish",
+        },
         address: "Manzil",
         deliveryTitle: "Yetkazib berish",
         cardTitle: "To'lov uchun karta",

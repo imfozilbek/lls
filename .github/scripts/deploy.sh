@@ -20,9 +20,18 @@ readonly DB_PLACEHOLDER="00000000-0000-0000-0000-000000000000"
 # Zumda's own addresses. The Worker has no workers.dev address (wrangler.jsonc).
 readonly DOMAIN="zumda.shop"
 readonly API_HOST="api.${DOMAIN}"
+# One Mini App, three addresses: customers, businesses (Mini App and web), couriers.
 readonly APP_HOST="app.${DOMAIN}"
+readonly BUSINESS_HOST="business.${DOMAIN}"
+readonly COURIER_HOST="delivery.${DOMAIN}"
+readonly APP_HOSTS=("$APP_HOST" "$BUSINESS_HOST" "$COURIER_HOST")
 readonly WORKER_URL="https://${API_HOST}"
+# The Zumda | Business bot: its Login Widget signs owners in on business.zumda.shop (its domain is
+# set by hand once in @BotFather: /setdomain).
+readonly BUSINESS_BOT="zumdashop_business_bot"
 readonly APP_ORIGIN="https://${APP_HOST}"
+readonly BUSINESS_ORIGIN="https://${BUSINESS_HOST}"
+readonly COURIER_ORIGIN="https://${COURIER_HOST}"
 readonly CF_ROOT="https://api.cloudflare.com/client/v4"
 readonly CF_API="${CF_ROOT}/accounts/${CLOUDFLARE_ACCOUNT_ID}"
 
@@ -95,14 +104,15 @@ ensure_pages() {
     echo "$PAGES_HOST"
 }
 
-# app.zumda.shop: the Pages custom domain plus its DNS record. A domain added through the API gets
-# no DNS record by itself.
+# `ensure_app_domain <host>`: a Pages custom domain plus its DNS record. A domain added through the
+# API gets no DNS record by itself.
 ensure_app_domain() {
-    log "Mini App address '${APP_HOST}'"
-    cf_call GET "/pages/projects/${PAGES_PROJECT}/domains/${APP_HOST}"
+    local host="$1"
+    log "Mini App address '${host}'"
+    cf_call GET "/pages/projects/${PAGES_PROJECT}/domains/${host}"
     if [[ "$CF_STATUS" == 404 ]]; then
-        cf_call POST "/pages/projects/${PAGES_PROJECT}/domains" "$(jq -n --arg n "$APP_HOST" '{name: $n}')"
-        [[ "$CF_STATUS" == 2?? ]] || fail "Cannot add ${APP_HOST} to Pages (HTTP ${CF_STATUS})."
+        cf_call POST "/pages/projects/${PAGES_PROJECT}/domains" "$(jq -n --arg n "$host" '{name: $n}')"
+        [[ "$CF_STATUS" == 2?? ]] || fail "Cannot add ${host} to Pages (HTTP ${CF_STATUS})."
         echo "added"
     elif [[ "$CF_STATUS" == 200 ]]; then
         echo "exists, $(jq -r '.result.status' <<<"$CF_BODY")"
@@ -115,13 +125,13 @@ ensure_app_domain() {
     local zone
     zone="$(jq -r '.result[0].id // empty' <<<"$CF_BODY")"
     [[ -n "$zone" ]] || fail "The zone ${DOMAIN} is not in this Cloudflare account."
-    cf_call GET "/zones/${zone}/dns_records?name=${APP_HOST}"
+    cf_call GET "/zones/${zone}/dns_records?name=${host}"
     [[ "$CF_STATUS" == 200 ]] || fail "Cannot read DNS records (HTTP ${CF_STATUS}). Check the API token has DNS Edit."
     if [[ "$(jq '.result | length' <<<"$CF_BODY")" == 0 ]]; then
-        cf_call POST "/zones/${zone}/dns_records" "$(jq -n --arg n "$APP_HOST" --arg c "$PAGES_HOST" \
+        cf_call POST "/zones/${zone}/dns_records" "$(jq -n --arg n "$host" --arg c "$PAGES_HOST" \
             '{type: "CNAME", name: $n, content: $c, proxied: true}')"
-        [[ "$CF_STATUS" == 2?? ]] || fail "Cannot create the DNS record ${APP_HOST} (HTTP ${CF_STATUS})."
-        echo "DNS record created: ${APP_HOST} → ${PAGES_HOST}"
+        [[ "$CF_STATUS" == 2?? ]] || fail "Cannot create the DNS record ${host} (HTTP ${CF_STATUS})."
+        echo "DNS record created: ${host} → ${PAGES_HOST}"
     else
         echo "DNS record exists"
     fi
@@ -176,9 +186,12 @@ deploy_worker() {
     PLATFORM_WEBHOOK_SECRET="$(webhook_secret zumda-platform-webhook "$PLATFORM_BOT_TOKEN")"
     COURIER_WEBHOOK_SECRET="$(webhook_secret zumda-courier-webhook "$COURIER_BOT_TOKEN")"
     BUSINESS_WEBHOOK_SECRET="$(webhook_secret zumda-business-webhook "$BUSINESS_BOT_TOKEN")"
+    # Signs the browser sessions of business.zumda.shop; a new bot token signs everyone out.
+    BUSINESS_SESSION_SECRET="$(webhook_secret zumda-business-session "$BUSINESS_BOT_TOKEN")"
     echo "::add-mask::${PLATFORM_WEBHOOK_SECRET}"
     echo "::add-mask::${COURIER_WEBHOOK_SECRET}"
     echo "::add-mask::${BUSINESS_WEBHOOK_SECRET}"
+    echo "::add-mask::${BUSINESS_SESSION_SECRET}"
 
     SECRETS_FILE="$(mktemp)"
     chmod 600 "$SECRETS_FILE"
@@ -187,10 +200,11 @@ deploy_worker() {
     jq -n --arg bot "$PLATFORM_BOT_TOKEN" --arg admins "$PLATFORM_ADMIN_IDS" \
         --arg hook "$PLATFORM_WEBHOOK_SECRET" --arg courier "$COURIER_BOT_TOKEN" \
         --arg courier_hook "$COURIER_WEBHOOK_SECRET" --arg business "$BUSINESS_BOT_TOKEN" \
-        --arg business_hook "$BUSINESS_WEBHOOK_SECRET" \
+        --arg business_hook "$BUSINESS_WEBHOOK_SECRET" --arg session "$BUSINESS_SESSION_SECRET" \
         '{PLATFORM_BOT_TOKEN: $bot, PLATFORM_ADMIN_IDS: $admins, PLATFORM_WEBHOOK_SECRET: $hook,
           COURIER_BOT_TOKEN: $courier, COURIER_WEBHOOK_SECRET: $courier_hook,
-          BUSINESS_BOT_TOKEN: $business, BUSINESS_WEBHOOK_SECRET: $business_hook}' \
+          BUSINESS_BOT_TOKEN: $business, BUSINESS_WEBHOOK_SECRET: $business_hook,
+          BUSINESS_SESSION_SECRET: $session}' \
         >"$secrets_file"
     if needs_encryption_key; then
         encryption_key
@@ -198,14 +212,17 @@ deploy_worker() {
         jq --arg key "$ENC_KEY" '. + {TOKEN_ENC_KEY: $key}' "$secrets_file" >"${secrets_file}.new"
         mv "${secrets_file}.new" "$secrets_file"
     fi
-    # The custom domain gets its DNS record and certificate from Cloudflare.
-    wrangler deploy --domain "$API_HOST" --var "APP_ORIGIN:${APP_ORIGIN}" \
+    # The custom domains get their DNS records and certificates from Cloudflare. The bare
+    # zumda.shop answers with a redirect to the customers' bot until the landing page exists.
+    wrangler deploy --domain "$API_HOST" --domain "$DOMAIN" \
+        --var "APP_ORIGIN:${APP_ORIGIN}" --var "BUSINESS_APP_ORIGIN:${BUSINESS_ORIGIN}" \
+        --var "COURIER_APP_ORIGIN:${COURIER_ORIGIN}" \
         --secrets-file "$secrets_file"
 }
 
 deploy_app() {
     log "Mini App"
-    (cd "$APP_DIR" && VITE_API_URL="$WORKER_URL" bun run build)
+    (cd "$APP_DIR" && VITE_API_URL="$WORKER_URL" VITE_BUSINESS_BOT="$BUSINESS_BOT" bun run build)
     wrangler pages deploy "${APP_DIR}/dist" --project-name "$PAGES_PROJECT" --branch main \
         --commit-dirty=true
 }
@@ -227,6 +244,8 @@ Zumda: tumaningizdagi do'konlar, oshxonalar va xizmatlar bir joyda.
 🔎 Kerakli narsani qidiring
 🛒 Buyurtma bering
 🚚 Kuryer eshigingizgacha olib keladi
+
+Biznesingiz bormi? @zumdashop_business_bot
 TEXT
 readonly PLATFORM_DESCRIPTION
 readonly PLATFORM_SHORT_DESCRIPTION="Tumaningizdagi do'konlar, oshxonalar va xizmatlar bir joyda. Buyurtma bering, eshigingizgacha yetkazamiz."
@@ -246,6 +265,7 @@ Zumda Business: do'kon, oshxona va xizmatlar uchun.
 🤖 O'z buyurtma botingizni bir tugma bilan yarating: token kerak emas
 📋 Menyu, buyurtmalar, pul va kuryerlar bir joyda
 🏪 Bir nechta biznesingiz bo'lsa ham, hammasi shu yerda
+💻 Kompyuterdan: business.zumda.shop
 TEXT
 readonly BUSINESS_DESCRIPTION
 readonly BUSINESS_SHORT_DESCRIPTION="Biznesingiz uchun o'z buyurtma boti: yarating va boshqaring. Menyu, buyurtmalar, pul, kuryerlar."
@@ -273,6 +293,50 @@ set_descriptions() {
     telegram "$1" setMyShortDescription --data-urlencode "short_description=$3"
 }
 
+# `set_avatar <token> <bot> <jpeg in brand/>`: setMyProfilePhoto only when this picture is new
+# for that bot (each call adds a photo to the bot's history). The last one set is kept in D1.
+set_avatar() {
+    local token="$1" key="avatar:$2" file="${ROOT}/brand/$3" sum stored
+    sum="$(sha256sum "$file" | cut -d' ' -f1)"
+    stored="$(wrangler d1 execute "$DATABASE" --remote --json \
+        --command "SELECT value FROM platform_settings WHERE key = '${key}'" 2>/dev/null |
+        jq -r '.[0].results[0].value // empty' 2>/dev/null || true)"
+    if [[ "$stored" == "$sum" ]]; then
+        echo "avatar unchanged"
+        return
+    fi
+    telegram "$token" setMyProfilePhoto \
+        -F 'photo={"type":"static","photo":"attach://avatar"}' \
+        -F "avatar=@${file};type=image/jpeg"
+    wrangler d1 execute "$DATABASE" --remote --command "INSERT INTO platform_settings (key, value, updated_at)
+        VALUES ('${key}', '${sum}', $(date +%s)000)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at" >/dev/null
+    echo "avatar set"
+}
+
+# Everyone sees /start; the admins also see their commands in Zumda | Business.
+readonly START_COMMAND='[{"command":"start","description":"Boshlash"}]'
+readonly ADMIN_COMMANDS='[
+    {"command":"start","description":"Boshlash"},
+    {"command":"market","description":"Vitrina: /market <slug> <foiz> yoki off"},
+    {"command":"district","description":"Tuman: /district <nom> <lat>,<lng> <km>"},
+    {"command":"network","description":"Tuman tarmog'"'"'i holati"},
+    {"command":"reconnect","description":"Botni qayta ulash: /reconnect <slug>"}
+]'
+
+# `set_admin_commands <token>`: per admin chat. An admin who never pressed Start in the bot has no
+# chat yet: that one is a warning, not a failed deploy.
+set_admin_commands() {
+    local admin result
+    for admin in ${PLATFORM_ADMIN_IDS//,/ }; do
+        result="$(curl -sS "https://api.telegram.org/bot${1}/setMyCommands" \
+            --data-urlencode "commands=${ADMIN_COMMANDS}" \
+            --data-urlencode "scope={\"type\":\"chat\",\"chat_id\":${admin}}")"
+        jq -e '.ok' <<<"$result" >/dev/null ||
+            echo "::warning::Admin commands not set for one admin: they must press Start in Zumda | Business first."
+    done
+}
+
 connect_platform_bot() {
     log "Platform bot"
     telegram "$PLATFORM_BOT_TOKEN" setWebhook \
@@ -282,7 +346,9 @@ connect_platform_bot() {
     telegram "$PLATFORM_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=market" \
         '{type: "web_app", text: "Zumda", web_app: {url: $url}}')"
     set_profile "$PLATFORM_BOT_TOKEN" "$PLATFORM_NAME" "$PLATFORM_DESCRIPTION" "$PLATFORM_SHORT_DESCRIPTION"
-    echo "webhook, menu button, name and descriptions set"
+    telegram "$PLATFORM_BOT_TOKEN" setMyCommands --data-urlencode "commands=${START_COMMAND}"
+    set_avatar "$PLATFORM_BOT_TOKEN" shop zumda-bot-avatar.jpg
+    echo "webhook, menu button, name, descriptions, commands and avatar set"
 }
 
 # Zumda Business: owners' «Mening bizneslarim», applications, admins' commands. It creates and
@@ -293,10 +359,13 @@ connect_business_bot() {
         --data-urlencode "url=${WORKER_URL}/tg/business" \
         --data-urlencode "secret_token=${BUSINESS_WEBHOOK_SECRET}" \
         --data-urlencode 'allowed_updates=["message","callback_query","managed_bot"]'
-    telegram "$BUSINESS_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=business" \
+    telegram "$BUSINESS_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${BUSINESS_ORIGIN}/" \
         '{type: "web_app", text: "Bizneslarim", web_app: {url: $url}}')"
     set_profile "$BUSINESS_BOT_TOKEN" "$BUSINESS_NAME" "$BUSINESS_DESCRIPTION" "$BUSINESS_SHORT_DESCRIPTION"
-    echo "webhook, menu button, name and descriptions set"
+    telegram "$BUSINESS_BOT_TOKEN" setMyCommands --data-urlencode "commands=${START_COMMAND}"
+    set_admin_commands "$BUSINESS_BOT_TOKEN"
+    set_avatar "$BUSINESS_BOT_TOKEN" business zumda-business-avatar.jpg
+    echo "webhook, menu button, name, descriptions, commands and avatar set"
 }
 
 # The Zumda courier bot: one bot for every courier; its menu button opens the courier screen.
@@ -306,10 +375,12 @@ connect_courier_bot() {
         --data-urlencode "url=${WORKER_URL}/tg/courier" \
         --data-urlencode "secret_token=${COURIER_WEBHOOK_SECRET}" \
         --data-urlencode 'allowed_updates=["message","callback_query"]'
-    telegram "$COURIER_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=courier" \
+    telegram "$COURIER_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${COURIER_ORIGIN}/" \
         '{type: "web_app", text: "Kuryer", web_app: {url: $url}}')"
     set_profile "$COURIER_BOT_TOKEN" "$COURIER_NAME" "$COURIER_DESCRIPTION" "$COURIER_SHORT_DESCRIPTION"
-    echo "webhook, menu button, name and descriptions set"
+    telegram "$COURIER_BOT_TOKEN" setMyCommands --data-urlencode "commands=${START_COMMAND}"
+    set_avatar "$COURIER_BOT_TOKEN" kuryer zumda-kuryer-avatar.jpg
+    echo "webhook, menu button, name, descriptions, commands and avatar set"
 }
 
 # Waits until `url` answers 200: a new address can take a few minutes to go live.
@@ -328,13 +399,15 @@ wait_for() {
 smoke_test() {
     log "Smoke test"
     wait_for "${WORKER_URL}/health"
-    wait_for "${APP_ORIGIN}/"
+    for host in "${APP_HOSTS[@]}"; do
+        wait_for "https://${host}/"
+    done
     echo "Worker:   ${WORKER_URL}"
-    echo "Mini App: ${APP_ORIGIN}"
+    echo "Mini App: ${APP_ORIGIN}, ${BUSINESS_ORIGIN}, ${COURIER_ORIGIN}"
     {
         echo "### Deployed"
         echo "- Worker: ${WORKER_URL}"
-        echo "- Mini App: ${APP_ORIGIN}"
+        echo "- Mini App: ${APP_ORIGIN}, ${BUSINESS_ORIGIN}, ${COURIER_ORIGIN}"
     } >>"${GITHUB_STEP_SUMMARY:-/dev/null}"
 }
 
@@ -345,7 +418,9 @@ main() {
     ensure_d1
     ensure_r2
     ensure_pages
-    ensure_app_domain
+    for host in "${APP_HOSTS[@]}"; do
+        ensure_app_domain "$host"
+    done
     deploy_worker
     deploy_app
     smoke_test

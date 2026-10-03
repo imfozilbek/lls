@@ -8,9 +8,11 @@ Qisqa va oddiy: do'konni ulash, katalogni to'ldirish, kuryerlarni qo'shish, buyu
 
 ### 1. Biznesni ulash (5 daqiqa)
 
-1. Telegram'da **Zumda | Business** botini oching va **Start** ni bosing.
+1. Telegram'da **Zumda | Business** botini (**@zumdashop_business_bot**) oching va **Start** ni bosing.
 2. **Mening bizneslarim** tugmasini bosing, keyin **Yangi biznes**. Ilova ochiladi.
-3. **1-qadam: Biznes haqida:** nomi, faoliyat turi (Ovqat / Suv / Oziq-ovqat), manzil.
+3. **1-qadam: Biznes haqida:** nomi, faoliyat turi (Oziq-ovqat do'koni / Restoran / Xizmat
+   ko'rsatish), manzil. Suv sotasizmi? «Oziq-ovqat do'koni»ni tanlang, keyin sozlamalarda
+   «Idish qaytarish va garov»ni yoqing.
 4. **2-qadam: Bot:** **Bot yaratish** ni bosing. Telegram oynasida bot nomi va manzili tayyor
    turadi: kerak bo'lsa o'zgartiring va tasdiqlang. Bot **sizning** Telegram akkauntingizda
    bo'ladi, Zumda uni boshqaradi: tokenni hech qayerga ko'chirish shart emas.
@@ -27,6 +29,10 @@ Mijozlar sizning botingizni, nomingizni va rangingizni ko'radi.
 **Mening bizneslarim:** Zumda | Business ilovasida barcha bizneslaringiz turadi. Birini
 bossangiz, shu yerning o'zida buyurtmalar, katalog, pul va sozlamalar ochiladi. Mijozlar esa
 Zumda | Shop (@zumdashop_bot) va sizning botingiz orqali buyurtma beradi.
+
+**Kompyuterdan:** **business.zumda.shop** saytini oching va **Telegram orqali kirish** ni
+bosing. Parol kerak emas; xuddi shu «Mening bizneslarim» ochiladi. Kompyuterdan chiqish uchun:
+**Chiqish**.
 
 ### 2. Katalogni to'ldirish
 

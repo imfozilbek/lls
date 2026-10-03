@@ -73,9 +73,22 @@ describe("business profiles", () => {
             expect(SUGGESTED_CATEGORIES[type].every((c) => CATEGORIES.includes(c))).toBe(true)
             expect(SUGGESTED_UNITS[type].every((u) => UNITS.includes(u))).toBe(true)
         }
-        expect(DEFAULT_FEATURES[BusinessType.WATER]).toContain(Feature.BOTTLE_DEPOSIT)
         expect(DEFAULT_FEATURES[BusinessType.GROCERY]).toContain(Feature.WEIGHT_ITEMS)
-        expect(SUGGESTED_UNITS[BusinessType.WATER][0]).toBe(Unit.BOTTLE_19L)
+        expect(SUGGESTED_UNITS[BusinessType.SERVICE][0]).toBe(Unit.PIECE)
+    })
+
+    it("three kinds: a grocery store (water too), a restaurant, a service", () => {
+        expect(BUSINESS_TYPES).toEqual([
+            BusinessType.GROCERY,
+            BusinessType.FOOD,
+            BusinessType.SERVICE,
+        ])
+        // A water shop is a grocery store: 19 l bottles and the water category are offered there,
+        // and the bottle deposit is a switch the owner turns on.
+        expect(SUGGESTED_UNITS[BusinessType.GROCERY]).toContain(Unit.BOTTLE_19L)
+        expect(SUGGESTED_CATEGORIES[BusinessType.GROCERY]).toContain("water")
+        expect(DEFAULT_FEATURES[BusinessType.SERVICE]).not.toContain(Feature.BOTTLE_DEPOSIT)
+        expect(SUGGESTED_CATEGORIES[BusinessType.SERVICE]).toContain("cleaning")
     })
 
     it("counts kilograms in grams", () => {

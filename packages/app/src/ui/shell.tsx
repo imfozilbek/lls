@@ -1,8 +1,9 @@
-import { useMainActionStore } from "../lib/main-button.js"
-import { hasNativeMainButton } from "../lib/telegram.js"
+import { useT } from "../i18n/index.js"
+import { useMainActionStore, useWebBackStore } from "../lib/main-button.js"
+import { hasNativeMainButton, webApp } from "../lib/telegram.js"
 import { useToasts } from "../stores/toast.js"
 
-import { CheckIcon, CloseIcon } from "./icons.js"
+import { CheckIcon, ChevronIcon, CloseIcon } from "./icons.js"
 import { Button } from "./primitives.js"
 
 /** In-app stand-in for Telegram's MainButton (web version, old clients, screenshots). */
@@ -22,6 +23,27 @@ export function BottomBar(): React.JSX.Element | null {
             >
                 {action.text}
             </Button>
+        </div>
+    )
+}
+
+/** Outside Telegram there is no BackButton: a quiet bar on top stands in for it. */
+export function WebBackBar(): React.JSX.Element | null {
+    const onBack = useWebBackStore((state) => state.onBack)
+    const t = useT().web
+    if (!onBack || webApp()) {
+        return null
+    }
+    return (
+        <div className="sticky top-0 z-sticky bg-tg-bg/95 px-2 py-1 backdrop-blur">
+            <button
+                type="button"
+                onClick={onBack}
+                className="tap inline-flex h-11 items-center gap-1 rounded-control px-2 font-semibold text-tg-link"
+            >
+                <ChevronIcon size={18} className="rotate-180" />
+                {t.back}
+            </button>
         </div>
     )
 }
