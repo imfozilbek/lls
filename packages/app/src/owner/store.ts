@@ -22,6 +22,9 @@ interface OwnerState {
     products: ProductDTO[] | null
     /** The shop's couriers, waiting for approval first. `null` until the first load. */
     couriers: CourierDTO[] | null
+    /** Active orders on the first page of «Buyurtmalar»: `null` until it loads. */
+    activeOrders: number | null
+    setActiveOrders(count: number): void
     /** Another business opened: nothing of the previous one may show or be edited. */
     bindShop(id: string): void
     setTab(tab: OwnerTab): void
@@ -49,10 +52,19 @@ export const useOwner = create<OwnerState>((set, get) => ({
     focusSection: null,
     products: null,
     couriers: null,
+    activeOrders: null,
+    setActiveOrders: (count): void => set({ activeOrders: count }),
     bindShop: (id): void => {
         if (get().shopId !== id) {
             // The order a bot message asked for stays: it belongs to the shop opening now.
-            set({ shopId: id, tab: "orders", focusSection: null, products: null, couriers: null })
+            set({
+                shopId: id,
+                tab: "orders",
+                focusSection: null,
+                products: null,
+                couriers: null,
+                activeOrders: null,
+            })
         }
     },
     setTab: (tab): void => set({ tab }),

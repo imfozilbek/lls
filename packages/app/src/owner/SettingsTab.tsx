@@ -12,7 +12,7 @@ import { useMainAction } from "../lib/main-button.js"
 import { getLocation, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { CheckIcon, CopyIcon, PinIcon, WifiOffIcon } from "../ui/icons.js"
+import { AlertIcon, CheckIcon, CopyIcon, PinIcon, WifiOffIcon } from "../ui/icons.js"
 import {
     Button,
     EmptyState,
@@ -95,7 +95,7 @@ function patchOf(form: Form): ShopPatch {
 }
 
 /** Keeps the storefront (and the brand color) in sync with what the owner just saved. */
-export function sectionId(section: ReadySection): string {
+export function sectionId(section: ReadySection | "delivery"): string {
     return `ready-${section}`
 }
 
@@ -157,12 +157,17 @@ function AcceptingCard({
         <div
             className={cn(
                 "flex items-center gap-3 rounded-tile p-4 transition-colors duration-300",
-                value ? "bg-success/15" : "bg-tg-secondary",
+                value ? "bg-success/15" : "bg-warning/15",
             )}
         >
             <div className="flex-1">
-                <p className="font-semibold">{t.owner.settings.accepting}</p>
-                <p className="text-sm text-tg-hint">{t.owner.settings.acceptingHint}</p>
+                <p className="flex items-center gap-2 font-semibold">
+                    {value ? null : <AlertIcon size={18} className="shrink-0 text-warning" />}
+                    {t.owner.settings.accepting}
+                </p>
+                <p className="text-sm text-tg-subtitle">
+                    {value ? t.owner.settings.acceptingHint : t.owner.settings.acceptingOff}
+                </p>
             </div>
             <Switch
                 checked={value}
@@ -245,7 +250,11 @@ function ColorPicker({
 }): React.JSX.Element {
     const t = useT()
     return (
-        <div className="flex flex-wrap gap-3" role="radiogroup" aria-label={t.owner.settings.color}>
+        <div
+            className="grid grid-cols-7 justify-items-center gap-1"
+            role="radiogroup"
+            aria-label={t.owner.settings.color}
+        >
             {BRAND_SWATCHES.map((color) => {
                 const selected = color.toLowerCase() === value.toLowerCase()
                 return (
@@ -314,7 +323,7 @@ function DeliveryFields({
 }): React.JSX.Element {
     const s = useT().owner.settings
     return (
-        <Section title={s.delivery}>
+        <Section title={s.delivery} id={sectionId("delivery")}>
             <Field label={s.fee} htmlFor="fee">
                 <MoneyInput id="fee" value={form.fee} onChange={(fee): void => patch({ fee })} />
             </Field>
@@ -513,6 +522,35 @@ function SettingsForm({
     )
 }
 
+const JUMPS = ["logo", "delivery", "hours", "card", "courier"] as const
+
+/** A long page: one row of chips goes straight to each group. */
+function SettingsNav(): React.JSX.Element {
+    const s = useT().owner.settings
+    return (
+        <nav aria-label={s.jumpTo} className="-mx-4 overflow-x-auto px-4">
+            <ul className="flex gap-2">
+                {JUMPS.map((id) => (
+                    <li key={id}>
+                        <button
+                            type="button"
+                            onClick={(): void => {
+                                haptic.select()
+                                document
+                                    .getElementById(sectionId(id))
+                                    ?.scrollIntoView({ behavior: "smooth" })
+                            }}
+                            className="tap min-h-11 whitespace-nowrap rounded-full bg-tg-secondary px-4 text-sm font-semibold"
+                        >
+                            {s.jump[id]}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+        </nav>
+    )
+}
+
 /** «Ishga tayyor» opened «Sozlamalar» for one part of it: bring that part into view, once. */
 function useFocusSection(ready: boolean): void {
     const section = useOwner((state) => state.focusSection)
@@ -554,6 +592,7 @@ export function SettingsTab(): React.JSX.Element {
     return (
         <div className="flex flex-col gap-6 px-4 pt-2">
             <AcceptingCard shop={shop} onSaved={setShop} />
+            <SettingsNav />
             <SettingsForm shop={shop} onSaved={setShop} />
             <div id={sectionId("card")} className="scroll-mt-24">
                 <PaymentCardsSection onSaved={setShop} />

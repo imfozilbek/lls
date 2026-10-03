@@ -103,15 +103,16 @@ export function brandInkHex(): string {
     return channels === WHITE || channels === "" ? "#ffffff" : "#111827"
 }
 
-/** Shop colors owners can pick: the Zumda palette, all readable with white or dark text. */
+/**
+ * Shop colors owners can pick: seven that never look alike side by side, each readable with
+ * white or dark text. The first is Zumda's green, a new shop's color.
+ */
 export const BRAND_SWATCHES = [
     ZUMDA_BRAND_COLOR,
-    "#0ea5e9",
-    "#0284c7",
-    "#10b981",
-    "#059669",
-    "#f59e0b",
-    "#d97706",
-    "#ef4444",
-    "#dc2626",
+    "#0f766e",
+    "#1d4ed8",
+    "#7c3aed",
+    "#be185d",
+    "#c2410c",
+    "#ca8a04",
 ] as const

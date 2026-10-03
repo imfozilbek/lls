@@ -252,6 +252,7 @@ export const uz = {
             courier: "Kuryer",
             courierHint: "Kuryer taklif qiling yoki o'zingiz yetkazing",
             selfDeliver: "O'zim yetkazaman",
+            next: "Keyingi: {item}",
         },
         pendingBanner:
             "Ariza tekshirilmoqda. Bu orada biznesni tayyorlang: bot allaqachon ishlayapti.",
@@ -307,6 +308,8 @@ export const uz = {
         stopToday: "Faqat bugunga",
         stopTodayHint: "Ertaga o'zi qaytadi",
         hideForGood: "Butunlay yashirish",
+        moreFor: "Boshqa: {name}",
+        stoppedTodayToast: "{name} bugunga sotuvdan olindi. Ertaga o'zi qaytadi.",
         product: {
             new: "Yangi mahsulot",
             edit: "Mahsulot",
@@ -331,7 +334,7 @@ export const uz = {
         money: {
             periods: { today: "Bugun", week: "7 kun", month: "Shu oy" },
             received: "Tushum",
-            card: "O'tkazmalar orqali olindi",
+            receivedHint: "Yetkazilgan va kartangizga to'langan buyurtmalar",
             goods: "Tovarlar",
             delivery: "Yetkazish",
             deposits: "Idish garovi",
@@ -372,6 +375,15 @@ export const uz = {
             color: "Rang",
             accepting: "Buyurtma qabul qilish",
             acceptingHint: "O'chirsangiz, mijozlar vaqtincha buyurtma bera olmaydi.",
+            acceptingOff: "Buyurtmalar to'xtatilgan: mijozlar hozir buyurtma bera olmaydi.",
+            jumpTo: "Bo'limlar",
+            jump: {
+                logo: "Do'kon",
+                delivery: "Yetkazish",
+                hours: "Ish vaqti",
+                card: "Karta",
+                courier: "Kuryerlar",
+            },
             delivery: "Yetkazib berish",
             fee: "Yetkazish narxi",
             freeFrom: "Shu summadan bepul yetkazish",

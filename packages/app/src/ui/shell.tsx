@@ -52,7 +52,14 @@ export function WebBackBar(): React.JSX.Element | null {
 export function BottomSpacer(): React.JSX.Element {
     const hasAction = useMainActionStore((state) => state.action !== null)
     return (
-        <div aria-hidden="true" className={hasAction && !hasNativeMainButton() ? "h-24" : "h-4"} />
+        <div
+            aria-hidden="true"
+            className={
+                hasAction && !hasNativeMainButton()
+                    ? "h-[calc(6.75rem+env(safe-area-inset-bottom))]"
+                    : "h-4"
+            }
+        />
     )
 }
 

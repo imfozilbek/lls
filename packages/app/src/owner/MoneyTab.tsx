@@ -79,8 +79,9 @@ function Totals({ report }: { report: MoneyReportDTO }): React.JSX.Element {
     ]
     return (
         <section className="animate-rise rounded-tile bg-tg-secondary p-4">
-            <p className="text-sm text-tg-hint">{m.received}</p>
+            <p className="font-semibold">{m.received}</p>
             <p className="text-3xl font-bold tabular-nums">{sum(totals.goods + totals.delivery)}</p>
+            <p className="text-sm text-tg-subtitle">{m.receivedHint}</p>
             <div className="mt-3 rounded-control bg-tg-bg px-3 py-2 text-sm">
                 <Row label={m.goods} value={sum(totals.goods)} />
                 <Row label={m.delivery} value={sum(totals.delivery)} />
@@ -90,13 +91,6 @@ function Totals({ report }: { report: MoneyReportDTO }): React.JSX.Element {
                 {totals.commission > 0 ? (
                     <Row label={m.commission} value={`−${sum(totals.commission)}`} />
                 ) : null}
-            </div>
-            <div className="mt-2 rounded-control bg-tg-bg px-3 py-2 text-sm">
-                <Row
-                    label={m.card}
-                    value={sum(totals.paid)}
-                    icon={<CardIcon size={18} className="text-success" />}
-                />
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2">
                 {cells.map((cell) => (
