@@ -121,7 +121,8 @@ export const haptic = {
 export interface LaunchParams {
     /** Shop slug from `?shop=` or `startapp=shop_<slug>`. */
     shop: string | null
-    onboarding: boolean
+    /** `?mode=business` (old buttons: `?mode=onboarding`): «Mening bizneslarim», Zumda Biznes. */
+    business: boolean
     /** `?mode=courier`: the courier's deliveries across shops, opened from the Zumda courier bot. */
     courier: boolean
     /** `?mode=market`: the Zumda showcase, opened from the Zumda bot. */
@@ -132,7 +133,7 @@ export function readLaunchParams(url: URL, app: WebApp | null): LaunchParams {
     const fromStart = app?.initDataUnsafe.start_param?.match(/^shop_([a-z0-9-]{3,40})$/)?.[1]
     return {
         shop: url.searchParams.get("shop") ?? fromStart ?? null,
-        onboarding: url.searchParams.get("mode") === "onboarding",
+        business: ["business", "onboarding"].includes(url.searchParams.get("mode") ?? ""),
         courier: url.searchParams.get("mode") === "courier",
         market: url.searchParams.get("mode") === "market",
     }

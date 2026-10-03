@@ -102,7 +102,7 @@ function Home({
 }
 
 /**
- * The Zumda bot's «Mening bizneslarim»: the owner's businesses with their review status, a new
+ * The Zumda Biznes bot's «Mening bizneslarim»: the owner's businesses with their review status, a new
  * one through the wizard, and any of them opened for management (`onOpen`).
  */
 export function OnboardingApp({ onOpen }: { onOpen(slug: string): void }): React.JSX.Element {

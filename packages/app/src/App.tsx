@@ -146,9 +146,9 @@ function ShopApp({
     onExit,
 }: {
     slug: string
-    /** Opened inside the Zumda bot: from the showcase, or from «Mening bizneslarim». */
+    /** Opened inside a Zumda bot: the showcase, or «Mening bizneslarim» in Zumda Biznes. */
     via?: ShopVia
-    /** Inside the Zumda bot: "back" on the first screen returns to the search or the list. */
+    /** Inside a Zumda bot: "back" on the first screen returns to the search or the list. */
     onExit?: () => void
 }): React.JSX.Element {
     const t = useT()
@@ -231,14 +231,14 @@ function ShowcaseApp(): React.JSX.Element {
 }
 
 /**
- * The Zumda bot's «Mening bizneslarim»: every shop of the owner, and the owner section of one of
+ * The Zumda Biznes bot's «Mening bizneslarim»: every shop of the owner, and the owner section of one of
  * them right here, without opening that shop's own bot.
  */
 function BusinessesApp(): React.JSX.Element {
     const [slug, setSlug] = useState<string | null>(null)
     useEffect(() => {
         if (slug === null) {
-            setShop(null)
+            setShop(null, { via: "business" })
             applyBrand(ZUMDA_BRAND_COLOR)
             document.title = ZUMDA_NAME
         }
@@ -248,10 +248,10 @@ function BusinessesApp(): React.JSX.Element {
             <ShopApp
                 key={slug}
                 slug={slug}
-                via="admin"
+                via="business"
                 onExit={(): void => {
                     // Before the list renders: its first request must not carry this shop.
-                    setShop(null)
+                    setShop(null, { via: "business" })
                     useRouter.getState().start({ name: "menu" })
                     setSlug(null)
                 }}
@@ -274,7 +274,7 @@ export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
     let content: React.JSX.Element
     if (!webApp()) {
         content = <NotInTelegram />
-    } else if (launch.onboarding) {
+    } else if (launch.business) {
         content = <BusinessesApp />
     } else if (launch.courier) {
         // The Zumda courier bot: one screen across every shop the courier delivers for.
