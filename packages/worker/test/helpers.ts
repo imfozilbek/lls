@@ -92,6 +92,8 @@ export class FakeTelegram implements TelegramGateway {
     failWebhooks = false
     /** Simulates a Telegram outage for messages to these chats. */
     readonly brokenChats = new Set<number>()
+    /** Cards the person deleted: editing them answers «message to edit not found». */
+    readonly deletedMessages = new Set<number>()
     private nextMessageId = 100
 
     constructor(private readonly bots: Record<string, BotInfo> = {}) {}
@@ -125,6 +127,9 @@ export class FakeTelegram implements TelegramGateway {
         html: string,
         options?: MessageOptions,
     ): Promise<void> {
+        if (this.deletedMessages.has(messageId)) {
+            throw new TelegramApiError("editMessageText", "Bad Request: message to edit not found")
+        }
         this.edited.push({ token, chatId, html, options, messageId })
     }
     async sendPhoto(

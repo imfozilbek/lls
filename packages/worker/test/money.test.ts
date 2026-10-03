@@ -304,6 +304,25 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect(rows[0]).toContain(`"'=HYPERLINK(""http://x"")"`)
     })
 
+    it("the owner deleted the order card: a new one comes, the customer still hears", async () => {
+        const order = await json<Order>(await place())
+        const card = await env.DB.prepare("SELECT owner_message_id FROM orders WHERE id = ?")
+            .bind(order.id)
+            .first<{ owner_message_id: number }>()
+        client.telegram.deletedMessages.add(card?.owner_message_id ?? -1)
+        const before = client.telegram.sent.length
+        expect((await payment(order.id, "paid")).status).toBe(200)
+        const after = client.telegram.sent.slice(before)
+        expect(after.some((m) => m.chatId === CUSTOMER.id)).toBe(true)
+        expect(
+            after.some((m) => m.chatId === OWNER.id && m.html.includes(`#${order.number}`)),
+        ).toBe(true)
+        const fresh = await env.DB.prepare("SELECT owner_message_id FROM orders WHERE id = ?")
+            .bind(order.id)
+            .first<{ owner_message_id: number }>()
+        expect(fresh?.owner_message_id).not.toBe(card?.owner_message_id)
+    })
+
     it("only the owner sees the shop's money", async () => {
         expect((await as(CUSTOMER)("/api/owner/money")).status).toBe(403)
         expect((await as(COURIER)("/api/owner/money")).status).toBe(403)
