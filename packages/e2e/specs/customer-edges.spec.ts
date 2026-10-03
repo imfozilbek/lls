@@ -35,7 +35,10 @@ test("declining the phone keeps the order button off; declining location says so
     await page.getByRole("button", { name: "Raqamni yuborish" }).click()
     await expect(page.getByRole("button", { name: "Raqamni yuborish" })).toBeVisible()
     await page.getByRole("textbox", { name: "Manzil" }).fill("Navoiy 3")
-    await expect(bottomButton(page)).toBeDisabled()
+    // No dead button: a tap says what is missing and nothing is sent.
+    await bottomButton(page).click()
+    await expect(page.getByText("Avval telefon raqamingizni yuboring")).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Buyurtma yuborildi!" })).toHaveCount(0)
     await page.getByRole("button", { name: "Joylashuvni yuborish" }).click()
     await expect(page.getByText("Joylashuvni olib bo'lmadi")).toBeVisible()
 })
@@ -150,4 +153,35 @@ test("an unknown shop link shows a clear message", async ({ page }) => {
     await openApp(page, { user: PEOPLE.customer, shop: FOOD, query: "?shop=no-such-shop" })
     await expect(page.getByRole("heading", { name: "Do'kon topilmadi" })).toBeVisible()
     await expect(page.getByRole("button", { name: "Qayta urinish" })).toBeHidden()
+})
+
+test("a long catalog has a search: Latin or Cyrillic, nothing found says so", async ({ page }) => {
+    const shopProducts = async (): Promise<number> =>
+        (
+            (await (await apiAs(PEOPLE.customer, "/shop/products", { shop: GROCERY })).json()) as {
+                data: unknown[]
+            }
+        ).data.length
+    // More than 20 products: the search field appears.
+    const add = async (name: string): Promise<void> => {
+        const created = await apiAs(PEOPLE.groceryOwner, "/owner/products", {
+            shop: GROCERY,
+            method: "POST",
+            json: { name, price: 12_000, unit: "pcs", category: "groceries" },
+        })
+        expect(created.status, await created.clone().text()).toBe(201)
+    }
+    await add("Shokolad Alpen")
+    for (let i = (await shopProducts()) + 1; i <= 21; i++) {
+        await add(`Mahsulot ${i}`)
+    }
+    await openApp(page, { user: PEOPLE.customer, shop: GROCERY })
+    const search = page.getByRole("textbox", { name: "Katalogdan qidirish" })
+    await search.fill("шоколад")
+    await expect(page.getByRole("heading", { name: "Shokolad Alpen" })).toBeVisible()
+    await expect(page.getByRole("heading", { name: /^Mahsulot/ })).toHaveCount(0)
+    await search.fill("zzzz")
+    await expect(page.getByText("Hech narsa topilmadi")).toBeVisible()
+    await page.getByRole("button", { name: "Qidiruvni tozalash" }).click()
+    await expect(page.getByRole("heading", { name: /^Mahsulot/ }).first()).toBeVisible()
 })

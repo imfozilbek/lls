@@ -99,8 +99,9 @@ test.describe("customer of a food shop: order and status", () => {
         await bottomButton(page).click()
         await bottomButton(page).click()
         await expect(page.getByRole("heading", { name: "Buyurtma" })).toBeVisible()
-        // Nothing to send yet: no phone, no address.
-        await expect(bottomButton(page)).toBeDisabled()
+        // Nothing to send yet: a tap says what is missing first.
+        await bottomButton(page).click()
+        await expect(page.getByText("Avval telefon raqamingizni yuboring")).toBeVisible()
 
         await page.getByRole("button", { name: "Raqamni yuborish" }).click()
         await expect(page.getByText("+998 90 123 45 67")).toBeVisible({ timeout: 20_000 })

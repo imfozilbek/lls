@@ -17,15 +17,6 @@ import {
 
 import type { ReactNode } from "react"
 
-const FLOW: readonly OrderStatus[] = [
-    "pending",
-    "accepted",
-    "preparing",
-    "ready",
-    "picked_up",
-    "delivered",
-] as OrderStatus[]
-
 const ICONS: Record<OrderStatus, (size: number) => ReactNode> = {
     pending: (s) => <ClockIcon size={s} />,
     accepted: (s) => <CheckIcon size={s} />,
@@ -119,31 +110,64 @@ export function StatusHero({
     )
 }
 
-/** Vertical progress: done steps filled, the current one highlighted, the rest quiet. */
+/**
+ * The customer's four stages, not the shop's six steps: paid, being made (cooking and «ready»
+ * are one wait for the customer), on the way, delivered.
+ */
+const STAGES: readonly { key: OrderStatus; covers: readonly OrderStatus[] }[] = [
+    { key: OrderStatus.ACCEPTED, covers: [OrderStatus.ACCEPTED] },
+    { key: OrderStatus.PREPARING, covers: [OrderStatus.PREPARING, OrderStatus.READY] },
+    { key: OrderStatus.PICKED_UP, covers: [OrderStatus.PICKED_UP] },
+    { key: OrderStatus.DELIVERED, covers: [OrderStatus.DELIVERED] },
+]
+
+type StageState = "done" | "current" | "todo"
+
+function stageState(index: number, current: number, status: OrderStatus): StageState {
+    if (status === OrderStatus.CANCELLED) {
+        return "todo"
+    }
+    // Delivered is the end: its own stage counts as done, not as waiting.
+    if (index < current || (status === OrderStatus.DELIVERED && index === current)) {
+        return "done"
+    }
+    return index === current ? "current" : "todo"
+}
+
+const DOT: Record<StageState, string> = {
+    done: "bg-brand text-brand-ink",
+    current: "bg-brand text-brand-ink ring-4 ring-brand/20",
+    todo: "bg-tg-secondary text-tg-hint",
+}
+const LABEL: Record<StageState, string> = {
+    done: "text-tg-text",
+    current: "font-semibold text-tg-text",
+    todo: "text-tg-hint",
+}
+
+/** Vertical progress: done stages filled, the current one highlighted, the rest quiet. */
 export function StatusTimeline({ status }: { status: OrderStatus }): React.JSX.Element {
     const t = useT()
     const icon = useIcon()
-    const current = FLOW.indexOf(status)
-    const cancelled = status === "cancelled"
+    const current = STAGES.findIndex((stage) => stage.covers.includes(status))
     return (
         <ol className="flex flex-col">
-            {FLOW.map((step, index) => {
-                const done = !cancelled && index < current
-                const isCurrent = !cancelled && index === current
+            {STAGES.map(({ key }, index) => {
+                const state = stageState(index, current, status)
+                const done = state === "done"
+                const label = key === OrderStatus.ACCEPTED ? t.order.paidStage : t.order.steps[key]
                 return (
-                    <li key={step} className="flex gap-3">
+                    <li key={key} className="flex gap-3">
                         <div className="flex flex-col items-center">
                             <span
                                 className={cn(
                                     "grid h-7 w-7 place-items-center rounded-full transition-colors duration-300",
-                                    done && "bg-brand text-brand-ink",
-                                    isCurrent && "bg-brand text-brand-ink ring-4 ring-brand/20",
-                                    !done && !isCurrent && "bg-tg-secondary text-tg-hint",
+                                    DOT[state],
                                 )}
                             >
-                                {done ? <CheckIcon size={15} strokeWidth={2.5} /> : icon(step, 15)}
+                                {done ? <CheckIcon size={15} strokeWidth={2.5} /> : icon(key, 15)}
                             </span>
-                            {index < FLOW.length - 1 ? (
+                            {index < STAGES.length - 1 ? (
                                 <span
                                     className={cn(
                                         "my-1 w-0.5 flex-1 rounded-full",
@@ -152,15 +176,7 @@ export function StatusTimeline({ status }: { status: OrderStatus }): React.JSX.E
                                 />
                             ) : null}
                         </div>
-                        <p
-                            className={cn(
-                                "pb-5 pt-0.5",
-                                isCurrent ? "font-semibold text-tg-text" : "text-tg-hint",
-                                done && "text-tg-text",
-                            )}
-                        >
-                            {t.order.steps[step]}
-                        </p>
+                        <p className={cn("pb-5 pt-0.5", LABEL[state])}>{label}</p>
                     </li>
                 )
             })}

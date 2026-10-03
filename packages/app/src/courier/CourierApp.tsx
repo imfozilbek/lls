@@ -495,9 +495,11 @@ function Deliveries({
     const t = useT()
     const active = home.orders.filter(isActive)
     const done = home.orders.filter((o) => o.status === OrderStatus.DELIVERED)
+    // Orders nearby are already on screen above: «nothing to deliver» would contradict them.
+    const offersNearby = home.profile.inNetwork && home.network.length > 0
     return (
         <>
-            {active.length === 0 ? (
+            {active.length === 0 && offersNearby ? null : active.length === 0 ? (
                 <EmptyState
                     art={<ScooterIcon size={44} />}
                     title={t.courier.empty}
