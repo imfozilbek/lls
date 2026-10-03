@@ -20,6 +20,7 @@
         "format:check": "prettier --check \"packages/**/*.{ts,tsx,json}\"",
         "clean": "rm -rf node_modules packages/*/node_modules packages/*/dist",
         "check:secrets": "./scripts/check-secrets.sh --all",
+        "check:dashes": "./scripts/check-dashes.sh --all",
         "stand": "bun run --cwd packages/e2e stand",
         "e2e": "bun run --cwd packages/e2e e2e",
         "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
