@@ -7,7 +7,7 @@ import { createHmac } from "node:crypto"
 
 import { APP_URL, courierBot, platformBot, shopBySlug } from "../stand/config.js"
 
-import { courierChat, llsChat, shopChat } from "./telegram.js"
+import { courierChat, platformChat, shopChat } from "./telegram.js"
 
 import type { Chat, TgUser } from "./telegram.js"
 import type { Page } from "@playwright/test"
@@ -49,9 +49,9 @@ export function signInitData(
 
 export interface OpenOptions {
     user: TgUser
-    /** Opened from this shop's bot; without it, from the LLS bot. */
+    /** Opened from this shop's bot; without it, from the Zumda bot. */
     shop?: string
-    /** Opened from the LLS courier bot (`?mode=courier`), whatever `shop` says. */
+    /** Opened from the Zumda courier bot (`?mode=courier`), whatever `shop` says. */
     courierBot?: boolean
     /** Query string after `/`, e.g. `?mode=market`. Default: `?shop=<shop>`. */
     query?: string
@@ -231,7 +231,7 @@ function openedFrom(options: OpenOptions): { token: string; chat: Chat; query: s
         const shop = shopBySlug(options.shop)
         return { token: shop.bot.token, chat: shopChat(shop.slug), query: `?shop=${shop.slug}` }
     }
-    return { token: platformBot().token, chat: llsChat(), query: "" }
+    return { token: platformBot().token, chat: platformChat(), query: "" }
 }
 
 export async function openApp(page: Page, options: OpenOptions): Promise<OpenedApp> {

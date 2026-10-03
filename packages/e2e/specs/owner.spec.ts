@@ -236,7 +236,7 @@ test("settings: name, color, delivery and features reach the storefront", async 
     await page.getByRole("tab", { name: "Sozlamalar" }).click()
     await expect(
         page.getByText(
-            "Do'koningiz LLS botidagi qidiruvda. Vitrina orqali sotuvdan komissiya: 5%.",
+            "Do'koningiz Zumda botidagi qidiruvda. Vitrina orqali sotuvdan komissiya: 5%.",
         ),
     ).toBeVisible()
     await expect(page.getByText("https://t.me/osh_markaz_dev_bot")).toBeVisible()
@@ -297,8 +297,8 @@ test("couriers: invite to the courier bot, approve in the app, days, remove", as
     const shared = (await app.calls()).find((c) => c.method === "openTelegramLink")
     const shareUrl = new URL(String(shared?.args[0]))
     const link = shareUrl.searchParams.get("url") ?? ""
-    expect(link).toMatch(/^https:\/\/t\.me\/lls_kuryer_dev_bot\?start=c_[\w-]{16}$/)
-    expect(shareUrl.searchParams.get("text")).toContain("LLS kuryer botida")
+    expect(link).toMatch(/^https:\/\/t\.me\/zumda_kuryer_dev_bot\?start=c_[\w-]{16}$/)
+    expect(shareUrl.searchParams.get("text")).toContain("Zumda kuryer botida")
 
     const since = await lastSeq()
     await courierChat().send(PEOPLE.newCourier, `/start ${link.split("start=")[1] ?? ""}`)
@@ -345,7 +345,7 @@ test("water shop settings: bottle deposit and returnable bottles", async ({ page
     await page.getByRole("button", { name: "Mening do'konim" }).click()
     await page.getByRole("tab", { name: "Sozlamalar" }).click()
     await expect(
-        page.getByText("Do'koningiz LLS vitrinasida emas.", { exact: false }),
+        page.getByText("Do'koningiz Zumda vitrinasida emas.", { exact: false }),
     ).toBeVisible()
     await page.getByLabel("Bitta idish garovi").fill("35000")
     await bottomButton(page).click()

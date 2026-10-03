@@ -128,7 +128,7 @@ async function postUpdate(path: string, secret: string, update: object): Promise
     })
 }
 
-/** A chat with one bot: the shop's own bot, the LLS bot or the LLS courier bot. */
+/** A chat with one bot: the shop's own bot, the Zumda bot or the Zumda courier bot. */
 export interface Chat {
     send(from: TgUser, text: string): Promise<Response>
     shareContact(from: TgUser, phone: string, userId?: number): Promise<Response>
@@ -182,11 +182,11 @@ export function shopChat(slug: string): Chat {
     return chat(`/tg/${shop.bot.id}`, shop.bot.webhookSecret)
 }
 
-export function llsChat(): Chat {
+export function platformChat(): Chat {
     return chat("/tg/platform", platformBot().secret)
 }
 
-/** The LLS courier bot: invites, the phone, order cards and their buttons. */
+/** The Zumda courier bot: invites, the phone, order cards and their buttons. */
 export function courierChat(): Chat {
     return chat("/tg/courier", courierBot().secret)
 }

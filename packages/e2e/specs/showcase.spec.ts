@@ -1,12 +1,12 @@
 /**
- * The LLS showcase: search across shops in the LLS bot, open a shop there, order with the
+ * The Zumda showcase: search across shops in the Zumda bot, open a shop there, order with the
  * marketplace channel and commission; the admin signs and ends showcase deals.
  */
 import { expect, test } from "@playwright/test"
 
 import { platformBot } from "../stand/config.js"
 import { FOOD, PEOPLE, WATER, apiAs, resetStand, payAndAccept } from "../support/stand.js"
-import { lastSeq, llsChat, waitForMessage } from "../support/telegram.js"
+import { lastSeq, platformChat, waitForMessage } from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
@@ -17,10 +17,10 @@ const search = (page: Page): ReturnType<Page["getByRole"]> =>
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
-test("the LLS bot greets with the showcase and «connect a shop»", async () => {
+test("the Zumda bot greets with the showcase and «connect a shop»", async () => {
     const since = await lastSeq()
-    await llsChat().send(PEOPLE.customer, "/start")
-    const welcome = await waitForMessage(PEOPLE.customer.id, "LLS", since)
+    await platformChat().send(PEOPLE.customer, "/start")
+    const welcome = await waitForMessage(PEOPLE.customer.id, "Zumda", since)
     expect(welcome.token).toBe(platformBot().token)
     expect(welcome.buttons.map((b) => b.web_app?.url)).toEqual([
         "http://localhost:5173/?mode=market",
@@ -51,7 +51,7 @@ test("shops with a deal are listed; search works in Latin and Cyrillic", async (
     await expect(page.getByRole("button", { name: /To'y oshi/ })).toBeHidden()
 })
 
-test("a product opens its shop inside the LLS bot; Back returns to the search", async ({
+test("a product opens its shop inside the Zumda bot; Back returns to the search", async ({
     page,
 }) => {
     const app = await openApp(page, { user: PEOPLE.foodOwner, query: "?mode=market" })
@@ -68,7 +68,7 @@ test("a product opens its shop inside the LLS bot; Back returns to the search", 
     await expect(page.getByRole("heading", { name: "Tumaningiz do'konlari" })).toBeVisible()
 })
 
-test("an order through the showcase: commission for LLS, LLS bot tells the customer", async ({
+test("an order through the showcase: commission for Zumda, Zumda bot tells the customer", async ({
     page,
 }) => {
     await openApp(page, { user: PEOPLE.customer, query: "?mode=market" })
@@ -86,7 +86,7 @@ test("an order through the showcase: commission for LLS, LLS bot tells the custo
     // The owner's card comes from the shop's own bot and shows the commission (5% of 45 000).
     const card = await waitForMessage(PEOPLE.foodOwner.id, "#1", since)
     expect(card.token).toContain("100200300:")
-    expect(card.text).toMatch(/LLS vitrinasidan · komissiya 5%: 2\s250/)
+    expect(card.text).toMatch(/Zumda vitrinasidan · komissiya 5%: 2\s250/)
 
     const orders = (await (
         await apiAs(PEOPLE.foodOwner, "/owner/orders?status=active", { shop: FOOD })
@@ -98,10 +98,10 @@ test("an order through the showcase: commission for LLS, LLS bot tells the custo
     expect(told.token).toBe(platformBot().token)
     expect(told.text).toContain("Osh Markaz")
 
-    // The owner sees the LLS mark on the order in «Мой магазин».
+    // The owner sees the Zumda mark on the order in «Мой магазин».
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
-    await expect(page.getByText(/LLS vitrinasidan · komissiya 2\s250/)).toBeVisible()
+    await expect(page.getByText(/Zumda vitrinasidan · komissiya 2\s250/)).toBeVisible()
 })
 
 test("orders through the shop's own bot carry no commission", async () => {
@@ -122,20 +122,20 @@ test("orders through the shop's own bot carry no commission", async () => {
 
 test("the admin adds and removes a shop; others cannot", async ({ page }) => {
     const since = await lastSeq()
-    await llsChat().send(PEOPLE.stranger, `/market ${WATER} 3`)
-    await llsChat().send(PEOPLE.admin, `/market ${WATER} 3`)
+    await platformChat().send(PEOPLE.stranger, `/market ${WATER} 3`)
+    await platformChat().send(PEOPLE.admin, `/market ${WATER} 3`)
     await waitForMessage(PEOPLE.admin.id, "3%", since)
     await waitForMessage(PEOPLE.waterOwner.id, "tovarlarning 3%", since)
     expect((await apiAs(PEOPLE.stranger, "/showcase/shops")).status).toBe(200)
 
     await openApp(page, { user: PEOPLE.customer, query: "?mode=market" })
     await expect(page.getByText("Do'konlar · 3")).toBeVisible()
-    await llsChat().send(PEOPLE.admin, `/market ${WATER} off`)
+    await platformChat().send(PEOPLE.admin, `/market ${WATER} off`)
     await waitForMessage(PEOPLE.waterOwner.id, "vitrinasidan olindi", since)
     await page.reload()
     await expect(page.getByText("Do'konlar · 2")).toBeVisible()
 
-    await llsChat().send(PEOPLE.admin, "/market nonsense")
+    await platformChat().send(PEOPLE.admin, "/market nonsense")
     await waitForMessage(PEOPLE.admin.id, "/market <slug>", since)
 })
 

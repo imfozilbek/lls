@@ -57,7 +57,7 @@ export function platformBot(): { token: string; secret: string; adminId: number 
     }
 }
 
-/** The LLS courier bot: one bot for every courier of every shop. */
+/** The Zumda courier bot: one bot for every courier of every shop. */
 export function courierBot(): { id: number; username: string; token: string; secret: string } {
     const vars = devVars()
     const token = vars["COURIER_BOT_TOKEN"] ?? DEV_COURIER_BOT.token

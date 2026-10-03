@@ -2,7 +2,7 @@
  * A fake Telegram Bot API for the local stand. The Worker sends every bot call here
  * (TELEGRAM_API_BASE); tests read what each bot "sent" and switch on failures.
  *
- *   POST /bot<token>/<method>   — the Bot API methods LLS uses
+ *   POST /bot<token>/<method>   — the Bot API methods Zumda uses
  *   GET  /__log                 — every recorded call, oldest first
  *   POST /__reset               — forget calls and failures
  *   POST /__control             — { broken?: number[], blocked?: number[], failWebhooks?: boolean }
@@ -50,12 +50,12 @@ function knownBots(): Map<string, Bot> {
     }
     const platform = platformBot()
     const platformId = Number(platform.token.split(":")[0])
-    bots.set(platform.token, { id: platformId, username: "lls_dev_bot", first_name: "LLS" })
+    bots.set(platform.token, { id: platformId, username: "zumda_dev_bot", first_name: "Zumda" })
     const courier = courierBot()
     bots.set(courier.token, {
         id: courier.id,
         username: courier.username,
-        first_name: "LLS Kuryer",
+        first_name: "Zumda Kuryer",
     })
     return bots
 }

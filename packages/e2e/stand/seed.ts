@@ -24,7 +24,7 @@ export function runSql(command: string): void {
             "wrangler",
             "d1",
             "execute",
-            "lls",
+            "zumda",
             "--local",
             "--persist-to",
             STATE_DIR,

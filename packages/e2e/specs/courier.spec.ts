@@ -1,5 +1,5 @@
 /**
- * The LLS courier bot: one bot and one screen for a courier of several shops. Order cards come
+ * The Zumda courier bot: one bot and one screen for a courier of several shops. Order cards come
  * from the courier bot with the shop's name; the courier picks up and delivers from the chat or
  * the app; never sees other orders or kitchen steps.
  */
