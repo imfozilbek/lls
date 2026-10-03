@@ -35,6 +35,19 @@ export type { DevShop }
 /** Bot tokens the onboarding tests paste: `<bot id>:NEW-...`. The fake Telegram accepts them. */
 export const NEW_BOT_TOKEN_PATTERN = /^(\d{6,12}):NEW-[\w-]{10,}$/
 
+/**
+ * Managed Bots: the token the fake Telegram gives for a bot created from the Zumda bot. A new
+ * one on every `getManagedBotToken`, as after «revoke token» in BotFather. secret-scan: fake
+ */
+export function managedBotToken(botId: number, version: number): string {
+    return `${botId}:NEW-managed-by-zumda-v${version}`
+}
+
+/** The @username Telegram gives a new bot in the fake: the same for any token of the bot. */
+export function newBotUsername(botId: number): string {
+    return `new_${botId}_bot`
+}
+
 /** Values from the git-ignored `.dev.vars` that the seed script created. */
 export function devVars(): Record<string, string> {
     const vars: Record<string, string> = {}

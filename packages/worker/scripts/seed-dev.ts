@@ -204,6 +204,7 @@ async function seedSql(tokenKey: string): Promise<string> {
             ${c.id}, ${quote(c.first_name)}, NULL, 1, 'active', ${now}, ${now});`,
     ])
     return [
+        "DELETE FROM managed_bots;",
         "DELETE FROM network_offers;",
         "DELETE FROM order_items;",
         "DELETE FROM cash_handovers;",

@@ -8,6 +8,7 @@ import {
     FAKE_TELEGRAM_URL,
     WORKER_URL,
     courierBot,
+    newBotUsername,
     platformBot,
     shopBySlug,
 } from "../stand/config.js"
@@ -217,4 +218,22 @@ export function courierChat(): Chat {
 /** A chat with a freshly approved shop bot: its secret lives only in D1. */
 export function chatWithSecret(botId: number, secret: string): Chat {
     return chat(`/tg/${botId}`, secret)
+}
+
+/**
+ * Telegram tells the Zumda bot that `owner` created the bot `botId` in the «create a bot» window
+ * (or that its token changed, or someone else owns it now).
+ */
+export function managedBotUpdate(owner: TgUser, botId: number): Promise<Response> {
+    return postUpdate("/tg/platform", platformBot().secret, {
+        managed_bot: {
+            user: { ...owner, is_bot: false },
+            bot: {
+                id: botId,
+                is_bot: true,
+                first_name: "New shop",
+                username: newBotUsername(botId),
+            },
+        },
+    })
 }

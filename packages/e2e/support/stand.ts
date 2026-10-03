@@ -58,7 +58,7 @@ export async function resetStand(): Promise<void> {
 
 export interface ApiOptions {
     shop?: string
-    via?: "marketplace"
+    via?: "marketplace" | "admin"
     /** Inside the app opened from the Zumda courier bot (no shop). */
     courierBot?: boolean
     method?: string

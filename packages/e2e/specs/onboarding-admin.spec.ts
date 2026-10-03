@@ -40,12 +40,15 @@ async function myShops(owner: TgUser = PEOPLE.newOwner): Promise<MyShop[]> {
     return (await response.json()) as MyShop[]
 }
 
+/** The BotFather way: step «Bot» → «Menda bot bor» → the token. */
 async function apply(page: Page, token: string, name: string): Promise<void> {
-    await page.getByLabel("Bot tokeni").fill(token)
-    await bottomButton(page).click()
-    await page.getByLabel("Do'kon nomi").fill(name)
+    await page.getByLabel("Biznes nomi").fill(name)
     await page.getByRole("radio", { name: "Oziq-ovqat" }).click()
     await page.getByLabel(/Manzil/).fill("Guliston, Navoiy 20")
+    await bottomButton(page).click()
+    await expect(page.getByText("2/3-qadam")).toBeVisible()
+    await page.getByRole("button", { name: "Menda bot bor" }).click()
+    await page.getByLabel("Bot tokeni").fill(token)
     await bottomButton(page).click()
     await page.getByLabel("Yetkazish narxi").fill("5000")
     // Customers pay only by transfer: no card, no «Отправить заявку».
@@ -73,16 +76,16 @@ test.beforeAll(resetStand)
 
 test("a wrong token is refused and the wizard returns to the bot step", async ({ page }) => {
     const app = await openApp(page, { user: PEOPLE.newOwner, query: "?mode=onboarding" })
-    await expect(page.getByRole("heading", { name: "Do'koningizni ulang" })).toBeVisible()
-    await bottomButton(page).click() // «Начать»
+    await expect(page.getByRole("heading", { name: "Biznesingizni ulang" })).toBeVisible()
+    await bottomButton(page).click() // «Boshlash»
     await expect(page.getByText("1/3-qadam")).toBeVisible()
+    await apply(page, UNKNOWN_TOKEN, "Yangi Non")
+    await expect(page.getByText("Token noto'g'ri. BotFather'dan to'liq nusxa oling.")).toBeVisible()
+    await expect(page.getByText("2/3-qadam")).toBeVisible()
     await page.getByRole("button", { name: "@BotFather'ni ochish" }).click()
     expect((await app.calls()).find((c) => c.method === "openTelegramLink")?.args[0]).toBe(
         "https://t.me/BotFather",
     )
-    await apply(page, UNKNOWN_TOKEN, "Yangi Non")
-    await expect(page.getByText("Token noto'g'ri. BotFather'dan to'liq nusxa oling.")).toBeVisible()
-    await expect(page.getByText("1/3-qadam")).toBeVisible()
 })
 
 test("the application reaches the admin; the pending shop opens only for its owner", async ({

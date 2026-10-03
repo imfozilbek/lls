@@ -2,7 +2,8 @@
  * A fake Telegram Bot API for the local stand. The Worker sends every bot call here
  * (TELEGRAM_API_BASE); tests read what each bot "sent" and switch on failures.
  *
- *   POST /bot<token>/<method>   the Bot API methods Zumda uses (sendPhoto takes a picture URL)
+ *   POST /bot<token>/<method>   the Bot API methods Zumda uses (sendPhoto takes a picture URL);
+ *                               Managed Bots: a new token on every getManagedBotToken
  *   GET  /__log                 every recorded call, oldest first
  *   POST /__reset               forget calls and failures
  *   POST /__control             { broken?: number[], blocked?: number[], failWebhooks?: boolean }
@@ -12,7 +13,14 @@
  */
 import { createServer } from "node:http"
 
-import { DEV_SHOPS, NEW_BOT_TOKEN_PATTERN, courierBot, platformBot } from "./config.js"
+import {
+    DEV_SHOPS,
+    NEW_BOT_TOKEN_PATTERN,
+    courierBot,
+    managedBotToken,
+    newBotUsername,
+    platformBot,
+} from "./config.js"
 
 import type { IncomingMessage, Server, ServerResponse } from "node:http"
 
@@ -37,6 +45,8 @@ interface State {
     blocked: Set<number>
     failWebhooks: boolean
     nextMessageId: number
+    /** How many tokens each managed bot got so far. */
+    managedTokens: Map<number, number>
 }
 
 function knownBots(): Map<string, Bot> {
@@ -70,7 +80,7 @@ function botFor(bots: Map<string, Bot>, token: string): Bot | null {
         return null
     }
     const id = Number(fresh[1])
-    return { id, username: `new_${id}_bot`, first_name: "New shop" }
+    return { id, username: newBotUsername(id), first_name: "New shop" }
 }
 
 export interface RecordedFile {
@@ -152,6 +162,13 @@ function photoAnswer(call: BotCall): [number, unknown] {
         : fail(400, "Bad Request: PHOTO_INVALID")
 }
 
+/** Every fetch gives a new token, as after «revoke token» in BotFather. */
+function nextManagedToken(state: State, botId: number): string {
+    const version = (state.managedTokens.get(botId) ?? 0) + 1
+    state.managedTokens.set(botId, version)
+    return managedBotToken(botId, version)
+}
+
 function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
     const chatId = Number(call.body["chat_id"])
     switch (call.method) {
@@ -175,6 +192,14 @@ function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
             return [200, { ok: true, result: { message_id: state.nextMessageId++ } }]
         case "setMyProfilePhoto":
             return photoAnswer(call)
+        case "savePreparedKeyboardButton":
+            return [200, { ok: true, result: { id: `prepared-${call.seq}` } }]
+        case "getManagedBotToken":
+        case "replaceManagedBotToken":
+            return [
+                200,
+                { ok: true, result: nextManagedToken(state, Number(call.body["user_id"])) },
+            ]
         default:
             return ALWAYS_OK.has(call.method)
                 ? [200, { ok: true, result: true }]
@@ -198,6 +223,7 @@ async function handle(
         state.broken.clear()
         state.blocked.clear()
         state.failWebhooks = false
+        state.managedTokens.clear()
         send(response, 200, { ok: true })
         return
     }
@@ -239,6 +265,7 @@ export function startFakeTelegram(port: number): Promise<Server> {
         blocked: new Set(),
         failWebhooks: false,
         nextMessageId: 1000,
+        managedTokens: new Map(),
     }
     const server = createServer((request, response) => {
         handle(state, bots, request, response).catch((error: unknown) => {

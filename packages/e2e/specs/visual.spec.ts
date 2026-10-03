@@ -96,6 +96,35 @@ for (const theme of ["light"] as const) {
         await snap(page, "24-onboarding-step1", theme)
     })
 
+    test(`a business and its bot from the Zumda bot, ${theme}`, async ({ page }) => {
+        const owner = { id: 4201, first_name: "Kamola", language_code: "uz" }
+        const app = { user: owner, query: "?mode=onboarding", theme, version: "9.6" }
+        await openApp(page, { ...app, createsBot: 777300400 })
+        await bottomButton(page).click()
+        await page.getByLabel("Biznes nomi").fill("Kamola Somsa")
+        await snap(page, "27-business-step1", theme)
+        await bottomButton(page).click()
+        await expect(page.getByRole("heading", { name: "Biznesingiz boti" })).toBeVisible()
+        await snap(page, "28-bot-step", theme)
+        await page.getByRole("button", { name: "Menda bot bor" }).click()
+        await snap(page, "29-bot-token", theme)
+        await page.getByRole("button", { name: "Botni Zumda orqali yaratish" }).click()
+        await bottomButton(page).click()
+        await expect(page.getByText("Bot yaratildi: @new_777300400_bot")).toBeVisible()
+        await snap(page, "30-bot-created", theme)
+        await bottomButton(page).click()
+        await page.getByLabel("Yetkazish narxi").fill("8000")
+        await page.getByLabel("Karta raqami").fill("4111 1111 1111 1111")
+        await page.getByLabel("Kartadagi ism").fill("Kamola Rahimova")
+        await bottomButton(page).click()
+        await bottomButton(page).click() // «Tayyor»
+        await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
+        await snap(page, "31-my-businesses", theme)
+        await page.getByRole("button", { name: /Kamola Somsa/ }).click()
+        await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
+        await snap(page, "32-business-owner-section", theme)
+    })
+
     test(`district network, ${theme}`, async ({ page }) => {
         // Jasur is off today: the accepted order goes to the district network.
         await apiAs(PEOPLE.foodOwner, "/owner/couriers/dev-food-courier", {
