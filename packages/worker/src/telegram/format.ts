@@ -31,11 +31,18 @@ function quantityLabel(item: OrderItemDTO, t: BotTexts): string {
     return `× ${kg} ${t.kg}`
 }
 
+/** Lines a card lists before «… va yana N ta»: a message is at most 4096 characters. */
+const MAX_CARD_ITEMS = 20
+
 function itemLines(order: OrderDTO, t: BotTexts, language: Language): string[] {
-    return order.items.map(
-        (item) =>
-            `${escapeHtml(item.name)} ${quantityLabel(item, t)}: ${formatMoney(item.total, language)}`,
-    )
+    const shown = order.items
+        .slice(0, MAX_CARD_ITEMS)
+        .map(
+            (item) =>
+                `${escapeHtml(item.name)} ${quantityLabel(item, t)}: ${formatMoney(item.total, language)}`,
+        )
+    const hidden = order.items.length - shown.length
+    return hidden > 0 ? [...shown, fill(t.moreItems, { n: hidden })] : shown
 }
 
 function addressLines(order: OrderDTO, t: BotTexts): string[] {

@@ -270,7 +270,8 @@ export class HttpTelegramGateway implements TelegramGateway {
             url,
             secret_token: secretToken,
             allowed_updates: ["message", "callback_query"],
-            drop_pending_updates: true,
+            // Never drop the queue: a reconnect must not lose a customer's contact or a press.
+            drop_pending_updates: false,
         })
     }
 

@@ -435,6 +435,28 @@ export class Notifier {
         )
     }
 
+    /**
+     * A card was added or customers now pay another one: the owner hears it from Zumda | Business,
+     * never from the shop bot, so a card changed by someone else does not go unnoticed.
+     */
+    async cardChanged(
+        business: Business,
+        change: { kind: "added" | "payment"; number: string },
+    ): Promise<void> {
+        const ownerId = business.ownerTelegramId.value
+        const t = textsFor(await this.languageOf(ownerId))
+        const text = fill(change.kind === "added" ? t.cardAddedOwner : t.paymentCardOwner, {
+            shop: `<b>${escapeHtml(business.name)}</b>`,
+            card: `•••• ${change.number.slice(-4)}`,
+        })
+        await this.services.telegram.sendMessage(
+            this.services.env.BUSINESS_BOT_TOKEN,
+            ownerId,
+            text,
+            { keyboard: this.businessesKeyboard(t) },
+        )
+    }
+
     async shopRegistered(shop: ShopOwnerDTO): Promise<void> {
         const token = this.services.env.BUSINESS_BOT_TOKEN
         const ownerLanguage = await this.languageOf(shop.ownerTelegramId)

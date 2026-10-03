@@ -3,12 +3,20 @@ import { Hono } from "hono"
 
 import { requireOwner, shopOf } from "../auth.js"
 import { idParam, onInvalid, payoutCardBody } from "../http/schemas.js"
+import { Notifier, inBackground } from "../telegram/notifier.js"
 
 import type { AppEnv } from "../env.js"
 import type { Context } from "hono"
 
 function owner(c: Context<AppEnv>): { actorTelegramId: number; businessId: string } {
     return { actorTelegramId: c.get("auth").user.id, businessId: shopOf(c).id }
+}
+
+function cardNotice(
+    c: Context<AppEnv>,
+    change: { kind: "added" | "payment"; number: string },
+): Promise<void> {
+    return new Notifier(c.get("services")).cardChanged(shopOf(c), change)
 }
 
 /**
@@ -23,19 +31,27 @@ export const payoutCardRoutes = new Hono<AppEnv>()
     )
 
     .post("/shop/cards", zValidator("json", payoutCardBody, onInvalid), async (c) => {
-        const cards = await c.get("services").useCases.addPayoutCard.execute({
-            ...owner(c),
-            ...c.req.valid("json"),
-        })
+        const services = c.get("services")
+        const body = c.req.valid("json")
+        const cards = await services.useCases.addPayoutCard.execute({ ...owner(c), ...body })
+        const added = cards.cards.at(-1)
+        if (added) {
+            const notice = { kind: "added" as const, number: added.number }
+            inBackground(c.executionCtx, services, cardNotice(c, notice))
+        }
         return c.json(cards, 201)
     })
 
     /** Customers are shown this card from the next order on. */
     .put("/shop/cards/:id/payment", zValidator("param", idParam, onInvalid), async (c) => {
-        const cards = await c.get("services").useCases.choosePaymentCard.execute({
-            ...owner(c),
-            cardId: c.req.valid("param").id,
-        })
+        const services = c.get("services")
+        const cardId = c.req.valid("param").id
+        const cards = await services.useCases.choosePaymentCard.execute({ ...owner(c), cardId })
+        const chosen = cards.cards.find((card) => card.id === cardId)
+        if (chosen) {
+            const notice = { kind: "payment" as const, number: chosen.number }
+            inBackground(c.executionCtx, services, cardNotice(c, notice))
+        }
         return c.json(cards)
     })
 

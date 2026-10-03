@@ -126,6 +126,13 @@ describe("money: transfer before the shop starts, report, files", () => {
         list = await json<Cards>(added)
         const second = list.cards[1]?.id ?? ""
         expect(list.paymentCardId).toBe(first)
+        // The owner hears of a new card from Zumda | Business, not from the shop bot.
+        const fromZumda = (): string | undefined =>
+            client.telegram.sent
+                .filter((m) => m.chatId === OWNER.id && m.token === env.BUSINESS_BOT_TOKEN)
+                .at(-1)?.html
+        expect(fromZumda()).toContain("•••• 7893")
+        expect(fromZumda()).toContain("yangi karta")
         const twice = await cards("", { method: "POST", json: SECOND_CARD })
         expect(await json(twice)).toMatchObject({ error: { code: "CARD_EXISTS" } })
 
@@ -134,6 +141,7 @@ describe("money: transfer before the shop starts, report, files", () => {
 
         list = await json<Cards>(await cards(`/${second}/payment`, { method: "PUT" }))
         expect(list.paymentCardId).toBe(second)
+        expect(fromZumda()).toContain("mijozlar endi •••• 7893")
         const shop = await json<{ payoutCard?: Json }>(await as(CUSTOMER)("/api/shop"))
         expect(shop.payoutCard).toEqual({ number: "5614681234567893", holder: "Malika Karimova" })
         const after = await json<Order>(await place())
