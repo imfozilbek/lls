@@ -1,6 +1,6 @@
 /**
  * Money: customers pay only by transfer to the shop's card, before the shop starts. «Я перевёл»,
- * «Деньги пришли — принять», one «Доставил», refunds, a shop without a card, the «Деньги» tab,
+ * «Деньги пришли, принять», one «Доставил», refunds, a shop without a card, the «Деньги» tab,
  * the CSV report and the QR poster in the owner's chat, hours per day.
  */
 import { expect, test } from "@playwright/test"
@@ -73,7 +73,7 @@ async function documentsTo(chatId: number, since: number): Promise<RecordedFile[
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
-test("checkout shows the card; «Я перевёл»; the owner «Деньги пришли — принять»", async ({
+test("checkout shows the card; «Я перевёл»; the owner «Деньги пришли, принять»", async ({
     page,
     context,
 }) => {
@@ -106,7 +106,7 @@ test("checkout shows the card; «Я перевёл»; the owner «Деньги �
     expect(toPay.text).toMatch(/55\s000/)
     const card = await waitForMessage(PEOPLE.foodOwner.id, "Kartaga o'tkazma kutilmoqda", placed)
     expect(card.buttons.map((b) => b.text)).toEqual([
-        "💳 Pul keldi — qabul qilish",
+        "💳 Pul keldi, qabul qilish",
         "❌ Bekor qilish",
     ])
 
@@ -119,9 +119,9 @@ test("checkout shows the card; «Я перевёл»; the owner «Деньги �
     expect((await report()).awaiting).toHaveLength(1)
     const accepted = await lastSeq()
     await openMoney(page)
-    const check = block(page, "Mijozlar o'tkazdi — kartani tekshiring")
+    const check = block(page, "Mijozlar o'tkazdi, kartani tekshiring")
     await expect(check).toContainText(/55\s000/)
-    await check.getByRole("button", { name: "Pul keldi — qabul qilish" }).click()
+    await check.getByRole("button", { name: "Pul keldi, qabul qilish" }).click()
     await expect(check).toBeHidden()
     await waitForMessage(PEOPLE.customer.id, "To'lov keldi", accepted)
     expect((await report()).awaiting).toEqual([])
@@ -141,17 +141,17 @@ test("not paid, not started: «Принять» is refused; the order card accep
         .filter({ has: page.getByText(`Buyurtma #${order.number}`, { exact: true }) })
     await expect(card).toContainText("O'tkazma kutilmoqda")
     await expect(card.getByRole("button", { name: "Qabul qilish", exact: true })).toHaveCount(0)
-    await card.getByRole("button", { name: "Pul keldi — qabul qilish" }).click()
+    await card.getByRole("button", { name: "Pul keldi, qabul qilish" }).click()
     await expect(card).toContainText("To'langan")
     await expect(card.getByRole("button", { name: "Tayyorlashni boshlash" })).toBeVisible()
 })
 
-test("from the bot: «Деньги пришли — принять», then one «Доставил» for the courier", async () => {
+test("from the bot: «Деньги пришли, принять», then one «Доставил» for the courier", async () => {
     const since = await lastSeq()
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 2 }])
     const card = await waitForMessage(PEOPLE.foodOwner.id, `#${order.number}`, since)
     const paid = card.buttons.find((b) => b.callback_data === `p:${order.id}`)
-    expect(paid?.text).toBe("💳 Pul keldi — qabul qilish")
+    expect(paid?.text).toBe("💳 Pul keldi, qabul qilish")
     await shopChat(FOOD).press(PEOPLE.foodOwner, paid?.callback_data ?? "", card.seq)
     await expect
         .poll(async () => {

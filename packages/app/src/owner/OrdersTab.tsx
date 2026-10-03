@@ -179,7 +179,7 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
     }
 
     const next = order.nextStatus
-    // The shop starts only after the transfer: accepting is «Деньги пришли — принять».
+    // The shop starts only after the transfer: accepting is «Деньги пришли, принять».
     const waitsForMoney =
         next === OrderStatus.ACCEPTED && order.payment.status !== PaymentStatus.PAID
     const actions = t.owner.actions as Record<string, string>

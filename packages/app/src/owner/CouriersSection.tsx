@@ -290,7 +290,7 @@ function useCourierActions(): CourierActions {
     return { review, schedule, remove }
 }
 
-/** «Если мои заняты — отдавать сети района»: on by default; the owner may switch it off. */
+/** «Если мои заняты, отдавать сети района»: on by default; the owner may switch it off. */
 export function NetworkSection({
     shop,
     onSaved,

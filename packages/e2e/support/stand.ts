@@ -130,7 +130,7 @@ export async function placeOrder(
 }
 
 /**
- * «Деньги пришли — принять»: the owner of `shop` saw the transfer on the card. The order is paid
+ * «Деньги пришли, принять»: the owner of `shop` saw the transfer on the card. The order is paid
  * and accepted in one step (the shop starts only after the money).
  */
 export async function payAndAccept(
