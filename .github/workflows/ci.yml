@@ -3,8 +3,11 @@ name: CI
 # Public repository: forks and pull requests run the checks with a read-only token and never see
 # secrets. Only main of THIS repository (a push, a manual run or the `deploy` event), after green
 # checks, reaches the deploy job.
+# One run per change: a pull request runs on `pull_request`, and `push` only for main (the merged
+# code, before the deploy). A push to a PR branch would otherwise run everything twice.
 on:
     push:
+        branches: [main]
     pull_request:
     workflow_dispatch:
     # The `deploy` event deploys main again: `gh api -X POST repos/imfozilbek/lls/dispatches
