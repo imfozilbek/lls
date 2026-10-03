@@ -72,7 +72,6 @@ export function WebSignIn({
             const [login] = await Promise.all([api.business.login(), loadLibrary()])
             const next = { ...login, at: Date.now() }
             setSetup(next)
-            setError(null)
             return next
         } catch (caught) {
             setError(errorText(t, caught instanceof ApiError ? caught.code : "NETWORK"))
@@ -106,6 +105,9 @@ export function WebSignIn({
         const login = telegramLogin()
         // The window must open in this very tap, or the browser blocks it: setup is ready.
         if (!login || !setup || Date.now() - setup.at > NONCE_MAX_AGE_MS) {
+            // A failed start or an old nonce: this tap prepares again (the spinner shows).
+            setSetup(null)
+            setError(null)
             void prepare()
             return
         }
