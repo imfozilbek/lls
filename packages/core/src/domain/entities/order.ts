@@ -18,6 +18,7 @@ import type { Courier, NetworkUnavailableReason } from "./courier.js"
 import type { OrderItem } from "./order-item.js"
 import type { OrderChannel } from "../enums/order-channel.js"
 import type { Location } from "../value-objects/location.js"
+import type { TransferReceipt } from "../value-objects/payment.js"
 import type { PayoutCard } from "../value-objects/payout-card.js"
 import type { Phone } from "../value-objects/phone.js"
 
@@ -308,9 +309,15 @@ export class Order {
         this.touch()
     }
 
-    /** «Я перевёл»: the customer says the transfer is sent; the owner checks the card. */
-    markTransferSent(): void {
-        this.props.payment = this.props.payment.markSent()
+    /** «Я перевёл» with the receipt: the customer says the transfer is sent; the owner checks. */
+    markTransferSent(receipt: TransferReceipt): void {
+        this.props.payment = this.props.payment.markSent(receipt)
+        this.touch()
+    }
+
+    /** «Pul kelmadi»: the owner did not find the transfer; the customer is asked again. */
+    rejectTransfer(): void {
+        this.props.payment = this.props.payment.reject()
         this.touch()
     }
 

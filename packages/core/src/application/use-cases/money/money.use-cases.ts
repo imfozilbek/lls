@@ -96,6 +96,25 @@ export class ConfirmPaymentUseCase {
     }
 }
 
+/**
+ * «Pul kelmadi»: the owner did not find the transfer on the card. The order waits for the money
+ * again; the customer is asked to check and send the screenshot again.
+ */
+export class RejectTransferUseCase {
+    constructor(private readonly deps: MoneyDeps) {}
+
+    async execute(input: {
+        actorTelegramId: number
+        businessId: string
+        orderId: string
+    }): Promise<OrderDTO> {
+        const order = await requireShopOrder(this.deps, input)
+        order.rejectTransfer()
+        await this.deps.orders.save(order)
+        return toOrderDTO(order)
+    }
+}
+
 /** The owner gave the money of a cancelled order back. */
 export class MarkRefundedUseCase {
     constructor(private readonly deps: MoneyDeps) {}

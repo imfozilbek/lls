@@ -66,6 +66,10 @@ export interface OrderPaymentDTO {
     cashCourierId?: string
     /** The shop's card the customer was shown for this order (the money goes there). */
     card?: { number: string; holder: string }
+    /** The transfer screenshot (fetched from its own route); warnings for the owner. */
+    receipt?: { at: string; reusedFrom?: number; customerRejections: number }
+    /** «Pul kelmadi» on this order so far. */
+    rejections: number
 }
 
 export function toOrderDTO(order: Order): OrderDTO {
@@ -115,6 +119,12 @@ export function toOrderDTO(order: Order): OrderDTO {
                 number: order.payment.card.number,
                 holder: order.payment.card.holder,
             },
+            receipt: order.payment.receipt && {
+                at: order.payment.receipt.at.toISOString(),
+                reusedFrom: order.payment.receipt.reusedFrom,
+                customerRejections: order.payment.receipt.customerRejections,
+            },
+            rejections: order.payment.rejections,
         },
         deliveredAt: order.deliveredAt?.toISOString(),
         createdAt: order.createdAt.toISOString(),
