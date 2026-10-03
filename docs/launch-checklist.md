@@ -66,6 +66,10 @@ Claude, и деплоем; перед подключением настоящи�
 - [ ] Старого бота с прежним названием удалите: @BotFather → `/deletebot` (его токен когда-то
       попал в чат).
 
+- [x] Bot Management Mode для `@zumdashop_bot` (цель 14: бот бизнеса создаётся без токена):
+      @BotFather → `/mybots` → `@zumdashop_bot` → **Bot Settings** → **Bot Management Mode** →
+      **On**. Проверка: `scripts/check-access.sh` → «can create bots for owners».
+
 Аватары, описания, кнопки меню и вебхуки ботов Zumda настроит Claude и деплой.
 
 - [ ] Картинка в блоке «Что умеет этот бот?» (через API её не поставить): @BotFather →

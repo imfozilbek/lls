@@ -12,4 +12,6 @@ export interface BusinessRepository {
     /** Insert a new shop together with its bot token. The adapter encrypts the token. */
     insert(business: Business, botToken: string): Promise<void>
     save(business: Business): Promise<void>
+    /** Telegram issued the shop's bot a new token (a managed bot). The adapter encrypts it. */
+    replaceBotToken(businessId: string, botToken: string): Promise<void>
 }

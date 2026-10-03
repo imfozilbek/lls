@@ -29,6 +29,13 @@ const updateSchema = z.object({
                 .optional(),
         })
         .optional(),
+    /** Managed Bots: a bot was created for us to manage, or its token or owner changed. */
+    managed_bot: z
+        .object({
+            user: userSchema,
+            bot: z.object({ id: z.number().int(), username: z.string().min(1) }),
+        })
+        .optional(),
     callback_query: z
         .object({
             id: z.string(),
@@ -44,6 +51,7 @@ const updateSchema = z.object({
 export type Update = z.infer<typeof updateSchema>
 export type Callback = NonNullable<Update["callback_query"]>
 export type IncomingMessage = NonNullable<Update["message"]>
+export type ManagedBotUpdate = NonNullable<Update["managed_bot"]>
 
 export function toTelegramUser(user: z.infer<typeof userSchema>): TelegramUser {
     return {

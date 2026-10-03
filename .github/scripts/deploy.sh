@@ -251,7 +251,7 @@ connect_platform_bot() {
     telegram "$PLATFORM_BOT_TOKEN" setWebhook \
         --data-urlencode "url=${WORKER_URL}/tg/platform" \
         --data-urlencode "secret_token=${PLATFORM_WEBHOOK_SECRET}" \
-        --data-urlencode 'allowed_updates=["message","callback_query"]'
+        --data-urlencode 'allowed_updates=["message","callback_query","managed_bot"]'
     telegram "$PLATFORM_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${APP_ORIGIN}/?mode=market" \
         '{type: "web_app", text: "Zumda", web_app: {url: $url}}')"
     set_descriptions "$PLATFORM_BOT_TOKEN" "$PLATFORM_DESCRIPTION" "$PLATFORM_SHORT_DESCRIPTION"

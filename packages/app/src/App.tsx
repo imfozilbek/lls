@@ -19,6 +19,7 @@ import { BotIcon, StoreIcon, WifiOffIcon } from "./ui/icons.js"
 import { Button, EmptyState, Skeleton } from "./ui/primitives.js"
 import { BottomBar, ToastHost } from "./ui/shell.js"
 
+import type { ShopVia } from "./lib/api.js"
 import type { LaunchParams } from "./lib/telegram.js"
 
 // Customers never download these chunks.
@@ -77,7 +78,7 @@ function NotInTelegram(): React.JSX.Element {
 }
 
 /** Loads the shop, the user and the catalog in parallel, then paints the shop's brand. */
-function useShopBootstrap(slug: string, viaShowcase: boolean): { state: LoadState; retry(): void } {
+function useShopBootstrap(slug: string, via?: ShopVia): { state: LoadState; retry(): void } {
     const [state, setState] = useState<LoadState>({ kind: "loading" })
     const setLanguage = useLanguageStore((s) => s.setLanguage)
 
@@ -103,10 +104,10 @@ function useShopBootstrap(slug: string, viaShowcase: boolean): { state: LoadStat
     }, [setLanguage])
 
     useEffect(() => {
-        setShop(slug, { viaShowcase })
+        setShop(slug, { via })
         useCart.getState().load(slug)
         void load()
-    }, [slug, viaShowcase, load])
+    }, [slug, via, load])
 
     return { state, retry: (): void => void load() }
 }
@@ -141,14 +142,17 @@ function Screen(): React.JSX.Element {
 
 function ShopApp({
     slug,
+    via,
     onExit,
 }: {
     slug: string
-    /** Opened from the Zumda showcase: "back" on the first screen returns to the search. */
+    /** Opened inside the Zumda bot: from the showcase, or from «Mening bizneslarim». */
+    via?: ShopVia
+    /** Inside the Zumda bot: "back" on the first screen returns to the search or the list. */
     onExit?: () => void
 }): React.JSX.Element {
     const t = useT()
-    const { state, retry } = useShopBootstrap(slug, onExit !== undefined)
+    const { state, retry } = useShopBootstrap(slug, via)
     const depth = useRouter((s) => s.stack.length)
     const back = useRouter((s) => s.back)
     const route = useCurrentRoute()
@@ -205,7 +209,9 @@ function ShowcaseApp(): React.JSX.Element {
             <ShopApp
                 key={slug}
                 slug={slug}
+                via="marketplace"
                 onExit={(): void => {
+                    setShop(null)
                     useRouter.getState().start({ name: "menu" })
                     setSlug(null)
                 }}
@@ -224,16 +230,52 @@ function ShowcaseApp(): React.JSX.Element {
     )
 }
 
+/**
+ * The Zumda bot's «Mening bizneslarim»: every shop of the owner, and the owner section of one of
+ * them right here, without opening that shop's own bot.
+ */
+function BusinessesApp(): React.JSX.Element {
+    const [slug, setSlug] = useState<string | null>(null)
+    useEffect(() => {
+        if (slug === null) {
+            setShop(null)
+            applyBrand(ZUMDA_BRAND_COLOR)
+            document.title = ZUMDA_NAME
+        }
+    }, [slug])
+    if (slug) {
+        return (
+            <ShopApp
+                key={slug}
+                slug={slug}
+                via="admin"
+                onExit={(): void => {
+                    // Before the list renders: its first request must not carry this shop.
+                    setShop(null)
+                    useRouter.getState().start({ name: "menu" })
+                    setSlug(null)
+                }}
+            />
+        )
+    }
+    return (
+        <Suspense fallback={<MenuSkeleton />}>
+            <OnboardingApp
+                onOpen={(next): void => {
+                    useRouter.getState().start({ name: "owner" })
+                    setSlug(next)
+                }}
+            />
+        </Suspense>
+    )
+}
+
 export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
     let content: React.JSX.Element
     if (!webApp()) {
         content = <NotInTelegram />
     } else if (launch.onboarding) {
-        content = (
-            <Suspense fallback={<MenuSkeleton />}>
-                <OnboardingApp />
-            </Suspense>
-        )
+        content = <BusinessesApp />
     } else if (launch.courier) {
         // The Zumda courier bot: one screen across every shop the courier delivers for.
         content = (

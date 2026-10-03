@@ -6,7 +6,7 @@ import { ZUMDA_BRAND_COLOR, applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
 import { hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
-import { haptic, openTelegramLink } from "../lib/telegram.js"
+import { haptic } from "../lib/telegram.js"
 import { BotIcon, ChevronIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, PoweredBy, Section, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
@@ -15,18 +15,26 @@ import { Wizard } from "./Wizard.js"
 
 import type { ShopOwnerDTO } from "@zumda/core"
 
-function ShopRow({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
+/** Tapping a shop opens its owner section right here; a turned-off shop opens nowhere. */
+function ShopRow({
+    shop,
+    onOpen,
+}: {
+    shop: ShopOwnerDTO
+    onOpen(slug: string): void
+}): React.JSX.Element {
     const t = useT().onboarding
     const logo = imageUrl(shop.logoKey)
     const active = shop.status === "active"
+    const opens = shop.status !== "disabled"
     return (
         <li>
             <button
                 type="button"
-                disabled={!active}
+                disabled={!opens}
                 onClick={(): void => {
                     haptic.tap()
-                    openTelegramLink(`https://t.me/${shop.botUsername}`)
+                    onOpen(shop.slug)
                 }}
                 className="tap flex w-full items-center gap-3 rounded-tile bg-tg-secondary p-3 text-left disabled:active:scale-100"
             >
@@ -55,7 +63,7 @@ function ShopRow({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
                 >
                     {t.status[shop.status]}
                 </span>
-                {active ? <ChevronIcon size={18} className="text-tg-hint" /> : null}
+                {opens ? <ChevronIcon size={18} className="text-tg-hint" /> : null}
             </button>
         </li>
     )
@@ -67,7 +75,15 @@ function Intro({ onStart }: { onStart(): void }): React.JSX.Element {
     return <EmptyState art={<BotIcon size={44} />} title={t.title} text={t.subtitle} />
 }
 
-function Home({ shops, onAdd }: { shops: ShopOwnerDTO[]; onAdd(): void }): React.JSX.Element {
+function Home({
+    shops,
+    onAdd,
+    onOpen,
+}: {
+    shops: ShopOwnerDTO[]
+    onAdd(): void
+    onOpen(slug: string): void
+}): React.JSX.Element {
     const t = useT().onboarding
     useMainAction({ text: t.addShop, onClick: onAdd })
     return (
@@ -75,7 +91,7 @@ function Home({ shops, onAdd }: { shops: ShopOwnerDTO[]; onAdd(): void }): React
             <Section title={t.myShops}>
                 <ul className="flex flex-col gap-3">
                     {shops.map((shop) => (
-                        <ShopRow key={shop.id} shop={shop} />
+                        <ShopRow key={shop.id} shop={shop} onOpen={onOpen} />
                     ))}
                 </ul>
             </Section>
@@ -85,8 +101,11 @@ function Home({ shops, onAdd }: { shops: ShopOwnerDTO[]; onAdd(): void }): React
     )
 }
 
-/** The platform bot's Mini App: connect a shop, see my shops and their review status. */
-export function OnboardingApp(): React.JSX.Element {
+/**
+ * The Zumda bot's «Mening bizneslarim»: the owner's businesses with their review status, a new
+ * one through the wizard, and any of them opened for management (`onOpen`).
+ */
+export function OnboardingApp({ onOpen }: { onOpen(slug: string): void }): React.JSX.Element {
     const t = useT()
     const [shops, setShops] = useState<ShopOwnerDTO[] | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -140,5 +159,5 @@ export function OnboardingApp(): React.JSX.Element {
     if (shops.length === 0) {
         return <Intro onStart={(): void => setWizard(true)} />
     }
-    return <Home shops={shops} onAdd={(): void => setWizard(true)} />
+    return <Home shops={shops} onAdd={(): void => setWizard(true)} onOpen={onOpen} />
 }

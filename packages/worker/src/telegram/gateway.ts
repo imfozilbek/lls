@@ -52,6 +52,14 @@ function replyMarkup(options: MessageOptions): unknown {
     return options.removeKeyboard ? { remove_keyboard: true } : undefined
 }
 
+/** A button that asks the user to create a bot managed by ours (Telegram Managed Bots). */
+export interface ManagedBotButton {
+    text: string
+    requestId: number
+    suggestedName?: string
+    suggestedUsername?: string
+}
+
 export interface BotInfo {
     id: number
     username: string
@@ -81,6 +89,19 @@ export interface TelegramGateway {
         options?: MessageOptions,
     ): Promise<void>
     answerCallback(token: string, callbackQueryId: string, text?: string): Promise<void>
+    /**
+     * Managed Bots: a button the user presses inside the Mini App (`WebApp.requestChat(id)`) to
+     * create a bot managed by `token`'s bot. Returns the prepared button's id.
+     */
+    savePreparedKeyboardButton(
+        token: string,
+        userId: number,
+        button: ManagedBotButton,
+    ): Promise<string>
+    /** The token of a bot managed by `token`'s bot. Never logged, never sent to a client. */
+    getManagedBotToken(token: string, botId: number): Promise<string>
+    /** Revokes the managed bot's token and returns a new one. */
+    replaceManagedBotToken(token: string, botId: number): Promise<string>
     /** A picture by URL (Telegram downloads it) with an HTML caption: the bots' welcome. */
     sendPhoto(
         token: string,
@@ -189,6 +210,33 @@ export class HttpTelegramGateway implements TelegramGateway {
             parse_mode: "HTML",
             reply_markup: replyMarkup(options),
         })
+    }
+
+    async savePreparedKeyboardButton(
+        token: string,
+        userId: number,
+        button: ManagedBotButton,
+    ): Promise<string> {
+        const prepared = await this.call<{ id: string }>(token, "savePreparedKeyboardButton", {
+            user_id: userId,
+            button: {
+                text: button.text,
+                request_managed_bot: {
+                    request_id: button.requestId,
+                    suggested_name: button.suggestedName,
+                    suggested_username: button.suggestedUsername,
+                },
+            },
+        })
+        return prepared.id
+    }
+
+    async getManagedBotToken(token: string, botId: number): Promise<string> {
+        return this.call<string>(token, "getManagedBotToken", { user_id: botId })
+    }
+
+    async replaceManagedBotToken(token: string, botId: number): Promise<string> {
+        return this.call<string>(token, "replaceManagedBotToken", { user_id: botId })
     }
 
     async answerCallback(token: string, callbackQueryId: string, text?: string): Promise<void> {

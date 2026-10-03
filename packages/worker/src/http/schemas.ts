@@ -160,18 +160,32 @@ export const shopPatchBody = z.object({
     bottleDeposit: z.number().int().min(0).max(1_000_000).optional(),
 })
 
-export const registerShopBody = z.object({
-    botToken: z.string().regex(/^\d{5,15}:[A-Za-z0-9_-]{30,64}$/),
-    name: text(60),
-    type: z.enum(BUSINESS_TYPES),
-    address: z.string().trim().max(200).optional(),
-    location: locationSchema.optional(),
-    deliveryFee: money,
-    freeDeliveryFrom: money.optional(),
-    minOrder: money.optional(),
-    /** Customers pay only by transfer: no card, no orders. */
-    payoutCard: payoutCardBody,
-})
+export const registerShopBody = z
+    .object({
+        /** A bot from BotFather: the owner pasted its token. */
+        botToken: z
+            .string()
+            .regex(/^\d{5,15}:[A-Za-z0-9_-]{30,64}$/)
+            .optional(),
+        /** A bot the owner created from the Zumda bot (Managed Bots): we already hold its token. */
+        managedBotId: z.number().int().positive().optional(),
+        name: text(60),
+        type: z.enum(BUSINESS_TYPES),
+        address: z.string().trim().max(200).optional(),
+        location: locationSchema.optional(),
+        deliveryFee: money,
+        freeDeliveryFrom: money.optional(),
+        minOrder: money.optional(),
+        /** Customers pay only by transfer: no card, no orders. */
+        payoutCard: payoutCardBody,
+    })
+    .refine((body) => (body.botToken === undefined) !== (body.managedBotId === undefined), {
+        message: "Send botToken or managedBotId, not both",
+        path: ["botToken"],
+    })
+
+/** Step «Bot» of the application: the name suggested for the new bot. */
+export const prepareManagedBotBody = z.object({ name: text(60) })
 
 interface ValidationResult {
     success: boolean

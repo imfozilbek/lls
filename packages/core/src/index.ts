@@ -2,6 +2,7 @@
 export * from "./domain/enums/business-type.js"
 export * from "./domain/enums/business-profile.js"
 export * from "./domain/enums/business-status.js"
+export * from "./domain/enums/bot-source.js"
 export * from "./domain/enums/category.js"
 export * from "./domain/enums/courier-status.js"
 export * from "./domain/enums/delivery-fee.js"

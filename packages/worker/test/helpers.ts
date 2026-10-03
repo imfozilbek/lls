@@ -7,6 +7,7 @@ import { TelegramApiError } from "../src/telegram/gateway.js"
 import type {
     BotDescriptions,
     BotInfo,
+    ManagedBotButton,
     MessageOptions,
     OutgoingFile,
     TelegramGateway,
@@ -74,6 +75,9 @@ export class FakeTelegram implements TelegramGateway {
     readonly photos: { token: string; jpeg: Uint8Array }[] = []
     readonly descriptions: ({ token: string } & BotDescriptions)[] = []
     readonly pictures: (SentMessage & { photoUrl: string })[] = []
+    /** Managed Bots: prepared buttons, and the token Telegram gives for each managed bot. */
+    readonly preparedButtons: { token: string; userId: number; button: ManagedBotButton }[] = []
+    readonly managedTokens = new Map<number, string>()
     /** Simulates Telegram failing to fetch a picture by URL. */
     failPictures = false
     /** Simulates Telegram refusing a new bot picture. */
@@ -136,6 +140,26 @@ export class FakeTelegram implements TelegramGateway {
         }
         this.pictures.push({ token, chatId, html, options, photoUrl })
     }
+    async savePreparedKeyboardButton(
+        token: string,
+        userId: number,
+        button: ManagedBotButton,
+    ): Promise<string> {
+        this.preparedButtons.push({ token, userId, button })
+        return `prepared-${this.preparedButtons.length}`
+    }
+    async getManagedBotToken(_token: string, botId: number): Promise<string> {
+        const token = this.managedTokens.get(botId)
+        if (!token) {
+            throw new TelegramApiError("getManagedBotToken", "Bad Request: bot is not managed")
+        }
+        return token
+    }
+    async replaceManagedBotToken(_token: string, botId: number): Promise<string> {
+        const token = `${botId}:replaced-${Date.now()}`
+        this.managedTokens.set(botId, token)
+        return token
+    }
     async answerCallback(_token: string, callbackQueryId: string): Promise<void> {
         if (this.failReplies) {
             throw new TelegramApiError("answerCallbackQuery", "Bad Request: query is too old")
@@ -179,18 +203,29 @@ export interface TestClient {
      */
     as(
         user: object,
-        options: { botToken?: string; shop?: string; via?: "marketplace"; courierBot?: boolean },
+        options: {
+            botToken?: string
+            shop?: string
+            via?: "marketplace" | "admin"
+            courierBot?: boolean
+            authDate?: Date
+        },
     ): (path: string, init?: RequestInit & { json?: unknown }) => Promise<Response>
     /** An update from Telegram to the Zumda courier bot's webhook. */
     courierBot(update: object): Promise<Response>
 }
 
 export const COURIER_BOT: BotInfo = { id: 100100, username: "zumda_kuryer_bot", firstName: "Zumda" }
+export const PLATFORM_BOT: BotInfo = { id: 100000, username: "zumdashop_bot", firstName: "Zumda" }
 
 export function testClient(
     options: { bots?: Record<string, BotInfo>; clock?: Clock } = {},
 ): TestClient {
-    const telegram = new FakeTelegram({ [env.COURIER_BOT_TOKEN]: COURIER_BOT, ...options.bots })
+    const telegram = new FakeTelegram({
+        [env.COURIER_BOT_TOKEN]: COURIER_BOT,
+        [env.PLATFORM_BOT_TOKEN]: PLATFORM_BOT,
+        ...options.bots,
+    })
     const app = createApp({ telegram, clock: options.clock })
 
     async function request(path: string, init: RequestInit = {}): Promise<Response> {
@@ -212,11 +247,11 @@ export function testClient(
                 },
                 body: JSON.stringify(update),
             }),
-        as(user, { botToken = env.PLATFORM_BOT_TOKEN, shop, via, courierBot }) {
+        as(user, { botToken = env.PLATFORM_BOT_TOKEN, shop, via, courierBot, authDate }) {
             return async (path, init = {}) => {
                 const headers = new Headers(init.headers)
                 const signer = courierBot ? env.COURIER_BOT_TOKEN : botToken
-                headers.set("X-Telegram-Init-Data", await signInitData(user, signer))
+                headers.set("X-Telegram-Init-Data", await signInitData(user, signer, authDate))
                 if (courierBot) {
                     headers.set("X-Bot", "courier")
                 }

@@ -32,6 +32,8 @@ import {
     RemovePayoutCardUseCase,
     PlaceOrderUseCase,
     RegisterShopUseCase,
+    ManagedBotChangedUseCase,
+    ListMyManagedBotsUseCase,
     ResolveCustomerUseCase,
     SaveContactUseCase,
     ReviewShopUseCase,
@@ -57,6 +59,7 @@ import { D1BusinessRepository } from "./repositories/business.repository.js"
 import { D1CourierRepository } from "./repositories/courier.repository.js"
 import { D1CustomerRepository } from "./repositories/customer.repository.js"
 import { D1DistrictRepository } from "./repositories/district.repository.js"
+import { D1ManagedBotRepository } from "./repositories/managed-bot.repository.js"
 import { D1NetworkOfferRepository } from "./repositories/network-offer.repository.js"
 import { D1OrderRepository } from "./repositories/order.repository.js"
 import { D1PayoutCardRepository } from "./repositories/payout-card.repository.js"
@@ -73,6 +76,8 @@ export interface ServiceDeps {
 
 export interface UseCases {
     registerShop: RegisterShopUseCase
+    managedBotChanged: ManagedBotChangedUseCase
+    listMyManagedBots: ListMyManagedBotsUseCase
     listPayoutCards: ListPayoutCardsUseCase
     addPayoutCard: AddPayoutCardUseCase
     choosePaymentCard: ChoosePaymentCardUseCase
@@ -147,6 +152,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const districts = new D1DistrictRepository(env.DB)
     const cards = new D1PayoutCardRepository(env.DB)
     const { clock, telegram } = deps
+    const managedBots = new D1ManagedBotRepository(env.DB, env.TOKEN_ENC_KEY, clock)
     const admins = platformAdminIds(env)
     const orderAccess = { businesses, customers, couriers, orders }
     const courierAccess = { businesses, couriers, orders, clock }
@@ -165,7 +171,9 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         districts,
         networkOffers: new D1NetworkOfferRepository(env.DB),
         useCases: {
-            registerShop: new RegisterShopUseCase(businesses, clock, cards),
+            registerShop: new RegisterShopUseCase(businesses, clock, cards, managedBots),
+            managedBotChanged: new ManagedBotChangedUseCase(businesses, managedBots, clock),
+            listMyManagedBots: new ListMyManagedBotsUseCase(managedBots),
             listPayoutCards: new ListPayoutCardsUseCase(cardBook),
             addPayoutCard: new AddPayoutCardUseCase(cardBook),
             choosePaymentCard: new ChoosePaymentCardUseCase(cardBook),

@@ -1,17 +1,22 @@
 import { zValidator } from "@hono/zod-validator"
+import { languageFromTelegram } from "@zumda/core"
 import { Hono } from "hono"
 
 import { ApiError } from "../http/errors.js"
 import { readJpeg } from "../http/images.js"
 import { rateLimit } from "../http/rate-limit.js"
-import { idParam, onInvalid, registerShopBody } from "../http/schemas.js"
+import { idParam, onInvalid, prepareManagedBotBody, registerShopBody } from "../http/schemas.js"
 import { TelegramApiError } from "../telegram/gateway.js"
+import { newBotLink, randomRequestId, suggestBotUsername } from "../telegram/managed-bots.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
+import { textsFor } from "../telegram/texts.js"
 
 import { setShopBotPhoto } from "./owner.routes.js"
 
 import type { AppEnv } from "../env.js"
+import type { Services } from "../services.js"
 import type { BotInfo, TelegramGateway } from "../telegram/gateway.js"
+import type { RegisterShopInput } from "@zumda/core"
 
 async function verifyBot(telegram: TelegramGateway, token: string): Promise<BotInfo> {
     try {
@@ -26,6 +31,19 @@ async function verifyBot(telegram: TelegramGateway, token: string): Promise<BotI
         }
         throw error
     }
+}
+
+/** The application's bot: a pasted BotFather token, or a bot the owner created from Zumda. */
+async function chosenBot(
+    services: Services,
+    choice: { botToken?: string; managedBotId?: number },
+): Promise<RegisterShopInput["bot"]> {
+    if (choice.managedBotId !== undefined) {
+        return { managedBotId: choice.managedBotId }
+    }
+    const token = choice.botToken ?? ""
+    const bot = await verifyBot(services.telegram, token)
+    return { id: bot.id, username: bot.username, token }
 }
 
 /** Onboarding through the Zumda platform bot (no `X-Shop`). */
@@ -49,14 +67,14 @@ export const platformRoutes = new Hono<AppEnv>()
         async (c) => {
             const services = c.get("services")
             const auth = c.get("auth")
-            const { botToken, ...shop } = c.req.valid("json")
-            const bot = await verifyBot(services.telegram, botToken)
+            const { botToken, managedBotId, ...shop } = c.req.valid("json")
+            const bot = await chosenBot(services, { botToken, managedBotId })
             // The Zumda bot signed this: remember the owner's name and language for the bots.
             await services.useCases.resolveCustomer.execute(auth.user, auth.scope)
             const registered = await services.useCases.registerShop.execute({
                 ...shop,
                 ownerTelegramId: auth.user.id,
-                bot: { id: bot.id, username: bot.username, token: botToken },
+                bot,
             })
             inBackground(
                 c.executionCtx,
@@ -66,6 +84,44 @@ export const platformRoutes = new Hono<AppEnv>()
             return c.json(registered, 201)
         },
     )
+
+    /**
+     * Step «Bot»: a prepared button the app opens with `WebApp.requestChat(preparedId)`. Telegram
+     * shows its «new bot» window with the shop's name; the bot is created in the owner's own
+     * account and managed by the Zumda bot, and `managed_bot` brings us its token. `link` opens
+     * the same window from Telegram apps that cannot do `requestChat`.
+     */
+    .post(
+        "/managed-bot/prepare",
+        rateLimit("SIGNUP_LIMITER"),
+        zValidator("json", prepareManagedBotBody, onInvalid),
+        async (c) => {
+            const services = c.get("services")
+            const { user } = c.get("auth")
+            const { name } = c.req.valid("json")
+            const platformToken = services.env.PLATFORM_BOT_TOKEN
+            const username = suggestBotUsername(name)
+            const preparedId = await services.telegram.savePreparedKeyboardButton(
+                platformToken,
+                user.id,
+                {
+                    text: textsFor(languageFromTelegram(user.languageCode)).managedBotButton,
+                    requestId: randomRequestId(),
+                    suggestedName: name,
+                    suggestedUsername: username,
+                },
+            )
+            const manager = await services.telegram.getMe(platformToken)
+            return c.json({ preparedId, link: newBotLink(manager.username, username, name) })
+        },
+    )
+
+    /** The owner's bots created from Zumda that wait for their application. */
+    .get("/managed-bots", async (c) => {
+        const services = c.get("services")
+        const bots = await services.useCases.listMyManagedBots.execute(c.get("auth").user.id)
+        return c.json({ data: bots })
+    })
 
     /** Right after connecting: the new bot gets its picture (the shop's name + the Zumda mark). */
     .put("/shops/:id/bot-photo", zValidator("param", idParam, onInvalid), async (c) => {

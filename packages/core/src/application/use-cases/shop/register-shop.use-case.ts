@@ -1,6 +1,8 @@
 import { Business } from "../../../domain/entities/business.js"
 import { PayoutCardBook } from "../../../domain/entities/payout-card-book.js"
+import { BotSource } from "../../../domain/enums/bot-source.js"
 import { ConflictError } from "../../../domain/errors/conflict.error.js"
+import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
 import { Location } from "../../../domain/value-objects/location.js"
 import { Money } from "../../../domain/value-objects/money.js"
 import { PayoutCard } from "../../../domain/value-objects/payout-card.js"
@@ -12,14 +14,26 @@ import type { BusinessType } from "../../../domain/enums/business-type.js"
 import type { LocationDTO, ShopOwnerDTO } from "../../dtos/shop.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
+import type { ManagedBotRepository } from "../../ports/managed-bot-repository.js"
 import type { PayoutCardRepository } from "../../ports/payout-card-repository.js"
 
 const MAX_SLUG_ATTEMPTS = 20
 
+/** A bot made in @BotFather: its token is pasted and already verified with `getMe`. */
+export interface PastedBot {
+    id: number
+    username: string
+    token: string
+}
+
+/** A bot the owner created from the Zumda bot: Zumda already holds its token. */
+export interface ManagedBotChoice {
+    managedBotId: number
+}
+
 export interface RegisterShopInput {
     ownerTelegramId: number
-    /** Already verified with Telegram `getMe` by the adapter. */
-    bot: { id: number; username: string; token: string }
+    bot: PastedBot | ManagedBotChoice
     name: string
     type: BusinessType
     address?: string
@@ -37,20 +51,23 @@ export class RegisterShopUseCase {
         private readonly businesses: BusinessRepository,
         private readonly clock: Clock,
         private readonly cards: PayoutCardRepository,
+        private readonly managedBots: ManagedBotRepository,
     ) {}
 
     async execute(input: RegisterShopInput): Promise<ShopOwnerDTO> {
-        if (await this.businesses.findByBotId(input.bot.id)) {
-            throw ConflictError.botAlreadyConnected(input.bot.id)
+        const bot = await this.botOf(input)
+        if (await this.businesses.findByBotId(bot.id)) {
+            throw ConflictError.botAlreadyConnected(bot.id)
         }
 
         const business = Business.register({
             id: crypto.randomUUID(),
-            slug: await this.freeSlug(Slug.fromBotUsername(input.bot.username)),
+            slug: await this.freeSlug(Slug.fromBotUsername(bot.username)),
             name: input.name,
             type: input.type,
             ownerTelegramId: TelegramId.create(input.ownerTelegramId),
-            bot: { id: input.bot.id, username: input.bot.username },
+            bot: { id: bot.id, username: bot.username },
+            botSource: bot.source,
             address: input.address,
             location: input.location
                 ? Location.create(input.location.latitude, input.location.longitude)
@@ -69,9 +86,31 @@ export class RegisterShopUseCase {
             card: PayoutCard.create(input.payoutCard.number, input.payoutCard.holder),
             now: this.clock.now(),
         })
-        await this.businesses.insert(business, input.bot.token)
+        await this.businesses.insert(business, bot.token)
         await this.cards.insert(business.id, card)
+        if (bot.source === BotSource.MANAGED) {
+            await this.managedBots.claim(bot.id, business.id)
+        }
         return toShopOwnerDTO(business, this.clock.now())
+    }
+
+    /** A managed bot must be this owner's own and not taken by a shop yet. */
+    private async botOf(input: RegisterShopInput): Promise<PastedBot & { source: BotSource }> {
+        if (!("managedBotId" in input.bot)) {
+            return { ...input.bot, source: BotSource.TOKEN }
+        }
+        const id = input.bot.managedBotId
+        const record = await this.managedBots.find(id)
+        const token = record ? await this.managedBots.token(id) : null
+        if (
+            !record ||
+            !token ||
+            record.ownerTelegramId !== input.ownerTelegramId ||
+            record.businessId !== undefined
+        ) {
+            throw EntityNotFoundError.managedBot(id)
+        }
+        return { id, username: record.username, token, source: BotSource.MANAGED }
     }
 
     private async freeSlug(base: Slug): Promise<Slug> {

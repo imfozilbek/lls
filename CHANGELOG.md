@@ -7,6 +7,23 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Goal 14: «Mening bizneslarim» and a bot without a token
+- **Added (core):** `Business.botSource` (`managed` | `token`), `ManagedBotRepository`,
+  `ManagedBotChangedUseCase`, `ListMyManagedBotsUseCase`; an application takes a managed bot by
+  id (only the owner's own, not taken yet). The owner DTO says `managedBot`.
+- **Added (worker):** migration `0006_managed_bots.sql`; `managed_bot` updates in `/tg/platform`
+  (the token is fetched and encrypted, the owner hears «Bot yaratildi»; a new token reconnects a
+  live shop; a new owner alerts the admins); `POST /api/platform/managed-bot/prepare`,
+  `GET /api/platform/managed-bots`; `POST /api/platform/shops` takes `botToken` or
+  `managedBotId`; `X-Via: admin` opens the owner's own shop from the Zumda bot (others: 403).
+- **Added (app):** «Mening bizneslarim» with statuses and «Yangi biznes»; the wizard is
+  business → bot («Bot yaratish» through `WebApp.requestChat`, the t.me/newbot link, «Menda bot
+  bor» with a token) → delivery and the card; any business opens its owner section in place.
+- **Fixed (app):** leaving a shop opened inside the Zumda bot no longer sends its `X-Shop` with
+  the next request.
+- **Changed:** the deploy gives the Zumda bot `managed_bot` updates; `scripts/check-access.sh`
+  checks `can_manage_bots`.
+
 ### Welcome of the Zumda bots: scene "Ko'cha" (owner's choice)
 - **Added (worker):** `/start` in the Zumda bot and the courier bot answers with one picture (a
   street of eateries, shops and services with a Zumda courier) and the greeting as its caption,

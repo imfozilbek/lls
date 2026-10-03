@@ -74,6 +74,12 @@ const BASE = {
         alertNotificationFailed: "🚨 Zumda: xabar yuborilmadi",
         alertQuiet: "Shu turdagi keyingi ogohlantirish {minutes} daqiqadan keyin.",
         applicationReceived: "✅ {shop} arizasi qabul qilindi. Tekshiruvdan so'ng xabar beramiz.",
+        managedBotButton: "🤖 Bot yaratish",
+        managedBotCreated:
+            "✅ {bot} yaratildi. Zumda ilovasiga qayting va arizani davom ettiring: tokenni hech qayerga ko'chirish shart emas.",
+        continueSetup: "➡️ Davom etish",
+        managedBotOwnerChanged:
+            "⚠️ {shop}: {bot} botining egasi o'zgardi, yangi egasi {owner}. Do'kon avvalgi egasida qoldi: kerak bo'lsa, tekshiring.",
         shopBotDescription:
             "{shop}: buyurtmalarni shu yerda qabul qilamiz.\nPastdagi «{openMenu}» tugmasini bosing: tanlang, buyurtma bering, eshigingizgacha olib kelamiz.\n\nZumda asosida ishlaydi · zumda.shop",
         shopBotShortDescription: "{shop}: uyga buyurtma bering. Zumda asosida ishlaydi",

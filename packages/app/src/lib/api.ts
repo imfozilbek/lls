@@ -36,24 +36,30 @@ interface ErrorBody {
     error?: { code?: string; message?: string }
 }
 
+/**
+ * How a shop was opened inside the Zumda bot: from the showcase (`marketplace`, a customer), or
+ * from «Mening bizneslarim» (`admin`, its owner). Absent: from the shop's own bot.
+ */
+export type ShopVia = "marketplace" | "admin"
+
 let currentShop: string | null = null
-let viaShowcase = false
+let currentVia: ShopVia | null = null
 let courierBot = false
 
 /**
  * Every request carries the shop, so the Worker verifies with the right bot token: the shop's own
- * bot, or the Zumda bot when the shop was opened from the showcase (`viaShowcase`).
+ * bot, or the Zumda bot when the shop was opened inside it (`via`).
  */
-export function setShop(slug: string | null, options: { viaShowcase?: boolean } = {}): void {
+export function setShop(slug: string | null, options: { via?: ShopVia } = {}): void {
     currentShop = slug
-    viaShowcase = options.viaShowcase ?? false
+    currentVia = options.via ?? null
     courierBot = false
 }
 
 /** Opened from the Zumda courier bot: no shop; the courier bot's token signed the request. */
 export function setCourierBot(): void {
     currentShop = null
-    viaShowcase = false
+    currentVia = null
     courierBot = true
 }
 
@@ -64,8 +70,8 @@ function authHeaders(): Headers {
     }
     if (currentShop) {
         headers.set("X-Shop", currentShop)
-        if (viaShowcase) {
-            headers.set("X-Via", "marketplace")
+        if (currentVia) {
+            headers.set("X-Via", currentVia)
         }
     }
     return headers
@@ -162,8 +168,22 @@ export interface ProductInput {
     position?: number
 }
 
-export interface RegisterShopBody {
-    botToken: string
+/** Step «Bot»: `preparedId` for `WebApp.requestChat`, `link` for older Telegram apps. */
+export interface PreparedManagedBot {
+    preparedId: string
+    link: string
+}
+
+/** A bot the owner created from the Zumda bot; Zumda holds its token, the owner never sees it. */
+export interface ManagedBot {
+    botId: number
+    username: string
+}
+
+/** The application's bot: exactly one of a pasted token or a managed bot. */
+export type RegisterShopBot = { botToken: string } | { managedBotId: number }
+
+export type RegisterShopBody = RegisterShopBot & {
     name: string
     type: string
     address?: string
@@ -304,6 +324,12 @@ export const api = {
         myShops: (): Promise<ShopOwnerDTO[]> => request("GET", "/api/platform/shops"),
         register: (body: RegisterShopBody): Promise<ShopOwnerDTO> =>
             request("POST", "/api/platform/shops", body),
+        /** Step «Bot»: the prepared «create a bot» window and the t.me/newbot link. */
+        prepareManagedBot: (name: string): Promise<PreparedManagedBot> =>
+            request("POST", "/api/platform/managed-bot/prepare", { name }),
+        /** Bots the owner created from Zumda that no application took yet. */
+        managedBots: async (): Promise<ManagedBot[]> =>
+            (await request<{ data: ManagedBot[] }>("GET", "/api/platform/managed-bots")).data,
         /** The new bot's first picture: the shop's name with the Zumda mark. */
         setBotPhoto: (shopId: string, jpeg: Blob): Promise<void> =>
             request("PUT", `/api/platform/shops/${shopId}/bot-photo`, jpeg),

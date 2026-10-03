@@ -4,16 +4,26 @@ import {
     GetShopBySlugUseCase,
     ListMyShopsUseCase,
 } from "../../application/use-cases/shop/get-shop.use-case.js"
+import {
+    ListMyManagedBotsUseCase,
+    ManagedBotChangedUseCase,
+} from "../../application/use-cases/shop/managed-bot.use-case.js"
 import { RegisterShopUseCase } from "../../application/use-cases/shop/register-shop.use-case.js"
 import { ReviewShopUseCase } from "../../application/use-cases/shop/review-shop.use-case.js"
 import { UpdateShopUseCase } from "../../application/use-cases/shop/update-shop.use-case.js"
+import { BotSource } from "../../domain/enums/bot-source.js"
 import { BusinessStatus } from "../../domain/enums/business-status.js"
 import { BusinessType } from "../../domain/enums/business-type.js"
 import { ConflictError } from "../../domain/errors/conflict.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../domain/errors/not-found.error.js"
 import { NOON_MONDAY_UZ, OWNER_TG, STRANGER_TG, TEST_CARD, makeBusiness } from "../fixtures.js"
-import { InMemoryBusinesses, InMemoryPayoutCards, fixedClock } from "../in-memory.js"
+import {
+    InMemoryBusinesses,
+    InMemoryManagedBots,
+    InMemoryPayoutCards,
+    fixedClock,
+} from "../in-memory.js"
 
 import type { RegisterShopInput } from "../../application/use-cases/shop/register-shop.use-case.js"
 
@@ -39,17 +49,22 @@ function registration(overrides: Partial<RegisterShopInput> = {}): RegisterShopI
 describe("shop use cases", () => {
     let businesses: InMemoryBusinesses
     let cards: InMemoryPayoutCards
+    let managedBots: InMemoryManagedBots
 
     beforeEach(() => {
         businesses = new InMemoryBusinesses()
         cards = new InMemoryPayoutCards()
+        managedBots = new InMemoryManagedBots()
     })
 
     describe("RegisterShop", () => {
         it("creates a pending shop, derives the slug and keeps the token for the adapter", async () => {
-            const shop = await new RegisterShopUseCase(businesses, clock, cards).execute(
-                registration(),
-            )
+            const shop = await new RegisterShopUseCase(
+                businesses,
+                clock,
+                cards,
+                managedBots,
+            ).execute(registration())
             expect(shop.status).toBe(BusinessStatus.PENDING)
             expect(shop.slug).toBe("osh-markaz")
             expect(shop.delivery).toEqual({ fee: 10_000, freeFrom: 150_000, minOrder: undefined })
@@ -66,7 +81,7 @@ describe("shop use cases", () => {
         })
 
         it("adds a suffix when the slug is taken", async () => {
-            const useCase = new RegisterShopUseCase(businesses, clock, cards)
+            const useCase = new RegisterShopUseCase(businesses, clock, cards, managedBots)
             await useCase.execute(registration())
             const second = await useCase.execute(
                 registration({ bot: { id: 556, username: "osh_markaz_bot", token: "x" } }),
@@ -75,9 +90,103 @@ describe("shop use cases", () => {
         })
 
         it("rejects a bot that is already connected", async () => {
-            const useCase = new RegisterShopUseCase(businesses, clock, cards)
+            const useCase = new RegisterShopUseCase(businesses, clock, cards, managedBots)
             await useCase.execute(registration())
             await expect(useCase.execute(registration())).rejects.toThrow(ConflictError)
+        })
+
+        it("a pasted token makes a `token` shop", async () => {
+            const shop = await new RegisterShopUseCase(
+                businesses,
+                clock,
+                cards,
+                managedBots,
+            ).execute(registration())
+            expect(shop.managedBot).toBe(false)
+        })
+    })
+
+    describe("Managed bots", () => {
+        const MANAGED = { id: 777, username: "Osh_Saroy_bot" }
+
+        async function created(owner = OWNER_TG): Promise<void> {
+            const change = await new ManagedBotChangedUseCase(
+                businesses,
+                managedBots,
+                clock,
+            ).execute({ bot: MANAGED, ownerTelegramId: owner, token: "777:first" })
+            expect(change).toEqual({ kind: "created", botUsername: "Osh_Saroy_bot" })
+        }
+
+        it("a bot created from the Zumda bot waits for its owner's application", async () => {
+            await created()
+            const list = new ListMyManagedBotsUseCase(managedBots)
+            expect(await list.execute(OWNER_TG)).toEqual([
+                { botId: 777, username: "Osh_Saroy_bot" },
+            ])
+            expect(await list.execute(STRANGER_TG)).toEqual([])
+        })
+
+        it("the owner applies with it: the token never comes from the client", async () => {
+            await created()
+            const register = new RegisterShopUseCase(businesses, clock, cards, managedBots)
+            const shop = await register.execute(registration({ bot: { managedBotId: 777 } }))
+            expect(shop.managedBot).toBe(true)
+            expect(shop.botUsername).toBe("Osh_Saroy_bot")
+            expect(shop.slug).toBe("osh-saroy")
+            expect(businesses.tokens.get(shop.id)).toBe("777:first")
+            // Taken: no longer offered, and cannot make a second shop.
+            expect(await new ListMyManagedBotsUseCase(managedBots).execute(OWNER_TG)).toEqual([])
+            await expect(
+                register.execute(registration({ bot: { managedBotId: 777 } })),
+            ).rejects.toThrow(EntityNotFoundError)
+        })
+
+        it("nobody applies with a bot they did not create, or one that does not exist", async () => {
+            await created()
+            const register = new RegisterShopUseCase(businesses, clock, cards, managedBots)
+            await expect(
+                register.execute(
+                    registration({ ownerTelegramId: STRANGER_TG, bot: { managedBotId: 777 } }),
+                ),
+            ).rejects.toThrow(EntityNotFoundError)
+            await expect(
+                register.execute(registration({ bot: { managedBotId: 778 } })),
+            ).rejects.toThrow(EntityNotFoundError)
+        })
+
+        it("a new token of the shop's bot is kept; a new owner is reported, not handed over", async () => {
+            await created()
+            const shop = await new RegisterShopUseCase(
+                businesses,
+                clock,
+                cards,
+                managedBots,
+            ).execute(registration({ bot: { managedBotId: 777 } }))
+            const changed = new ManagedBotChangedUseCase(businesses, managedBots, clock)
+
+            const renewed = await changed.execute({
+                bot: MANAGED,
+                ownerTelegramId: OWNER_TG,
+                token: "777:second",
+            })
+            expect(renewed).toMatchObject({ kind: "tokenChanged", shop: { id: shop.id } })
+            expect(businesses.tokens.get(shop.id)).toBe("777:second")
+
+            const moved = await changed.execute({
+                bot: MANAGED,
+                ownerTelegramId: STRANGER_TG,
+                token: "777:third",
+            })
+            expect(moved).toMatchObject({
+                kind: "ownerChanged",
+                shop: { id: shop.id, ownerTelegramId: OWNER_TG },
+                newOwnerTelegramId: STRANGER_TG,
+            })
+            // The shop stays with its owner and keeps working with the current token.
+            expect(businesses.items.get(shop.id)?.isOwnedBy(OWNER_TG)).toBe(true)
+            expect(businesses.tokens.get(shop.id)).toBe("777:third")
+            expect((await managedBots.find(777))?.businessId).toBe(shop.id)
         })
     })
 

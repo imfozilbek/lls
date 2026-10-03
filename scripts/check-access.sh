@@ -123,6 +123,17 @@ check_bot() {
     fi
 }
 
+# Goal 14: the Zumda bot creates shop bots for owners (Telegram Managed Bots).
+check_bot_management() {
+    local body
+    body="$(curl -sS -m 20 "${TG_API}/bot${PLATFORM_BOT_TOKEN}/getMe" 2>/dev/null || echo '{"ok":false}')"
+    if [[ "$(jq -r '.result.can_manage_bots // false' <<<"$body" 2>/dev/null)" == "true" ]]; then
+        ok "@${PLATFORM_BOT} can create bots for owners (can_manage_bots)"
+    else
+        bad "Bot Management Mode" "@BotFather → @${PLATFORM_BOT} → Bot Settings → Bot Management Mode → On"
+    fi
+}
+
 echo "Launch access check (values are never printed)"
 if check_variables; then
     check_admins
@@ -131,6 +142,7 @@ if check_variables; then
         check_account_products
     fi
     check_bot "PLATFORM_BOT_TOKEN" "$PLATFORM_BOT_TOKEN" "$PLATFORM_BOT"
+    check_bot_management
     check_bot "COURIER_BOT_TOKEN" "$COURIER_BOT_TOKEN" "$COURIER_BOT"
 fi
 

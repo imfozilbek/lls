@@ -6,16 +6,16 @@ Qisqa va oddiy: do'konni ulash, katalogni to'ldirish, kuryerlarni qo'shish, buyu
 
 ---
 
-### 1. Do'konni ulash (5 daqiqa)
+### 1. Biznesni ulash (5 daqiqa)
 
 1. Telegram'da **@zumdashop_bot** ni oching va **Start** ni bosing.
-2. **🏪 Do'konni ulash** tugmasini bosing. Ilova ochiladi.
-3. **1-qadam: Bot yarating:**
-   - **@BotFather'ni ochish** tugmasini bosing, `/newbot` yuboring;
-   - bot nomini yozing (masalan, `Osh Markaz`);
-   - bot manzilini yozing, u `bot` bilan tugashi kerak (masalan, `osh_markaz_bot`);
-   - BotFather bergan **tokenni** nusxa oling va ilovaga qo'ying.
-4. **2-qadam: Do'kon haqida:** nomi, faoliyat turi (Taomlar / Suv / Oziq-ovqat), manzil.
+2. **Biznesimni ulash** tugmasini bosing. Ilova ochiladi.
+3. **1-qadam: Biznes haqida:** nomi, faoliyat turi (Ovqat / Suv / Oziq-ovqat), manzil.
+4. **2-qadam: Bot:** **Bot yaratish** ni bosing. Telegram oynasida bot nomi va manzili tayyor
+   turadi: kerak bo'lsa o'zgartiring va tasdiqlang. Bot **sizning** Telegram akkauntingizda
+   bo'ladi, Zumda uni boshqaradi: tokenni hech qayerga ko'chirish shart emas.
+   - Oyna ochilmasa: **Havola orqali yaratish**.
+   - BotFather'da botingiz bor bo'lsa: **Menda bot bor** → tokenni qo'ying.
 5. **3-qadam: Yetkazib berish va karta:** yetkazish narxi, bepul yetkazish chegarasi, minimal
    buyurtma va **to'lov uchun karta** (raqam va egasining ismi). Mijozlar faqat shu kartaga
    o'tkazma qiladi: kartasiz ariza yuborilmaydi.
@@ -23,6 +23,9 @@ Qisqa va oddiy: do'konni ulash, katalogni to'ldirish, kuryerlarni qo'shish, buyu
 
 Tasdiqlangandan keyin bot sizga do'koningiz havolasini yuboradi: `t.me/osh_markaz_bot`.
 Mijozlar sizning botingizni, nomingizni va rangingizni ko'radi.
+
+**Mening bizneslarim:** @zumdashop_bot ilovasida barcha bizneslaringiz turadi. Birini bossangiz,
+shu yerning o'zida buyurtmalar, katalog, pul va sozlamalar ochiladi.
 
 ### 2. Katalogni to'ldirish
 

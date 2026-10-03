@@ -7,10 +7,13 @@ import { createHmac } from "node:crypto"
 
 import { APP_URL, courierBot, platformBot, shopBySlug } from "../stand/config.js"
 
-import { courierChat, platformChat, shopChat } from "./telegram.js"
+import { courierChat, managedBotUpdate, platformChat, shopChat } from "./telegram.js"
 
 import type { Chat, TgUser } from "./telegram.js"
 import type { Page } from "@playwright/test"
+
+/** Telegram's Bot API version that brought `WebApp.requestChat` (Managed Bots). */
+const REQUEST_CHAT_VERSION = 9.6
 
 export const GULISTAN = { latitude: 40.4897, longitude: 68.7842 }
 
@@ -69,6 +72,13 @@ export interface OpenOptions {
     location?: { latitude: number; longitude: number } | null
     confirm?: boolean
     writeAccess?: boolean
+    /** Telegram's Bot API version (default 8.0); `requestChat` is there from 9.6. */
+    version?: string
+    /**
+     * Telegram 9.6+: the bot the person creates in the «create a bot» window (`requestChat`);
+     * absent: they close the window.
+     */
+    createsBot?: number
 }
 
 interface StubConfig {
@@ -81,6 +91,8 @@ interface StubConfig {
     confirm: boolean
     writeAccess: boolean
     contact: "share" | "decline"
+    version: string
+    createsBot: number | null
 }
 
 /** Like telegram-web-app.js: the theme becomes CSS variables on <html>. Runs in the page. */
@@ -144,7 +156,7 @@ function installTelegramStub(config: StubConfig): void {
     const webApp = {
         initData: config.initData,
         initDataUnsafe: config.initData ? { user: config.user } : {},
-        version: "8.0",
+        version: config.version,
         platform: config.platform,
         colorScheme: config.colorScheme,
         ready: record("ready"),
@@ -152,7 +164,7 @@ function installTelegramStub(config: StubConfig): void {
         setHeaderColor: record("setHeaderColor"),
         setBackgroundColor: record("setBackgroundColor"),
         setBottomBarColor: record("setBottomBarColor"),
-        isVersionAtLeast: (version: string): boolean => Number(version) <= 8,
+        isVersionAtLeast: (version: string): boolean => Number(version) <= Number(config.version),
         MainButton: mainButton,
         BackButton: backButton,
         HapticFeedback: {
@@ -192,6 +204,27 @@ function installTelegramStub(config: StubConfig): void {
     })
 }
 
+/**
+ * Telegram 9.6+ only: `requestChat` opens the «create a bot» window. Like Telegram, the bot is
+ * created, the Zumda bot hears `managed_bot`, then the window closes and the app learns it.
+ * Runs in the page after `installTelegramStub`.
+ */
+function installRequestChat(createsBot: number | null): void {
+    const page = window as unknown as {
+        Telegram: { WebApp: Record<string, unknown> }
+        __tg: { calls: { method: string; args: unknown[] }[] }
+        __createBot: (id: number) => Promise<boolean>
+    }
+    page.Telegram.WebApp["requestChat"] = (id: string, done: (created: boolean) => void): void => {
+        page.__tg.calls.push({ method: "requestChat", args: [id] })
+        if (createsBot === null) {
+            done(false)
+            return
+        }
+        void page.__createBot(createsBot).then(done)
+    }
+}
+
 export interface OpenedApp {
     page: Page
     /** The bot chat the app was opened from (where a shared contact goes). */
@@ -216,11 +249,16 @@ function stubConfig(options: OpenOptions, initData: string): StubConfig {
         confirm: options.confirm ?? true,
         writeAccess: options.writeAccess ?? true,
         contact: options.contact ?? "share",
+        version: options.version ?? "8.0",
+        createsBot: options.createsBot ?? null,
     }
 }
 
-/** Per tab: where a shared contact goes now. */
-const opened = new WeakMap<Page, { share(): Promise<Response> }>()
+/** Per tab: where a shared contact goes now, and who creates a bot in the window. */
+const opened = new WeakMap<
+    Page,
+    { share(): Promise<Response>; createBot(botId: number): Promise<Response> }
+>()
 
 /** The bot that opened the app: its token signs initData, its chat gets a shared contact. */
 function openedFrom(options: OpenOptions): { token: string; chat: Chat; query: string } {
@@ -240,11 +278,15 @@ export async function openApp(page: Page, options: OpenOptions): Promise<OpenedA
     const initData = options.noInitData ? "" : signInitData(options.user, token)
     const phone = options.phone ?? "+998901234567"
 
-    const contact = { share: (): Promise<Response> => chat.shareContact(options.user, phone) }
+    const contact = {
+        share: (): Promise<Response> => chat.shareContact(options.user, phone),
+        createBot: (botId: number): Promise<Response> => managedBotUpdate(options.user, botId),
+    }
     const known = opened.get(page)
     if (known) {
         // The same tab opened again (another user or shop): the stub follows the new one.
         known.share = contact.share
+        known.createBot = contact.createBot
     } else {
         opened.set(page, contact)
         await page.route("https://telegram.org/**", (route) =>
@@ -255,12 +297,20 @@ export async function openApp(page: Page, options: OpenOptions): Promise<OpenedA
                 Promise.reject(new Error("closed")))
             return response.ok
         })
+        await page.exposeFunction("__createBot", async (botId: number): Promise<boolean> => {
+            const response = await (opened.get(page)?.createBot(botId) ??
+                Promise.reject(new Error("closed")))
+            return response.ok
+        })
     }
     const config = stubConfig(options, initData)
     if (config.theme) {
         await page.addInitScript(paintTheme, config.theme)
     }
     await page.addInitScript(installTelegramStub, config)
+    if (Number(config.version) >= REQUEST_CHAT_VERSION) {
+        await page.addInitScript(installRequestChat, config.createsBot)
+    }
     if (options.theme === "dark") {
         await page.emulateMedia({ colorScheme: "dark" })
     }

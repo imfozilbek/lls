@@ -17,6 +17,7 @@ import {
     parseReviewCallback,
 } from "../telegram/format.js"
 import { TelegramApiError, escapeHtml } from "../telegram/gateway.js"
+import { handleManagedBot } from "../telegram/managed-bots.js"
 import { Notifier, onboardingAppUrl, shopAppUrl, showcaseAppUrl } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 import {
@@ -430,6 +431,10 @@ export const webhookRoutes = new Hono<AppEnv>()
             await handleSafely(() =>
                 handleReviewCallback(services, callback, new URL(c.req.url).origin),
             )
+        }
+        const managed = update?.managed_bot
+        if (managed) {
+            await handleSafely(() => handleManagedBot(services, managed, new URL(c.req.url).origin))
         }
         return c.json({ ok: true })
     })

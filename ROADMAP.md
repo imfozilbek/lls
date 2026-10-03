@@ -171,6 +171,10 @@ Pilot: **food, water and grocery at the same time.**
       (`docs/launch-checklist.md`, steps 2–6)
 - [x] Access checked (`scripts/check-access.sh` all OK); SSL Full (strict) and Always HTTPS on
 - [x] First production deploy; Claude deploys `main` again with the `deploy` event
+- [x] Goal 14: «Mening bizneslarim» and a shop bot created from the Zumda bot without a token
+      (Telegram Managed Bots); the token path stays
+- [ ] Goal 14 in production: create a bot with «Bot yaratish», approve it, answer the practice
+      questions (token change, owner change, turning management off, the limit)
 - [ ] Production check: connect a test shop → order → statuses → notifications
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
