@@ -4,6 +4,7 @@
  *
  *   POST /bot<token>/<method>   the Bot API methods Zumda uses (sendPhoto takes a picture URL);
  *                               Managed Bots: a token stays until it is revoked or replaced
+ *   GET  /.well-known/jwks.json Telegram Login's public keys (the stand's test key)
  *   GET  /__log                 every recorded call, oldest first
  *   POST /__reset               forget calls and failures
  *   POST /__control             { broken?: number[], blocked?: number[], failWebhooks?: boolean,
@@ -23,6 +24,7 @@ import {
     newBotUsername,
     platformBot,
 } from "./config.js"
+import { STAND_LOGIN_PUBLIC_JWK } from "./login-key.js"
 
 import type { IncomingMessage, Server, ServerResponse } from "node:http"
 
@@ -233,6 +235,11 @@ async function handle(
     response: ServerResponse,
 ): Promise<void> {
     const url = new URL(request.url ?? "/", "http://localhost")
+    // Telegram Login's public keys: the stand signs `id_token`s with the matching private key.
+    if (url.pathname === "/.well-known/jwks.json") {
+        send(response, 200, { keys: [STAND_LOGIN_PUBLIC_JWK] })
+        return
+    }
     if (url.pathname === "/__log") {
         send(response, 200, state.calls)
         return
