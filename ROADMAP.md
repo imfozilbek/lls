@@ -175,6 +175,9 @@ Pilot: **food, water and grocery at the same time.**
       (Telegram Managed Bots); the token path stays
 - [x] Three Zumda bots by role: «Zumda | Shop» (customers), «Zumda | Business» (owners, admins,
       Managed Bots), «Zumda | Kuryer» (couriers)
+- [x] Goal 15: kinds of business (grocery store, restaurant, service), own addresses (app.,
+      business., delivery.zumda.shop; zumda.shop leads to the bot), Zumda | Business in a
+      browser, the bots' profiles set by CI
 - [ ] Goal 14 in production: create a bot with «Bot yaratish» in Zumda | Business, approve it,
       answer the practice questions (token change, owner change, turning management off, the limit)
 - [ ] Production check: connect a test shop → order → statuses → notifications

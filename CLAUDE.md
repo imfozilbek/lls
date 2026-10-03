@@ -149,6 +149,10 @@ cover each one's whole process; what exactly comes from the meeting with them.
   delivers, and whether Zumda takes a share of it. Until then: the shop keeps it (temporary rule).
 - Only shops with a marketplace deal (`business.marketplace`) appear in the showcase. A platform
   admin sets the deal in the Zumda bot: `/market <slug> <percent>` or `/market <slug> off`.
+- **Kinds of business (owner's decision, October 2026):** «Oziq-ovqat do'koni» (`grocery`),
+  «Restoran» (`food`), «Xizmat ko'rsatish» (`service`). A water shop is a grocery store with the
+  bottle deposit on (migration `0007` moved old `water` rows). Services use the normal order flow
+  with their own words until their process is agreed (goal 09).
 - One universal core for all business types. Vertical specifics = feature toggles per business:
   `reorder`, `bottleDeposit` (water), `weightItems` and `stopList` (grocery, food). Defaults come
   from the business type; the owner can switch them.
@@ -344,7 +348,7 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through t
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (food/water/grocery), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required to take orders), service fee rate (bps; plan), district_id, network_delivery (on by default) |
+| Business | id, slug, name, type (grocery/food/service), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required to take orders), service fee rate (bps; plan), district_id, network_delivery (on by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
@@ -471,7 +475,8 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 - Status change → message to the customer (courier name, never the courier's phone). Showcase
   orders: the Zumda bot writes to the customer (with the shop name); the owner still gets messages
   from the shop bot.
-- Texts depend on the business type (food: «Меню», «Готовится»; water/grocery: «Каталог», «Собираем»).
+- Texts depend on the business type (grocery: «Katalog», «Yig'ilmoqda»; food: «Menyu»,
+  «Tayyorlanmoqda»; service: «Xizmatlar», «Bajarilmoqda»).
 - Before the first order, the app calls `requestWriteAccess()` so the shop bot may message the customer.
 - Phone: `requestContact()` → Telegram sends a `contact` message to the bot that opened the app
   (shop bot or Zumda bot) → save it only if `contact.user_id === from.id`.
@@ -515,7 +520,12 @@ document.innerHTML = x                 // XSS
 - Prices, totals, the service fee and `customerId` are computed on the server. Never trust them from the client
 - Check ownership on every route (owner edits only own shop, customer sees only own orders)
 - Frontend NEVER talks to D1/R2 directly. Only through the Worker
-- CORS: allow only `APP_ORIGIN` (the Mini App address, `https://app.zumda.shop`)
+- CORS: allow only the Mini App's three addresses (`APP_ORIGIN`, `BUSINESS_APP_ORIGIN`,
+  `COURIER_APP_ORIGIN`)
+- Zumda | Business in a browser (business.zumda.shop): Telegram Login Widget → `POST
+  /api/business/session` checks the widget's signature with the bot token → a 30-day session
+  (`BUSINESS_SESSION_SECRET`) in `Authorization: Bearer`, the same rights as `X-Bot: business`.
+  No cookies; the widget's domain is set once in @BotFather (`/setdomain`)
 - Check `git diff` before commit
 
 **Public repository (GitHub, free CI):** the code is public, the keys never are.
@@ -744,17 +754,27 @@ bun run format && bun run lint && bun run test && bun run build
 CI/CD: GitHub Actions. **⛔ Docker is PROHIBITED. No VPS.**
 
 ```
-Telegram ─► Mini App (Pages, app.zumda.shop) ─► Worker (api.zumda.shop, /api) ─► D1 / R2
+Telegram ─► Mini App (Pages: app., business., delivery.zumda.shop) ─► Worker (api.zumda.shop) ─► D1 / R2
+Browser ─► business.zumda.shop (Telegram Login Widget) ─► Worker ─► D1 / R2
+zumda.shop ─► Worker ─► 302 to t.me/zumdashop_bot (until the landing page)
 Telegram Bot API ─► /tg/:botId, /tg/platform, /tg/business, /tg/courier ─► Worker
 ```
 
 **Worker secrets:** `TOKEN_ENC_KEY`, `PLATFORM_BOT_TOKEN`, `PLATFORM_WEBHOOK_SECRET`, `PLATFORM_ADMIN_IDS`,
-`COURIER_BOT_TOKEN`, `COURIER_WEBHOOK_SECRET`, `BUSINESS_BOT_TOKEN`, `BUSINESS_WEBHOOK_SECRET`
-(both webhook secrets of the Zumda bots are derived from their tokens by the deploy).
-**Worker vars:** `APP_ORIGIN` (`https://app.zumda.shop`).
+`COURIER_BOT_TOKEN`, `COURIER_WEBHOOK_SECRET`, `BUSINESS_BOT_TOKEN`, `BUSINESS_WEBHOOK_SECRET`,
+`BUSINESS_SESSION_SECRET` (the webhook and session secrets are derived from the bot tokens by the
+deploy).
+**Worker vars:** `APP_ORIGIN` (`https://app.zumda.shop`), `BUSINESS_APP_ORIGIN`
+(`https://business.zumda.shop`), `COURIER_APP_ORIGIN` (`https://delivery.zumda.shop`). The app
+picks its mode by address (`business.`, `delivery.`), locally by `?mode=`.
+**The bots' profiles are set by the deploy:** names «Zumda | Shop», «Zumda | Business»,
+«Zumda | Kuryer», descriptions, commands (admins get theirs in Zumda | Business), menu buttons,
+avatars (`brand/*-avatar.jpg`, set only when the file changed: its hash is in D1
+`platform_settings`), the `/start` pictures (`brand/welcome/`). Only the Description Picture and
+`/setdomain` are manual (no Bot API method).
 
-- Addresses: `api.zumda.shop` (Worker, Custom Domain) and `app.zumda.shop` (Pages); the deploy
-  adds them and their DNS records. The Worker has no workers.dev address.
+- Addresses: `api.zumda.shop` and `zumda.shop` (Worker, Custom Domains); `app.`, `business.`,
+  `delivery.zumda.shop` (one Pages project); the deploy adds them and their DNS records. The Worker has no workers.dev address.
 - Checks run on the pull request (`static` and `unit` side by side, e2e on eight machines; the
   required checks are `quality-gates` and `e2e`). A push to `main` only deploys (~30 s): the
   `main` ruleset takes a PR only with green checks on code up to date with `main`.
@@ -779,7 +799,9 @@ Telegram Bot API ─► /tg/:botId, /tg/platform, /tg/business, /tg/courier ─�
 - [ ] Courier invite → assign → picked up → delivered
 - [ ] District delivery: invite → accept in the courier bot → join the network → an order of a
       point without couriers taken by a network courier → paid before cooking, no cash
-- [ ] Water: empty bottles + deposit; reorder
+- [ ] Water (a grocery store with the bottle deposit): empty bottles + deposit; reorder
+- [ ] Service: «Xizmatlar», «Bajarilmoqda», «Bajarildi»
+- [ ] Zumda | Business in a browser: sign in with Telegram, manage a business, sign out
 - [ ] Grocery: weight items (kg steps); stop-list for today
 - [ ] Each order stores channel + commission (0 for own bot)
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report

@@ -72,13 +72,23 @@ Claude, и деплоем; перед подключением настоящи�
 - [ ] Bot Management Mode для **Zumda | Business** (цель 14: бот бизнеса создаётся без токена):
       @BotFather → `/mybots` → `@zumdashop_business_bot` → **Bot Settings** → **Bot Management Mode**
       → **On**. Проверка: `scripts/check-access.sh` → «can create bots for owners».
-- [ ] Аватар Zumda | Business: @BotFather → `/setuserpic` → `brand/zumda-business-avatar.png`.
+- [ ] Веб-вход на business.zumda.shop: @BotFather → `/setdomain` → `@zumdashop_business_bot` →
+      `business.zumda.shop`. Без этого кнопка «Telegram orqali kirish» не появится.
+- [ ] Картинки «Что умеет этот бот?» (Description Picture, через API не ставится): @BotFather →
+      `/mybots` → бот → **Edit Bot** → **Edit Description Picture**: `brand/welcome/zumda-640.png`
+      для `@zumdashop_bot`, `biznes-640.png` для `@zumdashop_business_bot`, `kuryer-640.png` для
+      `@zumdashop_kuryer_bot`.
 - [ ] Каждый админ один раз нажимает **Start** в Zumda | Business: иначе бот не сможет писать
       ему заявки и оповещения.
 
-Имена ботов («Zumda | Shop», «Zumda | Business», «Zumda | Kuryer») ставит деплой.
-
-Аватары, описания, кнопки меню и вебхуки ботов Zumda настроит Claude и деплой.
+Всё остальное у трёх ботов ставит деплой сам, при каждом запуске:
+- имена «Zumda | Shop», «Zumda | Business», «Zumda | Kuryer»;
+- описания и короткие описания;
+- команды (админам в Zumda | Business ещё `/market`, `/district`, `/network`, `/reconnect`);
+- кнопки меню;
+- аватары из `brand/*-avatar.jpg` (только когда файл изменился);
+- вебхуки;
+- адреса `app.`, `business.`, `delivery.zumda.shop` и переадресация `zumda.shop` в бот.
 
 - [ ] Картинка в блоке «Что умеет этот бот?» (через API её не поставить): @BotFather →
       `/mybots` → `@zumdashop_bot` → **Edit Bot** → **Edit Description Picture** → отправьте

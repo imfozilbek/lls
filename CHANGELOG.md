@@ -7,6 +7,21 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Goal 15: kinds of business, own addresses, Zumda | Business in a browser, bot profiles
+- **Changed (core, worker, app):** kinds of business are «Oziq-ovqat do'koni» (`grocery`),
+  «Restoran» (`food`), «Xizmat ko'rsatish» (`service`). Water is a grocery store with the bottle
+  deposit; migration `0007` moves old `water` rows. Services have their own words («Xizmatlar»,
+  «Bajarilmoqda», «Bajarildi») and icons; new categories cleaning, car care, repair, beauty.
+- **Added:**
+  - own addresses `app.`, `business.`, `delivery.zumda.shop` (one Pages project, the app picks
+    its mode by address); `zumda.shop` redirects to `t.me/zumdashop_bot`; CORS for the three
+    addresses.
+  - Zumda | Business in a browser: Telegram Login Widget, `POST /api/business/session`, a
+    30-day session in `Authorization: Bearer`, «Orqaga» and «Chiqish».
+  - the deploy sets the three bots' names, descriptions, commands (admins' own),
+    menu buttons and avatars (only when changed, hash in D1 `platform_settings`); a welcome
+    picture for Zumda | Business.
+
 ### Three bots by role: Zumda | Shop, Zumda | Business, Zumda | Kuryer (owner's decision)
 - **Added (worker):** the Zumda | Business bot (`BUSINESS_BOT_TOKEN`, webhook `/tg/business`):
   «Mening bizneslarim», applications, the admins' approval buttons and commands, `managed_bot`
