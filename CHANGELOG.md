@@ -7,6 +7,23 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Trust at the money moment, a queue for rush hour (UX phase 5, from the second critique)
+- **Added (core, worker, app):** «Do'konga eslatish»: when the shop has not answered a transfer
+  for 10 minutes, the customer asks the owner again with one tap (the bot repeats «Ha, … keldi» /
+  «Yo'q, kelmadi»); at most once per pause (`REMIND_TOO_SOON`), migration
+  `0011_transfer_reminder.sql`.
+- **Changed (app):** the shop's card says whose it is («Bu karta … do'koniga tegishli»); waiting
+  for the transfer shows a card, «Pul kelmadi» a warning instead of the same clock; the order's
+  first stage is the money (O'tkazma kutilmoqda → To'lov tekshirilmoqda → To'landi), and lists
+  show the payment state of a new order («Tekshiring» for the owner).
+- **Changed (app):** the owner's «Buyurtmalar» tab counts active orders; transfers to check come
+  first, outlined, under «Pulni tekshirish kerak: N».
+- **Fixed (app):** «Ishga tayyor»: «O'zim yetkazaman» sits under «Kuryer» instead of squeezing it
+  word by word; toasts appear above the bottom button, never over a banner.
+- **Changed (app):** a catalog mostly without photos is a list (photo or section mark, name,
+  price, «+»); scrolling chips fade at the edge; the money tab tells how many orders are still in
+  progress; the product name has an example; checkout's two Telegram buttons look alike.
+
 ### Customer, courier, application and search (UX phase 4)
 - **Added (app):** a shop with more than 20 products gets a search over its catalog (Latin or
   Cyrillic, like the showcase), with «Hech narsa topilmadi» and a clear button.
