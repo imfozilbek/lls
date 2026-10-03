@@ -9,11 +9,14 @@ export type OwnerTab = "orders" | "menu" | "money" | "settings"
 
 interface OwnerState {
     tab: OwnerTab
+    /** The order a bot message opened: shown first in «Buyurtmalar» until put away. */
+    focusOrderId: string | null
     /** All products, hidden ones too. `null` until the first load. */
     products: ProductDTO[] | null
     /** The shop's couriers, waiting for approval first. `null` until the first load. */
     couriers: CourierDTO[] | null
     setTab(tab: OwnerTab): void
+    focusOrder(id: string | null): void
     loadCouriers(): Promise<void>
     /** One courier changed (days, "not today"): swap it in place. */
     replaceCourier(courier: CourierDTO): void
@@ -31,9 +34,11 @@ function refreshStorefront(): void {
 
 export const useOwner = create<OwnerState>((set, get) => ({
     tab: "orders",
+    focusOrderId: null,
     products: null,
     couriers: null,
     setTab: (tab): void => set({ tab }),
+    focusOrder: (id): void => set({ focusOrderId: id, tab: "orders" }),
     loadCouriers: async (): Promise<void> => {
         set({ couriers: await api.owner.couriers() })
     },

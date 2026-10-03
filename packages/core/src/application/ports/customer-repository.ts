@@ -3,6 +3,8 @@ import type { Customer } from "../../domain/entities/customer.js"
 export interface CustomerRepository {
     findById(id: string): Promise<Customer | null>
     findByTelegramId(telegramId: number): Promise<Customer | null>
+    /** Several people at once (the admin's list of shop owners): one query, unknown ids skipped. */
+    findManyByTelegramIds(telegramIds: readonly number[]): Promise<Customer[]>
     save(customer: Customer): Promise<void>
     /**
      * Stores a new customer unless one with this Telegram id already exists, and returns the

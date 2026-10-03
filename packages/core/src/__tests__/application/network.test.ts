@@ -433,6 +433,7 @@ describe("district network", () => {
             const [guliston] = await stats.execute({ actorTelegramId: ADMIN_TG })
             expect(guliston).toMatchObject({
                 name: "Guliston",
+                shops: 2,
                 radiusKm: 30,
                 waitMinutes: 10,
                 freeCouriers: 1,

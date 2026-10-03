@@ -1,4 +1,5 @@
 import {
+    BUSINESS_STATUSES,
     BUSINESS_TYPES,
     CATEGORIES,
     FEATURES,
@@ -197,6 +198,27 @@ export const widgetLoginBody = z
 
 /** Step «Bot» of the application: the name suggested for the new bot. */
 export const prepareManagedBotBody = z.object({ name: text(60) })
+
+/** «Platforma»: which list of shops the admin opens. */
+export const adminShopsQuery = z.object({ status: z.enum(BUSINESS_STATUSES) })
+
+export const reviewShopBody = z.object({ decision: z.enum(["approve", "reject"]) })
+
+/** A showcase deal: the commission on goods in percent (5 or 2.5), or `null` to end it. */
+export const marketplaceBody = z.object({
+    percent: z.number().min(0).max(99.99).multipleOf(0.01).nullable(),
+})
+
+/** A district: a new one needs a center and a radius; an existing one may change any of them. */
+export const districtBody = z.object({
+    name: z
+        .string()
+        .trim()
+        .regex(/^[\p{L}\p{N}' -]{2,60}$/u),
+    center: locationSchema.optional(),
+    radiusKm: z.number().min(0.5).max(200).optional(),
+    waitMinutes: z.number().int().min(1).max(240).optional(),
+})
 
 interface ValidationResult {
     success: boolean

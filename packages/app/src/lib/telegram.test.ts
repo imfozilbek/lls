@@ -20,6 +20,8 @@ describe("readLaunchParams", () => {
             business: false,
             courier: false,
             market: false,
+            order: null,
+            admin: null,
         })
     })
 
@@ -37,6 +39,8 @@ describe("readLaunchParams", () => {
                 business: true,
                 courier: false,
                 market: false,
+                order: null,
+                admin: null,
             })
         }
     })
@@ -62,6 +66,22 @@ describe("readLaunchParams", () => {
         expect(readLaunchParams(url, null)).toMatchObject({ shop: null, market: true })
     })
 
+    it("a bot message opens one order, or «Platforma» on what it is about", () => {
+        const order = readLaunchParams(new URL("https://x.dev/?shop=osh&order=o-1"), null)
+        expect(order).toMatchObject({ shop: "osh", order: "o-1", admin: null })
+        const market = new URL("https://x.dev/?mode=market&shop=osh&order=o-2")
+        expect(readLaunchParams(market, null)).toMatchObject({ market: true, order: "o-2" })
+        const at = (admin: string): unknown =>
+            readLaunchParams(new URL(`https://business.zumda.shop/?admin=${admin}`), null).admin
+        expect(at("applications")).toBe("applications")
+        expect(at("districts")).toBe("districts")
+        expect(at("shop_b-1")).toEqual({ shopId: "b-1" })
+        expect(at("everything")).toBeNull()
+        expect(at("shop_%3Cscript%3E")).toBeNull()
+        const odd = readLaunchParams(new URL("https://x.dev/?shop=osh&order=%3Cx%3E"), null)
+        expect(odd.order).toBeNull()
+    })
+
     it("detects the courier mode opened from the shop bot", () => {
         const url = new URL("https://x.pages.dev/?shop=osh&mode=courier")
         expect(readLaunchParams(url, null)).toEqual({
@@ -69,6 +89,8 @@ describe("readLaunchParams", () => {
             business: false,
             courier: true,
             market: false,
+            order: null,
+            admin: null,
         })
     })
 })

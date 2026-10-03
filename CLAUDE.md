@@ -42,10 +42,18 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
     search, and messages about showcase orders.
   - **Zumda | Business (`@zumdashop_business_bot`, `BUSINESS_BOT_TOKEN`):** owners and platform admins: «Mening bizneslarim»
     (`?mode=business`), applications, all messages to owners and admins about their businesses
-    (application, approval, showcase deal, alerts), the admins' approval buttons and commands
-    (`/reconnect`, `/market`, `/district`, `/network`). It creates and manages the shops' bots
-    (Bot Management Mode on).
+    (application, approval, showcase deal, alerts), the admins' approval buttons and
+    **«Platforma»** (`?mode=business`, admins only: applications, shops, showcase deal, «Botni
+    qayta ulash», districts and their network stats; API `/api/admin/*`). It creates and manages
+    the shops' bots (Bot Management Mode on).
   - **Zumda | Kuryer (`@zumdashop_kuryer_bot`):** one bot for every courier of every shop.
+- **Bots only notify; the work is done in the Mini App (owner's decision, October 2026).** Every
+  bot has exactly one command, `/start` (the deploy sets Zumda's three, `connectShopBot` sets a
+  shop bot's); invite links are `/start` payloads. A message may carry buttons that act at once
+  (`p:`, `a:`, `x:`, `k:`, `n:`, `net:`, `r:`) and a button that opens the Mini App on what it is
+  about (`telegram/app-links.ts`: an order `&order=<id>`, «Platforma» `&admin=…`). Any other text
+  gets one line («ish esa ilovada») with the button to the app. Never add a bot command: add a
+  screen.
 - **One bot per shop.** The chat, name and avatar are the shop's. The owner creates it with one
   button in Zumda | Business («Bot yaratish», Telegram **Managed Bots**, goal 14): the bot lives
   in the owner's own Telegram account, Zumda | Business manages it and gets its token by itself
@@ -95,7 +103,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
   in any channel (shop bot, showcase, district delivery). The **customer** pays it as a separate
   "Сервис" line in the cart, the order and the messages. The shop's prices never change: the shop
   gets its price in full.
-- The rate is set per business by a platform admin, like `/market`: `/fee <slug> <percent>`.
+- The rate is set per business by a platform admin in «Platforma», next to the showcase deal.
   Zero is allowed (pilots).
 - Every order stores a **service fee snapshot** (rate + amount, integer UZS), fixed when the
   order is placed; 0 when the rate is 0. Computed only on the server.
@@ -119,8 +127,9 @@ cover each one's whole process; what exactly comes from the meeting with them.
   order is paid to the shop's card before cooking.
 - **Done (goal 06):** every courier a business approves is **offered** once to deliver for other
   points of the district too (`in_network`, only the courier's own consent).
-- **Done:** a district is a circle (center + radius) the platform admin sets in the Zumda bot:
-  `/district <name> <lat>,<lng> <km>`, `/district <name> wait <min>`; `/network` shows it.
+- **Done:** a district is a circle (center + radius) the platform admin sets in «Platforma» →
+  «Tumanlar» (center typed or the admin's location, radius, wait); the same tab shows its network
+  stats.
   A shop belongs to the district its location falls in.
 - **Done:** when the shop accepts an order and none of its own couriers can take it now, the
   order goes to the free network couriers of the district (in the network, on shift, carrying no
@@ -129,7 +138,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
   default** (owner's decision); the owner may also hand an order over by hand. The customer paid
   that point's card before cooking: the network courier carries no money. Nobody took it in
   `wait` minutes (default 10):
-  the shop and the admins hear it once (no cron: checked on every network event and `/network`).
+  the shop and the admins hear it once (no cron: checked on every network event and when
+  «Tumanlar» opens).
 - **Temporary rule (owner decides later, goal 02):** the delivery fee of a network order stays
   with the shop and Zumda takes no share. It is a snapshot in the order (`delivery_fee_to`), set in
   one place (`NETWORK_DELIVERY_FEE_RECIPIENT`).
@@ -148,7 +158,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - Not decided (ask the owner, never invent): who gets the delivery fee when a network courier
   delivers, and whether Zumda takes a share of it. Until then: the shop keeps it (temporary rule).
 - Only shops with a marketplace deal (`business.marketplace`) appear in the showcase. A platform
-  admin sets the deal in the Zumda bot: `/market <slug> <percent>` or `/market <slug> off`.
+  admin sets the deal in «Platforma» → «Bizneslar»: the switch and the percent.
 - **Kinds of business (owner's decision, October 2026):** «Oziq-ovqat do'koni» (`grocery`),
   «Restoran» (`food`), «Xizmat ko'rsatish» (`service`). A water shop is a grocery store with the
   bottle deposit on (migration `0007` moved old `water` rows). Services use the normal order flow
@@ -330,7 +340,7 @@ wrangler.jsonc        # Bindings: DB (D1), BUCKET (R2), vars; run `wrangler type
 migrations/           # D1 SQL migrations
 ```
 No cron: add `scheduled()` only when a real client needs a timed job.
-Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through the Zumda bot
+Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through Zumda | Business
 (`src/alerts.ts`, one per kind per 10 min). "Bot blocked by the user" is not an alert.
 ```
 ```
@@ -450,7 +460,7 @@ comes from `getManagedBotToken` on its `managed_bot` update (table `managed_bots
 application takes it); a new token of a live shop's bot reconnects it at once; a new owner of the
 bot alerts the admins and never moves the shop. Telegram may not announce a token changed in
 @BotFather, so the current token is fetched again before every use (application, approval,
-`/reconnect`).
+«Botni qayta ulash»).
 
 **Roles** (per shop, one app, one auth): `customer` (default), `owner`
 (`business.owner_telegram_id`). Through the showcase (`X-Via: marketplace`) the role is always
@@ -770,7 +780,7 @@ deploy).
 (`https://business.zumda.shop`), `COURIER_APP_ORIGIN` (`https://delivery.zumda.shop`). The app
 picks its mode by address (`business.`, `delivery.`), locally by `?mode=`.
 **The bots' profiles are set by the deploy:** names «Zumda | Shop», «Zumda | Business»,
-«Zumda | Kuryer», descriptions, commands (admins get theirs in Zumda | Business), menu buttons,
+«Zumda | Kuryer», descriptions, the command list (`/start` only), menu buttons,
 avatars (`brand/*-avatar.jpg`, set only when the file changed: its hash is in D1
 `platform_settings`), the `/start` pictures (`brand/welcome/`). Only the Description Picture and
 `/setdomain` are manual (no Bot API method).
@@ -804,6 +814,8 @@ avatars (`brand/*-avatar.jpg`, set only when the file changed: its hash is in D1
 - [ ] Water (a grocery store with the bottle deposit): empty bottles + deposit; reorder
 - [ ] Service: «Xizmatlar», «Bajarilmoqda», «Bajarildi»
 - [ ] Zumda | Business in a browser: sign in with Telegram, manage a business, sign out
+- [ ] «Platforma» (admins): approve an application from its message, showcase deal, «Botni qayta
+      ulash», a district; every bot message opens the app on its order; bots have `/start` only
 - [ ] Grocery: weight items (kg steps); stop-list for today
 - [ ] Each order stores channel + commission (0 for own bot)
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report

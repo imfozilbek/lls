@@ -46,6 +46,7 @@ import {
     ClaimNetworkOrderUseCase,
     FreeNetworkCouriersUseCase,
     ListNetworkOrdersUseCase,
+    ListPlatformShopsUseCase,
     NetworkStatsUseCase,
     OfferNetworkUseCase,
     OverdueNetworkOrdersUseCase,
@@ -127,6 +128,7 @@ export interface UseCases {
     claimNetworkOrder: ClaimNetworkOrderUseCase
     overdueNetworkOrders: OverdueNetworkOrdersUseCase
     networkStats: NetworkStatsUseCase
+    listPlatformShops: ListPlatformShopsUseCase
     freeNetworkCouriers: FreeNetworkCouriersUseCase
 }
 
@@ -226,6 +228,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             claimNetworkOrder: new ClaimNetworkOrderUseCase(network),
             overdueNetworkOrders: new OverdueNetworkOrdersUseCase(network),
             networkStats: new NetworkStatsUseCase(network, admins),
+            listPlatformShops: new ListPlatformShopsUseCase(businesses, customers, admins, clock),
             freeNetworkCouriers: new FreeNetworkCouriersUseCase(network),
         },
     }

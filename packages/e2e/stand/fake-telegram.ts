@@ -157,6 +157,7 @@ const ALWAYS_OK = new Set([
     "editMessageText",
     "answerCallbackQuery",
     "setChatMenuButton",
+    "setMyCommands",
     "setMyDescription",
     "setMyShortDescription",
 ])

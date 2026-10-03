@@ -12,6 +12,7 @@ import {
     authenticate,
 } from "./auth.js"
 import { toErrorResponse } from "./http/errors.js"
+import { adminRoutes } from "./routes/admin.routes.js"
 import { courierRoutes } from "./routes/courier.routes.js"
 import { customerRoutes } from "./routes/customer.routes.js"
 import { imageRoutes } from "./routes/image.routes.js"
@@ -89,6 +90,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         .route("/owner", payoutCardRoutes)
         .route("/courier", courierRoutes)
         .route("/platform", platformRoutes)
+        .route("/admin", adminRoutes)
         .route("/showcase", showcaseRoutes)
     app.route("/api", api)
     app.route("/img", imageRoutes)

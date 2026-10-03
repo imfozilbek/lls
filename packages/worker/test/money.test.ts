@@ -198,7 +198,10 @@ describe("money: transfer before the shop starts, report, files", () => {
         })
         const card = client.telegram.edited.filter((m) => m.chatId === COURIER.id).at(-1)
         const buttons = card?.options?.keyboard?.inline_keyboard.flat() ?? []
-        expect(buttons.map((b) => b.callback_data)).toEqual([`a:${order.id}:delivered`])
+        expect(buttons.map((b) => b.callback_data ?? b.web_app?.url)).toEqual([
+            `a:${order.id}:delivered`,
+            "https://delivery.zumda.test/?mode=courier",
+        ])
         expect(card?.html).toContain("mijozdan pul olmang")
 
         await client.courierBot({

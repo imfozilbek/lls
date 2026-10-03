@@ -1,11 +1,12 @@
 import { DomainError, Phone, TRUSTED_SCOPE, languageFromTelegram } from "@zumda/core"
 
 import { notifyNetworkClaim } from "../network-flow.js"
+import { appKeyboard, courierAppUrl } from "../telegram/app-links.js"
 import { parseCourierInvite, parseNetworkCallback, parseOrderCallback } from "../telegram/format.js"
 import { escapeHtml } from "../telegram/gateway.js"
-import { Notifier, courierAppUrl } from "../telegram/notifier.js"
+import { Notifier } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
-import { callbackErrorText, isStart, openButton, toTelegramUser } from "../telegram/updates.js"
+import { callbackErrorText, isStart, toTelegramUser } from "../telegram/updates.js"
 import { sendWelcome, welcomePictureUrl } from "../telegram/welcome.js"
 
 import type { Services } from "../services.js"
@@ -111,8 +112,25 @@ async function greet(services: Services, message: IncomingMessage, t: BotTexts):
         ...welcome,
         html: fill(t.courierBotHome, { shops: names.join(", ") }),
         options: {
-            keyboard: openButton(t.myDeliveries, courierAppUrl(services.env.COURIER_APP_ORIGIN)),
+            keyboard: appKeyboard(t.myDeliveries, courierAppUrl(services.env.COURIER_APP_ORIGIN)),
         },
+    })
+}
+
+/** Anything but `/start`: the bot only notifies, the courier screen is where the work is. */
+async function pointToApp(
+    services: Services,
+    message: IncomingMessage,
+    t: BotTexts,
+): Promise<void> {
+    const links = message.from ? await services.couriers.listByPerson(message.from.id) : []
+    const token = services.env.COURIER_BOT_TOKEN
+    if (!links.some((link) => link.isActive)) {
+        await services.telegram.sendMessage(token, message.chat.id, t.courierBotWelcome)
+        return
+    }
+    await services.telegram.sendMessage(token, message.chat.id, t.onlyInApp, {
+        keyboard: appKeyboard(t.myDeliveries, courierAppUrl(services.env.COURIER_APP_ORIGIN)),
     })
 }
 
@@ -136,7 +154,9 @@ export async function handleCourierBotMessage(
     }
     if (isStart(message.text)) {
         await greet(services, message, t)
+        return
     }
+    await pointToApp(services, message, t)
 }
 
 /** "Забрал" / "Доставил × how paid" on an order card: the order's own shop decides. */
@@ -204,7 +224,7 @@ async function handleNetworkCallback(
                 callback.message.message_id,
                 inNetwork ? t.networkJoined : t.networkSkipped,
                 {
-                    keyboard: openButton(
+                    keyboard: appKeyboard(
                         t.myDeliveries,
                         courierAppUrl(services.env.COURIER_APP_ORIGIN),
                     ),

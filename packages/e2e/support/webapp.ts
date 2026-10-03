@@ -17,6 +17,15 @@ const REQUEST_CHAT_VERSION = 9.6
 
 export const GULISTAN = { latitude: 40.4897, longitude: 68.7842 }
 
+/** The query of a message's «open the app» button: open the app the way the button would. */
+export function appQueryOf(buttons: { web_app?: { url: string } }[]): string {
+    const url = buttons.find((b) => b.web_app)?.web_app?.url
+    if (!url) {
+        throw new Error("The message has no button to the app")
+    }
+    return new URL(url).search
+}
+
 const DARK_THEME = {
     bg_color: "#17212b",
     text_color: "#f5f5f5",

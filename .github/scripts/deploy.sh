@@ -314,26 +314,16 @@ set_avatar() {
     echo "avatar set"
 }
 
-# Everyone sees /start; the admins also see their commands in Zumda | Business.
+# Bots only notify; the work is done in the Mini App (owner's decision): every bot has /start only.
 readonly START_COMMAND='[{"command":"start","description":"Boshlash"}]'
-readonly ADMIN_COMMANDS='[
-    {"command":"start","description":"Boshlash"},
-    {"command":"market","description":"Vitrina: /market <slug> <foiz> yoki off"},
-    {"command":"district","description":"Tuman: /district <nom> <lat>,<lng> <km>"},
-    {"command":"network","description":"Tuman tarmog'"'"'i holati"},
-    {"command":"reconnect","description":"Botni qayta ulash: /reconnect <slug>"}
-]'
 
-# `set_admin_commands <token>`: per admin chat. An admin who never pressed Start in the bot has no
-# chat yet: that one is a warning, not a failed deploy.
-set_admin_commands() {
-    local admin result
+# `clear_admin_commands <token>`: the admins once had their own commands in Zumda | Business (one
+# list per admin chat); they are gone, «Platforma» in the app does it all. No chat, nothing to clear.
+clear_admin_commands() {
+    local admin
     for admin in ${PLATFORM_ADMIN_IDS//,/ }; do
-        result="$(curl -sS "https://api.telegram.org/bot${1}/setMyCommands" \
-            --data-urlencode "commands=${ADMIN_COMMANDS}" \
-            --data-urlencode "scope={\"type\":\"chat\",\"chat_id\":${admin}}")"
-        jq -e '.ok' <<<"$result" >/dev/null ||
-            echo "::warning::Admin commands not set for one admin: they must press Start in Zumda | Business first."
+        curl -sS "https://api.telegram.org/bot${1}/deleteMyCommands" \
+            --data-urlencode "scope={\"type\":\"chat\",\"chat_id\":${admin}}" >/dev/null || true
     done
 }
 
@@ -351,7 +341,7 @@ connect_platform_bot() {
     echo "webhook, menu button, name, descriptions, commands and avatar set"
 }
 
-# Zumda Business: owners' «Mening bizneslarim», applications, admins' commands. It creates and
+# Zumda Business: owners' «Mening bizneslarim», applications, admins' «Platforma». It creates and
 # manages the shops' bots, so it hears `managed_bot`.
 connect_business_bot() {
     log "Business bot"
@@ -363,7 +353,7 @@ connect_business_bot() {
         '{type: "web_app", text: "Bizneslarim", web_app: {url: $url}}')"
     set_profile "$BUSINESS_BOT_TOKEN" "$BUSINESS_NAME" "$BUSINESS_DESCRIPTION" "$BUSINESS_SHORT_DESCRIPTION"
     telegram "$BUSINESS_BOT_TOKEN" setMyCommands --data-urlencode "commands=${START_COMMAND}"
-    set_admin_commands "$BUSINESS_BOT_TOKEN"
+    clear_admin_commands "$BUSINESS_BOT_TOKEN"
     set_avatar "$BUSINESS_BOT_TOKEN" business zumda-business-avatar.jpg
     echo "webhook, menu button, name, descriptions, commands and avatar set"
 }

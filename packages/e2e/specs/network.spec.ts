@@ -8,14 +8,8 @@ import { expect, test } from "@playwright/test"
 import { courierBot } from "../stand/config.js"
 import { runSql } from "../stand/seed.js"
 import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
-import {
-    courierChat,
-    lastSeq,
-    businessChat,
-    messagesTo,
-    waitForMessage,
-} from "../support/telegram.js"
-import { openApp } from "../support/webapp.js"
+import { courierChat, lastSeq, messagesTo, waitForMessage } from "../support/telegram.js"
+import { appQueryOf, openApp } from "../support/webapp.js"
 
 import type { PlacedOrder } from "../support/stand.js"
 
@@ -213,19 +207,22 @@ test("the courier's app: «Заказы рядом» with «Беру», and leav
     expect(sherzod.filter((m) => m.text.includes(`#${next.number}`))).toEqual([])
 })
 
-test("nobody took it in 10 minutes: the shop and the admin hear it once", async () => {
+test("nobody took it in 10 minutes: the shop and the admin hear it once", async ({ page }) => {
     const since = await lastSeq()
     const order = await placeAndAccept()
     runSql(
         `UPDATE orders SET network_requested_at = network_requested_at - 11 * 60000 WHERE id = '${order.id}'`,
     )
-    await businessChat().send(PEOPLE.admin, "/network")
-    await waitForMessage(PEOPLE.admin.id, "Tuman tarmog'i, 7 kun", since)
-    await waitForMessage(PEOPLE.admin.id, `#${order.number} buyurtma 10 daqiqa`, since)
+    // «Tumanlar» in «Platforma» also checks for late network orders (there is no cron).
+    expect((await apiAs(PEOPLE.admin, "/admin/districts", { businessBot: true })).status).toBe(200)
+    const late = await waitForMessage(PEOPLE.admin.id, `#${order.number} buyurtma 10 daqiqa`, since)
     await waitForMessage(PEOPLE.foodOwner.id, `#${order.number} buyurtma 10 daqiqadan beri`, since)
+
     const again = await lastSeq()
-    await businessChat().send(PEOPLE.admin, "/network")
-    await waitForMessage(PEOPLE.admin.id, "Tuman tarmog'i, 7 kun", again)
+    await openApp(page, { user: PEOPLE.admin, businessBot: true, query: appQueryOf(late.buttons) })
+    const district = page.getByRole("listitem").filter({ hasText: "Guliston" })
+    await expect(district).toContainText("Kutmoqda")
+    await expect(district).toContainText("Do'konlar")
     const owners = await messagesTo(PEOPLE.foodOwner.id, again)
     expect(owners.filter((m) => m.text.includes("10 daqiqadan beri"))).toEqual([])
     await ownCourierOff(false)

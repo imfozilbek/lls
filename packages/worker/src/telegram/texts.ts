@@ -63,15 +63,14 @@ const BASE = {
         showcaseJoined:
             "🛍 {shop} Zumda vitrinasiga qo'shildi. Mijozlar uni Zumda botida topadi.\nKomissiya: vitrina orqali sotilgan tovarlarning {rate}%. O'z botingiz orqali sotuvdan komissiya olinmaydi.",
         showcaseLeft: "{shop} Zumda vitrinasidan olindi.",
-        showcaseUsage:
-            "Buyruq: /market <slug> <foiz>, masalan /market osh-markaz 5\nO'chirish: /market <slug> off",
-        showcaseSet: "✅ {shop}: vitrinada, komissiya {rate}%",
-        showcaseOff: "✅ {shop}: vitrinadan olindi",
         botNotConnected:
-            "⚠️ {shop} tasdiqlandi, lekin bot ulanmadi: {reason}\nQayta urinish: /reconnect {slug}",
-        botConnected: "✅ {shop}: bot ulandi.",
-        reconnectUsage: "Buyruq: /reconnect <slug>, masalan /reconnect osh-markaz",
-        shopNotActive: "{shop} hali tasdiqlanmagan.",
+            "⚠️ {shop} tasdiqlandi, lekin bot ulanmadi: {reason}\n«Platforma»da «Botni qayta ulash»ni bosing.",
+        openPlatform: "🛠 Platformani ochish",
+        openApplication: "📋 Arizani ochish",
+        openOrder: "📱 Buyurtmani ochish",
+        openInApp: "📱 Ilovada ochish",
+        startCommand: "Boshlash",
+        onlyInApp: "Bu yerga xabarlar keladi, ish esa ilovada: pastdagi tugmani bosing 👇",
         alertServerError: "🚨 Zumda serverida xato",
         alertNotificationFailed: "🚨 Zumda: xabar yuborilmadi",
         alertQuiet: "Shu turdagi keyingi ogohlantirish {minutes} daqiqadan keyin.",
@@ -142,15 +141,6 @@ const BASE = {
             "✅ Siz tuman tarmog'idasiz. Smenaga chiqing, yaqindagi buyurtmalar shu yerga keladi.",
         networkSkipped: "Yaxshi. «Yetkazishlarim»da yoqish mumkin.",
         callbackTaken: "Bu buyurtmani allaqachon olishdi",
-        districtUsage:
-            "Format: /district <nom> <kenglik>,<uzunlik> <km> yoki /district <nom> wait <daqiqa>",
-        districtSaved:
-            "📍 {name} tumani: radius {km} km, kutish {min} daqiqa. Ichidagi do'konlar: {shops}.",
-        networkReportTitle: "📊 Tuman tarmog'i, 7 kun",
-        networkReportLine:
-            "<b>{name}</b> ({km} km): bo'sh kuryerlar {free}, kutayotgan buyurtmalar {waiting}; yetkazildi {delivered}, shundan tarmoq {network}",
-        networkNoDistricts:
-            "Hali tumanlar yo'q. Qo'shish: /district <nom> <kenglik>,<uzunlik> <km>",
         inviteInvalid: "😔 Bu taklif havolasi ishlamaydi. Do'kon egasidan yangisini so'rang.",
         myDeliveries: "🚚 Yetkazishlarim",
         courierCard: "🚚 Yetkazib berish",

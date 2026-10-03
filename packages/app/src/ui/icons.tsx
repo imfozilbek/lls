@@ -205,6 +205,13 @@ export const CardIcon = (p: IconProps): React.JSX.Element => (
         <path d="M2.5 10h19M6.5 15h4" />
     </Icon>
 )
+/** «Platforma»: a shield with a check, the admins' section. */
+export const ShieldIcon = (p: IconProps): React.JSX.Element => (
+    <Icon {...p}>
+        <path d="M12 3.5 5 6v5.2c0 4.3 2.9 7.9 7 9.3 4.1-1.4 7-5 7-9.3V6l-7-2.5Z" />
+        <path d="m9 12 2.2 2.2L15.5 10" />
+    </Icon>
+)
 export const QrIcon = (p: IconProps): React.JSX.Element => (
     <Icon {...p}>
         <rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.5" />

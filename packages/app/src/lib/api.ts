@@ -2,6 +2,9 @@ import { webApp } from "./telegram.js"
 
 import type { Shop } from "../stores/session.js"
 import type {
+    BusinessStatus,
+    DistrictStats,
+    PlatformShopDTO,
     CourierDTO,
     CourierHomeDTO,
     CourierProfileDTO,
@@ -347,6 +350,8 @@ export const api = {
     },
 
     platform: {
+        /** Who opened Zumda | Business: a platform admin also gets «Platforma». */
+        me: (): Promise<{ admin: boolean }> => request("GET", "/api/platform/me"),
         myShops: (): Promise<ShopOwnerDTO[]> => request("GET", "/api/platform/shops"),
         register: (body: RegisterShopBody): Promise<ShopOwnerDTO> =>
             request("POST", "/api/platform/shops", body),
@@ -360,6 +365,36 @@ export const api = {
         setBotPhoto: (shopId: string, jpeg: Blob): Promise<void> =>
             request("PUT", `/api/platform/shops/${shopId}/bot-photo`, jpeg),
     },
+}
+
+/** What «Platforma» does to a shop: what came back, and whether its bot answers now. */
+export interface AdminShopResult {
+    shop: Omit<ShopOwnerDTO, "payoutCard">
+    bot: { connected: true } | { connected: false; reason: string } | null
+}
+
+export interface DistrictInput {
+    name: string
+    center?: { latitude: number; longitude: number }
+    radiusKm?: number
+    waitMinutes?: number
+}
+
+/** «Platforma»: platform admins only (the Worker checks it on every call). */
+export const adminApi = {
+    shops: async (status: BusinessStatus): Promise<PlatformShopDTO[]> =>
+        (await request<Page<PlatformShopDTO>>("GET", `/api/admin/shops?status=${status}`)).data,
+    review: (id: string, decision: "approve" | "reject"): Promise<AdminShopResult> =>
+        request("PATCH", `/api/admin/shops/${id}`, { decision }),
+    reconnect: (id: string): Promise<AdminShopResult> =>
+        request("POST", `/api/admin/shops/${id}/reconnect`),
+    /** The showcase deal in percent, or `null` to take the shop out. */
+    marketplace: (id: string, percent: number | null): Promise<AdminShopResult> =>
+        request("PUT", `/api/admin/shops/${id}/marketplace`, { percent }),
+    districts: async (): Promise<DistrictStats[]> =>
+        (await request<Page<DistrictStats>>("GET", "/api/admin/districts")).data,
+    saveDistrict: (body: DistrictInput): Promise<unknown> =>
+        request("PUT", "/api/admin/districts", body),
 }
 
 /** Safety cap: 20 pages × 100 = 2000 products, far above a small shop's menu. */
