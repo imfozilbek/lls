@@ -1,9 +1,10 @@
 import { zValidator } from "@hono/zod-validator"
-import { EntityNotFoundError, OrderStatus, toShopOwnerDTO } from "@zumda/core"
+import { BusinessStatus, EntityNotFoundError, OrderStatus, toShopOwnerDTO } from "@zumda/core"
 import { Hono } from "hono"
 
 import { requireOwner, shopOf } from "../auth.js"
-import { deleteImage, readImageBody, storeImage } from "../http/images.js"
+import { ApiError } from "../http/errors.js"
+import { deleteImage, readImageBody, readJpeg, storeImage } from "../http/images.js"
 import {
     assignCourierBody,
     courierReviewBody,
@@ -18,9 +19,27 @@ import {
     onInvalid,
 } from "../http/schemas.js"
 import { networkAfterStep, notifyOwnerStep, reportOverdueNetworkOrders } from "../network-flow.js"
+import { TelegramApiError } from "../telegram/gateway.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
 
 import type { AppEnv } from "../env.js"
+import type { Services } from "../services.js"
+
+/** Sets the picture the app drew; Telegram's refusal is a 502 the app can name. */
+export async function setShopBotPhoto(
+    services: Services,
+    shopId: string,
+    jpeg: Uint8Array,
+): Promise<void> {
+    try {
+        await new Notifier(services).shopBotPhoto(shopId, jpeg)
+    } catch (error) {
+        if (error instanceof TelegramApiError) {
+            throw new ApiError(502, "BOT_PHOTO_FAILED", "Telegram did not accept the bot picture")
+        }
+        throw error
+    }
+}
 
 /** "Мой магазин": only the owner of the shop from `X-Shop`. */
 export const ownerRoutes = new Hono<AppEnv>()
@@ -29,12 +48,23 @@ export const ownerRoutes = new Hono<AppEnv>()
     .get("/shop", (c) => c.json(toShopOwnerDTO(shopOf(c), c.get("services").clock.now())))
 
     .patch("/shop", zValidator("json", shopPatchBody, onInvalid), async (c) => {
-        const shop = await c.get("services").useCases.updateShop.execute({
+        const services = c.get("services")
+        const patch = c.req.valid("json")
+        const shop = await services.useCases.updateShop.execute({
             actorTelegramId: c.get("auth").user.id,
             businessId: shopOf(c).id,
-            patch: c.req.valid("json"),
+            patch,
         })
+        // The bot's description carries the shop's name; approval sets it the first time.
+        if (patch.name !== undefined && shop.status === BusinessStatus.ACTIVE) {
+            inBackground(c.executionCtx, services, new Notifier(services).shopBotDescriptions(shop))
+        }
         return c.json(shop)
+    })
+
+    .put("/shop/bot-photo", async (c) => {
+        await setShopBotPhoto(c.get("services"), shopOf(c).id, await readJpeg(c.req.raw))
+        return c.body(null, 204)
     })
 
     .put("/shop/logo", async (c) => {

@@ -139,6 +139,13 @@ describe("platform bot", () => {
             status: string
         }>()
         expect(status?.status).toBe("active")
+        // Zumda writes the bot's description: the shop's name and «Zumda asosida ishlaydi».
+        expect(client.telegram.descriptions).toEqual([
+            expect.objectContaining({
+                token: SHOP_BOT_TOKEN,
+                shortDescription: "Osh <Markaz>: uyga buyurtma bering. Zumda asosida ishlaydi",
+            }),
+        ])
     })
 })
 

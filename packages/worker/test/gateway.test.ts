@@ -92,6 +92,39 @@ describe("HttpTelegramGateway", () => {
         })
     })
 
+    it("sets the bot's picture as a multipart upload, and both descriptions", async () => {
+        const forms: FormData[] = []
+        const urls: string[] = []
+        const fetcher = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+            urls.push(String(input))
+            if (init?.body instanceof FormData) {
+                forms.push(init.body)
+            }
+            return Promise.resolve(new Response(JSON.stringify({ ok: true, result: true })))
+        })
+        const gateway = new HttpTelegramGateway(fetcher as typeof fetch)
+        await gateway.setProfilePhoto("t", new Uint8Array([0xff, 0xd8, 0xff]))
+        await gateway.setDescriptions("t", { description: "Long", shortDescription: "Short" })
+
+        expect(urls.map((u) => u.split("/").at(-1))).toEqual([
+            "setMyProfilePhoto",
+            "setMyDescription",
+            "setMyShortDescription",
+        ])
+        expect(JSON.parse(String(forms[0]?.get("photo")))).toEqual({
+            type: "static",
+            photo: "attach://avatar",
+        })
+        const file = forms[0]?.get("avatar")
+        expect(file instanceof Blob ? file.type : null).toBe("image/jpeg")
+        expect(JSON.parse(String(fetcher.mock.calls[1]?.[1]?.body))).toEqual({
+            description: "Long",
+        })
+        expect(JSON.parse(String(fetcher.mock.calls[2]?.[1]?.body))).toEqual({
+            short_description: "Short",
+        })
+    })
+
     it("throws TelegramApiError when Telegram says no", async () => {
         const { fetcher } = fakeFetch(null, false)
         await expect(new HttpTelegramGateway(fetcher).getMe("bad")).rejects.toThrow(

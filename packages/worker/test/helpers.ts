@@ -5,6 +5,7 @@ import { createApp } from "../src/app.js"
 import { TelegramApiError } from "../src/telegram/gateway.js"
 
 import type {
+    BotDescriptions,
     BotInfo,
     MessageOptions,
     OutgoingFile,
@@ -70,6 +71,10 @@ export class FakeTelegram implements TelegramGateway {
     readonly webhooks: { token: string; url: string; secret: string }[] = []
     readonly menuButtons: { token: string; url: string }[] = []
     readonly answered: string[] = []
+    readonly photos: { token: string; jpeg: Uint8Array }[] = []
+    readonly descriptions: ({ token: string } & BotDescriptions)[] = []
+    /** Simulates Telegram refusing a new bot picture. */
+    failPhotos = false
     readonly documents: { token: string; chatId: number; file: OutgoingFile; caption?: string }[] =
         []
     /** Simulates a blocked bot or Telegram outage: replies to users fail. */
@@ -135,6 +140,15 @@ export class FakeTelegram implements TelegramGateway {
     }
     async setMenuButton(token: string, _text: string, url: string): Promise<void> {
         this.menuButtons.push({ token, url })
+    }
+    async setProfilePhoto(token: string, jpeg: Uint8Array): Promise<void> {
+        if (this.failPhotos) {
+            throw new TelegramApiError("setMyProfilePhoto", "Bad Request: PHOTO_INVALID")
+        }
+        this.photos.push({ token, jpeg })
+    }
+    async setDescriptions(token: string, texts: BotDescriptions): Promise<void> {
+        this.descriptions.push({ token, ...texts })
     }
 }
 

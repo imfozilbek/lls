@@ -430,6 +430,34 @@ export class Notifier {
         }
     }
 
+    /** Zumda's picture on the shop bot: the shop's logo (or name) with the Zumda mark. */
+    async shopBotPhoto(shopId: string, jpeg: Uint8Array): Promise<void> {
+        const credentials = await this.services.businesses.getBotCredentials(shopId)
+        if (!credentials) {
+            throw new Error(`No bot credentials for shop ${shopId}`)
+        }
+        await this.services.telegram.setProfilePhoto(credentials.token, jpeg)
+    }
+
+    /** The shop bot's description and profile line, always with «Zumda asosida ishlaydi». */
+    async shopBotDescriptions(shop: ShopOwnerDTO): Promise<void> {
+        const credentials = await this.services.businesses.getBotCredentials(shop.id)
+        if (!credentials) {
+            throw new Error(`No bot credentials for shop ${shop.id}`)
+        }
+        const texts = textsFor(Language.UZ, shop.type)
+        await this.services.telegram.setDescriptions(credentials.token, {
+            description: fitShopName(texts.shopBotDescription, shop.name, BOT_DESCRIPTION_MAX, {
+                openMenu: texts.openMenu,
+            }),
+            shortDescription: fitShopName(
+                texts.shopBotShortDescription,
+                shop.name,
+                BOT_SHORT_DESCRIPTION_MAX,
+            ),
+        })
+    }
+
     /** Approve: connect the shop bot (webhook + menu button) and send the owner their link. */
     async shopReviewed(shop: ShopOwnerDTO, workerOrigin: string): Promise<void> {
         const platformToken = this.services.env.PLATFORM_BOT_TOKEN
@@ -464,6 +492,10 @@ export class Notifier {
             platformToken,
             shop.ownerTelegramId,
             `${fill(texts.shopApproved, { shop: name })}\n${link}`,
+        )
+        // The shop already works: a description Telegram refused only reaches the admins.
+        await this.shopBotDescriptions(shop).catch((error: unknown) =>
+            alertAdmins(this.services, "notification_failed", error),
         )
     }
 
@@ -597,6 +629,24 @@ export class Notifier {
  * Run a notification after the response; a failure never breaks the request. It is logged, and
  * the admins hear about it unless the recipient simply blocked the bot.
  */
+/** Bot API limits for `setMyDescription` and `setMyShortDescription`. */
+const BOT_DESCRIPTION_MAX = 512
+const BOT_SHORT_DESCRIPTION_MAX = 120
+const ELLIPSIS = "…"
+
+/** Fills `{shop}`, shortening a long shop name so the text stays within Telegram's limit. */
+function fitShopName(
+    template: string,
+    shopName: string,
+    max: number,
+    values: Record<string, string> = {},
+): string {
+    const rest = fill(template, { ...values, shop: "" }).length
+    const room = max - rest
+    const shop = shopName.length <= room ? shopName : `${shopName.slice(0, room - 1)}${ELLIPSIS}`
+    return fill(template, { ...values, shop })
+}
+
 export function inBackground(
     ctx: { waitUntil(promise: Promise<unknown>): void },
     services: Services,

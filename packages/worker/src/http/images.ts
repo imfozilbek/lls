@@ -70,6 +70,16 @@ export function looksLike(type: string, body: ArrayBuffer): boolean {
     }
 }
 
+/** A JPEG made by the app (a bot picture): anything else is refused before Telegram sees it. */
+export async function readJpeg(request: Request): Promise<Uint8Array> {
+    const type = request.headers.get("Content-Type")?.split(";")[0]?.trim().toLowerCase()
+    const body = await readImageBody(request)
+    if (type !== "image/jpeg" || body.byteLength === 0 || !looksLike(type, body)) {
+        throw new ApiError(415, "UNSUPPORTED_IMAGE", "Upload a JPEG image")
+    }
+    return new Uint8Array(body)
+}
+
 /** Stores an uploaded image under `prefix` and returns its R2 key. */
 export async function storeImage(
     bucket: R2Bucket,

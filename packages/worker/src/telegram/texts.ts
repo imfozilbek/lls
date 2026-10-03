@@ -74,6 +74,9 @@ const BASE = {
         alertNotificationFailed: "🚨 Zumda: xabar yuborilmadi",
         alertQuiet: "Shu turdagi keyingi ogohlantirish {minutes} daqiqadan keyin.",
         applicationReceived: "✅ {shop} arizasi qabul qilindi. Tekshiruvdan so'ng xabar beramiz.",
+        shopBotDescription:
+            "{shop} — buyurtmalarni shu yerda qabul qilamiz.\nPastdagi «{openMenu}» tugmasini bosing: tanlang, buyurtma bering — eshigingizgacha olib kelamiz.\n\nZumda asosida ishlaydi · zumda.shop",
+        shopBotShortDescription: "{shop}: uyga buyurtma bering. Zumda asosida ishlaydi",
         shopApproved: "🎉 {shop} ishga tushdi! Mijozlaringizga ushbu havolani yuboring:",
         shopRejected: "😔 {shop} arizasi rad etildi. Savollar bo'lsa, bizga yozing.",
         newShop: "🏪 Yangi do'kon",

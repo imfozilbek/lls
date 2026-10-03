@@ -2,10 +2,13 @@ import { zValidator } from "@hono/zod-validator"
 import { Hono } from "hono"
 
 import { ApiError } from "../http/errors.js"
+import { readJpeg } from "../http/images.js"
 import { rateLimit } from "../http/rate-limit.js"
-import { onInvalid, registerShopBody } from "../http/schemas.js"
+import { idParam, onInvalid, registerShopBody } from "../http/schemas.js"
 import { TelegramApiError } from "../telegram/gateway.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
+
+import { setShopBotPhoto } from "./owner.routes.js"
 
 import type { AppEnv } from "../env.js"
 import type { BotInfo, TelegramGateway } from "../telegram/gateway.js"
@@ -63,3 +66,15 @@ export const platformRoutes = new Hono<AppEnv>()
             return c.json(registered, 201)
         },
     )
+
+    /** Right after connecting: the new bot gets its picture (the shop's name + the Zumda mark). */
+    .put("/shops/:id/bot-photo", zValidator("param", idParam, onInvalid), async (c) => {
+        const services = c.get("services")
+        const { id } = c.req.valid("param")
+        const mine = await services.useCases.listMyShops.execute(c.get("auth").user.id)
+        if (!mine.some((shop) => shop.id === id)) {
+            throw new ApiError(404, "NOT_FOUND", "Shop not found")
+        }
+        await setShopBotPhoto(services, id, await readJpeg(c.req.raw))
+        return c.body(null, 204)
+    })
