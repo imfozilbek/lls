@@ -1,7 +1,8 @@
 import { ValidationError } from "../errors/validation.error.js"
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/
-const DEFAULT_BRAND_COLOR = "#0ea5e9"
+/** Zumda green: a new shop wears it until the owner picks a color. */
+const DEFAULT_BRAND_COLOR = "#15803d"
 
 export class BrandColor {
     private constructor(public readonly hex: string) {}
@@ -9,7 +10,7 @@ export class BrandColor {
     static create(value: string): BrandColor {
         const normalized = value.trim().toLowerCase()
         if (!HEX_COLOR.test(normalized)) {
-            throw ValidationError.fromField("brandColor", "Must be a hex color like #0ea5e9", value)
+            throw ValidationError.fromField("brandColor", "Must be a hex color like #15803d", value)
         }
         return new BrandColor(normalized)
     }

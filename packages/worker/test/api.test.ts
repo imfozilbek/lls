@@ -176,7 +176,7 @@ describe("inside a shop", () => {
             slug,
             name: "Osh Markaz",
             isOpen: true,
-            brandColor: "#0ea5e9",
+            brandColor: "#15803d",
         })
         expect(shop).not.toHaveProperty("ownerTelegramId")
         expect(shop).toMatchObject({ viewerRole: "customer" })
