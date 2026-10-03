@@ -170,6 +170,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   `production` environment, `scripts/check-secrets.sh` in CI and as a git pre-commit hook,
   Dependabot, `SECURITY.md`, `CODEOWNERS`
 - **Changed:** the workers.dev subdomain is random instead of derived from the account id
+- **Changed:** CI runs once per change: `pull_request` for a PR, `push` only for `main` (a push
+  to a PR branch ran quality-gates and e2e twice)
 - **Changed:** no em dash anywhere (owner's decision): product texts, code and docs use a colon,
   a comma, a period or a hyphen; `scripts/check-dashes.sh` checks it in CI and pre-commit
 - **Added:** Claude deploys `main` again with the `deploy` dispatch event (`repository_dispatch`):
