@@ -497,6 +497,15 @@ export class Notifier {
         ])
     }
 
+    /**
+     * Right after the application: the shop's bot answers («Tez orada ochiladi»), opens the
+     * storefront and carries Zumda's description. Approval connects it again.
+     */
+    async connectApplied(shop: ShopOwnerDTO, workerOrigin: string): Promise<void> {
+        await this.connectShopBot(shop, workerOrigin)
+        await this.shopBotDescriptions(shop)
+    }
+
     /** The owner created a bot from Zumda Business: back to the application, no token to copy. */
     async managedBotCreated(ownerTelegramId: number, botUsername: string): Promise<void> {
         const texts = textsFor(await this.languageOf(ownerTelegramId))
@@ -537,10 +546,16 @@ export class Notifier {
         const texts = textsFor(await this.languageOf(shop.ownerTelegramId), shop.type)
         const name = `<b>${escapeHtml(shop.name)}</b>`
         if (shop.status !== "active") {
+            const reason = shop.rejection?.reason
+            const lines = [
+                fill(texts.shopRejected, { shop: name }),
+                reason ? fill(texts.shopRejectedReason, { reason: escapeHtml(reason) }) : null,
+                shop.rejection ? texts.shopRejectedNext : null,
+            ]
             await this.services.telegram.sendMessage(
                 businessToken,
                 shop.ownerTelegramId,
-                fill(texts.shopRejected, { shop: name }),
+                lines.filter((line) => line !== null).join("\n"),
                 { keyboard: this.businessesKeyboard(texts) },
             )
             return
@@ -550,7 +565,12 @@ export class Notifier {
         await this.services.telegram.sendMessage(
             businessToken,
             shop.ownerTelegramId,
-            `${fill(texts.shopApproved, { shop: name })}\n${link}`,
+            [
+                `${fill(texts.shopApproved, { shop: name })}\n${link}`,
+                shop.hasPayoutCard ? null : `\n${texts.shopApprovedNeedsCard}`,
+            ]
+                .filter((line) => line !== null)
+                .join(""),
             { keyboard: this.businessesKeyboard(texts) },
         )
         // The shop already works: a description Telegram refused only reaches the admins.

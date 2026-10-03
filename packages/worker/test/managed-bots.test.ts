@@ -254,11 +254,12 @@ describe("a bot created from Zumda Business (Managed Bots)", () => {
         expect(client.telegram.webhooks.at(-1)?.token).toBe(NEW_MANAGED_TOKEN)
     })
 
-    it("a pending shop's new token waits for approval: no webhook yet", async () => {
+    it("a pending shop's bot already answers, and a new token reconnects it", async () => {
         await managedBotUpdate(client, OWNER)
         await applyWithManagedBot(client)
+        expect(client.telegram.webhooks).toHaveLength(1)
         await managedBotUpdate(client, OWNER, NEW_MANAGED_TOKEN)
-        expect(client.telegram.webhooks).toHaveLength(0)
+        expect(client.telegram.webhooks.at(-1)?.token).toBe(NEW_MANAGED_TOKEN)
     })
 
     it("a token changed in BotFather without an event is fetched fresh for the application", async () => {
@@ -293,10 +294,11 @@ describe("a bot created from Zumda Business (Managed Bots)", () => {
     it("Telegram refusing the token at approval warns the admin; the shop is not lost", async () => {
         await managedBotUpdate(client, OWNER)
         const shop = (await (await applyWithManagedBot(client)).json()) as { id: string }
+        const applied = client.telegram.webhooks.length
         // Management turned off, for example: Telegram no longer gives the token.
         client.telegram.managedTokens.delete(MANAGED_BOT.id)
         await approve(client, shop.id)
-        expect(client.telegram.webhooks).toHaveLength(0)
+        expect(client.telegram.webhooks).toHaveLength(applied)
         expect(client.telegram.sent.at(-1)?.chatId).toBe(ADMIN.id)
         expect(client.telegram.sent.at(-1)?.html).toContain("Botni qayta ulash")
     })

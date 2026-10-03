@@ -99,6 +99,13 @@ describe("Zumda Business bot", () => {
         const approve = toAdmin?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data
         expect(approve).toBe(`r:${shop.id}:approve`)
 
+        // The application already connected the bot («Tez orada ochiladi»); count from here.
+        expect(client.telegram.webhooks).toHaveLength(1)
+        expect(client.telegram.descriptions).toHaveLength(1)
+        client.telegram.webhooks.splice(0)
+        client.telegram.menuButtons.splice(0)
+        client.telegram.descriptions.splice(0)
+
         const fromStranger = await client.request(
             "/tg/business",
             update(
@@ -172,6 +179,10 @@ describe("Zumda Business bot: a failed connection on approval", () => {
             },
         })
         const shop = (await registered.json()) as { id: string; slug: string }
+        // The application already connected the bot («Tez orada ochiladi»); count from here.
+        expect(client.telegram.webhooks).toHaveLength(1)
+        client.telegram.webhooks.splice(0)
+        client.telegram.menuButtons.splice(0)
 
         client.telegram.failWebhooks = true
         await platform({
@@ -259,7 +270,8 @@ describe("the Zumda bot is for customers only", () => {
         await zumdaShop({
             callback_query: { id: "cb-old", from: ADMIN, data: `r:${shop.id}:approve` },
         })
-        expect(client.telegram.webhooks).toHaveLength(1)
+        // Once at the application, once at the approval.
+        expect(client.telegram.webhooks).toHaveLength(2)
         expect(client.telegram.answered).toContain("cb-old")
     })
 })

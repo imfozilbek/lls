@@ -89,10 +89,12 @@ describe("«Platforma»: the admins' section of Zumda | Business (/api/admin)", 
             shop: { status: "active" },
             bot: { connected: true },
         })
-        expect(client.telegram.webhooks).toHaveLength(1)
-        expect(client.telegram.commands).toEqual([
-            { token: SHOP_BOT_TOKEN, commands: [{ command: "start", description: "Boshlash" }] },
-        ])
+        // Connected at the application («Tez orada ochiladi»), and again at the approval.
+        expect(client.telegram.webhooks).toHaveLength(2)
+        expect(client.telegram.commands.at(-1)).toEqual({
+            token: SHOP_BOT_TOKEN,
+            commands: [{ command: "start", description: "Boshlash" }],
+        })
         const toOwner = client.telegram.sent.filter((m) => m.chatId === OWNER.id).at(-1)
         expect(toOwner?.html).toContain("ishga tushdi")
         expect(toOwner?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
@@ -130,7 +132,8 @@ describe("«Platforma»: the admins' section of Zumda | Business (/api/admin)", 
             method: "POST",
         })
         expect(response.status).toBe(422)
-        expect(client.telegram.webhooks).toHaveLength(0)
+        // Only the application's connection: the refused reconnect added none.
+        expect(client.telegram.webhooks).toHaveLength(1)
     })
 
     it("only an admin, only from Zumda | Business: every other door is closed", async () => {

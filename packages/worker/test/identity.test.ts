@@ -82,8 +82,9 @@ describe("a shop owner cannot borrow other shops' customers", () => {
         await shareContactWithShopA()
     })
 
-    it("a pending shop opens only for its owner", async () => {
-        expect((await forgedInB(CUSTOMER)("/api/me")).status).toBe(404)
+    it("a pending shop opens to everyone («Tez orada ochiladi») but takes no orders", async () => {
+        const shop = await json<{ opensSoon: boolean }>(await forgedInB(CUSTOMER)("/api/shop"))
+        expect(shop.opensSoon).toBe(true)
         expect((await forgedInB(ATTACKER)("/api/shop")).status).toBe(200)
     })
 
@@ -121,11 +122,11 @@ describe("a shop owner cannot borrow other shops' customers", () => {
         expect(await json(order)).toMatchObject({ error: { code: "PHONE_REQUIRED" } })
     })
 
-    it("a disabled shop is closed to everyone, its owner too", async () => {
+    it("a disabled shop is closed to everyone but its owner, who fixes it there", async () => {
         await env.DB.prepare("UPDATE businesses SET status = 'disabled' WHERE id = ?")
             .bind(shopB.id)
             .run()
-        expect((await forgedInB(ATTACKER)("/api/shop")).status).toBe(404)
+        expect((await forgedInB(ATTACKER)("/api/shop")).status).toBe(200)
         expect((await forgedInB(CUSTOMER)("/api/shop")).status).toBe(404)
         expect(
             (await client.as(OWNER, { botToken: SHOP_BOT_TOKEN, shop: shopA })("/api/shop")).status,

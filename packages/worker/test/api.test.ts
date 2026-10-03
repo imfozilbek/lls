@@ -127,7 +127,7 @@ describe("onboarding through the Zumda Business bot", () => {
         const body = await json<{ error: { code: string; details: { field: string }[] } }>(response)
         expect(body.error.code).toBe("VALIDATION_ERROR")
         expect(body.error.details.map((d) => d.field)).toEqual(
-            expect.arrayContaining(["botToken", "name", "type", "deliveryFee", "payoutCard"]),
+            expect.arrayContaining(["botToken", "name", "type", "deliveryFee"]),
         )
     })
 })

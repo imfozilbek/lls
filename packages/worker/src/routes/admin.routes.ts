@@ -77,7 +77,7 @@ export const adminRoutes = new Hono<AppEnv>()
             const shop = await services.useCases.reviewShop.execute({
                 actorTelegramId: c.get("auth").user.id,
                 businessId: c.req.valid("param").id,
-                decision: c.req.valid("json").decision,
+                ...c.req.valid("json"),
             })
             const bot = await connectReviewedShop(services, shop, new URL(c.req.url).origin)
             return c.json({ shop: withoutCard(shop), bot: shop.status === "active" ? bot : null })

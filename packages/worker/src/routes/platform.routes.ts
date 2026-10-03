@@ -102,14 +102,28 @@ export const platformRoutes = new Hono<AppEnv>()
                 ownerTelegramId: auth.user.id,
                 bot,
             })
+            const notifier = new Notifier(services)
+            inBackground(c.executionCtx, services, notifier.shopRegistered(registered))
+            // The shop's bot answers from the application on: «Tez orada ochiladi».
             inBackground(
                 c.executionCtx,
                 services,
-                new Notifier(services).shopRegistered(registered),
+                notifier.connectApplied(registered, new URL(c.req.url).origin),
             )
             return c.json(registered, 201)
         },
     )
+
+    /** A rejected application, fixed by its owner, goes to the admins again. */
+    .post("/shops/:id/resubmit", zValidator("param", idParam, onInvalid), async (c) => {
+        const services = c.get("services")
+        const shop = await services.useCases.resubmitShop.execute({
+            ownerTelegramId: c.get("auth").user.id,
+            businessId: c.req.valid("param").id,
+        })
+        inBackground(c.executionCtx, services, new Notifier(services).shopRegistered(shop))
+        return c.json(shop)
+    })
 
     /**
      * Step «Bot»: a prepared button the app opens with `WebApp.requestChat(preparedId)`. Telegram
