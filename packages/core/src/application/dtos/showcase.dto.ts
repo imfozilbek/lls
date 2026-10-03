@@ -13,7 +13,7 @@ export interface ShowcaseShopRef {
     isOpen: boolean
 }
 
-/** A product found in the LLS showcase. */
+/** A product found in the Zumda showcase. */
 export interface ShowcaseProductDTO extends ProductDTO {
     shop: ShowcaseShopRef
 }

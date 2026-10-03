@@ -56,6 +56,6 @@ export interface MoneyTotals {
     deposits: number
     /** Transfers that arrived for the delivered orders. */
     paid: number
-    /** LLS commission on showcase orders. */
+    /** Zumda commission on showcase orders. */
     commission: number
 }

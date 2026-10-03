@@ -50,7 +50,7 @@ export interface ShopOwnerDTO extends ShopPublicDTO {
     status: BusinessStatus
     ownerTelegramId: number
     deliveryRadiusMeters?: number
-    /** The shop's marketplace deal with LLS, if signed. */
+    /** The shop's marketplace deal with Zumda, if signed. */
     marketplace?: { commissionBps: number; joinedAt: string }
     /** When its own couriers are busy, orders go to the district network. */
     networkDelivery: boolean

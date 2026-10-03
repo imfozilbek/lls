@@ -26,7 +26,7 @@ export interface ProductRepository {
     /** Sorted by position, then name. */
     list(businessId: string, query: ProductListQuery, page: PageRequest): Promise<Page<Product>>
     /**
-     * Products across every shop in the LLS showcase (active, with a marketplace deal).
+     * Products across every shop in the Zumda showcase (active, with a marketplace deal).
      * Sorted by name.
      */
     searchShowcase(search: ShowcaseSearch, page: PageRequest): Promise<Page<Product>>

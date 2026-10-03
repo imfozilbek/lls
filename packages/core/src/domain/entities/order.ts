@@ -55,7 +55,7 @@ export interface OrderProps {
     depositTotal: Money
     bottlesReturned: number
     total: Money
-    /** Snapshot of the LLS commission at placement: rate and amount on the goods subtotal. */
+    /** Snapshot of the Zumda commission at placement: rate and amount on the goods subtotal. */
     commissionBps: number
     commission: Money
     status: OrderStatus

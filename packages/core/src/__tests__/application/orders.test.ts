@@ -156,7 +156,8 @@ describe("order use cases", () => {
             await customers.sharePhoneWith("cust-1", "other-shop", NOON_MONDAY_UZ)
             await expect(placeOrder.execute(input())).rejects.toThrow(/phone/)
 
-            // Through the showcase the LLS bot signed the user: the order gives this shop the phone.
+            // Through the showcase the Zumda bot signed the user: the order gives this shop the
+            // phone.
             const business = await businesses.findById("biz-1")
             business?.joinMarketplace(500, NOON_MONDAY_UZ)
             const order = await placeOrder.execute(input({ channel: OrderChannel.MARKETPLACE }))
