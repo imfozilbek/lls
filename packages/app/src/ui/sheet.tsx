@@ -31,7 +31,12 @@ export function Sheet({
         return (): void => window.removeEventListener("keydown", onKey)
     }, [onClose])
     return createPortal(
-        <div className="fixed inset-0 z-sheet flex flex-col justify-end" role="dialog" aria-modal>
+        <div
+            className="fixed inset-0 z-sheet flex flex-col justify-end"
+            role="dialog"
+            aria-modal
+            aria-label={title}
+        >
             <button
                 type="button"
                 aria-label={title}
