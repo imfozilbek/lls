@@ -16,7 +16,7 @@ import {
     resetStand,
 } from "../support/stand.js"
 import { courierChat, lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
-import { openApp, signInitData } from "../support/webapp.js"
+import { openApp, signInitData, openSettings } from "../support/webapp.js"
 
 import type { PlacedOrder } from "../support/stand.js"
 import type { TgUser } from "../support/telegram.js"
@@ -332,7 +332,7 @@ test("days and shift: «сегодня не работает» and «не на �
     // The owner switches the courier off for today in "Мой магазин".
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openSettings(page, "Kuryerlar")
     const row = page.getByRole("listitem").filter({ hasText: "Jasur" })
     await row.getByRole("switch", { name: /Bugun ishlamaydi/ }).click()
     await expect(row.getByRole("switch", { name: /Bugun ishlamaydi/ })).toHaveAttribute(

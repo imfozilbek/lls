@@ -24,6 +24,7 @@ import {
 import { BottomSpacer } from "../ui/shell.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
+import type { Dictionary } from "../i18n/index.js"
 import type {
     CourierHomeDTO,
     CourierOrderDTO,
@@ -146,7 +147,7 @@ function DeliveryCard({
                 </p>
             ) : null}
             <details className="group">
-                <summary className="tap cursor-pointer list-none px-1 py-2 text-sm font-medium text-tg-link">
+                <summary className="tap cursor-pointer list-none px-1 py-2 text-sm font-medium text-brand">
                     {t.order.items} · {order.items.length}
                 </summary>
                 <OrderItems order={order} />
@@ -313,6 +314,14 @@ function NetworkCard({
     )
 }
 
+const MINUTE_MS = 60_000
+
+/** How long the order has waited for a courier: the longer, the sooner someone should take it. */
+function waitingText(t: Dictionary, requestedAt: string): string {
+    const minutes = Math.floor((Date.now() - Date.parse(requestedAt)) / MINUTE_MS)
+    return minutes < 1 ? t.courier.waitingNow : fill(t.courier.waitingFor, { n: minutes })
+}
+
 /** One network order nearby: the shop, what to take, how far; nothing about the customer. */
 function NearbyCard({
     offer,
@@ -367,6 +376,7 @@ function NearbyCard({
                 {offer.bottlesReturned > 0 ? (
                     <span>{fill(t.courier.bottles, { n: offer.bottlesReturned })}</span>
                 ) : null}
+                <span>{waitingText(t, offer.requestedAt)}</span>
             </p>
             <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-semibold">{t.courier.nothingToCollect}</span>

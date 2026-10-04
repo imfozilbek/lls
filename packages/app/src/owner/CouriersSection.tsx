@@ -130,7 +130,7 @@ function CourierContacts({ courier }: { courier: CourierDTO }): React.JSX.Elemen
                 {courier.phone ? (
                     <a
                         href={`tel:${courier.phone}`}
-                        className="-my-2 inline-flex items-center py-2 font-medium text-tg-link active:opacity-70"
+                        className="-my-2 inline-flex items-center py-2 font-medium text-brand active:opacity-70"
                     >
                         {formatPhone(courier.phone)}
                     </a>
@@ -379,7 +379,7 @@ export function CouriersSection({ shopName }: { shopName: string }): React.JSX.E
     const { review, schedule, remove } = useCourierActions()
 
     return (
-        <Section title={s.couriers}>
+        <Section>
             <p className="px-1 text-sm text-tg-hint">{s.couriersHint}</p>
             {couriers === null ? <Skeleton className="h-14" /> : null}
             {pending.length > 0 ? (
