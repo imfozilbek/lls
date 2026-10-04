@@ -57,6 +57,8 @@ interface BusinessRow {
     network_delivery: number
     rejected_at: number | null
     review_note: string | null
+    owner_chat_open_at: number | null
+    owner_chat_closed_at: number | null
     created_at: number
     updated_at: number
 }
@@ -67,7 +69,7 @@ const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_us
     delivery_radius_m, working_hours, features, accepting_orders, bottle_deposit,
     marketplace_commission_bps, marketplace_joined_at, payout_card_number, payout_card_holder,
     district_id, network_delivery, payment_card_id, contact_phone, payment_options, rejected_at,
-    review_note, created_at, updated_at`
+    review_note, owner_chat_open_at, owner_chat_closed_at, created_at, updated_at`
 
 export interface BotCredentials {
     botId: number
@@ -79,6 +81,10 @@ const versions = new Versions<Business>()
 
 function toBusiness(row: BusinessRow): Business {
     return versions.remember(reconstitute(row), row.updated_at)
+}
+
+function optionalDate(ms: number | null): Date | undefined {
+    return ms === null ? undefined : new Date(ms)
 }
 
 function reconstitute(row: BusinessRow): Business {
@@ -131,6 +137,8 @@ function reconstitute(row: BusinessRow): Business {
         networkDelivery: bool(row.network_delivery),
         rejectedAt: row.rejected_at === null ? undefined : new Date(row.rejected_at),
         reviewNote: optional(row.review_note),
+        ownerChatOpenAt: optionalDate(row.owner_chat_open_at),
+        ownerChatClosedAt: optionalDate(row.owner_chat_closed_at),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -275,6 +283,19 @@ export class D1BusinessRepository implements BusinessRepository {
         await this.db
             .prepare("UPDATE businesses SET bot_token_enc = ? WHERE id = ?")
             .bind(await encryptSecret(botToken, this.encryptionKey), businessId)
+            .run()
+    }
+
+    async saveOwnerChat(business: Business): Promise<void> {
+        await this.db
+            .prepare(
+                "UPDATE businesses SET owner_chat_open_at = ?, owner_chat_closed_at = ? WHERE id = ?",
+            )
+            .bind(
+                business.ownerChatOpenAt?.getTime() ?? null,
+                business.ownerChatClosedAt?.getTime() ?? null,
+                business.id,
+            )
             .run()
     }
 

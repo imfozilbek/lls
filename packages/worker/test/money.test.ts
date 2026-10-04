@@ -374,7 +374,7 @@ describe("money: transfer before the shop starts, report, files", () => {
     it("the report as a CSV file and the QR poster arrive in the owner's chat", async () => {
         await place()
         const sent = await as(OWNER)("/api/owner/money/export?period=month", { method: "POST" })
-        expect(await json(sent)).toEqual({ sent: 1 })
+        expect(await json(sent)).toEqual({ sent: 1, delivered: "shop" })
         const csv = client.telegram.documents.at(-1)
         expect(csv?.chatId).toBe(OWNER.id)
         expect(csv?.token).toBe(SHOP_BOT_TOKEN)
@@ -400,6 +400,20 @@ describe("money: transfer before the shop starts, report, files", () => {
         })
         expect(posted.status).toBe(200)
         expect(client.telegram.documents.at(-1)?.file.contentType).toBe("image/png")
+        // Kept for «Yuklab olish»: public under /img, saved as a file, the same key next time.
+        const { delivered, key } = await json<{ delivered: string; key: string }>(posted)
+        expect(delivered).toBe("shop")
+        expect(key).toMatch(/^shops\/.+\/poster-[0-9a-f]{16}\.png$/)
+        const file = await client.request(`/img/${key}`)
+        expect(file.headers.get("Content-Type")).toBe("image/png")
+        expect(file.headers.get("Content-Disposition")).toContain("attachment")
+        expect(new Uint8Array(await file.arrayBuffer())).toEqual(png)
+        const again = await as(OWNER)("/api/owner/shop/poster", {
+            method: "POST",
+            headers: { "Content-Type": "image/png" },
+            body: png,
+        })
+        expect((await json<{ key: string }>(again)).key).toBe(key)
         const fake = await as(OWNER)("/api/owner/shop/poster", {
             method: "POST",
             headers: { "Content-Type": "image/png" },
@@ -417,7 +431,7 @@ describe("money: transfer before the shop starts, report, files", () => {
             await env.DB.prepare("UPDATE orders SET address = '=HYPERLINK(\"http://x\")'").run()
             await env.DB.prepare("UPDATE businesses SET name = 'Tom & Jerry'").run()
             const sent = await as(OWNER)("/api/owner/money/export?period=month", { method: "POST" })
-            expect(await json(sent)).toEqual({ sent: 101 })
+            expect(await json(sent)).toEqual({ sent: 101, delivered: "shop" })
             const csv = client.telegram.documents.at(-1)
             // The shop's name is escaped in the HTML caption, or Telegram refuses the file.
             expect(csv?.caption).toContain("Tom &amp; Jerry")

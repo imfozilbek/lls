@@ -25,6 +25,7 @@ import { handleCourierBotCallback, handleCourierBotMessage } from "./courier-bot
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
 import type { OrderCallback } from "../telegram/format.js"
+import type { BotTexts } from "../telegram/texts.js"
 import type { Callback, IncomingMessage } from "../telegram/updates.js"
 import type { Business, OrderDTO } from "@zumda/core"
 
@@ -66,6 +67,33 @@ async function saveContact(
     await services.telegram.sendMessage(token, message.chat.id, texts.phoneSaved)
 }
 
+/**
+ * The owner pressed Start in the shop's own bot: from now on it may write to them, so orders and
+ * files come there instead of Zumda | Business.
+ */
+async function ownerStarted(
+    services: Services,
+    business: Business,
+    token: string,
+    message: { chatId: number; texts: BotTexts },
+): Promise<void> {
+    if (business.ownerChatOpened(services.clock.now())) {
+        await services.businesses.saveOwnerChat(business)
+    }
+    const { chatId, texts: t } = message
+    await services.telegram.sendMessage(
+        token,
+        chatId,
+        fill(t.ownerBotOpened, { shop: `<b>${escapeHtml(business.name)}</b>` }),
+        {
+            keyboard: appKeyboard(
+                t.openMyShop,
+                shopAppUrl(services.env.APP_ORIGIN, business.slug.value),
+            ),
+        },
+    )
+}
+
 async function handleShopMessage(
     services: Services,
     business: Business,
@@ -87,6 +115,10 @@ async function handleShopMessage(
     )
     if (!isStart(message.text)) {
         await services.telegram.sendMessage(token, message.chat.id, texts.onlyInApp, { keyboard })
+        return
+    }
+    if (from.id === business.ownerTelegramId.value) {
+        await ownerStarted(services, business, token, { chatId: message.chat.id, texts })
         return
     }
     // Waiting for approval: the bot already answers, the shop opens soon.

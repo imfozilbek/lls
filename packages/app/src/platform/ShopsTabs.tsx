@@ -1,4 +1,4 @@
-import { BusinessStatus } from "@zumda/core"
+import { BusinessStatus, OwnerChat } from "@zumda/core"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -9,7 +9,7 @@ import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
-import { CheckIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
+import { AlertIcon, CheckIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
 import {
     Button,
     EmptyState,
@@ -299,6 +299,13 @@ function LiveShopCard({
         >
             <ShopHead shop={shop} />
             <OwnerLine shop={shop} />
+            {shop.ownerChat === OwnerChat.CLOSED ? (
+                // Orders reach this owner only through Zumda | Business until Start in the bot.
+                <p className="flex gap-2 rounded-control bg-warning/10 p-3 text-sm">
+                    <AlertIcon size={18} className="mt-0.5 shrink-0 text-warning" />
+                    {t.platform.ownerChatClosed}
+                </p>
+            ) : null}
             {live ? <ShowcaseBlock shop={shop} onDone={onDone} /> : null}
             <div className="flex flex-wrap gap-2">
                 {live ? (

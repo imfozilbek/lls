@@ -96,6 +96,9 @@ export class InMemoryBusinesses implements BusinessRepository {
     async replaceBotToken(businessId: string, botToken: string): Promise<void> {
         this.tokens.set(businessId, botToken)
     }
+    async saveOwnerChat(business: Business): Promise<void> {
+        this.items.set(business.id, business)
+    }
 }
 
 export class InMemoryManagedBots implements ManagedBotRepository {

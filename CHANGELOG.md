@@ -7,6 +7,17 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The owner always hears: Zumda | Business until Start in the shop's bot
+- **Fixed:** a shop whose bot was made with «Bot yaratish» and never opened by its owner got no
+  QR poster («Telegram hozir javob bermadi») and lost the owner's order messages silently:
+  Telegram lets a bot write first only after Start. Now every message and file for the owner goes
+  through Zumda | Business in that case, with the note to press Start and a button to the bot;
+  after Start the shop's own bot writes again. Migration `0015_owner_bot_chat.sql`.
+- **Added (app):** «Botingizni oching» in «Ishga tayyor» (checked quietly with "typing…", ticks
+  itself on return from the bot); «Platforma» marks shops whose bot cannot write to the owner.
+- **Added (app):** the QR poster opens in a sheet with «Yuklab olish» (Telegram's own save
+  window, a file link in a browser); it still comes to the chat too. The CSV says where it went.
+
 ### Zumda's own map and trips
 - **Added:** Zumda's own map of Uzbekistan (OpenStreetMap, the Protomaps build cut by
   `go-pmtiles`), kept in our R2 and served by the Worker in byte ranges (`/map/*`): the app never

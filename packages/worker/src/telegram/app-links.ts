@@ -10,6 +10,17 @@ export function shopAppUrl(appOrigin: string, slug: string, orderId?: string): s
     return `${appOrigin}/?shop=${encodeURIComponent(slug)}${order}`
 }
 
+/**
+ * The shop's bot opened on Start (`/start owner`): the owner presses it once, then the bot may
+ * write to them (orders, files).
+ */
+export function shopBotStartUrl(botUsername: string): string {
+    return `https://t.me/${botUsername}?start=${OWNER_START}`
+}
+
+/** The `/start` payload of `shopBotStartUrl`. */
+export const OWNER_START = "owner"
+
 /** A showcase customer's order, opened from Zumda | Shop: the shop inside the showcase. */
 export function showcaseOrderUrl(appOrigin: string, slug: string, orderId: string): string {
     return `${showcaseAppUrl(appOrigin)}&shop=${encodeURIComponent(slug)}&order=${encodeURIComponent(orderId)}`

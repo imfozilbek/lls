@@ -11,6 +11,7 @@ import type {
     Weekday,
     CustomerDTO,
     OrderDTO,
+    OwnerChat,
     Page,
     PaymentMethod,
     PaymentOptions,
@@ -48,6 +49,12 @@ interface ErrorBody {
  * Absent: the shop's own bot.
  */
 export type ShopVia = "marketplace" | "business"
+
+/**
+ * Where a file for the owner arrived: the shop's own bot, Zumda | Business (the owner has not
+ * pressed Start in the shop's bot), or nowhere.
+ */
+export type OwnerDelivery = "shop" | "business" | "none"
 
 let currentShop: string | null = null
 let currentVia: ShopVia | null = null
@@ -308,7 +315,7 @@ export const api = {
         money: (period: MoneyPeriod): Promise<MoneyReportDTO> =>
             request("GET", `/api/owner/money${query({ period })}`),
         /** The bot sends the period's orders to the owner's chat as a CSV file. */
-        exportMoney: (period: MoneyPeriod): Promise<{ sent: number }> =>
+        exportMoney: (period: MoneyPeriod): Promise<{ sent: number; delivered: OwnerDelivery }> =>
             request("POST", `/api/owner/money/export${query({ period })}`),
         /** The shop's cards and the one customers are shown. */
         cards: (): Promise<PayoutCardsDTO> => request("GET", "/api/owner/shop/cards"),
@@ -328,9 +335,12 @@ export const api = {
         /** «Pulni oldim»: the owner took this cash order's money from the courier. */
         receiveCash: (orderId: string): Promise<OrderDTO> =>
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "cash_received" }),
-        /** The bot sends the QR poster back to the owner's chat. */
-        sendPoster: (png: Blob): Promise<{ sent: boolean }> =>
+        /** The bot sends the QR poster back to the owner's chat; `key` is it for the download. */
+        sendPoster: (png: Blob): Promise<{ delivered: OwnerDelivery; key: string }> =>
             request("POST", "/api/owner/shop/poster", png),
+        /** May the shop's bot write to the owner (pressed Start in it)? Asked quietly. */
+        botCheck: (): Promise<{ ownerChat: OwnerChat }> =>
+            request("POST", "/api/owner/shop/bot-check"),
         orders: (filter: "active" | "done", page = 1): Promise<Page<OrderDTO>> =>
             request("GET", `/api/owner/orders${query({ filter, page })}`),
         setStatus: (

@@ -227,6 +227,12 @@ const BASE = {
             channel: { shop_bot: "do'kon boti", marketplace: "Zumda vitrinasi" },
         },
         posterCaption: "🖨 {shop} uchun QR-kod. Chop eting yoki Instagramga joylang.",
+        ownerBotClosed:
+            "⚠️ {bot} sizga yoza olmadi: siz unda hali Start bosmagansiz. Botingizni oching va Start bosing: keyingi xabarlar o'sha yerga keladi.",
+        openShopBot: "🤖 {bot} ni ochish",
+        ownerBotOpened:
+            "✅ {shop}: endi buyurtmalar va xabarlar shu yerga keladi. Ish esa ilovada: pastdagi tugma.",
+        openMyShop: "🏪 Mening do'konim",
         courierRemoved: "↩️ {shop}: #{n} buyurtma boshqa kuryerga berildi.",
         tripAssigned:
             "🗺 {shop}: {count} ta buyurtma bir yo'nalishda, shu tartibda: {stops}. Xarita va yo'l ilovada.",

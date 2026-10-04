@@ -3,6 +3,7 @@ import { DEFAULT_FEATURES } from "../enums/business-profile.js"
 import { BusinessStatus } from "../enums/business-status.js"
 import { Feature } from "../enums/feature.js"
 import { OrderChannel } from "../enums/order-channel.js"
+import { OwnerChat } from "../enums/owner-chat.js"
 import { PaymentMethod, PaymentOptions } from "../enums/payment.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ValidationError } from "../errors/validation.error.js"
@@ -87,6 +88,10 @@ export interface BusinessProps {
     /** A platform admin rejected the application: when, and why (the owner sees it). */
     rejectedAt?: Date
     reviewNote?: string
+    /** The shop's bot last reached its owner, or the owner pressed Start in it. */
+    ownerChatOpenAt?: Date
+    /** Telegram last refused the shop's bot a message to its owner. */
+    ownerChatClosedAt?: Date
     createdAt: Date
     updatedAt: Date
 }
@@ -213,6 +218,36 @@ export class Business {
         return this.props.rejectedAt
             ? { at: this.props.rejectedAt, reason: this.props.reviewNote }
             : undefined
+    }
+    /** Can the shop's bot write to its owner: whichever was seen last. */
+    get ownerChat(): OwnerChat {
+        const open = this.props.ownerChatOpenAt?.getTime()
+        const closed = this.props.ownerChatClosedAt?.getTime()
+        if (closed !== undefined && (open === undefined || closed > open)) {
+            return OwnerChat.CLOSED
+        }
+        return open === undefined ? OwnerChat.UNKNOWN : OwnerChat.OPEN
+    }
+    get ownerChatOpenAt(): Date | undefined {
+        return this.props.ownerChatOpenAt
+    }
+    get ownerChatClosedAt(): Date | undefined {
+        return this.props.ownerChatClosedAt
+    }
+    /**
+     * The shop's bot reached its owner (or the owner pressed Start). Not an edit of the shop:
+     * `updatedAt` stays. True when this changed what Zumda knew, so only then is it written.
+     */
+    ownerChatOpened(now: Date): boolean {
+        const changed = this.ownerChat !== OwnerChat.OPEN
+        this.props.ownerChatOpenAt = now
+        return changed
+    }
+    /** Telegram refused the shop's bot a message to its owner. True when this is news. */
+    ownerChatClosed(now: Date): boolean {
+        const changed = this.ownerChat !== OwnerChat.CLOSED
+        this.props.ownerChatClosedAt = now
+        return changed
     }
     get districtId(): string | undefined {
         return this.props.districtId

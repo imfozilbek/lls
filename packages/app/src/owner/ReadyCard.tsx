@@ -1,15 +1,16 @@
-import { BusinessStatus } from "@zumda/core"
+import { BusinessStatus, OwnerChat } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
-import { haptic } from "../lib/telegram.js"
+import { haptic, onAppActive, openTelegramLink, shopBotStartLink } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import {
     BagIcon,
+    BotIcon,
     CardIcon,
     CheckIcon,
     ChevronIcon,
@@ -34,13 +35,52 @@ import type { ReactNode } from "react"
 const FIRST_PRODUCTS = 3
 
 interface ReadyItem {
-    id: ReadySection | "products"
+    id: ReadySection | "products" | "bot"
     icon: ReactNode
     title: string
     hint: string
     done: boolean
     /** Helps, but the shop works without it: once the rest is done the card goes away. */
     optional?: boolean
+}
+
+/** What the server last said per shop: a remount (tab switch) asks again only if not open. */
+const ownerChats = new Map<string, OwnerChat>()
+
+/**
+ * May the shop's bot write to the owner? Asked quietly (the server sends "typing…") when the
+ * section opens and when the owner comes back from the bot, until it is open. Unknown until the
+ * answer: the step never flashes on a shop whose bot is fine.
+ */
+function useOwnerChat(shopId: string | undefined): OwnerChat | null {
+    const [chat, setChat] = useState<OwnerChat | null>(() =>
+        shopId ? (ownerChats.get(shopId) ?? null) : null,
+    )
+    useEffect(() => {
+        if (!shopId) {
+            return undefined
+        }
+        const check = (): void => {
+            if (ownerChats.get(shopId) === OwnerChat.OPEN) {
+                return
+            }
+            api.owner
+                .botCheck()
+                .then(({ ownerChat }) => {
+                    ownerChats.set(shopId, ownerChat)
+                    setChat(ownerChat)
+                })
+                .catch(() => undefined)
+        }
+        check()
+        return onAppActive(check)
+    }, [shopId])
+    return chat
+}
+
+/** Not asked yet counts as open: the step shows only once Telegram said the bot may not write. */
+function botIsOpen(chat: OwnerChat | null): boolean {
+    return chat !== OwnerChat.CLOSED && chat !== OwnerChat.UNKNOWN
 }
 
 /**
@@ -84,6 +124,7 @@ function itemsOf(
     t: Dictionary["owner"]["ready"],
     state: {
         hasCard: boolean
+        botOpen: boolean
         hasPhone: boolean
         located: boolean
         hasHours: boolean
@@ -99,6 +140,13 @@ function itemsOf(
             title: t.card,
             hint: t.cardHint,
             done: state.hasCard,
+        },
+        {
+            id: "bot",
+            icon: <BotIcon size={20} />,
+            title: t.bot,
+            hint: t.botHint,
+            done: state.botOpen,
         },
         {
             id: "phone",
@@ -239,6 +287,45 @@ function FoldedReady({
     )
 }
 
+/** Where a step leads: the catalog, the shop's bot (to press Start), or its settings section. */
+function useOpenStep(): (item: ReadyItem, botUsername: string) => void {
+    const goToSection = useOwner((state) => state.goToSection)
+    const setTab = useOwner((state) => state.setTab)
+    return (item, botUsername): void => {
+        if (item.id === "products") {
+            setTab("menu")
+        } else if (item.id === "bot") {
+            // Back from the bot, `useOwnerChat` asks again and the step ticks itself.
+            openTelegramLink(shopBotStartLink(botUsername))
+        } else {
+            goToSection(item.id)
+        }
+    }
+}
+
+function ReadyProgress({ done, all }: { done: number; all: number }): React.JSX.Element {
+    const t = useT().owner.ready
+    return (
+        <>
+            <div className="flex items-center justify-between px-2 pb-1">
+                <h2 className="text-lg font-bold">{t.title}</h2>
+                <span className="rounded-full bg-brand/15 px-2.5 py-0.5 text-sm font-bold tabular-nums">
+                    {fill(t.progress, { done, all })}
+                </span>
+            </div>
+            <div
+                className="mx-2 mb-2 h-1.5 overflow-hidden rounded-full bg-tg-bg"
+                aria-hidden="true"
+            >
+                <div
+                    className="h-full origin-left rounded-full bg-brand transition-transform duration-500 ease-out-quart"
+                    style={{ transform: `scaleX(${done / all})` }}
+                />
+            </div>
+        </>
+    )
+}
+
 /**
  * «Ishga tayyor»: what a new business still needs before its first customer. Each row leads to
  * the place it is done; the card disappears once everything is ready.
@@ -250,9 +337,9 @@ export function ReadyCard(): React.JSX.Element | null {
     const couriers = useOwner((state) => state.couriers)
     const loadProducts = useOwner((state) => state.loadProducts)
     const loadCouriers = useOwner((state) => state.loadCouriers)
-    const goToSection = useOwner((state) => state.goToSection)
-    const setTab = useOwner((state) => state.setTab)
+    const openStep = useOpenStep()
     const { ticks, tick } = useTicks(shop?.id)
+    const ownerChat = useOwnerChat(shop?.id)
     const activeOrders = useOwner((state) => state.activeOrders)
     const focusOrderId = useOwner((state) => state.focusOrderId)
     const [expanded, setExpanded] = useState(false)
@@ -266,6 +353,7 @@ export function ReadyCard(): React.JSX.Element | null {
     }
     const items = itemsOf(t, {
         hasCard: shop.paymentMethods.length > 0,
+        botOpen: botIsOpen(ownerChat),
         located: shop.location !== undefined,
         hasHours: shop.workingHours !== null || ticks.hours,
         products: products.length,
@@ -290,28 +378,13 @@ export function ReadyCard(): React.JSX.Element | null {
             />
         )
     }
-    const open = (item: ReadyItem): void =>
-        item.id === "products" ? setTab("menu") : goToSection(item.id)
+    const open = (item: ReadyItem): void => openStep(item, shop.botUsername)
     return (
         <section
             aria-label={t.title}
             className="mx-4 mt-3 animate-rise rounded-tile bg-tg-secondary p-3"
         >
-            <div className="flex items-center justify-between px-2 pb-1">
-                <h2 className="text-lg font-bold">{t.title}</h2>
-                <span className="rounded-full bg-brand/15 px-2.5 py-0.5 text-sm font-bold tabular-nums">
-                    {fill(t.progress, { done, all: required.length })}
-                </span>
-            </div>
-            <div
-                className="mx-2 mb-2 h-1.5 overflow-hidden rounded-full bg-tg-bg"
-                aria-hidden="true"
-            >
-                <div
-                    className="h-full origin-left rounded-full bg-brand transition-transform duration-500 ease-out-quart"
-                    style={{ transform: `scaleX(${done / required.length})` }}
-                />
-            </div>
+            <ReadyProgress done={done} all={required.length} />
             <ul className="flex flex-col">
                 {items.map((item) => (
                     <ReadyRow

@@ -82,6 +82,12 @@ export const ownerRoutes = new Hono<AppEnv>()
         return c.body(null, 204)
     })
 
+    /** «Botingizni oching»: whether the shop's bot may write to the owner now. */
+    .post("/shop/bot-check", async (c) => {
+        const ownerChat = await new Notifier(c.get("services")).checkOwnerChat(shopOf(c))
+        return c.json({ ownerChat })
+    })
+
     .put("/shop/logo", async (c) => {
         const business = shopOf(c)
         const services = c.get("services")

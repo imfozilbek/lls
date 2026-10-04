@@ -340,9 +340,18 @@ function ExportButton({ period }: { period: MoneyPeriod }): React.JSX.Element {
     const send = async (): Promise<void> => {
         setBusy(true)
         try {
-            await api.owner.exportMoney(period)
-            haptic.success()
-            toast(t.owner.money.exportSent, "success")
+            const { delivered } = await api.owner.exportMoney(period)
+            if (delivered === "shop") {
+                haptic.success()
+                toast(t.owner.money.exportSent, "success")
+            } else {
+                haptic.warning()
+                if (delivered === "business") {
+                    toast(t.owner.money.exportSentBusiness, "info")
+                } else {
+                    toast(t.owner.money.exportSentNone, "error")
+                }
+            }
         } catch (caught) {
             failToast(t, caught)
         } finally {
