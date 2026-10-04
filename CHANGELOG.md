@@ -7,6 +7,15 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### A checklist that finishes (UX phase 15, from the tenth critique, 34/40)
+- **Fixed (app):** a shop open around the clock could never finish «Ish vaqti» in «Ishga tayyor»
+  (24/7 is stored as "no hours"): the row offers «Kecha-kunduz ochiqmiz», and saving the hours
+  in «Sozlamalar» ticks it too, like «O'zim yetkazaman». The progress bar counts the required
+  steps, as its label does.
+- **Changed (app):** the owner's order card shows three lines and «Yana N ta mahsulot», with
+  the time, the customer and the wait on one line; a courier outside the network sees that
+  choice right under «Smenadaman».
+
 ### The oldest order first (UX phase 14, from the ninth critique)
 - **Changed (app):** the owner's active orders run oldest first after the money checks, and each
   open order says how long it has waited («12 daqiqa kutmoqda», the clock amber after 30).
