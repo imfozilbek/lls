@@ -1,4 +1,12 @@
-import { OrderChannel, OrderStatus, PaymentStatus, Unit, formatPhone, mapUrl } from "@zumda/core"
+import {
+    OrderChannel,
+    OrderStatus,
+    PaymentMethod,
+    PaymentStatus,
+    Unit,
+    formatPhone,
+    mapUrl,
+} from "@zumda/core"
 
 import { escapeHtml } from "./gateway.js"
 import { fill, textsFor } from "./texts.js"
@@ -61,9 +69,18 @@ function addressLines(order: OrderDTO, t: BotTexts): string[] {
     return lines
 }
 
-/** One line about the money of an order: paid to the shop's card before the shop starts. */
+/**
+ * One line about the money of an order: a transfer to the shop's card before the shop starts, or
+ * cash the courier takes at the door and hands to the shop.
+ */
 export function paymentLine(order: OrderDTO, t: BotTexts): string {
     const p = t.payment
+    if (order.payment.method === PaymentMethod.CASH) {
+        if (order.payment.status !== PaymentStatus.PAID) {
+            return p.cashUnpaid
+        }
+        return order.payment.withCourier ? p.cashWithCourier : p.cashReceived
+    }
     switch (order.payment.status) {
         case PaymentStatus.UNPAID:
             return p.unpaid
@@ -125,8 +142,8 @@ export function formatNewOrderForOwner(order: OrderDTO, reader: Reader): string 
 
 /**
  * The courier's card in the Zumda courier bot: which shop, where to go, whom to call, how many
- * bottles to take. The customer paid before the shop started: the courier takes no money.
- * A courier may work for several shops, so the shop comes first.
+ * bottles to take, and the money: a transfer was paid before the shop started (take nothing),
+ * cash is taken at the door. A courier may work for several shops, so the shop comes first.
  */
 export function formatOrderForCourier(order: OrderDTO, reader: Reader, shopName: string): string {
     const { language } = reader
@@ -136,7 +153,7 @@ export function formatOrderForCourier(order: OrderDTO, reader: Reader, shopName:
         "",
         ...itemLines(order, t, language),
         "",
-        order.payment.status === PaymentStatus.PAID ? t.nothingToCollect : paymentLine(order, t),
+        courierMoneyLine(order, t, language),
     ]
     if (order.bottlesReturned > 0) {
         lines.push(fill(t.bottlesToCollect, { n: order.bottlesReturned }))
@@ -147,6 +164,15 @@ export function formatOrderForCourier(order: OrderDTO, reader: Reader, shopName:
         lines.push(t.courierWait)
     }
     return lines.join("\n")
+}
+
+function courierMoneyLine(order: OrderDTO, t: BotTexts, language: Language): string {
+    if (order.payment.method === PaymentMethod.CASH) {
+        return order.payment.status === PaymentStatus.PAID
+            ? paymentLine(order, t)
+            : `<b>${fill(t.collectCash, { sum: formatMoney(order.total, language) })}</b>`
+    }
+    return order.payment.status === PaymentStatus.PAID ? t.nothingToCollect : paymentLine(order, t)
 }
 
 export function formatStatusForCustomer(order: OrderDTO, reader: Reader): string | null {
@@ -198,8 +224,8 @@ export function parseOrderCallback(data: string): OrderCallback | null {
 }
 
 /**
- * Owner: the next step + cancel, or no buttons for a finished order. A new order waits for the
- * transfer: its step is «Деньги пришли, принять».
+ * Owner: the next step + cancel, or no buttons for a finished order. A new transfer order waits
+ * for the money: its step is «Деньги пришли, принять». A cash order is accepted at once.
  */
 export function orderKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard {
     const t = textsFor(reader.language, reader.type)
@@ -207,7 +233,10 @@ export function orderKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard {
     if (!next) {
         return { inline_keyboard: [] }
     }
-    const waitsForMoney = next === OrderStatus.ACCEPTED && !isPaid(order)
+    const waitsForMoney =
+        next === OrderStatus.ACCEPTED &&
+        !isPaid(order) &&
+        order.payment.method !== PaymentMethod.CASH
     const step: InlineButton = waitsForMoney
         ? { text: t.paidAccept, callback_data: `p:${order.id}` }
         : { text: t.actions[next] ?? next, callback_data: `a:${order.id}:${next}` }
@@ -263,7 +292,11 @@ export function courierKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard
     if (!next) {
         return { inline_keyboard: [] }
     }
-    const text = t.courierActions[next] ?? next
+    const cash =
+        next === OrderStatus.DELIVERED &&
+        order.payment.method === PaymentMethod.CASH &&
+        order.payment.status !== PaymentStatus.PAID
+    const text = cash ? t.cashDelivered : (t.courierActions[next] ?? next)
     return { inline_keyboard: [[{ text, callback_data: `a:${order.id}:${next}` }]] }
 }
 

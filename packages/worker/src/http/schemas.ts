@@ -7,6 +7,8 @@ import {
     MONEY_PERIODS,
     ORDER_STATUSES,
     OrderStatus,
+    PAYMENT_METHODS,
+    PAYMENT_OPTIONS,
     UNITS,
     WEEKDAYS,
 } from "@zumda/core"
@@ -63,6 +65,8 @@ export const placeOrderBody = z.object({
     location: locationSchema.optional(),
     comment: z.string().trim().max(300).optional(),
     bottlesReturned: z.number().int().min(0).max(99).optional(),
+    /** The customer's choice when the shop takes both; the shop checks it takes it. */
+    paymentMethod: z.enum(PAYMENT_METHODS).optional(),
 })
 
 export const customerCancelBody = z.object({
@@ -123,7 +127,10 @@ export const courierOrderBody = z.object({
  * «Деньги пришли, принять»: the transfer arrived (a new order is accepted in the same tap);
  * or «Вернул»: the money of a cancelled order went back.
  */
-export const paymentBody = z.object({ action: z.enum(["paid", "refunded", "rejected"]) })
+/** `cash_received`: «Pulni oldim», the owner took a cash order's money from the courier. */
+export const paymentBody = z.object({
+    action: z.enum(["paid", "refunded", "rejected", "cash_received"]),
+})
 
 export const moneyQuery = z.object({ period: z.enum(MONEY_PERIODS).default("today") })
 
@@ -165,6 +172,7 @@ export const shopPatchBody = z.object({
     workingHours: z.partialRecord(z.enum(WEEKDAYS), timeRange).nullable().optional(),
     acceptingOrders: z.boolean().optional(),
     networkDelivery: z.boolean().optional(),
+    paymentOptions: z.enum(PAYMENT_OPTIONS).optional(),
     features: z.array(z.enum(FEATURES)).max(10).optional(),
     bottleDeposit: z.number().int().min(0).max(1_000_000).optional(),
 })

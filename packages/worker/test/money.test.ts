@@ -83,6 +83,7 @@ describe("money: transfer before the shop starts, report, files", () => {
         totals: Json
         awaiting: Order[]
         refunds: Order[]
+        courierCash: unknown[]
     }> => json(await as(OWNER)("/api/owner/money"))
 
     beforeEach(async () => {
@@ -325,7 +326,7 @@ describe("money: transfer before the shop starts, report, files", () => {
             callback_query: { id: "cb-1", from: COURIER, data: `a:${order.id}:delivered` },
         })
         const home = await json<{ shops: Json[] }>(await courierApp("/api/courier/home"))
-        expect(home.shops[0]).not.toHaveProperty("onHand")
+        expect(home.shops[0]).toMatchObject({ cashToHand: 0 })
         const report = await money()
         expect(report.totals).toEqual({
             placed: 1,
@@ -335,9 +336,11 @@ describe("money: transfer before the shop starts, report, files", () => {
             delivery: 10_000,
             deposits: 0,
             paid: 80_000,
+            paidCash: 0,
             commission: 0,
         })
-        // The cash routes are gone.
+        expect(report.courierCash).toEqual([])
+        // Cash is handed over per order, never as a lump sum.
         const handover = await as(OWNER)(`/api/owner/couriers/${courierId}/handovers`, {
             method: "POST",
             json: { amount: 1 },
@@ -380,8 +383,8 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect([...(csv?.file.bytes.slice(0, 3) ?? [])]).toEqual([0xef, 0xbb, 0xbf])
         const text = new TextDecoder().decode(csv?.file.bytes)
         const [header, row] = text.split("\r\n")
-        expect(header?.split(";")).toHaveLength(15)
-        expect(row).toContain(";80000;")
+        expect(header?.split(";")).toHaveLength(16)
+        expect(row).toContain(";80000;karta;")
 
         const png = new Uint8Array([...PNG_HEADER, 0, 0, 0, 13])
         const poster = await as(OWNER)("/api/owner/shop/poster", {

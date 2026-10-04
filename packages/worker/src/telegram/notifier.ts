@@ -1,4 +1,11 @@
-import { Language, OrderChannel, OrderStatus, PaymentStatus, toNetworkOrderDTO } from "@zumda/core"
+import {
+    Language,
+    OrderChannel,
+    OrderStatus,
+    PaymentMethod,
+    PaymentStatus,
+    toNetworkOrderDTO,
+} from "@zumda/core"
 
 import { alertAdmins, describeError, isRecipientProblem } from "../alerts.js"
 import { platformAdminIds } from "../env.js"
@@ -100,10 +107,21 @@ export class Notifier {
     }
 
     /**
-     * Right after checkout: the card and the sum, so the customer can transfer from the chat.
-     * Sent on its own: a failed owner card never keeps the customer from paying.
+     * Right after checkout: the card and the sum, so the customer can transfer from the chat, or
+     * the sum to have ready for the courier. Sent on its own: a failed owner card never keeps the
+     * customer from paying.
      */
     async askForTransfer(business: Business, order: OrderDTO): Promise<void> {
+        if (order.payment.method === PaymentMethod.CASH) {
+            const token = await this.shopToken(business.id)
+            await this.tellCustomer(token, business, order, (t, language) =>
+                fill(t.payByCash, {
+                    n: order.number,
+                    sum: `<b>${formatMoney(order.total, language)}</b>`,
+                }),
+            )
+            return
+        }
         // The card this order was shown: the owner may have switched the payment card since.
         const card = order.payment.card
         if (!card) {
@@ -698,7 +716,7 @@ export class Notifier {
             shop.ownerTelegramId,
             [
                 `${fill(texts.shopApproved, { shop: name })}\n${link}`,
-                shop.hasPayoutCard ? null : `\n${texts.shopApprovedNeedsCard}`,
+                shop.paymentMethods.length > 0 ? null : `\n${texts.shopApprovedNeedsCard}`,
             ]
                 .filter((line) => line !== null)
                 .join(""),
