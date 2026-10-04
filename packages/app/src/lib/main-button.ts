@@ -70,7 +70,6 @@ export function useMainAction(action: MainAction | null): void {
     }, [visible, text, loading, disabled])
 }
 
-/** Shows Telegram's BackButton while `onBack` is set. */
 /** Outside Telegram (Zumda | Business in a browser) there is no BackButton: the app draws one. */
 interface WebBackState {
     onBack: (() => void) | null
@@ -82,24 +81,65 @@ export const useWebBackStore = create<WebBackState>((set) => ({
     set: (onBack): void => set({ onBack }),
 }))
 
+interface BackEntry {
+    /** Render order of the owner: a screen inside another one always outranks it. */
+    rank: number
+    handler: { current: () => void }
+}
+
+/** Everyone who wants "back" now; only the innermost (highest rank) one gets the press. */
+const backStack: BackEntry[] = []
+let nextRank = 0
+let nativeBound = false
+
+function pressBack(): void {
+    const top = backStack.reduce<BackEntry | undefined>(
+        (best, entry) => (!best || entry.rank > best.rank ? entry : best),
+        undefined,
+    )
+    top?.handler.current()
+}
+
+function syncBackButton(): void {
+    const visible = backStack.length > 0
+    const button = webApp()?.BackButton
+    if (!button) {
+        useWebBackStore.getState().set(visible ? pressBack : null)
+        return
+    }
+    if (!nativeBound) {
+        button.onClick(pressBack)
+        nativeBound = true
+    }
+    if (visible) {
+        button.show()
+    } else {
+        button.hide()
+    }
+}
+
+/**
+ * Shows Telegram's BackButton while `onBack` is set. Screens nest (a sheet over a screen, a part
+ * of «Sozlamalar» inside the owner's section): one press goes only to the innermost of them.
+ */
 export function useBackButton(onBack: (() => void) | null): void {
     const handler = useRef<() => void>(() => undefined)
     handler.current = onBack ?? ((): void => undefined)
+    const rank = useRef<number | null>(null)
+    if (rank.current === null) {
+        rank.current = nextRank++
+    }
     const visible = onBack !== null
     useEffect(() => {
-        const button = webApp()?.BackButton
-        if (!button) {
-            const store = useWebBackStore.getState()
-            store.set(visible ? (): void => handler.current() : null)
-            return (): void => store.set(null)
+        if (!visible) {
+            return
         }
-        const click = (): void => handler.current()
-        if (visible) {
-            button.show()
-            button.onClick(click)
-        } else {
-            button.hide()
+        const entry: BackEntry = { rank: rank.current ?? 0, handler }
+        backStack.push(entry)
+        syncBackButton()
+        return (): void => {
+            backStack.splice(backStack.indexOf(entry), 1)
+            syncBackButton()
         }
-        return (): void => button.offClick(click)
     }, [visible])
 }
