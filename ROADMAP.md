@@ -5,7 +5,7 @@ and districts of Uzbekistan, where aggregators are absent or take 20–30% of ea
 Each shop gets its own Telegram bot and brand; the app says "powered by Zumda".
 
 **Goal:** every offline point within 20–30 km of one district becomes an online point. Start with
-the three pilots (Guliston); next to them grow the district's own delivery network; then one Zumda
+the three pilots (pilot district: Yakkabog', Qashqadaryo); next to them grow the district's own delivery network; then one Zumda
 marketplace on top of both.
 
 > Rules, stack and architecture: `CLAUDE.md`. Product context for design: `PRODUCT.md`.
@@ -13,20 +13,21 @@ marketplace on top of both.
 > Questions for the pilots' meeting: `docs/pilot-meeting.md`.
 > The path to the full vision, goal by goal: `docs/goals/README.md` («Дай, друг, дай следующую цель»).
 
-## Current status: stage 1, online point, courier bot, district network and transfer-only payments done; waiting for Cloudflare accounts and the pilots' meeting
+## Current status: stage 1 live in production (5 businesses, first orders delivered); waiting for the pilots' meeting and the owner's money decisions
 
 | Part | Status | Notes |
 |------|--------|-------|
-| `@zumda/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search, district network, transfer-only payments, many cards; 195 tests |
-| `@zumda/worker` | ✅ Done | Hono API, D1, R2, initData auth (shop bot or Zumda bot), roles, bot webhooks (bots have `/start` only), «Platforma» admin API, alerts, money routes («O'tkazdim», «Pul keldi, qabul qilish»), cards, CSV and poster files; Uzbek texts; 87 tests |
-| `@zumda/app` | ✅ Done | Storefront, checkout, tracking, reorder, owner section, courier screen, Zumda showcase, onboarding, «Pul», cards, QR poster; Uzbek, light only; 43 tests; 86 KB gzip JS |
-| CI | ✅ Done | format, lint, build, test, coverage, 84 e2e scenarios on every push |
+| `@zumda/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search, district network, card transfer and cash (the shop's choice), many cards, trips, owner chat state; 242 tests |
+| `@zumda/worker` | ✅ Done | Hono API, D1, R2, initData auth, roles, three Zumda bots + shop bots (`/start` only), «Platforma» admin API, alerts, money routes, cards, CSV and poster, own map (`/map/*`), trips (OpenRouteService), owner messages through Zumda \| Business until Start; Uzbek texts; 180 tests |
+| `@zumda/app` | ✅ Done | Storefront, checkout, tracking, owner section, courier screen, showcase, onboarding, «Mening bizneslarim», «Platforma», business.zumda.shop in a browser, «Pul», cash, map, trips, sound, poster download; Uzbek, light only; 84 tests; ~95 KB gzip initial JS |
+| CI | ✅ Done | format, lint, build, unit tests, coverage, 119 e2e scenarios on eight machines on every pull request; a push to `main` deploys |
 | Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
-| Deploy | 🟡 Ready | Deploy job in `ci.yml` waits for GitHub secrets (`docs/launch-checklist.md`); public-repo hardening in `SECURITY.md` |
-| Pilot (food, water, grocery) | ⏳ Next | Three friends' shops, each with its own bot and couriers |
+| Deploy | ✅ Live | `api.`, `app.`, `business.`, `delivery.zumda.shop`; migrations up to `0015`; the map of Uzbekistan in R2 |
+| Pilot (food, water, grocery) | 🔨 Started | 5 businesses in production (all bots made with «Bot yaratish»), 3 active couriers, 4 orders delivered and paid (one through the showcase); no district yet |
 
-**Blocking:** Cloudflare account, API token and the Zumda platform bot, owner tasks in
-`docs/launch-checklist.md`.
+**Blocking:** the meeting with the pilots and the owner's decisions below (goal 02). Owner tasks
+without code: the «Yakkabog'» district in «Platforma → Tumanlar», `ORS_API_KEY` for road routes,
+the Login Widget and Description Pictures in @BotFather (goal 15), a local `wrangler d1 export`.
 
 **Owner decisions still open** (never invent them in code or docs):
 - service fee rate and base (goods, or goods + delivery), the pilots' rate;
@@ -135,11 +136,12 @@ Pilot: **food, water and grocery at the same time.**
 - [ ] After the meeting with the pilots: service type (carpets, car wash), variants and add-ons,
       pickup and order time, water subscriptions, staff, expenses: only what they confirm
 
-### M4g. Transfer only, before cooking ✅ (owner's decision, October 2026)
+### M4g. Transfer only, before cooking ✅ (owner's decision, October 2026; cash came back in M4k)
 - [x] Customers pay only by transfer to the shop's card; the card shows at checkout and in the bot
 - [x] «Я перевёл» → the owner hears it → «Деньги пришли, принять» (paid and accepted in one tap);
       an unpaid order is never accepted
-- [x] No cash: one «Доставил» for couriers and owners, no courier cash, no handovers, no debts
+- [x] ~~No cash: one «Доставил» for couriers and owners, no courier cash, no handovers, no debts~~:
+      cash came back as the shop's choice in M4k (owner's decision)
 - [x] The card is a required onboarding step; a shop without it takes no orders («Скоро начнёт
       принимать заказы», a banner in "Мой магазин")
 - [x] Cancelled after the money came: owed back until «Вернул»
@@ -169,7 +171,28 @@ Pilot: **food, water and grocery at the same time.**
       ulash», off and on), districts with network stats; `/market`, `/district`, `/network`,
       `/reconnect` removed
 
-### M5. Deploy and pilot ⏳
+### M4k. Cash: the shop's choice ✅ (owner's decision, October 2026)
+- [x] «To'lov»: card transfer (default), cash or both; the customer picks at checkout
+- [x] Cash is accepted at once, goes only with the shop's own courier or the owner, never to the
+      network; «Pulni oldim, yetkazdim»; the owner takes it per order in «Kuryerlardagi naqd pul»
+
+### M4l. Native feel and the Zumda sound ✅ (owner's decisions, October 2026)
+- [x] Pull to refresh, swipe back, no flashing, data kept on refresh, JS budget kept
+- [x] «Zum-da» rings on news for the shop and the courier (softly for the customer); can be off
+
+### M4m. Zumda's own map and trips ✅ (owner's decisions, October 2026)
+- [x] OpenStreetMap of Uzbekistan in our R2, served by the Worker; picking and showing places in
+      checkout, the application, settings, districts, the courier's and customer's order
+- [x] Trips: several orders one way, Zumda's order of the stops, one courier, road route
+      (OpenRouteService, optional key), «Yandex Navigatorda ochish»
+
+### M4n. The owner always hears ✅ (October 2026)
+- [x] A shop bot the owner never started cannot write first: orders, files and the poster come
+      through Zumda | Business with the note to press Start; «Botingizni oching» in «Ishga
+      tayyor»; «Platforma» marks such shops
+- [x] The QR poster downloads in the app («Yuklab olish») and in a browser
+
+### M5. Deploy and pilot 🔨
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)
 - [x] `scripts/check-access.sh`: checks the Cloudflare token, account, zone, R2, D1, Pages,
       Workers and both bots, never printing a key
@@ -190,7 +213,8 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Onboarding review (owner's decisions): a three-step application, the bot works before
       approval, «Ishga tayyor» checklist, rejection with a reason and a resubmit
 - [x] Zumda | Business in a browser signs in with the new Telegram Login (OpenID Connect)
-- [ ] Production check: connect a test shop → order → statuses → notifications
+- [x] Production check: connect a shop → order → transfer → statuses → courier → delivered, also
+      through the showcase (production data, 4 October 2026)
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
 
@@ -201,7 +225,8 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Every connected courier is offered to join the district network
 - [x] An order of a point without its own courier on shift goes to free network couriers; the
       first who accepts takes it; the customer paid that point's card before cooking
-- [x] Districts set by the admin (`/district`), `/network` report, "nobody took it" alerts
+- [x] Districts set by the admin («Platforma → Tumanlar»), network stats, "nobody took it"
+      alerts (production has no district yet: an owner task)
 - [x] Orders from several points in one place; each point sees only its own
 - [x] Today's shop couriers move to the new model without losing data
 - [ ] Decide (owner): who gets the delivery fee for a network delivery, and Zumda's share
