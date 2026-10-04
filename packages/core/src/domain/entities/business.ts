@@ -3,6 +3,7 @@ import { DEFAULT_FEATURES } from "../enums/business-profile.js"
 import { BusinessStatus } from "../enums/business-status.js"
 import { Feature } from "../enums/feature.js"
 import { OrderChannel } from "../enums/order-channel.js"
+import { PaymentMethod, PaymentOptions } from "../enums/payment.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { optionalText, requireInteger, requireText } from "../shared/guards.js"
@@ -74,6 +75,8 @@ export interface BusinessProps {
      */
     payoutCard?: PayoutCard
     paymentCardId?: string
+    /** Which ways of paying the shop takes; a card transfer unless the owner chose otherwise. */
+    paymentOptions?: PaymentOptions
     /** The delivery-network district the shop's location falls in. */
     districtId?: string
     /**
@@ -229,9 +232,50 @@ export class Business {
     get paymentCardId(): string | undefined {
         return this.props.paymentCardId
     }
-    /** Customers pay only by transfer: without the card the shop takes no orders. */
-    acceptsCardTransfers(): boolean {
+    get paymentOptions(): PaymentOptions {
+        return this.props.paymentOptions ?? PaymentOptions.CARD
+    }
+    /** Has a payment card customers can be shown. */
+    hasPayoutCard(): boolean {
         return this.props.payoutCard !== undefined
+    }
+    /** Takes transfers now: chosen by the owner, and a card customers transfer to. */
+    acceptsCardTransfers(): boolean {
+        return this.paymentOptions !== PaymentOptions.CASH && this.hasPayoutCard()
+    }
+    /** Takes cash to the courier on delivery: chosen by the owner, no card needed. */
+    acceptsCash(): boolean {
+        return this.paymentOptions !== PaymentOptions.CARD
+    }
+    /** At least one way of paying works: otherwise the shop takes no orders. */
+    takesPayment(): boolean {
+        return this.acceptsCash() || this.acceptsCardTransfers()
+    }
+    /** The ways a customer may pay right now, the card first. */
+    paymentMethods(): PaymentMethod[] {
+        const methods: PaymentMethod[] = []
+        if (this.acceptsCardTransfers()) {
+            methods.push(PaymentMethod.CARD_TRANSFER)
+        }
+        if (this.acceptsCash()) {
+            methods.push(PaymentMethod.CASH)
+        }
+        return methods
+    }
+    /**
+     * The way this order is paid: the customer's choice when the shop takes it, the only one
+     * when the customer did not choose.
+     */
+    paymentMethodFor(chosen: PaymentMethod | undefined): PaymentMethod {
+        const methods = this.paymentMethods()
+        const method = chosen ?? methods[0]
+        if (method === undefined) {
+            throw BusinessRuleViolationError.noPayoutCard(this.props.id)
+        }
+        if (!methods.includes(method)) {
+            throw BusinessRuleViolationError.paymentMethodUnavailable(method)
+        }
+        return method
     }
     get marketplace(): MarketplaceTerms | undefined {
         return this.props.marketplace ? { ...this.props.marketplace } : undefined
@@ -317,7 +361,7 @@ export class Business {
         if (!this.props.acceptingOrders) {
             throw BusinessRuleViolationError.notAcceptingOrders(this.props.id)
         }
-        if (!this.acceptsCardTransfers()) {
+        if (!this.takesPayment()) {
             throw BusinessRuleViolationError.noPayoutCard(this.props.id)
         }
         if (!this.props.workingHours.isOpenAt(now)) {
@@ -325,12 +369,12 @@ export class Business {
         }
     }
 
-    /** Takes orders right now: active, accepting, has its card for transfers, within hours. */
+    /** Takes orders right now: active, accepting, a way of paying works, within hours. */
     isOpenAt(now: Date): boolean {
         return (
             this.isActive() &&
             this.props.acceptingOrders &&
-            this.acceptsCardTransfers() &&
+            this.takesPayment() &&
             this.props.workingHours.isOpenAt(now)
         )
     }
@@ -409,6 +453,11 @@ export class Business {
 
     setNetworkDelivery(on: boolean): void {
         this.props.networkDelivery = on
+        this.touch()
+    }
+
+    setPaymentOptions(options: PaymentOptions): void {
+        this.props.paymentOptions = options
         this.touch()
     }
 

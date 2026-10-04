@@ -64,6 +64,8 @@ export interface CourierShopDTO {
     workDays: Weekday[]
     /** Works for this shop today: approved, a working day, not switched off for today. */
     worksToday: boolean
+    /** Cash the courier collected for this shop and has not handed over yet, UZS. */
+    cashToHand: number
 }
 
 export interface CourierOrderDTO extends OrderDTO {

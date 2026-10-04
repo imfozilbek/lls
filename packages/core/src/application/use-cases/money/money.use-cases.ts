@@ -5,7 +5,7 @@ import { toOrderDTO } from "../../dtos/order.dto.js"
 import { requireOwnedBusiness } from "../shared.js"
 
 import type { Order } from "../../../domain/entities/order.js"
-import type { MoneyPeriod, MoneyReportDTO } from "../../dtos/money.dto.js"
+import type { CourierCashDTO, MoneyPeriod, MoneyReportDTO } from "../../dtos/money.dto.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
@@ -47,9 +47,10 @@ export class GetMoneyReportUseCase {
         const { businessId } = input
         await requireOwnedBusiness(this.deps.businesses, businessId, input.actorTelegramId)
         const { from, to } = periodRange(input.period, this.deps.clock.now())
-        const [totals, open] = await Promise.all([
+        const [totals, open, cash] = await Promise.all([
             this.deps.orders.moneyTotals(businessId, from, to),
             this.deps.orders.listOpenPayments(businessId, OPEN_PAYMENTS_LIMIT),
+            this.deps.orders.listCashWithCouriers(businessId, OPEN_PAYMENTS_LIMIT),
         ])
         const pick = (keep: (order: Order) => boolean): OrderDTO[] =>
             open.filter(keep).map(toOrderDTO)
@@ -61,8 +62,30 @@ export class GetMoneyReportUseCase {
             // A cancelled order stays here too: if its transfer arrives, it is owed back.
             awaiting: pick((o) => o.payment.status === PaymentStatus.AWAITING),
             refunds: pick((o) => o.payment.status === PaymentStatus.REFUND_DUE),
+            courierCash: byCourier(cash),
         }
     }
+}
+
+/** Cash still with couriers, grouped per courier in the order of their oldest debt. */
+export function byCourier(orders: readonly Order[]): CourierCashDTO[] {
+    const groups = new Map<string, CourierCashDTO>()
+    for (const order of orders) {
+        const courierId = order.payment.cashCourierId
+        if (courierId === undefined) {
+            continue
+        }
+        const group = groups.get(courierId) ?? {
+            courierId,
+            courierName: order.courierName ?? "-",
+            total: 0,
+            orders: [],
+        }
+        group.total += order.total.amount
+        group.orders.push(toOrderDTO(order))
+        groups.set(courierId, group)
+    }
+    return [...groups.values()]
 }
 
 async function requireShopOrder(
@@ -110,6 +133,22 @@ export class RejectTransferUseCase {
     }): Promise<OrderDTO> {
         const order = await requireShopOrder(this.deps, input)
         order.rejectTransfer()
+        await this.deps.orders.save(order)
+        return toOrderDTO(order)
+    }
+}
+
+/** «Pulni oldim»: the owner took a cash order's money from the courier who delivered it. */
+export class ReceiveCourierCashUseCase {
+    constructor(private readonly deps: MoneyDeps) {}
+
+    async execute(input: {
+        actorTelegramId: number
+        businessId: string
+        orderId: string
+    }): Promise<OrderDTO> {
+        const order = await requireShopOrder(this.deps, input)
+        order.receiveCash(this.deps.clock.now())
         await this.deps.orders.save(order)
         return toOrderDTO(order)
     }

@@ -291,10 +291,12 @@ describe("money: transfer before the shop starts, report", () => {
             delivery: 10_000,
             deposits: 0,
             paid: 80_000,
+            paidCash: 0,
             commission: 0,
         })
         const home = await new GetCourierHomeUseCase(money()).execute({ telegramId: COURIER_TG })
-        expect(home.shops[0]).not.toHaveProperty("onHand")
+        expect(home.shops[0]?.cashToHand).toBe(0)
+        expect(today.courierCash).toEqual([])
     })
 
     it("a paid order that is cancelled is owed back until the owner refunds it", async () => {

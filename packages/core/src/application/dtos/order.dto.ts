@@ -64,8 +64,12 @@ export interface OrderPaymentDTO {
     method: PaymentMethod
     status: PaymentStatus
     paidAt?: string
-    /** History only: the courier who took cash at the door before payments became transfers. */
+    /** A cash order: the courier who took the money at the door. */
     cashCourierId?: string
+    /** The shop has this order's cash (taken from the courier, or the owner delivered it). */
+    cashReceivedAt?: string
+    /** A courier holds this order's cash and has not handed it to the shop yet. */
+    withCourier: boolean
     /** The shop's card the customer was shown for this order (the money goes there). */
     card?: { number: string; holder: string }
     /** The transfer screenshot (fetched from its own route); warnings for the owner. */
@@ -122,6 +126,8 @@ export function toOrderDTO(order: Order): OrderDTO {
             status: order.payment.status,
             paidAt: order.payment.paidAt?.toISOString(),
             cashCourierId: order.payment.cashCourierId,
+            cashReceivedAt: order.payment.cashReceivedAt?.toISOString(),
+            withCourier: order.payment.isWithCourier(),
             card: order.payment.card && {
                 number: order.payment.card.number,
                 holder: order.payment.card.holder,

@@ -212,7 +212,7 @@ describe("Order", () => {
             total: order.total,
             commissionBps: 0,
             commission: Money.zero(),
-            payment: Payment.start(),
+            payment: Payment.start(PaymentMethod.CARD_TRANSFER),
             status: OrderStatus.READY,
             courierId: "courier-1",
             courierName: "Jasur",
@@ -280,5 +280,54 @@ describe("Order and couriers", () => {
         expect(() =>
             order.advanceTo(OrderStatus.PICKED_UP, { role: "courier", courierId: "courier-2" }),
         ).toThrow(ForbiddenError)
+    })
+})
+
+describe("Order paid in cash", () => {
+    const cashOrder = (): Order => placeOrder([item()], { paymentMethod: PaymentMethod.CASH })
+
+    it("is accepted without money and refuses every transfer step", () => {
+        const order = cashOrder()
+        expect(order.isCash()).toBe(true)
+        expect(() => order.markTransferSent(RECEIPT)).toThrow(/cash/)
+        expect(() => order.confirmPayment()).toThrow(/cash/)
+        expect(() => order.rejectTransfer()).toThrow(/cash/)
+        expect(() => order.remindTransfer(new Date())).toThrow(/cash/)
+        order.advanceTo(OrderStatus.ACCEPTED)
+        expect(order.status).toBe(OrderStatus.ACCEPTED)
+        expect(order.payment.status).toBe(PaymentStatus.UNPAID)
+    })
+
+    it("never goes to the district network", () => {
+        const order = cashOrder()
+        order.advanceTo(OrderStatus.ACCEPTED)
+        expect(() => order.requestNetwork(NOW)).toThrow(/own courier/)
+    })
+
+    it("the assigned courier holds the money on delivery until the owner takes it", () => {
+        const order = cashOrder()
+        order.advanceTo(OrderStatus.ACCEPTED)
+        order.assignCourier(courier(), NOW)
+        order.advanceTo(OrderStatus.PREPARING)
+        order.advanceTo(OrderStatus.READY)
+        expect(() => order.receiveCash(NOW)).toThrow(/No courier/)
+        const by = { role: "courier", courierId: "courier-1" } as const
+        order.advanceTo(OrderStatus.PICKED_UP, by)
+        order.advanceTo(OrderStatus.DELIVERED, by)
+        expect(order.payment).toMatchObject({
+            status: PaymentStatus.PAID,
+            cashCourierId: "courier-1",
+        })
+        expect(order.payment.isWithCourier()).toBe(true)
+        order.receiveCash(NOW)
+        expect(order.payment.cashReceivedAt).toEqual(NOW)
+        expect(() => order.receiveCash(NOW)).toThrow(/No courier/)
+    })
+
+    it("cancelled before delivery: nothing is owed", () => {
+        const order = cashOrder()
+        order.advanceTo(OrderStatus.ACCEPTED)
+        order.cancel("owner")
+        expect(order.payment.status).toBe(PaymentStatus.UNPAID)
     })
 })
