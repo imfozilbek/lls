@@ -15,6 +15,8 @@ import { CardIcon, CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
 import { Button, Field, Section, Stepper, TextArea, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import type { Shop } from "../stores/session.js"
+
 const CONTACT_POLL_MS = 1500
 const CONTACT_POLL_TRIES = 10
 const LAST_ADDRESS_KEY = "zumda:address"
@@ -25,19 +27,36 @@ const FLASH_MS = 1400
 /** A customer may hand back a few more empty bottles than they order. */
 const MAX_EXTRA_BOTTLES = 5
 
+/** The last delivery, kept on this phone: the next order starts filled in. */
 interface SavedAddress {
     address: string
     landmark: string
+    /** The map pin too: a network courier sees how far the order goes only with it. */
+    location: Point | null
+    /** A regular water customer hands back the same number of bottles each time. */
+    bottlesReturned: number
+}
+
+function savedPoint(value: unknown): Point | null {
+    const point = value as Partial<Point> | null | undefined
+    return typeof point?.latitude === "number" && typeof point.longitude === "number"
+        ? { latitude: point.latitude, longitude: point.longitude }
+        : null
 }
 
 function loadAddress(): SavedAddress {
     try {
         const saved = JSON.parse(
             localStorage.getItem(LAST_ADDRESS_KEY) ?? "null",
-        ) as SavedAddress | null
-        return { address: saved?.address ?? "", landmark: saved?.landmark ?? "" }
+        ) as Partial<SavedAddress> | null
+        return {
+            address: saved?.address ?? "",
+            landmark: saved?.landmark ?? "",
+            location: savedPoint(saved?.location),
+            bottlesReturned: typeof saved?.bottlesReturned === "number" ? saved.bottlesReturned : 0,
+        }
     } catch {
-        return { address: "", landmark: "" }
+        return { address: "", landmark: "", location: null, bottlesReturned: 0 }
     }
 }
 
@@ -216,7 +235,13 @@ function usePlaceOrder(delivery: Delivery): { placing: boolean; place(): Promise
                 comment: delivery.comment.trim() || undefined,
                 bottlesReturned: delivery.bottlesReturned || undefined,
             })
-            saveAddress({ address: delivery.address.trim(), landmark: delivery.landmark.trim() })
+            saveAddress({
+                address: delivery.address.trim(),
+                landmark: delivery.landmark.trim(),
+                location: delivery.location,
+                // An order without bottles keeps the count a water order left.
+                bottlesReturned: delivery.bottlesReturned || loadAddress().bottlesReturned,
+            })
             clearCart()
             haptic.success()
             reset({ name: "order", id: order.id, justPlaced: true })
@@ -390,6 +415,22 @@ function useOrderButton(input: {
         )
 }
 
+/** Bottles for a water order: the remembered count only where bottles go back, and never past
+ * what this order allows; the deposit for the ones the customer keeps. */
+function bottlesOf(
+    shop: Shop | null,
+    returnable: number,
+    remembered: number,
+): { usesBottles: boolean; bottlesReturned: number; deposit: number } {
+    const usesBottles = Boolean(shop?.features.includes(Feature.BOTTLE_DEPOSIT)) && returnable > 0
+    if (!usesBottles) {
+        return { usesBottles, bottlesReturned: 0, deposit: 0 }
+    }
+    const bottlesReturned = Math.min(remembered, returnable + MAX_EXTRA_BOTTLES)
+    const deposit = (shop?.bottleDeposit ?? 0) * Math.max(0, returnable - bottlesReturned)
+    return { usesBottles, bottlesReturned, deposit }
+}
+
 export function CheckoutScreen(): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -400,18 +441,15 @@ export function CheckoutScreen(): React.JSX.Element {
     const [delivery, setDelivery] = useState<Delivery>(() => ({
         ...loadAddress(),
         comment: "",
-        location: null,
-        bottlesReturned: 0,
     }))
-    const { placing, place } = usePlaceOrder(delivery)
-
     const cart = summarize(lines, catalog)
     const fee = deliveryFee(cart.subtotal, shop?.delivery ?? { fee: 0 })
-    const usesBottles =
-        Boolean(shop?.features.includes(Feature.BOTTLE_DEPOSIT)) && cart.returnable > 0
-    const deposit = usesBottles
-        ? (shop?.bottleDeposit ?? 0) * Math.max(0, cart.returnable - delivery.bottlesReturned)
-        : 0
+    const { usesBottles, bottlesReturned, deposit } = bottlesOf(
+        shop,
+        cart.returnable,
+        delivery.bottlesReturned,
+    )
+    const { placing, place } = usePlaceOrder({ ...delivery, bottlesReturned })
     const total = cart.subtotal + fee + deposit
     const missing = missingStep(t, {
         phone: me?.phone,
@@ -446,6 +484,16 @@ export function CheckoutScreen(): React.JSX.Element {
                 />
             </div>
 
+            {usesBottles ? (
+                <BottlesField
+                    returnable={cart.returnable}
+                    value={bottlesReturned}
+                    onChange={(bottlesReturned): void =>
+                        setDelivery((d) => ({ ...d, bottlesReturned }))
+                    }
+                />
+            ) : null}
+
             <Field label={`${t.checkout.comment} (${t.checkout.optional})`} htmlFor="comment">
                 <TextArea
                     id="comment"
@@ -455,16 +503,6 @@ export function CheckoutScreen(): React.JSX.Element {
                     maxLength={300}
                 />
             </Field>
-
-            {usesBottles ? (
-                <BottlesField
-                    returnable={cart.returnable}
-                    value={delivery.bottlesReturned}
-                    onChange={(bottlesReturned): void =>
-                        setDelivery((d) => ({ ...d, bottlesReturned }))
-                    }
-                />
-            ) : null}
 
             <Totals
                 rows={[

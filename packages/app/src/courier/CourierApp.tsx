@@ -366,13 +366,16 @@ function NearbyCard({
             </div>
             <p className="flex flex-wrap gap-x-3 text-sm text-tg-subtitle">
                 <span>{fill(t.courier.items, { n: offer.itemsCount })}</span>
-                {offer.distanceMeters === undefined ? null : (
-                    <span>
-                        {fill(t.courier.distance, {
-                            km: (offer.distanceMeters / METERS_PER_KM).toFixed(1).replace(".", ","),
-                        })}
-                    </span>
-                )}
+                {/* Never the customer's address before «Olaman»: only how far, when the pin is known. */}
+                <span>
+                    {offer.distanceMeters === undefined
+                        ? t.courier.distanceUnknown
+                        : fill(t.courier.distance, {
+                              km: (offer.distanceMeters / METERS_PER_KM)
+                                  .toFixed(1)
+                                  .replace(".", ","),
+                          })}
+                </span>
                 {offer.bottlesReturned > 0 ? (
                     <span>{fill(t.courier.bottles, { n: offer.bottlesReturned })}</span>
                 ) : null}
@@ -485,6 +488,7 @@ function VehicleField({
             lastSaved.current = profile.vehicle ?? ""
             onChange({ ...home, profile })
             haptic.success()
+            toast(t.courier.vehicleSaved, "success")
         } catch (caught) {
             haptic.error()
             toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")

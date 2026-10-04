@@ -1,6 +1,7 @@
 import { fill, useLanguage, useT } from "../i18n/index.js"
 import { formatMoney, formatQuantity } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
+import { confirm } from "../lib/telegram.js"
 import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
@@ -184,7 +185,14 @@ export function CartScreen(): React.JSX.Element {
                 <h1 className="text-2xl font-bold">{t.cart.title}</h1>
                 <button
                     type="button"
-                    onClick={clear}
+                    onClick={(): void => {
+                        // The whole cart in one tap: worth one question first.
+                        void confirm(t.cart.clearAsk).then((yes) => {
+                            if (yes) {
+                                clear()
+                            }
+                        })
+                    }}
                     className="tap -mr-2 inline-flex min-h-11 items-center rounded-control px-3 text-sm font-semibold text-tg-subtitle active:bg-tg-secondary"
                 >
                     {t.cart.clear}

@@ -7,6 +7,20 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Remembered and steady (UX phase 11, from the sixth critique)
+- **Changed (app):** checkout remembers the map pin and, for water, the bottles handed back last
+  time (never past what the order allows, never on an order without bottles); the bottles come
+  before the comment, near the total.
+- **Changed (app):** the network courier's card says «masofa noma'lum» when the customer set no
+  pin (it still shows nothing about the customer before «Olaman»).
+- **Changed (app):** the owner's tabs stay right under the shop's name on every tab; «kuryer
+  qidirilmoqda» says «Hozirgina so'raldi» in the first minute and advises delivering yourself
+  only after the district's usual wait.
+- **Changed (app):** «Savatni tozalash» asks first; the courier's «Transport» says it saved; the
+  «Buyurtma qabul qilish» card wears the shop's color.
+- **Not changed:** the customer's order screen already refreshes every 20 s while the order is
+  open (the critique missed the timer).
+
 ### Faster for the owner, never stuck for the customer (UX phase 10, from the fifth critique)
 - **Changed (app):** «Ishga tayyor» asks for «Mijozlar uchun telefon» right after the card, so a
   customer told «Pul kelmadi» has someone to call (still optional: orders never wait for it).

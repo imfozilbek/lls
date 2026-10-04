@@ -120,12 +120,13 @@ export function OwnerApp(): React.JSX.Element {
                 <h1 className="truncate text-xl font-bold">{shop?.name}</h1>
             </header>
             <StatusBanner />
+            {/* The tabs never move: whatever a tab adds on top comes under them. */}
+            <TabBar tab={tab} onChange={(next): void => void changeTab(next)} />
             {/* «Buyurtmalar» shows the whole «Ishga tayyor»; other tabs only the card it lacks. */}
             {tab === "orders" ? <ReadyCard /> : null}
             {shop && !shop.hasPayoutCard && tab !== "orders" ? (
                 <NoCardBanner onOpen={(): void => goToSection("card")} />
             ) : null}
-            <TabBar tab={tab} onChange={(next): void => void changeTab(next)} />
             <div key={tab} className="animate-fade-in">
                 {tab === "orders" ? <OrdersTab /> : null}
                 {tab === "menu" ? <MenuTab /> : null}

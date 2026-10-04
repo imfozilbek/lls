@@ -179,7 +179,7 @@ function AcceptingCard({
         <div
             className={cn(
                 "flex items-center gap-3 rounded-tile p-4 transition-colors duration-300",
-                value ? "bg-success/15" : "bg-warning/15",
+                value ? "bg-brand/10" : "bg-warning/15",
             )}
         >
             <div className="flex-1">
