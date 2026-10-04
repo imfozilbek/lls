@@ -227,6 +227,15 @@ export const uz = {
         placing: "Yuborilmoqda…",
     },
     pay: {
+        /** A card's system by its first digits; Zumda does not know every card. */
+        cardSystems: {
+            humo: "Humo",
+            uzcard: "Uzcard",
+            visa: "Visa",
+            mastercard: "Mastercard",
+            unionpay: "UnionPay",
+            mir: "Mir",
+        },
         title: "O'tkazma orqali to'lov",
         methodTitle: "To'lov usuli",
         cashTitle: "Naqd pul bilan to'lov",
@@ -616,6 +625,10 @@ export const uz = {
             cardHint:
                 "Mijozlarga faqat «To'lov uchun» karta ko'rsatiladi: buyurtma ustida ish boshlanishidan oldin shunga o'tkazadi. Kartani istalgan vaqtda almashtirish mumkin.",
             cardInvalid: "Raqamda xato bor: tekshirib qayta kiriting.",
+            cardSystem: "{system} kartasi",
+            cardUnknown: "Bu karta turini tanimadik: raqam to'g'riligini tekshiring.",
+            cardUnknownConfirm: "Karta turi tanilmadi. Raqam to'g'rimi?",
+            cardUnknownYes: "Ha, to'g'ri",
             closed: "Dam olish",
             sameAsMonday: "Hamma kunlarga dushanbadagidek",
             poster: "Chop etish uchun QR-kod",
