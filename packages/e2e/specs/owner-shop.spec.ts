@@ -153,8 +153,17 @@ test("settings: name, color, delivery and features reach the storefront", async 
     // Leaving with an unsaved edit asks first; yes drops the edit.
     await page.getByLabel("Nomi", { exact: true }).fill("Osh Markaz Old")
     await settingsBack(page)
-    const asked = (await app.calls()).filter((c) => c.method === "showConfirm")
-    expect(String(asked.at(-1)?.args[0])).toContain("saqlanmagan")
+    // Telegram's popup with our own Uzbek buttons, the red one to leave without saving.
+    const asked = (await app.calls()).filter((c) => c.method === "showPopup")
+    const popup = asked.at(-1)?.args[0] as {
+        message: string
+        buttons: { type: string; text: string }[]
+    }
+    expect(popup.message).toContain("saqlanmagan")
+    expect(popup.buttons).toEqual([
+        { id: "no", type: "default", text: "Qolish" },
+        { id: "yes", type: "destructive", text: "Saqlamasdan chiqish" },
+    ])
     await expect(page.getByRole("button", { name: /^Do'kon\s*Osh Markaz( ·|$)/ })).toBeVisible()
 
     await openGroup(page, "Do'kon")

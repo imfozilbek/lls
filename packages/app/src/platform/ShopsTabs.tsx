@@ -5,7 +5,9 @@ import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, adminApi } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatTime } from "../lib/format.js"
+import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
+import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
 import { CheckIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
 import {
@@ -29,7 +31,7 @@ function useShops(status: BusinessStatus): {
     error: string | null
     reload(): Promise<void>
 } {
-    const [shops, setShops] = useState<PlatformShopDTO[] | null>(null)
+    const [shops, setShops] = useCachedState<PlatformShopDTO[]>(`platform:${status}`)
     const [error, setError] = useState<string | null>(null)
     const reload = useCallback(async (): Promise<void> => {
         setError(null)
@@ -38,11 +40,11 @@ function useShops(status: BusinessStatus): {
         } catch (caught) {
             setError(caught instanceof ApiError ? caught.code : "generic")
         }
-    }, [status])
+    }, [status, setShops])
     useEffect(() => {
-        setShops(null)
         void reload()
     }, [reload])
+    useRefresh(reload)
     return { shops, error, reload }
 }
 

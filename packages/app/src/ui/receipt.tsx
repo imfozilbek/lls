@@ -80,7 +80,12 @@ function ReceiptViewer({ url, onClose }: { url: string; onClose(): void }): Reac
                 </button>
             </div>
             <div className="min-h-0 flex-1 overflow-auto px-3 pb-6">
-                <img src={url} alt={t.receipt.title} className="mx-auto w-full max-w-md" />
+                <img
+                    src={url}
+                    alt={t.receipt.title}
+                    // A screenshot is a tall phone screen: its room is kept while it loads.
+                    className="mx-auto aspect-[9/19] w-full max-w-md bg-tg-secondary object-contain"
+                />
             </div>
         </div>,
         document.body,

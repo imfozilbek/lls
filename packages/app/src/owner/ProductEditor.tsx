@@ -289,7 +289,8 @@ function ProductExtras({
     const back = useRouter((state) => state.back)
     const drop = useOwner((state) => state.drop)
     const remove = async (): Promise<void> => {
-        if (!(await confirm(t.owner.product.deleteConfirm))) {
+        const options = { yes: t.common.delete, destructive: true }
+        if (!(await confirm(t.owner.product.deleteConfirm, options))) {
             return
         }
         try {

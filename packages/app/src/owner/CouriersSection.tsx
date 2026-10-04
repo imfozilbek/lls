@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
-import { confirm, haptic, openTelegramLink } from "../lib/telegram.js"
+import { confirm, haptic, onAppActive, openTelegramLink } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { AlertIcon, CheckIcon, CopyIcon, PlusIcon, ScooterIcon, TrashIcon } from "../ui/icons.js"
 import { Button, Section, Skeleton, Switch } from "../ui/primitives.js"
@@ -287,7 +287,8 @@ function useCourierActions(): CourierActions {
     }
 
     const remove = async (courier: CourierDTO): Promise<void> => {
-        if (!(await confirm(`${s.removeCourier}\n${courier.name}`))) {
+        const options = { yes: t.common.delete, destructive: true }
+        if (!(await confirm(`${s.removeCourier}\n${courier.name}`, options))) {
             return
         }
         try {
@@ -362,8 +363,7 @@ export function CouriersSection({ shopName }: { shopName: string }): React.JSX.E
         const reload = (): void => void loadCouriers().catch(() => undefined)
         reload()
         // A courier joins in the bot while the owner is away: refresh when the app comes back.
-        document.addEventListener("visibilitychange", reload)
-        return (): void => document.removeEventListener("visibilitychange", reload)
+        return onAppActive(reload)
     }, [loadCouriers])
 
     const create = async (): Promise<void> => {

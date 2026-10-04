@@ -8,6 +8,7 @@ import { cn } from "../lib/cn.js"
 import { formatMoney, formatQuantity, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
+import { useCachedState } from "../lib/use-cached.js"
 import { summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
@@ -116,7 +117,8 @@ function HeaderAction({
 
 /** Whether the customer has an order on its way here: «Buyurtmalarim» then wears a dot. */
 function useHasActiveOrder(shopId: string | undefined): boolean {
-    const [active, setActive] = useState(false)
+    // Known at once on a return to the menu: the dot never pops in late a second time.
+    const [active, setActive] = useCachedState<boolean>("has-active-order")
     useEffect(() => {
         if (!shopId) {
             return undefined
@@ -132,8 +134,8 @@ function useHasActiveOrder(shopId: string | undefined): boolean {
         return (): void => {
             alive = false
         }
-    }, [shopId])
-    return active
+    }, [shopId, setActive])
+    return active === true
 }
 
 export function CatalogSearch({

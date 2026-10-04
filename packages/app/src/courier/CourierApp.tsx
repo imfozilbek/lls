@@ -6,6 +6,8 @@ import { ApiError, api, setCourierBot } from "../lib/api.js"
 import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "../lib/brand.js"
 import { formatMoney } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
+import { usePolling } from "../lib/polling.js"
+import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
@@ -222,13 +224,9 @@ function useHome(): {
     }, [])
     useEffect(() => {
         void reload()
-        const timer = window.setInterval(() => {
-            if (document.visibilityState === "visible") {
-                void reload()
-            }
-        }, POLL_MS)
-        return (): void => window.clearInterval(timer)
     }, [reload])
+    usePolling(reload, POLL_MS)
+    useRefresh(reload)
     const replace = (order: OrderDTO): void => {
         setHome((current) =>
             current

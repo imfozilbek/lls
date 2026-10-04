@@ -3,6 +3,7 @@ import { useEffect, useId, useState } from "react"
 import { errorText, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { compressReceipt } from "../lib/image.js"
+import { useClosingGuard } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { ReceiptIcon } from "../ui/icons.js"
@@ -68,7 +69,7 @@ function ReceiptPicker({
                 <img
                     src={picked.url}
                     alt={t.receipt.title}
-                    className="max-h-[36vh] w-auto rounded-control bg-tg-secondary object-contain ring-1 ring-black/5"
+                    className="h-[36vh] w-auto max-w-full rounded-control bg-tg-secondary object-contain ring-1 ring-black/5"
                 />
                 {input}
                 <label
@@ -113,6 +114,8 @@ export function ReceiptSheet({
 }): React.JSX.Element {
     const t = useT()
     const [picked, setPicked] = useState<Picked | null>(null)
+    // A screenshot picked but not sent yet: closing the app by mistake asks first.
+    useClosingGuard(picked !== null)
     const [sending, setSending] = useState(false)
 
     // The preview's object URL lives exactly as long as the preview.

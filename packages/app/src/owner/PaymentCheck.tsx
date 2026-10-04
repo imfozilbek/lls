@@ -61,7 +61,8 @@ export function PaymentCheckSheet({
 
     const answer = async (kind: "yes" | "no"): Promise<void> => {
         // «Pul kelmadi» sends the customer back to the worst moment: one more question first.
-        if (kind === "no" && !(await confirm(c.noConfirm))) {
+        const options = { yes: c.no, destructive: true }
+        if (kind === "no" && !(await confirm(c.noConfirm, options))) {
             return
         }
         setBusy(kind)

@@ -700,6 +700,13 @@ console.log            // Use logger
 **REQUIRED:**
 - Micro-interactions on all interactive elements
 - Personality: custom icons and empty states with character (no stock illustrations)
+- **Native feel (owner's decision, October 2026):** every screen with server data registers
+  `useRefresh` (pull down from the top) and keeps its data on refresh; data comes through
+  `usePagedList` / `useCachedState` (this session's copy at once, a quiet refresh behind it,
+  never a skeleton over shown data); timers through `usePolling` (stops while collapsed,
+  refreshes on return); "back" through `useBackButton` (the swipe right uses it too); a question
+  through `confirm(text, { yes, destructive })` (Uzbek buttons); something to lose holds
+  `useClosingGuard`. Fields stay 16px (iOS zooms below) with the dark caret (`index.css`).
 
 ## Skills Usage (MANDATORY)
 

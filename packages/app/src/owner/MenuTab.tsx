@@ -6,6 +6,7 @@ import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
+import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { CatalogSearch, SEARCH_FROM, matches } from "../shop/MenuScreen.js"
 import { useRouter } from "../stores/router.js"
@@ -260,12 +261,19 @@ export function MenuTab(): React.JSX.Element {
         try {
             await loadProducts()
         } catch (caught) {
-            setError(caught instanceof ApiError ? caught.code : "generic")
+            const code = caught instanceof ApiError ? caught.code : "generic"
+            // The menu already on screen stays; only a first load shows the error in its place.
+            if (useOwner.getState().products === null) {
+                setError(code)
+            } else {
+                toast(errorText(t, code), "error")
+            }
         }
     }
     useEffect(() => {
         void load()
     }, [])
+    useRefresh(load)
 
     useMainAction({
         text: t.owner.addProduct,

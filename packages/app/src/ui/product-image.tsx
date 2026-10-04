@@ -16,6 +16,9 @@ function tintOf(category: string): string {
     return TINTS[sum % TINTS.length] ?? TINTS[0]
 }
 
+/** Photos already on screen once this session: shown again at once, never faded in twice. */
+const seen = new Set<string>()
+
 /** Photo with a calm brand-tinted placeholder (category drawing) while loading or when missing. */
 export function ProductImage({
     imageKey,
@@ -35,7 +38,10 @@ export function ProductImage({
 }): React.JSX.Element {
     const src = imageUrl(imageKey)
     // State is tied to the URL, so a new or removed photo starts from a clean placeholder.
-    const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
+    const [loadedSrc, setLoadedSrc] = useState<string | null>(() =>
+        src !== undefined && seen.has(src) ? src : null,
+    )
+    const known = src !== undefined && seen.has(src)
     const [failedSrc, setFailedSrc] = useState<string | null>(null)
     const loaded = src !== undefined && loadedSrc === src
     const failed = src !== undefined && failedSrc === src
@@ -64,10 +70,14 @@ export function ProductImage({
                     alt={alt}
                     loading="lazy"
                     decoding="async"
-                    onLoad={(): void => setLoadedSrc(src)}
+                    onLoad={(): void => {
+                        seen.add(src)
+                        setLoadedSrc(src)
+                    }}
                     onError={(): void => setFailedSrc(src)}
                     className={cn(
-                        "absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ease-out-quart",
+                        "absolute inset-0 h-full w-full object-cover",
+                        !known && "transition-opacity duration-300 ease-out-quart",
                         loaded ? "opacity-100" : "opacity-0",
                     )}
                 />

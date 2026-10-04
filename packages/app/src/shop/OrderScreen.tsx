@@ -5,11 +5,22 @@ import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { formatMoney, formatTime } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
-import { confirm, haptic } from "../lib/telegram.js"
+import { usePolling } from "../lib/polling.js"
+import { useRefresh } from "../lib/refresh.js"
+import { addToHomeScreen, canAddToHomeScreen, confirm, haptic } from "../lib/telegram.js"
+import { useCachedState } from "../lib/use-cached.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { CashIcon, PhoneIcon, PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import {
+    CashIcon,
+    CloseIcon,
+    HeartHomeIcon,
+    PhoneIcon,
+    PinIcon,
+    ScooterIcon,
+    WifiOffIcon,
+} from "../ui/icons.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusHero, StatusTimeline } from "../ui/order-status.js"
 import { CardBlock, PaymentLine } from "../ui/payment.js"
@@ -224,13 +235,76 @@ function CashPayment({ order }: { order: OrderDTO }): React.JSX.Element | null {
     )
 }
 
+/** Offered once per shop, after a delivered order. */
+const HOME_OFFER_KEY = "zumda:home-offered:"
+
+/**
+ * After a delivered order, once per shop: the shop's icon on the phone's home screen, so the next
+ * order is one tap away. Only where Telegram can do it (8.0) and the icon is not there yet.
+ */
+function HomeScreenOffer(): React.JSX.Element | null {
+    const t = useT()
+    const slug = useSession((state) => state.shop?.slug)
+    const [offer, setOffer] = useState(false)
+    useEffect(() => {
+        if (!slug) {
+            return
+        }
+        let seen = true
+        try {
+            seen = window.localStorage.getItem(HOME_OFFER_KEY + slug) !== null
+        } catch {
+            return
+        }
+        if (!seen) {
+            void canAddToHomeScreen().then(setOffer)
+        }
+    }, [slug])
+    if (!offer || !slug) {
+        return null
+    }
+    const answer = (add: boolean): void => {
+        try {
+            window.localStorage.setItem(HOME_OFFER_KEY + slug, "1")
+        } catch {
+            // Private mode: the offer may come back once more, nothing breaks.
+        }
+        if (add) {
+            haptic.tap()
+            addToHomeScreen()
+        }
+        setOffer(false)
+    }
+    return (
+        <div className="flex animate-rise items-center gap-3 rounded-tile bg-brand/10 p-4">
+            <HeartHomeIcon size={24} className="shrink-0 text-brand" />
+            <button
+                type="button"
+                onClick={(): void => answer(true)}
+                className="tap min-w-0 flex-1 text-left"
+            >
+                <span className="block font-semibold">{t.order.homeScreen}</span>
+                <span className="block text-sm text-tg-subtitle">{t.order.homeScreenHint}</span>
+            </button>
+            <button
+                type="button"
+                aria-label={t.common.no}
+                onClick={(): void => answer(false)}
+                className="tap -mr-2 grid h-11 w-11 shrink-0 place-items-center rounded-full text-tg-hint"
+            >
+                <CloseIcon size={18} />
+            </button>
+        </div>
+    )
+}
+
 function useOrder(id: string): {
     order: OrderDTO | null
     error: string | null
     reload(): Promise<void>
     setOrder(order: OrderDTO): void
 } {
-    const [order, setOrder] = useState<OrderDTO | null>(null)
+    const [order, setOrder] = useCachedState<OrderDTO>(`order:${id}`)
     const [error, setError] = useState<string | null>(null)
 
     const reload = useCallback(async (): Promise<void> => {
@@ -240,31 +314,15 @@ function useOrder(id: string): {
         } catch (caught) {
             setError(caught instanceof ApiError ? caught.code : "generic")
         }
-    }, [id])
+    }, [id, setOrder])
 
     const active = order !== null && !isFinalStatus(order.status)
     useEffect(() => {
         void reload()
-        // Back from the bank app: show the news at once, not after the next 20 s tick.
-        const onVisible = (): void => {
-            if (document.visibilityState === "visible") {
-                void reload()
-            }
-        }
-        document.addEventListener("visibilitychange", onVisible)
-        return (): void => document.removeEventListener("visibilitychange", onVisible)
     }, [reload])
-    useEffect(() => {
-        if (!active) {
-            return undefined
-        }
-        const timer = window.setInterval(() => {
-            if (document.visibilityState === "visible") {
-                void reload()
-            }
-        }, POLL_MS)
-        return (): void => window.clearInterval(timer)
-    }, [active, reload])
+    // Back from the bank app: the news at once, not after the next 20 s tick.
+    usePolling(reload, POLL_MS, active)
+    useRefresh(reload)
 
     return { order, error, reload, setOrder }
 }
@@ -313,7 +371,9 @@ function OrderActions({
 
     const cancel = async (): Promise<void> => {
         const sent = order.payment.status === PaymentStatus.AWAITING
-        if (!(await confirm(sent ? t.order.cancelAfterTransfer : t.order.cancelConfirm))) {
+        const question = sent ? t.order.cancelAfterTransfer : t.order.cancelConfirm
+        const options = { yes: t.order.cancel, no: t.common.no, destructive: true }
+        if (!(await confirm(question, options))) {
             return
         }
         setCancelling(true)
@@ -531,6 +591,7 @@ export function OrderScreen({
             ) : null}
 
             <OrderActions order={order} onChange={setOrder} onStale={reload} />
+            {order.status === OrderStatus.DELIVERED ? <HomeScreenOffer /> : null}
             <BottomSpacer />
         </main>
     )

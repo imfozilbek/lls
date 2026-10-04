@@ -121,6 +121,16 @@ const config: Config = {
                     to: { transform: "none" },
                 },
                 "fade-in": { from: { opacity: "0" }, to: { opacity: "1" } },
+                // A new screen slides in from the side it comes from; it is never blank.
+                "screen-forward": {
+                    from: { opacity: "0.6", transform: "translateX(28px)" },
+                    to: { opacity: "1", transform: "none" },
+                },
+                "screen-back": {
+                    from: { opacity: "0.6", transform: "translateX(-28px)" },
+                    to: { opacity: "1", transform: "none" },
+                },
+                "screen-in": { from: { opacity: "0.6" }, to: { opacity: "1" } },
             },
             animation: {
                 rise: "rise 240ms cubic-bezier(0.16, 1, 0.3, 1) both",
@@ -130,6 +140,9 @@ const config: Config = {
                 ring: "ring 1.8s cubic-bezier(0.25, 1, 0.5, 1) infinite",
                 "sheet-in": "sheet-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 "fade-in": "fade-in 200ms ease-out both",
+                "screen-forward": "screen-forward 220ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                "screen-back": "screen-back 220ms cubic-bezier(0.16, 1, 0.3, 1) both",
+                "screen-in": "screen-in 180ms ease-out both",
             },
         },
     },
