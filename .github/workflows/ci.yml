@@ -132,7 +132,7 @@ jobs:
                     - customer-shop.spec.ts gestures.spec.ts sound.spec.ts
                     - showcase.spec.ts managed-bots.spec.ts business-web.spec.ts platform.spec.ts
                     - customer-edges.spec.ts onboarding-admin.spec.ts
-                    - courier.spec.ts network.spec.ts
+                    - courier.spec.ts network.spec.ts trips.spec.ts
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:

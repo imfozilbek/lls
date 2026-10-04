@@ -82,6 +82,11 @@ async function main(): Promise<void> {
             `TELEGRAM_API_BASE:${FAKE_TELEGRAM_URL}`,
             "--var",
             `TELEGRAM_OAUTH_BASE:${FAKE_TELEGRAM_URL}`,
+            // Trips: the way along the "roads" of the fake OpenRouteService.
+            "--var",
+            "ORS_API_KEY:stand-ors-key",
+            "--var",
+            `ORS_API_BASE:${FAKE_TELEGRAM_URL}/ors`,
         ],
         WORKER_DIR,
     )

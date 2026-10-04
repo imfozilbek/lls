@@ -5,6 +5,9 @@
  *   POST /bot<token>/<method>   the Bot API methods Zumda uses (sendPhoto takes a picture URL);
  *                               Managed Bots: a token stays until it is revoked or replaced
  *   GET  /.well-known/jwks.json Telegram Login's public keys (the stand's test key)
+ *   POST /ors/v2/directions/driving-car/geojson
+ *                               a fake OpenRouteService: the way turns at right angles, like
+ *                               streets (recorded as method "ors")
  *   GET  /__log                 every recorded call, oldest first
  *   POST /__reset               forget calls and failures
  *   POST /__control             { broken?: number[], blocked?: number[], failWebhooks?: boolean,
@@ -228,6 +231,45 @@ function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
     }
 }
 
+const ORS_PATH = "/ors/v2/directions/driving-car/geojson"
+const METERS_PER_DEGREE = 111_320
+const STAND_SPEED_MPS = 8
+
+/** A way through the points that turns at right angles (east-west, then north-south). */
+function fakeRoute(points: [number, number][]): object {
+    const line: [number, number][] = []
+    let meters = 0
+    points.forEach((point, i) => {
+        const previous = points[i - 1]
+        if (previous) {
+            line.push([point[0], previous[1]])
+            meters +=
+                (Math.abs(point[0] - previous[0]) * 0.78 + Math.abs(point[1] - previous[1])) *
+                METERS_PER_DEGREE
+        }
+        line.push(point)
+    })
+    return {
+        features: [
+            {
+                geometry: { coordinates: line },
+                properties: { summary: { distance: meters, duration: meters / STAND_SPEED_MPS } },
+            },
+        ],
+    }
+}
+
+async function serveOrs(
+    state: State,
+    request: IncomingMessage,
+    response: ServerResponse,
+): Promise<void> {
+    const body = await readJson(request)
+    state.calls.push({ seq: state.calls.length + 1, token: "ors", method: "ors", body })
+    const points = (body["coordinates"] as [number, number][] | undefined) ?? []
+    send(response, 200, fakeRoute(points))
+}
+
 async function handle(
     state: State,
     bots: Map<string, Bot>,
@@ -238,6 +280,10 @@ async function handle(
     // Telegram Login's public keys: the stand signs `id_token`s with the matching private key.
     if (url.pathname === "/.well-known/jwks.json") {
         send(response, 200, { keys: [STAND_LOGIN_PUBLIC_JWK] })
+        return
+    }
+    if (url.pathname === ORS_PATH) {
+        await serveOrs(state, request, response)
         return
     }
     if (url.pathname === "/__log") {
