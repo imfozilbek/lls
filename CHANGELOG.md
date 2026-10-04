@@ -7,6 +7,14 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### «Do'konga qo'ng'iroq» (UX phase 8, from the fourth critique)
+- **Added (core, worker):** the shop's optional contact phone (`contact_phone`, migration
+  `0012`, E.164 through `Phone`), set in the owner's `PATCH /api/owner/shop` and given to
+  customers with the shop.
+- **Added (app):** «Mijozlar uchun telefon (ixtiyoriy)» in «Sozlamalar» → «Do'kon», checked as
+  typed; the customer's order shows «Do'konga qo'ng'iroq» with the number while the transfer is
+  awaited or checked, and after «Pul kelmadi» says why to call. Without a number nothing changes.
+
 ### Calm when the money is in doubt (UX phase 7, from the fourth critique)
 - **Changed (app):** «Pul kelmadi» reads «Do'kon pulni hali ko'rmadi», and the note under the
   card asks to check the transfer and send the screenshot again (it no longer says «O'tkazdim»
