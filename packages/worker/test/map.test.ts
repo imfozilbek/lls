@@ -84,7 +84,7 @@ describe("/map", () => {
     })
 
     it("serves glyphs and icons, an empty set for a script we do not keep", async () => {
-        await env.BUCKET.put("map/fonts/Noto Sans Regular/0-255.pbf", new Uint8Array([1, 2, 3]))
+        await env.BUCKET.put("map/fonts/noto-sans-regular/0-255.pbf", new Uint8Array([1, 2, 3]))
         await env.BUCKET.put("map/sprites/light.json", "{}")
 
         const glyphs = await get("/fonts/Noto%20Sans%20Regular/0-255.pbf")

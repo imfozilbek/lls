@@ -138,7 +138,9 @@ export const mapRoutes = new Hono<AppEnv>()
         if (!FONT.test(font) || !glyphs) {
             return c.notFound()
         }
-        const key = `${PREFIX}/fonts/${font}/${c.req.param("range")}`
+        // Stored without spaces: "Noto Sans Regular" is `noto-sans-regular` (scripts/map-data.mjs).
+        const slug = font.toLowerCase().replaceAll(" ", "-")
+        const key = `${PREFIX}/fonts/${slug}/${c.req.param("range")}`
         const served = await servedObject(c.env, key, PROTOBUF_TYPE, IMMUTABLE_CACHE)
         // A script we do not keep (e.g. Chinese in a far label): an empty glyph set, no error.
         return (

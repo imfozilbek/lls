@@ -16,7 +16,8 @@
  *
  * In R2 (bucket `zumda-media`):
  *   map/uzbekistan-YYYYMMDD.pmtiles     the map
- *   map/fonts/<font>/<range>.pbf        label glyphs
+ *   map/fonts/<font-slug>/<range>.pbf   label glyphs (noto-sans-regular: no spaces in R2 keys,
+ *                                       wrangler would store them %20-encoded)
  *   map/sprites/light[@2x].{json,png}   icons
  *   map/current.json                    which map the app gets: written LAST, so the switch is
  *                                       atomic; the map before it stays, older ones are removed
@@ -181,6 +182,11 @@ async function assets(outDir) {
     }
 }
 
+/** "Noto Sans Regular" → "noto-sans-regular": the Worker maps the style's font stack the same way. */
+function fontSlug(font) {
+    return font.toLowerCase().replaceAll(" ", "-")
+}
+
 function wrangler(args, options = {}) {
     return run("bunx", ["wrangler", "r2", "object", ...args, "--remote"], {
         cwd: WORKER_DIR,
@@ -217,7 +223,7 @@ function upload(outDir, current) {
     put(`${PREFIX}/${current.file}`, join(outDir, current.file), "application/vnd.pmtiles")
     for (const font of FONTS) {
         for (const range of GLYPH_RANGES) {
-            const key = `${PREFIX}/fonts/${font}/${range}.pbf`
+            const key = `${PREFIX}/fonts/${fontSlug(font)}/${range}.pbf`
             put(key, join(outDir, "fonts", font, `${range}.pbf`), "application/x-protobuf")
         }
     }
