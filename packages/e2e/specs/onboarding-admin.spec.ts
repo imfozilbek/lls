@@ -15,7 +15,7 @@ import {
     waitForCall,
     waitForMessage,
 } from "../support/telegram.js"
-import { appQueryOf, bottomButton, openApp } from "../support/webapp.js"
+import { appQueryOf, bottomButton, openApp, pickOnMap } from "../support/webapp.js"
 
 import type { TgUser } from "../support/telegram.js"
 import type { Page } from "@playwright/test"
@@ -53,8 +53,8 @@ async function apply(page: Page, token: string, name: string): Promise<void> {
     await page.getByLabel("Bot tokeni").fill(token)
     await bottomButton(page).click()
     await expect(page.getByText("3/3-qadam")).toBeVisible()
-    await page.getByRole("button", { name: "Joylashuvni yuborish" }).click()
-    await expect(page.getByText("Joylashuv olindi")).toBeVisible()
+    await pickOnMap(page)
+    await expect(page.getByRole("button", { name: /Joy belgilandi/ })).toBeVisible()
     await page.getByLabel(/Manzil/).fill("Yakkabog', Navoiy 20")
     await bottomButton(page).click() // «Ariza yuborish»
 }

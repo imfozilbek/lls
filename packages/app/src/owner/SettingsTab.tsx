@@ -14,6 +14,7 @@ import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { AlertIcon, CheckIcon, ChevronIcon, CopyIcon, PinIcon, WifiOffIcon } from "../ui/icons.js"
+import { PlacePick } from "../ui/maps.js"
 import {
     Button,
     EmptyState,
@@ -433,15 +434,30 @@ function LocationFields({
                 maxLength={200}
                 onChange={(e): void => patch({ address: e.target.value })}
             />
-            <Button
-                variant="secondary"
-                icon={
-                    <PinIcon size={18} className={form.location ? "text-success" : "text-brand"} />
+            <PlacePick
+                value={form.location}
+                onChange={(location): void => patch({ location })}
+                zone={
+                    form.location && form.radiusKm
+                        ? { center: form.location, radiusMeters: form.radiusKm * 1000 }
+                        : null
                 }
-                onClick={(): void => void locate()}
-            >
-                {form.location ? s.setLocation : s.location}
-            </Button>
+                pin="shop"
+                fallback={
+                    <Button
+                        variant="secondary"
+                        icon={
+                            <PinIcon
+                                size={18}
+                                className={form.location ? "text-success" : "text-brand"}
+                            />
+                        }
+                        onClick={(): void => void locate()}
+                    >
+                        {form.location ? s.setLocation : s.location}
+                    </Button>
+                }
+            />
         </Section>
     )
 }

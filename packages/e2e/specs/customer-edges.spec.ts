@@ -39,8 +39,11 @@ test("declining the phone keeps the order button off; declining location says so
     await bottomButton(page).click()
     await expect(page.getByText("Avval telefon raqamingizni yuboring")).toBeVisible()
     await expect(page.getByRole("heading", { name: "Buyurtma yuborildi!" })).toHaveCount(0)
-    await page.getByRole("button", { name: "Joylashuvni yuborish" }).click()
+    // Telegram gives no place: the map says so and stays open for a pick by hand.
+    await page.getByRole("button", { name: "Xaritada belgilash" }).click()
+    await page.getByRole("button", { name: "Joylashuvim" }).click()
     await expect(page.getByText("Joylashuvni olib bo'lmadi")).toBeVisible()
+    await page.getByRole("button", { name: "Yopish" }).click()
 })
 
 test("a contact of another person is not saved as the customer's phone", async ({ page }) => {

@@ -13,14 +13,27 @@ export interface MainAction {
 
 interface MainActionState {
     action: MainAction | null
+    /** Full-screen layers (the map picker) over the screen: its action waits under them. */
+    suspended: number
     set(action: MainAction | null): void
 }
 
 /** The screen's one primary action. Rendered by <BottomBar/> when Telegram has no native button. */
 export const useMainActionStore = create<MainActionState>((set) => ({
     action: null,
+    suspended: 0,
     set: (action): void => set({ action }),
 }))
+
+/** While mounted, the screen's main action is hidden; it comes back as it was afterwards. */
+export function useSuspendMainAction(): void {
+    useEffect(() => {
+        useMainActionStore.setState((state) => ({ suspended: state.suspended + 1 }))
+        return (): void => {
+            useMainActionStore.setState((state) => ({ suspended: state.suspended - 1 }))
+        }
+    }, [])
+}
 
 /**
  * Declares the screen's primary action. Inside Telegram it drives the native MainButton
@@ -32,7 +45,8 @@ export function useMainAction(action: MainAction | null): void {
     const text = action?.text
     const loading = action?.loading ?? false
     const disabled = action?.disabled ?? false
-    const visible = action !== null
+    const suspended = useMainActionStore((state) => state.suspended > 0)
+    const visible = action !== null && !suspended
 
     useEffect(() => {
         const click = (): void => handler.current()

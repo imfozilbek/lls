@@ -514,3 +514,27 @@ export async function openSettings(page: Page, group: string): Promise<void> {
 export async function settingsBack(page: Page): Promise<void> {
     await page.getByRole("button", { name: "Sozlamalar", exact: true }).click()
 }
+
+/**
+ * Our map's picker: «Xaritada belgilash» → «Joylashuvim» (the place Telegram gives) → «Shu yer».
+ * `where` is that place (the stub's location of the person, Yakkabog' by default).
+ */
+export async function pickOnMap(
+    page: Page,
+    where: { latitude: number; longitude: number } = YAKKABOG,
+    button: RegExp | string = "Xaritada belgilash",
+): Promise<void> {
+    await page.getByRole("button", { name: button }).click()
+    const picker = page.locator("[role=dialog][data-point]")
+    await expect(picker.locator(".zumda-map")).toHaveAttribute("data-map-ready", "true", {
+        timeout: 20_000,
+    })
+    await picker.getByRole("button", { name: "Joylashuvim" }).click()
+    await expect(picker).toHaveAttribute(
+        "data-point",
+        `${where.latitude.toFixed(4)},${where.longitude.toFixed(4)}`,
+        { timeout: 10_000 },
+    )
+    await picker.getByRole("button", { name: "Shu yer" }).click()
+    await expect(picker).toBeHidden()
+}

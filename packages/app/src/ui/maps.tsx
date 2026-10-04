@@ -1,0 +1,151 @@
+import { Suspense, lazy, useMemo, useState } from "react"
+
+import { useT } from "../i18n/index.js"
+import { cn } from "../lib/cn.js"
+import { HOME_POINT, loadMapKit, useMapReady } from "../lib/map.js"
+import { haptic } from "../lib/telegram.js"
+
+import { CheckIcon, PinIcon } from "./icons.js"
+
+import type { Point } from "../lib/map.js"
+import type { MapMarker, MapPickerProps, MapShowProps, Zone } from "./map/kit.js"
+import type { ReactNode } from "react"
+
+/**
+ * The map in the main bundle is only these doors: MapLibre itself loads with the first map
+ * (`ui/map/kit.ts`). With no map file yet, every place works as before (`fallback`).
+ */
+const LazyPicker = lazy(() => loadMapKit().then((kit) => ({ default: kit.MapPicker })))
+const LazyPreview = lazy(() => loadMapKit().then((kit) => ({ default: kit.MapPreview })))
+
+export type { MapMarker, Zone }
+
+function MapLoading(): React.JSX.Element {
+    const t = useT()
+    return (
+        <div
+            className="fixed inset-0 z-viewer flex items-center justify-center bg-tg-bg text-tg-hint"
+            role="status"
+        >
+            {t.map.loading}
+        </div>
+    )
+}
+
+export function MapPicker(props: MapPickerProps): React.JSX.Element {
+    return (
+        <Suspense fallback={<MapLoading />}>
+            <LazyPicker {...props} />
+        </Suspense>
+    )
+}
+
+/** A small map of where (the shop, the customer, a trip); nothing while there is no map. */
+export function MapPreview(
+    props: MapShowProps & { className?: string; footer?: ReactNode },
+): React.JSX.Element | null {
+    const ready = useMapReady()
+    if (!ready) {
+        return null
+    }
+    return (
+        <Suspense
+            fallback={
+                <div
+                    className={cn("rounded-tile bg-tg-secondary", props.className ?? "h-40")}
+                    aria-hidden
+                />
+            }
+        >
+            <LazyPreview {...props} />
+        </Suspense>
+    )
+}
+
+export interface PlacePickProps {
+    value: Point | null
+    onChange(point: Point): void
+    /** Where the map opens with no point yet: the shop, the district; else Yakkabog'. */
+    start?: Point | null
+    zone?: Zone | null
+    markers?: MapMarker[]
+    title?: string
+    /** Before the map exists: the old way (the place from Telegram). */
+    fallback: ReactNode
+    /** How the picked place shows in the small map above the button. */
+    pin?: "shop" | "customer"
+}
+
+/** «Xaritada belgilash»: the place picked on our map; the button turns green once it is set. */
+export function PlacePick({
+    value,
+    onChange,
+    start,
+    zone,
+    markers,
+    title,
+    fallback,
+    pin = "customer",
+}: PlacePickProps): React.JSX.Element {
+    const t = useT()
+    const ready = useMapReady()
+    const [open, setOpen] = useState(false)
+    const shown = useMemo(
+        (): MapMarker[] =>
+            value
+                ? [
+                      ...(markers ?? []),
+                      { id: "picked", point: value, kind: pin, title: t.map.picked },
+                  ]
+                : [],
+        [value, markers, pin, t],
+    )
+    if (!ready) {
+        return <>{fallback}</>
+    }
+    return (
+        <>
+            {value ? (
+                <MapPreview
+                    className="h-32"
+                    fit={[value]}
+                    zone={zone}
+                    markers={shown}
+                    label={t.map.picked}
+                />
+            ) : null}
+            <button
+                type="button"
+                onClick={(): void => {
+                    haptic.tap()
+                    setOpen(true)
+                }}
+                onPointerEnter={(): void => void loadMapKit()}
+                className={cn(
+                    "tap flex h-12 items-center justify-center gap-2 rounded-control font-medium text-tg-text transition-colors duration-200",
+                    value ? "bg-success/15" : "bg-tg-secondary",
+                )}
+            >
+                {value ? (
+                    <CheckIcon size={20} className="text-success" />
+                ) : (
+                    <PinIcon size={20} className="text-brand" />
+                )}
+                {value ? `${t.map.picked} · ${t.map.change}` : t.map.pick}
+            </button>
+            {open ? (
+                <MapPicker
+                    start={value ?? start ?? HOME_POINT}
+                    zone={zone}
+                    markers={markers}
+                    title={title}
+                    onPick={(point): void => {
+                        onChange(point)
+                        setOpen(false)
+                    }}
+                    onClose={(): void => setOpen(false)}
+                />
+            ) : null}
+        </>
+    )
+}

@@ -15,7 +15,7 @@ import {
     resetStand,
     payAndAccept,
 } from "../support/stand.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { bottomButton, openApp, pickOnMap } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -143,8 +143,8 @@ for (const theme of ["light"] as const) {
         await snap(page, "30-bot-created", theme)
         await bottomButton(page).click()
         await expect(page.getByRole("heading", { name: "Biznes qayerda?" })).toBeVisible()
-        await page.getByRole("button", { name: "Joylashuvni yuborish" }).click()
-        await expect(page.getByText("Joylashuv olindi")).toBeVisible()
+        await pickOnMap(page)
+        await expect(page.getByRole("button", { name: /Joy belgilandi/ })).toBeVisible()
         await snap(page, "31-location-step", theme)
         await bottomButton(page).click() // «Ariza yuborish»
         // Straight into the new business: under review, and «Ishga tayyor».
