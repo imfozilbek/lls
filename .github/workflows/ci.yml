@@ -129,7 +129,7 @@ jobs:
                     - owner-shop.spec.ts
                     - money.spec.ts cash.spec.ts
                     - visual.spec.ts
-                    - customer-shop.spec.ts gestures.spec.ts
+                    - customer-shop.spec.ts gestures.spec.ts sound.spec.ts
                     - showcase.spec.ts managed-bots.spec.ts business-web.spec.ts platform.spec.ts
                     - customer-edges.spec.ts onboarding-admin.spec.ts
                     - courier.spec.ts network.spec.ts

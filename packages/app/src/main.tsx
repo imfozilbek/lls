@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client"
 import { App, initialLanguage } from "./App.js"
 import { dictionaryFor, useLanguageStore } from "./i18n/index.js"
 import { setUpKeyboard } from "./lib/keyboard.js"
+import { unlockSoundOnFirstTouch } from "./lib/sound.js"
 import {
     paintLightFrame,
     readLaunchParams,
@@ -19,6 +20,7 @@ app?.expand()
 paintLightFrame(app)
 setUpNativeFeel(app)
 setUpKeyboard()
+unlockSoundOnFirstTouch()
 initialLanguage()
 const { common } = dictionaryFor(useLanguageStore.getState().language)
 setPopupWords({ yes: common.yes, no: common.cancel })

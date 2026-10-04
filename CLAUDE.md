@@ -524,6 +524,11 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 - Courier assigned → order card from the Zumda courier bot, titled with the shop's name (address,
   landmark, map, phone, «Оплачено заранее: денег не брать» or for cash «Mijozdan {sum} naqd
   oling», empty bottles) with "Забрал", then one "Доставил" («Pulni oldim, yetkazdim» for cash).
+- **The Zumda sound** (owner's choice, October 2026: «Zum-da», `lib/sound.ts`, synthesized): while
+  the Mini App is open, news rings it: the shop (new order, «O'tkazdim») and the courier (new
+  delivery, ready to pick up, network order nearby) twice, the customer once and softly (the
+  order moved). `useRingOnNews` compares with the last look; «Zumda ovozi» turns it off for the
+  shop and the courier. Bot messages keep Telegram's own sound (a bot cannot set one).
 - Status change → message to the customer (courier name, never the courier's phone). Showcase
   orders: the Zumda bot writes to the customer (with the shop name); the owner still gets messages
   from the shop bot.

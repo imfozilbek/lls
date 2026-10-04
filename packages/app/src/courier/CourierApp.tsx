@@ -1,5 +1,5 @@
 import { CourierStatus, OrderStatus, PaymentStatus } from "@zumda/core"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api, setCourierBot } from "../lib/api.js"
@@ -9,6 +9,7 @@ import { useMainAction } from "../lib/main-button.js"
 import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
+import { useRingOnNews } from "../lib/use-ring.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
 import { CashIcon, CheckIcon, ClockIcon, ScooterIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
@@ -24,6 +25,7 @@ import {
     TextInput,
 } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { SoundSwitch } from "../ui/sound-switch.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import type { Dictionary } from "../i18n/index.js"
@@ -227,6 +229,20 @@ function useHome(): {
     }, [reload])
     usePolling(reload, POLL_MS)
     useRefresh(reload)
+    // A new delivery, an order ready to pick up, or a network order nearby: the Zumda sound.
+    const snapshot = useMemo(
+        () =>
+            home
+                ? new Map([
+                      ...home.orders
+                          .filter((o) => isActive(o))
+                          .map((o): [string, string] => [`o:${o.id}`, o.status]),
+                      ...home.network.map((n): [string, string] => [`n:${n.id}`, "nearby"]),
+                  ])
+                : null,
+        [home],
+    )
+    useRingOnNews("courier-home", snapshot, "order", (state) => state === OrderStatus.READY)
     const replace = (order: OrderDTO): void => {
         setHome((current) =>
             current
@@ -667,6 +683,7 @@ export function CourierApp(): React.JSX.Element {
                         </ul>
                     </section>
                     <VehicleField home={home} onChange={setHome} />
+                    <SoundSwitch />
                 </>
             )}
             <PoweredBy />

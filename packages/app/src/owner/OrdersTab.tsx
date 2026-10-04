@@ -6,7 +6,7 @@ import {
     formatPhone,
     isFinalStatus,
 } from "@zumda/core"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
@@ -18,6 +18,7 @@ import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
+import { useRingOnNews } from "../lib/use-ring.js"
 import { toast } from "../stores/toast.js"
 import { CompactAddress } from "../ui/contact-links.js"
 import {
@@ -517,6 +518,17 @@ function useShopOrders(filter: Filter): PagedList<OrderDTO> {
     const list = usePagedList(filter, (page) => api.owner.orders(filter, page))
     usePolling(list.reload, POLL_MS, filter === "active")
     useRefresh(list.reload)
+    // A new order, or a customer's «O'tkazdim»: the Zumda sound, like a taxi's new ride.
+    const snapshot = useMemo(
+        () =>
+            filter === "active" && list.items
+                ? new Map(list.items.map((o) => [o.id, `${o.status}:${o.payment.status}`]))
+                : null,
+        [filter, list.items],
+    )
+    useRingOnNews(`owner-orders:${filter}`, snapshot, "order", (state) =>
+        state.endsWith(`:${PaymentStatus.AWAITING}`),
+    )
     return list
 }
 

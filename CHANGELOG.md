@@ -7,6 +7,14 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The Zumda sound
+- **Added (app):** Zumda's own sound «Zum-da» (owner's choice of five): the two syllables of the
+  name as a rising fifth on a soft bell, synthesized in the app (no file). While the app is open,
+  a new order or a customer's «O'tkazdim» rings it twice for the shop; a new delivery, an order
+  ready to pick up or a network order nearby, for the courier; the customer hears it once, softly,
+  when the order moves. Only real news rings (never the first look or the same list again).
+  «Zumda ovozi» in «Sozlamalar» and on the courier screen turns it off; turning it on plays it.
+
 ### Native feel inside Telegram
 - **Added (app):** a pull down from the top refreshes the screen (the app no longer collapses:
   `disableVerticalSwipes`); a swipe right goes back (closes a sheet, a part of the settings, a
