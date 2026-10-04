@@ -2,6 +2,7 @@ import {
     Language,
     OrderChannel,
     OrderStatus,
+    OwnerChat,
     PaymentMethod,
     PaymentStatus,
     toNetworkOrderDTO,
@@ -17,6 +18,7 @@ import {
     courierAppUrl,
     platformAppUrl,
     shopAppUrl,
+    shopBotStartUrl,
     showcaseOrderUrl,
     withAppButton,
 } from "./app-links.js"
@@ -91,6 +93,18 @@ async function everyOne(steps: readonly (() => Promise<void>)[]): Promise<void> 
     }
 }
 
+/**
+ * Where a message for the owner arrived: the shop's own bot, Zumda | Business (the shop's bot
+ * may not write to the owner: never started, or blocked), or nowhere (both refused).
+ */
+export type OwnerDelivery = "shop" | "business" | "none"
+
+/** What a message through Zumda | Business carries instead: the note on top, its buttons. */
+interface OwnerNote {
+    text: string
+    keyboard: InlineKeyboard
+}
+
 export class Notifier {
     constructor(private readonly services: Services) {}
 
@@ -98,13 +112,20 @@ export class Notifier {
         const token = await this.shopToken(business.id)
         const ownerId = business.ownerTelegramId.value
         const reader = await this.readerFor(ownerId, business)
-        const { messageId } = await this.services.telegram.sendMessage(
-            token,
-            ownerId,
-            formatNewOrderForOwner(order, reader),
-            { keyboard: this.ownerKeyboard(business, order, reader) },
+        const text = formatNewOrderForOwner(order, reader)
+        await this.reachOwner(
+            business,
+            async () => {
+                const { messageId } = await this.services.telegram.sendMessage(
+                    token,
+                    ownerId,
+                    text,
+                    { keyboard: this.ownerKeyboard(business, order, reader) },
+                )
+                await this.services.orders.setMessageId(order.id, "owner", messageId)
+            },
+            (note) => this.noteToOwner(business, note, text),
         )
-        await this.services.orders.setMessageId(order.id, "owner", messageId)
     }
 
     /**
@@ -176,15 +197,28 @@ export class Notifier {
             contentType: receipt.contentType,
             bytes: receipt.bytes,
         }
-        try {
-            await this.services.telegram.sendPhotoFile(token, ownerId, file, caption, options)
-        } catch (error) {
-            // Telegram refused the picture itself: the owner still hears it, the picture is in the app.
-            if (!(error instanceof TelegramApiError) || isRecipientProblem(error)) {
-                throw error
-            }
-            await this.services.telegram.sendMessage(token, ownerId, caption, options)
-        }
+        await this.reachOwner(
+            business,
+            async () => {
+                try {
+                    await this.services.telegram.sendPhotoFile(
+                        token,
+                        ownerId,
+                        file,
+                        caption,
+                        options,
+                    )
+                } catch (error) {
+                    // Telegram refused the picture itself: the owner still hears it, the picture
+                    // is in the app.
+                    if (!(error instanceof TelegramApiError) || isRecipientProblem(error)) {
+                        throw error
+                    }
+                    await this.services.telegram.sendMessage(token, ownerId, caption, options)
+                }
+            },
+            (note) => this.noteToOwner(business, note, caption),
+        )
     }
 
     /** «Pul keldi» pressed in the chat: ask once, with the sum and the card to look at. */
@@ -204,9 +238,12 @@ export class Notifier {
             ...(order.payment.status === PaymentStatus.UNPAID ? [t.confirmPaidNoReceipt] : []),
             ...receiptWarnings(order, t),
         ]
-        await this.services.telegram.sendMessage(token, ownerId, lines.join("\n"), {
-            keyboard: confirmPaidKeyboard(order, t, sum),
-        })
+        await this.textToOwner(
+            business,
+            token,
+            lines.join("\n"),
+            confirmPaidKeyboard(order, t, sum),
+        )
     }
 
     /** «Pul kelmadi»: the owner's card shows it, the customer is asked to check and send again. */
@@ -470,15 +507,53 @@ export class Notifier {
         ])
     }
 
-    /** A file for the owner in the shop bot's chat: the CSV report or the QR poster. */
-    async fileToOwner(business: Business, file: OutgoingFile, caption: string): Promise<void> {
+    /**
+     * A file for the owner in the shop bot's chat: the CSV report or the QR poster. Through
+     * Zumda | Business when the shop's bot may not write to the owner yet.
+     */
+    async fileToOwner(
+        business: Business,
+        file: OutgoingFile,
+        caption: string,
+    ): Promise<OwnerDelivery> {
         const token = await this.shopToken(business.id)
-        await this.services.telegram.sendDocument(
-            token,
-            business.ownerTelegramId.value,
-            file,
-            caption,
+        const ownerId = business.ownerTelegramId.value
+        return this.reachOwner(
+            business,
+            () => this.services.telegram.sendDocument(token, ownerId, file, caption),
+            (note) =>
+                this.services.telegram.sendDocument(
+                    this.services.env.BUSINESS_BOT_TOKEN,
+                    ownerId,
+                    file,
+                    `${note.text}\n\n${caption}`,
+                    { keyboard: note.keyboard },
+                ),
         )
+    }
+
+    /**
+     * May the shop's bot write to its owner? "typing…" for a moment, nothing in the chat:
+     * Telegram refuses it to someone who never pressed Start in the bot. What it learns is kept.
+     */
+    async checkOwnerChat(business: Business): Promise<OwnerChat> {
+        const token = await this.shopToken(business.id)
+        const now = this.services.clock.now()
+        try {
+            await this.services.telegram.sendTyping(token, business.ownerTelegramId.value)
+        } catch (error) {
+            if (!isRecipientProblem(error)) {
+                throw error
+            }
+            if (business.ownerChatClosed(now)) {
+                await this.services.businesses.saveOwnerChat(business)
+            }
+            return OwnerChat.CLOSED
+        }
+        if (business.ownerChatOpened(now)) {
+            await this.services.businesses.saveOwnerChat(business)
+        }
+        return OwnerChat.OPEN
     }
 
     /** Someone accepted the shop's invite: the owner approves or declines, in the shop bot. */
@@ -487,15 +562,18 @@ export class Notifier {
         const ownerId = business.ownerTelegramId.value
         const t = textsFor(await this.languageOf(ownerId), business.type)
         const text = fill(t.courierJoinedOwner, { name: escapeHtml(courier.name) })
-        await this.services.telegram.sendMessage(token, ownerId, text, {
-            keyboard: withAppButton(
+        await this.textToOwner(
+            business,
+            token,
+            text,
+            withAppButton(
                 courierReviewKeyboard(courier.id, t),
                 appButton(
                     t.openInApp,
                     shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value),
                 ),
             ),
-        })
+        )
     }
 
     /** The owner approved or declined: the courier hears it in the Zumda courier bot. */
@@ -765,13 +843,20 @@ export class Notifier {
         const { owner: messageId } = await this.services.orders.getMessageIds(order.id)
         const ownerId = business.ownerTelegramId.value
         const owner = await this.readerFor(ownerId, business)
-        const sent = await this.upsertCard(token, ownerId, messageId, {
-            text: formatOrderForOwner(order, owner),
-            keyboard: this.ownerKeyboard(business, order, owner),
-        })
-        if (sent !== null) {
-            await this.services.orders.setMessageId(order.id, "owner", sent)
-        }
+        const text = formatOrderForOwner(order, owner)
+        await this.reachOwner(
+            business,
+            async () => {
+                const sent = await this.upsertCard(token, ownerId, messageId, {
+                    text,
+                    keyboard: this.ownerKeyboard(business, order, owner),
+                })
+                if (sent !== null) {
+                    await this.services.orders.setMessageId(order.id, "owner", sent)
+                }
+            },
+            (note) => this.noteToOwner(business, note, text),
+        )
     }
 
     /**
@@ -905,9 +990,99 @@ export class Notifier {
         const ownerId = business.ownerTelegramId.value
         const t = textsFor(await this.languageOf(ownerId), business.type)
         const url = shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value, order.id)
-        await this.services.telegram.sendMessage(token, ownerId, text, {
-            keyboard: appKeyboard(t.openOrder, url),
-        })
+        await this.textToOwner(business, token, text, appKeyboard(t.openOrder, url))
+    }
+
+    /** A text for the owner from the shop's bot, or through Zumda | Business with the note. */
+    private async textToOwner(
+        business: Business,
+        token: string,
+        text: string,
+        keyboard: InlineKeyboard,
+    ): Promise<OwnerDelivery> {
+        return this.reachOwner(
+            business,
+            async () => {
+                await this.services.telegram.sendMessage(
+                    token,
+                    business.ownerTelegramId.value,
+                    text,
+                    { keyboard },
+                )
+            },
+            (note) => this.noteToOwner(business, note, text),
+        )
+    }
+
+    /**
+     * The shop's bot first. Telegram lets a bot write first only to someone who pressed Start in
+     * it, and a bot made with «Bot yaratish» was never opened: then the same goes through
+     * Zumda | Business, where the owner applied, with the note to press Start. Its buttons are
+     * links only: a press on an action button would reach the wrong bot. What Zumda learns about
+     * the owner's chat is written only when it changes.
+     */
+    private async reachOwner(
+        business: Business,
+        viaShopBot: () => Promise<void>,
+        viaBusinessBot: (note: OwnerNote) => Promise<unknown>,
+    ): Promise<OwnerDelivery> {
+        const now = this.services.clock.now()
+        try {
+            await viaShopBot()
+        } catch (error) {
+            if (!isRecipientProblem(error)) {
+                throw error
+            }
+            if (business.ownerChatClosed(now)) {
+                await this.services.businesses.saveOwnerChat(business)
+            }
+            try {
+                await viaBusinessBot(await this.ownerNote(business))
+                return "business"
+            } catch (fallback) {
+                if (isRecipientProblem(fallback)) {
+                    return "none"
+                }
+                throw fallback
+            }
+        }
+        if (business.ownerChatOpened(now)) {
+            await this.services.businesses.saveOwnerChat(business)
+        }
+        return "shop"
+    }
+
+    private async ownerNote(business: Business): Promise<OwnerNote> {
+        const t = textsFor(await this.languageOf(business.ownerTelegramId.value), business.type)
+        const bot = `@${business.bot.username}`
+        return {
+            text: fill(t.ownerBotClosed, { bot: escapeHtml(bot) }),
+            keyboard: {
+                inline_keyboard: [
+                    [
+                        {
+                            text: fill(t.openShopBot, { bot }),
+                            url: shopBotStartUrl(business.bot.username),
+                        },
+                    ],
+                    [
+                        appButton(
+                            t.openBusinesses,
+                            businessAppUrl(this.services.env.BUSINESS_APP_ORIGIN),
+                        ),
+                    ],
+                ],
+            },
+        }
+    }
+
+    private async noteToOwner(business: Business, note: OwnerNote, text: string): Promise<void> {
+        await this.services.telegram.sendMessage(
+            this.services.env.BUSINESS_BOT_TOKEN,
+            business.ownerTelegramId.value,
+            `${note.text}\n\n${text}`,
+            { keyboard: note.keyboard },
+        )
     }
 
     private courierAppButton(t: BotTexts, label = t.openInApp): InlineButton {

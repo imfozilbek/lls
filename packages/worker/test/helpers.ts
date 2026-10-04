@@ -84,8 +84,20 @@ export class FakeTelegram implements TelegramGateway {
     failPictures = false
     /** Simulates Telegram refusing a picture: a new bot picture, or a photo message. */
     failPhotos = false
-    readonly documents: { token: string; chatId: number; file: OutgoingFile; caption?: string }[] =
-        []
+    readonly documents: {
+        token: string
+        chatId: number
+        file: OutgoingFile
+        caption?: string
+        options?: MessageOptions
+    }[] = []
+    /** "typing…" probes: whether a bot may write to someone. */
+    readonly typing: { token: string; chatId: number }[] = []
+    /**
+     * `${token}:${chatId}`: this person never pressed Start in this bot, so it may not write
+     * first (a bot made with «Bot yaratish» that its owner never opened).
+     */
+    readonly notStarted = new Set<string>()
     /** Simulates a blocked bot or Telegram outage: replies to users fail. */
     failReplies = false
     /** Simulates Telegram refusing setWebhook (network hiccup, revoked token). */
@@ -114,6 +126,7 @@ export class FakeTelegram implements TelegramGateway {
         if (this.failReplies) {
             throw new TelegramApiError("sendMessage", "Forbidden: bot was blocked by the user")
         }
+        this.refuseUnstarted("sendMessage", token, chatId)
         if (this.brokenChats.has(chatId)) {
             throw new TelegramApiError("sendMessage", "Internal Server Error")
         }
@@ -190,6 +203,7 @@ export class FakeTelegram implements TelegramGateway {
         if (this.failReplies) {
             throw new TelegramApiError("sendPhoto", "Forbidden: bot was blocked by the user")
         }
+        this.refuseUnstarted("sendPhoto", token, chatId)
         if (this.failPhotos) {
             throw new TelegramApiError("sendPhoto", "Bad Request: PHOTO_INVALID_DIMENSIONS")
         }
@@ -200,8 +214,22 @@ export class FakeTelegram implements TelegramGateway {
         chatId: number,
         file: OutgoingFile,
         caption?: string,
+        options?: MessageOptions,
     ): Promise<void> {
-        this.documents.push({ token, chatId, file, caption })
+        this.refuseUnstarted("sendDocument", token, chatId)
+        this.documents.push({ token, chatId, file, caption, options })
+    }
+    async sendTyping(token: string, chatId: number): Promise<void> {
+        this.refuseUnstarted("sendChatAction", token, chatId)
+        this.typing.push({ token, chatId })
+    }
+    private refuseUnstarted(method: string, token: string, chatId: number): void {
+        if (this.notStarted.has(`${token}:${chatId}`)) {
+            throw new TelegramApiError(
+                method,
+                "Forbidden: bot can't initiate conversation with a user",
+            )
+        }
     }
     async setWebhook(token: string, url: string, secret: string): Promise<void> {
         if (this.failWebhooks) {

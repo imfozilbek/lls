@@ -123,6 +123,32 @@ export async function storeImage(
     return key
 }
 
+/**
+ * The QR poster, kept so the app can offer it as a download: public like a logo (its QR opens a
+ * public bot). The same picture keeps the same key, so drawing it again adds nothing.
+ */
+export async function storePoster(
+    bucket: R2Bucket,
+    business: { id: string; slug: string },
+    png: ArrayBuffer,
+): Promise<string> {
+    const hash = await crypto.subtle.digest("SHA-256", png)
+    const tail = [...new Uint8Array(hash).slice(0, POSTER_HASH_BYTES)]
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+    const key = `${IMAGE_KEY_PREFIX}${business.id}/poster-${tail}.png`
+    await bucket.put(key, png, {
+        httpMetadata: {
+            contentType: "image/png",
+            cacheControl: IMMUTABLE_CACHE,
+            contentDisposition: `attachment; filename="${business.slug}-qr.png"`,
+        },
+    })
+    return key
+}
+
+const POSTER_HASH_BYTES = 8
+
 export async function deleteImage(bucket: R2Bucket, key: string | undefined): Promise<void> {
     if (key?.startsWith(IMAGE_KEY_PREFIX)) {
         await bucket.delete(key)

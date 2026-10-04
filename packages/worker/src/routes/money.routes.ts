@@ -5,7 +5,7 @@ import { Hono } from "hono"
 import { requireOwner, shopOf } from "../auth.js"
 import { ordersCsv, localDateTime } from "../http/csv.js"
 import { ApiError } from "../http/errors.js"
-import { looksLike, readImageBody } from "../http/images.js"
+import { looksLike, readImageBody, storePoster } from "../http/images.js"
 import { idParam, moneyQuery, onInvalid, paymentBody } from "../http/schemas.js"
 import { networkAfterStep, notifyPaymentConfirmed } from "../network-flow.js"
 import { escapeHtml } from "../telegram/gateway.js"
@@ -54,7 +54,7 @@ export const moneyRoutes = new Hono<AppEnv>()
             from: day(from),
             to: day(lastDay),
         })
-        await new Notifier(services).fileToOwner(
+        const delivered = await new Notifier(services).fileToOwner(
             business,
             {
                 name: `${business.slug.value}-${day(from)}-${day(lastDay)}.csv`,
@@ -63,7 +63,7 @@ export const moneyRoutes = new Hono<AppEnv>()
             },
             caption,
         )
-        return c.json({ sent: orders.length })
+        return c.json({ sent: orders.length, delivered })
     })
 
     .patch(
@@ -112,15 +112,23 @@ export const moneyRoutes = new Hono<AppEnv>()
         },
     )
 
-    /** The QR poster drawn in the app comes back as a PNG file in the owner's chat. */
+    /**
+     * The QR poster drawn in the app comes back as a PNG file in the owner's chat, and is kept
+     * for the app's «Yuklab olish» (`key`, public under /img).
+     */
     .post("/shop/poster", async (c) => {
         const business = shopOf(c)
         const body = await readImageBody(c.req.raw)
         if (c.req.header("Content-Type") !== PNG || !looksLike(PNG, body)) {
             throw new ApiError(415, "UNSUPPORTED_IMAGE", "The poster must be a PNG image")
         }
+        const key = await storePoster(
+            c.env.BUCKET,
+            { id: business.id, slug: business.slug.value },
+            body,
+        )
         const t = textsFor(await ownerLanguage(c, business), business.type)
-        await new Notifier(c.get("services")).fileToOwner(
+        const delivered = await new Notifier(c.get("services")).fileToOwner(
             business,
             {
                 name: `${business.slug.value}-qr.png`,
@@ -129,5 +137,5 @@ export const moneyRoutes = new Hono<AppEnv>()
             },
             fill(t.posterCaption, { shop: escapeHtml(business.name) }),
         )
-        return c.json({ sent: true })
+        return c.json({ delivered, key })
     })

@@ -119,7 +119,18 @@ export interface TelegramGateway {
         options?: MessageOptions,
     ): Promise<void>
     /** A file in the chat: the owner's CSV report or the QR poster. */
-    sendDocument(token: string, chatId: number, file: OutgoingFile, caption?: string): Promise<void>
+    sendDocument(
+        token: string,
+        chatId: number,
+        file: OutgoingFile,
+        caption?: string,
+        options?: MessageOptions,
+    ): Promise<void>
+    /**
+     * "typing…" for a few seconds, nothing in the chat: whether the bot may write to this person
+     * at all (Telegram answers Forbidden to someone who never pressed Start).
+     */
+    sendTyping(token: string, chatId: number): Promise<void>
     setWebhook(token: string, url: string, secretToken: string): Promise<void>
     setMenuButton(token: string, text: string, webAppUrl: string): Promise<void>
     /** The bot's command list: Zumda's bots have only `/start` (the app does the rest). */
@@ -330,6 +341,7 @@ export class HttpTelegramGateway implements TelegramGateway {
         chatId: number,
         file: OutgoingFile,
         caption?: string,
+        options?: MessageOptions,
     ): Promise<void> {
         const form = new FormData()
         form.set("chat_id", String(chatId))
@@ -338,7 +350,14 @@ export class HttpTelegramGateway implements TelegramGateway {
             form.set("caption", caption)
             form.set("parse_mode", "HTML")
         }
+        if (options?.keyboard) {
+            form.set("reply_markup", JSON.stringify(options.keyboard))
+        }
         await this.send(token, "sendDocument", { body: form })
+    }
+
+    async sendTyping(token: string, chatId: number): Promise<void> {
+        await this.call(token, "sendChatAction", { chat_id: chatId, action: "typing" })
     }
 
     private async call<T>(token: string, method: string, body: object): Promise<T> {
