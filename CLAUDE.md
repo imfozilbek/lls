@@ -201,7 +201,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
   one courier. «Shu yo'nalishda yana N ta» on an order (±35° from the shop, `sameDirection`)
   opens «Bir yo'nalish»: Zumda orders the stops nearest-next (`nearestNextOrder`), the owner
   changes them (↑↓, also later in «Yo'lni ko'rish»), picks the courier, «Tayinlash». The way
-  along the roads comes from OpenRouteService (`ORS_API_KEY`, optional; without it the app
+  along the roads comes from OpenRouteService (`api.heigit.org/openrouteservice`; key from
+  account.heigit.org in `ORS_API_KEY`, optional; without it the app
   draws straight lines), computed on creating and reordering, stored in D1 (`trips`). The
   courier: one card per trip, «Hammasini oldim» once all are ready, «Yandex Navigatorda ochish»
   through every stop still to go, «Yetkazdim» per stop; the bot sends one trip message. A trip

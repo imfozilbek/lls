@@ -2,7 +2,11 @@ import { z } from "zod"
 
 import type { GeoPoint, RoutePlanner, TripRoute } from "@zumda/core"
 
-const ORS_BASE = "https://api.openrouteservice.org"
+/**
+ * OpenRouteService's own address: `api.openrouteservice.org` stops working in November 2026
+ * (their announcement, May 2026); the key is the same (account.heigit.org).
+ */
+const ORS_BASE = "https://api.heigit.org/openrouteservice"
 /** A trip is planned while the owner waits: never longer than this. */
 const TIMEOUT_MS = 5_000
 
