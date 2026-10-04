@@ -7,6 +7,22 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Faster for the owner, never stuck for the customer (UX phase 10, from the fifth critique)
+- **Changed (app):** «Ishga tayyor» asks for «Mijozlar uchun telefon» right after the card, so a
+  customer told «Pul kelmadi» has someone to call (still optional: orders never wait for it).
+- **Changed (app):** the owner's order card is shorter: address and landmark on one line, call
+  and map as round buttons beside it; the screenshot thumbnail and «Kattalashtirish» fit the
+  money sheet.
+- **Added (core, app):** `networkRequestedAt` on an order: «kuryer qidirilmoqda» says for how
+  many minutes and what to do if nobody takes it.
+- **Changed (app):** the delivery radius says that empty means no limit; a shop color from
+  before the swatches shows first and chosen; swatches read their names; each of the courier's
+  shops says «Bugun ishlaysiz», «Bugun dam olish» or «Do'kon tasdiqlashini kutmoqda»; checkout
+  explains paying once, next to the total; the history row puts the status on its own line;
+  the showcase has «Hammasi»; the owner's menu says how many products have no photo.
+- **Not done:** the owner's tab bar stays on top: at the bottom it would sit on Telegram's main
+  button.
+
 ### «Sozlamalar» in parts (UX phase 9, from the fourth critique)
 - **Changed (app):** «Sozlamalar» opens on «Buyurtma qabul qilish» and a list of its parts (Do'kon,
   Yetkazib berish, Ish vaqti, Manzil, Kartalar, Kuryerlar, Do'kon imkoniyatlari, Havola, QR-kod va
