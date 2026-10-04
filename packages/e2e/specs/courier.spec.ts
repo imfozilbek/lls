@@ -334,19 +334,17 @@ test("days and shift: «сегодня не работает» and «не на �
     await page.getByRole("button", { name: "Mening do'konim" }).click()
     await openSettings(page, "Kuryerlar")
     const row = page.getByRole("listitem").filter({ hasText: "Jasur" })
-    await row.getByRole("switch", { name: /Bugun ishlamaydi/ }).click()
-    await expect(row.getByRole("switch", { name: /Bugun ishlamaydi/ })).toHaveAttribute(
-        "aria-checked",
-        "true",
-    )
+    // «Bugun ishlaydi» is on while the courier works today, like «Sotuvda» in the menu.
+    const today = row.getByRole("switch", { name: /Bugun ishlaydi/ })
+    await expect(today).toHaveAttribute("aria-checked", "true")
+    await today.click()
+    await expect(today).toHaveAttribute("aria-checked", "false")
+    await expect(row).toContainText("Bugun ishlamaydi")
     expect(await reasonOf(await owner(order.id, { courierId: COURIER_ID }, "/courier"))).toBe(
         "off_today",
     )
-    await row.getByRole("switch", { name: /Bugun ishlamaydi/ }).click()
-    await expect(row.getByRole("switch", { name: /Bugun ishlamaydi/ })).toHaveAttribute(
-        "aria-checked",
-        "false",
-    )
+    await today.click()
+    await expect(today).toHaveAttribute("aria-checked", "true")
 
     // The courier ends the shift in the courier app.
     const courierPage = await page.context().newPage()
@@ -370,6 +368,38 @@ test("days and shift: «сегодня не работает» and «не на �
     await shift.click()
     await expect(shift).toHaveAttribute("aria-checked", "true")
     expect((await owner(order.id, { courierId: COURIER_ID }, "/courier")).status).toBe(200)
+})
+
+test("a courier on shift switched off for today by mistake is still one tap away", async ({
+    page,
+}) => {
+    const order = await placeOrder(PEOPLE.customer, FOOD, [
+        { productId: "dev-food-p1", quantity: 1 },
+    ])
+    await accept(order.id)
+    const off = await apiAs(PEOPLE.foodOwner, `/owner/couriers/${COURIER_ID}`, {
+        shop: FOOD,
+        method: "PATCH",
+        json: { offToday: true },
+    })
+    expect(off.status).toBe(200)
+
+    await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
+    await page.getByRole("button", { name: "Mening do'konim" }).click()
+    const card = page
+        .locator("li")
+        .filter({ has: page.getByText(`Buyurtma #${order.number}`, { exact: true }) })
+    await card.getByRole("button", { name: "Kuryer tayinlash" }).click()
+    const option = page.getByRole("dialog").getByRole("button", { name: /Jasur/ })
+    await expect(option).toContainText("bugunga qaytariladi")
+    await expect(option).toBeEnabled()
+    await option.click()
+    await expect(card).toContainText("Jasur")
+
+    const couriers = (await (
+        await apiAs(PEOPLE.foodOwner, "/owner/couriers", { shop: FOOD })
+    ).json()) as { id: string; offToday: boolean }[]
+    expect(couriers.find((courier) => courier.id === COURIER_ID)?.offToday).toBe(false)
 })
 
 test("reassigning tells the previous courier in the courier bot; the order leaves their list", async () => {

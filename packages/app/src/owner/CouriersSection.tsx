@@ -227,14 +227,16 @@ function CourierRow({
                 days={courier.workDays}
                 onChange={(workDays): void => onSchedule({ workDays })}
             />
+            {/* On = works today, like «Sotuvda» in the menu: an «off» switch that is on read
+                as "works" and kept couriers out of the courier choice. */}
             <label className="flex items-center justify-between gap-3">
                 <span className={cn("text-sm", courier.offToday && "font-medium")}>
-                    {s.offToday}
+                    {courier.offToday ? s.offToday : s.worksToday}
                 </span>
                 <Switch
-                    checked={courier.offToday}
-                    onChange={(offToday): void => onSchedule({ offToday })}
-                    label={`${s.offToday}: ${courier.name}`}
+                    checked={!courier.offToday}
+                    onChange={(works): void => onSchedule({ offToday: !works })}
+                    label={`${s.worksToday}: ${courier.name}`}
                 />
             </label>
         </li>

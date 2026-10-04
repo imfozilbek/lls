@@ -83,9 +83,14 @@ function CourierSheet({
         loadCouriers().catch(() => undefined)
     }, [loadCouriers])
 
-    const assign = async (courierId: string | "network"): Promise<void> => {
+    const replaceCourier = useOwner((state) => state.replaceCourier)
+    const assign = async (courierId: string | "network", backToday = false): Promise<void> => {
         onClose()
         try {
+            if (backToday && courierId !== "network") {
+                // Switched off for today, maybe by mistake: picking them is the owner's yes.
+                replaceCourier(await api.owner.setCourierSchedule(courierId, { offToday: false }))
+            }
             onChange(
                 courierId === "network"
                     ? await api.owner.toNetwork(order.id)
@@ -102,21 +107,27 @@ function CourierSheet({
         <Sheet title={t.owner.assign} onClose={onClose}>
             {couriers === null ? <Skeleton className="h-[52px]" /> : null}
             {active?.length === 0 ? <p className="text-tg-hint">{t.owner.noCouriers}</p> : null}
-            {active?.map((courier) => (
-                <SheetOption
-                    key={courier.id}
-                    label={courier.name}
-                    hint={
-                        courier.unavailableReason
-                            ? t.owner.courierReasons[courier.unavailableReason]
-                            : courier.phone
-                              ? formatPhone(courier.phone)
-                              : undefined
-                    }
-                    disabled={courier.unavailableReason !== null}
-                    onClick={(): void => void assign(courier.id)}
-                />
-            ))}
+            {active?.map((courier) => {
+                // «Bugun ishlamaydi» is the owner's own switch: one tap turns it back and assigns.
+                const offToday = courier.unavailableReason === "off_today" && courier.onShift
+                return (
+                    <SheetOption
+                        key={courier.id}
+                        label={courier.name}
+                        hint={
+                            offToday
+                                ? t.owner.backTodayAssign
+                                : courier.unavailableReason
+                                  ? t.owner.courierReasons[courier.unavailableReason]
+                                  : courier.phone
+                                    ? formatPhone(courier.phone)
+                                    : undefined
+                        }
+                        disabled={courier.unavailableReason !== null && !offToday}
+                        onClick={(): void => void assign(courier.id, offToday)}
+                    />
+                )
+            })}
             {order.waitingForNetwork || order.courierId ? null : (
                 <SheetOption
                     label={t.owner.toNetwork}
