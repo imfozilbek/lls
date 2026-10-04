@@ -21,7 +21,8 @@ are absent or take 20–30% of each order (Uzum Tezkor has worked in Guliston si
 **The goal: every offline point within 20–30 km of one district becomes an online point.** Today
 the customer has to come to the point; with Zumda they order from home and a courier brings it.
 Start with the three pilots; next to them grow the district's own delivery network, then one
-Zumda marketplace on top of both.
+Zumda marketplace on top of both. **The pilot district is Yakkabog'** (Qashqadaryo, town center
+38.9785, 66.6831; owner, October 2026): the map opens there, the stand's demo shops live there.
 
 | Package | Description |
 |---------|-------------|
@@ -190,8 +191,27 @@ cover each one's whole process; what exactly comes from the meeting with them.
   is agreed with the client.
 - The Zumda showcase is in: search across shops + shop list in the Zumda bot;
   a tap opens that shop's storefront inside the Zumda bot; cart and order stay per shop.
-- Still forbidden: shared cart, algorithmic order dispatch (couriers accept orders themselves),
-  routing, settlements or payouts between businesses through Zumda.
+- Still forbidden: shared cart, algorithmic order dispatch (couriers accept orders themselves;
+  the owner assigns), pickups from several shops in one trip (stage 3), settlements or payouts
+  between businesses through Zumda.
+- **Trips (owner's decision, October 2026):** one shop gives several orders going one way to
+  one courier. «Shu yo'nalishda yana N ta» on an order (±35° from the shop, `sameDirection`)
+  opens «Bir yo'nalish»: Zumda orders the stops nearest-next (`nearestNextOrder`), the owner
+  changes them (↑↓, also later in «Yo'lni ko'rish»), picks the courier, «Tayinlash». The way
+  along the roads comes from OpenRouteService (`ORS_API_KEY`, optional; without it the app
+  draws straight lines), computed on creating and reordering, stored in D1 (`trips`). The
+  courier: one card per trip, «Hammasini oldim» once all are ready, «Yandex Navigatorda ochish»
+  through every stop still to go, «Yetkazdim» per stop; the bot sends one trip message. A trip
+  is over when all its orders are; a cancelled order leaves its way. Network orders stay single.
+- **Zumda's own map (owner's decision, October 2026):** OpenStreetMap of Uzbekistan from the
+  Protomaps build (mirror `data.source.coop/protomaps/openstreetmap/v4.pmtiles`), cut by
+  `go-pmtiles` (`scripts/map-data.mjs`, workflow «Map»: by hand and monthly) into R2
+  `zumda-media/map/` (`uzbekistan-YYYYMMDD.pmtiles` z14, glyphs, icons, `current.json` last).
+  The Worker serves it (`/map/*`, byte ranges, edge cache); the app never calls an outside map
+  server. No search: the person moves the map under the pin; «Joylashuvim» comes from Telegram.
+  Picking: checkout, the application, «Sozlamalar → Manzil», «Tumanlar». Showing: the courier's
+  card, the owner's order (map button), the customer's order, the storefront («Xarita»), trips.
+  MapLibre is the lazy `ui/map` chunk; with no map yet every place works as before.
 - Not decided (ask the owner, never invent): who gets the delivery fee when a network courier
   delivers, and whether Zumda takes a share of it. Until then: the shop keeps it (temporary rule).
 - Only shops with a marketplace deal (`business.marketplace`) appear in the showcase. A platform
@@ -227,7 +247,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 |------|-------------|
 | **v1.0 scope** | Stage 1: orders, status tracking, money, shop couriers, district delivery, vertical toggles |
 | **Quality** | Must be PERFECT, not "good enough" |
-| **No scope creep** | Shared cart, algorithmic dispatch, routing, multi-city, payment gateways: NOT in v1.0 |
+| **No scope creep** | Shared cart, algorithmic dispatch, multi-shop routing, multi-city, payment gateways: NOT in v1.0 |
 | **UX** | Order in 3 taps |
 | **Cost** | $0/month until real usage requires more |
 
@@ -339,6 +359,7 @@ bunx wrangler types                            # Regenerate Env types after wran
 bunx wrangler deploy                           # Deploy Worker
 scripts/check-access.sh                        # Launch keys work? (Cloudflare, bots; read-only)
 scripts/check-dashes.sh --all                  # No em dash anywhere (CI and pre-commit too)
+node scripts/map-data.mjs                      # Build the map of Uzbekistan into map-build/ (CI uploads it)
 gh api -X POST repos/imfozilbek/lls/dispatches -f event_type=deploy  # Deploy main again (Claude)
 ```
 
@@ -402,6 +423,7 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through Z
 | District | id, name, center (lat, lng), radius, wait_minutes: a circle of the delivery network |
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until: the person's link to one shop (`network`: took a network order of it) |
+| Trip | id, business_id, courier_id, route (JSON line), distance_m, duration_s: several orders of one shop one way; stops are `orders.trip_id` + `trip_stop` |
 | Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
@@ -563,6 +585,8 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   Picked up → Delivered (cash: takes the sum, «Pulni oldim, yetkazdim», hands it to the owner)
 - Network courier: approved by a point → «Да, для района» in the Zumda courier bot → "on shift" →
   «Новый заказ рядом» → «Беру» → full card → Picked up → Delivered
+- Trip: owner «Shu yo'nalishda yana N ta» → «Bir yo'nalish» (order, courier) → «Tayinlash» →
+  courier «Hammasini oldim» → «Yandex Navigatorda ochish» → «Yetkazdim» stop by stop
 
 ## Security (MANDATORY)
 
@@ -833,7 +857,8 @@ zumda.shop ─► Worker ─► 302 to t.me/zumdashop_bot (until the landing pag
 Telegram Bot API ─► /tg/:botId, /tg/platform, /tg/business, /tg/courier ─► Worker
 ```
 
-**Worker secrets:** `TOKEN_ENC_KEY`, `PLATFORM_BOT_TOKEN`, `PLATFORM_WEBHOOK_SECRET`, `PLATFORM_ADMIN_IDS`,
+**Worker secrets:** `ORS_API_KEY` (optional, trips' roads; GitHub secret of the same name),
+`TOKEN_ENC_KEY`, `PLATFORM_BOT_TOKEN`, `PLATFORM_WEBHOOK_SECRET`, `PLATFORM_ADMIN_IDS`,
 `COURIER_BOT_TOKEN`, `COURIER_WEBHOOK_SECRET`, `BUSINESS_BOT_TOKEN`, `BUSINESS_WEBHOOK_SECRET`,
 `BUSINESS_SESSION_SECRET` (the webhook and session secrets are derived from the bot tokens by the
 deploy).
@@ -881,6 +906,10 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Zumda | Business in a browser: sign in with Telegram, manage a business, sign out
 - [ ] «Platforma» (admins): approve an application from its message, showcase deal, «Botni qayta
       ulash», a district; every bot message opens the app on its order; bots have `/start` only
+- [ ] Map: pick a place at checkout (the pin under a moving map), in the application and the
+      settings; the courier's and the customer's order maps; «Xarita» on the storefront
+- [ ] Trips: three orders one way → «Bir yo'nalish» → reorder → «Tayinlash» → «Hammasini
+      oldim» → Yandex link in order → delivered stops grey for the owner
 - [ ] Grocery: weight items (kg steps); stop-list for today
 - [ ] Each order stores channel + commission (0 for own bot)
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report

@@ -7,6 +7,25 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Zumda's own map and trips
+- **Added:** Zumda's own map of Uzbekistan (OpenStreetMap, the Protomaps build cut by
+  `go-pmtiles`), kept in our R2 and served by the Worker in byte ranges (`/map/*`): the app never
+  calls an outside map server. `scripts/map-data.mjs` and the «Map» workflow (by hand, monthly)
+  build and upload it; the switch to a new map is atomic (`current.json` last).
+- **Added (app):** «Xaritada belgilash»: the pin stays in the middle, the person moves the map
+  (no search); «Joylashuvim» from Telegram; the delivery zone as a circle, a warning outside it.
+  At checkout, in the application, in «Sozlamalar → Manzil» and in «Tumanlar».
+- **Added (app):** the order on the map for the courier (shop and customer; a network offer shows
+  only the shop), the owner (map button, Yandex under it), the customer, and «Xarita» with the
+  delivery zone on the storefront. MapLibre loads only with the first map (initial JS 98 KB).
+- **Added:** trips (owner's decision): «Shu yo'nalishda yana N ta» → «Bir yo'nalish»: orders
+  going one way (±35° from the shop), Zumda's order of the stops (nearest next), ↑↓ to change
+  it, one courier, «Tayinlash». The way along the roads from OpenRouteService (optional
+  `ORS_API_KEY`; straight lines without it). The courier: one trip card, «Hammasini oldim»,
+  «Yandex Navigatorda ochish» through every stop, «Yetkazdim» per stop, one bot message. The
+  owner sees delivered stops grey and can reorder those still to go. Migration `0014_trips.sql`.
+- **Changed:** the pilot district is Yakkabog'; the local stand's demo shops live there.
+
 ### The Zumda sound
 - **Added (app):** Zumda's own sound «Zum-da» (owner's choice of five): the two syllables of the
   name as a rising fifth on a soft bell, synthesized in the app (no file). While the app is open,
