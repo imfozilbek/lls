@@ -3,6 +3,7 @@ import { mapUrl } from "@zumda/core"
 import { useT } from "../i18n/index.js"
 
 import { PhoneIcon, PinIcon } from "./icons.js"
+import { OrderMapButton } from "./maps.js"
 
 import type { OrderDTO } from "@zumda/core"
 
@@ -55,7 +56,14 @@ const ICON_LINK =
  * The owner's order list: address and landmark on one line, call and map as two round buttons.
  * A card stays short in a rush; the full block is for the courier at the door.
  */
-export function CompactAddress({ order }: { order: OrderDTO }): React.JSX.Element {
+export function CompactAddress({
+    order,
+    shop,
+}: {
+    order: OrderDTO
+    /** The shop's place: the map shows where it goes from. */
+    shop?: { latitude: number; longitude: number } | null
+}): React.JSX.Element {
     const t = useT()
     const map = order.location ? mapUrl(order.location) : null
     return (
@@ -78,16 +86,15 @@ export function CompactAddress({ order }: { order: OrderDTO }): React.JSX.Elemen
                     <PhoneIcon size={20} />
                 </a>
             ) : null}
-            {map ? (
-                <a
+            {map && order.location ? (
+                <OrderMapButton
+                    shop={shop}
+                    customer={order.location}
                     href={map}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={t.owner.map}
                     className={ICON_LINK}
                 >
                     <PinIcon size={20} />
-                </a>
+                </OrderMapButton>
             ) : null}
         </div>
     )

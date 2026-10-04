@@ -19,6 +19,7 @@ import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { useRingOnNews } from "../lib/use-ring.js"
+import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { CompactAddress } from "../ui/contact-links.js"
 import {
@@ -395,6 +396,7 @@ function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
 function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
+    const shopPlace = useSession((state) => state.shop?.location)
     return (
         <li
             className={cn(
@@ -446,7 +448,7 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
                 </p>
             ) : null}
             <div className="mt-3 flex flex-col gap-2 border-t border-tg-separator pt-3 text-sm">
-                <CompactAddress order={order} />
+                <CompactAddress order={order} shop={shopPlace} />
                 <CourierLine order={order} />
             </div>
             <OrderActions order={order} onChange={onChange} onStale={onStale} />

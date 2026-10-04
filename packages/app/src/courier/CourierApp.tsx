@@ -13,6 +13,7 @@ import { useRingOnNews } from "../lib/use-ring.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
 import { CashIcon, CheckIcon, ClockIcon, ScooterIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
+import { OrderMap } from "../ui/maps.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusBadge } from "../ui/order-status.js"
 import {
@@ -167,6 +168,7 @@ function DeliveryCard({
                 <StatusBadge status={order.status} />
             </div>
             <p className="font-medium">{order.customerName}</p>
+            <OrderMap shop={order.shopLocation} customer={order.location} />
             <AddressBlock order={order} />
             <ContactLinks order={order} />
             <Collect order={order} />
@@ -403,6 +405,8 @@ function NearbyCard({
                 </span>
                 <span className="shrink-0 text-lg font-bold">#{offer.number}</span>
             </div>
+            {/* Only the shop: the customer's place shows after «Olaman». */}
+            <OrderMap shop={offer.shopLocation} className="h-28" />
             <p className="flex flex-wrap gap-x-3 text-sm text-tg-subtitle">
                 <span>{fill(t.courier.items, { n: offer.itemsCount })}</span>
                 {/* Never the customer's address before «Olaman»: only how far, when the pin is known. */}

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 
 import { useT } from "../../i18n/index.js"
@@ -55,6 +55,23 @@ export function MapViewer({
     )
 }
 
+/** True while the element is on (or near) the screen. */
+function useOnScreen(element: Element | null): boolean {
+    const [visible, setVisible] = useState(false)
+    useEffect(() => {
+        if (!element) {
+            return undefined
+        }
+        const observer = new IntersectionObserver(
+            ([entry]) => setVisible(entry?.isIntersecting ?? false),
+            { rootMargin: "200px 0px" },
+        )
+        observer.observe(element)
+        return (): void => observer.disconnect()
+    }, [element])
+    return visible
+}
+
 /**
  * A small map in a card: shows where, without moving; a tap opens it on the whole screen.
  * Nothing at all when the map cannot be drawn (no map file yet, no WebGL).
@@ -67,6 +84,8 @@ export function MapPreview({
     const t = useT()
     const [open, setOpen] = useState(false)
     const [failed, setFailed] = useState(false)
+    const [box, setBox] = useState<HTMLButtonElement | null>(null)
+    const visible = useOnScreen(box)
     const center = map.fit[0] ?? map.markers[0]?.point
     if (failed || !center) {
         return null
@@ -74,21 +93,25 @@ export function MapPreview({
     return (
         <>
             <button
+                ref={setBox}
                 type="button"
                 onClick={(): void => {
                     haptic.tap()
                     setOpen(true)
                 }}
                 aria-label={t.map.open}
-                className={`tap relative block w-full overflow-hidden rounded-tile ${className}`}
+                className={`tap relative block w-full overflow-hidden rounded-tile bg-tg-secondary ${className}`}
             >
-                <MapView
-                    center={center}
-                    {...map}
-                    interactive={false}
-                    onFail={(): void => setFailed(true)}
-                    className="pointer-events-none absolute inset-0"
-                />
+                {/* A browser keeps ~16 maps alive at once: a small map lives only on screen. */}
+                {visible ? (
+                    <MapView
+                        center={center}
+                        {...map}
+                        interactive={false}
+                        onFail={(): void => setFailed(true)}
+                        className="pointer-events-none absolute inset-0"
+                    />
+                ) : null}
             </button>
             {open ? (
                 <MapViewer {...map} footer={footer} onClose={(): void => setOpen(false)} />

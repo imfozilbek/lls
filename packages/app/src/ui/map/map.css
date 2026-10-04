@@ -1,0 +1,16 @@
+/* OpenStreetMap's credit stays (its licence asks for it), small and quiet. */
+.zumda-map .maplibregl-ctrl-attrib {
+    font-size: 10px;
+    line-height: 14px;
+    background: rgb(255 255 255 / 0.7);
+}
+.zumda-map .maplibregl-ctrl-attrib.maplibregl-compact {
+    min-height: 20px;
+    padding: 2px 22px 2px 6px;
+    margin: 0 6px 6px 0;
+}
+.zumda-map .maplibregl-ctrl-attrib-button {
+    width: 20px;
+    height: 20px;
+    background-size: 14px;
+}

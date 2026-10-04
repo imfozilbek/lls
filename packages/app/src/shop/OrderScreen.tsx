@@ -22,6 +22,7 @@ import {
     ScooterIcon,
     WifiOffIcon,
 } from "../ui/icons.js"
+import { OrderMap } from "../ui/maps.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusHero, StatusTimeline } from "../ui/order-status.js"
 import { CardBlock, PaymentLine } from "../ui/payment.js"
@@ -496,6 +497,7 @@ function useOrderMainAction(
 function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
+    const shopPlace = useSession((state) => state.shop?.location)
     return (
         <>
             <div className="flex items-baseline justify-between px-1">
@@ -530,6 +532,7 @@ function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
                 <OrderItems order={order} />
             </Section>
             <Section title={t.order.address}>
+                <OrderMap shop={shopPlace} customer={order.location} />
                 <Address order={order} />
             </Section>
         </>

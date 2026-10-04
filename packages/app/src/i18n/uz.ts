@@ -38,6 +38,7 @@ export const uz = {
         customer: "Mijoz",
         picked: "Joy belgilandi",
         street: "Ko'cha: {name}",
+        external: "Yandex xaritada ochish",
     },
     sound: {
         title: "Zumda ovozi",
@@ -98,6 +99,7 @@ export const uz = {
         text: "Bu ilova do'kon botining ichida ishlaydi. Botga o'tib, pastdagi tugmani bosing.",
     },
     shop: {
+        map: "Xarita",
         open: "Ochiq",
         closed: "Hozir yopiq",
         paused: "Buyurtma vaqtincha qabul qilinmaydi",
