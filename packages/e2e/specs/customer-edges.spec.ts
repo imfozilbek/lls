@@ -145,7 +145,7 @@ test("an item that runs out during checkout is refused and dropped from the cart
 test("Uzbek customer: texts and bot messages in Uzbek", async ({ page }) => {
     await openApp(page, { user: PEOPLE.customerUz, shop: GROCERY })
     await expect(page.getByRole("button", { name: "Buyurtmalarim" })).toBeVisible()
-    await page.getByRole("button", { name: /Mol go'shti/ }).click()
+    await page.getByRole("button", { name: "Qo'shish: Mol go'shti" }).click()
     await bottomButton(page).click()
     await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
     await bottomButton(page).click()

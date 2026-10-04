@@ -241,8 +241,11 @@ function usePlaceOrder(delivery: Delivery): { placing: boolean; place(): Promise
                     productId: l.product.id,
                     quantity: l.quantity,
                 })),
-                address: delivery.address.trim(),
-                landmark: delivery.landmark.trim() || undefined,
+                // A pin and a landmark are an address in a mahalla: the landmark stands in.
+                address: delivery.address.trim() || delivery.landmark.trim(),
+                landmark: delivery.address.trim()
+                    ? delivery.landmark.trim() || undefined
+                    : undefined,
                 location: delivery.location ?? undefined,
                 comment: delivery.comment.trim() || undefined,
                 bottlesReturned: delivery.bottlesReturned || undefined,
@@ -369,6 +372,7 @@ function missingStep(
         /** The shop delivers within a radius: it needs the pin to tell. */
         needsPin: boolean
         hasPin: boolean
+        landmark: string
     },
 ): { id: string | null; text: string } | null {
     if (input.count === 0) {
@@ -383,8 +387,13 @@ function missingStep(
     if (input.needsPin && !input.hasPin) {
         return { id: CHECKOUT_ADDRESS, text: t.checkout.needPin }
     }
-    if (input.address.trim().length === 0) {
-        return { id: CHECKOUT_ADDRESS, text: t.checkout.needAddress }
+    // With the pin, a landmark is enough: many district homes have no street and number.
+    const placeNamed = input.address.trim() || (input.hasPin && input.landmark.trim())
+    if (!placeNamed) {
+        return {
+            id: CHECKOUT_ADDRESS,
+            text: input.hasPin ? t.checkout.needStreetOrLandmark : t.checkout.needAddress,
+        }
     }
     return null
 }
@@ -482,6 +491,7 @@ export function CheckoutScreen(): React.JSX.Element {
         count: cart.count,
         needsPin: needsPin(shop),
         hasPin: delivery.location !== null,
+        landmark: delivery.landmark,
     })
     const glow = useOrderButton({
         missing,

@@ -159,6 +159,7 @@ export const uz = {
         optional: "ixtiyoriy",
         needPhone: "Avval telefon raqamingizni yuboring",
         needAddress: "Manzilni yozing: ko'cha va uy",
+        needStreetOrLandmark: "Ko'cha va uyni yoki mo'ljalni yozing",
         needPin: "Joylashuvni yuboring: do'kon shu bo'yicha masofani tekshiradi",
         pinHelps: "Joylashuv kuryerga eshikni topishga yordam beradi.",
         pinRequired: "Majburiy: do'kon {km} km gacha yetkazadi.",

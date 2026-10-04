@@ -252,16 +252,18 @@ export function ReadyCard(): React.JSX.Element | null {
         hasPhone: shop.contactPhone !== undefined,
         delivers: selfDelivery || couriers.some((courier) => courier.isActive),
     })
-    const done = items.filter((item) => item.done).length
+    // Progress counts what a shop needs; the nice-to-haves never hold it back.
+    const required = items.filter((item) => !item.optional)
+    const done = required.filter((item) => item.done).length
     // Everything a shop needs is there: the nice-to-haves never keep the card on screen.
     if (items.every((item) => item.done || item.optional)) {
         return null
     }
-    const next = items.find((item) => !item.done)
+    const next = required.find((item) => !item.done) ?? items.find((item) => !item.done)
     if (folded && next) {
         return (
             <FoldedReady
-                progress={fill(t.progress, { done, all: items.length })}
+                progress={fill(t.progress, { done, all: required.length })}
                 next={next.title}
                 onOpen={(): void => setExpanded(true)}
             />
@@ -277,7 +279,7 @@ export function ReadyCard(): React.JSX.Element | null {
             <div className="flex items-center justify-between px-2 pb-1">
                 <h2 className="text-lg font-bold">{t.title}</h2>
                 <span className="rounded-full bg-brand/15 px-2.5 py-0.5 text-sm font-bold tabular-nums">
-                    {fill(t.progress, { done, all: items.length })}
+                    {fill(t.progress, { done, all: required.length })}
                 </span>
             </div>
             <div

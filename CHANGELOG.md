@@ -7,6 +7,17 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Closer to the product (UX phase 13, from the eighth critique)
+- **Added (app):** a tap on a product's name opens it up close: the whole photo, the whole
+  description, the price and «Qo'shish» or the stepper.
+- **Changed (app):** a product tapped in the showcase opens its shop on that product, scrolled
+  into view and glowing for a moment.
+- **Changed (app):** with the pin set, a landmark is enough when a home has no street and number
+  (it is sent as the address); «Ishga tayyor» counts and points to the required steps only; the
+  money sheet shows the screenshot large enough to read the sum; the screenshot tip goes away
+  once a picture is chosen; status badges never wrap; an order not yet transferred says so once
+  on the owner's card.
+
 ### No paid order from outside the zone (UX phase 12, from the seventh critique)
 - **Changed (core, worker, app):** a shop with a delivery radius and its own location needs the
   customer's pin (`LOCATION_REQUIRED`, 422) instead of skipping the check: an order from outside

@@ -10,6 +10,7 @@ import { formatMoney, hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { usePagedList } from "../lib/paged.js"
 import { haptic } from "../lib/telegram.js"
+import { useSession } from "../stores/session.js"
 import { ChevronIcon, CloseIcon, SearchIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
 import { LanguageSwitch } from "../ui/language-switch.js"
 import { LoadMore } from "../ui/load-more.js"
@@ -222,6 +223,8 @@ function ProductResult({
                 type="button"
                 onClick={(): void => {
                     haptic.tap()
+                    // The shop opens on this product, not at its top.
+                    useSession.getState().focusProduct(product.id)
                     onOpen(product.shop.slug)
                 }}
                 className="tap flex w-full flex-col text-left"

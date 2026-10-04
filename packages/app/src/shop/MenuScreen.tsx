@@ -1,5 +1,6 @@
 import { WEEKDAYS, isFinalStatus, searchText, searchWords, toLocalTime } from "@zumda/core"
 import { useEffect, useMemo, useRef, useState } from "react"
+import { create } from "zustand"
 
 import { fill, useLanguage, useT } from "../i18n/index.js"
 import { api, imageUrl } from "../lib/api.js"
@@ -15,6 +16,8 @@ import { LanguageSwitch } from "../ui/language-switch.js"
 import { EmptyState, PoweredBy, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
+
+import { ProductSheet } from "./ProductSheet.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { Shop } from "../stores/session.js"
@@ -279,6 +282,52 @@ function CategoryChips({
     )
 }
 
+const GLOW_MS = 1800
+
+/** The product opened up close, and the one a showcase tap asked for (it glows a moment). */
+const useProductDetail = create<{
+    product: ProductDTO | null
+    glowId: string | null
+    show(product: ProductDTO | null): void
+    glow(id: string | null): void
+}>((set) => ({
+    product: null,
+    glowId: null,
+    show: (product): void => set({ product }),
+    glow: (glowId): void => set({ glowId }),
+}))
+
+function openDetail(product: ProductDTO): void {
+    haptic.tap()
+    useProductDetail.getState().show(product)
+}
+
+function productAnchor(id: string): string {
+    return `product-${id}`
+}
+
+/** Opened from the showcase on one product: bring it into view and make it glow once. */
+function useFocusedProduct(catalog: readonly ProductDTO[]): void {
+    const focusId = useSession((state) => state.focusProductId)
+    useEffect(() => {
+        if (!focusId || !catalog.some((product) => product.id === focusId)) {
+            return undefined
+        }
+        useSession.getState().focusProduct(null)
+        const frame = window.requestAnimationFrame(() => {
+            document
+                .getElementById(productAnchor(focusId))
+                ?.scrollIntoView({ behavior: "smooth", block: "center" })
+            useProductDetail.getState().glow(focusId)
+        })
+        const timer = window.setTimeout(() => useProductDetail.getState().glow(null), GLOW_MS)
+        return (): void => {
+            window.cancelAnimationFrame(frame)
+            window.clearTimeout(timer)
+        }
+    }, [focusId, catalog])
+}
+
 function ProductTile({
     product,
     index,
@@ -292,9 +341,14 @@ function ProductTile({
     const add = useCart((state) => state.add)
     const remove = useCart((state) => state.remove)
     const unit = (t.units as Record<string, string>)[product.unit] ?? product.unit
+    const glowing = useProductDetail((state) => state.glowId === product.id)
     return (
         <article
-            className="flex animate-rise flex-col"
+            id={productAnchor(product.id)}
+            className={cn(
+                "flex animate-rise scroll-mt-24 flex-col rounded-tile transition-shadow duration-500",
+                glowing && "ring-2 ring-brand ring-offset-4",
+            )}
             style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
         >
             <div className="relative">
@@ -329,16 +383,22 @@ function ProductTile({
                     </div>
                 )}
             </div>
-            <h3 className="mt-2 line-clamp-2 px-0.5 font-medium leading-snug">{product.name}</h3>
-            {product.description ? (
-                <p className="mt-0.5 line-clamp-2 px-0.5 text-sm text-tg-hint">
-                    {product.description}
+            <button
+                type="button"
+                onClick={(): void => openDetail(product)}
+                className="tap mt-2 rounded-control px-0.5 text-left"
+            >
+                <h3 className="line-clamp-2 font-medium leading-snug">{product.name}</h3>
+                {product.description ? (
+                    <p className="mt-0.5 line-clamp-2 text-sm text-tg-hint">
+                        {product.description}
+                    </p>
+                ) : null}
+                <p className="mt-0.5 text-sm">
+                    <span className="font-semibold">{formatMoney(product.price, language)}</span>
+                    <span className="text-tg-hint"> / {unit}</span>
                 </p>
-            ) : null}
-            <p className="mt-0.5 px-0.5 text-sm">
-                <span className="font-semibold">{formatMoney(product.price, language)}</span>
-                <span className="text-tg-hint"> / {unit}</span>
-            </p>
+            </button>
         </article>
     )
 }
@@ -354,8 +414,15 @@ function ProductListRow({ product }: { product: ProductDTO }): React.JSX.Element
     const add = useCart((state) => state.add)
     const remove = useCart((state) => state.remove)
     const unit = (t.units as Record<string, string>)[product.unit] ?? product.unit
+    const glowing = useProductDetail((state) => state.glowId === product.id)
     return (
-        <li className="flex animate-rise items-center gap-3 py-3">
+        <li
+            id={productAnchor(product.id)}
+            className={cn(
+                "flex animate-rise scroll-mt-24 items-center gap-3 rounded-control py-3 transition-shadow duration-500",
+                glowing && "ring-2 ring-brand ring-offset-2",
+            )}
+        >
             <ProductImage
                 imageKey={product.imageKey}
                 category={product.category}
@@ -363,7 +430,11 @@ function ProductListRow({ product }: { product: ProductDTO }): React.JSX.Element
                 iconSize={22}
                 className="h-14 w-14 shrink-0 rounded-control"
             />
-            <div className="min-w-0 flex-1">
+            <button
+                type="button"
+                onClick={(): void => openDetail(product)}
+                className="tap min-w-0 flex-1 rounded-control text-left"
+            >
                 <h3 className="line-clamp-2 font-medium leading-snug">{product.name}</h3>
                 {product.description ? (
                     <p className="line-clamp-1 text-sm text-tg-hint">{product.description}</p>
@@ -372,7 +443,7 @@ function ProductListRow({ product }: { product: ProductDTO }): React.JSX.Element
                     <span className="font-semibold">{formatMoney(product.price, language)}</span>
                     <span className="text-tg-hint"> / {unit}</span>
                 </p>
-            </div>
+            </button>
             {quantity === 0 ? (
                 <button
                     type="button"
@@ -420,6 +491,8 @@ export function MenuScreen(): React.JSX.Element {
         (p) => (!category || p.category === category) && (words.length === 0 || matches(p, words)),
     )
     const cart = summarize(lines, catalog)
+    const detail = useProductDetail((state) => state.product)
+    useFocusedProduct(catalog)
 
     useMainAction(
         cart.count > 0
@@ -465,6 +538,12 @@ export function MenuScreen(): React.JSX.Element {
                     ))}
                 </div>
             )}
+            {detail ? (
+                <ProductSheet
+                    product={detail}
+                    onClose={(): void => useProductDetail.getState().show(null)}
+                />
+            ) : null}
             <PoweredBy />
             <BottomSpacer />
         </main>

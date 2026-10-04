@@ -3,6 +3,7 @@ import { createPortal } from "react-dom"
 
 import { useT } from "../i18n/index.js"
 import { api } from "../lib/api.js"
+import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
 
 import { CloseIcon, ReceiptIcon } from "./icons.js"
@@ -90,9 +91,12 @@ function ReceiptViewer({ url, onClose }: { url: string; onClose(): void }): Reac
 export function ReceiptThumb({
     orderId,
     sentAt,
+    large = false,
 }: {
     orderId: string
     sentAt: string | undefined
+    /** The owner's money check: big enough to read the sum without opening it. */
+    large?: boolean
 }): React.JSX.Element | null {
     const t = useT()
     const loaded = useReceiptUrl(orderId, sentAt)
@@ -120,10 +124,15 @@ export function ReceiptThumb({
                     setOpen(true)
                 }}
                 aria-label={t.receipt.open}
-                className="tap flex shrink-0 flex-col items-center gap-1"
+                className={cn("tap flex shrink-0 flex-col items-center gap-1", large && "w-full")}
             >
                 {/* Whole, never cropped: the sum and the card digits may sit anywhere on it. */}
-                <span className="block h-24 w-20 overflow-hidden rounded-control bg-white ring-1 ring-black/10">
+                <span
+                    className={cn(
+                        "block overflow-hidden rounded-control bg-white ring-1 ring-black/10",
+                        large ? "h-[30vh] max-h-72 w-full" : "h-24 w-20",
+                    )}
+                >
                     <img src={loaded.url} alt="" className="h-full w-full object-contain" />
                 </span>
                 <span className="whitespace-nowrap text-xs font-semibold text-brand">

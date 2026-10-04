@@ -348,7 +348,11 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
                 <span>{t.cart.total}</span>
                 <span className="tabular-nums">{formatMoney(order.total, language)}</span>
             </p>
-            <PaymentLine order={order} forOwner className="mt-1" />
+            {/* Not yet transferred: the badge already says it, once is enough. */}
+            {order.status === OrderStatus.PENDING &&
+            order.payment.status === PaymentStatus.UNPAID ? null : (
+                <PaymentLine order={order} forOwner className="mt-1" />
+            )}
             {order.bottlesReturned > 0 ? (
                 <p className="text-sm text-tg-subtitle">
                     {fill(t.owner.bottlesBack, { n: order.bottlesReturned })}
