@@ -544,6 +544,16 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   oladi» with «Qabul qilish»; the customer gets the sum to give the courier. «Я перевёл» with the screenshot → the owner gets
   the picture, the sum, the card tail, warnings and «Ha, … keldi» / «Yo'q, kelmadi». After that
   the owner's button is the **next allowed status**.
+- **The owner never pressed Start in the shop's bot** (a bot made with «Bot yaratish» was never
+  opened; Telegram lets a bot write first only after Start): every message and file for the owner
+  (orders, the transfer, couriers, the CSV, the QR poster) goes through Zumda | Business instead,
+  with «@bot sizga yoza olmadi … Start bosing» and link buttons only (an action button would
+  reach the wrong bot). `businesses.owner_chat_open_at` / `owner_chat_closed_at` keep what Zumda
+  last saw (`ownerChat`: open / closed / unknown); the owner's Start in the shop's bot opens it.
+  «Ishga tayyor» asks «Botingizni oching» (`POST /api/owner/shop/bot-check`: "typing…", nothing
+  in the chat); «Platforma» marks such a shop. The QR poster is also kept in R2
+  (`shops/<id>/poster-<hash>.png`, public) and downloads in the app («Yuklab olish»:
+  `WebApp.downloadFile`, a link in a browser).
 - Courier assigned → order card from the Zumda courier bot, titled with the shop's name (address,
   landmark, map, phone, «Оплачено заранее: денег не брать» or for cash «Mijozdan {sum} naqd
   oling», empty bottles) with "Забрал", then one "Доставил" («Pulni oldim, yetkazdim» for cash).
@@ -893,6 +903,9 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Customer order placement (contact + location + landmark)
 - [ ] Owner notification with buttons
 - [ ] Order status updates → customer notification
+- [ ] Owner without Start in the shop's bot: «Botingizni oching» in «Ishga tayyor»; the poster
+      and a new order come through Zumda | Business with the note; «Yuklab olish» saves the
+      poster; after Start the shop's bot writes again
 - [ ] Money: card on the order screen → «Я перевёл» with the screenshot → «Деньги пришли,
       принять» (asked once more) → one «Доставил»; «Pul kelmadi» → sent again; a reused
       screenshot warns; cancel after paid → «Вернул»; a shop without a card takes no orders

@@ -178,8 +178,12 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
 ### 8. Mijozlarni jalb qilish
 
 - Havolani (`t.me/osh_markaz_bot`) Telegram guruhlaringizga, Instagram'ga, stikerga yozing.
-- **Sozlamalar → Chop etish uchun QR-kod**: bot sizga do'kon nomi, logotipi va QR-kodli plakatni
-  PNG fayl qilib yuboradi. Chop etib peshtaxtaga, eshikka yopishtiring yoki Instagram'ga joylang.
+- **Sozlamalar → Chop etish uchun QR-kod**: do'kon nomi, logotipi va QR-kodli plakat ochiladi.
+  **Yuklab olish** tugmasi uni telefoningizga saqlaydi, bot esa PNG faylni chatga ham yuboradi.
+  Chop etib peshtaxtaga, eshikka yopishtiring yoki Instagram'ga joylang.
+- **Botingizda Start bosing.** Telegram bot sizga birinchi bo'lib yoza olmaydi: botni bir marta
+  oching va Start bosing. Shungacha buyurtmalar va fayllar Zumda Business'ga keladi, «Ishga
+  tayyor»da esa «Botingizni oching» qadami turadi.
 - Mijoz faqat **kartangizga o'tkazma** bilan to'laydi (10-bo'limga qarang).
 - O'z botingiz orqali sotuvdan Zumda komissiya olmaydi.
 
