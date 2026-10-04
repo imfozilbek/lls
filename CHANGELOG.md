@@ -7,6 +7,19 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The oldest order first (UX phase 14, from the ninth critique)
+- **Changed (app):** the owner's active orders run oldest first after the money checks, and each
+  open order says how long it has waited («12 daqiqa kutmoqda», the clock amber after 30).
+- **Added (app):** the owner's menu by its sections, with a search once the catalog is long
+  (the same search as the storefront).
+- **Changed (app):** the stop-list button is a clock («Sotuvdan olish»), not «…»; the owner's
+  payment line says «Chek yuborildi» next to the «Tekshiring» badge; past the usual wait the
+  customer reads «Do'kon odatdagidan kechikmoqda» instead of «5-10 daqiqa»; with a pin the street
+  field says a landmark is enough; the storefront list rows no longer bend their dividers; the
+  courier's «Transport» saves after a short pause too; «Hozirgina chiqdi» on a network offer.
+- **Not done (owner's decision needed):** an expected delivery time on the storefront and the
+  order: a new feature.
+
 ### Closer to the product (UX phase 13, from the eighth critique)
 - **Added (app):** a tap on a product's name opens it up close: the whole photo, the whole
   description, the price and «Qo'shish» or the stepper.
