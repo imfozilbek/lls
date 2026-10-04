@@ -361,6 +361,7 @@ scripts/check-access.sh                        # Launch keys work? (Cloudflare, 
 scripts/check-dashes.sh --all                  # No em dash anywhere (CI and pre-commit too)
 node scripts/map-data.mjs                      # Build the map of Uzbekistan into map-build/ (CI uploads it)
 gh api -X POST repos/imfozilbek/lls/dispatches -f event_type=deploy  # Deploy main again (Claude)
+gh api -X POST repos/imfozilbek/lls/dispatches -f event_type=map     # Build the map again (Claude)
 ```
 
 ## Architecture (DDD + Clean Architecture)
