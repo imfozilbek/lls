@@ -31,6 +31,7 @@ import { PaymentCardsSection } from "./PaymentCardsSection.js"
 import { PosterSection } from "./PosterSection.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 import { useOwner } from "./store.js"
+import { saveTick } from "./ticks.js"
 
 import type { Hours } from "./hours.js"
 import type { ReadySection } from "./store.js"
@@ -837,7 +838,13 @@ function SettingsBody({
     const t = useT()
     const s = t.owner.settings
     const [group, setGroup] = useState<SettingsGroup | null>(null)
-    const { form, patch, dirty, reset } = useSettingsForm(shop, onSaved)
+    const { form, patch, dirty, reset } = useSettingsForm(shop, (saved): void => {
+        // Hours saved as 24/7 look like hours never set: the owner's save is the tick.
+        if (group === "hours") {
+            saveTick("hours", saved.id)
+        }
+        onSaved(saved)
+    })
     const open = useCallback((next: SettingsGroup): void => {
         setGroup(next)
         window.scrollTo({ top: 0 })

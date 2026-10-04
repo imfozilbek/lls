@@ -317,22 +317,58 @@ function OrderAge({ createdAt }: { createdAt: string }): React.JSX.Element {
     const minutes = Math.max(0, Math.floor((Date.now() - Date.parse(createdAt)) / MINUTE_MS))
     const late = minutes >= LATE_MINUTES
     return (
-        <p
+        <span
             className={cn(
-                "mt-0.5 flex items-center gap-1 text-sm font-medium",
+                "inline-flex shrink-0 items-center gap-1 font-medium",
                 late ? "text-tg-text" : "text-tg-subtitle",
             )}
         >
             {/* Amber only on the icon: amber text would not read on a light card. */}
             <ClockIcon size={14} className={cn("shrink-0", late && "text-warning")} />
             {minutes < 1 ? t.owner.ageNew : fill(t.owner.age, { n: minutes })}
-        </p>
+        </span>
     )
 }
 
 /** The customer said they transferred: the owner's next move is the bank app. */
 function needsCheck(order: OrderDTO): boolean {
     return order.status === OrderStatus.PENDING && order.payment.status === PaymentStatus.AWAITING
+}
+
+/** A long order shows its first lines and «+N ta»: a tap shows the rest. */
+const SHOWN_ITEMS = 3
+
+function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
+    const t = useT()
+    const [all, setAll] = useState(false)
+    const hidden = order.items.length - SHOWN_ITEMS
+    const shown = all || hidden <= 1 ? order.items : order.items.slice(0, SHOWN_ITEMS)
+    return (
+        <ul className="mt-2 flex flex-col gap-0.5">
+            {shown.map((item) => (
+                <li key={item.productId} className="flex gap-2">
+                    <span className="shrink-0 font-semibold tabular-nums">
+                        {formatQuantity(item.quantity, item.unit, t.units.kg)}×
+                    </span>
+                    <span className="flex-1">{item.name}</span>
+                </li>
+            ))}
+            {shown.length < order.items.length ? (
+                <li>
+                    <button
+                        type="button"
+                        onClick={(): void => {
+                            haptic.tap()
+                            setAll(true)
+                        }}
+                        className="tap -ml-1 min-h-11 rounded-control px-1 text-sm font-semibold text-brand"
+                    >
+                        {fill(t.owner.moreItems, { n: hidden })}
+                    </button>
+                </li>
+            ) : null}
+        </ul>
+    )
 }
 
 function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
@@ -351,23 +387,19 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
                     <span className="text-lg font-bold">
                         {fill(t.order.title, { n: order.number })}
                     </span>
-                    <p className="text-sm text-tg-hint">
-                        {formatTime(order.createdAt, language)} · {order.customerName}
+                    {/* Time, who, and how long it has waited: one line, so the card stays short. */}
+                    <p className="flex flex-wrap items-center gap-x-2 text-sm text-tg-hint">
+                        <span className="min-w-0 truncate">
+                            {formatTime(order.createdAt, language)} · {order.customerName}
+                        </span>
+                        {isFinalStatus(order.status) ? null : (
+                            <OrderAge createdAt={order.createdAt} />
+                        )}
                     </p>
-                    {isFinalStatus(order.status) ? null : <OrderAge createdAt={order.createdAt} />}
                 </div>
                 <OrderBadge order={order} forOwner />
             </div>
-            <ul className="mt-2 flex flex-col gap-0.5">
-                {order.items.map((item) => (
-                    <li key={item.productId} className="flex gap-2">
-                        <span className="shrink-0 font-semibold tabular-nums">
-                            {formatQuantity(item.quantity, item.unit, t.units.kg)}×
-                        </span>
-                        <span className="flex-1">{item.name}</span>
-                    </li>
-                ))}
-            </ul>
+            <CardItems order={order} />
             <p className="mt-1.5 flex justify-between font-semibold">
                 <span>{t.cart.total}</span>
                 <span className="tabular-nums">{formatMoney(order.total, language)}</span>

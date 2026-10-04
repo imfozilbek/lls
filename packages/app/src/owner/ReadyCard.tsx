@@ -21,15 +21,16 @@ import {
 import { Button } from "../ui/primitives.js"
 
 import { useOwner } from "./store.js"
+import { readTick, saveTick } from "./ticks.js"
 
 import type { ReadySection } from "./store.js"
+import type { Tick } from "./ticks.js"
 import type { Dictionary } from "../i18n/index.js"
 import type { ShopOwnerDTO } from "@zumda/core"
 import type { ReactNode } from "react"
 
 /** Enough of a catalog for a first customer to find something. */
 const FIRST_PRODUCTS = 3
-const SELF_DELIVERY_KEY = "zumda.selfDelivery."
 
 interface ReadyItem {
     id: ReadySection | "products"
@@ -41,20 +42,41 @@ interface ReadyItem {
     optional?: boolean
 }
 
-function readSelfDelivery(shopId: string): boolean {
-    try {
-        return window.localStorage.getItem(SELF_DELIVERY_KEY + shopId) === "1"
-    } catch {
-        return false
+/**
+ * Steps only the owner's word can tick: delivering themselves, and hours that are really 24/7
+ * (stored the same as hours never set).
+ */
+function useTicks(shopId: string | undefined): {
+    ticks: Record<Tick, boolean>
+    tick(which: Tick): void
+} {
+    const [ticks, setTicks] = useState<Record<Tick, boolean>>(() => ({
+        selfDelivery: shopId ? readTick("selfDelivery", shopId) : false,
+        hours: shopId ? readTick("hours", shopId) : false,
+    }))
+    const tick = (which: Tick): void => {
+        if (shopId) {
+            saveTick(which, shopId)
+        }
+        setTicks((current) => ({ ...current, [which]: true }))
     }
+    return { ticks, tick }
 }
 
-function saveSelfDelivery(shopId: string): void {
-    try {
-        window.localStorage.setItem(SELF_DELIVERY_KEY + shopId, "1")
-    } catch {
-        // Private mode: the tick lasts until the app closes.
-    }
+/** «O'zim yetkazaman», «Kecha-kunduz ochiqmiz»: the owner's word ticks the step. */
+function TickButton({ label, onTick }: { label: string; onTick(): void }): React.JSX.Element {
+    return (
+        <button
+            type="button"
+            onClick={(): void => {
+                haptic.success()
+                onTick()
+            }}
+            className="tap shrink-0 rounded-full bg-tg-bg px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+        >
+            {label}
+        </button>
+    )
 }
 
 function itemsOf(
@@ -229,9 +251,7 @@ export function ReadyCard(): React.JSX.Element | null {
     const loadCouriers = useOwner((state) => state.loadCouriers)
     const goToSection = useOwner((state) => state.goToSection)
     const setTab = useOwner((state) => state.setTab)
-    const [selfDelivery, setSelfDelivery] = useState(() =>
-        shop ? readSelfDelivery(shop.id) : false,
-    )
+    const { ticks, tick } = useTicks(shop?.id)
     const activeOrders = useOwner((state) => state.activeOrders)
     const focusOrderId = useOwner((state) => state.focusOrderId)
     const [expanded, setExpanded] = useState(false)
@@ -246,11 +266,11 @@ export function ReadyCard(): React.JSX.Element | null {
     const items = itemsOf(t, {
         hasCard: shop.hasPayoutCard,
         located: shop.location !== undefined,
-        hasHours: shop.workingHours !== null,
+        hasHours: shop.workingHours !== null || ticks.hours,
         products: products.length,
         hasLogo: shop.logoKey !== undefined,
         hasPhone: shop.contactPhone !== undefined,
-        delivers: selfDelivery || couriers.some((courier) => courier.isActive),
+        delivers: ticks.selfDelivery || couriers.some((courier) => courier.isActive),
     })
     // Progress counts what a shop needs; the nice-to-haves never hold it back.
     const required = items.filter((item) => !item.optional)
@@ -288,7 +308,7 @@ export function ReadyCard(): React.JSX.Element | null {
             >
                 <div
                     className="h-full origin-left rounded-full bg-brand transition-transform duration-500 ease-out-quart"
-                    style={{ transform: `scaleX(${done / items.length})` }}
+                    style={{ transform: `scaleX(${done / required.length})` }}
                 />
             </div>
             <ul className="flex flex-col">
@@ -298,18 +318,16 @@ export function ReadyCard(): React.JSX.Element | null {
                         item={item}
                         onOpen={(): void => open(item)}
                         extra={
-                            item.id === "courier" && !item.done ? (
-                                <button
-                                    type="button"
-                                    onClick={(): void => {
-                                        haptic.success()
-                                        saveSelfDelivery(shop.id)
-                                        setSelfDelivery(true)
-                                    }}
-                                    className="tap shrink-0 rounded-full bg-tg-bg px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
-                                >
-                                    {t.selfDeliver}
-                                </button>
+                            item.done ? null : item.id === "courier" ? (
+                                <TickButton
+                                    label={t.selfDeliver}
+                                    onTick={(): void => tick("selfDelivery")}
+                                />
+                            ) : item.id === "hours" && shop.workingHours === null ? (
+                                <TickButton
+                                    label={t.alwaysOpen}
+                                    onTick={(): void => tick("hours")}
+                                />
                             ) : null
                         }
                     />
