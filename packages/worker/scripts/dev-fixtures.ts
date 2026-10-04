@@ -1,7 +1,7 @@
 /** Fixed data for local runs. Never used in production: the bot tokens are fake. */
 export interface DevShop {
     id: string
-    /** Inside the demo district around Gulistan. */
+    /** Inside the demo district around Yakkabog' (the pilot district). */
     location: { latitude: number; longitude: number }
     slug: string
     name: string
@@ -21,7 +21,7 @@ export function typeOf(shop: DevShop): "food" | "grocery" | "service" {
 export const DEV_SHOPS: readonly DevShop[] = [
     {
         id: "dev-food",
-        location: { latitude: 40.492, longitude: 68.781 },
+        location: { latitude: 38.9801, longitude: 66.6842 },
         slug: "osh-markaz-dev",
         name: "Osh Markaz",
         kind: "food",
@@ -36,7 +36,7 @@ export const DEV_SHOPS: readonly DevShop[] = [
     },
     {
         id: "dev-water",
-        location: { latitude: 40.485, longitude: 68.79 },
+        location: { latitude: 38.9742, longitude: 66.6903 },
         slug: "toza-suv-dev",
         name: "Toza Suv",
         kind: "water",
@@ -51,7 +51,7 @@ export const DEV_SHOPS: readonly DevShop[] = [
     },
     {
         id: "dev-grocery",
-        location: { latitude: 40.496, longitude: 68.775 },
+        location: { latitude: 38.9834, longitude: 66.6771 },
         slug: "baraka-market-dev",
         name: "Baraka Market",
         kind: "grocery",
@@ -66,7 +66,7 @@ export const DEV_SHOPS: readonly DevShop[] = [
     },
     {
         id: "dev-service",
-        location: { latitude: 40.49, longitude: 68.786 },
+        location: { latitude: 38.9771, longitude: 66.6881 },
         slug: "toza-gilam-dev",
         name: "Toza Gilam",
         kind: "service",
@@ -99,12 +99,12 @@ export const DEV_BUSINESS_BOT = {
 
 /** One courier who works for all three shops: a person may deliver for several. */
 export const DEV_COURIER = { id: 3003, first_name: "Jasur", language_code: "uz" }
-/** The demo district of the delivery network: 30 km around Gulistan. */
+/** The demo district of the delivery network: 30 km around Yakkabog', the pilot district. */
 export const DEV_DISTRICT = {
-    id: "dev-district-guliston",
-    name: "Guliston",
-    latitude: 40.4897,
-    longitude: 68.7842,
+    id: "dev-district-yakkabog",
+    name: "Yakkabog'",
+    latitude: 38.9785,
+    longitude: 66.6831,
     radiusMeters: 30_000,
 }
 

@@ -1,4 +1,6 @@
 import { execFileSync } from "node:child_process"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 
 import { STATE_DIR, WORKER_DIR } from "./config.js"
 
@@ -37,4 +39,35 @@ export function runSql(command: string): void {
         ],
         { cwd: WORKER_DIR, stdio: "pipe" },
     )
+}
+
+const MAP_DIR = join(import.meta.dirname, "map")
+
+/**
+ * The stand's map: a small piece around Yakkabog' (`scripts/map-data.mjs --bbox=... --out=...`),
+ * no fonts (the Worker answers glyphs with an empty set, the map draws without labels).
+ */
+export function loadMap(): void {
+    const current = JSON.parse(readFileSync(join(MAP_DIR, "current.json"), "utf8")) as {
+        file: string
+    }
+    const put = (key: string, file: string): void => {
+        execFileSync(
+            "bunx",
+            [
+                "wrangler",
+                "r2",
+                "object",
+                "put",
+                `zumda-media/map/${key}`,
+                `--file=${join(MAP_DIR, file)}`,
+                "--local",
+                "--persist-to",
+                STATE_DIR,
+            ],
+            { cwd: WORKER_DIR, stdio: "pipe" },
+        )
+    }
+    put(current.file, current.file)
+    put("current.json", "current.json")
 }

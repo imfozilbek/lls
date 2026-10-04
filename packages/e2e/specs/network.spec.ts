@@ -38,7 +38,7 @@ async function placeAndAccept(): Promise<OrderBody> {
         PEOPLE.customer,
         FOOD,
         [{ productId: "dev-food-p1", quantity: 2 }],
-        { landmark: "bozor yonida", location: { latitude: 40.5, longitude: 68.79 } },
+        { landmark: "bozor yonida", location: { latitude: 38.99, longitude: 66.69 } },
     )
     const accepted = await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)
     expect(accepted.status).toBe(200)
@@ -220,7 +220,7 @@ test("nobody took it in 10 minutes: the shop and the admin hear it once", async 
 
     const again = await lastSeq()
     await openApp(page, { user: PEOPLE.admin, businessBot: true, query: appQueryOf(late.buttons) })
-    const district = page.getByRole("listitem").filter({ hasText: "Guliston" })
+    const district = page.getByRole("listitem").filter({ hasText: "Yakkabog'" })
     await expect(district).toContainText("Kutmoqda")
     await expect(district).toContainText("Do'konlar")
     const owners = await messagesTo(PEOPLE.foodOwner.id, again)

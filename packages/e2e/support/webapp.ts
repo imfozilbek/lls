@@ -17,7 +17,7 @@ import type { Page } from "@playwright/test"
 /** Telegram's Bot API version that brought `WebApp.requestChat` (Managed Bots). */
 const REQUEST_CHAT_VERSION = 9.6
 
-export const GULISTAN = { latitude: 40.4897, longitude: 68.7842 }
+export const YAKKABOG = { latitude: 38.9785, longitude: 66.6831 }
 
 /** The query of a message's «open the app» button: open the app the way the button would. */
 export function appQueryOf(buttons: { web_app?: { url: string } }[]): string {
@@ -363,7 +363,7 @@ function stubConfig(options: OpenOptions, initData: string): StubConfig {
         platform: options.native ? "android" : "unknown",
         colorScheme: options.theme ?? "light",
         theme: options.theme === "dark" ? DARK_THEME : null,
-        location: options.location === undefined ? GULISTAN : options.location,
+        location: options.location === undefined ? YAKKABOG : options.location,
         confirm: options.confirm ?? true,
         writeAccess: options.writeAccess ?? true,
         contact: options.contact ?? "share",

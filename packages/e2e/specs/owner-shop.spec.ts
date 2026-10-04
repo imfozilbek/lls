@@ -167,12 +167,12 @@ test("settings: name, color, delivery and features reach the storefront", async 
     await expect(page.getByRole("button", { name: /^Do'kon\s*Osh Markaz( ·|$)/ })).toBeVisible()
 
     await openGroup(page, "Do'kon")
-    await page.getByLabel("Nomi", { exact: true }).fill("Osh Markaz Guliston")
+    await page.getByLabel("Nomi", { exact: true }).fill("Osh Markaz Yakkabog")
     await page.getByRole("radio").nth(2).click()
     await bottomButton(page).click()
     await expect(page.getByText("Saqlandi").first()).toBeVisible()
     await settingsBack(page)
-    await expect(page.getByRole("button", { name: /Osh Markaz Guliston/ })).toBeVisible()
+    await expect(page.getByRole("button", { name: /Osh Markaz Yakkabog/ })).toBeVisible()
 
     await openGroup(page, "Yetkazib berish")
     await page.getByLabel("Yetkazish narxi").fill("12000")
@@ -187,7 +187,7 @@ test("settings: name, color, delivery and features reach the storefront", async 
     await expect(page.getByText("Saqlandi").first()).toBeVisible()
 
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
-    await expect(page.getByRole("heading", { name: "Osh Markaz Guliston" })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Osh Markaz Yakkabog" })).toBeVisible()
     await expect(page.getByText(/Yetkazish 12\s000/)).toBeVisible()
     // Reorder is off: no "Повторить" in history.
     await page.getByRole("button", { name: "Buyurtmalarim" }).click()

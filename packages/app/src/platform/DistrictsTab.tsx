@@ -20,7 +20,7 @@ const COORDINATE_DIGITS = 5
 const MIN_RADIUS_KM = 0.5
 const MAX_RADIUS_KM = 200
 
-/** "40.4897, 68.7842" (a comma or a space between), or null. */
+/** "38.9785, 66.6831" (a comma or a space between), or null. */
 function parseCenter(text: string): { latitude: number; longitude: number } | null {
     const parts = text.trim().split(/[\s,;]+/)
     if (parts.length !== 2) {

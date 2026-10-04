@@ -55,7 +55,7 @@ async function apply(page: Page, token: string, name: string): Promise<void> {
     await expect(page.getByText("3/3-qadam")).toBeVisible()
     await page.getByRole("button", { name: "Joylashuvni yuborish" }).click()
     await expect(page.getByText("Joylashuv olindi")).toBeVisible()
-    await page.getByLabel(/Manzil/).fill("Guliston, Navoiy 20")
+    await page.getByLabel(/Manzil/).fill("Yakkabog', Navoiy 20")
     await bottomButton(page).click() // «Ariza yuborish»
 }
 

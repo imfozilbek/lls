@@ -176,7 +176,7 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
          VALUES (${quote(shop.id)}, ${quote(shop.slug)}, ${quote(shop.name)}, ${quote(typeOf(shop))},
             ${shop.owner.id}, 'active', ${shop.bot.id}, ${quote(shop.bot.username)},
             ${quote(tokenEnc)}, ${quote(shop.bot.webhookSecret)}, ${quote(shop.brandColor)},
-            'Guliston, Mustaqillik 12', ${shop.location.latitude}, ${shop.location.longitude},
+            'Yakkabog'', Mustaqillik 12', ${shop.location.latitude}, ${shop.location.longitude},
             ${quote(DEV_DISTRICT.id)}, 10000, 150000, ${MIN_ORDER[shop.kind] ?? "NULL"},
             ${quote(JSON.stringify(FEATURES[shop.kind]))}, ${deposit},
             ${SHOWCASE_BPS[shop.kind] ?? "NULL"}, ${SHOWCASE_BPS[shop.kind] === null ? "NULL" : now},
