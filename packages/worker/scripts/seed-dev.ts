@@ -223,6 +223,7 @@ async function seedSql(tokenKey: string): Promise<string> {
         "DELETE FROM order_items;",
         "DELETE FROM cash_handovers;",
         "DELETE FROM orders;",
+        "DELETE FROM trips;",
         "DELETE FROM courier_invites;",
         "DELETE FROM couriers;",
         "DELETE FROM courier_profiles;",

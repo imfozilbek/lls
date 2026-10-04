@@ -228,6 +228,8 @@ const BASE = {
         },
         posterCaption: "🖨 {shop} uchun QR-kod. Chop eting yoki Instagramga joylang.",
         courierRemoved: "↩️ {shop}: #{n} buyurtma boshqa kuryerga berildi.",
+        tripAssigned:
+            "🗺 {shop}: {count} ta buyurtma bir yo'nalishda, shu tartibda: {stops}. Xarita va yo'l ilovada.",
     },
 }
 

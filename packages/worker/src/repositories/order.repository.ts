@@ -76,6 +76,8 @@ interface OrderRow {
     transfer_rejections: number
     transfer_reminded_at: number | null
     cash_received_at: number | null
+    trip_id: string | null
+    trip_stop: number | null
 }
 
 interface ItemRow {
@@ -99,7 +101,7 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     delivered_at, created_at, updated_at, network_requested_at, network_alerted_at,
     delivery_fee_to, payment_card_number, payment_card_holder, receipt_key, receipt_hash,
     receipt_at, receipt_reused_from, customer_rejections, transfer_rejections,
-    transfer_reminded_at, cash_received_at`
+    transfer_reminded_at, cash_received_at, trip_id, trip_stop`
 
 /** A cash order whose money a courier still holds. */
 const WITH_COURIER = `payment_method = 'cash' AND payment_status = 'paid'
@@ -190,6 +192,8 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         networkRequestedAt: dateOrUndefined(row.network_requested_at),
         networkAlertedAt: dateOrUndefined(row.network_alerted_at),
         deliveryFeeTo: oneOf(row.delivery_fee_to, DELIVERY_FEE_RECIPIENTS, "delivery_fee_to"),
+        tripId: optional(row.trip_id),
+        tripStop: optional(row.trip_stop),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -254,11 +258,16 @@ function orderValues(order: Order): (string | number | null)[] {
         ...cardValues(order),
         ...receiptValues(order),
         ...cashValues(order),
+        ...tripValues(order),
     ]
 }
 
 function cashValues(order: Order): (number | null)[] {
     return [order.payment.cashReceivedAt?.getTime() ?? null]
+}
+
+function tripValues(order: Order): (string | number | null)[] {
+    return [order.tripId ?? null, order.tripStop ?? null]
 }
 
 function receiptValues(order: Order): (string | number | null)[] {
@@ -362,7 +371,7 @@ export class D1OrderRepository implements OrderRepository {
                     network_requested_at = ?, network_alerted_at = ?, delivery_fee_to = ?,
                     receipt_key = ?, receipt_hash = ?, receipt_at = ?, receipt_reused_from = ?,
                     customer_rejections = ?, transfer_rejections = ?, transfer_reminded_at = ?,
-                    cash_received_at = ?
+                    cash_received_at = ?, trip_id = ?, trip_stop = ?
                  WHERE id = ?${guard}`,
             )
             .bind(
@@ -376,6 +385,7 @@ export class D1OrderRepository implements OrderRepository {
                 ...networkValues(order),
                 ...receiptValues(order),
                 ...cashValues(order),
+                ...tripValues(order),
                 order.id,
                 ...(expected === undefined ? [] : [expected]),
             )

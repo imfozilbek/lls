@@ -1,4 +1,9 @@
 import {
+    CreateTripUseCase,
+    ListShopTripsUseCase,
+    PickUpTripUseCase,
+    RefreshTripRouteUseCase,
+    ReorderTripUseCase,
     AdvanceOrderUseCase,
     AssignCourierUseCase,
     CancelOrderUseCase,
@@ -71,11 +76,13 @@ import { D1OrderRepository } from "./repositories/order.repository.js"
 import { D1PayoutCardRepository } from "./repositories/payout-card.repository.js"
 import { D1ProductRepository } from "./repositories/product.repository.js"
 import { R2ReceiptStore } from "./repositories/receipt.store.js"
+import { D1TripRepository } from "./repositories/trip.repository.js"
+import { OrsRoutePlanner } from "./routing.js"
 
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
 import type { LoginKeys } from "./telegram-login.js"
-import type { Clock } from "@zumda/core"
+import type { Clock, TripDeps } from "@zumda/core"
 
 export interface ServiceDeps {
     telegram: TelegramGateway
@@ -144,6 +151,11 @@ export interface UseCases {
     networkStats: NetworkStatsUseCase
     listPlatformShops: ListPlatformShopsUseCase
     freeNetworkCouriers: FreeNetworkCouriersUseCase
+    createTrip: CreateTripUseCase
+    reorderTrip: ReorderTripUseCase
+    pickUpTrip: PickUpTripUseCase
+    refreshTripRoute: RefreshTripRouteUseCase
+    listShopTrips: ListShopTripsUseCase
 }
 
 export interface Services extends ServiceDeps {
@@ -158,6 +170,25 @@ export interface Services extends ServiceDeps {
     /** Bots Zumda | Business created and manages for owners. */
     managedBots: D1ManagedBotRepository
     useCases: UseCases
+}
+
+type TripUseCases = Pick<
+    UseCases,
+    "createTrip" | "reorderTrip" | "pickUpTrip" | "refreshTripRoute" | "listShopTrips"
+>
+
+function newTripId(): string {
+    return crypto.randomUUID()
+}
+
+function tripUseCases(deps: TripDeps): TripUseCases {
+    return {
+        createTrip: new CreateTripUseCase(deps),
+        reorderTrip: new ReorderTripUseCase(deps),
+        pickUpTrip: new PickUpTripUseCase(deps),
+        refreshTripRoute: new RefreshTripRouteUseCase(deps),
+        listShopTrips: new ListShopTripsUseCase(deps),
+    }
 }
 
 /** Per-request wiring of repositories and use cases. Construction is cheap. */
@@ -175,7 +206,10 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const admins = platformAdminIds(env)
     const orderAccess = { businesses, customers, couriers, orders }
     const courierAccess = { businesses, couriers, orders, clock }
-    const network = { ...courierAccess, districts }
+    const trips = new D1TripRepository(env.DB)
+    const network = { ...courierAccess, districts, trips }
+    const routes = new OrsRoutePlanner(env.ORS_API_KEY, env.ORS_API_BASE)
+    const tripDeps: TripDeps = { ...courierAccess, trips, routes, newId: newTripId }
     const cardBook = { businesses, cards, clock }
 
     return {
@@ -251,6 +285,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             networkStats: new NetworkStatsUseCase(network, admins),
             listPlatformShops: new ListPlatformShopsUseCase(businesses, customers, admins, clock),
             freeNetworkCouriers: new FreeNetworkCouriersUseCase(network),
+            ...tripUseCases(tripDeps),
         },
     }
 }

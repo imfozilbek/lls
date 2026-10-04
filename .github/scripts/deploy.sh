@@ -7,7 +7,8 @@
 #
 # Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS,
 # COURIER_BOT_TOKEN, BUSINESS_BOT_TOKEN.
-# Optional: TOKEN_ENC_KEY, a saved copy of the encryption key, used only when the Worker has none.
+# Optional: TOKEN_ENC_KEY, a saved copy of the encryption key, used only when the Worker has none;
+# ORS_API_KEY, the OpenRouteService key for trips' way along the roads (without it: straight lines).
 set -euo pipefail
 # Temp files (the Worker secrets file) are readable by this user only.
 umask 077
@@ -210,6 +211,11 @@ deploy_worker() {
         encryption_key
         echo "::add-mask::${ENC_KEY}"
         jq --arg key "$ENC_KEY" '. + {TOKEN_ENC_KEY: $key}' "$secrets_file" >"${secrets_file}.new"
+        mv "${secrets_file}.new" "$secrets_file"
+    fi
+    if [[ -n "${ORS_API_KEY:-}" ]]; then
+        echo "::add-mask::${ORS_API_KEY}"
+        jq --arg key "$ORS_API_KEY" '. + {ORS_API_KEY: $key}' "$secrets_file" >"${secrets_file}.new"
         mv "${secrets_file}.new" "$secrets_file"
     fi
     # The custom domains get their DNS records and certificates from Cloudflare. The bare
