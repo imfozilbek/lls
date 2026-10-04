@@ -7,6 +7,24 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Native feel inside Telegram
+- **Added (app):** a pull down from the top refreshes the screen (the app no longer collapses:
+  `disableVerticalSwipes`); a swipe right goes back (closes a sheet, a part of the settings, a
+  screen) and a swipe left goes forward again, each screen at the place it was scrolled to.
+  Sideways lists (category chips) keep their own swipes.
+- **Fixed (app):** focusing a field no longer zooms the app (every field is 16px, the viewport
+  does not scale); the caret is always dark on the light fields.
+- **Changed (app):** no flicker: screens and tabs open from this session's copy and refresh
+  quietly; lists rise in once per session; a seen photo never fades in again; an error after a
+  refresh is a toast, not a blank screen; screens slide in from the side they come from.
+- **Added (app):** Uzbek popups with a red button for what cannot be undone (cancel, remove,
+  leave unsaved); Telegram asks before closing a filled checkout, unsaved settings, a half
+  application or a picked receipt; refresh at once when the app comes back, no polling while it
+  is collapsed; Enter goes to the next field or closes the keyboard, the focused field stays
+  above it; portrait only; after a delivered order, «Do'konni bosh ekranga qo'shish».
+- **Changed (app):** checkout, the order and the order list load right after the menu, so the
+  first screen is lighter (initial JS 94 KB gzip).
+
 ### Cash as a way of paying, chosen by the shop
 - **Added:** «Sozlamalar» → «To'lov» → «Mijoz qanday to'laydi»: «Kartaga o'tkazma» (the
   default, as before), «Naqd pul» or «Ikkalasi». A cash shop needs no card; with both, the
