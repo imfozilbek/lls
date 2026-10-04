@@ -334,6 +334,8 @@ export const uz = {
             off_today: "bugun ishlamaydi",
             not_on_shift: "smenada emas",
         },
+        backTodayAssign:
+            "Bugun ishlamaydi deb belgilangan: bossangiz, bugunga qaytariladi va tayinlanadi",
         assign: "Kuryer tayinlash",
         reassign: "Boshqa kuryer",
         noCouriers: "Hali kuryer yo'q. Sozlamalarda taklif qiling.",
@@ -488,6 +490,7 @@ export const uz = {
             approved: "Kuryer tasdiqlandi",
             workDays: "Ish kunlari",
             offToday: "Bugun ishlamaydi",
+            worksToday: "Bugun ishlaydi",
             onShift: "Smenada",
             notOnShift: "Smenada emas",
             invite: "Kuryerni taklif qilish",
