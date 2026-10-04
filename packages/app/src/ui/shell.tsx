@@ -39,7 +39,7 @@ export function WebBackBar(): React.JSX.Element | null {
             <button
                 type="button"
                 onClick={onBack}
-                className="tap inline-flex h-11 items-center gap-1 rounded-control px-2 font-semibold text-tg-link"
+                className="tap inline-flex h-11 items-center gap-1 rounded-control px-2 font-semibold text-brand"
             >
                 <ChevronIcon size={18} className="rotate-180" />
                 {t.back}

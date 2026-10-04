@@ -370,7 +370,7 @@ function CategoryField({
                 <button
                     type="button"
                     onClick={(): void => setAll(true)}
-                    className="tap self-start px-1 py-2 text-sm font-medium text-tg-link"
+                    className="tap self-start px-1 py-2 text-sm font-medium text-brand"
                 >
                     {t.owner.product.moreCategories}
                 </button>

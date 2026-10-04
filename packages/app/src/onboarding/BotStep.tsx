@@ -253,7 +253,7 @@ function SwitchLink({ text, onClick }: { text: string; onClick(): void }): React
                 haptic.select()
                 onClick()
             }}
-            className="tap -mx-1 self-start rounded-control px-1 py-2 font-semibold text-tg-link"
+            className="tap -mx-1 self-start rounded-control px-1 py-2 font-semibold text-brand"
         >
             {text}
         </button>

@@ -89,7 +89,14 @@ function ProductSummary({
                 )}
             />
             <span className="min-w-0">
-                <span className="line-clamp-1 font-medium">{product.name}</span>
+                <span
+                    className={cn(
+                        "line-clamp-2 font-medium transition-colors duration-200",
+                        !onSale && "text-tg-hint",
+                    )}
+                >
+                    {product.name}
+                </span>
                 <span className="block text-sm text-tg-hint">
                     {onSale
                         ? `${formatMoney(product.price, language)}${product.unit === Unit.KG ? ` / ${t.units.kg}` : ""}`
@@ -153,24 +160,32 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
                 </button>
             ) : null}
             {/* One tap does the everyday thing: off for today where the shop has a stop-list. */}
-            <Switch
-                checked={onSale}
-                onChange={(next): void => {
-                    if (saving) {
-                        return
-                    }
-                    if (!next && canStop) {
-                        void save({ stopForToday: true }).then((saved) => {
-                            if (saved) {
-                                toast(fill(t.owner.stoppedTodayToast, { name: product.name }))
-                            }
-                        })
-                        return
-                    }
-                    void save({ isAvailable: next })
-                }}
-                label={`${t.owner.product.available}: ${product.name}`}
-            />
+            <div className="flex w-16 shrink-0 flex-col items-center gap-1">
+                <Switch
+                    checked={onSale}
+                    onChange={(next): void => {
+                        if (saving) {
+                            return
+                        }
+                        if (!next && canStop) {
+                            void save({ stopForToday: true }).then((saved) => {
+                                if (saved) {
+                                    toast(fill(t.owner.stoppedTodayToast, { name: product.name }))
+                                }
+                            })
+                            return
+                        }
+                        void save({ isAvailable: next })
+                    }}
+                    label={`${t.owner.product.available}: ${product.name}`}
+                />
+                <span
+                    aria-hidden
+                    className={cn("text-xs font-medium", onSale ? "text-success" : "text-tg-hint")}
+                >
+                    {onSale ? t.owner.onSale : t.owner.offSale}
+                </span>
+            </div>
             {asking ? (
                 <OffSheet
                     onPick={(patch): void => void save(patch)}
