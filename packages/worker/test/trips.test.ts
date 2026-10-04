@@ -217,6 +217,18 @@ describe("OpenRouteService", () => {
         })
     })
 
+    it("asks OpenRouteService at its new address, with the key", async () => {
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(Response.json({ features: [] }))
+        await new OrsRoutePlanner("key-2").route([SHOP, north(1)]) // secret-scan: fake
+        const [url, init] = fetchSpy.mock.calls[0] ?? []
+        expect(url).toBe(
+            "https://api.heigit.org/openrouteservice/v2/directions/driving-car/geojson",
+        )
+        expect(new Headers(init?.headers).get("Authorization")).toBe("key-2")
+    })
+
     it("an error or a strange answer: null, the trip goes on with straight lines", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response("no", { status: 403 }))
         expect(await new OrsRoutePlanner("k").route([SHOP, north(1)])).toBeNull()
