@@ -324,7 +324,8 @@ describe("inside a shop", () => {
                 min_order, delivery_radius_m, working_hours, features, accepting_orders,
                 bottle_deposit, marketplace_commission_bps, marketplace_joined_at,
                 created_at, updated_at, payout_card_number, payout_card_holder, district_id,
-                network_delivery, payment_card_id, bot_source, rejected_at, review_note
+                network_delivery, payment_card_id, bot_source, rejected_at, review_note,
+                contact_phone
              FROM businesses WHERE slug = ?`,
         )
             .bind(slug)
@@ -378,6 +379,20 @@ describe("inside a shop", () => {
         })
         const owner = await json(await asOwner()("/api/owner/shop"))
         expect(owner).toMatchObject({ status: "active", ownerTelegramId: OWNER.id })
+    })
+
+    it("the owner's contact phone reaches customers; empty text removes it", async () => {
+        const patch = (contactPhone: string | null): Promise<Response> =>
+            asOwner()("/api/owner/shop", { method: "PATCH", json: { contactPhone } })
+        expect((await patch("+998 90 123-45-67")).status).toBe(200)
+        const shop = await json(await asCustomer()("/api/shop"))
+        expect(shop).toMatchObject({ contactPhone: "+998901234567" })
+
+        expect((await patch("<script>")).status).toBe(400)
+        expect((await patch("12")).status).toBe(400)
+        expect(await json<{ contactPhone?: string }>(await patch(""))).not.toHaveProperty(
+            "contactPhone",
+        )
     })
 
     it("images: upload, serve with cache headers, replace and delete", async () => {
