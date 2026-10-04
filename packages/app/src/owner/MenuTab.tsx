@@ -10,7 +10,7 @@ import { haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { BagIcon, MoreIcon, WifiOffIcon } from "../ui/icons.js"
+import { BagIcon, ImageIcon, MoreIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, Skeleton, Switch } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
@@ -181,7 +181,7 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
                 />
                 <span
                     aria-hidden
-                    className={cn("text-xs font-medium", onSale ? "text-success" : "text-tg-hint")}
+                    className={cn("text-xs font-medium", onSale ? "text-brand" : "text-tg-hint")}
                 >
                     {onSale ? t.owner.onSale : t.owner.offSale}
                 </span>
@@ -251,8 +251,16 @@ export function MenuTab(): React.JSX.Element {
             />
         )
     }
+    const noPhoto = products.filter((product) => !product.imageKey).length
     return (
         <section className="px-4">
+            {noPhoto > 0 ? (
+                // A photo sells: the storefront without them looks like a price list.
+                <p className="mt-2 flex items-center gap-2 rounded-control bg-brand/10 px-3 py-2.5 text-sm">
+                    <ImageIcon size={18} className="shrink-0 text-brand" />
+                    {fill(t.owner.addPhotos, { n: noPhoto })}
+                </p>
+            ) : null}
             <ul className="divide-y divide-tg-separator">
                 {products.map((product) => (
                     <ProductRow key={product.id} product={product} />

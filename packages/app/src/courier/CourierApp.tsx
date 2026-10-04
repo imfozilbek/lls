@@ -430,6 +430,17 @@ function Nearby({
     )
 }
 
+/** Where the courier stands with this shop today: the one line they come here to read. */
+function shopStanding(t: Dictionary, shop: CourierShopDTO): string {
+    if (shop.status === CourierStatus.NETWORK) {
+        return t.courier.networkShop
+    }
+    if (shop.status === CourierStatus.PENDING) {
+        return t.courier.awaitingApproval
+    }
+    return shop.worksToday ? t.courier.worksToday : t.courier.dayOff
+}
+
 function ShopRow({ shop }: { shop: CourierShopDTO }): React.JSX.Element {
     const t = useT()
     return (
@@ -443,11 +454,11 @@ function ShopRow({ shop }: { shop: CourierShopDTO }): React.JSX.Element {
             </span>
             <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium">{shop.shopName}</span>
-                {shop.status === CourierStatus.NETWORK ? (
-                    <span className="block text-sm text-tg-hint">{t.courier.networkShop}</span>
-                ) : shop.worksToday ? null : (
-                    <span className="block text-sm text-tg-hint">{t.courier.dayOff}</span>
-                )}
+                <span
+                    className={`block text-sm ${shop.worksToday ? "font-medium text-tg-subtitle" : "text-tg-hint"}`}
+                >
+                    {shopStanding(t, shop)}
+                </span>
             </span>
         </li>
     )

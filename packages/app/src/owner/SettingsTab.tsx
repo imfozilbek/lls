@@ -271,13 +271,17 @@ function ColorPicker({
     onChange(color: string): void
 }): React.JSX.Element {
     const t = useT()
+    const s = t.owner.settings
+    // A color chosen before the swatches changed stays visible, and chosen, at the front.
+    const own = !BRAND_SWATCHES.some((color) => color.toLowerCase() === value.toLowerCase())
+    const colors: string[] = own ? [value, ...BRAND_SWATCHES] : [...BRAND_SWATCHES]
     return (
         <div
-            className="grid grid-cols-7 justify-items-center gap-1"
+            className="grid grid-cols-[repeat(auto-fill,minmax(2.75rem,1fr))] justify-items-center gap-y-2"
             role="radiogroup"
-            aria-label={t.owner.settings.color}
+            aria-label={s.color}
         >
-            {BRAND_SWATCHES.map((color) => {
+            {colors.map((color, index) => {
                 const selected = color.toLowerCase() === value.toLowerCase()
                 return (
                     <button
@@ -285,7 +289,11 @@ function ColorPicker({
                         type="button"
                         role="radio"
                         aria-checked={selected}
-                        aria-label={color}
+                        aria-label={
+                            own && index === 0
+                                ? s.currentColor
+                                : (s.colorNames[index - (own ? 1 : 0)] ?? color)
+                        }
                         onClick={(): void => {
                             haptic.select()
                             onChange(color)
@@ -363,10 +371,11 @@ function DeliveryFields({
                     onChange={(minOrder): void => patch({ minOrder })}
                 />
             </Field>
-            <Field label={s.radius} htmlFor="radius">
+            <Field label={s.radius} htmlFor="radius" hint={s.radiusHint}>
                 <TextInput
                     id="radius"
                     inputMode="numeric"
+                    placeholder={s.radiusNone}
                     value={form.radiusKm === null ? "" : String(form.radiusKm)}
                     onChange={(e): void => {
                         const digits = e.target.value.replace(/\D/g, "")
@@ -539,6 +548,7 @@ const GROUPS: SettingsGroup[] = [
 /** Where each step of «Ishga tayyor» leads. */
 const READY_GROUP: Record<ReadySection, SettingsGroup> = {
     logo: "shop",
+    phone: "shop",
     card: "card",
     location: "location",
     hours: "hours",
