@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { formatMoney } from "../lib/format.js"
+import { useRefresh } from "../lib/refresh.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import {
@@ -435,6 +436,7 @@ export function MoneyTab(): React.JSX.Element {
     const t = useT()
     const [period, setPeriod] = useState<MoneyPeriod>("today")
     const state = useReport(period)
+    useRefresh(state.load)
     return (
         <div className="flex flex-col gap-3 px-4 pt-2">
             <Segmented<MoneyPeriod>

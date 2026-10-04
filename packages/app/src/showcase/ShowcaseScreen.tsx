@@ -1,5 +1,5 @@
 import { SUGGESTED_CATEGORIES } from "@zumda/core"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { create } from "zustand"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -9,6 +9,7 @@ import { cn } from "../lib/cn.js"
 import { formatMoney, hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { usePagedList } from "../lib/paged.js"
+import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { ChevronIcon, CloseIcon, SearchIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
@@ -254,17 +255,19 @@ function ProductResult({
 function useShops(): { shops: ShopPublicDTO[] | null; error: string | null; retry(): void } {
     const [shops, setShops] = useState<ShopPublicDTO[] | null>(null)
     const [error, setError] = useState<string | null>(null)
-    const [attempt, setAttempt] = useState(0)
-    useEffect(() => {
+    const load = useCallback(async (): Promise<void> => {
         setError(null)
-        api.showcase
-            .shops()
-            .then((page) => setShops(page.data))
-            .catch((caught: unknown) =>
-                setError(caught instanceof ApiError ? caught.code : "generic"),
-            )
-    }, [attempt])
-    return { shops, error, retry: (): void => setAttempt((n) => n + 1) }
+        try {
+            setShops((await api.showcase.shops()).data)
+        } catch (caught) {
+            setError(caught instanceof ApiError ? caught.code : "generic")
+        }
+    }, [])
+    useEffect(() => {
+        void load()
+    }, [load])
+    useRefresh(load)
+    return { shops, error, retry: (): void => void load() }
 }
 
 function Results({
@@ -280,6 +283,7 @@ function Results({
     const list = usePagedList(`${query}|${category ?? ""}`, (page) =>
         api.showcase.search({ q: query || undefined, category: category ?? undefined }, page),
     )
+    useRefresh(list.reload)
     if (list.error && list.items === null) {
         return (
             <EmptyState

@@ -2,6 +2,7 @@ import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { api } from "../lib/api.js"
 import { formatMoney, formatTime } from "../lib/format.js"
 import { usePagedList } from "../lib/paged.js"
+import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { ChevronIcon, ReceiptIcon, WifiOffIcon } from "../ui/icons.js"
@@ -74,6 +75,7 @@ export function OrdersScreen(): React.JSX.Element {
     const t = useT()
     const back = useRouter((state) => state.back)
     const list = usePagedList("orders", (page) => api.myOrders(page))
+    useRefresh(list.reload)
     const orders = list.items
 
     let body: React.JSX.Element

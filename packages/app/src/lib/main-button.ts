@@ -92,7 +92,13 @@ const backStack: BackEntry[] = []
 let nextRank = 0
 let nativeBound = false
 
-function pressBack(): void {
+/** Is there a "back" now (a sheet, a part of the settings, an earlier screen)? */
+export function canGoBack(): boolean {
+    return backStack.length > 0
+}
+
+/** The same "back" as Telegram's BackButton: the innermost screen or sheet gets it. */
+export function pressBack(): void {
     const top = backStack.reduce<BackEntry | undefined>(
         (best, entry) => (!best || entry.rank > best.rank ? entry : best),
         undefined,

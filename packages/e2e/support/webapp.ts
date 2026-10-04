@@ -125,6 +125,46 @@ function paintTheme(theme: Record<string, string>): void {
     }
 }
 
+type Recorder = (
+    method: string,
+    result?: (...args: unknown[]) => unknown,
+) => (...args: unknown[]) => unknown
+
+/**
+ * Bot API 6.2-9.1: closing confirmation, no vertical swipes, orientation, keyboard, home screen,
+ * and Telegram's events. Part of the page stub: runs in the page, so it takes everything it uses.
+ */
+function nativeFeel(record: Recorder): { api: Record<string, unknown>; fire(event: string): void } {
+    const events: Record<string, (() => void)[]> = {}
+    const fire = (event: string): void => {
+        const app = (window as unknown as { Telegram: { WebApp: { isActive: boolean } } }).Telegram
+            .WebApp
+        app.isActive = event !== "deactivated"
+        for (const handler of events[event] ?? []) {
+            handler()
+        }
+    }
+    const api = {
+        disableVerticalSwipes: record("disableVerticalSwipes"),
+        enableClosingConfirmation: record("enableClosingConfirmation"),
+        disableClosingConfirmation: record("disableClosingConfirmation"),
+        lockOrientation: record("lockOrientation"),
+        hideKeyboard: record("hideKeyboard"),
+        addToHomeScreen: record("addToHomeScreen"),
+        checkHomeScreenStatus: record("checkHomeScreenStatus", (callback) =>
+            (callback as (status: string) => void)("missed"),
+        ),
+        isActive: true,
+        onEvent: (event: string, handler: () => void): void => {
+            events[event] = [...(events[event] ?? []), handler]
+        },
+        offEvent: (event: string, handler: () => void): void => {
+            events[event] = (events[event] ?? []).filter((h) => h !== handler)
+        },
+    }
+    return { api, fire }
+}
+
 /** Runs in the page before any app code. Records every call in `window.__tg`. */
 function installTelegramStub(config: StubConfig): void {
     interface Handlers {
@@ -166,6 +206,9 @@ function installTelegramStub(config: StubConfig): void {
         }
     const mainButton = button()
     const backButton = button()
+    // Defined beside the stub and put in the page before it (`openApp`); `__tg.fire` plays
+    // Telegram's own events (activated, deactivated) in a test.
+    const native = (window as unknown as { __nativeFeel: typeof nativeFeel }).__nativeFeel(record)
     const webApp = {
         initData: config.initData,
         initDataUnsafe: config.initData ? { user: config.user } : {},
@@ -209,11 +252,17 @@ function installTelegramStub(config: StubConfig): void {
         showConfirm: record("showConfirm", (_message, callback) =>
             (callback as (ok: boolean) => void)(config.confirm),
         ),
+        // The answer is the button the person would press: «yes» or «no».
+        showPopup: record("showPopup", (_params, callback) =>
+            (callback as (id: string) => void)(config.confirm ? "yes" : "no"),
+        ),
         openTelegramLink: record("openTelegramLink"),
+        ...native.api,
     }
+    const fire = native.fire
     Object.assign(window, {
         Telegram: { WebApp: webApp },
-        __tg: { calls, mainButton, backButton },
+        __tg: { calls, mainButton, backButton, fire },
     })
 }
 
@@ -249,6 +298,8 @@ export interface OpenedApp {
     /** Native MainButton: its current params, and a press. */
     mainButton(): Promise<Record<string, unknown>>
     pressMainButton(): Promise<void>
+    /** Plays one of Telegram's events: the app collapsed («deactivated») or back («activated»). */
+    fire(event: "activated" | "deactivated"): Promise<void>
 }
 
 function stubConfig(options: OpenOptions, initData: string): StubConfig {
@@ -323,6 +374,7 @@ export async function openApp(page: Page, options: OpenOptions): Promise<OpenedA
     if (config.theme) {
         await page.addInitScript(paintTheme, config.theme)
     }
+    await page.addInitScript(`window.__nativeFeel = ${nativeFeel.toString()}`)
     await page.addInitScript(installTelegramStub, config)
     if (Number(config.version) >= REQUEST_CHAT_VERSION) {
         await page.addInitScript(installRequestChat, config.createsBot)
@@ -351,6 +403,10 @@ export async function openApp(page: Page, options: OpenOptions): Promise<OpenedA
         chat,
         calls: async () => (await tg()).calls,
         mainButton: async () => (await tg()).mainButton.params,
+        fire: (event) =>
+            page.evaluate((name) => {
+                ;(window as unknown as { __tg: { fire(event: string): void } }).__tg.fire(name)
+            }, event),
         back: () =>
             page.evaluate(() => {
                 const state = (

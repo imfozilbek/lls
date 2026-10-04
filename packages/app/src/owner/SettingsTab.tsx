@@ -9,6 +9,7 @@ import { cn } from "../lib/cn.js"
 import { formatMoney, hexToRgbChannels } from "../lib/format.js"
 import { compressImage } from "../lib/image.js"
 import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-button.js"
+import { useRefresh } from "../lib/refresh.js"
 import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
@@ -136,17 +137,28 @@ function useOwnerShop(): {
 } {
     const [shop, setShopState] = useState<ShopOwnerDTO | null>(null)
     const [error, setError] = useState<string | null>(null)
+    const t = useT()
+    const loaded = useRef(false)
+    const loadCouriers = useOwner((state) => state.loadCouriers)
     const reload = async (): Promise<void> => {
         setError(null)
         try {
             setShopState(await api.owner.shop())
+            loaded.current = true
         } catch (caught) {
-            setError(caught instanceof ApiError ? caught.code : "generic")
+            const code = caught instanceof ApiError ? caught.code : "generic"
+            // Settings already on screen stay; only a first load shows the error in their place.
+            if (loaded.current) {
+                toast(errorText(t, code), "error")
+            } else {
+                setError(code)
+            }
         }
     }
     useEffect(() => {
         void reload()
     }, [])
+    useRefresh(() => Promise.all([reload(), loadCouriers().catch(() => undefined)]))
     const setShop = (next: ShopOwnerDTO): void => {
         setShopState(next)
         publish(next)

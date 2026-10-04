@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, adminApi } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
+import { useRefresh } from "../lib/refresh.js"
 import { getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { ChevronIcon, PinIcon, PlusIcon, WifiOffIcon } from "../ui/icons.js"
@@ -261,7 +262,13 @@ function DistrictCard({
 export function DistrictsTab(): React.JSX.Element {
     const t = useT()
     const p = t.platform
-    const [districts, setDistricts] = useState<DistrictStats[] | null>(null)
+    const [districtList, setDistrictState] = useState<DistrictStats[] | null>(null)
+    // The latest list for the loader: an error while it is on screen is only a toast.
+    const districts = useRef<DistrictStats[] | null>(null)
+    const setDistricts = (next: DistrictStats[]): void => {
+        districts.current = next
+        setDistrictState(next)
+    }
     const [error, setError] = useState<string | null>(null)
     const [editing, setEditing] = useState<DistrictStats | "new" | null>(null)
     const load = useCallback(async (): Promise<void> => {
@@ -269,12 +276,18 @@ export function DistrictsTab(): React.JSX.Element {
         try {
             setDistricts(await adminApi.districts())
         } catch (caught) {
-            setError(caught instanceof ApiError ? caught.code : "generic")
+            const code = caught instanceof ApiError ? caught.code : "generic"
+            if (districts.current) {
+                toast(errorText(t, code), "error")
+            } else {
+                setError(code)
+            }
         }
-    }, [])
+    }, [t])
     useEffect(() => {
         void load()
     }, [load])
+    useRefresh(editing ? null : load)
 
     let body: React.JSX.Element
     if (error) {
@@ -289,9 +302,9 @@ export function DistrictsTab(): React.JSX.Element {
                 }
             />
         )
-    } else if (districts === null) {
+    } else if (districtList === null) {
         body = <Skeleton className="h-44 rounded-tile" />
-    } else if (districts.length === 0) {
+    } else if (districtList.length === 0) {
         body = (
             <EmptyState
                 art={<PinIcon size={44} />}
@@ -302,7 +315,7 @@ export function DistrictsTab(): React.JSX.Element {
     } else {
         body = (
             <ul className="flex flex-col gap-3">
-                {districts.map((district) => (
+                {districtList.map((district) => (
                     <DistrictCard
                         key={district.id}
                         district={district}

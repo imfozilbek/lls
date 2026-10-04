@@ -15,6 +15,7 @@ import { cn } from "../lib/cn.js"
 import { formatMoney, formatQuantity, formatTime } from "../lib/format.js"
 import { usePagedList } from "../lib/paged.js"
 import { usePolling } from "../lib/polling.js"
+import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { CompactAddress } from "../ui/contact-links.js"
@@ -514,6 +515,7 @@ function FocusedOrder({
 function useShopOrders(filter: Filter): PagedList<OrderDTO> {
     const list = usePagedList(filter, (page) => api.owner.orders(filter, page))
     usePolling(list.reload, POLL_MS, filter === "active")
+    useRefresh(list.reload)
     return list
 }
 

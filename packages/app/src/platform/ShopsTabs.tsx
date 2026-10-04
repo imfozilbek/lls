@@ -5,6 +5,7 @@ import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, adminApi } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatTime } from "../lib/format.js"
+import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { CheckIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
@@ -43,6 +44,7 @@ function useShops(status: BusinessStatus): {
         setShops(null)
         void reload()
     }, [reload])
+    useRefresh(reload)
     return { shops, error, reload }
 }
 

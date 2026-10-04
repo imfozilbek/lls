@@ -6,7 +6,9 @@ import { ZUMDA_BRAND_COLOR, applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
 import { hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
+import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
+import { toast } from "../stores/toast.js"
 import { BotIcon, ChevronIcon, ShieldIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, PoweredBy, Section, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
@@ -209,13 +211,18 @@ export function OnboardingApp({
                 onSignOut()
                 return
             }
-            setError(code)
+            if (shops === null) {
+                setError(code)
+            } else {
+                toast(errorText(t, code), "error")
+            }
         }
     }
     useEffect(() => {
         applyBrand(ZUMDA_BRAND_COLOR)
         void load()
     }, [])
+    useRefresh(wizard ? null : load)
 
     if (wizard) {
         return (

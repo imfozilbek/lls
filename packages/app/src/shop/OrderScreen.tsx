@@ -6,6 +6,7 @@ import { ApiError, api } from "../lib/api.js"
 import { formatMoney, formatTime } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { usePolling } from "../lib/polling.js"
+import { useRefresh } from "../lib/refresh.js"
 import { addToHomeScreen, canAddToHomeScreen, confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
@@ -320,6 +321,7 @@ function useOrder(id: string): {
     }, [reload])
     // Back from the bank app: the news at once, not after the next 20 s tick.
     usePolling(reload, POLL_MS, active)
+    useRefresh(reload)
 
     return { order, error, reload, setOrder }
 }
