@@ -1,4 +1,5 @@
 import type { OrderDTO } from "./order.dto.js"
+import type { LocationDTO } from "./shop.dto.js"
 import type { CourierProfile } from "../../domain/entities/courier-profile.js"
 import type { Courier, CourierUnavailableReason } from "../../domain/entities/courier.js"
 import type { CourierStatus } from "../../domain/enums/courier-status.js"
@@ -70,6 +71,9 @@ export interface CourierShopDTO {
 
 export interface CourierOrderDTO extends OrderDTO {
     shopName: string
+    /** Where to pick it up: the shop's place on the map and its address. */
+    shopLocation?: LocationDTO
+    shopAddress?: string
 }
 
 /**
@@ -81,6 +85,8 @@ export interface NetworkOrderDTO {
     businessId: string
     shopName: string
     shopAddress?: string
+    /** The shop on the map: where the courier would go first (never the customer's place). */
+    shopLocation?: LocationDTO
     number: number
     /** What the order costs (already paid by transfer: nothing to take at the door). */
     total: number

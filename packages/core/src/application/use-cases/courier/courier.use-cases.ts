@@ -8,6 +8,7 @@ import { startOfLocalDay } from "../../../domain/shared/time.js"
 import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
 import { toCourierDTO, toCourierProfileDTO } from "../../dtos/courier.dto.js"
 import { toOrderDTO } from "../../dtos/order.dto.js"
+import { toLocationDTO } from "../../dtos/shop.dto.js"
 import { displayNameOf } from "../../dtos/telegram-user.js"
 import { ListNetworkOrdersUseCase } from "../network/network.use-cases.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
@@ -331,9 +332,14 @@ export class GetCourierHomeUseCase {
                     worksToday: link.worksToday(now),
                     cashToHand,
                 }
+                const shopLocation = business?.location
+                    ? toLocationDTO(business.location)
+                    : undefined
                 const shopOrders: CourierOrderDTO[] = list.map((o) => ({
                     ...toOrderDTO(o),
                     shopName,
+                    shopLocation,
+                    shopAddress: business?.address,
                 }))
                 return { shop, shopOrders, network: link.isNetwork }
             }),

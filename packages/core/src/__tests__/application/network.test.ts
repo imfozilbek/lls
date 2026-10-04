@@ -254,6 +254,7 @@ describe("district network", () => {
                 itemsCount: 2,
             })
             expect(list[0]?.distanceMeters).toBeGreaterThan(0)
+            expect(list[0]?.shopLocation).toEqual(GULISTAN)
             expect(JSON.stringify(list[0])).not.toContain("Navoiy")
             expect(JSON.stringify(list[0])).not.toContain("Aziz")
             expect(
@@ -312,6 +313,8 @@ describe("district network", () => {
                 ["Osh Markaz", "network"],
             ])
             expect(home.orders.map((o) => o.id)).toEqual([order.id])
+            // Where to pick it up: the shop's place, for the courier's map.
+            expect(home.orders[0]?.shopLocation).toEqual(GULISTAN)
         })
 
         it("the first one wins; the second hears «already taken»", async () => {

@@ -10,6 +10,7 @@ import { addDays } from "../../../domain/shared/time.js"
 import { Location } from "../../../domain/value-objects/location.js"
 import { toCourierProfileDTO } from "../../dtos/courier.dto.js"
 import { toOrderDTO } from "../../dtos/order.dto.js"
+import { toLocationDTO } from "../../dtos/shop.dto.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
 import type { Business } from "../../../domain/entities/business.js"
@@ -101,6 +102,7 @@ export function toNetworkOrderDTO(order: Order, shop: Business): NetworkOrderDTO
         businessId: order.businessId,
         shopName: shop.name,
         shopAddress: shop.address,
+        shopLocation: shop.location ? toLocationDTO(shop.location) : undefined,
         number: order.number,
         total: order.total.amount,
         itemsCount: piecesToCarry(order),
