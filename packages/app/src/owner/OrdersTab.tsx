@@ -1,4 +1,11 @@
-import { OrderChannel, OrderStatus, PaymentStatus, formatPhone, isFinalStatus } from "@zumda/core"
+import {
+    DEFAULT_NETWORK_WAIT_MINUTES,
+    OrderChannel,
+    OrderStatus,
+    PaymentStatus,
+    formatPhone,
+    isFinalStatus,
+} from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -253,6 +260,19 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
 
 const MINUTE_MS = 60_000
 
+/**
+ * How long the district has looked for a courier. Advice to act only once the usual wait has
+ * passed: before that the network simply needs a minute.
+ */
+function networkWaitText(t: Dictionary, requestedAt: string): string {
+    const minutes = Math.floor((Date.now() - Date.parse(requestedAt)) / MINUTE_MS)
+    if (minutes < 1) {
+        return t.owner.networkJustAsked
+    }
+    const waited = fill(t.owner.networkWaited, { n: minutes })
+    return minutes < DEFAULT_NETWORK_WAIT_MINUTES ? waited : `${waited} ${t.owner.networkLate}`
+}
+
 /** Who brings it: the shop's courier, a network courier, or the network is still looking. */
 function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
     const t = useT()
@@ -264,15 +284,7 @@ function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
                     {t.owner.networkSearching}
                     {order.networkRequestedAt ? (
                         <span className="block text-sm font-normal text-tg-hint">
-                            {fill(t.owner.networkWaited, {
-                                n: Math.max(
-                                    0,
-                                    Math.floor(
-                                        (Date.now() - Date.parse(order.networkRequestedAt)) /
-                                            MINUTE_MS,
-                                    ),
-                                ),
-                            })}
+                            {networkWaitText(t, order.networkRequestedAt)}
                         </span>
                     ) : null}
                 </span>

@@ -141,6 +141,7 @@ export const uz = {
         removed: "Savatdagi {n} ta mahsulot tugab qoldi, ularni olib tashladik.",
         unavailable: "Tugagan",
         clear: "Savatni tozalash",
+        clearAsk: "Savatdagi hamma mahsulotlar o'chirilsinmi?",
     },
     checkout: {
         title: "Buyurtma",
@@ -328,8 +329,9 @@ export const uz = {
         toNetwork: "Tuman tarmog'i kuryeri",
         toNetworkHint: "Tumanning birinchi bo'sh kuryeri oladi",
         networkSearching: "Tuman tarmog'idan kuryer qidirilmoqda…",
-        networkWaited:
-            "{n} daqiqadan beri qidirilmoqda. Hech kim olmasa, o'zingiz yetkazing yoki bekor qiling.",
+        networkJustAsked: "Hozirgina so'raldi",
+        networkWaited: "{n} daqiqadan beri qidirilmoqda.",
+        networkLate: "Hech kim olmasa, o'zingiz yetkazing.",
         viaNetwork: "tuman tarmog'i",
         bottlesBack: "Bo'sh idish qaytaradi: {n} ta",
         addProduct: "Mahsulot qo'shish",
@@ -536,6 +538,8 @@ export const uz = {
         shops: "Do'konlarim",
         dayOff: "Bugun dam olish",
         worksToday: "Bugun ishlaysiz",
+        vehicleSaved: "Transport saqlandi",
+        distanceUnknown: "Mijoz xaritada belgi qo'ymagan: masofa noma'lum",
         awaitingApproval: "Do'kon tasdiqlashini kutmoqda",
         vehicle: "Transport",
         vehiclePlaceholder: "Masalan: Damas",
