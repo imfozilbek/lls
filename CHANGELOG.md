@@ -7,6 +7,20 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### «Sozlamalar» in parts (UX phase 9, from the fourth critique)
+- **Changed (app):** «Sozlamalar» opens on «Buyurtma qabul qilish» and a list of its parts (Do'kon,
+  Yetkazib berish, Ish vaqti, Manzil, Kartalar, Kuryerlar, Do'kon imkoniyatlari, Havola, QR-kod va
+  vitrina), each with what is set in it now; a missing card or location shows in amber. A tap
+  opens the part with «Saqlash»; leaving it with unsaved edits asks first.
+- **Fixed (app):** the back press goes only to the innermost screen (a sheet over a screen, a
+  part of «Sozlamalar»), never to two of them at once.
+- **Changed (app):** the owner's menu says «Sotuvda» / «Sotilmaydi» under each switch, mutes the
+  products off sale and keeps long names on two lines; a network courier sees how long an order
+  nearby has waited; text buttons are in the shop's color, not link blue; the screenshot
+  thumbnail shows the whole picture with «Kattalashtirish».
+- **Not done (owner's decision needed):** the delivery fee on the network courier's card: who
+  gets it on a network order is not decided yet.
+
 ### «Do'konga qo'ng'iroq» (UX phase 8, from the fourth critique)
 - **Added (core, worker):** the shop's optional contact phone (`contact_phone`, migration
   `0012`, E.164 through `Phone`), set in the owner's `PATCH /api/owner/shop` and given to
