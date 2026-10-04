@@ -7,6 +7,14 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Hotfix: a shop could not pick its courier
+- **Fixed (app):** the courier's day switch read «Bugun ishlamaydi» and was on when the courier
+  did NOT work: owners turned it on meaning "works today", and their couriers on shift were
+  greyed out in «Kuryer tayinlash» («bugun ishlamaydi»). It is now «Bugun ishlaydi», on while the
+  courier works today, like «Sotuvda» in the menu.
+- **Changed (app):** in «Kuryer tayinlash», a courier on shift who is marked off for today can be
+  picked: one tap turns them back for today and assigns the order.
+
 ### A checklist that finishes (UX phase 15, from the tenth critique, 34/40)
 - **Fixed (app):** a shop open around the clock could never finish «Ish vaqti» in «Ishga tayyor»
   (24/7 is stored as "no hours"): the row offers «Kecha-kunduz ochiqmiz», and saving the hours
