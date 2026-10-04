@@ -155,6 +155,7 @@ export const uz = {
         address: "Manzil",
         addressPlaceholder: "Ko'cha, uy",
         street: "Ko'cha va uy",
+        streetOrLandmark: "Joylashuv bor: ko'cha yoki mo'ljaldan bittasi yetarli.",
         landmark: "Mo'ljal",
         optional: "ixtiyoriy",
         needPhone: "Avval telefon raqamingizni yuboring",
@@ -189,7 +190,7 @@ export const uz = {
         beforeCooking:
             "Faqat do'kon kartasiga o'tkazma. Buyurtma bering va summani o'tkazing. Pul kelishi bilan do'kon boshlaydi.",
         sent: "O'tkazdim",
-        ownerAwaiting: "Mijoz o'tkazdi, kartani tekshiring",
+        ownerAwaiting: "Chek yuborildi",
         afterOrder: "Buyurtmadan keyin do'kon kartasiga {sum} o'tkazasiz",
         afterOrderHint:
             "Karta raqami buyurtma berilgach ko'rinadi. Pul kelishi bilan do'kon boshlaydi.",
@@ -204,6 +205,7 @@ export const uz = {
         callShopHint: "Savol bo'lsa, do'kon bilan to'g'ridan-to'g'ri gaplashing.",
         reminded: "Do'konga eslatdik. Javobni botda yozamiz.",
         checkingTime: "Odatda 5-10 daqiqa. Qabul qilinishi bilan botda yozamiz.",
+        checkingLate: "Do'kon odatdagidan kechikmoqda. Pastda do'konga eslating.",
         rejectedTitle: "Do'kon pulni hali ko'rmadi",
         rejectedText:
             "Bank ilovangizda pul shu kartaga o'tganini tekshiring va chekni qayta yuboring.",
@@ -338,6 +340,8 @@ export const uz = {
         toNetworkHint: "Tumanning birinchi bo'sh kuryeri oladi",
         networkSearching: "Tuman tarmog'idan kuryer qidirilmoqda…",
         networkJustAsked: "Hozirgina so'raldi",
+        ageNew: "Hozirgina keldi",
+        age: "{n} daqiqa kutmoqda",
         networkWaited: "{n} daqiqadan beri qidirilmoqda.",
         networkLate: "Hech kim olmasa, o'zingiz yetkazing.",
         viaNetwork: "tuman tarmog'i",
@@ -355,7 +359,7 @@ export const uz = {
         stopToday: "Faqat bugunga",
         stopTodayHint: "Ertaga o'zi qaytadi",
         hideForGood: "Butunlay yashirish",
-        moreFor: "Boshqa: {name}",
+        moreFor: "Sotuvdan olish: {name}",
         stoppedTodayToast: "{name} bugunga sotuvdan olindi. Ertaga o'zi qaytadi.",
         product: {
             new: "Yangi mahsulot",
@@ -561,7 +565,7 @@ export const uz = {
         items: "{n} dona olib borasiz",
         distance: "mijozgacha ≈ {km} km",
         waitingFor: "{n} daqiqa kutmoqda",
-        waitingNow: "Hozirgina",
+        waitingNow: "Hozirgina chiqdi",
         networkShop: "tuman tarmog'i",
         notCourierText:
             "Do'kon egasidan taklif havolasini so'rang. Havolani ochgan bo'lsangiz, tasdiqlashni kuting, bot yozadi.",

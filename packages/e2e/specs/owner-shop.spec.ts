@@ -82,7 +82,7 @@ test("catalog: edit price, take off for today, hide, show again, delete", async 
     await Promise.all([saved(), onSale.click()])
     await expect(onSale).toHaveAttribute("aria-checked", "true")
     // For good: from «⋯». The sheet sits at the bottom of the screen, over everything.
-    await page.getByRole("button", { name: "Boshqa: Manti" }).click()
+    await page.getByRole("button", { name: "Sotuvdan olish: Manti" }).click()
     const sheet = page.getByRole("dialog")
     const box = await sheet.getByRole("heading", { name: "Sotuvdan olish" }).boundingBox()
     const height = page.viewportSize()?.height ?? 0

@@ -77,7 +77,7 @@ function shopFacts(shop: Shop, t: Dictionary, language: Language): string[] {
 }
 
 /** A catalog this long gets a search field; a short one is faster to scroll. */
-const SEARCH_FROM = 20
+export const SEARCH_FROM = 20
 
 function HeaderAction({
     icon,
@@ -136,7 +136,7 @@ function useHasActiveOrder(shopId: string | undefined): boolean {
     return active
 }
 
-function CatalogSearch({
+export function CatalogSearch({
     value,
     onChange,
 }: {
@@ -182,7 +182,7 @@ function CatalogSearch({
 }
 
 /** Each word must start a word of the name or description, Latin or Cyrillic alike. */
-function matches(product: ProductDTO, words: readonly string[]): boolean {
+export function matches(product: ProductDTO, words: readonly string[]): boolean {
     const text = ` ${searchText(product.name, product.description)}`
     return words.every((word) => text.includes(` ${word}`))
 }
@@ -419,8 +419,9 @@ function ProductListRow({ product }: { product: ProductDTO }): React.JSX.Element
         <li
             id={productAnchor(product.id)}
             className={cn(
-                "flex animate-rise scroll-mt-24 items-center gap-3 rounded-control py-3 transition-shadow duration-500",
-                glowing && "ring-2 ring-brand ring-offset-2",
+                "flex animate-rise scroll-mt-24 items-center gap-3 py-3 transition-shadow duration-500",
+                // Rounded only while it glows: a rounded row bends the dividers between rows.
+                glowing && "rounded-control ring-2 ring-brand ring-offset-2",
             )}
         >
             <ProductImage

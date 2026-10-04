@@ -93,7 +93,7 @@ for (const theme of ["light"] as const) {
         await page.getByRole("button", { name: "Mening do'konim" }).click()
         await page.getByRole("tab", { name: "Menyu" }).click()
         await snap(page, "11-owner-menu", theme)
-        await page.getByRole("button", { name: "Boshqa: Lag'mon" }).click()
+        await page.getByRole("button", { name: "Sotuvdan olish: Lag'mon" }).click()
         await snap(page, "12-owner-stop-sheet", theme)
         await page.keyboard.press("Escape")
         await bottomButton(page).click()

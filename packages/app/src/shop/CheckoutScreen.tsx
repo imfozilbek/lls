@@ -171,7 +171,11 @@ function AddressSection({
                     ? t.checkout.pinHelps
                     : fill(t.checkout.pinRequired, { km: kmText(radius) })}
             </p>
-            <Field label={t.checkout.street} htmlFor="street">
+            <Field
+                label={t.checkout.street}
+                htmlFor="street"
+                hint={value.location ? t.checkout.streetOrLandmark : undefined}
+            >
                 <TextInput
                     id="street"
                     aria-label={t.checkout.address}

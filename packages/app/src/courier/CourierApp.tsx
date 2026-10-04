@@ -468,6 +468,8 @@ function ShopRow({ shop }: { shop: CourierShopDTO }): React.JSX.Element {
 }
 
 /** What the courier drives: shops see it next to the name. */
+const VEHICLE_SAVE_MS = 1500
+
 function VehicleField({
     home,
     onChange,
@@ -479,21 +481,28 @@ function VehicleField({
     const saved = home.profile.vehicle ?? ""
     const [value, setValue] = useState(saved)
     const lastSaved = useRef(saved)
-    const save = async (): Promise<void> => {
-        if (value.trim() === lastSaved.current) {
+    const save = async (text: string): Promise<void> => {
+        if (text.trim() === lastSaved.current) {
             return
         }
+        lastSaved.current = text.trim()
         try {
-            const profile = await api.courier.profile(value.trim() || null)
+            const profile = await api.courier.profile(text.trim() || null)
             lastSaved.current = profile.vehicle ?? ""
             onChange({ ...home, profile })
             haptic.success()
             toast(t.courier.vehicleSaved, "success")
         } catch (caught) {
+            lastSaved.current = saved
             haptic.error()
             toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
         }
     }
+    // Saved after a short pause too: closing the app right after typing loses nothing.
+    useEffect(() => {
+        const timer = window.setTimeout(() => void save(value), VEHICLE_SAVE_MS)
+        return (): void => window.clearTimeout(timer)
+    }, [value])
     return (
         <Field label={t.courier.vehicle} htmlFor="vehicle">
             <TextInput
@@ -502,7 +511,7 @@ function VehicleField({
                 maxLength={40}
                 placeholder={t.courier.vehiclePlaceholder}
                 onChange={(e): void => setValue(e.target.value)}
-                onBlur={(): void => void save()}
+                onBlur={(): void => void save(value)}
             />
         </Field>
     )
