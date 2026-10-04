@@ -27,7 +27,7 @@ import {
     shopChat,
     waitForMessage,
 } from "../support/telegram.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { bottomButton, openApp, openSettings } from "../support/webapp.js"
 
 import type { RecordedFile } from "../stand/fake-telegram.js"
 import type { Page } from "@playwright/test"
@@ -246,7 +246,7 @@ test("the owner's number: «Do'konga qo'ng'iroq» on the order the shop did not 
     page,
 }) => {
     await openOwner(page)
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openSettings(page, "Do'kon")
     const phone = page.getByLabel("Mijozlar uchun telefon (ixtiyoriy)")
     await phone.fill("90 12")
     await expect(page.getByText("Raqam to'liq emas")).toBeVisible()
@@ -368,10 +368,8 @@ test("many cards: the owner adds one, makes it the payment card; old orders keep
 }) => {
     const before = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
     await openOwner(page)
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
-    const cards = page
-        .locator("section")
-        .filter({ has: page.getByRole("heading", { name: "Kartalar" }) })
+    await openSettings(page, "Kartalar")
+    const cards = page.getByRole("region", { name: "Kartalar" })
     await expect(cards.getByRole("listitem")).toHaveCount(1)
     await expect(cards.getByRole("listitem").first()).toContainText("To'lov uchun")
     await cards.getByRole("button", { name: "Karta qo'shish" }).click()
@@ -448,7 +446,7 @@ test("the QR poster arrives as a PNG and its code opens the shop bot", async ({ 
     const since = await lastSeq()
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openSettings(page, "Havola, QR-kod va vitrina")
     await page.getByRole("button", { name: "Chop etish uchun QR-kod" }).click()
     await expect(page.getByText("Plakat bot bilan chatga yuborildi")).toBeVisible()
     const [poster] = await documentsTo(PEOPLE.foodOwner.id, since)
@@ -483,7 +481,7 @@ test("hours per day: Monday off, Tuesday 9–18, then Monday's hours for every d
 }) => {
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openSettings(page, "Ish vaqti")
     const always = page.getByRole("switch", { name: "24/7 ochiq" })
     if ((await always.getAttribute("aria-checked")) === "true") {
         await always.click()

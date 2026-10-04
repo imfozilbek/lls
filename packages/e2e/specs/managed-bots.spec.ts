@@ -15,7 +15,7 @@ import {
     waitForCall,
     waitForMessage,
 } from "../support/telegram.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { bottomButton, openApp, openGroup } from "../support/webapp.js"
 
 import type { TgUser } from "../support/telegram.js"
 import type { Page } from "@playwright/test"
@@ -114,7 +114,12 @@ test("«Mening bizneslarim» opens the shop's owner section right in the Zumda b
     await page.getByRole("button", { name: /Kamola Somsa/ }).click()
     await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
     await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await expect(page.getByRole("button", { name: /Do'kon\s*Kamola Somsa/ })).toBeVisible()
+    await openGroup(page, "Do'kon")
     await expect(page.getByLabel("Nomi", { exact: true })).toHaveValue("Kamola Somsa")
+    // Back: first to the list of parts, then out of the shop.
+    await app.back()
+    await expect(page.getByRole("button", { name: /Do'kon\s*Kamola Somsa/ })).toBeVisible()
     await app.back()
     await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
 })

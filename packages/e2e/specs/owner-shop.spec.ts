@@ -8,7 +8,7 @@ import { shopBySlug } from "../stand/config.js"
 import { pngImage } from "../support/images.js"
 import { FOOD, PEOPLE, SERVICE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import { courierChat, lastSeq, shopChat, waitForCall, waitForMessage } from "../support/telegram.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { bottomButton, openApp, openGroup, openSettings, settingsBack } from "../support/webapp.js"
 
 import type { OpenedApp } from "../support/webapp.js"
 import type { Page } from "@playwright/test"
@@ -120,20 +120,43 @@ test("catalog in Telegram's native button: «Добавить товар» opens
 test("settings: name, color, delivery and features reach the storefront", async ({ page }) => {
     // The customer's history needs an order to show that «Takrorlash» is gone.
     await placeOrder(PEOPLE.customer, FOOD, [{ productId: "dev-food-p1", quantity: 1 }])
-    await openOwner(page)
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    const app = await openOwner(page)
+    await openSettings(page, "Havola, QR-kod va vitrina")
     await expect(
         page.getByText(
             "Do'koningiz Zumda botidagi qidiruvda. Vitrina orqali sotuvdan komissiya: 5%.",
         ),
     ).toBeVisible()
     await expect(page.getByText("https://t.me/osh_markaz_dev_bot")).toBeVisible()
+    await settingsBack(page)
+
+    await openGroup(page, "Do'kon")
+    // Leaving with an unsaved edit asks first; yes drops the edit.
+    await page.getByLabel("Nomi", { exact: true }).fill("Osh Markaz Old")
+    await settingsBack(page)
+    const asked = (await app.calls()).filter((c) => c.method === "showConfirm")
+    expect(String(asked.at(-1)?.args[0])).toContain("saqlanmagan")
+    await expect(page.getByRole("button", { name: /^Do'kon\s*Osh Markaz( ·|$)/ })).toBeVisible()
+
+    await openGroup(page, "Do'kon")
     await page.getByLabel("Nomi", { exact: true }).fill("Osh Markaz Guliston")
     await page.getByRole("radio").nth(2).click()
+    await bottomButton(page).click()
+    await expect(page.getByText("Saqlandi").first()).toBeVisible()
+    await settingsBack(page)
+    await expect(page.getByRole("button", { name: /Osh Markaz Guliston/ })).toBeVisible()
+
+    await openGroup(page, "Yetkazib berish")
     await page.getByLabel("Yetkazish narxi").fill("12000")
+    await bottomButton(page).click()
+    await expect(page.getByText("Saqlandi").first()).toBeVisible()
+    await settingsBack(page)
+    await expect(page.getByRole("button", { name: /Yetkazib berish\s*12\s000/ })).toBeVisible()
+
+    await openGroup(page, "Do'kon imkoniyatlari")
     await page.getByRole("switch", { name: "Buyurtmani takrorlash" }).click()
     await bottomButton(page).click()
-    await expect(page.getByText("Saqlandi")).toBeVisible()
+    await expect(page.getByText("Saqlandi").first()).toBeVisible()
 
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await expect(page.getByRole("heading", { name: "Osh Markaz Guliston" })).toBeVisible()
@@ -146,7 +169,7 @@ test("settings: name, color, delivery and features reach the storefront", async 
 
 test("settings: logo upload and the accepting switch", async ({ page }) => {
     await openOwner(page)
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openSettings(page, "Do'kon")
     await expect(
         page.getByText("Bot rasmi avtomatik: logotip (yoki nom) va Zumda belgisi."),
     ).toBeVisible()
@@ -163,7 +186,9 @@ test("settings: logo upload and the accepting switch", async ({ page }) => {
     // The logo becomes the shop bot's picture, with the Zumda mark: Zumda sets it, as a JPEG.
     const photo = await waitForCall("setMyProfilePhoto", shopBySlug(FOOD).bot.token, since)
     expect(photo.body["avatar"]).toMatchObject({ contentType: "image/jpeg" })
-    // The switch moves at once; the check below needs the save to land first.
+    // «Buyurtma qabul qilish» heads the list of parts: it moves at once, the check below needs
+    // the save to land first.
+    await settingsBack(page)
     await Promise.all([
         page.waitForResponse(
             (r) => r.url().endsWith("/owner/shop") && r.request().method() === "PATCH",
@@ -185,7 +210,7 @@ test("settings: logo upload and the accepting switch", async ({ page }) => {
 
 test("couriers: invite to the courier bot, approve in the app, days, remove", async ({ page }) => {
     const app = await openOwner(page)
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openSettings(page, "Kuryerlar")
     await expect(page.getByText("Jasur")).toBeVisible()
     await page.getByRole("button", { name: "Kuryerni taklif qilish" }).click()
     await page.getByRole("button", { name: "Telegram'da yuborish" }).click()
@@ -238,10 +263,12 @@ test("couriers: invite to the courier bot, approve in the app, days, remove", as
 test("water shop settings: bottle deposit and returnable bottles", async ({ page }) => {
     await openApp(page, { user: PEOPLE.waterOwner, shop: WATER })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openSettings(page, "Havola, QR-kod va vitrina")
     await expect(
         page.getByText("Do'koningiz Zumda vitrinasida emas.", { exact: false }),
     ).toBeVisible()
+    await settingsBack(page)
+    await openGroup(page, "Do'kon imkoniyatlari")
     await page.getByLabel("Bitta idish garovi").fill("35000")
     await bottomButton(page).click()
     await expect(page.getByText("Saqlandi")).toBeVisible()

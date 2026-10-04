@@ -9,7 +9,7 @@ import { courierBot } from "../stand/config.js"
 import { runSql } from "../stand/seed.js"
 import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
 import { courierChat, lastSeq, messagesTo, waitForMessage } from "../support/telegram.js"
-import { appQueryOf, openApp } from "../support/webapp.js"
+import { appQueryOf, openApp, openSettings } from "../support/webapp.js"
 
 import type { PlacedOrder } from "../support/stand.js"
 
@@ -143,7 +143,7 @@ test("the owner: the network switch, «Доставщик сети района�
 }) => {
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openSettings(page, "Kuryerlar")
     const network = page.getByRole("switch", {
         name: "Kuryerlarim band bo'lsa, tuman tarmog'iga berish",
     })
@@ -180,7 +180,7 @@ test("the owner: the network switch, «Доставщик сети района�
         )
         .toBe(true)
 
-    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openSettings(page, "Kuryerlar")
     await network.click()
     await expect(network).toHaveAttribute("aria-checked", "true")
 })

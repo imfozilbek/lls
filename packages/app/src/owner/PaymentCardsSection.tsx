@@ -213,13 +213,13 @@ export function PaymentCardsSection({
 
     if (!cards) {
         return (
-            <Section title={s.payoutCard}>
+            <Section>
                 <Skeleton className="h-24 rounded-tile" />
             </Section>
         )
     }
     return (
-        <Section title={s.payoutCard}>
+        <Section>
             {cards.cards.length > 0 ? (
                 <ul className="flex flex-col gap-2">
                     {cards.cards.map((card) => (

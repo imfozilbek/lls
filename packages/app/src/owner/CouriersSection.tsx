@@ -379,7 +379,7 @@ export function CouriersSection({ shopName }: { shopName: string }): React.JSX.E
     const { review, schedule, remove } = useCourierActions()
 
     return (
-        <Section title={s.couriers}>
+        <Section>
             <p className="px-1 text-sm text-tg-hint">{s.couriersHint}</p>
             {couriers === null ? <Skeleton className="h-14" /> : null}
             {pending.length > 0 ? (

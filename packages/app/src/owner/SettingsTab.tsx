@@ -1,18 +1,18 @@
 import { FEATURES, Feature, Phone, formatPhone } from "@zumda/core"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
-import { errorText, fill, useT } from "../i18n/index.js"
+import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api, imageUrl } from "../lib/api.js"
 import { updateBotPhoto } from "../lib/bot-photo.js"
 import { BRAND_SWATCHES, applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
-import { hexToRgbChannels } from "../lib/format.js"
+import { formatMoney, hexToRgbChannels } from "../lib/format.js"
 import { compressImage } from "../lib/image.js"
-import { useMainAction } from "../lib/main-button.js"
-import { getLocation, haptic } from "../lib/telegram.js"
+import { useBackButton, useMainAction } from "../lib/main-button.js"
+import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { AlertIcon, CheckIcon, CopyIcon, PinIcon, WifiOffIcon } from "../ui/icons.js"
+import { AlertIcon, CheckIcon, ChevronIcon, CopyIcon, PinIcon, WifiOffIcon } from "../ui/icons.js"
 import {
     Button,
     EmptyState,
@@ -34,6 +34,7 @@ import { useOwner } from "./store.js"
 
 import type { Hours } from "./hours.js"
 import type { ReadySection } from "./store.js"
+import type { Dictionary } from "../i18n/index.js"
 import type { ShopPatch } from "../lib/api.js"
 import type { BotAvatarInput } from "../lib/bot-avatar.js"
 import type { ShopOwnerDTO } from "@zumda/core"
@@ -344,7 +345,7 @@ function DeliveryFields({
 }): React.JSX.Element {
     const s = useT().owner.settings
     return (
-        <Section title={s.delivery} id={sectionId("delivery")}>
+        <Section id={sectionId("delivery")}>
             <Field label={s.fee} htmlFor="fee">
                 <MoneyInput id="fee" value={form.fee} onChange={(fee): void => patch({ fee })} />
             </Field>
@@ -401,7 +402,7 @@ function LocationFields({
         }
     }
     return (
-        <Section title={s.address} id={sectionId("location")}>
+        <Section id={sectionId("location")}>
             <TextInput
                 aria-label={s.address}
                 value={form.address}
@@ -435,7 +436,7 @@ function FeatureFields({
         patch({ features: on ? [...rest, feature] : rest })
     }
     return (
-        <Section title={s.features}>
+        <Section>
             <div className="flex flex-col divide-y divide-tg-separator rounded-tile bg-tg-secondary px-4">
                 {FEATURES.map((feature) => (
                     <label key={feature} className="flex min-h-[52px] items-center gap-3 py-2">
@@ -476,7 +477,7 @@ function ShopFields({
     const s = useT().owner.settings
     const phoneOk = isPhoneText(form.contactPhone)
     return (
-        <Section title={s.shop} id={sectionId("logo")}>
+        <Section id={sectionId("logo")}>
             <LogoPicker shop={shop} onSaved={onSaved} />
             <p className="-mt-1 px-1 text-sm text-tg-hint">{s.botPhotoHint}</p>
             <Field label={s.name} htmlFor="shop-name">
@@ -520,13 +521,171 @@ function ShopFields({
     )
 }
 
-function SettingsForm({
+/** The parts of «Sozlamalar»: the first screen lists them, a tap opens one. */
+type SettingsGroup =
+    "shop" | "delivery" | "hours" | "location" | "features" | "card" | "courier" | "link"
+
+const GROUPS: SettingsGroup[] = [
+    "shop",
+    "delivery",
+    "hours",
+    "location",
+    "card",
+    "courier",
+    "features",
+    "link",
+]
+
+/** Where each step of «Ishga tayyor» leads. */
+const READY_GROUP: Record<ReadySection, SettingsGroup> = {
+    logo: "shop",
+    card: "card",
+    location: "location",
+    hours: "hours",
+    courier: "courier",
+}
+
+type Settings = Dictionary["owner"]["settings"]
+
+function groupTitle(s: Settings, group: SettingsGroup): string {
+    const titles: Record<SettingsGroup, string> = {
+        shop: s.shop,
+        delivery: s.delivery,
+        hours: s.hours,
+        location: s.address,
+        features: s.features,
+        card: s.payoutCard,
+        courier: s.couriers,
+        link: s.linkGroup,
+    }
+    return titles[group]
+}
+
+function hoursSummary(s: Settings, hours: Hours): string {
+    if (hours.alwaysOpen) {
+        return s.alwaysOpen
+    }
+    const open = hours.days.flatMap((day, index) => (day.open ? [{ ...day, index }] : []))
+    const first = open[0]
+    if (!first) {
+        return s.summary.closed
+    }
+    const days =
+        open.length === hours.days.length
+            ? s.summary.everyDay
+            : open.map((day) => s.days[day.index]).join(", ")
+    const same = open.every((day) => day.from === first.from && day.to === first.to)
+    return same ? `${days} · ${first.from}-${first.to}` : days
+}
+
+/** One line under each part's name: what is set there now. */
+function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string; warn?: boolean }> {
+    const t = useT()
+    const s = t.owner.settings
+    const language = useLanguage()
+    const couriers = useOwner((state) => state.couriers)
+    const loadCouriers = useOwner((state) => state.loadCouriers)
+    useEffect(() => {
+        if (couriers === null) {
+            loadCouriers().catch(() => undefined)
+        }
+    }, [couriers, loadCouriers])
+    const { fee } = shop.delivery
+    const radius = shop.deliveryRadiusMeters
+    const card = shop.payoutCard
+    const on = shop.features.map((f) => s.featureNames[f])
+    const team = couriers?.filter((c) => c.status === "active").length
+    return {
+        shop: {
+            text: [shop.name, shop.contactPhone && formatPhone(shop.contactPhone)]
+                .filter(Boolean)
+                .join(" · "),
+        },
+        delivery: {
+            text: [
+                fee > 0 ? formatMoney(fee, language) : s.summary.free,
+                radius ? fill(s.summary.radius, { km: String(radius / METERS_PER_KM) }) : null,
+            ]
+                .filter(Boolean)
+                .join(" · "),
+        },
+        hours: { text: hoursSummary(s, hoursOf(shop.workingHours)) },
+        location: shop.location
+            ? { text: shop.address || s.summary.onMap }
+            : { text: s.summary.noLocation, warn: true },
+        features: { text: on.length > 0 ? on.join(", ") : s.summary.noFeatures },
+        card: card
+            ? { text: `•••• ${card.number.slice(-4)} · ${card.holder}` }
+            : { text: s.summary.noCard, warn: true },
+        courier: {
+            text:
+                team === undefined
+                    ? s.summary.couriersHint
+                    : team > 0
+                      ? fill(s.summary.couriers, { n: String(team) })
+                      : s.summary.noCouriers,
+        },
+        link: { text: `t.me/${shop.botUsername}` },
+    }
+}
+
+/** The first screen: every part with what is set in it, one tap to open. */
+function GroupList({
     shop,
-    onSaved,
+    onOpen,
 }: {
     shop: ShopOwnerDTO
-    onSaved(shop: ShopOwnerDTO): void
+    onOpen(group: SettingsGroup): void
 }): React.JSX.Element {
+    const s = useT().owner.settings
+    const summaries = useSummaries(shop)
+    return (
+        <ul className="flex flex-col divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary">
+            {GROUPS.map((group) => {
+                const summary = summaries[group]
+                return (
+                    <li key={group}>
+                        <button
+                            type="button"
+                            onClick={(): void => {
+                                haptic.select()
+                                onOpen(group)
+                            }}
+                            className="tap flex min-h-[60px] w-full items-center gap-3 px-4 py-3 text-left"
+                        >
+                            <span className="min-w-0 flex-1">
+                                <span className="block font-semibold">{groupTitle(s, group)}</span>
+                                <span
+                                    className={cn(
+                                        "flex items-center gap-1.5 text-sm",
+                                        summary.warn ? "text-warning" : "text-tg-hint",
+                                    )}
+                                >
+                                    {summary.warn ? (
+                                        <AlertIcon size={14} className="shrink-0" />
+                                    ) : null}
+                                    <span className="truncate">{summary.text}</span>
+                                </span>
+                            </span>
+                            <ChevronIcon size={18} className="shrink-0 text-tg-hint" />
+                        </button>
+                    </li>
+                )
+            })}
+        </ul>
+    )
+}
+
+/** The form behind the parts with «Saqlash»: one state, so a part never loses another's edit. */
+function useSettingsForm(
+    shop: ShopOwnerDTO,
+    onSaved: (shop: ShopOwnerDTO) => void,
+): {
+    form: Form
+    patch(change: Partial<Form>): void
+    dirty: boolean
+    reset(): void
+} {
     const t = useT()
     const s = t.owner.settings
     const [form, setForm] = useState<Form>(() => formOf(shop))
@@ -577,69 +736,146 @@ function SettingsForm({
               }
             : null,
     )
+    return { form, patch, dirty, reset: (): void => setForm(formOf(shop)) }
+}
 
+/** One part of «Sozlamalar», opened from the list. */
+function GroupBody({
+    group,
+    shop,
+    onSaved,
+    form,
+    patch,
+}: {
+    group: SettingsGroup
+    shop: ShopOwnerDTO
+    onSaved(shop: ShopOwnerDTO): void
+    form: Form
+    patch(change: Partial<Form>): void
+}): React.JSX.Element {
+    switch (group) {
+        case "shop":
+            return <ShopFields shop={shop} onSaved={onSaved} form={form} patch={patch} />
+        case "delivery":
+            return <DeliveryFields form={form} patch={patch} />
+        case "hours":
+            return (
+                <Section id={sectionId("hours")}>
+                    <HoursEditor hours={form.hours} onChange={(hours): void => patch({ hours })} />
+                </Section>
+            )
+        case "location":
+            return <LocationFields form={form} patch={patch} />
+        case "features":
+            return <FeatureFields form={form} patch={patch} />
+        case "card":
+            return <PaymentCardsSection onSaved={onSaved} />
+        case "courier":
+            return (
+                <>
+                    <CouriersSection shopName={shop.name} />
+                    <NetworkSection shop={shop} onSaved={onSaved} />
+                </>
+            )
+        case "link":
+            return <LinkGroup shop={shop} />
+    }
+}
+
+function LinkGroup({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
+    const s = useT().owner.settings
     return (
         <>
-            <ShopFields shop={shop} onSaved={onSaved} form={form} patch={patch} />
-            <DeliveryFields form={form} patch={patch} />
-            <Section title={s.hours} id={sectionId("hours")}>
-                <HoursEditor hours={form.hours} onChange={(hours): void => patch({ hours })} />
+            <Section title={s.link}>
+                <ShopLink shop={shop} />
             </Section>
-            <LocationFields form={form} patch={patch} />
-            <FeatureFields form={form} patch={patch} />
+            <PosterSection shop={shop} />
+            <Section title={s.showcase}>
+                <p className="rounded-tile bg-tg-secondary p-4 text-sm text-tg-subtitle">
+                    {shop.marketplace
+                        ? fill(s.showcaseOn, {
+                              rate: String(
+                                  shop.marketplace.commissionBps / BPS_PER_PERCENT,
+                              ).replace(".", ","),
+                          })
+                        : s.showcaseOff}
+                </p>
+            </Section>
         </>
     )
 }
 
-const JUMPS = ["logo", "delivery", "hours", "card", "courier"] as const
-
-/** A long page: one row of chips goes straight to each group. */
-function SettingsNav(): React.JSX.Element {
-    const s = useT().owner.settings
-    return (
-        <nav
-            aria-label={s.jumpTo}
-            className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)]"
-        >
-            <ul className="flex gap-2">
-                {JUMPS.map((id) => (
-                    <li key={id}>
-                        <button
-                            type="button"
-                            onClick={(): void => {
-                                haptic.select()
-                                document
-                                    .getElementById(sectionId(id))
-                                    ?.scrollIntoView({ behavior: "smooth" })
-                            }}
-                            className="tap min-h-11 whitespace-nowrap rounded-full bg-tg-secondary px-4 text-sm font-semibold"
-                        >
-                            {s.jump[id]}
-                        </button>
-                    </li>
-                ))}
-            </ul>
-        </nav>
-    )
-}
-
-/** «Ishga tayyor» opened «Sozlamalar» for one part of it: bring that part into view, once. */
-function useFocusSection(ready: boolean): void {
+/** «Ishga tayyor» (or the no-card banner) asked for one part: open it, once. */
+function useFocusGroup(open: (group: SettingsGroup) => void): void {
     const section = useOwner((state) => state.focusSection)
     const goToSection = useOwner((state) => state.goToSection)
     useEffect(() => {
-        if (!ready || !section) {
+        if (section) {
+            open(READY_GROUP[section])
+            goToSection(null)
+        }
+    }, [section, goToSection, open])
+}
+
+function SettingsBody({
+    shop,
+    onSaved,
+}: {
+    shop: ShopOwnerDTO
+    onSaved(shop: ShopOwnerDTO): void
+}): React.JSX.Element {
+    const t = useT()
+    const s = t.owner.settings
+    const [group, setGroup] = useState<SettingsGroup | null>(null)
+    const { form, patch, dirty, reset } = useSettingsForm(shop, onSaved)
+    const open = useCallback((next: SettingsGroup): void => {
+        setGroup(next)
+        window.scrollTo({ top: 0 })
+    }, [])
+    useFocusGroup(open)
+    const leave = async (): Promise<void> => {
+        if (dirty && !(await confirm(s.unsavedLeave))) {
             return
         }
-        document.getElementById(sectionId(section))?.scrollIntoView({ behavior: "smooth" })
-        goToSection(null)
-    }, [ready, section, goToSection])
+        reset()
+        setGroup(null)
+        window.scrollTo({ top: 0 })
+    }
+    useBackButton(group ? (): void => void leave() : null)
+
+    if (!group) {
+        return (
+            <div className="flex animate-fade-in flex-col gap-6 px-4 pt-2">
+                <AcceptingCard shop={shop} onSaved={onSaved} />
+                <GroupList shop={shop} onOpen={open} />
+                <BottomSpacer />
+            </div>
+        )
+    }
+    return (
+        <section
+            key={group}
+            aria-label={groupTitle(s, group)}
+            className="flex animate-fade-in flex-col gap-6 px-4 pt-2"
+        >
+            <button
+                type="button"
+                onClick={(): void => void leave()}
+                className="tap -ml-1 flex min-h-11 items-center gap-1 self-start rounded-control px-1 text-sm font-semibold text-brand"
+            >
+                <ChevronIcon size={16} className="rotate-180" />
+                {t.owner.tabs.settings}
+            </button>
+            <h1 className="-mt-4 px-1 text-2xl font-bold">{groupTitle(s, group)}</h1>
+            <GroupBody group={group} shop={shop} onSaved={onSaved} form={form} patch={patch} />
+            <BottomSpacer />
+        </section>
+    )
 }
 
 export function SettingsTab(): React.JSX.Element {
     const t = useT()
     const { shop, error, reload, setShop } = useOwnerShop()
-    useFocusSection(shop !== null)
     if (error) {
         return (
             <EmptyState
@@ -661,34 +897,5 @@ export function SettingsTab(): React.JSX.Element {
             </div>
         )
     }
-    return (
-        <div className="flex flex-col gap-6 px-4 pt-2">
-            <AcceptingCard shop={shop} onSaved={setShop} />
-            <SettingsNav />
-            <SettingsForm shop={shop} onSaved={setShop} />
-            <div id={sectionId("card")} className="scroll-mt-24">
-                <PaymentCardsSection onSaved={setShop} />
-            </div>
-            <div id={sectionId("courier")} className="scroll-mt-24">
-                <CouriersSection shopName={shop.name} />
-            </div>
-            <NetworkSection shop={shop} onSaved={setShop} />
-            <Section title={t.owner.settings.link}>
-                <ShopLink shop={shop} />
-            </Section>
-            <PosterSection shop={shop} />
-            <Section title={t.owner.settings.showcase}>
-                <p className="rounded-tile bg-tg-secondary p-4 text-sm text-tg-subtitle">
-                    {shop.marketplace
-                        ? fill(t.owner.settings.showcaseOn, {
-                              rate: String(
-                                  shop.marketplace.commissionBps / BPS_PER_PERCENT,
-                              ).replace(".", ","),
-                          })
-                        : t.owner.settings.showcaseOff}
-                </p>
-            </Section>
-            <BottomSpacer />
-        </div>
-    )
+    return <SettingsBody shop={shop} onSaved={setShop} />
 }

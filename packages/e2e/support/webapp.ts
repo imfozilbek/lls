@@ -5,6 +5,8 @@
  */
 import { createHmac } from "node:crypto"
 
+import { expect } from "@playwright/test"
+
 import { APP_URL, businessBot, courierBot, platformBot, shopBySlug } from "../stand/config.js"
 
 import { businessChat, courierChat, managedBotUpdate, platformChat, shopChat } from "./telegram.js"
@@ -373,4 +375,24 @@ export async function openApp(page: Page, options: OpenOptions): Promise<OpenedA
 /** The in-app bottom button (Telegram Web and old clients draw no native one). */
 export function bottomButton(page: Page): ReturnType<Page["locator"]> {
     return page.locator("div.fixed.bottom-0 button")
+}
+
+/** «Sozlamalar» lists its parts with what is set in each: a tap on a part's name opens it. */
+export async function openGroup(page: Page, group: string): Promise<void> {
+    await page
+        .getByRole("button")
+        .filter({ has: page.getByText(group, { exact: true }) })
+        .click()
+    await expect(page.getByRole("heading", { name: group, exact: true, level: 1 })).toBeVisible()
+}
+
+/** The owner's «Sozlamalar» tab, opened on one part. */
+export async function openSettings(page: Page, group: string): Promise<void> {
+    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openGroup(page, group)
+}
+
+/** From a part of «Sozlamalar» back to the list of parts. */
+export async function settingsBack(page: Page): Promise<void> {
+    await page.getByRole("button", { name: "Sozlamalar", exact: true }).click()
 }
