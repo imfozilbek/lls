@@ -333,7 +333,7 @@ test("a paid order cancelled: owed back until «Вернул»", async ({ page }
     await refunds.getByRole("button", { name: "Qaytardim" }).click()
     await expect(refunds).toBeHidden()
     await expect(
-        page.getByText("Barcha o'tkazmalar tekshirildi, qaytariladigan pul yo'q."),
+        page.getByText("Barcha pul joyida: tekshiriladigan o'tkazma, qaytariladigan pul yo'q."),
     ).toBeVisible()
 })
 
@@ -347,7 +347,8 @@ test("the day adds up to the sum; the CSV report arrives in the owner's chat", a
     const since = await lastSeq()
     await openMoney(page)
     await expect(page.getByText(/100\s000/).first()).toBeVisible()
-    await expect(page.getByText("Yetkazilgan va kartangizga to'langan buyurtmalar")).toBeVisible()
+    await expect(page.getByText("Yetkazilgan va to'langan buyurtmalar")).toBeVisible()
+    // A card shop: no cash line, no couriers' cash.
     await expect(page.getByText(/Naqd/)).toHaveCount(0)
     await page.getByRole("tab", { name: "Shu oy" }).click()
     await page.getByRole("button", { name: "Excel uchun hisobot" }).click()
@@ -360,7 +361,8 @@ test("the day adds up to the sum; the CSV report arrives in the owner's chat", a
     // Header + the 7 orders of this file, the cancelled one too.
     expect(lines).toHaveLength(8)
     expect(lines[0]).toContain("To'lov holati")
-    expect(lines[0]).not.toContain("To'lov usuli")
+    expect(lines[0]).toContain("To'lov usuli")
+    expect(lines.slice(1).every((line) => line.includes(";karta;"))).toBe(true)
 })
 
 test("many cards: the owner adds one, makes it the payment card; old orders keep theirs", async ({
@@ -368,8 +370,8 @@ test("many cards: the owner adds one, makes it the payment card; old orders keep
 }) => {
     const before = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
     await openOwner(page)
-    await openSettings(page, "Kartalar")
-    const cards = page.getByRole("region", { name: "Kartalar" })
+    await openSettings(page, "To'lov")
+    const cards = page.getByRole("region", { name: "To'lov" })
     await expect(cards.getByRole("listitem")).toHaveCount(1)
     await expect(cards.getByRole("listitem").first()).toContainText("To'lov uchun")
     await cards.getByRole("button", { name: "Karta qo'shish" }).click()
@@ -423,7 +425,7 @@ test("no card, no orders: the storefront waits; the owner adds the card from the
     await openOwner(page, GROCERY, PEOPLE.groceryOwner)
     // «Ishga tayyor» leads to the card first: without it there are no orders.
     const ready = page.getByRole("region", { name: "Ishga tayyor" })
-    const banner = ready.getByRole("button", { name: /To'lov kartasi/ })
+    const banner = ready.getByRole("button", { name: /To'lov usuli/ })
     await expect(banner).toBeEnabled()
     await banner.click()
     // No card yet: the form is already open.
@@ -434,7 +436,7 @@ test("no card, no orders: the storefront waits; the owner adds the card from the
     await page.getByRole("tab", { name: "Buyurtmalar" }).click()
     // The card row is ticked (or the whole list is done and gone).
     await expect(
-        page.getByText("Mijozlar shu kartaga o'tkazadi: kartasiz buyurtma yo'q"),
+        page.getByText("Karta, naqd yoki ikkalasi: to'lov usulisiz buyurtma yo'q"),
     ).toBeHidden()
     const shop = (await (await apiAs(PEOPLE.customer, "/shop", { shop: GROCERY })).json()) as {
         hasPayoutCard: boolean

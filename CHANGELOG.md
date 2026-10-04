@@ -7,6 +7,22 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Cash as a way of paying, chosen by the shop
+- **Added:** «Sozlamalar» → «To'lov» → «Mijoz qanday to'laydi»: «Kartaga o'tkazma» (the
+  default, as before), «Naqd pul» or «Ikkalasi». A cash shop needs no card; with both, the
+  customer picks one at checkout and only its rules apply (owner's decision, October 2026).
+- **Added:** a cash order is accepted at once with «Qabul qilish», goes only with the shop's own
+  courier or the owner (never to the district network), the courier card says «Mijozdan {sum}
+  naqd oling» and «Pulni oldim, yetkazdim»; the courier's shops show «Do'konga topshirasiz».
+- **Added:** «Pul» → «Kuryerlardagi naqd pul»: per courier, per order, «Pulni oldim» (asked once
+  more); the totals split card and cash; the CSV has «To'lov usuli».
+- **Changed:** «Ishga tayyor» asks for «To'lov usuli»; the transfer screenshot sheet loads only
+  when «O'tkazdim» is pressed (the initial JS stays under 100 KB).
+- **Worker:** migration `0013_cash_option.sql` (`businesses.payment_options`,
+  `orders.cash_received_at`); `PATCH /api/owner/orders/:id/payment` takes `cash_received`;
+  `paymentMethod` on `POST /api/orders`; rules `PAYMENT_METHOD_UNAVAILABLE`, `NOT_A_TRANSFER`,
+  `CASH_NOT_FOR_NETWORK`, `CASH_NOT_WITH_COURIER`.
+
 ### Hotfix: a shop could not pick its courier
 - **Fixed (app):** the courier's day switch read «Bugun ishlamaydi» and was on when the courier
   did NOT work: owners turned it on meaning "works today", and their couriers on shift were
