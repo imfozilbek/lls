@@ -23,6 +23,25 @@ async function openOwner(page: Page, options: { native?: boolean } = {}): Promis
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
+test("«Ishga tayyor»: a shop open around the clock ticks «Ish vaqti» with one button", async ({
+    page,
+}) => {
+    await openOwner(page)
+    const folded = page.getByRole("button", { expanded: false }).filter({ hasText: "Ishga tayyor" })
+    if (await folded.count()) {
+        await folded.click()
+    }
+    const ready = page.getByRole("region", { name: "Ishga tayyor" })
+    const doneBefore = Number(/(\d+)\/5/.exec((await ready.textContent()) ?? "")?.[1])
+    await ready.getByRole("button", { name: "Kecha-kunduz ochiqmiz" }).click()
+    // One step closer; the last required one makes the whole card go away.
+    if (doneBefore + 1 === 5) {
+        await expect(ready).toHaveCount(0)
+    } else {
+        await expect(ready).toContainText(`${doneBefore + 1}/5`)
+    }
+})
+
 test("catalog: add a product with a photo; customers see it at once", async ({ page }) => {
     await openOwner(page)
     await page.getByRole("tab", { name: "Menyu" }).click()

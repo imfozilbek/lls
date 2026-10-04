@@ -617,11 +617,13 @@ export function CourierApp(): React.JSX.Element {
             ) : (
                 <>
                     <ShiftCard home={home} onChange={setHome} />
+                    {/* Not in the network yet: the one choice to make sits right under the shift. */}
+                    {home.profile.inNetwork ? null : <NetworkCard home={home} onChange={setHome} />}
                     {/* Nothing to deliver yet: orders nearby come before the empty state. */}
                     {home.orders.some(isActive) ? null : <Nearby home={home} reload={reload} />}
                     <Deliveries home={home} replace={replace} reload={reload} />
                     {home.orders.some(isActive) ? <Nearby home={home} reload={reload} /> : null}
-                    <NetworkCard home={home} onChange={setHome} />
+                    {home.profile.inNetwork ? <NetworkCard home={home} onChange={setHome} /> : null}
                     <section className="flex flex-col gap-2">
                         <h2 className="px-1 text-sm font-semibold text-tg-subtitle">
                             {t.courier.shops}
