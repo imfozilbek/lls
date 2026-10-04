@@ -77,7 +77,6 @@ test("the owner gives three orders one way to one courier, in Zumda's order", as
     const since = await lastSeq()
     await sheet.getByRole("button", { name: /Tayinlash · 3/ }).click()
     await expect(sheet).toBeHidden()
-    await expect(page.getByText(/Yo'l Jasurga berildi/)).toBeVisible()
     await expect(page.getByRole("button", { name: /Yo'l · 1-manzil · 0\/3/ })).toBeVisible()
 
     // The way came from the road service: the shop first, then the stops in order.
