@@ -1,0 +1,49 @@
+name: Map
+
+# Zumda's own map of Uzbekistan (scripts/map-data.mjs): cut out of the Protomaps OpenStreetMap
+# build, put into R2, served by the Worker under /map. Run by hand after a merge that needs a new
+# map, and once a month for fresh roads and buildings. Only main of this repository.
+on:
+    workflow_dispatch:
+    schedule:
+        - cron: "17 3 2 * *"
+
+permissions:
+    contents: read
+
+concurrency:
+    group: map
+    cancel-in-progress: false
+
+jobs:
+    map:
+        if: github.repository == 'imfozilbek/lls' && github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        environment: production
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+              with:
+                  bun-version: "1.3.11"
+
+            - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+              with:
+                  node-version: "22"
+
+            # No secrets here: package install scripts never see them.
+            - name: Install
+              run: bun install --frozen-lockfile
+
+            - name: Build the map
+              run: node scripts/map-data.mjs
+
+            # The only step that gets the secrets.
+            - name: Upload to R2
+              env:
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+              run: node scripts/map-data.mjs --upload --reuse
