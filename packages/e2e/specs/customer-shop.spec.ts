@@ -275,3 +275,15 @@ test.describe("customer of a grocery", () => {
         expect(card.text).toContain("1,5 kg")
     })
 })
+
+test("a product up close: the whole description, and «Qo'shish» right there", async ({ page }) => {
+    await openApp(page, { user: PEOPLE.customer, shop: FOOD })
+    await page
+        .getByRole("button", { name: /^To'y oshi/ })
+        .first()
+        .click()
+    const sheet = page.getByRole("dialog")
+    await expect(sheet).toContainText("To'y oshi")
+    await sheet.getByRole("button", { name: "Qo'shish", exact: true }).click()
+    await expect(sheet.getByRole("group", { name: "To'y oshi" })).toBeVisible()
+})

@@ -65,7 +65,7 @@ export function StatusBadge({ status }: { status: OrderStatus }): React.JSX.Elem
     return (
         <span
             className={cn(
-                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-tg-text",
+                "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold text-tg-text",
                 toneOf(status).tint,
             )}
         >
@@ -100,7 +100,7 @@ export function OrderBadge({
     return (
         <span
             className={cn(
-                "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-tg-text",
+                "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold text-tg-text",
                 awaiting && forOwner ? "bg-warning/20" : "bg-tg-hint/15",
             )}
         >

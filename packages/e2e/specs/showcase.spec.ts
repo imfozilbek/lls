@@ -75,6 +75,10 @@ test("a product opens its shop inside the Zumda bot; Back returns to the search"
     await expect(product).toBeVisible()
     await product.click()
     await expect(page.getByRole("heading", { name: "Osh Markaz" })).toBeVisible()
+    // The shop opens on the dish that was tapped, not at its top.
+    await expect(
+        page.locator('[id^="product-"]').filter({ hasText: "To'y oshi" }).first(),
+    ).toBeInViewport()
     // Owner screens never open through the showcase.
     await expect(page.getByRole("button", { name: "Mening do'konim" })).toBeHidden()
     await app.back()

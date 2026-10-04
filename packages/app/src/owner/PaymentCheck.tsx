@@ -88,8 +88,8 @@ export function PaymentCheckSheet({
 
     return (
         <Sheet title={fill(c.title, { sum })} onClose={onClose}>
-            <div className="flex gap-3">
-                <div className="min-w-0 flex-1">
+            <div className="flex flex-col gap-3">
+                <div className="min-w-0">
                     {card ? (
                         <p className="flex items-center gap-2 font-semibold">
                             <CardIcon size={18} className="shrink-0 text-brand" />
@@ -99,7 +99,8 @@ export function PaymentCheckSheet({
                     <p className="truncate text-sm font-medium">{order.customerName}</p>
                     <p className="mt-1 text-sm text-tg-subtitle">{c.hint}</p>
                 </div>
-                <ReceiptThumb orderId={order.id} sentAt={order.payment.receipt?.at} />
+                {/* The sum and the card digits readable right here, next to the yes and no. */}
+                <ReceiptThumb orderId={order.id} sentAt={order.payment.receipt?.at} large />
             </div>
             {warnings.length > 0 ? (
                 <ul className="flex flex-col gap-1.5 rounded-control bg-warning/15 px-3 py-2.5">
