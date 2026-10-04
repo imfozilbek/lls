@@ -1,5 +1,5 @@
 import { OrderStatus, PaymentStatus, formatPhone, isFinalStatus } from "@zumda/core"
-import { Suspense, lazy, useCallback, useEffect, useState } from "react"
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
@@ -9,6 +9,7 @@ import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
 import { addToHomeScreen, canAddToHomeScreen, confirm, haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
+import { useRingOnNews } from "../lib/use-ring.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
@@ -323,6 +324,12 @@ function useOrder(id: string): {
     // Back from the bank app: the news at once, not after the next 20 s tick.
     usePolling(reload, POLL_MS, active)
     useRefresh(reload)
+    // The order moved (accepted, on the way, delivered, paid): the soft Zumda sound.
+    const snapshot = useMemo(
+        () => (order ? new Map([[order.id, `${order.status}:${order.payment.status}`]]) : null),
+        [order],
+    )
+    useRingOnNews(`order:${id}`, snapshot, "status")
 
     return { order, error, reload, setOrder }
 }

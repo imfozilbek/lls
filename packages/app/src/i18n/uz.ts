@@ -22,6 +22,10 @@ export const uz = {
         increase: "Ko'paytirish",
         decrease: "Kamaytirish",
     },
+    sound: {
+        title: "Zumda ovozi",
+        hint: "Ilova ochiq turganda yangi buyurtma kelsa, Zumda ovozi chalinadi.",
+    },
     errors: {
         NETWORK: "Internet bilan aloqa yo'q. Tarmoqni tekshirib, qayta urinib ko'ring.",
         TOO_MANY_REQUESTS: "Juda ko'p so'rov. Bir daqiqadan keyin qayta urinib ko'ring.",

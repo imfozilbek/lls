@@ -25,6 +25,7 @@ import {
     TextInput,
 } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { SoundSwitch } from "../ui/sound-switch.js"
 
 import { CouriersSection, NetworkSection } from "./CouriersSection.js"
 import { HoursEditor } from "./HoursEditor.js"
@@ -897,6 +898,7 @@ function SettingsBody({
             <div className="flex animate-fade-in flex-col gap-6 px-4 pt-2">
                 <AcceptingCard shop={shop} onSaved={onSaved} />
                 <GroupList shop={shop} onOpen={open} />
+                <SoundSwitch />
                 <BottomSpacer />
             </div>
         )
