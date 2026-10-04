@@ -1,4 +1,4 @@
-import { Feature, Unit } from "@zumda/core"
+import { Feature } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -99,7 +99,7 @@ function ProductSummary({
                 </span>
                 <span className="block text-sm text-tg-hint">
                     {onSale
-                        ? `${formatMoney(product.price, language)}${product.unit === Unit.KG ? ` / ${t.units.kg}` : ""}`
+                        ? `${formatMoney(product.price, language)} / ${(t.units as Record<string, string>)[product.unit] ?? product.unit}`
                         : today
                           ? t.owner.stoppedToday
                           : t.owner.hidden}

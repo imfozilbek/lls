@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api, loadCatalog } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
-import { formatMoney } from "../lib/format.js"
+import { formatMoney, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { getLocation, haptic, requestContact, requestWriteAccess } from "../lib/telegram.js"
 import { deliveryFee, summarize, useCart } from "../stores/cart.js"
@@ -137,6 +137,11 @@ interface Delivery {
     bottlesReturned: number
 }
 
+/** A shop that delivers within a radius takes orders only with the pin (`LOCATION_REQUIRED`). */
+function needsPin(shop: Shop | null): boolean {
+    return shop?.delivery.radiusMeters !== undefined
+}
+
 function AddressSection({
     value,
     onChange,
@@ -145,6 +150,8 @@ function AddressSection({
     onChange(change: Partial<Delivery>): void
 }): React.JSX.Element {
     const t = useT()
+    const shop = useSession((state) => state.shop)
+    const radius = shop?.delivery.radiusMeters
     const locate = async (): Promise<void> => {
         haptic.tap()
         const found = await getLocation()
@@ -159,6 +166,11 @@ function AddressSection({
         <Section title={t.checkout.address} id={CHECKOUT_ADDRESS}>
             {/* The pin first: one tap, and the courier finds the door even without words. */}
             <LocationButton saved={value.location !== null} onLocate={(): void => void locate()} />
+            <p className="-mt-1 px-1 text-sm text-tg-hint">
+                {radius === undefined
+                    ? t.checkout.pinHelps
+                    : fill(t.checkout.pinRequired, { km: kmText(radius) })}
+            </p>
             <Field label={t.checkout.street} htmlFor="street">
                 <TextInput
                     id="street"
@@ -349,7 +361,15 @@ function Totals({ rows }: { rows: [string, number | string, boolean?][] }): Reac
 /** What still stops the order, first thing first: the place to show and the words to say. */
 function missingStep(
     t: ReturnType<typeof useT>,
-    input: { phone: string | undefined; hasCard: boolean; address: string; count: number },
+    input: {
+        phone: string | undefined
+        hasCard: boolean
+        address: string
+        count: number
+        /** The shop delivers within a radius: it needs the pin to tell. */
+        needsPin: boolean
+        hasPin: boolean
+    },
 ): { id: string | null; text: string } | null {
     if (input.count === 0) {
         return { id: null, text: t.cart.emptyText }
@@ -359,6 +379,9 @@ function missingStep(
     }
     if (!input.phone) {
         return { id: CHECKOUT_PHONE, text: t.checkout.needPhone }
+    }
+    if (input.needsPin && !input.hasPin) {
+        return { id: CHECKOUT_ADDRESS, text: t.checkout.needPin }
     }
     if (input.address.trim().length === 0) {
         return { id: CHECKOUT_ADDRESS, text: t.checkout.needAddress }
@@ -457,6 +480,8 @@ export function CheckoutScreen(): React.JSX.Element {
         hasCard: shop?.hasPayoutCard === true && !shop.opensSoon,
         address: delivery.address,
         count: cart.count,
+        needsPin: needsPin(shop),
+        hasPin: delivery.location !== null,
     })
     const glow = useOrderButton({
         missing,

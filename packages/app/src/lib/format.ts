@@ -50,3 +50,11 @@ export function formatQuantity(quantity: number, unit: string, kgLabel: string):
     }
     return `${String(quantity / 1000).replace(".", ",")} ${kgLabel}`
 }
+
+const METERS_PER_KM = 1000
+
+/** 3000 → "3", 2500 → "2,5": the radius as people say it. */
+export function kmText(meters: number): string {
+    const km = Math.round((meters / METERS_PER_KM) * 10) / 10
+    return String(km).replace(".", ",")
+}

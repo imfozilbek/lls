@@ -207,7 +207,7 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
                 // No screenshot yet: possible, but not the main thing to do.
                 <Button
                     variant={
-                        order.payment.status === PaymentStatus.AWAITING ? "primary" : "secondary"
+                        order.payment.status === PaymentStatus.AWAITING ? "primary" : "surface"
                     }
                     disabled={busy}
                     icon={<CardIcon size={18} />}

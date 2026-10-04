@@ -52,6 +52,29 @@ test("a contact of another person is not saved as the customer's phone", async (
     expect(me.phone).toBeUndefined()
 })
 
+test("a shop that delivers within a radius shows it and asks for the pin", async ({ page }) => {
+    const shop = (await (await apiAs(PEOPLE.foodOwner, "/owner/shop", { shop: FOOD })).json()) as {
+        delivery: { fee: number; freeFrom?: number; minOrder?: number }
+    }
+    const { fee, freeFrom, minOrder } = shop.delivery
+    await ownerPatch("/owner/shop", { delivery: { fee, freeFrom, minOrder, radiusMeters: 3_000 } })
+    // The phone is there first: the next missing thing must be the pin.
+    const first = await openApp(page, { user: PEOPLE.stranger, shop: FOOD, location: null })
+    await first.chat.shareContact(PEOPLE.stranger, "+998909999999", PEOPLE.stranger.id)
+    await openApp(page, { user: PEOPLE.stranger, shop: FOOD, location: null })
+    await expect(page.getByText("3 km gacha yetkazamiz")).toBeVisible()
+    await toCheckout(page)
+    await expect(page.getByText("Majburiy: do'kon 3 km gacha yetkazadi.")).toBeVisible()
+    await expect(page.getByText("+998 90 999 99 99")).toBeVisible()
+    await bottomButton(page).click()
+    await expect(
+        page.getByText("Joylashuvni yuboring: do'kon shu bo'yicha masofani tekshiradi"),
+    ).toBeVisible()
+    await ownerPatch("/owner/shop", {
+        delivery: { fee, freeFrom, minOrder, radiusMeters: null },
+    })
+})
+
 test("a paused shop shows it and takes no orders", async ({ page }) => {
     await ownerPatch("/owner/shop", { acceptingOrders: false })
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
@@ -59,7 +82,10 @@ test("a paused shop shows it and takes no orders", async ({ page }) => {
     await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
     await bottomButton(page).click()
     await expect(page.getByText("Do'kon hozir buyurtma qabul qilmayapti.")).toBeVisible()
-    await expect(bottomButton(page)).toBeDisabled()
+    // Never a dead button: a tap says why and stays in the cart.
+    await bottomButton(page).click()
+    await expect(page.getByText("Do'kon hozir buyurtma qabul qilmayapti.")).toHaveCount(2)
+    await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
     await ownerPatch("/owner/shop", { acceptingOrders: true })
 })
 
@@ -79,7 +105,8 @@ test("outside working hours the shop is closed and says so", async ({ page }) =>
     await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
     await bottomButton(page).click()
     await expect(page.getByText("Do'kon hozir yopiq. Ish vaqtida buyurtma bering.")).toBeVisible()
-    await expect(bottomButton(page)).toBeDisabled()
+    await bottomButton(page).click()
+    await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
     await ownerPatch("/owner/shop", { workingHours: null })
 })
 

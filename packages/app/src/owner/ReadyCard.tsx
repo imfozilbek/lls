@@ -37,6 +37,8 @@ interface ReadyItem {
     title: string
     hint: string
     done: boolean
+    /** Helps, but the shop works without it: once the rest is done the card goes away. */
+    optional?: boolean
 }
 
 function readSelfDelivery(shopId: string): boolean {
@@ -81,6 +83,7 @@ function itemsOf(
             title: t.phone,
             hint: t.phoneHint,
             done: state.hasPhone,
+            optional: true,
         },
         {
             id: "location",
@@ -109,6 +112,7 @@ function itemsOf(
             title: t.logo,
             hint: t.logoHint,
             done: state.hasLogo,
+            optional: true,
         },
         {
             id: "courier",
@@ -129,6 +133,7 @@ function ReadyRow({
     onOpen(): void
     extra?: ReactNode
 }): React.JSX.Element {
+    const t = useT()
     return (
         // The extra button sits under the words: beside them it squeezed «Kuryer» word by word.
         <li className="flex flex-col">
@@ -164,7 +169,9 @@ function ReadyRow({
                         {item.title}
                     </span>
                     {item.done ? null : (
-                        <span className="block text-sm text-tg-subtitle">{item.hint}</span>
+                        <span className="block text-sm text-tg-subtitle">
+                            {item.optional ? `${t.owner.ready.optional} · ${item.hint}` : item.hint}
+                        </span>
                     )}
                 </span>
                 {item.done ? null : <ChevronIcon size={18} className="text-tg-hint" />}
@@ -246,7 +253,8 @@ export function ReadyCard(): React.JSX.Element | null {
         delivers: selfDelivery || couriers.some((courier) => courier.isActive),
     })
     const done = items.filter((item) => item.done).length
-    if (done === items.length) {
+    // Everything a shop needs is there: the nice-to-haves never keep the card on screen.
+    if (items.every((item) => item.done || item.optional)) {
         return null
     }
     const next = items.find((item) => !item.done)
