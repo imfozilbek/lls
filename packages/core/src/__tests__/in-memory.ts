@@ -297,6 +297,10 @@ export class InMemoryOrders implements OrderRepository {
                 delivered.filter((o) => o.payment.status === PaymentStatus.PAID),
                 (o) => o.total.amount,
             ),
+            paidCash: sum(
+                delivered.filter((o) => o.payment.isPaid() && o.isCash()),
+                (o) => o.total.amount,
+            ),
             commission: sum(delivered, (o) => o.commission.amount),
         }
     }
@@ -310,6 +314,17 @@ export class InMemoryOrders implements OrderRepository {
             )
             .sort((a, b) => a.number - b.number)
             .slice(0, limit)
+    }
+    async listCashWithCouriers(businessId: string, limit: number): Promise<Order[]> {
+        return [...this.items.values()]
+            .filter((o) => o.businessId === businessId && o.payment.isWithCourier())
+            .sort((a, b) => a.number - b.number)
+            .slice(0, limit)
+    }
+    async cashHeldBy(courierId: string): Promise<number> {
+        return [...this.items.values()]
+            .filter((o) => o.payment.cashCourierId === courierId && o.payment.isWithCourier())
+            .reduce((total, o) => total + o.total.amount, 0)
     }
     async claimForNetwork(order: Order): Promise<boolean> {
         if (this.claimRaces > 0) {

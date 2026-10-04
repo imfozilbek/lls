@@ -149,7 +149,7 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
-    /** Paid before the shop starts: an order is accepted only after the transfer arrived. */
+    /** A transfer is paid before the shop starts: the order is accepted only after it arrived. */
     static paymentRequired(orderId: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "PAYMENT_REQUIRED",
@@ -158,7 +158,7 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
-    /** Customers pay only by transfer: a shop without a card cannot take orders. */
+    /** A shop that takes only transfers cannot take orders without a card. */
     static noPayoutCard(businessId: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "NO_PAYOUT_CARD",
@@ -232,6 +232,42 @@ export class BusinessRuleViolationError extends DomainError {
             "PAYMENT_NOT_REFUNDABLE",
             "Only money owed back can be marked as refunded",
             { status },
+        )
+    }
+
+    /** The customer chose a way of paying the shop does not take. */
+    static paymentMethodUnavailable(method: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "PAYMENT_METHOD_UNAVAILABLE",
+            "The shop does not take this way of paying",
+            { method },
+        )
+    }
+
+    /** «O'tkazdim», «Pul keldi», «Pul kelmadi»: only for an order paid by transfer. */
+    static notATransfer(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NOT_A_TRANSFER",
+            "This order is paid in cash to the courier",
+            { orderId },
+        )
+    }
+
+    /** Cash orders go only with the shop's own couriers: a network courier carries no money. */
+    static cashNotForNetwork(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "CASH_NOT_FOR_NETWORK",
+            "A cash order is delivered only by the shop's own courier",
+            { orderId },
+        )
+    }
+
+    /** «Pulni oldim»: only cash a courier collected and has not handed over yet. */
+    static cashNotWithCourier(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "CASH_NOT_WITH_COURIER",
+            "No courier holds this order's cash",
+            { orderId },
         )
     }
 }

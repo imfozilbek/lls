@@ -155,8 +155,10 @@ function CardRow({
  * card, and the owner switches it at any moment. The payment card itself is never removed.
  */
 export function PaymentCardsSection({
+    title,
     onSaved,
 }: {
+    title?: string
     onSaved(shop: ShopOwnerDTO): void
 }): React.JSX.Element {
     const t = useT()
@@ -213,13 +215,13 @@ export function PaymentCardsSection({
 
     if (!cards) {
         return (
-            <Section>
+            <Section title={title}>
                 <Skeleton className="h-24 rounded-tile" />
             </Section>
         )
     }
     return (
-        <Section>
+        <Section title={title}>
             {cards.cards.length > 0 ? (
                 <ul className="flex flex-col gap-2">
                     {cards.cards.map((card) => (

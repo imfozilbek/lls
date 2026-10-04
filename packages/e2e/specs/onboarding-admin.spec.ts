@@ -97,7 +97,7 @@ test("the application reaches the admin; the pending shop opens only for its own
     // Straight into the new business: under review, and what is left before the first order.
     await expect(page.getByText("Ariza tekshirilmoqda")).toBeVisible()
     const ready = page.getByRole("region", { name: "Ishga tayyor" })
-    await expect(ready).toContainText("To'lov kartasi")
+    await expect(ready).toContainText("To'lov usuli")
     await expect(ready).toContainText("1/5") // the location came with the application
     await app.back()
     await expect(page.getByText("Yangi Non")).toBeVisible()

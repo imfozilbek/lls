@@ -13,6 +13,7 @@ import { phoneVisibleIn, resolveCustomer } from "../customer/customer.use-cases.
 import { requireBusiness } from "../shared.js"
 
 import type { Product } from "../../../domain/entities/product.js"
+import type { PaymentMethod } from "../../../domain/enums/payment.js"
 import type { IdentityScope } from "../../dtos/identity-scope.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { LocationDTO } from "../../dtos/shop.dto.js"
@@ -41,6 +42,8 @@ export interface PlaceOrderInput {
     comment?: string
     /** Empty returnable bottles the customer gives back (water shops). */
     bottlesReturned?: number
+    /** The customer's choice when the shop takes both; the only way the shop takes otherwise. */
+    paymentMethod?: PaymentMethod
     /** Decided by the server from which bot opened the app; never sent by the client. */
     channel?: OrderChannel
 }
@@ -104,6 +107,7 @@ export class PlaceOrderUseCase {
 
         const business = await requireBusiness(businesses, input.businessId)
         business.assertCanAcceptOrders(now)
+        const paymentMethod = business.paymentMethodFor(input.paymentMethod)
 
         const lines = mergeLines(input.items)
         if (lines.length === 0) {
@@ -161,6 +165,7 @@ export class PlaceOrderUseCase {
                 // The name as signed for this order: a shop-signed name never renames the customer.
                 customerName: displayNameOf(input.user),
                 customerPhone: customer.phone,
+                paymentMethod,
                 paymentCard: business.payoutCard,
             })
             if (await orders.insert(order)) {

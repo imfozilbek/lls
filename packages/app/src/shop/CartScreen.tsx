@@ -130,7 +130,7 @@ function ClosedNote({ shop }: { shop: Shop | null }): React.JSX.Element | null {
         <p className="mt-3 text-center text-sm text-tg-hint">
             {shop.opensSoon
                 ? t.shop.opensSoon
-                : !shop.hasPayoutCard
+                : shop.paymentMethods.length === 0
                   ? t.errors.NO_PAYOUT_CARD
                   : shop.acceptingOrders
                     ? t.errors.SHOP_CLOSED
@@ -147,7 +147,7 @@ function closedReason(shop: Shop | null): string {
     if (shop && !shop.acceptingOrders) {
         return "NOT_ACCEPTING_ORDERS"
     }
-    if (shop && !shop.hasPayoutCard) {
+    if (shop && shop.paymentMethods.length === 0) {
         return "NO_PAYOUT_CARD"
     }
     return "SHOP_CLOSED"

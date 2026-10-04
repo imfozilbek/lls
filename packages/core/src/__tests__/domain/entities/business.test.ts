@@ -4,6 +4,7 @@ import { Business } from "../../../domain/entities/business.js"
 import { BusinessStatus } from "../../../domain/enums/business-status.js"
 import { Feature } from "../../../domain/enums/feature.js"
 import { OrderChannel } from "../../../domain/enums/order-channel.js"
+import { PaymentMethod, PaymentOptions } from "../../../domain/enums/payment.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { BrandColor } from "../../../domain/value-objects/brand-color.js"
@@ -63,6 +64,35 @@ describe("Business", () => {
         const open = makeBusiness()
         expect(() => open.assertCanAcceptOrders(NOON_MONDAY_UZ)).not.toThrow()
         expect(open.isOpenAt(NOON_MONDAY_UZ)).toBe(true)
+    })
+
+    it("takes the ways of paying the owner chose; a card only when it has one", () => {
+        const card = makeBusiness()
+        expect(card.paymentOptions).toBe(PaymentOptions.CARD)
+        expect(card.paymentMethods()).toEqual([PaymentMethod.CARD_TRANSFER])
+        expect(card.paymentMethodFor(undefined)).toBe(PaymentMethod.CARD_TRANSFER)
+        expect(() => card.paymentMethodFor(PaymentMethod.CASH)).toThrow(/does not take/)
+
+        const cash = makeBusiness({ card: false })
+        cash.setPaymentOptions(PaymentOptions.CASH)
+        expect(cash.hasPayoutCard()).toBe(false)
+        expect(cash.takesPayment()).toBe(true)
+        expect(cash.isOpenAt(NOON_MONDAY_UZ)).toBe(true)
+        expect(cash.paymentMethodFor(undefined)).toBe(PaymentMethod.CASH)
+
+        const both = makeBusiness()
+        both.setPaymentOptions(PaymentOptions.BOTH)
+        expect(both.paymentMethods()).toEqual([PaymentMethod.CARD_TRANSFER, PaymentMethod.CASH])
+        expect(both.paymentMethodFor(PaymentMethod.CASH)).toBe(PaymentMethod.CASH)
+
+        const cashOnlyWithCard = makeBusiness()
+        cashOnlyWithCard.setPaymentOptions(PaymentOptions.CASH)
+        expect(cashOnlyWithCard.acceptsCardTransfers()).toBe(false)
+        expect(cashOnlyWithCard.paymentMethods()).toEqual([PaymentMethod.CASH])
+
+        const nothing = makeBusiness({ card: false })
+        expect(nothing.takesPayment()).toBe(false)
+        expect(() => nothing.paymentMethodFor(undefined)).toThrow(/no card/)
     })
 
     it("delivery fee is free above the threshold", () => {

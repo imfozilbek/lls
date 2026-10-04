@@ -6,6 +6,7 @@ import {
     getNextStatus,
     isFinalStatus,
 } from "../enums/order-status.js"
+import { PaymentMethod } from "../enums/payment.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ForbiddenError } from "../errors/forbidden.error.js"
 import { InvalidOrderTransitionError } from "../errors/invalid-transition.error.js"
@@ -99,6 +100,8 @@ export interface PlaceOrderProps {
     comment?: string
     customerName: string
     customerPhone?: Phone
+    /** How the customer pays; a transfer to the card unless they chose cash. */
+    paymentMethod?: PaymentMethod
     /** The shop's payment card shown to the customer: kept with the order. */
     paymentCard?: PayoutCard
 }
@@ -147,7 +150,10 @@ export class Order {
             comment: optionalText("comment", input.comment, COMMENT_MAX),
             customerName: input.customerName,
             customerPhone: input.customerPhone,
-            payment: Payment.start(input.paymentCard),
+            payment: Payment.start(
+                input.paymentMethod ?? PaymentMethod.CARD_TRANSFER,
+                input.paymentCard,
+            ),
             createdAt: now,
             updatedAt: now,
         })
@@ -254,6 +260,11 @@ export class Order {
         )
     }
 
+    /** Paid in cash to the courier on delivery, not by transfer. */
+    isCash(): boolean {
+        return this.props.payment.isCash()
+    }
+
     /** Delivered (or being delivered) by a courier who took it from the district network. */
     isViaNetwork(): boolean {
         return this.props.networkRequestedAt !== undefined && this.props.courierId !== undefined
@@ -283,8 +294,10 @@ export class Order {
 
     /**
      * Moves the order forward. The owner may make every step; a courier only the delivery part
-     * of an order assigned to them. Cancelling goes through `cancel()`. The shop starts only
-     * after the transfer arrived: accepting an unpaid order is refused.
+     * of an order assigned to them. Cancelling goes through `cancel()`. A transfer order starts
+     * only after the money arrived: accepting it unpaid is refused. A cash order starts at once
+     * and is paid on delivery: the assigned courier then holds the money, or the owner when they
+     * delivered it themself.
      */
     advanceTo(status: OrderStatus, by: OrderMover = OWNER): void {
         if (status === OrderStatus.CANCELLED) {
@@ -299,11 +312,13 @@ export class Order {
         if (!canActorMove(by.role, this.props.status, status)) {
             throw ForbiddenError.stepNotAllowed(this.props.id, status)
         }
-        if (status === OrderStatus.ACCEPTED && !this.props.payment.isPaid()) {
+        if (status === OrderStatus.ACCEPTED && !this.isCash() && !this.props.payment.isPaid()) {
             throw BusinessRuleViolationError.paymentRequired(this.props.id)
         }
         if (status === OrderStatus.DELIVERED) {
-            this.props.deliveredAt = new Date()
+            const now = new Date()
+            this.props.deliveredAt = now
+            this.props.payment = this.props.payment.settleCash(now, this.props.courierId)
         }
         this.props.status = status
         this.touch()
@@ -311,24 +326,28 @@ export class Order {
 
     /** «Я перевёл» with the receipt: the customer says the transfer is sent; the owner checks. */
     markTransferSent(receipt: TransferReceipt): void {
+        this.assertTransfer()
         this.props.payment = this.props.payment.markSent(receipt)
         this.touch()
     }
 
     /** «Do'konga eslatish»: the customer asks the owner to look at the transfer again. */
     remindTransfer(now: Date): void {
+        this.assertTransfer()
         this.props.payment = this.props.payment.remind(now)
         this.touch()
     }
 
     /** «Pul kelmadi»: the owner did not find the transfer; the customer is asked again. */
     rejectTransfer(): void {
+        this.assertTransfer()
         this.props.payment = this.props.payment.reject()
         this.touch()
     }
 
     /** The owner saw the transfer on the card. On a cancelled order it is owed back. */
     confirmPayment(): void {
+        this.assertTransfer()
         this.props.payment = this.props.payment.confirm(
             new Date(),
             this.props.status === OrderStatus.CANCELLED,
@@ -342,6 +361,15 @@ export class Order {
         if (this.props.status === OrderStatus.PENDING) {
             this.advanceTo(OrderStatus.ACCEPTED)
         }
+    }
+
+    /** «Pulni oldim»: the owner took this order's cash from the courier who delivered it. */
+    receiveCash(now: Date): void {
+        if (!this.props.payment.isWithCourier()) {
+            throw BusinessRuleViolationError.cashNotWithCourier(this.props.id)
+        }
+        this.props.payment = this.props.payment.receiveCash(now)
+        this.touch()
     }
 
     /** The owner gave the money of a cancelled order back. */
@@ -374,8 +402,14 @@ export class Order {
         this.touch()
     }
 
-    /** No courier of its own is free: the free network couriers of the district may take it. */
+    /**
+     * No courier of its own is free: the free network couriers of the district may take it. Never
+     * a cash order: a network courier carries no money.
+     */
     requestNetwork(now: Date): void {
+        if (this.isCash()) {
+            throw BusinessRuleViolationError.cashNotForNetwork(this.props.id)
+        }
         if (!ASSIGNABLE.includes(this.props.status) || this.props.courierId !== undefined) {
             throw BusinessRuleViolationError.orderNotAssignable(this.props.id, this.props.status)
         }
@@ -429,6 +463,12 @@ export class Order {
         this.props.cancelledBy = by
         this.props.cancelReason = optionalText("cancelReason", reason, REASON_MAX)
         this.touch()
+    }
+
+    private assertTransfer(): void {
+        if (this.isCash()) {
+            throw BusinessRuleViolationError.notATransfer(this.props.id)
+        }
     }
 
     private touch(): void {

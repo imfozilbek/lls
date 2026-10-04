@@ -167,6 +167,9 @@ export class MarkTransferSentUseCase {
         if (!customer || !order.isPlacedBy(customer.id)) {
             throw ForbiddenError.notOrderParticipant(order.id)
         }
+        if (order.isCash()) {
+            throw BusinessRuleViolationError.notATransfer(order.id)
+        }
         const open = [PaymentStatus.UNPAID, PaymentStatus.AWAITING].includes(order.payment.status)
         if (!open) {
             return { order: toOrderDTO(order), changed: false }

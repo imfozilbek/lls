@@ -13,6 +13,7 @@ import {
     GetCourierHomeUseCase,
     GetMoneyReportUseCase,
     MarkRefundedUseCase,
+    ReceiveCourierCashUseCase,
     JoinAsCourierUseCase,
     ReviewCourierUseCase,
     SetCourierScheduleUseCase,
@@ -116,6 +117,7 @@ export interface UseCases {
     moneyReport: GetMoneyReportUseCase
     confirmPayment: ConfirmPaymentUseCase
     markRefunded: MarkRefundedUseCase
+    receiveCourierCash: ReceiveCourierCashUseCase
     exportOrders: ExportOrdersUseCase
     createCourierInvite: CreateCourierInviteUseCase
     joinAsCourier: JoinAsCourierUseCase
@@ -221,6 +223,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             moneyReport: new GetMoneyReportUseCase(network),
             confirmPayment: new ConfirmPaymentUseCase(network),
             markRefunded: new MarkRefundedUseCase(network),
+            receiveCourierCash: new ReceiveCourierCashUseCase(network),
             rejectTransfer: new RejectTransferUseCase(network),
             exportOrders: new ExportOrdersUseCase(network),
             createCourierInvite: new CreateCourierInviteUseCase(courierAccess),

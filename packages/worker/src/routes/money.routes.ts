@@ -88,6 +88,9 @@ export const moneyRoutes = new Hono<AppEnv>()
                 )
                 return c.json(order)
             }
+            if (c.req.valid("json").action === "cash_received") {
+                return c.json(await services.useCases.receiveCourierCash.execute(ids))
+            }
             if (c.req.valid("json").action === "refunded") {
                 const order = await services.useCases.markRefunded.execute(ids)
                 inBackground(

@@ -28,11 +28,10 @@ export interface PaymentProps {
      * payment card later; this order still points to the card the money went to.
      */
     card?: PayoutCard
-    /**
-     * History only: orders paid in cash before payments became transfer-only. New orders never
-     * set it.
-     */
+    /** A cash order: the courier who took the money from the customer and still owes the shop. */
     cashCourierId?: string
+    /** The shop has the cash: the owner took it from the courier, or delivered it themself. */
+    cashReceivedAt?: Date
     receipt?: TransferReceipt
     /** «Pul kelmadi»: how many times the owner did not find this order's transfer. */
     rejections?: number
@@ -47,19 +46,22 @@ export interface PaymentProps {
 export const TRANSFER_REMIND_AFTER_MS = 10 * 60 * 1000
 
 /**
- * The money side of an order: a transfer to the shop's card, made before the shop starts.
- * Immutable: every change returns a new Payment. The one place for payment rules.
+ * The money side of an order: a transfer to the shop's card made before the shop starts, or cash
+ * the courier takes on delivery and hands to the shop. Immutable: every change returns a new
+ * Payment. The one place for payment rules.
  */
 export class Payment {
     private constructor(private readonly props: PaymentProps) {}
 
-    /** At checkout: the customer will transfer to this card of the shop; nothing has arrived yet. */
-    static start(card?: PayoutCard): Payment {
-        return new Payment({
-            method: PaymentMethod.CARD_TRANSFER,
-            status: PaymentStatus.UNPAID,
-            card,
-        })
+    /**
+     * At checkout: the customer will transfer to this card of the shop, or pay the courier in
+     * cash. Nothing has arrived yet.
+     */
+    static start(method: PaymentMethod, card?: PayoutCard): Payment {
+        if (method === PaymentMethod.CASH) {
+            return new Payment({ method, status: PaymentStatus.UNPAID })
+        }
+        return new Payment({ method, status: PaymentStatus.UNPAID, card })
     }
 
     static reconstitute(props: PaymentProps): Payment {
@@ -80,6 +82,9 @@ export class Payment {
     }
     get cashCourierId(): string | undefined {
         return this.props.cashCourierId
+    }
+    get cashReceivedAt(): Date | undefined {
+        return this.props.cashReceivedAt
     }
     get receipt(): TransferReceipt | undefined {
         return this.props.receipt
@@ -112,6 +117,45 @@ export class Payment {
 
     isPaid(): boolean {
         return this.props.status === PaymentStatus.PAID
+    }
+
+    isCash(): boolean {
+        return this.props.method === PaymentMethod.CASH
+    }
+
+    /** A courier took the money of this order and has not handed it to the shop yet. */
+    isWithCourier(): boolean {
+        return (
+            this.isCash() &&
+            this.isPaid() &&
+            this.props.cashCourierId !== undefined &&
+            this.props.cashReceivedAt === undefined
+        )
+    }
+
+    /**
+     * Delivered and paid in cash. The courier now holds the money until the owner takes it; an
+     * order the owner delivered themself is in the shop's hands at once.
+     */
+    settleCash(at: Date, courierId?: string): Payment {
+        if (!this.isCash() || this.props.status !== PaymentStatus.UNPAID) {
+            return this
+        }
+        return new Payment({
+            ...this.props,
+            status: PaymentStatus.PAID,
+            paidAt: at,
+            cashCourierId: courierId,
+            cashReceivedAt: courierId === undefined ? at : undefined,
+        })
+    }
+
+    /** «Pulni oldim»: the owner took this order's cash from the courier. */
+    receiveCash(at: Date): Payment {
+        if (!this.isWithCourier()) {
+            return this
+        }
+        return new Payment({ ...this.props, cashReceivedAt: at })
     }
 
     /**

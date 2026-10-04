@@ -1,4 +1,5 @@
 import { FEATURES } from "../../../domain/enums/feature.js"
+import { PAYMENT_OPTIONS } from "../../../domain/enums/payment.js"
 import { requireOneOf } from "../../../domain/shared/guards.js"
 import { BrandColor } from "../../../domain/value-objects/brand-color.js"
 import { Location } from "../../../domain/value-objects/location.js"
@@ -39,6 +40,8 @@ export interface ShopSettingsPatch {
     bottleDeposit?: number
     /** When its own couriers are busy, orders go to the district network. */
     networkDelivery?: boolean
+    /** Which ways of paying the shop takes: card, cash or both. */
+    paymentOptions?: string
 }
 
 export interface UpdateShopInput {
@@ -94,6 +97,11 @@ function applyPatch(business: Business, patch: ShopSettingsPatch): void {
     }
     if (patch.bottleDeposit !== undefined) {
         business.setBottleDeposit(Money.of(patch.bottleDeposit))
+    }
+    if (patch.paymentOptions !== undefined) {
+        business.setPaymentOptions(
+            requireOneOf("paymentOptions", patch.paymentOptions, PAYMENT_OPTIONS),
+        )
     }
 }
 

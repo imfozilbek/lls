@@ -317,9 +317,10 @@ export class GetCourierHomeUseCase {
         )
         const perShop = await Promise.all(
             links.map(async (link) => {
-                const [business, list] = await Promise.all([
+                const [business, list, cashToHand] = await Promise.all([
                     businesses.findById(link.businessId),
                     orders.listByCourier(link.id, since),
+                    orders.cashHeldBy(link.id),
                 ])
                 const shopName = business?.name ?? "-"
                 const shop: CourierShopDTO = {
@@ -328,6 +329,7 @@ export class GetCourierHomeUseCase {
                     status: link.status,
                     workDays: [...link.workDays],
                     worksToday: link.worksToday(now),
+                    cashToHand,
                 }
                 const shopOrders: CourierOrderDTO[] = list.map((o) => ({
                     ...toOrderDTO(o),

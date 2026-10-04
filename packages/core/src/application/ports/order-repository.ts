@@ -26,6 +26,10 @@ export interface OrderRepository {
      * and cancelled orders that were paid (owed back). Oldest first.
      */
     listOpenPayments(businessId: string, limit: number): Promise<Order[]>
+    /** Cash orders a courier of this shop collected and has not handed over yet, oldest first. */
+    listCashWithCouriers(businessId: string, limit: number): Promise<Order[]>
+    /** How much cash this courier link collected for its shop and has not handed over, UZS. */
+    cashHeldBy(courierId: string): Promise<number>
     /** Orders created in [from, to), oldest first: the owner's export. */
     listCreatedBetween(businessId: string, from: Date, to: Date, limit: number): Promise<Order[]>
     /**
@@ -71,8 +75,10 @@ export interface MoneyTotals {
     delivery: number
     /** Bottle deposits: held for the customer, not revenue. */
     deposits: number
-    /** Transfers that arrived for the delivered orders. */
+    /** Money of the delivered orders: transfers and cash together. */
     paid: number
+    /** Of it, paid in cash to the courier or the owner. */
+    paidCash: number
     /** Zumda commission on showcase orders. */
     commission: number
 }

@@ -1,5 +1,5 @@
 import { OrderStatus, PaymentStatus, formatPhone, isFinalStatus } from "@zumda/core"
-import { useCallback, useEffect, useState } from "react"
+import { Suspense, lazy, useCallback, useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
@@ -9,7 +9,7 @@ import { confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { PhoneIcon, PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import { CashIcon, PhoneIcon, PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusHero, StatusTimeline } from "../ui/order-status.js"
 import { CardBlock, PaymentLine } from "../ui/payment.js"
@@ -17,11 +17,15 @@ import { Button, EmptyState, Section, Skeleton } from "../ui/primitives.js"
 import { ReceiptThumb } from "../ui/receipt.js"
 import { BottomSpacer } from "../ui/shell.js"
 
-import { ReceiptSheet } from "./ReceiptSheet.js"
 import { useReorder } from "./reorder.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { OrderDTO } from "@zumda/core"
+
+/** Opened only by «O'tkazdim»: a cash order and a paid one never download it. */
+const ReceiptSheet = lazy(() =>
+    import("./ReceiptSheet.js").then((m) => ({ default: m.ReceiptSheet })),
+)
 
 /** Status changes arrive by bot message too, so a calm 20 s refresh is enough (free-tier friendly). */
 const POLL_MS = 20_000
@@ -150,6 +154,9 @@ function Payment({
     const shopName = useSession((state) => state.shop?.name)
     const card = order.payment.card ?? shopCard
     const open = order.status !== OrderStatus.CANCELLED
+    if (order.payment.method === "cash") {
+        return <CashPayment order={order} />
+    }
     const unpaid = open && order.payment.status === PaymentStatus.UNPAID
     const checking = open && order.payment.status === PaymentStatus.AWAITING
 
@@ -183,6 +190,36 @@ function Payment({
             {unpaid || checking ? (
                 <CallShop problem={unpaid && order.payment.rejections > 0} />
             ) : null}
+        </Section>
+    )
+}
+
+/** Cash at the door: the sum to have ready until the courier takes it, then paid. */
+function CashPayment({ order }: { order: OrderDTO }): React.JSX.Element | null {
+    const t = useT()
+    const language = useLanguage()
+    const due = order.payment.status !== PaymentStatus.PAID
+    if (order.status === OrderStatus.CANCELLED && due) {
+        return null
+    }
+    return (
+        <Section title={t.pay.cashTitle}>
+            {due ? (
+                <div className="flex gap-3 rounded-tile bg-tg-secondary p-4">
+                    <CashIcon size={22} className="mt-0.5 shrink-0 text-brand" />
+                    <div>
+                        <p className="font-semibold">
+                            {fill(t.pay.cashOrder, { sum: formatMoney(order.total, language) })}
+                        </p>
+                        <p className="mt-1 text-sm text-tg-subtitle">{t.pay.cashHint}</p>
+                    </div>
+                </div>
+            ) : (
+                <PaymentLine
+                    order={order}
+                    className="rounded-control bg-tg-secondary px-4 py-3 text-base"
+                />
+            )}
         </Section>
     )
 }
@@ -337,6 +374,9 @@ function heroText(
     if (order.status !== OrderStatus.PENDING) {
         return {}
     }
+    if (order.payment.method === "cash") {
+        return justPlaced ? { title: t.order.placedTitle } : {}
+    }
     if (order.payment.status === PaymentStatus.AWAITING) {
         // Past the usual wait the promise turns into the truth, next to «Do'konga eslatish».
         const late =
@@ -368,6 +408,7 @@ function useOrderMainAction(
     const toPay =
         order !== null &&
         order.status !== OrderStatus.CANCELLED &&
+        order.payment.method !== "cash" &&
         order.payment.status === PaymentStatus.UNPAID
     useMainAction(
         toPay
@@ -399,7 +440,11 @@ function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
 
             {order.status !== "cancelled" ? (
                 <div className="px-1">
-                    <StatusTimeline status={order.status} payment={order.payment.status} />
+                    <StatusTimeline
+                        status={order.status}
+                        payment={order.payment.status}
+                        cash={order.payment.method === "cash"}
+                    />
                 </div>
             ) : order.cancelReason ? (
                 <p className="rounded-control bg-danger/10 px-4 py-3 text-sm">
@@ -457,7 +502,9 @@ export function OrderScreen({
     const hero = heroText(order, t, justPlaced, formatMoney(order.total, language))
     // While the money is open, the card and the screenshot come right under the hero.
     const moneyFirst =
-        order.status === OrderStatus.PENDING && order.payment.status !== PaymentStatus.PAID
+        order.status === OrderStatus.PENDING &&
+        order.payment.method !== "cash" &&
+        order.payment.status !== PaymentStatus.PAID
     const payment = (
         <Payment order={order} onChange={setOrder} onOpenSheet={(): void => setSheet(true)} />
     )
@@ -474,11 +521,13 @@ export function OrderScreen({
             <OrderDetails order={order} />
             {moneyFirst ? null : payment}
             {sheet ? (
-                <ReceiptSheet
-                    order={order}
-                    onSent={setOrder}
-                    onClose={(): void => setSheet(false)}
-                />
+                <Suspense fallback={null}>
+                    <ReceiptSheet
+                        order={order}
+                        onSent={setOrder}
+                        onClose={(): void => setSheet(false)}
+                    />
+                </Suspense>
             ) : null}
 
             <OrderActions order={order} onChange={setOrder} onStale={reload} />

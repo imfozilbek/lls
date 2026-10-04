@@ -75,6 +75,7 @@ interface OrderRow {
     customer_rejections: number
     transfer_rejections: number
     transfer_reminded_at: number | null
+    cash_received_at: number | null
 }
 
 interface ItemRow {
@@ -98,7 +99,11 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     delivered_at, created_at, updated_at, network_requested_at, network_alerted_at,
     delivery_fee_to, payment_card_number, payment_card_holder, receipt_key, receipt_hash,
     receipt_at, receipt_reused_from, customer_rejections, transfer_rejections,
-    transfer_reminded_at`
+    transfer_reminded_at, cash_received_at`
+
+/** A cash order whose money a courier still holds. */
+const WITH_COURIER = `payment_method = 'cash' AND payment_status = 'paid'
+    AND cash_courier_id IS NOT NULL AND cash_received_at IS NULL`
 
 /** A courier can still take the order: from accepted until pickup. */
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
@@ -115,6 +120,7 @@ const EMPTY_TOTALS: MoneyTotals = {
     delivery: 0,
     deposits: 0,
     paid: 0,
+    paidCash: 0,
     commission: 0,
 }
 
@@ -171,6 +177,7 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
             status: oneOf(row.payment_status, PAYMENT_STATUSES, "payment status"),
             paidAt: row.paid_at === null ? undefined : new Date(row.paid_at),
             cashCourierId: optional(row.cash_courier_id),
+            cashReceivedAt: dateOrUndefined(row.cash_received_at),
             card:
                 row.payment_card_number === null || row.payment_card_holder === null
                     ? undefined
@@ -246,7 +253,12 @@ function orderValues(order: Order): (string | number | null)[] {
         ...networkValues(order),
         ...cardValues(order),
         ...receiptValues(order),
+        ...cashValues(order),
     ]
+}
+
+function cashValues(order: Order): (number | null)[] {
+    return [order.payment.cashReceivedAt?.getTime() ?? null]
 }
 
 function receiptValues(order: Order): (string | number | null)[] {
@@ -349,7 +361,8 @@ export class D1OrderRepository implements OrderRepository {
                     cash_courier_id = ?, delivered_at = ?, updated_at = ?,
                     network_requested_at = ?, network_alerted_at = ?, delivery_fee_to = ?,
                     receipt_key = ?, receipt_hash = ?, receipt_at = ?, receipt_reused_from = ?,
-                    customer_rejections = ?, transfer_rejections = ?, transfer_reminded_at = ?
+                    customer_rejections = ?, transfer_rejections = ?, transfer_reminded_at = ?,
+                    cash_received_at = ?
                  WHERE id = ?${guard}`,
             )
             .bind(
@@ -362,6 +375,7 @@ export class D1OrderRepository implements OrderRepository {
                 version,
                 ...networkValues(order),
                 ...receiptValues(order),
+                ...cashValues(order),
                 order.id,
                 ...(expected === undefined ? [] : [expected]),
             )
@@ -516,6 +530,8 @@ export class D1OrderRepository implements OrderRepository {
                         COALESCE(SUM(delivery_fee), 0) AS delivery,
                         COALESCE(SUM(deposit_total), 0) AS deposits,
                         COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN total END), 0) AS paid,
+                        COALESCE(SUM(CASE WHEN payment_status = 'paid'
+                            AND payment_method = 'cash' THEN total END), 0) AS paidCash,
                         COALESCE(SUM(commission), 0) AS commission
                      FROM orders
                      WHERE business_id = ? AND status = 'delivered'
@@ -538,6 +554,21 @@ export class D1OrderRepository implements OrderRepository {
             "number ASC",
             limit,
         )
+    }
+
+    async listCashWithCouriers(businessId: string, limit: number): Promise<Order[]> {
+        return this.list(`business_id = ? AND ${WITH_COURIER}`, [businessId], "number ASC", limit)
+    }
+
+    async cashHeldBy(courierId: string): Promise<number> {
+        const row = await this.db
+            .prepare(
+                `SELECT COALESCE(SUM(total), 0) AS held FROM orders
+                 WHERE cash_courier_id = ? AND ${WITH_COURIER}`,
+            )
+            .bind(courierId)
+            .first<{ held: number }>()
+        return row?.held ?? 0
     }
 
     async listCreatedBetween(

@@ -11,11 +11,12 @@ import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { CardIcon, CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
+import { CardIcon, CashIcon, CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
 import { Button, Field, Section, Stepper, TextArea, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
 import type { Shop } from "../stores/session.js"
+import type { PaymentMethod } from "@zumda/core"
 
 const CONTACT_POLL_MS = 1500
 const CONTACT_POLL_TRIES = 10
@@ -227,7 +228,10 @@ function LocationButton({
 }
 
 /** Sends the order: prices and totals are computed by the Worker, the app sends only ids. */
-function usePlaceOrder(delivery: Delivery): { placing: boolean; place(): Promise<void> } {
+function usePlaceOrder(
+    delivery: Delivery,
+    paymentMethod: PaymentMethod | undefined,
+): { placing: boolean; place(): Promise<void> } {
     const t = useT()
     const catalog = useSession((state) => state.catalog)
     const setCatalog = useSession((state) => state.setCatalog)
@@ -253,6 +257,7 @@ function usePlaceOrder(delivery: Delivery): { placing: boolean; place(): Promise
                 location: delivery.location ?? undefined,
                 comment: delivery.comment.trim() || undefined,
                 bottlesReturned: delivery.bottlesReturned || undefined,
+                paymentMethod,
             })
             saveAddress({
                 address: delivery.address.trim(),
@@ -316,26 +321,120 @@ function BottlesField({
     )
 }
 
-/**
- * Only a transfer to the shop's card, made after placing: the shop starts once the money
- * arrives. The card number waits for the order screen; here the customer learns how and how much.
- */
-function PaymentSection({ total }: { total: number }): React.JSX.Element | null {
+/** One way of paying, as a row to pick when the shop takes both. */
+function MethodRow({
+    method,
+    selected,
+    total,
+    onChoose,
+}: {
+    method: PaymentMethod
+    selected: boolean
+    total: number
+    onChoose(): void
+}): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
-    const card = useSession((state) => state.shop?.payoutCard)
-    if (!card) {
+    const sum = formatMoney(total, language)
+    const cash = method === "cash"
+    return (
+        <button
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={(): void => {
+                haptic.select()
+                onChoose()
+            }}
+            className={cn(
+                "tap flex min-h-[64px] items-center gap-3 rounded-tile p-4 text-left ring-2 transition-colors duration-200",
+                selected ? "bg-brand/10 ring-brand" : "bg-tg-secondary ring-transparent",
+            )}
+        >
+            <span className={selected ? "text-brand" : "text-tg-hint"}>
+                {cash ? <CashIcon size={22} /> : <CardIcon size={22} />}
+            </span>
+            <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{cash ? t.pay.cashChoice : t.pay.card}</span>
+                <span className="block text-sm text-tg-subtitle">
+                    {fill(cash ? t.pay.cashToCourier : t.pay.afterOrder, { sum })}
+                </span>
+            </span>
+            <span
+                className={cn(
+                    "grid h-6 w-6 shrink-0 place-items-center rounded-full border-2 transition-colors duration-200",
+                    selected ? "border-brand bg-brand text-brand-ink" : "border-tg-separator",
+                )}
+            >
+                {selected ? <CheckIcon size={14} strokeWidth={3} /> : null}
+            </span>
+        </button>
+    )
+}
+
+/**
+ * How the customer pays: a transfer to the shop's card after placing (the shop starts once the
+ * money arrives), or cash to the courier at the door. A shop that takes both lets the customer
+ * pick; the card number waits for the order screen.
+ */
+function PaymentSection({
+    total,
+    methods,
+    method,
+    onChoose,
+}: {
+    total: number
+    methods: readonly PaymentMethod[]
+    method: PaymentMethod | undefined
+    onChoose(method: PaymentMethod): void
+}): React.JSX.Element | null {
+    const t = useT()
+    const language = useLanguage()
+    if (!method) {
         return null
     }
+    if (methods.length > 1) {
+        return (
+            <Section title={t.pay.methodTitle}>
+                <div
+                    role="radiogroup"
+                    aria-label={t.pay.methodTitle}
+                    className="flex flex-col gap-2"
+                >
+                    {methods.map((m) => (
+                        <MethodRow
+                            key={m}
+                            method={m}
+                            selected={m === method}
+                            total={total}
+                            onChoose={(): void => onChoose(m)}
+                        />
+                    ))}
+                </div>
+                <p className="px-1 text-sm text-tg-hint">
+                    {method === "cash" ? t.pay.cashHint : t.pay.afterOrderHint}
+                </p>
+            </Section>
+        )
+    }
+    const cash = method === "cash"
     return (
-        <Section title={t.pay.title}>
+        <Section title={cash ? t.pay.cashTitle : t.pay.title}>
             <div className="flex gap-3 rounded-tile bg-tg-secondary p-4">
-                <CardIcon size={22} className="mt-0.5 shrink-0 text-brand" />
+                {cash ? (
+                    <CashIcon size={22} className="mt-0.5 shrink-0 text-brand" />
+                ) : (
+                    <CardIcon size={22} className="mt-0.5 shrink-0 text-brand" />
+                )}
                 <div>
                     <p className="font-semibold">
-                        {fill(t.pay.afterOrder, { sum: formatMoney(total, language) })}
+                        {fill(cash ? t.pay.cashToCourier : t.pay.afterOrder, {
+                            sum: formatMoney(total, language),
+                        })}
                     </p>
-                    <p className="mt-1 text-sm text-tg-subtitle">{t.pay.afterOrderHint}</p>
+                    <p className="mt-1 text-sm text-tg-subtitle">
+                        {cash ? t.pay.cashHint : t.pay.afterOrderHint}
+                    </p>
                 </div>
             </div>
         </Section>
@@ -467,6 +566,18 @@ function bottlesOf(
     return { usesBottles, bottlesReturned, deposit }
 }
 
+/** The customer's pick while the shop still takes it; else the first way it takes (the card). */
+function usePaymentMethod(shop: Shop | null): {
+    methods: readonly PaymentMethod[]
+    method: PaymentMethod | undefined
+    setChosen(method: PaymentMethod): void
+} {
+    const methods = shop?.paymentMethods ?? []
+    const [chosen, setChosen] = useState<PaymentMethod | null>(null)
+    const method = chosen && methods.includes(chosen) ? chosen : methods[0]
+    return { methods, method, setChosen }
+}
+
 export function CheckoutScreen(): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -485,12 +596,13 @@ export function CheckoutScreen(): React.JSX.Element {
         cart.returnable,
         delivery.bottlesReturned,
     )
-    const { placing, place } = usePlaceOrder({ ...delivery, bottlesReturned })
+    const { methods, method, setChosen } = usePaymentMethod(shop)
+    const { placing, place } = usePlaceOrder({ ...delivery, bottlesReturned }, method)
     const total = cart.subtotal + fee + deposit
     const missing = missingStep(t, {
         phone: me?.phone,
         // Waiting for Zumda's approval: the storefront opens, orders do not yet.
-        hasCard: shop?.hasPayoutCard === true && !shop.opensSoon,
+        hasCard: (shop?.paymentMethods.length ?? 0) > 0 && !shop?.opensSoon,
         address: delivery.address,
         count: cart.count,
         needsPin: needsPin(shop),
@@ -552,7 +664,7 @@ export function CheckoutScreen(): React.JSX.Element {
                 ]}
             />
 
-            <PaymentSection total={total} />
+            <PaymentSection total={total} methods={methods} method={method} onChoose={setChosen} />
             <BottomSpacer />
         </main>
     )

@@ -15,4 +15,15 @@ export interface MoneyReportDTO {
     awaiting: OrderDTO[]
     /** Cancelled after payment: give the money back. */
     refunds: OrderDTO[]
+    /** Cash the shop's couriers collected and still have to hand over, one entry per courier. */
+    courierCash: CourierCashDTO[]
+}
+
+export interface CourierCashDTO {
+    courierId: string
+    courierName: string
+    /** UZS the courier owes the shop. */
+    total: number
+    /** The orders it came from, oldest first: the owner marks each one «Pulni oldim». */
+    orders: OrderDTO[]
 }

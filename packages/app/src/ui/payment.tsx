@@ -6,7 +6,7 @@ import { formatMoney } from "../lib/format.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 
-import { CardIcon, CopyIcon, ShieldIcon } from "./icons.js"
+import { CardIcon, CashIcon, CopyIcon, ShieldIcon } from "./icons.js"
 import { Button } from "./primitives.js"
 
 import type { OrderDTO } from "@zumda/core"
@@ -23,7 +23,31 @@ function toneOf(status: PaymentStatus): string {
 }
 
 /**
- * "Перевод на карту · Ждём перевод". The owner reads «Клиент перевёл» where the customer reads
+ * A cash order: paid at the door. The owner also sees where the money is now: with the courier
+ * until «Pulni oldim», then in the shop.
+ */
+function cashLine(
+    order: OrderDTO,
+    forOwner: boolean,
+    t: ReturnType<typeof useT>,
+): {
+    label: string
+    tone: string
+} {
+    const s = t.pay.cashStatus
+    if (order.payment.status !== PaymentStatus.PAID) {
+        return { label: s.unpaid, tone: "text-tg-hint" }
+    }
+    if (!forOwner) {
+        return { label: s.paid, tone: "text-success" }
+    }
+    return order.payment.withCourier
+        ? { label: s.withCourier, tone: "text-warning" }
+        : { label: s.received, tone: "text-success" }
+}
+
+/**
+ * "Kartaga o'tkazma · O'tkazma kutilmoqda", "Naqd · Pul kuryerda". The owner reads «Клиент перевёл» where the customer reads
  * «Магазин проверяет перевод».
  */
 export function PaymentLine({
@@ -41,15 +65,21 @@ export function PaymentLine({
     if (order.status === OrderStatus.CANCELLED && status === PaymentStatus.UNPAID) {
         return null
     }
-    const label =
-        forOwner && status === PaymentStatus.AWAITING ? t.pay.ownerAwaiting : t.pay.status[status]
+    const cash = order.payment.method === "cash"
+    const { label, tone } = cash
+        ? cashLine(order, forOwner, t)
+        : {
+              label:
+                  forOwner && status === PaymentStatus.AWAITING
+                      ? t.pay.ownerAwaiting
+                      : t.pay.status[status],
+              tone: toneOf(status),
+          }
     return (
         <p className={cn("flex items-center gap-2 text-sm", className)}>
-            <span className={toneOf(status)}>
-                <CardIcon size={18} />
-            </span>
+            <span className={tone}>{cash ? <CashIcon size={18} /> : <CardIcon size={18} />}</span>
             <span>
-                {t.pay.card}
+                {cash ? t.pay.cash : t.pay.card}
                 <span className="text-tg-hint"> · </span>
                 <span className="font-semibold">{label}</span>
             </span>

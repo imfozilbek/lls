@@ -218,6 +218,9 @@ async function requestNetwork(
     order: Order,
     business: Business,
 ): Promise<NetworkRequest> {
+    if (order.isCash()) {
+        throw BusinessRuleViolationError.cashNotForNetwork(order.id)
+    }
     const district = business.districtId ? await deps.districts.findById(business.districtId) : null
     if (!district) {
         throw BusinessRuleViolationError.noDistrict(business.id)
@@ -263,11 +266,17 @@ export class AutoRequestNetworkUseCase {
 
     /**
      * Right after the shop accepts an order: when none of its own couriers can take it now and
-     * the shop keeps network delivery on, the district network gets it. Null: nothing to do.
+     * the shop keeps network delivery on, the district network gets it. Never a cash order: only
+     * the shop's own courier or the owner carries its money. Null: nothing to do.
      */
     async execute(input: { orderId: string }): Promise<NetworkRequest | null> {
         const order = await this.deps.orders.findById(input.orderId)
-        if (!order || order.status !== OrderStatus.ACCEPTED || order.courierId !== undefined) {
+        if (
+            !order ||
+            order.status !== OrderStatus.ACCEPTED ||
+            order.courierId !== undefined ||
+            order.isCash()
+        ) {
             return null
         }
         const business = await requireBusiness(this.deps.businesses, order.businessId)

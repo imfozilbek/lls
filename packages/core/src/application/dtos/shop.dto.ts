@@ -6,6 +6,7 @@ import type { PayoutCardBook } from "../../domain/entities/payout-card-book.js"
 import type { BusinessStatus } from "../../domain/enums/business-status.js"
 import type { BusinessType } from "../../domain/enums/business-type.js"
 import type { Feature } from "../../domain/enums/feature.js"
+import type { PaymentMethod, PaymentOptions } from "../../domain/enums/payment.js"
 import type { WeeklySchedule } from "../../domain/value-objects/working-hours.js"
 
 export interface LocationDTO {
@@ -42,8 +43,12 @@ export interface ShopPublicDTO {
     bottleDeposit: number
     /** The card to transfer to; only in the shop's own view, never in the showcase list. */
     payoutCard?: PayoutCardDTO
-    /** Customers pay only by transfer: without a card the shop takes no orders yet. */
+    /** The shop has a payment card customers may be shown. */
     hasPayoutCard: boolean
+    /** Which ways of paying the owner chose. */
+    paymentOptions: PaymentOptions
+    /** The ways a customer may pay now, the card first. Empty: the shop takes no orders yet. */
+    paymentMethods: PaymentMethod[]
     /** Waiting for Zumda's approval: the storefront opens, orders do not («Tez orada ochiladi»). */
     opensSoon: boolean
 }
@@ -113,7 +118,9 @@ export function toShopPublicDTO(
         features: business.features,
         bottleDeposit: business.bottleDeposit.amount,
         payoutCard: options.withCard ? toPayoutCardDTO(business) : undefined,
-        hasPayoutCard: business.acceptsCardTransfers(),
+        hasPayoutCard: business.hasPayoutCard(),
+        paymentOptions: business.paymentOptions,
+        paymentMethods: business.paymentMethods(),
         opensSoon: business.isPending(),
     }
 }

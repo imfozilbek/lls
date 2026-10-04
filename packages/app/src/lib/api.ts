@@ -12,6 +12,8 @@ import type {
     CustomerDTO,
     OrderDTO,
     Page,
+    PaymentMethod,
+    PaymentOptions,
     PayoutCardsDTO,
     ProductDTO,
     ShopOwnerDTO,
@@ -185,6 +187,8 @@ export interface PlaceOrderBody {
     location?: { latitude: number; longitude: number }
     comment?: string
     bottlesReturned?: number
+    /** The customer's choice when the shop takes both; the server checks the shop takes it. */
+    paymentMethod?: PaymentMethod
 }
 
 export type ShopPatch = Partial<{
@@ -204,6 +208,7 @@ export type ShopPatch = Partial<{
     networkDelivery: boolean
     features: string[]
     bottleDeposit: number
+    paymentOptions: PaymentOptions
 }>
 
 export interface ProductInput {
@@ -307,6 +312,9 @@ export const api = {
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "rejected" }),
         markRefunded: (orderId: string): Promise<OrderDTO> =>
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "refunded" }),
+        /** «Pulni oldim»: the owner took this cash order's money from the courier. */
+        receiveCash: (orderId: string): Promise<OrderDTO> =>
+            request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "cash_received" }),
         /** The bot sends the QR poster back to the owner's chat. */
         sendPoster: (png: Blob): Promise<{ sent: boolean }> =>
             request("POST", "/api/owner/shop/poster", png),

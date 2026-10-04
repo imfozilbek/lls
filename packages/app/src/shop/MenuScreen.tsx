@@ -194,7 +194,7 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
     const hasActiveOrder = useHasActiveOrder(shop.id)
     const status = shop.opensSoon
         ? t.shop.opensSoon
-        : !shop.hasPayoutCard
+        : shop.paymentMethods.length === 0
           ? t.shop.soon
           : !shop.acceptingOrders
             ? t.shop.paused

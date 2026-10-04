@@ -88,11 +88,23 @@ Zoir (20 l water production and delivery). Each business has its own bot. The fi
 cover each one's whole process; what exactly comes from the meeting with them.
 
 **Money rules of the platform** (Zumda earns on volume):
-- **Customers pay only by transfer to the shop's card, before the shop starts** (owner's
-  decision, October 2026). The order is placed unpaid → the customer transfers and presses
-  «Я перевёл» → the owner sees the money and presses «Деньги пришли, принять» (paid and
-  accepted in one tap). An order is never accepted unpaid (`PAYMENT_REQUIRED`). No cash: couriers
-  carry no money, there is no courier cash, no handovers, no debts.
+- **The shop chooses how customers pay** (owner's decision, October 2026), in «Sozlamalar» →
+  «To'lov»: **«Kartaga o'tkazma»** (the default), **«Naqd pul»** or **«Ikkalasi»** (the customer
+  picks one at checkout and only that one's rules apply to the order; `PAYMENT_METHOD_UNAVAILABLE`
+  for a way the shop does not take). Every order stores its method (`card_transfer` | `cash`).
+- **Transfer: paid to the shop's card before the shop starts.** The order is placed unpaid → the
+  customer transfers and presses «Я перевёл» → the owner sees the money and presses «Деньги
+  пришли, принять» (paid and accepted in one tap). A transfer order is never accepted unpaid
+  (`PAYMENT_REQUIRED`).
+- **Cash: paid to the courier at the door** (owner's decision, October 2026). The owner accepts it
+  at once with «Qabul qilish». It goes only with the shop's own courier or the owner, never to
+  the district network (`CASH_NOT_FOR_NETWORK`; auto-network skips it). The courier card says
+  «Mijozdan {sum} naqd oling»; «Pulni oldim, yetkazdim» marks it paid and the courier holds the
+  money (`cash_courier_id`); the owner delivering it has the money at once. The owner takes it
+  **per order**: «Pul» → «Kuryerlardagi naqd pul» (per courier, per order) → «Pulni oldim»
+  (asked once more; `cash_received_at`). The courier sees «Do'konga topshirasiz: {sum}» per shop
+  until then. No change (qaytim) field: the customer writes it in the comment. Transfer steps on a
+  cash order are refused (`NOT_A_TRANSFER`).
 - **The transfer screenshot (owner's decision, October 2026).** «O'tkazdim» carries the
   screenshot of the transfer (`RECEIPT_REQUIRED` without it); it is a hint, never proof: the
   money on the card is. It is stored privately in R2 (`receipts/`, never under the public
@@ -110,9 +122,10 @@ cover each one's whole process; what exactly comes from the meeting with them.
   **payment card** customers are shown; it switches it at any moment (owner's decision). Every
   order keeps the card it was shown (`payment_card_*` snapshot). The payment card is never
   removed.
-- **No card, no orders.** The card is the first step of «Ishga tayyor» (the owner's checklist
-  after the application); a shop without one shows «Tez orada buyurtma qabul qila boshlaydi» and
-  refuses orders (`NO_PAYOUT_CARD`).
+- **No way of paying, no orders.** «To'lov usuli» is the first step of «Ishga tayyor» (the
+  owner's checklist after the application): a card shop needs a card, a cash shop needs none, a
+  «both» shop without a card takes cash only. A shop with no working way shows «Tez orada
+  buyurtma qabul qila boshlaydi» and refuses orders (`NO_PAYOUT_CARD`).
 - **Onboarding (owner's decision, October 2026):** a short application in three steps (name and
   kind → bot → where the business is: location and address); the card, hours, products, logo
   and courier come after it in «Ishga tayyor». The shop's bot works from the application on: a
@@ -144,8 +157,9 @@ cover each one's whole process; what exactly comes from the meeting with them.
   it in the courier bot → the business approves (bot button or app) and switches the courier on or
   off by day (like the menu's stop-list). The courier marks "on shift" himself (until midnight).
   An order goes only to a courier who is approved, works today and is on shift.
-- **Done:** a business never sees its courier's other businesses. Couriers carry no money: every
-  order is paid to the shop's card before cooking.
+- **Done:** a business never sees its courier's other businesses. A transfer order is paid to the
+  shop's card before cooking; a cash order's money goes from the shop's own courier to the owner,
+  per order.
 - **Done (goal 06):** every courier a business approves is **offered** once to deliver for other
   points of the district too (`in_network`, only the courier's own consent).
 - **Done:** a district is a circle (center + radius) the platform admin sets in «Platforma» →
@@ -156,8 +170,9 @@ cover each one's whole process; what exactly comes from the meeting with them.
   order goes to the free network couriers of the district (in the network, on shift, carrying no
   other network order): «Новый заказ рядом» without the customer, «Беру»; the first press wins
   (one conditional UPDATE). The shop switch «Если мои заняты, отдавать сети района» is **on by
-  default** (owner's decision); the owner may also hand an order over by hand. The customer paid
-  that point's card before cooking: the network courier carries no money. Nobody took it in
+  default** (owner's decision); the owner may also hand an order over by hand. Only transfer
+  orders go to the network: the customer paid that point's card before cooking, so the network
+  courier carries no money; a cash order never goes there. Nobody took it in
   `wait` minutes (default 10):
   the shop and the admins hear it once (no cron: checked on every network event and when
   «Tumanlar» opens).
@@ -166,10 +181,11 @@ cover each one's whole process; what exactly comes from the meeting with them.
   one place (`NETWORK_DELIVERY_FEE_RECIPIENT`).
 
 **⛔ RULES:**
-- Build ONLY stage 1 now: the online point and district delivery. Money is in: only a transfer to
-  the shop's card, before the shop starts (unpaid → «Я перевёл» → paid by the owner's
-  «Деньги пришли, принять»; refund due / refunded after a cancel), money report and CSV export.
-  **No cash, no payment gateways (Click, Payme)**: the owner confirms transfers by hand.
+- Build ONLY stage 1 now: the online point and district delivery. Money is in: the shop's choice
+  of a transfer to its card before the shop starts (unpaid → «Я перевёл» → paid by the owner's
+  «Деньги пришли, принять»; refund due / refunded after a cancel) and cash to its own courier at
+  the door (handed to the owner per order), money report and CSV export. **No payment gateways
+  (Click, Payme)**: the owner confirms transfers and cash by hand.
 - Services (carpet and car cleaning) join stage 1 as their own business type once their process
   is agreed with the client.
 - The Zumda showcase is in: search across shops + shop list in the Zumda bot;
@@ -379,15 +395,15 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through Z
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (grocery/food/service), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (optional, E.164: customers call it about an order), delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required to take orders), service fee rate (bps; plan), district_id, network_delivery (on by default) |
+| Business | id, slug, name, type (grocery/food/service), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (optional, E.164: customers call it about an order), delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
 | District | id, name, center (lat, lng), radius, wait_minutes: a circle of the delivery network |
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until: the person's link to one shop (`network`: took a network order of it) |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer: `cash` only in old rows; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash courier: history only), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
-| CashHandover | History only: the `cash_handovers` table stays (additive schema), no code uses it since payments became transfer-only |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
+| CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
 items; line total = `round(price × grams / 1000)`.
@@ -399,8 +415,9 @@ pending → accepted → preparing → ready → picked_up → delivered
 cancelled  cancelled  cancelled  cancelled  cancelled
 ```
 - `pending → ready` = shop part. `picked_up → delivered` = delivery part.
-- `pending → accepted` only when paid: the owner's «Деньги пришли, принять» confirms the transfer
-  and accepts in one step (`Order.advanceTo` refuses an unpaid accept).
+- A transfer order: `pending → accepted` only when paid: the owner's «Деньги пришли, принять»
+  confirms the transfer and accepts in one step (`Order.advanceTo` refuses an unpaid accept). A
+  cash order is accepted at once and becomes paid on `delivered`.
 - Owner moves every step and may cancel. The assigned courier moves only
   `ready → picked_up → delivered` and never cancels. The customer cancels only while `pending`.
 - The owner assigns a courier (`accepted`…`ready`); without couriers the owner delivers.
@@ -500,12 +517,13 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 
 **Notifications (no WebSockets):**
 - New order → message to the owner «💳 Ждём перевод» with «Деньги пришли, принять» + «Отменить»;
-  the customer gets the shop's card and the sum. «Я перевёл» with the screenshot → the owner gets
+  the customer gets the shop's card and the sum. A cash order: «💵 Naqd: kuryer yetkazganda
+  oladi» with «Qabul qilish»; the customer gets the sum to give the courier. «Я перевёл» with the screenshot → the owner gets
   the picture, the sum, the card tail, warnings and «Ha, … keldi» / «Yo'q, kelmadi». After that
   the owner's button is the **next allowed status**.
 - Courier assigned → order card from the Zumda courier bot, titled with the shop's name (address,
-  landmark, map, phone, «Оплачено заранее: денег не брать», empty bottles) with "Забрал", then
-  one "Доставил".
+  landmark, map, phone, «Оплачено заранее: денег не брать» or for cash «Mijozdan {sum} naqd
+  oling», empty bottles) with "Забрал", then one "Доставил" («Pulni oldim, yetkazdim» for cash).
 - Status change → message to the customer (courier name, never the courier's phone). Showcase
   orders: the Zumda bot writes to the customer (with the shop name); the owner still gets messages
   from the shop bot.
@@ -524,18 +542,20 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   its own location) takes orders only with the customer's pin (`LOCATION_REQUIRED`), so an
   out-of-zone order is never paid and refunded; the storefront says «{km} km gacha yetkazamiz»
 - Phone: Telegram "share contact" button, never typed by hand
-- Payment: only a transfer to the shop's card; checkout tells the sum, the order screen shows the
-  card with a copy button; the customer transfers after placing and presses «Я перевёл» with the
+- Payment: the shop's choice. Transfer: checkout tells the sum, the order screen shows the card
+  with a copy button; the customer transfers after placing and presses «Я перевёл» with the
   screenshot; the owner confirms by hand («Деньги пришли, принять», asked once more), then the
-  shop starts
+  shop starts. Cash: checkout and the order screen say the sum to give the courier. «Ikkalasi»:
+  checkout asks which one (the card first)
 
 **User Flow:**
-- Customer: Open shop link → Browse → Cart → Order → Transfer → «Я перевёл» → Track
+- Customer: Open shop link → Browse → Cart → Order → Transfer → «Я перевёл» → Track (cash:
+  Order → Track → pay the courier)
 - Showcase customer: Zumda bot → Search → Shop → Cart → Order → Track
 - Owner: New order message → the transfer arrives → «Деньги пришли, принять» → Next status →
   assign courier; catalog, couriers and the card in "Мой магазин"
 - Courier: Invite link → Zumda courier bot → phone → approved → "on shift" → assigned order card →
-  Picked up → Delivered
+  Picked up → Delivered (cash: takes the sum, «Pulni oldim, yetkazdim», hands it to the owner)
 - Network courier: approved by a point → «Да, для района» in the Zumda courier bot → "on shift" →
   «Новый заказ рядом» → «Беру» → full card → Picked up → Delivered
 
@@ -838,6 +858,9 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Money: card on the order screen → «Я перевёл» with the screenshot → «Деньги пришли,
       принять» (asked once more) → one «Доставил»; «Pul kelmadi» → sent again; a reused
       screenshot warns; cancel after paid → «Вернул»; a shop without a card takes no orders
+- [ ] Cash: «Naqd pul» in «To'lov» → no card at checkout → «Qabul qilish» without money → no
+      network option → «Mijozdan … naqd oling» → «Pulni oldim, yetkazdim» → «Pul» →
+      «Kuryerlardagi naqd pul» → «Pulni oldim»; «Ikkalasi»: the customer picks; «Karta»: no cash
 - [ ] Courier invite → assign → picked up → delivered
 - [ ] District delivery: invite → accept in the courier bot → join the network → an order of a
       point without couriers taken by a network courier → paid before cooking, no cash

@@ -1,6 +1,6 @@
 /**
- * How the customer paid. Only transfers to the shop's card now (no payment gateways); `cash` is
- * kept to read orders from before.
+ * How the customer pays: a transfer to the shop's card before the shop starts, or cash to the
+ * courier on delivery. No payment gateways.
  */
 export enum PaymentMethod {
     CASH = "cash",
@@ -26,3 +26,15 @@ export enum PaymentStatus {
 }
 
 export const PAYMENT_STATUSES: readonly PaymentStatus[] = Object.values(PaymentStatus)
+
+/**
+ * Which ways of paying a shop takes (the owner chooses in «Sozlamalar»). With `both` the customer
+ * picks one at checkout and only that one's rules apply to the order.
+ */
+export enum PaymentOptions {
+    CARD = "card",
+    CASH = "cash",
+    BOTH = "both",
+}
+
+export const PAYMENT_OPTIONS: readonly PaymentOptions[] = Object.values(PaymentOptions)

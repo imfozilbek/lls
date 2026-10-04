@@ -92,7 +92,7 @@ Yetkazish narxi hozircha sizda qoladi.
 Yangi buyurtma kelganda bot sizga xabar yuboradi: tarkibi, summasi, manzili, mo'ljal va telefon,
 hamda **💳 Kartaga o'tkazma kutilmoqda**. Mijozga bot kartangiz raqami va summani yozadi.
 
-Mijozlar **faqat kartangizga o'tkazma** bilan, **ish boshlanishidan oldin** to'laydi:
+**Kartaga o'tkazma** bilan to'langan buyurtma **ish boshlanishidan oldin** to'lanadi:
 1. Mijoz pulni o'tkazadi va ilovada **O'tkazdim** ni bosib, **o'tkazma chekining skrinshotini**
    yuboradi. Bot sizga chek rasmini, summani va kartangizning oxirgi 4 raqamini yuboradi.
 2. **Bank ilovangizni oching** va pul kartangizga kelganini ko'ring. Chek dalil emas: uni
@@ -121,7 +121,15 @@ Keyin ilovada **Mening do'konim → Buyurtmalar → Kuryer tayinlash** ni bosing
 - Buyurtma tayyor bo'lganda kuryer **🚚 Oldim**, eshik oldida **🏁 Yetkazdim** ni bosadi.
 - Mijoz kuryer ismini ko'radi: «Buyurtmangizni Jasur olib kelmoqda».
 
-Kuryer yo'q bo'lsa, hammasini o'zingiz bosasiz: **🚚 Jo'natish → 🏁 Yetkazildi**.
+**💵 Naqd pul bilan buyurtma** (do'koningiz naqd pulni olsa): botda **💵 Naqd: kuryer
+yetkazganda oladi** va oddiy **Qabul qilish** tugmasi bo'ladi: pulni kutmasdan qabul qilasiz.
+Bunday buyurtmani faqat o'z kuryeringiz yoki o'zingiz olib borasiz: tuman tarmog'iga berilmaydi.
+Kuryer kartasida **«Mijozdan … naqd oling»** yoziladi, eshik oldida kuryer **Pulni oldim,
+yetkazdim** ni bosadi. Pulni kuryerdan olganingizda: **Pul → Kuryerlardagi naqd pul → Pulni
+oldim** (har bir buyurtma uchun alohida).
+
+Kuryer yo'q bo'lsa, hammasini o'zingiz bosasiz: **🚚 Jo'natish → 🏁 Yetkazildi**. Naqd pulli
+buyurtmani o'zingiz yetkazsangiz, pul darhol do'konda hisoblanadi.
 Bekor qilish: **❌ Bekor qilish** (ilovada sababini yozish mumkin).
 
 ### 5. Suv do'koni uchun
@@ -173,23 +181,31 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
 
 ### 10. Pul
 
-**To'lov.** Mijozlar faqat **kartangizga o'tkazma** bilan, buyurtma ustida ish boshlanishidan
-oldin to'laydi. Naqd pul yo'q, kuryer pul olmaydi. Birinchi karta (16 raqam va egasining ismi)
-do'konni ulashda yoziladi. **Kartasiz buyurtma qabul qilinmaydi**: mijoz «Tez orada buyurtma
+**To'lov usuli.** **Sozlamalar → To'lov → Mijoz qanday to'laydi** da tanlaysiz:
+- **Kartaga o'tkazma**: mijoz kartangizga o'tkazadi, pul kelgach boshlaysiz (yuqorida, 4-bo'lim).
+- **Naqd pul**: mijoz kuryerga yetkazganda to'laydi. Karta shart emas. Bunday buyurtma tuman
+  tarmog'iga berilmaydi.
+- **Ikkalasi**: mijoz buyurtma berishda o'zi tanlaydi; tanlangan usul qoidasi ishlaydi.
+
+Qaytim uchun alohida joy yo'q: mijoz kerak bo'lsa izohda yozadi. **To'lov usulisiz buyurtma
+qabul qilinmaydi** (kartani tanlab, karta qo'shmagan bo'lsangiz): mijoz «Tez orada buyurtma
 qabul qila boshlaydi» ni ko'radi.
 
-**Kartalar.** **Sozlamalar → Kartalar** da xohlagancha karta qo'shasiz (20 tagacha). Mijozlarga
+**Kartalar.** **Sozlamalar → To'lov → Kartalar** da xohlagancha karta qo'shasiz (20 tagacha). Mijozlarga
 faqat **To'lov uchun** belgisi bor karta ko'rsatiladi. Boshqa kartaga o'tish: uning ostidagi
 **Shu kartaga to'lansin**; istalgan vaqtda almashtirish mumkin. Oldingi buyurtmalar o'sha paytda
 ko'rsatilgan kartani saqlaydi. To'lov uchun kartani o'chirib bo'lmaydi: avval boshqasini tanlang.
 Click/Payme yo'q: pul to'g'ridan-to'g'ri sizga.
 
 **Mening do'konim → Pul** (bugun, 7 kun, shu oy):
-- **Tushum**: tovarlar va yetkazish alohida, **o'tkazmalar orqali olingan** summa. Idish garovi:
+- **Tushum**: tovarlar va yetkazish alohida, to'langan summa (naqd bo'lsa, karta va naqd
+  alohida). Idish garovi:
   alohida, tushum emas. Vitrina buyurtmalaridan Zumda komissiyasi.
 - **Mijozlar o'tkazdi, kartani tekshiring**: mijoz **O'tkazdim** ni bosgan buyurtmalar. Tugmani
   bosing: summa, karta, chek rasmi va ogohlantirishlar chiqadi. Pul kelgan bo'lsa **Ha, … keldi**,
   kelmagan bo'lsa **Yo'q, pul kelmadi**.
+- **Kuryerlardagi naqd pul**: kuryer mijozdan olgan, sizga hali bermagan naqd pul: har bir
+  kuryer bo'yicha jami va buyurtmalar. Kuryer pulni berganda o'sha buyurtmada **Pulni oldim**.
 - **Mijozlarga qaytarish**: to'langan, keyin bekor qilingan buyurtma. Qaytarganda **Qaytardim**.
 - **Excel uchun hisobot**: bot sizga davr buyurtmalarini CSV fayl qilib yuboradi
   (Excel va Google Sheets'da ochiladi).
@@ -202,7 +218,9 @@ Click/Payme yo'q: pul to'g'ridan-to'g'ri sizga.
 2. Do'kon tasdiqlashini kuting: bot yozadi.
 3. Ishga chiqqanda **🚚 Yetkazishlarim** → **Smenadaman** ni yoqing. Smena yarim tunda tugaydi.
 4. Buyurtma kartasi botga keladi. Tayyor bo'lganda **🚚 Oldim**, eshik oldida: **🏁 Yetkazdim**.
-5. Mijoz do'kon kartasiga oldindan to'lagan: **mijozdan pul olmang**.
+5. Kartada **«Oldindan to'langan, mijozdan pul olmang»** bo'lsa, pul olmang. **«Mijozdan …
+   naqd oling»** bo'lsa, shu summani oling va **Pulni oldim, yetkazdim** ni bosing. Bu pulni
+   do'konga topshirasiz: **Yetkazishlarim** da do'kon yonida «Do'konga topshirasiz: …» turadi.
 6. **Tuman tarmog'i** (xohishga ko'ra): botda **✅ Ha, tuman uchun** yoki ilovada **Tuman
    buyurtmalarini olaman**. Smenada bo'lsangiz, yaqindagi buyurtmalar keladi: **🙋 Olaman**,
    birinchi bosgan oladi. Bir vaqtda bitta tarmoq buyurtmasi.

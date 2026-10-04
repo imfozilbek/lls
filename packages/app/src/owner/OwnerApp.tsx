@@ -124,7 +124,7 @@ export function OwnerApp(): React.JSX.Element {
             <TabBar tab={tab} onChange={(next): void => void changeTab(next)} />
             {/* «Buyurtmalar» shows the whole «Ishga tayyor»; other tabs only the card it lacks. */}
             {tab === "orders" ? <ReadyCard /> : null}
-            {shop && !shop.hasPayoutCard && tab !== "orders" ? (
+            {shop && shop.paymentMethods.length === 0 && tab !== "orders" ? (
                 <NoCardBanner onOpen={(): void => goToSection("card")} />
             ) : null}
             <div key={tab} className="animate-fade-in">
