@@ -184,6 +184,7 @@ describe("district network", () => {
             const request = await auto.execute({ orderId: order.id })
             expect(request?.district.name).toBe("Guliston")
             expect(request?.order.waitingForNetwork).toBe(true)
+            expect(request?.order.networkRequestedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
             // Only once, only for accepted orders without a courier.
             expect(await auto.execute({ orderId: order.id })).toMatchObject({
                 order: { id: order.id },

@@ -41,6 +41,8 @@ export interface OrderDTO {
     courierName?: string
     /** Waiting for a district network courier to take it. */
     waitingForNetwork: boolean
+    /** Since when the district network looks for a courier (shown as minutes waited). */
+    networkRequestedAt?: string
     /** Taken by a district network courier. */
     viaNetwork: boolean
     deliveryFeeTo: DeliveryFeeRecipient
@@ -102,6 +104,9 @@ export function toOrderDTO(order: Order): OrderDTO {
         courierId: order.courierId,
         courierName: order.courierName,
         waitingForNetwork: order.isWaitingForNetwork(),
+        networkRequestedAt: order.isWaitingForNetwork()
+            ? order.networkRequestedAt?.toISOString()
+            : undefined,
         viaNetwork: order.isViaNetwork(),
         deliveryFeeTo: order.deliveryFeeTo,
         address: order.address,
