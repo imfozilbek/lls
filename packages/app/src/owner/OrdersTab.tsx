@@ -17,6 +17,7 @@ import { usePagedList } from "../lib/paged.js"
 import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
+import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
 import { CompactAddress } from "../ui/contact-links.js"
 import {
@@ -462,7 +463,7 @@ function FocusedOrder({
 }): React.JSX.Element | null {
     const t = useT()
     const focusOrder = useOwner((state) => state.focusOrder)
-    const [order, setOrder] = useState<OrderDTO | null>(null)
+    const [order, setOrder] = useCachedState<OrderDTO>(`owner-order:${id}`)
     useEffect(() => {
         api.order(id)
             .then(setOrder)
@@ -471,7 +472,7 @@ function FocusedOrder({
                 toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
                 focusOrder(null)
             })
-    }, [id, focusOrder, t])
+    }, [id, focusOrder, t, setOrder])
     if (!order) {
         return <Skeleton className="h-64 rounded-tile" />
     }

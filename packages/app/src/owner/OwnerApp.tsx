@@ -5,6 +5,7 @@ import { cn } from "../lib/cn.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { BagIcon, CardIcon, CashIcon, GearIcon, ListIcon } from "../ui/icons.js"
+import { Settle } from "../ui/settle.js"
 
 import { MenuTab } from "./MenuTab.js"
 import { MoneyTab } from "./MoneyTab.js"
@@ -131,12 +132,12 @@ export function OwnerApp(): React.JSX.Element {
             {shop && shop.paymentMethods.length === 0 && tab !== "orders" ? (
                 <NoCardBanner onOpen={(): void => goToSection("card")} />
             ) : null}
-            <div key={tab} className="animate-fade-in">
+            <Settle key={tab} id={`owner:${tab}`} className="animate-screen-in">
                 {tab === "orders" ? <OrdersTab /> : null}
                 {tab === "menu" ? <MenuTab /> : null}
                 {tab === "money" ? <MoneyTab /> : null}
                 {tab === "settings" ? <SettingsTab /> : null}
-            </div>
+            </Settle>
         </div>
     )
 }

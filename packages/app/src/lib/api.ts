@@ -70,6 +70,12 @@ export function onWebSessionExpired(handler: (() => void) | null): void {
  * Every request carries the shop, so the Worker verifies with the right bot token: the shop's own
  * bot, or the Zumda bot that opened it (`via`). Zumda Business also works with no shop (`null`).
  */
+/** A cache key of this shop and this bot: the same list of another shop is another key. */
+export function scopedKey(key: string): string {
+    const who = courierBot ? "courier" : `${currentShop ?? "-"}:${currentVia ?? "own"}`
+    return `${who}|${key}`
+}
+
 export function setShop(slug: string | null, options: { via?: ShopVia } = {}): void {
     currentShop = slug
     currentVia = options.via ?? null

@@ -2,7 +2,9 @@ import { MONEY_PERIODS, OrderStatus } from "@zumda/core"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
-import { ApiError, api } from "../lib/api.js"
+import { ApiError, api, scopedKey } from "../lib/api.js"
+import { cached, remember } from "../lib/cache.js"
+import { cn } from "../lib/cn.js"
 import { formatMoney } from "../lib/format.js"
 import { useRefresh } from "../lib/refresh.js"
 import { confirm, haptic } from "../lib/telegram.js"
@@ -359,12 +361,20 @@ function ExportButton({ period }: { period: MoneyPeriod }): React.JSX.Element {
     )
 }
 
+const reportKey = (period: MoneyPeriod): string => `money:${scopedKey(period)}`
+
 function useReport(period: MoneyPeriod): {
     report: MoneyReportDTO | null
+    /** The report on screen is another period's: the new one is on its way. */
+    switching: boolean
     error: string | null
     load(): Promise<void>
 } {
-    const [report, setReport] = useState<MoneyReportDTO | null>(null)
+    // This session's copy shows at once; switching periods keeps the old one, dimmed, until
+    // the new one arrives: no skeleton blinking over the same tab.
+    const [report, setReport] = useState<MoneyReportDTO | null>(
+        () => cached<MoneyReportDTO>(reportKey(period)) ?? null,
+    )
     const [error, setError] = useState<string | null>(null)
     // A slow answer for the period left behind never shows under the new one.
     const latest = useRef(period)
@@ -374,7 +384,7 @@ function useReport(period: MoneyPeriod): {
         try {
             const next = await api.owner.money(period)
             if (latest.current === period) {
-                setReport(next)
+                setReport(remember(reportKey(period), next))
             }
         } catch (caught) {
             if (latest.current === period) {
@@ -383,13 +393,16 @@ function useReport(period: MoneyPeriod): {
         }
     }, [period])
     useEffect(() => {
-        setReport(null)
+        const copy = cached<MoneyReportDTO>(reportKey(period))
+        if (copy) {
+            setReport(copy)
+        }
         void load()
-    }, [load])
-    return { report, error, load }
+    }, [load, period])
+    return { report, switching: report !== null && report.period !== period, error, load }
 }
 
-function Body({ report, error, load }: ReturnType<typeof useReport>): React.JSX.Element {
+function Body({ report, switching, error, load }: ReturnType<typeof useReport>): React.JSX.Element {
     const t = useT()
     if (error && !report) {
         return (
@@ -422,12 +435,18 @@ function Body({ report, error, load }: ReturnType<typeof useReport>): React.JSX.
         )
     }
     return (
-        <>
+        <div
+            aria-busy={switching}
+            className={cn(
+                "flex flex-col gap-3 transition-opacity duration-200",
+                switching && "opacity-60",
+            )}
+        >
             <Totals report={report} />
             <CourierCash groups={report.courierCash} reload={load} />
             <OpenPayments report={report} reload={load} />
             <ExportButton period={report.period} />
-        </>
+        </div>
     )
 }
 

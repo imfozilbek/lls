@@ -99,6 +99,13 @@
     }
 }
 
+/* A screen opened again this session: its content is simply there, no entrance motion. */
+.settled .animate-rise,
+.settled .animate-fade-in,
+.settled .animate-pop {
+    animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

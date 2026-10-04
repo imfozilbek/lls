@@ -8,6 +8,7 @@ import { useMainAction } from "../lib/main-button.js"
 import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
 import { addToHomeScreen, canAddToHomeScreen, confirm, haptic } from "../lib/telegram.js"
+import { useCachedState } from "../lib/use-cached.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
@@ -303,7 +304,7 @@ function useOrder(id: string): {
     reload(): Promise<void>
     setOrder(order: OrderDTO): void
 } {
-    const [order, setOrder] = useState<OrderDTO | null>(null)
+    const [order, setOrder] = useCachedState<OrderDTO>(`order:${id}`)
     const [error, setError] = useState<string | null>(null)
 
     const reload = useCallback(async (): Promise<void> => {
@@ -313,7 +314,7 @@ function useOrder(id: string): {
         } catch (caught) {
             setError(caught instanceof ApiError ? caught.code : "generic")
         }
-    }, [id])
+    }, [id, setOrder])
 
     const active = order !== null && !isFinalStatus(order.status)
     useEffect(() => {

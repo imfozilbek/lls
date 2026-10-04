@@ -24,6 +24,7 @@ import { toast } from "./stores/toast.js"
 import { Gestures } from "./ui/gestures.js"
 import { BotIcon, StoreIcon, WifiOffIcon } from "./ui/icons.js"
 import { Button, EmptyState, Skeleton } from "./ui/primitives.js"
+import { Settle } from "./ui/settle.js"
 import { BottomBar, ToastHost, WebBackBar } from "./ui/shell.js"
 
 import type { ShopVia, WebSession } from "./lib/api.js"
@@ -322,9 +323,9 @@ function ShopApp({
     }
     // Keyed by route: a new screen slides in from the side it comes from, never from blank.
     return (
-        <div key={`${route.name}:${depth}`} className={SCREEN_IN[direction]}>
+        <Settle key={`${route.name}:${depth}`} id={route.name} className={SCREEN_IN[direction]}>
             <Screen />
-        </div>
+        </Settle>
     )
 }
 

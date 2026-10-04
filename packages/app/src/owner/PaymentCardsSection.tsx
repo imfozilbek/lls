@@ -5,6 +5,7 @@ import { errorText, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { confirm, haptic } from "../lib/telegram.js"
+import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
 import { PayoutCardFields, payoutCardIsValid } from "../ui/card-fields.js"
 import { CardIcon, CheckIcon, PlusIcon, TrashIcon } from "../ui/icons.js"
@@ -163,7 +164,7 @@ export function PaymentCardsSection({
 }): React.JSX.Element {
     const t = useT()
     const s = t.owner.settings
-    const [cards, setCards] = useState<Cards | null>(null)
+    const [cards, setCards] = useCachedState<Cards>("payout-cards")
     const [adding, setAdding] = useState(false)
     const [busy, setBusy] = useState<string | null>(null)
 
@@ -175,7 +176,7 @@ export function PaymentCardsSection({
                 setAdding(loaded.cards.length === 0)
             })
             .catch((caught: unknown) => failToast(t, caught))
-    }, [t])
+    }, [t, setCards])
 
     /** The storefront shows the payment card: keep "Мой магазин" and it in sync. */
     const changed = async (next: Cards): Promise<void> => {
@@ -207,7 +208,10 @@ export function PaymentCardsSection({
         }
         try {
             await api.owner.removeCard(id)
-            setCards((c) => c && { ...c, cards: c.cards.filter((card) => card.id !== id) })
+            setCards((c) => ({
+                ...c,
+                cards: (c?.cards ?? []).filter((card) => card.id !== id),
+            }))
             haptic.success()
         } catch (caught) {
             failToast(t, caught)

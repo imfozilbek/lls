@@ -69,7 +69,7 @@ function ReceiptPicker({
                 <img
                     src={picked.url}
                     alt={t.receipt.title}
-                    className="max-h-[36vh] w-auto rounded-control bg-tg-secondary object-contain ring-1 ring-black/5"
+                    className="h-[36vh] w-auto max-w-full rounded-control bg-tg-secondary object-contain ring-1 ring-black/5"
                 />
                 {input}
                 <label

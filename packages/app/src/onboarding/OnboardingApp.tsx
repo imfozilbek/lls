@@ -8,6 +8,7 @@ import { hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
+import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
 import { BotIcon, ChevronIcon, ShieldIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, PoweredBy, Section, Skeleton } from "../ui/primitives.js"
@@ -193,7 +194,7 @@ export function OnboardingApp({
     onPlatform(): void
 }): React.JSX.Element {
     const t = useT()
-    const [shops, setShops] = useState<ShopOwnerDTO[] | null>(null)
+    const [shops, setShops] = useCachedState<ShopOwnerDTO[]>("my-businesses")
     const [admin, setAdmin] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [wizard, setWizard] = useState(false)

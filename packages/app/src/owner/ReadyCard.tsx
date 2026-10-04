@@ -5,6 +5,7 @@ import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
+import { useCachedState } from "../lib/use-cached.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import {
@@ -343,14 +344,14 @@ export function ReadyCard(): React.JSX.Element | null {
  */
 export function StatusBanner(): React.JSX.Element | null {
     const t = useT()
-    const [shop, setShop] = useState<ShopOwnerDTO | null>(null)
+    const [shop, setShop] = useCachedState<ShopOwnerDTO>("owner-shop")
     const [busy, setBusy] = useState(false)
     useEffect(() => {
         api.owner
             .shop()
             .then(setShop)
             .catch(() => undefined)
-    }, [])
+    }, [setShop])
     if (!shop || shop.status === BusinessStatus.ACTIVE) {
         return null
     }

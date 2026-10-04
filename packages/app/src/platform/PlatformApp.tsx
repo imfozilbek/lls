@@ -4,6 +4,7 @@ import { useT } from "../i18n/index.js"
 import { useBackButton } from "../lib/main-button.js"
 import { ShieldIcon } from "../ui/icons.js"
 import { PoweredBy, Segmented } from "../ui/primitives.js"
+import { Settle } from "../ui/settle.js"
 import { BottomSpacer } from "../ui/shell.js"
 
 import { DistrictsTab } from "./DistrictsTab.js"
@@ -56,7 +57,7 @@ export function PlatformApp({
                     { value: "districts", label: t.tabs.districts },
                 ]}
             />
-            <div key={tab} className="animate-fade-in">
+            <Settle key={tab} id={`platform:${tab}`} className="animate-screen-in">
                 {tab === "applications" ? (
                     <ApplicationsTab
                         focusId={focusId}
@@ -71,7 +72,7 @@ export function PlatformApp({
                     <ShopsTab key={stamp} focusId={focusId} initialFilter={shopsFilter} />
                 ) : null}
                 {tab === "districts" ? <DistrictsTab /> : null}
-            </div>
+            </Settle>
             <PoweredBy />
             <BottomSpacer />
         </main>
