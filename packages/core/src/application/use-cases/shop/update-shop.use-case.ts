@@ -3,6 +3,7 @@ import { requireOneOf } from "../../../domain/shared/guards.js"
 import { BrandColor } from "../../../domain/value-objects/brand-color.js"
 import { Location } from "../../../domain/value-objects/location.js"
 import { Money } from "../../../domain/value-objects/money.js"
+import { Phone } from "../../../domain/value-objects/phone.js"
 import { WorkingHours } from "../../../domain/value-objects/working-hours.js"
 import { toShopOwnerDTO } from "../../dtos/shop.dto.js"
 import { districtIdFor } from "../network/network.use-cases.js"
@@ -21,6 +22,8 @@ export interface ShopSettingsPatch {
     logoKey?: string | null
     address?: string | null
     location?: LocationDTO | null
+    /** The number customers call about an order; `null` or "" removes it. */
+    contactPhone?: string | null
     delivery?: {
         fee: number
         freeFrom?: number | null
@@ -107,6 +110,9 @@ function toProfilePatch(patch: ShopSettingsPatch): ProfilePatch {
         profile.location = patch.location
             ? Location.create(patch.location.latitude, patch.location.longitude)
             : null
+    }
+    if (patch.contactPhone !== undefined) {
+        profile.contactPhone = patch.contactPhone?.trim() ? Phone.create(patch.contactPhone) : null
     }
     return profile
 }
