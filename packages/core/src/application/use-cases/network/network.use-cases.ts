@@ -1,6 +1,7 @@
 import { Courier } from "../../../domain/entities/courier.js"
 import { District, districtOf } from "../../../domain/entities/district.js"
 import { OrderStatus, isFinalStatus } from "../../../domain/enums/order-status.js"
+import { Unit } from "../../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
@@ -89,6 +90,11 @@ async function isBusy(
     return lists.flat().some((order) => order.isViaNetwork() && !isFinalStatus(order.status))
 }
 
+/** What the courier carries: pieces, and one package per weighed line (grams are no load count). */
+function piecesToCarry(order: Order): number {
+    return order.items.reduce((sum, item) => sum + (item.unit === Unit.KG ? 1 : item.quantity), 0)
+}
+
 export function toNetworkOrderDTO(order: Order, shop: Business): NetworkOrderDTO {
     return {
         id: order.id,
@@ -97,7 +103,7 @@ export function toNetworkOrderDTO(order: Order, shop: Business): NetworkOrderDTO
         shopAddress: shop.address,
         number: order.number,
         total: order.total.amount,
-        itemsCount: order.items.length,
+        itemsCount: piecesToCarry(order),
         bottlesReturned: order.bottlesReturned,
         distanceMeters:
             shop.location && order.location ? shop.location.distanceTo(order.location) : undefined,

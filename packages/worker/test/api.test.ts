@@ -358,6 +358,33 @@ describe("inside a shop", () => {
         expect(await json(response)).toMatchObject({ error: { code: "PHONE_REQUIRED" } })
     })
 
+    it("a shop with a radius asks for the customer's pin, then checks the distance", async () => {
+        const osh = await addProduct("Osh", 35_000)
+        await givePhone()
+        await asOwner()("/api/owner/shop", {
+            method: "PATCH",
+            json: {
+                location: { latitude: 41.3111, longitude: 69.2797 },
+                delivery: { fee: 5_000, radiusMeters: 3_000 },
+            },
+        })
+        const order = (location?: { latitude: number; longitude: number }): Promise<Response> =>
+            asCustomer()("/api/orders", {
+                method: "POST",
+                json: { items: [{ productId: osh, quantity: 1 }], address: "Navoiy 12", location },
+            })
+        const noPin = await order()
+        expect(noPin.status).toBe(422)
+        expect(await json(noPin)).toMatchObject({
+            error: { code: "LOCATION_REQUIRED", details: { radiusMeters: 3_000 } },
+        })
+        const far = await order({ latitude: 41.4, longitude: 69.5 })
+        expect(await json(far)).toMatchObject({ error: { code: "OUTSIDE_DELIVERY_ZONE" } })
+        expect((await order({ latitude: 41.3111, longitude: 69.2917 })).status).toBe(201)
+        const shop = await json(await asCustomer()("/api/shop"))
+        expect(shop).toMatchObject({ delivery: { radiusMeters: 3_000 } })
+    })
+
     it("owner updates shop settings", async () => {
         const response = await asOwner()("/api/owner/shop", {
             method: "PATCH",

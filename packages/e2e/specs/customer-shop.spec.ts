@@ -68,7 +68,10 @@ test.describe("customer of a food shop", () => {
 
         await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
         await expect(page.getByText(/Minimal buyurtmagacha yana 24\s000/)).toBeVisible()
-        await expect(bottomButton(page)).toBeDisabled()
+        // Below the minimum the button says what is left instead of going on.
+        await bottomButton(page).click()
+        await expect(page.getByText(/Minimal buyurtmagacha yana 24\s000/)).toHaveCount(2)
+        await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
 
         // Remove one, then reach the minimum with a main dish.
         await page

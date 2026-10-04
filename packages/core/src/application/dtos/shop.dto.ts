@@ -29,6 +29,8 @@ export interface ShopPublicDTO {
         fee: number
         freeFrom?: number
         minOrder?: number
+        /** Set with the shop's location: orders come only from inside it, with the pin. */
+        radiusMeters?: number
     }
     workingHours: WeeklySchedule | null
     acceptingOrders: boolean
@@ -98,7 +100,12 @@ export function toShopPublicDTO(
         address: business.address,
         location: toLocationDTO(business.location),
         contactPhone: business.contactPhone?.number,
-        delivery: { fee: fee.amount, freeFrom: freeFrom?.amount, minOrder: minOrder?.amount },
+        delivery: {
+            fee: fee.amount,
+            freeFrom: freeFrom?.amount,
+            minOrder: minOrder?.amount,
+            radiusMeters: business.location ? business.delivery.radiusMeters : undefined,
+        },
         workingHours: business.workingHours.toJSON(),
         acceptingOrders: business.acceptingOrders,
         isOpen: business.isOpenAt(now),

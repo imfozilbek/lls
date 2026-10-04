@@ -1,10 +1,11 @@
-import { fill, useLanguage, useT } from "../i18n/index.js"
+import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { formatMoney, formatQuantity } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
-import { confirm } from "../lib/telegram.js"
+import { confirm, haptic } from "../lib/telegram.js"
 import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
+import { toast } from "../stores/toast.js"
 import { BagIcon, TrashIcon } from "../ui/icons.js"
 import { Button, EmptyState, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
@@ -138,6 +139,20 @@ function ClosedNote({ shop }: { shop: Shop | null }): React.JSX.Element | null {
     )
 }
 
+/** Why the shop takes no order right now, in the words the Worker would use. */
+function closedReason(shop: Shop | null): string {
+    if (shop?.opensSoon) {
+        return "SHOP_NOT_ACTIVE"
+    }
+    if (shop && !shop.acceptingOrders) {
+        return "NOT_ACCEPTING_ORDERS"
+    }
+    if (shop && !shop.hasPayoutCard) {
+        return "NO_PAYOUT_CARD"
+    }
+    return "SHOP_CLOSED"
+}
+
 export function CartScreen(): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -157,8 +172,22 @@ export function CartScreen(): React.JSX.Element {
         cart.count > 0
             ? {
                   text: `${t.cart.checkout} · ${formatMoney(cart.subtotal + fee, language)}`,
-                  onClick: (): void => push({ name: "checkout" }),
-                  disabled: !canOrder,
+                  // Never a dead button: a tap that cannot go on says why.
+                  onClick: (): void => {
+                      if (canOrder) {
+                          push({ name: "checkout" })
+                          return
+                      }
+                      haptic.error()
+                      toast(
+                          belowMinimum && rules.minOrder !== undefined
+                              ? fill(t.cart.minOrderLeft, {
+                                    sum: formatMoney(rules.minOrder - cart.subtotal, language),
+                                })
+                              : errorText(t, closedReason(shop)),
+                          "error",
+                      )
+                  },
               }
             : null,
     )

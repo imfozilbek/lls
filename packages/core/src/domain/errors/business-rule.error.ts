@@ -57,11 +57,23 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
-    static outsideDeliveryZone(distanceMeters: number): BusinessRuleViolationError {
+    static outsideDeliveryZone(
+        distanceMeters: number,
+        radiusMeters: number,
+    ): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "OUTSIDE_DELIVERY_ZONE",
             "Address is outside the delivery zone",
-            { distanceMeters },
+            { distanceMeters, radiusMeters },
+        )
+    }
+
+    /** The shop delivers only so far: without the customer's pin nobody can tell. */
+    static locationRequired(radiusMeters: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "LOCATION_REQUIRED",
+            "Share the delivery location: the shop delivers within a radius",
+            { radiusMeters },
         )
     }
 

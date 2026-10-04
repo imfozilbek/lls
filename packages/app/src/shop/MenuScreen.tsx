@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { fill, useLanguage, useT } from "../i18n/index.js"
 import { api, imageUrl } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
-import { formatMoney, formatQuantity } from "../lib/format.js"
+import { formatMoney, formatQuantity, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
 import { summarize, useCart } from "../stores/cart.js"
@@ -62,6 +62,9 @@ function shopFacts(shop: Shop, t: Dictionary, language: Language): string[] {
     }
     if (delivery.minOrder) {
         facts.push(fill(t.shop.minOrder, { sum: money(delivery.minOrder) }))
+    }
+    if (delivery.radiusMeters !== undefined) {
+        facts.push(fill(t.shop.radius, { km: kmText(delivery.radiusMeters) }))
     }
     const hours = hoursToday(shop, t)
     if (hours) {

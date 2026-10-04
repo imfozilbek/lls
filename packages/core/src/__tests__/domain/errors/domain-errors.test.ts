@@ -53,9 +53,11 @@ describe("domain errors", () => {
             minOrder: 1,
             subtotal: 0,
         })
-        expect(BusinessRuleViolationError.outsideDeliveryZone(5000).rule).toBe(
-            "OUTSIDE_DELIVERY_ZONE",
-        )
+        expect(BusinessRuleViolationError.outsideDeliveryZone(5000, 3000).details).toMatchObject({
+            distanceMeters: 5000,
+            radiusMeters: 3000,
+        })
+        expect(BusinessRuleViolationError.locationRequired(3000).rule).toBe("LOCATION_REQUIRED")
         expect(BusinessRuleViolationError.phoneRequired().rule).toBe("PHONE_REQUIRED")
         expect(BusinessRuleViolationError.orderCannotBeCancelled("o", "accepted").rule).toBe(
             "ORDER_CANNOT_BE_CANCELLED",

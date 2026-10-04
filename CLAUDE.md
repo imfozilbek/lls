@@ -520,7 +520,9 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   product (app, bots, owner and courier guides). The dictionary mechanism stays (`Language`, one
   dictionary per language, no heavy i18n library): another language is one more dictionary.
   Telegram's `language_code` and old `ru` rows read as Uzbek.
-- Address: Telegram location + "ориентир" (landmark) field
+- Address: Telegram location + "ориентир" (landmark) field. A shop with a delivery radius (and
+  its own location) takes orders only with the customer's pin (`LOCATION_REQUIRED`), so an
+  out-of-zone order is never paid and refunded; the storefront says «{km} km gacha yetkazamiz»
 - Phone: Telegram "share contact" button, never typed by hand
 - Payment: only a transfer to the shop's card; checkout tells the sum, the order screen shows the
   card with a copy button; the customer transfers after placing and presses «Я перевёл» with the
