@@ -50,6 +50,11 @@ interface State {
     broken: Set<number>
     /** Chats that blocked the bot (403). */
     blocked: Set<number>
+    /**
+     * `<bot username>:<chat id>`: this person never pressed Start in this bot, so it may not
+     * write first (403), like a shop bot made with «Bot yaratish» that its owner never opened.
+     */
+    notStarted: Set<string>
     failWebhooks: boolean
     nextMessageId: number
     /** How many tokens each managed bot got so far. */
@@ -189,27 +194,43 @@ function rotateManagedToken(state: State, botId: number): string {
     return currentManagedToken(state, botId)
 }
 
-function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
+const WRITES = new Set(["sendMessage", "sendPhoto", "sendDocument", "sendChatAction"])
+
+/**
+ * Telegram refuses a message to someone who blocked the bot or never pressed Start in it, and
+ * fails (500) for a chat in an outage (messages and photos only).
+ */
+function refused(state: State, bot: Bot, call: BotCall): [number, unknown] | null {
     const chatId = Number(call.body["chat_id"])
+    if (!WRITES.has(call.method)) {
+        return null
+    }
+    if (state.notStarted.has(`${bot.username}:${chatId}`)) {
+        return fail(403, "Forbidden: bot can't initiate conversation with a user")
+    }
+    if (state.blocked.has(chatId)) {
+        return fail(403, "Forbidden: bot was blocked by the user")
+    }
+    const outage = call.method === "sendMessage" || call.method === "sendPhoto"
+    return outage && state.broken.has(chatId) ? fail(500, "Internal Server Error") : null
+}
+
+function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
+    const refusal = refused(state, bot, call)
+    if (refusal) {
+        return refusal
+    }
     switch (call.method) {
         case "getMe":
             return [200, { ok: true, result: { ...bot, is_bot: true } }]
         case "sendMessage":
         case "sendPhoto":
-            if (state.blocked.has(chatId)) {
-                return fail(403, "Forbidden: bot was blocked by the user")
-            }
-            if (state.broken.has(chatId)) {
-                return fail(500, "Internal Server Error")
-            }
+        case "sendDocument":
             return [200, { ok: true, result: { message_id: state.nextMessageId++ } }]
+        case "sendChatAction":
+            return [200, { ok: true, result: true }]
         case "setWebhook":
             return state.failWebhooks ? fail(502, "Bad Gateway") : [200, { ok: true, result: true }]
-        case "sendDocument":
-            if (state.blocked.has(chatId)) {
-                return fail(403, "Forbidden: bot was blocked by the user")
-            }
-            return [200, { ok: true, result: { message_id: state.nextMessageId++ } }]
         case "setMyProfilePhoto":
             return photoAnswer(call)
         case "savePreparedKeyboardButton":
@@ -270,6 +291,20 @@ async function serveOrs(
     send(response, 200, fakeRoute(points))
 }
 
+/** `/__control`: what a test makes Telegram do; a field left out keeps its value. */
+function applyControl(state: State, body: Record<string, unknown>): void {
+    state.broken = new Set((body["broken"] as number[] | undefined) ?? [...state.broken])
+    state.blocked = new Set((body["blocked"] as number[] | undefined) ?? [...state.blocked])
+    state.notStarted = new Set(
+        (body["notStarted"] as string[] | undefined) ?? [...state.notStarted],
+    )
+    state.failWebhooks = (body["failWebhooks"] as boolean | undefined) ?? state.failWebhooks
+    const revoked = body["revokeManagedBot"] as number | undefined
+    if (revoked !== undefined) {
+        rotateManagedToken(state, revoked)
+    }
+}
+
 async function handle(
     state: State,
     bots: Map<string, Bot>,
@@ -294,20 +329,14 @@ async function handle(
         state.calls.length = 0
         state.broken.clear()
         state.blocked.clear()
+        state.notStarted.clear()
         state.failWebhooks = false
         state.managedTokens.clear()
         send(response, 200, { ok: true })
         return
     }
     if (url.pathname === "/__control") {
-        const body = await readJson(request)
-        state.broken = new Set((body["broken"] as number[] | undefined) ?? [...state.broken])
-        state.blocked = new Set((body["blocked"] as number[] | undefined) ?? [...state.blocked])
-        state.failWebhooks = (body["failWebhooks"] as boolean | undefined) ?? state.failWebhooks
-        const revoked = body["revokeManagedBot"] as number | undefined
-        if (revoked !== undefined) {
-            rotateManagedToken(state, revoked)
-        }
+        applyControl(state, await readJson(request))
         send(response, 200, { ok: true })
         return
     }
@@ -339,6 +368,7 @@ export function startFakeTelegram(port: number): Promise<Server> {
         calls: [],
         broken: new Set(),
         blocked: new Set(),
+        notStarted: new Set(),
         failWebhooks: false,
         nextMessageId: 1000,
         managedTokens: new Map(),

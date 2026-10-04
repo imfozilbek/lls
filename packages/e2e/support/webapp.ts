@@ -309,6 +309,7 @@ function installTelegramStub(config: StubConfig): void {
             (callback as (id: string) => void)(config.confirm ? "yes" : "no"),
         ),
         openTelegramLink: record("openTelegramLink"),
+        downloadFile: record("downloadFile"),
         ...native.api,
     }
     const fire = native.fire

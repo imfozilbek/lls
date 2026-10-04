@@ -56,6 +56,8 @@ export async function resetTelegram(): Promise<void> {
 export async function controlTelegram(control: {
     broken?: number[]
     blocked?: number[]
+    /** `<bot username>:<chat id>`: never pressed Start in that bot; it may not write first. */
+    notStarted?: string[]
     failWebhooks?: boolean
     /** The owner presses «Revoke token» in @BotFather for this managed bot. */
     revokeManagedBot?: number
