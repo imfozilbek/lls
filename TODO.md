@@ -4,7 +4,7 @@ Known shortcuts. Fix an item when a real shop hits it or before the stage that n
 
 | # | Where | Debt | Why it waits | Fix when |
 |---|-------|------|--------------|----------|
-| 2 | `app` bundle | Customer JS is 91 KB gzip (+5 KB CSS) of the 100 KB budget | React alone is ~61 KB | Before adding any customer-side dependency; measure after each `vite build` |
+| 2 | `app` bundle | Customer JS is 98 KB gzip (+7 KB CSS) of the 100 KB budget; the map (MapLibre, ~300 KB) is a lazy chunk | React alone is ~61 KB | Before adding any customer-side dependency; measure after each `vite build` |
 | 4 | `worker/telegram/notifier.ts` | A failed notification is logged and the admins are alerted, but it is never retried | Customers also see the status in the app | If owners report missed order messages |
 | 6 | `app/owner/OrdersTab.tsx` | The 20 s refresh of active orders reloads only the first page | Active orders rarely exceed 20 | A shop regularly has > 20 open orders |
 | 8 | `worker` couriers | A courier removed by the owner keeps already assigned active orders; the owner must reassign them by hand | Rare in a small shop | If an owner reports a stuck order after removing a courier |
@@ -18,3 +18,5 @@ Known shortcuts. Fix an item when a real shop hits it or before the stage that n
 | 16 | API lists | `GET /api/platform/shops` and `GET /api/owner/couriers` return a plain array, not `{ data, meta }` | Both are short (a person's shops, a shop's couriers) | Before any of them can grow past one screen |
 | 17 | Money | Payments became transfer-only: the `cash_handovers` table, the `cash_courier_id` column and `PaymentMethod.CASH` stay only to read old rows | Additive schema rule; production had no cash rows yet | The release after the first production deploy: drop them in a new migration |
 | 18 | Money | No expenses: the report shows money in, not profit | Waits for the pilots' answer on how they track spending | A pilot asks for expenses |
+| 19 | Map | Every map tile goes through the Worker (100 000 requests a day on the free plan; a map opening costs about 20 to 40, the edge cache takes the repeats) | Plenty for the pilot | Workers requests near 70 000 a day: serve `map/` from an R2 custom domain `map.zumda.shop` (owner's decision) |
+| 20 | Trips | OpenRouteService's free plan has 2 000 routes a day; the way is computed only on creating and reordering a trip | A shop makes a few trips a day | Many shops with trips: count calls, or a paid plan / own routing |

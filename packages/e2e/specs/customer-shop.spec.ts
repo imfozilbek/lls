@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, GROCERY, PEOPLE, WATER, apiAs, resetStand } from "../support/stand.js"
 import { lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { bottomButton, openApp, pickOnMap } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -110,8 +110,8 @@ test.describe("customer of a food shop: order and status", () => {
         await expect(page.getByText("+998 90 123 45 67")).toBeVisible({ timeout: 20_000 })
         await page.getByRole("textbox", { name: "Manzil" }).fill("Mustaqillik 5")
         await page.getByLabel("Mo'ljal").fill("maktab yonida, ko'k darvoza")
-        await page.getByRole("button", { name: "Joylashuvni yuborish" }).click()
-        await expect(page.getByText("Joylashuv qo'shildi")).toBeVisible()
+        await pickOnMap(page)
+        await expect(page.getByRole("button", { name: /Joy belgilandi/ })).toBeVisible()
         await page.getByLabel("Izoh").fill("3-qavat")
         // Only a transfer to the shop's card (the whole path is covered in money.spec).
         await expect(page.getByRole("heading", { name: "O'tkazma orqali to'lov" })).toBeVisible()

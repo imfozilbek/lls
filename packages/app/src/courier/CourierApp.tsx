@@ -13,6 +13,7 @@ import { useRingOnNews } from "../lib/use-ring.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
 import { CashIcon, CheckIcon, ClockIcon, ScooterIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
+import { OrderMap } from "../ui/maps.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusBadge } from "../ui/order-status.js"
 import {
@@ -27,6 +28,8 @@ import {
 import { BottomSpacer } from "../ui/shell.js"
 import { SoundSwitch } from "../ui/sound-switch.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
+
+import { TripCard } from "./TripCard.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type {
@@ -167,6 +170,7 @@ function DeliveryCard({
                 <StatusBadge status={order.status} />
             </div>
             <p className="font-medium">{order.customerName}</p>
+            <OrderMap shop={order.shopLocation} customer={order.location} />
             <AddressBlock order={order} />
             <ContactLinks order={order} />
             <Collect order={order} />
@@ -403,6 +407,8 @@ function NearbyCard({
                 </span>
                 <span className="shrink-0 text-lg font-bold">#{offer.number}</span>
             </div>
+            {/* Only the shop: the customer's place shows after «Olaman». */}
+            <OrderMap shop={offer.shopLocation} className="h-28" />
             <p className="flex flex-wrap gap-x-3 text-sm text-tg-subtitle">
                 <span>{fill(t.courier.items, { n: offer.itemsCount })}</span>
                 {/* Never the customer's address before «Olaman»: only how far, when the pin is known. */}
@@ -577,6 +583,16 @@ function Deliveries({
     const t = useT()
     const active = home.orders.filter(isActive)
     const done = home.orders.filter((o) => o.status === OrderStatus.DELIVERED)
+    // A trip's orders are one card; the others stay one card each.
+    const trips = home.trips.filter((trip) => active.some((o) => o.tripId === trip.id))
+    const inTrips = new Set(trips.flatMap((trip) => trip.stops))
+    const single = active.filter((o) => !inTrips.has(o.id))
+    const replaceMany = (orders: OrderDTO[]): void => {
+        for (const order of orders) {
+            replace(order)
+        }
+    }
+    const stale = (): void => void reload()
     // Orders nearby are already on screen above: «nothing to deliver» would contradict them.
     const offersNearby = home.profile.inNetwork && home.network.length > 0
     return (
@@ -589,12 +605,35 @@ function Deliveries({
                 />
             ) : (
                 <ul className="flex flex-col gap-3" aria-label={t.courier.active}>
-                    {active.map((order) => (
+                    {trips.map((trip) => (
+                        <TripCard
+                            key={trip.id}
+                            trip={trip}
+                            orders={home.orders}
+                            onChange={replaceMany}
+                            onStale={stale}
+                            renderStop={(order, showStep): React.JSX.Element => (
+                                <>
+                                    <AddressBlock order={order} />
+                                    <ContactLinks order={order} />
+                                    <Collect order={order} />
+                                    {showStep ? (
+                                        <StepButton
+                                            order={order}
+                                            onChange={replace}
+                                            onStale={stale}
+                                        />
+                                    ) : null}
+                                </>
+                            )}
+                        />
+                    ))}
+                    {single.map((order) => (
                         <DeliveryCard
                             key={order.id}
                             order={order}
                             onChange={replace}
-                            onStale={(): void => void reload()}
+                            onStale={stale}
                         />
                     ))}
                 </ul>

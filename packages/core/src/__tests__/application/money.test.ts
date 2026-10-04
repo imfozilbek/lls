@@ -45,6 +45,7 @@ import {
     InMemoryCouriers,
     InMemoryCustomers,
     InMemoryDistricts,
+    InMemoryTrips,
     InMemoryOrders,
     InMemoryProducts,
     InMemoryReceipts,
@@ -71,8 +72,16 @@ describe("money: transfer before the shop starts, report", () => {
         couriers: InMemoryCouriers
         orders: InMemoryOrders
         districts: InMemoryDistricts
+        trips: InMemoryTrips
         clock: typeof clock
-    } => ({ businesses, couriers, orders, districts: new InMemoryDistricts(), clock })
+    } => ({
+        businesses,
+        couriers,
+        orders,
+        districts: new InMemoryDistricts(),
+        trips: new InMemoryTrips(orders),
+        clock,
+    })
     const access = (): {
         businesses: InMemoryBusinesses
         customers: InMemoryCustomers

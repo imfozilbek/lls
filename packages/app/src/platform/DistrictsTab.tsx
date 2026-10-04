@@ -7,6 +7,7 @@ import { useRefresh } from "../lib/refresh.js"
 import { getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { ChevronIcon, PinIcon, PlusIcon, WifiOffIcon } from "../ui/icons.js"
+import { PlacePick } from "../ui/maps.js"
 import { Button, EmptyState, Field, Skeleton, TextInput } from "../ui/primitives.js"
 import { Sheet } from "../ui/sheet.js"
 
@@ -20,7 +21,7 @@ const COORDINATE_DIGITS = 5
 const MIN_RADIUS_KM = 0.5
 const MAX_RADIUS_KM = 200
 
-/** "40.4897, 68.7842" (a comma or a space between), or null. */
+/** "38.9785, 66.6831" (a comma or a space between), or null. */
 function parseCenter(text: string): { latitude: number; longitude: number } | null {
     const parts = text.trim().split(/[\s,;]+/)
     if (parts.length !== 2) {
@@ -80,14 +81,18 @@ function districtInput(form: DistrictForm): DistrictInput | null {
 /** The circle's center: typed, or where the admin stands now. */
 function CenterField({
     value,
+    radiusKm,
     onChange,
 }: {
     value: string
+    /** The radius typed so far: the map shows the circle. */
+    radiusKm: number
     onChange(center: string): void
 }): React.JSX.Element {
     const t = useT()
     const p = t.platform
-    const bad = value !== "" && parseCenter(value) === null
+    const center = parseCenter(value)
+    const bad = value !== "" && center === null
     const locate = async (): Promise<void> => {
         const found = await getLocation()
         if (found) {
@@ -107,13 +112,21 @@ function CenterField({
                 aria-invalid={bad}
                 onChange={(e): void => onChange(e.target.value)}
             />
-            <Button
-                variant="secondary"
-                icon={<PinIcon size={18} className="text-brand" />}
-                onClick={(): void => void locate()}
-            >
-                {p.useMyLocation}
-            </Button>
+            <PlacePick
+                value={center}
+                onChange={(point): void => onChange(centerText(point))}
+                zone={center && radiusKm > 0 ? { center, radiusMeters: radiusKm * 1000 } : null}
+                title={p.center}
+                fallback={
+                    <Button
+                        variant="secondary"
+                        icon={<PinIcon size={18} className="text-brand" />}
+                        onClick={(): void => void locate()}
+                    >
+                        {p.useMyLocation}
+                    </Button>
+                }
+            />
         </Field>
     )
 }
@@ -164,7 +177,11 @@ function DistrictSheet({
                     onChange={(e): void => patch({ name: e.target.value })}
                 />
             </Field>
-            <CenterField value={form.center} onChange={(center): void => patch({ center })} />
+            <CenterField
+                value={form.center}
+                radiusKm={decimal(form.radius) || 0}
+                onChange={(center): void => patch({ center })}
+            />
             <div className="grid grid-cols-2 gap-3">
                 <Field label={p.radius} htmlFor="district-radius">
                     <TextInput

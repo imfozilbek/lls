@@ -11,6 +11,7 @@ const TABLES = [
     "order_items",
     "cash_handovers",
     "orders",
+    "trips",
     "courier_invites",
     "couriers",
     "courier_profiles",

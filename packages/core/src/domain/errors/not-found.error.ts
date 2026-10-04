@@ -26,6 +26,10 @@ export class EntityNotFoundError extends DomainError {
         return new EntityNotFoundError("Courier", id)
     }
 
+    static trip(id: string): EntityNotFoundError {
+        return new EntityNotFoundError("Trip", id)
+    }
+
     static invite(): EntityNotFoundError {
         return new EntityNotFoundError("CourierInvite", "code")
     }

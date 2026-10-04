@@ -16,6 +16,8 @@ import {
     productPatchBody,
     productsQuery,
     shopPatchBody,
+    tripBody,
+    tripOrderBody,
     onInvalid,
 } from "../http/schemas.js"
 import { networkAfterStep, notifyOwnerStep, reportOverdueNetworkOrders } from "../network-flow.js"
@@ -137,6 +139,15 @@ export const ownerRoutes = new Hono<AppEnv>()
                 services,
                 notifyOwnerStep(services, shopOf(c), step.order, step.request),
             )
+            // A cancelled stop leaves the trip's way.
+            if (order.tripId && order.status === OrderStatus.CANCELLED) {
+                const tripId = order.tripId
+                inBackground(
+                    c.executionCtx,
+                    services,
+                    services.useCases.refreshTripRoute.execute({ tripId }),
+                )
+            }
             return c.json(step.order)
         },
     )
@@ -183,6 +194,52 @@ export const ownerRoutes = new Hono<AppEnv>()
                 new Notifier(services).courierAssigned(business, order, previous?.courierId),
             )
             return c.json(order)
+        },
+    )
+
+    /** «Bir yo'nalish»: several orders one way with one courier, stops in this order. */
+    .post("/trips", zValidator("json", tripBody, onInvalid), async (c) => {
+        const services = c.get("services")
+        const business = shopOf(c)
+        const { courierId, orderIds } = c.req.valid("json")
+        const before = await Promise.all(orderIds.map((id) => services.orders.findById(id)))
+        const previous = new Map(before.map((o, i) => [orderIds[i] ?? "", o?.courierId]))
+        const trip = await services.useCases.createTrip.execute({
+            actorTelegramId: c.get("auth").user.id,
+            businessId: business.id,
+            courierId,
+            orderIds,
+        })
+        inBackground(
+            c.executionCtx,
+            services,
+            new Notifier(services).tripAssigned(business, trip, previous),
+        )
+        return c.json({ trip: trip.trip, orders: trip.orders }, 201)
+    })
+
+    /** The shop's trips still on the way (the orders come with `/orders`). */
+    .get("/trips", async (c) => {
+        const trips = await c.get("services").useCases.listShopTrips.execute({
+            actorTelegramId: c.get("auth").user.id,
+            businessId: shopOf(c).id,
+        })
+        return c.json({ data: trips, meta: { page: 1, limit: trips.length, total: trips.length } })
+    })
+
+    /** The owner moves the stops still to go; the way is planned again. */
+    .patch(
+        "/trips/:id",
+        zValidator("param", idParam, onInvalid),
+        zValidator("json", tripOrderBody, onInvalid),
+        async (c) => {
+            const trip = await c.get("services").useCases.reorderTrip.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: shopOf(c).id,
+                tripId: c.req.valid("param").id,
+                orderIds: c.req.valid("json").orderIds,
+            })
+            return c.json({ trip: trip.trip, orders: trip.orders })
         },
     )
 

@@ -1,4 +1,6 @@
 import { execFileSync } from "node:child_process"
+import { readFileSync, readdirSync } from "node:fs"
+import { join, sep } from "node:path"
 
 import { STATE_DIR, WORKER_DIR } from "./config.js"
 
@@ -37,4 +39,44 @@ export function runSql(command: string): void {
         ],
         { cwd: WORKER_DIR, stdio: "pipe" },
     )
+}
+
+const MAP_DIR = join(import.meta.dirname, "map")
+
+/**
+ * The stand's map: a small piece around Yakkabog' (`scripts/map-data.mjs --bbox=... --out=...`),
+ * with the label glyphs of Latin and Cyrillic and the icons, like production has them.
+ */
+export function loadMap(): void {
+    const current = JSON.parse(readFileSync(join(MAP_DIR, "current.json"), "utf8")) as {
+        file: string
+    }
+    // No spaces in R2 keys: "fonts/Noto Sans Regular/…" is stored as "fonts/noto-sans-regular/…".
+    const put = (file: string): void => {
+        const key = file.replace(
+            /^fonts\/([^/]+)/,
+            (_, font: string) => `fonts/${font.toLowerCase().replaceAll(" ", "-")}`,
+        )
+        execFileSync(
+            "bunx",
+            [
+                "wrangler",
+                "r2",
+                "object",
+                "put",
+                `zumda-media/map/${key}`,
+                `--file=${join(MAP_DIR, file)}`,
+                "--local",
+                "--persist-to",
+                STATE_DIR,
+            ],
+            { cwd: WORKER_DIR, stdio: "pipe" },
+        )
+    }
+    const files = readdirSync(MAP_DIR, { recursive: true, encoding: "utf8" })
+        .filter((file) => /\.(pbf|json|png)$/.test(file) && file !== "current.json")
+        .map((file) => file.split(sep).join("/"))
+    for (const file of [current.file, ...files, "current.json"]) {
+        put(file)
+    }
 }

@@ -1,0 +1,5 @@
+/* OpenStreetMap's credit stays (its licence asks for it): quiet, readable (13 px). */
+.zumda-map .maplibregl-ctrl-attrib {
+    font-size: 13px;
+    background: rgb(255 255 255 / 0.75);
+}

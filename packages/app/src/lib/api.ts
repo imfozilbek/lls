@@ -21,6 +21,7 @@ import type {
     MoneyReportDTO,
     ShopPublicDTO,
     ShowcaseProductDTO,
+    TripDTO,
 } from "@zumda/core"
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8787"
@@ -265,6 +266,12 @@ export interface CourierInvite {
     expiresAt: string
 }
 
+/** A trip as the API answers it: the order of its stops and its orders as they are now. */
+export interface TripWithOrders {
+    trip: TripDTO
+    orders: OrderDTO[]
+}
+
 export const api = {
     shop: (): Promise<Shop> => request("GET", "/api/shop"),
     products: (page = 1): Promise<Page<ProductDTO>> =>
@@ -364,6 +371,13 @@ export const api = {
             id: string,
             patch: { workDays?: Weekday[]; offToday?: boolean },
         ): Promise<CourierDTO> => request("PATCH", `/api/owner/couriers/${id}`, patch),
+        /** The shop's trips still on the way. */
+        trips: (): Promise<Page<TripWithOrders>> => request("GET", "/api/owner/trips"),
+        /** «Bir yo'nalish»: these orders, in this order, with one courier. */
+        createTrip: (courierId: string, orderIds: string[]): Promise<TripWithOrders> =>
+            request("POST", "/api/owner/trips", { courierId, orderIds }),
+        reorderTrip: (id: string, orderIds: string[]): Promise<TripWithOrders> =>
+            request("PATCH", `/api/owner/trips/${id}`, { orderIds }),
     },
 
     /** The Zumda courier bot's screen (`setCourierBot`): every shop the courier works for. */
@@ -380,6 +394,9 @@ export const api = {
         /** «Беру»: the order is theirs, or NETWORK_ORDER_TAKEN when someone was faster. */
         claim: (orderId: string): Promise<OrderDTO> =>
             request("POST", `/api/courier/network/orders/${orderId}/claim`),
+        /** «Hammasini oldim»: every order of the trip picked up at once. */
+        pickUpTrip: (id: string): Promise<TripWithOrders> =>
+            request("POST", `/api/courier/trips/${id}/pickup`),
     },
 
     showcase: {

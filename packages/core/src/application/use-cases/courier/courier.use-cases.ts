@@ -8,7 +8,9 @@ import { startOfLocalDay } from "../../../domain/shared/time.js"
 import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
 import { toCourierDTO, toCourierProfileDTO } from "../../dtos/courier.dto.js"
 import { toOrderDTO } from "../../dtos/order.dto.js"
+import { toLocationDTO } from "../../dtos/shop.dto.js"
 import { displayNameOf } from "../../dtos/telegram-user.js"
+import { toTripDTO } from "../../dtos/trip.dto.js"
 import { ListNetworkOrdersUseCase } from "../network/network.use-cases.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
@@ -27,6 +29,7 @@ import type { Clock } from "../../ports/clock.js"
 import type { CourierRepository } from "../../ports/courier-repository.js"
 import type { DistrictRepository } from "../../ports/district-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
+import type { TripRepository } from "../../ports/trip-repository.js"
 
 /** 12 random bytes → 16 url-safe characters: fits Telegram's `start` payload (max 64). */
 const INVITE_CODE_BYTES = 12
@@ -48,6 +51,7 @@ export interface CourierDeps {
 
 export interface CourierHomeDeps extends CourierDeps {
     districts: DistrictRepository
+    trips: TripRepository
 }
 
 /** The approved courier link of this person in this shop, or a 403. */
@@ -331,9 +335,14 @@ export class GetCourierHomeUseCase {
                     worksToday: link.worksToday(now),
                     cashToHand,
                 }
+                const shopLocation = business?.location
+                    ? toLocationDTO(business.location)
+                    : undefined
                 const shopOrders: CourierOrderDTO[] = list.map((o) => ({
                     ...toOrderDTO(o),
                     shopName,
+                    shopLocation,
+                    shopAddress: business?.address,
                 }))
                 return { shop, shopOrders, network: link.isNetwork }
             }),
@@ -345,6 +354,9 @@ export class GetCourierHomeUseCase {
                 .flatMap((p) => p.shopOrders)
                 .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
             network: await new ListNetworkOrdersUseCase(this.deps).execute(input),
+            trips: (await this.deps.trips.listOpenByCouriers(links.map((l) => l.id))).map(
+                toTripDTO,
+            ),
         }
     }
 }

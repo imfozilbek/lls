@@ -18,8 +18,9 @@ Qisqa va oddiy: do'konni ulash, katalogni to'ldirish, kuryerlarni qo'shish, buyu
    bo'ladi, Zumda uni boshqaradi: tokenni hech qayerga ko'chirish shart emas.
    - Oyna ochilmasa: **Havola orqali yaratish**.
    - BotFather'da botingiz bor bo'lsa: **Menda bot bor** → tokenni qo'ying.
-5. **3-qadam: Biznes qayerda?:** biznes turgan joyda **Joylashuvni yuborish** ni bosing va
-   manzilni yozing. Hozir imkon bo'lmasa, keyin qo'shasiz.
+5. **3-qadam: Biznes qayerda?:** **Xaritada belgilash** ni bosing: xaritani suring, nuqta
+   markazda turadi; **Joylashuvim** sizni Telegram bilgan joyga olib boradi; **Shu yer** ni
+   bosing. Keyin manzilni yozing. Hozir imkon bo'lmasa, keyin qo'shasiz.
 6. **Ariza yuborish** ni bosing. Tekshirib, xabar beramiz.
 
 **Bot darhol ishlaydi.** Ariza yuborilgan zahoti botingiz javob beradi: mijozlar do'koningizni
@@ -127,6 +128,20 @@ Bunday buyurtmani faqat o'z kuryeringiz yoki o'zingiz olib borasiz: tuman tarmog
 Kuryer kartasida **«Mijozdan … naqd oling»** yoziladi, eshik oldida kuryer **Pulni oldim,
 yetkazdim** ni bosadi. Pulni kuryerdan olganingizda: **Pul → Kuryerlardagi naqd pul → Pulni
 oldim** (har bir buyurtma uchun alohida).
+
+**🗺 Bir yo'nalish: bir kuryerga bir nechta buyurtma.** Bir tomonga ketadigan buyurtmalar
+bo'lsa, buyurtma kartasida **Shu yo'nalishda yana 2 ta** chiqadi. Bosing:
+1. Xaritada do'kon va manzillar 1, 2, 3 tartibda turadi: Zumda eng yaqinidan boshlab qo'ydi.
+   Tartibni **↑ ↓** bilan o'zgartirasiz, keraksiz buyurtmaning belgisini olib tashlaysiz.
+2. Kuryerni tanlang va **Tayinlash** ni bosing. Kuryerga bitta xabar boradi: «3 ta buyurtma
+   bir yo'nalishda, shu tartibda: #12 → #14 → #15».
+3. Kuryer hammasi tayyor bo'lganda **Hammasini oldim**, keyin **Yandex Navigatorda ochish**
+   (yo'l hamma manzillar orqali, tartib bilan) va har bir eshik oldida **Yetkazdim** ni bosadi.
+4. Kartadagi **Yo'l · 1-manzil · 1/3 yetkazildi** ni bosing: xaritada yetkazilganlari kulrang,
+   keyingisi katta. Yetkazilmaganlarining tartibini shu yerda ham o'zgartirasiz.
+
+**Xarita.** Buyurtma kartasidagi xarita belgisi buyurtmani Zumda xaritasida ochadi (do'kon va
+mijoz), pastida **Yandex xaritada ochish**.
 
 Kuryer yo'q bo'lsa, hammasini o'zingiz bosasiz: **🚚 Jo'natish → 🏁 Yetkazildi**. Naqd pulli
 buyurtmani o'zingiz yetkazsangiz, pul darhol do'konda hisoblanadi.

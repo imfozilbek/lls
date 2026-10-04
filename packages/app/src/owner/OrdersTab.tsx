@@ -6,7 +6,7 @@ import {
     formatPhone,
     isFinalStatus,
 } from "@zumda/core"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
@@ -19,6 +19,7 @@ import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { useRingOnNews } from "../lib/use-ring.js"
+import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { CompactAddress } from "../ui/contact-links.js"
 import {
@@ -41,6 +42,7 @@ import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import { PaymentCheckSheet } from "./PaymentCheck.js"
 import { useOwner } from "./store.js"
+import { TripScope, TripSlot } from "./trips.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { PagedList } from "../lib/paged.js"
@@ -395,6 +397,7 @@ function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
 function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
+    const shopPlace = useSession((state) => state.shop?.location)
     return (
         <li
             className={cn(
@@ -446,8 +449,9 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
                 </p>
             ) : null}
             <div className="mt-3 flex flex-col gap-2 border-t border-tg-separator pt-3 text-sm">
-                <CompactAddress order={order} />
+                <CompactAddress order={order} shop={shopPlace} />
                 <CourierLine order={order} />
+                <TripSlot order={order} />
             </div>
             <OrderActions order={order} onChange={onChange} onStale={onStale} />
         </li>
@@ -584,6 +588,15 @@ export function OrdersTab(): React.JSX.Element {
     const toCheck = orders?.filter(needsCheck).length ?? 0
     const replace = (order: OrderDTO): void =>
         list.update((items) => items.map((o) => (o.id === order.id ? order : o)))
+    const update = list.update
+    const replaceMany = useCallback(
+        (changed: OrderDTO[]): void => {
+            const byId = new Map(changed.map((o) => [o.id, o]))
+            update((items) => items.map((o) => byId.get(o.id) ?? o))
+        },
+        [update],
+    )
+    const shopPlace = useSession((state) => state.shop?.location)
     const refresh = (): void => void list.reload()
     // Orders waiting: «Ishga tayyor» folds into one line so the orders come first.
     const setActiveOrders = useOwner((state) => state.setActiveOrders)
@@ -625,7 +638,11 @@ export function OrdersTab(): React.JSX.Element {
         )
     } else {
         body = (
-            <div>
+            <TripScope
+                orders={filter === "active" ? list.items : null}
+                shop={shopPlace}
+                onChange={replaceMany}
+            >
                 <ul className="flex flex-col gap-3">
                     {orders.map((order) => (
                         <OrderCard
@@ -637,7 +654,7 @@ export function OrdersTab(): React.JSX.Element {
                     ))}
                 </ul>
                 <LoadMore list={list} />
-            </div>
+            </TripScope>
         )
     }
 

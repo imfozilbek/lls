@@ -54,6 +54,7 @@ import type {
     OrderDTO,
     OverdueNetworkOrder,
     ShopOwnerDTO,
+    TripResult,
 } from "@zumda/core"
 
 /**
@@ -275,6 +276,34 @@ export class Notifier {
         await this.orderChangedForOwner(token, business, order)
         // The shop's own courier took it: the network's offers are no longer open.
         await this.closeNetworkOffers(business, order)
+    }
+
+    /**
+     * The owner gave several orders one way to one courier: each order's card as for a single
+     * assignment, then one message with the order of the stops and the button to the trip.
+     */
+    async tripAssigned(
+        business: Business,
+        trip: TripResult,
+        previousCouriers: ReadonlyMap<string, string | undefined>,
+    ): Promise<void> {
+        for (const order of trip.orders) {
+            await this.courierAssigned(business, order, previousCouriers.get(order.id))
+        }
+        const chatId = trip.courierTelegramId
+        const t = textsFor((await this.readerFor(chatId, business)).language)
+        const numbers = new Map(trip.orders.map((o) => [o.id, o.number]))
+        const stops = trip.trip.stops.map((id) => `#${numbers.get(id) ?? "?"}`).join(" → ")
+        await this.services.telegram.sendMessage(
+            this.services.env.COURIER_BOT_TOKEN,
+            chatId,
+            fill(t.tripAssigned, {
+                shop: escapeHtml(business.name),
+                count: trip.trip.stops.length,
+                stops,
+            }),
+            { keyboard: { inline_keyboard: [[this.courierAppButton(t)]] } },
+        )
     }
 
     /** Only the owner's card changed (the order went to the network by hand). */

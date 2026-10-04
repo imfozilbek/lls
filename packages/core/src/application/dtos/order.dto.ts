@@ -46,6 +46,9 @@ export interface OrderDTO {
     /** Taken by a district network courier. */
     viaNetwork: boolean
     deliveryFeeTo: DeliveryFeeRecipient
+    /** In a trip of several orders with one courier, and this order's stop there (1…). */
+    tripId?: string
+    tripStop?: number
     address: string
     landmark?: string
     location?: LocationDTO
@@ -113,6 +116,8 @@ export function toOrderDTO(order: Order): OrderDTO {
             : undefined,
         viaNetwork: order.isViaNetwork(),
         deliveryFeeTo: order.deliveryFeeTo,
+        tripId: order.tripId,
+        tripStop: order.tripStop,
         address: order.address,
         landmark: order.landmark,
         location: toLocationDTO(order.location),

@@ -98,6 +98,17 @@ export const productPatchBody = productBody.partial().extend({
 
 export const assignCourierBody = z.object({ courierId: z.string().min(1).max(64) })
 
+/** «Bir yo'nalish»: the orders in the order of the stops (the core checks 2..10). */
+export const tripBody = z.object({
+    courierId: z.string().min(1).max(64),
+    orderIds: z.array(z.string().min(1).max(64)).min(1).max(20),
+})
+
+/** The owner's new order of the stops still to go. */
+export const tripOrderBody = z.object({
+    orderIds: z.array(z.string().min(1).max(64)).min(1).max(20),
+})
+
 /** The owner's week for a courier and "сегодня не работает"; at least one of them. */
 export const courierSchedulePatch = z
     .object({

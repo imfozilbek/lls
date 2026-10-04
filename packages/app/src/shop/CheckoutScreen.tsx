@@ -12,10 +12,12 @@ import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { CardIcon, CashIcon, CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
+import { PlacePick } from "../ui/maps.js"
 import { Button, Field, Section, Stepper, TextArea, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
 import type { Shop } from "../stores/session.js"
+import type { MapMarker } from "../ui/maps.js"
 import type { PaymentMethod } from "@zumda/core"
 
 const CONTACT_POLL_MS = 1500
@@ -138,6 +140,11 @@ interface Delivery {
     bottlesReturned: number
 }
 
+/** The shop's own pin on the checkout map, when it has a place. */
+function shopMarker(shop: Shop | null, title: string): MapMarker[] {
+    return shop?.location ? [{ id: "shop", point: shop.location, kind: "shop", title }] : []
+}
+
 /** A shop that delivers within a radius takes orders only with the pin (`LOCATION_REQUIRED`). */
 function needsPin(shop: Shop | null): boolean {
     return shop?.delivery.radiusMeters !== undefined
@@ -166,7 +173,23 @@ function AddressSection({
     return (
         <Section title={t.checkout.address} id={CHECKOUT_ADDRESS}>
             {/* The pin first: one tap, and the courier finds the door even without words. */}
-            <LocationButton saved={value.location !== null} onLocate={(): void => void locate()} />
+            <PlacePick
+                value={value.location}
+                onChange={(location): void => onChange({ location })}
+                start={shop?.location}
+                zone={
+                    shop?.location && radius !== undefined
+                        ? { center: shop.location, radiusMeters: radius }
+                        : null
+                }
+                markers={shopMarker(shop, t.map.shop)}
+                fallback={
+                    <LocationButton
+                        saved={value.location !== null}
+                        onLocate={(): void => void locate()}
+                    />
+                }
+            />
             <p className="-mt-1 px-1 text-sm text-tg-hint">
                 {radius === undefined
                     ? t.checkout.pinHelps

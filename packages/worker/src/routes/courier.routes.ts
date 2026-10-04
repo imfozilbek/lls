@@ -96,6 +96,28 @@ export const courierRoutes = new Hono<AppEnv>()
         return c.json(profile)
     })
 
+    /** «Hammasini oldim»: every order of the trip is picked up at once. */
+    .post("/trips/:id/pickup", zValidator("param", idParam, onInvalid), async (c) => {
+        const services = c.get("services")
+        const trip = await services.useCases.pickUpTrip.execute({
+            telegramId: c.get("auth").user.id,
+            tripId: c.req.valid("param").id,
+        })
+        const business = await services.businesses.findById(trip.trip.businessId)
+        if (business) {
+            const notifier = new Notifier(services)
+            inBackground(
+                c.executionCtx,
+                services,
+                trip.orders.reduce(
+                    (chain, order) => chain.then(() => notifier.orderChanged(business, order)),
+                    Promise.resolve(),
+                ),
+            )
+        }
+        return c.json({ trip: trip.trip, orders: trip.orders })
+    })
+
     .patch(
         "/orders/:id",
         zValidator("param", idParam, onInvalid),

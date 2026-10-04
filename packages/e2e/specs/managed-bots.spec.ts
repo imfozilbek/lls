@@ -15,7 +15,7 @@ import {
     waitForCall,
     waitForMessage,
 } from "../support/telegram.js"
-import { bottomButton, openApp, openGroup } from "../support/webapp.js"
+import { bottomButton, openApp, openGroup, pickOnMap } from "../support/webapp.js"
 
 import type { TgUser } from "../support/telegram.js"
 import type { Page } from "@playwright/test"
@@ -49,8 +49,8 @@ async function describeBusiness(page: Page, name: string): Promise<void> {
 /** Step 3: where the business is, then the application goes to the admin. */
 async function finishApplication(page: Page): Promise<void> {
     await bottomButton(page).click() // «Keyingi» after the bot
-    await page.getByRole("button", { name: "Joylashuvni yuborish" }).click()
-    await expect(page.getByText("Joylashuv olindi")).toBeVisible()
+    await pickOnMap(page)
+    await expect(page.getByRole("button", { name: /Joy belgilandi/ })).toBeVisible()
     await bottomButton(page).click() // «Ariza yuborish»
     await expect(page.getByRole("region", { name: "Ishga tayyor" })).toBeVisible()
 }

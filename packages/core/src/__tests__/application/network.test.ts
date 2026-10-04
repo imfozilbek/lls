@@ -33,6 +33,7 @@ import {
     InMemoryCouriers,
     InMemoryCustomers,
     InMemoryDistricts,
+    InMemoryTrips,
     InMemoryOrders,
     fixedClock,
 } from "../in-memory.js"
@@ -254,6 +255,7 @@ describe("district network", () => {
                 itemsCount: 2,
             })
             expect(list[0]?.distanceMeters).toBeGreaterThan(0)
+            expect(list[0]?.shopLocation).toEqual(GULISTAN)
             expect(JSON.stringify(list[0])).not.toContain("Navoiy")
             expect(JSON.stringify(list[0])).not.toContain("Aziz")
             expect(
@@ -306,12 +308,17 @@ describe("district network", () => {
             expect(delivered.payment.cashCourierId).toBeUndefined()
 
             // The courier sees the shop they delivered for through the network.
-            const home = await new GetCourierHomeUseCase(deps()).execute({ telegramId: BOBUR_TG })
+            const home = await new GetCourierHomeUseCase({
+                ...deps(),
+                trips: new InMemoryTrips(orders),
+            }).execute({ telegramId: BOBUR_TG })
             expect(home.shops.map((s) => [s.shopName, s.status])).toEqual([
                 ["Osh Markaz", "active"],
                 ["Osh Markaz", "network"],
             ])
             expect(home.orders.map((o) => o.id)).toEqual([order.id])
+            // Where to pick it up: the shop's place, for the courier's map.
+            expect(home.orders[0]?.shopLocation).toEqual(GULISTAN)
         })
 
         it("the first one wins; the second hears «already taken»", async () => {

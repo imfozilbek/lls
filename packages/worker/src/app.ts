@@ -16,6 +16,7 @@ import { adminRoutes } from "./routes/admin.routes.js"
 import { courierRoutes } from "./routes/courier.routes.js"
 import { customerRoutes } from "./routes/customer.routes.js"
 import { imageRoutes } from "./routes/image.routes.js"
+import { mapRoutes } from "./routes/map.routes.js"
 import { moneyRoutes } from "./routes/money.routes.js"
 import { ownerRoutes } from "./routes/owner.routes.js"
 import { payoutCardRoutes } from "./routes/payout-card.routes.js"
@@ -100,6 +101,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         .route("/showcase", showcaseRoutes)
     app.route("/api", api)
     app.route("/img", imageRoutes)
+    app.route("/map", mapRoutes)
     app.route("/tg", webhookRoutes)
 
     app.notFound((c) => c.json({ error: { code: "NOT_FOUND", message: "Not found" } }, 404))

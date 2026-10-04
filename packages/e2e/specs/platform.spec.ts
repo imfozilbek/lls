@@ -74,7 +74,7 @@ test("«Tumanlar»: a new district by its center, then a longer wait", async ({ 
         businessBot: true,
         query: "?mode=business&admin=districts",
     })
-    await expect(page.getByRole("listitem").filter({ hasText: "Guliston" })).toBeVisible()
+    await expect(page.getByRole("listitem").filter({ hasText: "Yakkabog'" })).toBeVisible()
     await page.getByRole("button", { name: "Yangi tuman" }).click()
     const sheet = page.getByRole("dialog")
     await sheet.getByLabel("Tuman nomi").fill("Sirdaryo")

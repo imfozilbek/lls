@@ -17,7 +17,7 @@ import type { Page } from "@playwright/test"
 /** Telegram's Bot API version that brought `WebApp.requestChat` (Managed Bots). */
 const REQUEST_CHAT_VERSION = 9.6
 
-export const GULISTAN = { latitude: 40.4897, longitude: 68.7842 }
+export const YAKKABOG = { latitude: 38.9785, longitude: 66.6831 }
 
 /** The query of a message's «open the app» button: open the app the way the button would. */
 export function appQueryOf(buttons: { web_app?: { url: string } }[]): string {
@@ -363,7 +363,7 @@ function stubConfig(options: OpenOptions, initData: string): StubConfig {
         platform: options.native ? "android" : "unknown",
         colorScheme: options.theme ?? "light",
         theme: options.theme === "dark" ? DARK_THEME : null,
-        location: options.location === undefined ? GULISTAN : options.location,
+        location: options.location === undefined ? YAKKABOG : options.location,
         confirm: options.confirm ?? true,
         writeAccess: options.writeAccess ?? true,
         contact: options.contact ?? "share",
@@ -513,4 +513,28 @@ export async function openSettings(page: Page, group: string): Promise<void> {
 /** From a part of «Sozlamalar» back to the list of parts. */
 export async function settingsBack(page: Page): Promise<void> {
     await page.getByRole("button", { name: "Sozlamalar", exact: true }).click()
+}
+
+/**
+ * Our map's picker: «Xaritada belgilash» → «Joylashuvim» (the place Telegram gives) → «Shu yer».
+ * `where` is that place (the stub's location of the person, Yakkabog' by default).
+ */
+export async function pickOnMap(
+    page: Page,
+    where: { latitude: number; longitude: number } = YAKKABOG,
+    button: RegExp | string = "Xaritada belgilash",
+): Promise<void> {
+    await page.getByRole("button", { name: button }).click()
+    const picker = page.locator("[role=dialog][data-point]")
+    await expect(picker.locator(".zumda-map")).toHaveAttribute("data-map-ready", "true", {
+        timeout: 20_000,
+    })
+    await picker.getByRole("button", { name: "Joylashuvim" }).click()
+    await expect(picker).toHaveAttribute(
+        "data-point",
+        `${where.latitude.toFixed(4)},${where.longitude.toFixed(4)}`,
+        { timeout: 10_000 },
+    )
+    await picker.getByRole("button", { name: "Shu yer" }).click()
+    await expect(picker).toBeHidden()
 }

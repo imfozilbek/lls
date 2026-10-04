@@ -1,4 +1,4 @@
-import { WEEKDAYS, isFinalStatus, searchText, searchWords, toLocalTime } from "@zumda/core"
+import { WEEKDAYS, isFinalStatus, mapUrl, searchText, searchWords, toLocalTime } from "@zumda/core"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { create } from "zustand"
 
@@ -12,8 +12,17 @@ import { useCachedState } from "../lib/use-cached.js"
 import { summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
-import { BagIcon, CloseIcon, PlusIcon, ReceiptIcon, SearchIcon, StoreIcon } from "../ui/icons.js"
+import {
+    BagIcon,
+    CloseIcon,
+    PinIcon,
+    PlusIcon,
+    ReceiptIcon,
+    SearchIcon,
+    StoreIcon,
+} from "../ui/icons.js"
 import { LanguageSwitch } from "../ui/language-switch.js"
+import { MapButton } from "../ui/maps.js"
 import { EmptyState, PoweredBy, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
@@ -22,6 +31,7 @@ import { ProductSheet } from "./ProductSheet.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { Shop } from "../stores/session.js"
+import type { MapMarker } from "../ui/maps.js"
 import type { Language, ProductDTO } from "@zumda/core"
 
 function ShopAvatar({ shop }: { shop: Shop }): React.JSX.Element {
@@ -233,6 +243,7 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                     badge={hasActiveOrder ? t.shop.activeOrder : undefined}
                     onClick={(): void => push({ name: "orders" })}
                 />
+                <ShopMapChip shop={shop} />
                 {shop.viewerRole === "owner" ? (
                     <HeaderAction
                         icon={<StoreIcon size={16} />}
@@ -243,6 +254,38 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                 ) : null}
             </div>
         </header>
+    )
+}
+
+/** «Xarita»: where the shop is and how far it delivers (the map loads only on a tap). */
+function ShopMapChip({ shop }: { shop: Shop }): React.JSX.Element | null {
+    const t = useT()
+    const location = shop.location
+    const radius = shop.delivery.radiusMeters
+    const markers = useMemo(
+        (): MapMarker[] =>
+            location ? [{ id: "shop", point: location, kind: "shop", title: shop.name }] : [],
+        [location, shop.name],
+    )
+    const zone = useMemo(
+        () =>
+            location && radius !== undefined ? { center: location, radiusMeters: radius } : null,
+        [location, radius],
+    )
+    if (!location) {
+        return null
+    }
+    return (
+        <MapButton
+            markers={markers}
+            zone={zone}
+            href={mapUrl(location)}
+            label={t.shop.map}
+            className="tap relative flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-tg-secondary px-4 font-medium"
+        >
+            <PinIcon size={16} />
+            {t.shop.map}
+        </MapButton>
     )
 }
 

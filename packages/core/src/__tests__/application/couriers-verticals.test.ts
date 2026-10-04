@@ -47,6 +47,7 @@ import {
     InMemoryBusinesses,
     InMemoryCouriers,
     InMemoryDistricts,
+    InMemoryTrips,
     InMemoryCustomers,
     InMemoryOrders,
     InMemoryProducts,
@@ -119,11 +120,16 @@ describe("shop couriers and vertical features", () => {
     }
 
     /** "Today" for the courier screen is real time: entities stamp updates with it. */
-    function homeDeps(): ReturnType<typeof courierDeps> & { districts: InMemoryDistricts } {
+    function homeDeps(): ReturnType<typeof courierDeps> & {
+        districts: InMemoryDistricts
+        trips: InMemoryTrips
+    } {
+        const deps = courierDeps()
         return {
-            ...courierDeps(),
+            ...deps,
             clock: fixedClock(new Date()),
             districts: new InMemoryDistricts(),
+            trips: new InMemoryTrips(deps.orders),
         }
     }
 

@@ -51,7 +51,7 @@ async function assigned(courierId = COURIER_ID): Promise<PlacedOrder> {
         PEOPLE.customer,
         FOOD,
         [{ productId: "dev-food-p1", quantity: 2 }],
-        { landmark: "bozor yonida", location: { latitude: 40.49, longitude: 68.78 } },
+        { landmark: "bozor yonida", location: { latitude: 38.976, longitude: 66.686 } },
     )
     expect((await accept(order.id)).status).toBe(200)
     expect((await owner(order.id, { courierId }, "/courier")).status).toBe(200)

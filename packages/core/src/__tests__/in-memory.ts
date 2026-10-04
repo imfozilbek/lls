@@ -2,6 +2,7 @@ import { offsetOf } from "../application/dtos/pagination.js"
 import { CourierStatus } from "../domain/enums/courier-status.js"
 import { ACTIVE_ORDER_STATUSES, OrderStatus } from "../domain/enums/order-status.js"
 import { PaymentStatus } from "../domain/enums/payment.js"
+import { Trip } from "../domain/entities/trip.js"
 
 import type { Page, PageRequest } from "../application/dtos/pagination.js"
 import type { BusinessRepository } from "../application/ports/business-repository.js"
@@ -16,6 +17,7 @@ import type {
 import type { PayoutCardRepository } from "../application/ports/payout-card-repository.js"
 import type { MoneyTotals, OrderRepository } from "../application/ports/order-repository.js"
 import type { ReceiptStore, ReceiptUpload } from "../application/ports/receipt-store.js"
+import type { RoutePlanner, TripRepository } from "../application/ports/trip-repository.js"
 import type {
     ProductListQuery,
     ProductRepository,
@@ -30,6 +32,8 @@ import type { District } from "../domain/entities/district.js"
 import type { Order } from "../domain/entities/order.js"
 import type { SavedPayoutCard } from "../domain/entities/payout-card-book.js"
 import type { Product } from "../domain/entities/product.js"
+import type { TripRoute } from "../domain/entities/trip.js"
+import type { GeoPoint } from "../domain/services/trip-planning.js"
 
 function paginate<T>(items: T[], request: PageRequest): Page<T> {
     const start = offsetOf(request)
@@ -525,5 +529,70 @@ export class InMemoryReceipts implements ReceiptStore {
     }
     async remove(key: string): Promise<void> {
         this.files.delete(key)
+    }
+}
+
+/** Trips in memory: the stops come from the orders (`tripId`, `tripStop`), as in D1. */
+export class InMemoryTrips implements TripRepository {
+    readonly items = new Map<string, Trip>()
+
+    constructor(private readonly orders: InMemoryOrders) {}
+
+    private withStops(trip: Trip): Trip {
+        const stops = [...this.orders.items.values()]
+            .filter((o) => o.tripId === trip.id && o.status !== OrderStatus.CANCELLED)
+            .sort((a, b) => (a.tripStop ?? 0) - (b.tripStop ?? 0))
+            .map((o) => o.id)
+        return Trip.reconstitute({
+            id: trip.id,
+            businessId: trip.businessId,
+            courierId: trip.courierId,
+            stops,
+            route: trip.route,
+            createdAt: trip.createdAt,
+            updatedAt: trip.updatedAt,
+        })
+    }
+
+    private isOpen(trip: Trip): boolean {
+        return [...this.orders.items.values()].some((o) => o.tripId === trip.id && !o.isFinal())
+    }
+
+    async insert(trip: Trip): Promise<void> {
+        this.items.set(trip.id, trip)
+    }
+    async save(trip: Trip): Promise<void> {
+        this.items.set(trip.id, trip)
+    }
+    async findById(id: string): Promise<Trip | null> {
+        const trip = this.items.get(id)
+        return trip ? this.withStops(trip) : null
+    }
+    async listOpenByBusiness(businessId: string): Promise<Trip[]> {
+        return [...this.items.values()]
+            .filter((t) => t.businessId === businessId && this.isOpen(t))
+            .map((t) => this.withStops(t))
+    }
+    async listOpenByCouriers(courierIds: readonly string[]): Promise<Trip[]> {
+        return [...this.items.values()]
+            .filter((t) => courierIds.includes(t.courierId) && this.isOpen(t))
+            .map((t) => this.withStops(t))
+    }
+}
+
+/** A road service that answers with straight lines (or nothing, when `down`). */
+export class FakeRoutes implements RoutePlanner {
+    down = false
+    calls: GeoPoint[][] = []
+
+    async route(points: readonly GeoPoint[]): Promise<TripRoute | null> {
+        this.calls.push([...points])
+        return this.down
+            ? null
+            : {
+                  line: [...points],
+                  distanceMeters: 1000 * points.length,
+                  durationSeconds: 60 * points.length,
+              }
     }
 }

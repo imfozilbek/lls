@@ -9,6 +9,7 @@ import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-butto
 import { getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { CheckIcon, DishIcon, PinIcon, ShopFrontIcon, ToolIcon } from "../ui/icons.js"
+import { PlacePick } from "../ui/maps.js"
 import { Button, Field, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
@@ -183,31 +184,39 @@ function LocationStep({
         <>
             <h1 className="text-2xl font-bold">{o.locationTitle}</h1>
             <p className="text-tg-subtitle">{o.locationText}</p>
-            {draft.location ? (
-                <div className="flex animate-pop items-center gap-3 rounded-tile bg-success/15 p-4">
-                    <span className="grid h-10 w-10 place-items-center rounded-full bg-tg-bg text-success">
-                        <CheckIcon size={22} strokeWidth={2.5} />
-                    </span>
-                    <span className="flex-1 font-semibold">{o.locationTaken}</span>
-                    <button
-                        type="button"
-                        onClick={(): void => void locate()}
-                        className="tap rounded-full px-3 py-2 text-sm font-semibold text-tg-subtitle focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
-                    >
-                        {o.locationAgain}
-                    </button>
-                </div>
-            ) : (
-                <Button
-                    variant="secondary"
-                    size="lg"
-                    loading={busy}
-                    icon={<PinIcon size={20} className="text-brand" />}
-                    onClick={(): void => void locate()}
-                >
-                    {o.locationSend}
-                </Button>
-            )}
+            <PlacePick
+                value={draft.location}
+                onChange={(location): void => patch({ location })}
+                title={o.locationTitle}
+                pin="shop"
+                fallback={
+                    draft.location ? (
+                        <div className="flex animate-pop items-center gap-3 rounded-tile bg-success/15 p-4">
+                            <span className="grid h-10 w-10 place-items-center rounded-full bg-tg-bg text-success">
+                                <CheckIcon size={22} strokeWidth={2.5} />
+                            </span>
+                            <span className="flex-1 font-semibold">{o.locationTaken}</span>
+                            <button
+                                type="button"
+                                onClick={(): void => void locate()}
+                                className="tap rounded-full px-3 py-2 text-sm font-semibold text-tg-subtitle focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                            >
+                                {o.locationAgain}
+                            </button>
+                        </div>
+                    ) : (
+                        <Button
+                            variant="secondary"
+                            size="lg"
+                            loading={busy}
+                            icon={<PinIcon size={20} className="text-brand" />}
+                            onClick={(): void => void locate()}
+                        >
+                            {o.locationSend}
+                        </Button>
+                    )
+                }
+            />
             <Field label={`${o.address} (${o.optional})`} htmlFor="shop-address">
                 <TextInput
                     id="shop-address"

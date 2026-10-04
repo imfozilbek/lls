@@ -19,7 +19,7 @@ import {
     WORKER_URL,
 } from "./config.js"
 import { startFakeTelegram } from "./fake-telegram.js"
-import { buildCore, seed } from "./seed.js"
+import { buildCore, loadMap, seed } from "./seed.js"
 
 import type { ChildProcess } from "node:child_process"
 
@@ -67,6 +67,7 @@ async function main(): Promise<void> {
     // A fresh database on every start: the schema always matches the migrations.
     rmSync(STATE_DIR, { recursive: true, force: true })
     seed({ migrate: true })
+    loadMap()
     await startFakeTelegram(FAKE_TELEGRAM_PORT)
     start(
         "bunx",
@@ -81,6 +82,11 @@ async function main(): Promise<void> {
             `TELEGRAM_API_BASE:${FAKE_TELEGRAM_URL}`,
             "--var",
             `TELEGRAM_OAUTH_BASE:${FAKE_TELEGRAM_URL}`,
+            // Trips: the way along the "roads" of the fake OpenRouteService.
+            "--var",
+            "ORS_API_KEY:stand-ors-key",
+            "--var",
+            `ORS_API_BASE:${FAKE_TELEGRAM_URL}/ors`,
         ],
         WORKER_DIR,
     )
