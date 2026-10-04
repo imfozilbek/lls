@@ -1,4 +1,4 @@
-import { Feature } from "@zumda/core"
+import { Feature, searchWords } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -7,10 +7,11 @@ import { cn } from "../lib/cn.js"
 import { formatMoney } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
+import { CatalogSearch, SEARCH_FROM, matches } from "../shop/MenuScreen.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { BagIcon, ImageIcon, MoreIcon, WifiOffIcon } from "../ui/icons.js"
+import { BagIcon, ClockIcon, ImageIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, Skeleton, Switch } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
@@ -156,7 +157,8 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
                     }}
                     className="tap grid h-11 w-11 shrink-0 place-items-center rounded-full text-tg-subtitle active:bg-tg-secondary"
                 >
-                    <MoreIcon size={22} />
+                    {/* A clock, not «…»: it only takes the item off, for today or for good. */}
+                    <ClockIcon size={22} />
                 </button>
             ) : null}
             {/* One tap does the everyday thing: off for today where the shop has a stop-list. */}
@@ -196,8 +198,58 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
     )
 }
 
+/**
+ * The owner's catalog by its sections, as customers see it; a search across all of it once the
+ * catalog is long, for «off for today» in the middle of a shift.
+ */
+function ProductGroups({
+    products,
+    query,
+}: {
+    products: ProductDTO[]
+    query: string
+}): React.JSX.Element {
+    const t = useT()
+    const words = searchWords(query)
+    if (words.length > 0) {
+        const found = products.filter((product) => matches(product, words))
+        return found.length === 0 ? (
+            <p className="py-8 text-center text-tg-hint">{t.shop.nothingFound}</p>
+        ) : (
+            <ul className="divide-y divide-tg-separator">
+                {found.map((product) => (
+                    <ProductRow key={product.id} product={product} />
+                ))}
+            </ul>
+        )
+    }
+    const names = t.categories as Record<string, string>
+    const sections = [...new Set(products.map((product) => product.category))]
+    return (
+        <>
+            {sections.map((category) => (
+                <section key={category} className="pt-3">
+                    {sections.length > 1 ? (
+                        <h2 className="px-1 pt-2 text-sm font-semibold text-tg-subtitle">
+                            {names[category] ?? category}
+                        </h2>
+                    ) : null}
+                    <ul className="divide-y divide-tg-separator">
+                        {products
+                            .filter((product) => product.category === category)
+                            .map((product) => (
+                                <ProductRow key={product.id} product={product} />
+                            ))}
+                    </ul>
+                </section>
+            ))}
+        </>
+    )
+}
+
 export function MenuTab(): React.JSX.Element {
     const t = useT()
+    const [query, setQuery] = useState("")
     const push = useRouter((state) => state.push)
     const products = useOwner((state) => state.products)
     const loadProducts = useOwner((state) => state.loadProducts)
@@ -254,6 +306,11 @@ export function MenuTab(): React.JSX.Element {
     const noPhoto = products.filter((product) => !product.imageKey).length
     return (
         <section className="px-4">
+            {products.length > SEARCH_FROM ? (
+                <div className="-mx-4 mt-2">
+                    <CatalogSearch value={query} onChange={setQuery} />
+                </div>
+            ) : null}
             {noPhoto > 0 ? (
                 // A photo sells: the storefront without them looks like a price list.
                 <p className="mt-2 flex items-center gap-2 rounded-control bg-brand/10 px-3 py-2.5 text-sm">
@@ -261,11 +318,7 @@ export function MenuTab(): React.JSX.Element {
                     {fill(t.owner.addPhotos, { n: noPhoto })}
                 </p>
             ) : null}
-            <ul className="divide-y divide-tg-separator">
-                {products.map((product) => (
-                    <ProductRow key={product.id} product={product} />
-                ))}
-            </ul>
+            <ProductGroups products={products} query={query} />
             <BottomSpacer />
         </section>
     )

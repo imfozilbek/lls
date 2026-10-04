@@ -338,7 +338,11 @@ function heroText(
         return {}
     }
     if (order.payment.status === PaymentStatus.AWAITING) {
-        return { title: t.pay.checkingTitle, hint: t.pay.checkingTime }
+        // Past the usual wait the promise turns into the truth, next to «Do'konga eslatish».
+        const late =
+            order.payment.remindableAt !== undefined &&
+            Date.parse(order.payment.remindableAt) <= Date.now()
+        return { title: t.pay.checkingTitle, hint: late ? t.pay.checkingLate : t.pay.checkingTime }
     }
     if (order.payment.rejections > 0) {
         return { title: t.pay.rejectedTitle, hint: t.pay.rejectedText, mood: "problem" }

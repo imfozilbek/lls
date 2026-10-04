@@ -21,6 +21,7 @@ import {
     AlertIcon,
     CardIcon,
     ChevronIcon,
+    ClockIcon,
     CloseIcon,
     ReceiptIcon,
     ScooterIcon,
@@ -307,6 +308,28 @@ function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
     )
 }
 
+/** After this long an open order looks late: the age turns amber. */
+const LATE_MINUTES = 30
+
+/** How long an open order has waited: the oldest needs the owner first. */
+function OrderAge({ createdAt }: { createdAt: string }): React.JSX.Element {
+    const t = useT()
+    const minutes = Math.max(0, Math.floor((Date.now() - Date.parse(createdAt)) / MINUTE_MS))
+    const late = minutes >= LATE_MINUTES
+    return (
+        <p
+            className={cn(
+                "mt-0.5 flex items-center gap-1 text-sm font-medium",
+                late ? "text-tg-text" : "text-tg-subtitle",
+            )}
+        >
+            {/* Amber only on the icon: amber text would not read on a light card. */}
+            <ClockIcon size={14} className={cn("shrink-0", late && "text-warning")} />
+            {minutes < 1 ? t.owner.ageNew : fill(t.owner.age, { n: minutes })}
+        </p>
+    )
+}
+
 /** The customer said they transferred: the owner's next move is the bank app. */
 function needsCheck(order: OrderDTO): boolean {
     return order.status === OrderStatus.PENDING && order.payment.status === PaymentStatus.AWAITING
@@ -331,6 +354,7 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
                     <p className="text-sm text-tg-hint">
                         {formatTime(order.createdAt, language)} · {order.customerName}
                     </p>
+                    {isFinalStatus(order.status) ? null : <OrderAge createdAt={order.createdAt} />}
                 </div>
                 <OrderBadge order={order} forOwner />
             </div>
@@ -454,10 +478,22 @@ function useShopOrders(filter: Filter): PagedList<OrderDTO> {
 }
 
 /** Transfers to check come first: at rush hour they are what holds a customer back. */
-function ownerQueue(items: readonly OrderDTO[], focusId: string | null): OrderDTO[] {
+/**
+ * Active orders in the order they need the owner: money to check first, then the oldest, which
+ * has waited longest. Finished ones stay newest first.
+ */
+function ownerQueue(
+    items: readonly OrderDTO[],
+    focusId: string | null,
+    active: boolean,
+): OrderDTO[] {
     return items
         .filter((order) => order.id !== focusId)
-        .sort((a, b) => Number(needsCheck(b)) - Number(needsCheck(a)))
+        .sort(
+            (a, b) =>
+                Number(needsCheck(b)) - Number(needsCheck(a)) ||
+                (active ? Date.parse(a.createdAt) - Date.parse(b.createdAt) : 0),
+        )
 }
 
 function ToCheckBanner({ count }: { count: number }): React.JSX.Element | null {
@@ -489,7 +525,7 @@ export function OrdersTab(): React.JSX.Element {
     const [filter, setFilter] = useState<Filter>("active")
     const focusId = useOwner((state) => state.focusOrderId)
     const list = useShopOrders(filter)
-    const orders = list.items ? ownerQueue(list.items, focusId) : null
+    const orders = list.items ? ownerQueue(list.items, focusId, filter === "active") : null
     const toCheck = orders?.filter(needsCheck).length ?? 0
     const replace = (order: OrderDTO): void =>
         list.update((items) => items.map((o) => (o.id === order.id ? order : o)))
