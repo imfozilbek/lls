@@ -88,7 +88,12 @@ export function OrderBadge({
 }): React.JSX.Element {
     const t = useT()
     const payment = order.payment.status
-    if (order.status !== OrderStatus.PENDING || payment === PaymentStatus.PAID) {
+    // A cash order is paid at the door: nothing about money while it waits for the shop.
+    if (
+        order.status !== OrderStatus.PENDING ||
+        payment === PaymentStatus.PAID ||
+        order.payment.method === "cash"
+    ) {
         return <StatusBadge status={order.status} />
     }
     const awaiting = payment === PaymentStatus.AWAITING
@@ -211,13 +216,18 @@ function moneyStage(state: StageState, payment: PaymentStatus, t: Dictionary): s
     return payment === PaymentStatus.AWAITING ? t.pay.checkingShort : t.pay.status.unpaid
 }
 
-/** Vertical progress: done stages filled, the current one highlighted, the rest quiet. */
+/**
+ * Vertical progress: done stages filled, the current one highlighted, the rest quiet. A cash
+ * order has no money stage: it is paid at the door.
+ */
 export function StatusTimeline({
     status,
     payment,
+    cash = false,
 }: {
     status: OrderStatus
     payment: PaymentStatus
+    cash?: boolean
 }): React.JSX.Element {
     const t = useT()
     const icon = useIcon()
@@ -227,8 +237,8 @@ export function StatusTimeline({
             {STAGES.map(({ key }, index) => {
                 const state = stageState(index, current, status)
                 const done = state === "done"
-                const label =
-                    key === OrderStatus.PENDING ? moneyStage(state, payment, t) : t.order.steps[key]
+                const money = key === OrderStatus.PENDING && !cash
+                const label = money ? moneyStage(state, payment, t) : t.order.steps[key]
                 return (
                     <li key={key} className="flex gap-3">
                         <div className="flex flex-col items-center">
@@ -240,7 +250,7 @@ export function StatusTimeline({
                             >
                                 {done ? (
                                     <CheckIcon size={15} strokeWidth={2.5} />
-                                ) : key === OrderStatus.PENDING ? (
+                                ) : money ? (
                                     <CardIcon size={15} />
                                 ) : (
                                     icon(key, 15)

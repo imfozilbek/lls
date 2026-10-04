@@ -128,7 +128,10 @@ function CourierSheet({
                     />
                 )
             })}
-            {order.waitingForNetwork || order.courierId ? null : (
+            {/* A network courier carries no money: a cash order goes only with the shop's own. */}
+            {order.waitingForNetwork ||
+            order.courierId ||
+            order.payment.method === "cash" ? null : (
                 <SheetOption
                     label={t.owner.toNetwork}
                     hint={t.owner.toNetworkHint}
@@ -208,9 +211,12 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
     }
 
     const next = order.nextStatus
-    // The shop starts only after the transfer: accepting is «Деньги пришли, принять».
+    // A transfer order starts only after the money: accepting is «Деньги пришли, принять».
+    // A cash order is accepted at once and paid at the door.
     const waitsForMoney =
-        next === OrderStatus.ACCEPTED && order.payment.status !== PaymentStatus.PAID
+        next === OrderStatus.ACCEPTED &&
+        order.payment.method !== "cash" &&
+        order.payment.status !== PaymentStatus.PAID
     const actions = t.owner.actions as Record<string, string>
     const close = (): void => setSheet(null)
     return (
@@ -415,8 +421,9 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
                 <span>{t.cart.total}</span>
                 <span className="tabular-nums">{formatMoney(order.total, language)}</span>
             </p>
-            {/* Not yet transferred: the badge already says it, once is enough. */}
+            {/* Not yet transferred: the badge already says it, once is enough. Cash says so. */}
             {order.status === OrderStatus.PENDING &&
+            order.payment.method !== "cash" &&
             order.payment.status === PaymentStatus.UNPAID ? null : (
                 <PaymentLine order={order} forOwner className="mt-1" />
             )}

@@ -4,16 +4,24 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { formatMoney } from "../lib/format.js"
-import { haptic } from "../lib/telegram.js"
+import { confirm, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
-import { CardIcon, ChartIcon, CheckIcon, ReceiptIcon, WifiOffIcon } from "../ui/icons.js"
+import {
+    CardIcon,
+    CashIcon,
+    ChartIcon,
+    CheckIcon,
+    ReceiptIcon,
+    ScooterIcon,
+    WifiOffIcon,
+} from "../ui/icons.js"
 import { Button, EmptyState, Segmented, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
 import { PaymentCheckSheet } from "./PaymentCheck.js"
 
 import type { Dictionary } from "../i18n/index.js"
-import type { MoneyPeriod, MoneyReportDTO, OrderDTO } from "@zumda/core"
+import type { CourierCashDTO, MoneyPeriod, MoneyReportDTO, OrderDTO } from "@zumda/core"
 import type { ReactNode } from "react"
 
 function failToast(t: Dictionary, caught: unknown): void {
@@ -93,6 +101,20 @@ function Totals({ report }: { report: MoneyReportDTO }): React.JSX.Element {
             <div className="mt-3 rounded-control bg-tg-bg px-3 py-2 text-sm">
                 <Row label={m.goods} value={sum(totals.goods)} />
                 <Row label={m.delivery} value={sum(totals.delivery)} />
+                {totals.paidCash > 0 ? (
+                    <>
+                        <Row
+                            label={m.byCard}
+                            value={sum(totals.paid - totals.paidCash)}
+                            icon={<CardIcon size={16} className="text-tg-hint" />}
+                        />
+                        <Row
+                            label={m.byCash}
+                            value={sum(totals.paidCash)}
+                            icon={<CashIcon size={16} className="text-tg-hint" />}
+                        />
+                    </>
+                ) : null}
                 {totals.deposits > 0 ? (
                     <Row label={m.deposits} value={sum(totals.deposits)} />
                 ) : null}
@@ -152,6 +174,79 @@ function ListBlock({ title, children }: { title: string; children: ReactNode }):
     )
 }
 
+/**
+ * Cash the shop's couriers took at the door and still hold: per courier, per order. «Pulni oldim»
+ * on each order, asked once more, as the courier hands it over.
+ */
+function CourierCash({
+    groups,
+    reload,
+}: {
+    groups: CourierCashDTO[]
+    reload(): Promise<void>
+}): React.JSX.Element | null {
+    const t = useT()
+    const language = useLanguage()
+    const m = t.owner.money
+    const { busy, run } = useAction(reload)
+    if (groups.length === 0) {
+        return null
+    }
+    const take = async (group: CourierCashDTO, order: OrderDTO): Promise<void> => {
+        const question = fill(m.cashConfirm, {
+            name: group.courierName,
+            n: order.number,
+            sum: formatMoney(order.total, language),
+        })
+        if (!(await confirm(question))) {
+            return
+        }
+        await run(order.id, async () => {
+            await api.owner.receiveCash(order.id)
+            toast(m.cashTaken, "success")
+        })
+    }
+    return (
+        <section
+            aria-label={m.courierCashTitle}
+            className="animate-rise rounded-tile bg-tg-secondary p-4"
+        >
+            <h2 className="text-sm font-semibold text-tg-subtitle">{m.courierCashTitle}</h2>
+            <p className="mb-3 text-sm text-tg-hint">{m.courierCashHint}</p>
+            <div className="flex flex-col gap-4">
+                {groups.map((group) => (
+                    <div key={group.courierId} className="flex flex-col gap-2">
+                        <p className="flex items-center gap-2 px-1">
+                            <ScooterIcon size={18} className="shrink-0 text-brand" />
+                            <span className="min-w-0 flex-1 truncate font-semibold">
+                                {group.courierName}
+                            </span>
+                            <span className="font-bold tabular-nums">
+                                {formatMoney(group.total, language)}
+                            </span>
+                        </p>
+                        <ul className="flex flex-col gap-2">
+                            {group.orders.map((order) => (
+                                <OpenOrder key={order.id} order={order}>
+                                    <Button
+                                        className="grow"
+                                        variant="surface"
+                                        icon={<CashIcon size={18} />}
+                                        loading={busy === order.id}
+                                        onClick={(): void => void take(group, order)}
+                                    >
+                                        {m.cashReceived}
+                                    </Button>
+                                </OpenOrder>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
+            </div>
+        </section>
+    )
+}
+
 /** Transfers to check and money owed back: what needs the owner now. */
 function OpenPayments({
     report,
@@ -165,7 +260,7 @@ function OpenPayments({
     const { busy, run } = useAction(reload)
     const [checking, setChecking] = useState<OrderDTO | null>(null)
     const refresh = (): void => void reload()
-    if (report.awaiting.length + report.refunds.length === 0) {
+    if (report.awaiting.length + report.refunds.length + report.courierCash.length === 0) {
         return (
             <p className="flex items-center gap-2 px-1 text-sm text-tg-hint">
                 <CheckIcon size={18} className="shrink-0 text-success" />
@@ -229,7 +324,7 @@ function isEmpty(report: MoneyReportDTO): boolean {
     const { totals } = report
     return (
         totals.placed + totals.delivered + totals.cancelled === 0 &&
-        report.awaiting.length + report.refunds.length === 0
+        report.awaiting.length + report.refunds.length + report.courierCash.length === 0
     )
 }
 
@@ -326,13 +421,14 @@ function Body({ report, error, load }: ReturnType<typeof useReport>): React.JSX.
     return (
         <>
             <Totals report={report} />
+            <CourierCash groups={report.courierCash} reload={load} />
             <OpenPayments report={report} reload={load} />
             <ExportButton period={report.period} />
         </>
     )
 }
 
-/** «Деньги»: what came in by transfer, and what still needs the owner. */
+/** «Pul»: what came in by transfer and in cash, and what still needs the owner. */
 export function MoneyTab(): React.JSX.Element {
     const t = useT()
     const [period, setPeriod] = useState<MoneyPeriod>("today")

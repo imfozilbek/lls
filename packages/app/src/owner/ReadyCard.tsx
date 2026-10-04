@@ -264,7 +264,7 @@ export function ReadyCard(): React.JSX.Element | null {
         return null
     }
     const items = itemsOf(t, {
-        hasCard: shop.hasPayoutCard,
+        hasCard: shop.paymentMethods.length > 0,
         located: shop.location !== undefined,
         hasHours: shop.workingHours !== null || ticks.hours,
         products: products.length,

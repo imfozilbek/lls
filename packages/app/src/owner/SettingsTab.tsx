@@ -28,6 +28,7 @@ import { BottomSpacer } from "../ui/shell.js"
 import { CouriersSection, NetworkSection } from "./CouriersSection.js"
 import { HoursEditor } from "./HoursEditor.js"
 import { PaymentCardsSection } from "./PaymentCardsSection.js"
+import { PaymentOptionsSection } from "./PaymentOptionsSection.js"
 import { PosterSection } from "./PosterSection.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 import { useOwner } from "./store.js"
@@ -565,7 +566,7 @@ function groupTitle(s: Settings, group: SettingsGroup): string {
         hours: s.hours,
         location: s.address,
         features: s.features,
-        card: s.payoutCard,
+        card: s.paymentGroup,
         courier: s.couriers,
         link: s.linkGroup,
     }
@@ -589,6 +590,18 @@ function hoursSummary(s: Settings, hours: Hours): string {
     return same ? `${days} · ${first.from}-${first.to}` : days
 }
 
+/** «Karta · •••• 9012», «Naqd pul»; a warning when no way of paying works. */
+function paymentSummary(s: Settings, shop: ShopOwnerDTO): { text: string; warn?: boolean } {
+    if (shop.paymentMethods.length === 0) {
+        return { text: s.summary.noCard, warn: true }
+    }
+    const card = shop.paymentOptions === "cash" ? undefined : shop.payoutCard
+    const tail = card ? `•••• ${card.number.slice(-4)}` : null
+    return {
+        text: [s.summary.payment[shop.paymentOptions], tail].filter(Boolean).join(" · "),
+    }
+}
+
 /** One line under each part's name: what is set there now. */
 function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string; warn?: boolean }> {
     const t = useT()
@@ -603,7 +616,6 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
     }, [couriers, loadCouriers])
     const { fee } = shop.delivery
     const radius = shop.deliveryRadiusMeters
-    const card = shop.payoutCard
     const on = shop.features.map((f) => s.featureNames[f])
     const team = couriers?.filter((c) => c.status === "active").length
     return {
@@ -625,9 +637,7 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
             ? { text: shop.address || s.summary.onMap }
             : { text: s.summary.noLocation, warn: true },
         features: { text: on.length > 0 ? on.join(", ") : s.summary.noFeatures },
-        card: card
-            ? { text: `•••• ${card.number.slice(-4)} · ${card.holder}` }
-            : { text: s.summary.noCard, warn: true },
+        card: paymentSummary(s, shop),
         courier: {
             text:
                 team === undefined
@@ -764,6 +774,7 @@ function GroupBody({
     form: Form
     patch(change: Partial<Form>): void
 }): React.JSX.Element {
+    const settings = useT().owner.settings
     switch (group) {
         case "shop":
             return <ShopFields shop={shop} onSaved={onSaved} form={form} patch={patch} />
@@ -780,7 +791,14 @@ function GroupBody({
         case "features":
             return <FeatureFields form={form} patch={patch} />
         case "card":
-            return <PaymentCardsSection onSaved={onSaved} />
+            return (
+                <>
+                    <PaymentOptionsSection shop={shop} onSaved={onSaved} />
+                    {shop.paymentOptions === "cash" ? null : (
+                        <PaymentCardsSection title={settings.payoutCard} onSaved={onSaved} />
+                    )}
+                </>
+            )
         case "courier":
             return (
                 <>

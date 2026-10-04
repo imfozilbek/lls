@@ -9,7 +9,7 @@ import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
-import { CheckIcon, ClockIcon, ScooterIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
+import { CashIcon, CheckIcon, ClockIcon, ScooterIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusBadge } from "../ui/order-status.js"
 import {
@@ -83,6 +83,11 @@ function StepButton({
             setBusy(false)
         }
     }
+    // Cash: the tap that says «delivered» also says the money is in the courier's hands.
+    const delivered =
+        order.payment.method === "cash" && order.payment.status !== PaymentStatus.PAID
+            ? t.courier.cashDelivered
+            : t.courier.delivered
     return (
         <Button
             size="lg"
@@ -90,15 +95,35 @@ function StepButton({
             icon={step === "delivered" ? <CheckIcon size={20} /> : <ScooterIcon size={20} />}
             onClick={(): void => void go()}
         >
-            {step === "delivered" ? t.courier.delivered : t.courier.pickedUp}
+            {step === "delivered" ? delivered : t.courier.pickedUp}
         </Button>
     )
 }
 
-/** Paid to the shop's card before the shop started: the courier takes no money at the door. */
+/**
+ * Paid to the shop's card before the shop started: the courier takes no money at the door. A
+ * cash order: the sum to take, large, then that it was taken.
+ */
 function Collect({ order }: { order: OrderDTO }): React.JSX.Element {
     const t = useT()
+    const language = useLanguage()
     const paid = order.payment.status === PaymentStatus.PAID
+    if (order.payment.method === "cash") {
+        const sum = formatMoney(order.total, language)
+        return (
+            <p
+                className={`flex items-center gap-2 rounded-control px-4 py-3 ${
+                    paid ? "bg-success/15 font-medium" : "bg-warning/15 text-lg font-bold"
+                }`}
+            >
+                <CashIcon
+                    size={22}
+                    className={`shrink-0 ${paid ? "text-success" : "text-warning"}`}
+                />
+                {fill(paid ? t.courier.cashTaken : t.courier.collectCash, { sum })}
+            </p>
+        )
+    }
     return (
         <p
             className={`flex items-center gap-2 rounded-control px-4 py-3 font-medium ${
@@ -446,6 +471,7 @@ function shopStanding(t: Dictionary, shop: CourierShopDTO): string {
 
 function ShopRow({ shop }: { shop: CourierShopDTO }): React.JSX.Element {
     const t = useT()
+    const language = useLanguage()
     return (
         <li className="flex items-center gap-3 py-2.5">
             <span
@@ -462,6 +488,14 @@ function ShopRow({ shop }: { shop: CourierShopDTO }): React.JSX.Element {
                 >
                     {shopStanding(t, shop)}
                 </span>
+                {shop.cashToHand > 0 ? (
+                    <span className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold">
+                        <CashIcon size={16} className="shrink-0 text-warning" />
+                        {fill(t.courier.cashToHand, {
+                            sum: formatMoney(shop.cashToHand, language),
+                        })}
+                    </span>
+                ) : null}
             </span>
         </li>
     )
