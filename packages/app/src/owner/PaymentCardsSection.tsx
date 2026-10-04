@@ -173,7 +173,8 @@ export function PaymentCardsSection({
             .cards()
             .then((loaded) => {
                 setCards(loaded)
-                setAdding(loaded.cards.length === 0)
+                // No card yet: the form opens itself; a late answer never closes an open form.
+                setAdding((open) => open || loaded.cards.length === 0)
             })
             .catch((caught: unknown) => failToast(t, caught))
     }, [t, setCards])
