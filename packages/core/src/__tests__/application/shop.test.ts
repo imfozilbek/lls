@@ -383,7 +383,12 @@ describe("shop use cases", () => {
             expect(shop.name).toBe("Osh Markaz №1")
             expect(shop.brandColor).toBe("#f97316")
             expect(shop.address).toBeUndefined()
-            expect(shop.delivery).toEqual({ fee: 5_000, freeFrom: undefined, minOrder: 30_000 })
+            expect(shop.delivery).toEqual({
+                fee: 5_000,
+                freeFrom: undefined,
+                minOrder: 30_000,
+                radiusMeters: 4_000,
+            })
             expect(shop.deliveryRadiusMeters).toBe(4_000)
             expect(shop.workingHours).toEqual({ mon: { open: "10:00", close: "22:00" } })
             expect(shop.acceptingOrders).toBe(false)

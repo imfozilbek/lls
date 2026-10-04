@@ -342,15 +342,22 @@ export class Business {
         }
     }
 
-    /** Only checked when the shop set a radius and both points are known. */
+    /**
+     * A shop with a radius and its own location takes orders only from inside it, so the
+     * customer's pin is required there: without it an out-of-zone order would be paid, then
+     * refunded. A shop without a radius (or without a location) delivers anywhere.
+     */
     assertDeliversTo(destination: Location | undefined): void {
         const { radiusMeters } = this.props.delivery
-        if (radiusMeters === undefined || !this.props.location || !destination) {
+        if (radiusMeters === undefined || !this.props.location) {
             return
+        }
+        if (!destination) {
+            throw BusinessRuleViolationError.locationRequired(radiusMeters)
         }
         const distance = this.props.location.distanceTo(destination)
         if (distance > radiusMeters) {
-            throw BusinessRuleViolationError.outsideDeliveryZone(distance)
+            throw BusinessRuleViolationError.outsideDeliveryZone(distance, radiusMeters)
         }
     }
 

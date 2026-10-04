@@ -82,7 +82,7 @@ describe("Business", () => {
         expect(() => makeBusiness().assertMinOrder(Money.of(1))).not.toThrow()
     })
 
-    it("checks the delivery radius only when everything is known", () => {
+    it("checks the delivery radius once the shop has a radius and a location", () => {
         const business = makeBusiness({ delivery: { fee: Money.of(0), radiusMeters: 3_000 } })
         const near = Location.create(41.3111, 69.2917)
         const far = Location.create(41.4, 69.5)
@@ -90,7 +90,9 @@ describe("Business", () => {
         business.updateProfile({ location: Location.create(41.3111, 69.2797) })
         expect(() => business.assertDeliversTo(near)).not.toThrow()
         expect(() => business.assertDeliversTo(far)).toThrow(/delivery zone/)
-        expect(() => business.assertDeliversTo(undefined)).not.toThrow()
+        // No pin: the shop cannot tell, so the customer must share it.
+        expect(() => business.assertDeliversTo(undefined)).toThrow(/delivery location/)
+        expect(() => makeBusiness().assertDeliversTo(undefined)).not.toThrow()
     })
 
     it("updates profile fields and can clear optional ones", () => {
