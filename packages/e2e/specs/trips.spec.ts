@@ -37,6 +37,23 @@ async function setStatus(id: string, status: string): Promise<void> {
 
 test.describe.configure({ mode: "serial" })
 
+// What the page itself says when something breaks: CI keeps only the log.
+test.beforeEach(({ page }) => {
+    page.on("pageerror", (error) => console.error(`pageerror: ${error.message}`))
+    page.on("console", (message) => {
+        if (message.type() === "error" || message.type() === "warning") {
+            console.error(`console.${message.type()}: ${message.text()}`)
+        }
+    })
+})
+
+test.afterEach(async ({ page }, info) => {
+    if (info.status !== info.expectedStatus) {
+        const text = await page.evaluate(() => document.body.innerText).catch(() => "")
+        console.error(`page text at failure:\n${text.slice(0, 2000)}`)
+    }
+})
+
 test.beforeAll(async () => {
     await resetStand()
     // Far, near, middle: Zumda puts them near → middle → far.
