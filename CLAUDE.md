@@ -122,7 +122,10 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - **Many cards, one shown.** A shop keeps as many cards as it needs (up to 20) and chooses the
   **payment card** customers are shown; it switches it at any moment (owner's decision). Every
   order keeps the card it was shown (`payment_card_*` snapshot). The payment card is never
-  removed.
+  removed. Any card is taken (16 digits, the Luhn check); its system is told by the first digits
+  (`cardSystemOf`: Humo 9860, Uzcard 8600 and 5614, Mir 2200-2204, Mastercard 51-55 and
+  2221-2720, Visa 4, UnionPay 62) and shown to the owner, the customer and in the bot's transfer
+  message; a card of an unknown system is saved after one question (owner's decision).
 - **No way of paying, no orders.** «To'lov usuli» is the first step of «Ishga tayyor» (the
   owner's checklist after the application): a card shop needs a card, a cash shop needs none, a
   «both» shop without a card takes cash only. A shop with no working way shows «Tez orada
