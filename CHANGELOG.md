@@ -7,6 +7,14 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The card's system
+- **Added:** Humo, Uzcard, Visa, Mastercard, UnionPay and Mir are told by the card's first digits
+  (owner's decision): shown while the owner types the number, in the list of cards, to the
+  customer next to the shop's card, and in the bot's transfer message. Any card is still taken
+  (16 digits, the Luhn check); one of an unknown system is saved after one question.
+- **Fixed (app):** a late answer with the list of cards closed the «Karta qo'shish» form the owner
+  had just opened.
+
 ### The owner always hears: Zumda | Business until Start in the shop's bot
 - **Fixed:** a shop whose bot was made with «Bot yaratish» and never opened by its owner got no
   QR poster («Telegram hozir javob bermadi») and lost the owner's order messages silently:

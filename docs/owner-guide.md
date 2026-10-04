@@ -29,6 +29,9 @@ Qisqa va oddiy: do'konni ulash, katalogni to'ldirish, kuryerlarni qo'shish, buyu
 **Ishga tayyor.** Tekshiruv paytida ilovada «Ishga tayyor» ro'yxati turadi. Har bir qatorni
 bosing, u kerakli joyni ochadi:
 - **To'lov kartasi:** mijozlar faqat shu kartaga o'tkazadi. Kartasiz buyurtma qabul qilinmaydi.
+  Istalgan karta bo'ladi: Humo, Uzcard, Visa, Mastercard va boshqalar. Raqamni yozganingizda
+  karta turi ko'rinadi, xato raqam saqlanmaydi. Zumda turini tanimagan karta bir marta so'rab
+  saqlanadi.
 - **Joylashuv**, **Ish vaqti**, **Kamida 3 ta mahsulot**, **Logotip** (botingiz rasmi ham shu
   bo'ladi).
 - **Kuryer:** kuryer taklif qiling yoki **O'zim yetkazaman** ni bosing.

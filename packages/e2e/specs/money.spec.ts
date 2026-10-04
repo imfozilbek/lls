@@ -375,6 +375,9 @@ test("many cards: the owner adds one, makes it the payment card; old orders keep
     await expect(cards.getByRole("listitem")).toHaveCount(1)
     await expect(cards.getByRole("listitem").first()).toContainText("To'lov uchun")
     await cards.getByRole("button", { name: "Karta qo'shish" }).click()
+    // The system shows as soon as the first digits tell it.
+    await page.getByLabel("Karta raqami").fill("5614")
+    await expect(cards.getByText("Uzcard kartasi")).toBeVisible()
     await page.getByLabel("Karta raqami").fill("5614 6812 3456 7893")
     await page.getByLabel("Kartadagi ism").fill("Malika Karimova")
     await cards.getByRole("button", { name: "Kartani saqlash" }).click()
@@ -393,6 +396,8 @@ test("many cards: the owner adds one, makes it the payment card; old orders keep
     await page.getByRole("button", { name: "Buyurtmalarim" }).click()
     await page.getByRole("button", { name: new RegExp(`Buyurtma #${before.number}`) }).click()
     await expect(page.getByText(CARD)).toBeVisible()
+    // The customer sees the card's system too.
+    await expect(page.getByText("Uzcard", { exact: true })).toBeVisible()
     const after = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
     const read = await apiAs(PEOPLE.customer, `/orders/${after.id}`, { shop: FOOD })
     expect(
@@ -400,6 +405,22 @@ test("many cards: the owner adds one, makes it the payment card; old orders keep
     ).toMatchObject({
         number: "5614681234567893",
     })
+})
+
+test("a card Zumda does not know is asked about once, then saved", async ({ page }) => {
+    await openOwner(page)
+    await openSettings(page, "To'lov")
+    const cards = page.getByRole("region", { name: "To'lov" })
+    await cards.getByRole("button", { name: "Karta qo'shish" }).click()
+    // A valid number (Luhn) whose first digits are no known system. secret-scan: fake
+    await page.getByLabel("Karta raqami").fill("1234 5678 9012 3452")
+    await page.getByLabel("Kartadagi ism").fill("Malika Karimova")
+    await expect(cards.getByText("Bu karta turini tanimadik")).toBeVisible()
+    await cards.getByRole("button", { name: "Kartani saqlash" }).click()
+    await expect(page.getByText("Karta qo'shildi")).toBeVisible()
+    await expect(
+        cards.getByRole("listitem").filter({ hasText: "1234 5678 9012 3452" }),
+    ).toBeVisible()
 })
 
 test("no card, no orders: the storefront waits; the owner adds the card from the banner", async ({

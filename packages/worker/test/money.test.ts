@@ -181,7 +181,7 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect(order.payment).toMatchObject({ method: "card_transfer", status: "unpaid" })
         // The customer has the card and the sum in the chat right away.
         const toPay = client.telegram.sent.filter((m) => m.chatId === CUSTOMER.id).at(-1)
-        expect(toPay?.html).toContain("4111 1111 1111 1111")
+        expect(toPay?.html).toContain("Visa <code>4111 1111 1111 1111</code>")
         expect(toPay?.html).toContain("80 000")
 
         // Only the customer of the order says it is sent.

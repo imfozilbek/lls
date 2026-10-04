@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentStatus } from "@zumda/core"
+import { OrderStatus, PaymentStatus, cardSystemOf } from "@zumda/core"
 
 import { fill, useLanguage, useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
@@ -108,6 +108,7 @@ export function CardBlock({
 }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
+    const system = cardSystemOf(card.number)
     /** The bank app wants both: the card number and the exact sum, digits only. */
     const copy = async (text: string, done: string, shown: string): Promise<void> => {
         try {
@@ -122,7 +123,17 @@ export function CardBlock({
     }
     return (
         <div className="animate-rise rounded-tile bg-tg-secondary p-4">
-            <p className="text-sm text-tg-hint">{t.pay.cardTitle}</p>
+            <p className="text-sm text-tg-hint">
+                {t.pay.cardTitle}
+                {system ? (
+                    <>
+                        {" · "}
+                        <span className="font-semibold text-tg-subtitle">
+                            {t.pay.cardSystems[system]}
+                        </span>
+                    </>
+                ) : null}
+            </p>
             <p className="mt-1 text-xl font-bold tracking-wide tabular-nums">
                 {groupCard(card.number)}
             </p>

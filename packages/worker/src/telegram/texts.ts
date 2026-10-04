@@ -195,7 +195,16 @@ const BASE = {
             "Do'kon #{n} buyurtma uchun pulni topmadi. Kartangizdan o'tganini tekshiring va chekni qayta yuboring.",
         transferRejectedOwner: "#{n}: «Pul kelmadi» belgilandi. Mijozdan chekni qayta so'radik.",
         payByTransfer:
-            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n<code>{card}</code> ({holder})\nSo'ng ilovada «O'tkazdim» ni bosing. Pul kelishi bilan do'kon boshlaydi.",
+            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n{system}<code>{card}</code> ({holder})\nSo'ng ilovada «O'tkazdim» ni bosing. Pul kelishi bilan do'kon boshlaydi.",
+        /** A card's system before its number; Zumda does not know every card (then nothing). */
+        cardSystems: {
+            humo: "Humo",
+            uzcard: "Uzcard",
+            visa: "Visa",
+            mastercard: "Mastercard",
+            unionpay: "UnionPay",
+            mir: "Mir",
+        },
         reportCaption: "📊 {shop}: buyurtmalar, {from} - {to}",
         csv: {
             headers: [

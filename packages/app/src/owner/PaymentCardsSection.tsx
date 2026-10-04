@@ -1,4 +1,4 @@
-import { MAX_PAYOUT_CARDS } from "@zumda/core"
+import { MAX_PAYOUT_CARDS, cardSystemOf } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, useT } from "../i18n/index.js"
@@ -7,7 +7,7 @@ import { cn } from "../lib/cn.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
-import { PayoutCardFields, payoutCardIsValid } from "../ui/card-fields.js"
+import { PayoutCardFields, cardIsUnknown, payoutCardIsValid } from "../ui/card-fields.js"
 import { CardIcon, CheckIcon, PlusIcon, TrashIcon } from "../ui/icons.js"
 import { Button, Section, Skeleton } from "../ui/primitives.js"
 
@@ -41,6 +41,13 @@ function AddCard({
     const [saving, setSaving] = useState(false)
     const valid = payoutCardIsValid(draft.number, draft.holder)
     const save = async (): Promise<void> => {
+        // Any card is taken; one whose first digits Zumda does not know is asked about once.
+        if (
+            cardIsUnknown(draft.number) &&
+            !(await confirm(s.cardUnknownConfirm, { yes: s.cardUnknownYes }))
+        ) {
+            return
+        }
         setSaving(true)
         try {
             onAdded(await api.owner.addCard({ number: draft.number, holder: draft.holder.trim() }))
@@ -106,7 +113,9 @@ function CardRow({
     onChoose(): void
     onRemove(): void
 }): React.JSX.Element {
-    const s = useT().owner.settings
+    const t = useT()
+    const s = t.owner.settings
+    const system = cardSystemOf(card.number)
     return (
         <li
             className={cn(
@@ -119,6 +128,11 @@ function CardRow({
                     <CardIcon size={24} />
                 </span>
                 <span className="min-w-0 flex-1">
+                    {system ? (
+                        <span className="block text-sm font-semibold text-tg-subtitle">
+                            {t.pay.cardSystems[system]}
+                        </span>
+                    ) : null}
                     <span className="block font-semibold tabular-nums tracking-wide">
                         {grouped(card.number)}
                     </span>
