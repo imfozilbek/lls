@@ -40,6 +40,7 @@ import {
     InMemoryCouriers,
     InMemoryCustomers,
     InMemoryDistricts,
+    InMemoryTrips,
     InMemoryOrders,
     InMemoryProducts,
     InMemoryReceipts,
@@ -67,6 +68,7 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
         products,
         districts: new InMemoryDistricts(),
         receipts: new InMemoryReceipts(),
+        trips: new InMemoryTrips(orders),
         clock,
     })
     const ids = (order: OrderDTO, actorTelegramId = OWNER_TG) => ({

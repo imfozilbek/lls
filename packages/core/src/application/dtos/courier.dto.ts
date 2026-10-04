@@ -1,5 +1,6 @@
 import type { OrderDTO } from "./order.dto.js"
 import type { LocationDTO } from "./shop.dto.js"
+import type { TripDTO } from "./trip.dto.js"
 import type { CourierProfile } from "../../domain/entities/courier-profile.js"
 import type { Courier, CourierUnavailableReason } from "../../domain/entities/courier.js"
 import type { CourierStatus } from "../../domain/enums/courier-status.js"
@@ -105,4 +106,6 @@ export interface CourierHomeDTO {
     orders: CourierOrderDTO[]
     /** Network orders of the courier's districts waiting for «Беру» (empty when not in network). */
     network: NetworkOrderDTO[]
+    /** Trips still on the way: their orders are in `orders` (`tripId`, `tripStop`). */
+    trips: TripDTO[]
 }

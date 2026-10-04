@@ -270,4 +270,31 @@ export class BusinessRuleViolationError extends DomainError {
             { orderId },
         )
     }
+
+    /** A trip has 2..10 stops, each an order of this shop with the customer's pin. */
+    static tripStops(min: number, max: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "TRIP_STOPS",
+            `A trip has from ${min} to ${max} orders with the customer's place`,
+            { min, max },
+        )
+    }
+
+    /** This order cannot join a trip (taken by the network, already in a trip, no place). */
+    static notForTrip(orderId: string, why: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NOT_FOR_TRIP",
+            `Order "${orderId}" cannot join a trip: ${why}`,
+            { orderId, why },
+        )
+    }
+
+    /** «Hammasini oldim» only when every order of the trip is ready. */
+    static tripNotReady(ready: number, total: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "TRIP_NOT_READY",
+            `${ready} of ${total} orders are ready`,
+            { ready, total },
+        )
+    }
 }

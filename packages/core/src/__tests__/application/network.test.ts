@@ -33,6 +33,7 @@ import {
     InMemoryCouriers,
     InMemoryCustomers,
     InMemoryDistricts,
+    InMemoryTrips,
     InMemoryOrders,
     fixedClock,
 } from "../in-memory.js"
@@ -307,7 +308,10 @@ describe("district network", () => {
             expect(delivered.payment.cashCourierId).toBeUndefined()
 
             // The courier sees the shop they delivered for through the network.
-            const home = await new GetCourierHomeUseCase(deps()).execute({ telegramId: BOBUR_TG })
+            const home = await new GetCourierHomeUseCase({
+                ...deps(),
+                trips: new InMemoryTrips(orders),
+            }).execute({ telegramId: BOBUR_TG })
             expect(home.shops.map((s) => [s.shopName, s.status])).toEqual([
                 ["Osh Markaz", "active"],
                 ["Osh Markaz", "network"],

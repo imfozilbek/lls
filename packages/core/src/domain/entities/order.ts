@@ -11,6 +11,7 @@ import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ForbiddenError } from "../errors/forbidden.error.js"
 import { InvalidOrderTransitionError } from "../errors/invalid-transition.error.js"
 import { ValidationError } from "../errors/validation.error.js"
+import { MAX_TRIP_STOPS } from "../services/trip-planning.js"
 import { optionalText, requireInteger, requireText } from "../shared/guards.js"
 import { Money } from "../value-objects/money.js"
 import { Payment } from "../value-objects/payment.js"
@@ -79,6 +80,9 @@ export interface OrderProps {
     networkAlertedAt?: Date
     /** Who gets the delivery fee: a snapshot, fixed when a courier takes the order. */
     deliveryFeeTo?: DeliveryFeeRecipient
+    /** One trip of several orders going one way with one courier, and this order's stop (1…). */
+    tripId?: string
+    tripStop?: number
     createdAt: Date
     updatedAt: Date
 }
@@ -247,6 +251,12 @@ export class Order {
     get networkAlertedAt(): Date | undefined {
         return this.props.networkAlertedAt
     }
+    get tripId(): string | undefined {
+        return this.props.tripId
+    }
+    get tripStop(): number | undefined {
+        return this.props.tripStop
+    }
     get deliveryFeeTo(): DeliveryFeeRecipient {
         return this.props.deliveryFeeTo ?? DeliveryFeeRecipient.BUSINESS
     }
@@ -393,6 +403,11 @@ export class Order {
         if (reason !== null) {
             throw BusinessRuleViolationError.courierNotAvailable(courier.id, reason)
         }
+        // Given to someone else: it leaves the trip it was in.
+        if (this.props.tripId !== undefined && this.props.courierId !== courier.id) {
+            this.props.tripId = undefined
+            this.props.tripStop = undefined
+        }
         this.props.courierId = courier.id
         this.props.courierName = courier.name
         // The shop's own courier takes it: the network no longer needs to.
@@ -432,6 +447,30 @@ export class Order {
         this.props.courierId = link.id
         this.props.courierName = link.name
         this.props.deliveryFeeTo = NETWORK_DELIVERY_FEE_RECIPIENT
+        this.touch()
+    }
+
+    /**
+     * Joins a trip as stop `stop` (after `assignCourier`): only an order of the shop's own
+     * courier, still before pickup, with the customer's pin.
+     */
+    joinTrip(tripId: string, stop: number): void {
+        if (!ASSIGNABLE.includes(this.props.status)) {
+            throw BusinessRuleViolationError.orderNotAssignable(this.props.id, this.props.status)
+        }
+        if (!this.props.location) {
+            throw BusinessRuleViolationError.notForTrip(this.props.id, "no_location")
+        }
+        if (this.isViaNetwork() || this.props.courierId === undefined) {
+            throw BusinessRuleViolationError.notForTrip(this.props.id, "no_own_courier")
+        }
+        this.props.tripId = tripId
+        this.setTripStop(stop)
+    }
+
+    /** The owner put the stops in another order. */
+    setTripStop(stop: number): void {
+        this.props.tripStop = requireInteger("tripStop", stop, 1, MAX_TRIP_STOPS)
         this.touch()
     }
 

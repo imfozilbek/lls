@@ -38,6 +38,10 @@ export * from "./domain/entities/district.js"
 export * from "./domain/entities/order.js"
 export * from "./domain/entities/order-item.js"
 export * from "./domain/entities/product.js"
+export * from "./domain/entities/trip.js"
+
+// Domain - Services
+export * from "./domain/services/trip-planning.js"
 
 // Domain - Errors
 export * from "./domain/errors/index.js"
