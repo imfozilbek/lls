@@ -82,6 +82,10 @@ export interface WebApp {
     /** 9.1: closes the keyboard. */
     hideKeyboard?(): void
     openTelegramLink?(url: string): void
+    /** 6.1: a link outside Telegram, in the phone's browser. */
+    openLink?(url: string): void
+    /** 8.0: Telegram's own "save the file" window. */
+    downloadFile?(params: { url: string; file_name: string }): void
     /** Bot API 9.6: opens a prepared button's window, here «create a bot» (Managed Bots). */
     requestChat?(preparedId: string, callback?: (shared: boolean) => void): void
 }
@@ -141,6 +145,9 @@ export const haptic = {
     },
     error(): void {
         webApp()?.HapticFeedback.notificationOccurred("error")
+    },
+    warning(): void {
+        webApp()?.HapticFeedback.notificationOccurred("warning")
     },
 }
 
@@ -401,6 +408,34 @@ export function canAddToHomeScreen(): Promise<boolean> {
 
 export function addToHomeScreen(): void {
     webApp()?.addToHomeScreen?.()
+}
+
+/**
+ * Saves a file (the QR poster): Telegram's own window from 8.0, the browser before it, and in a
+ * plain browser (business.zumda.shop) a link the file's `Content-Disposition` turns into a save.
+ */
+export function downloadFile(url: string, fileName: string): void {
+    const app = webApp()
+    if (app?.downloadFile && app.isVersionAtLeast("8.0")) {
+        app.downloadFile({ url, file_name: fileName })
+        return
+    }
+    if (app?.openLink) {
+        app.openLink(url)
+        return
+    }
+    const link = document.createElement("a")
+    link.href = url
+    link.download = fileName
+    link.rel = "noopener"
+    document.body.append(link)
+    link.click()
+    link.remove()
+}
+
+/** The shop's bot opened on Start: once the owner presses it, orders and files come there. */
+export function shopBotStartLink(botUsername: string): string {
+    return `https://t.me/${botUsername}?start=owner`
 }
 
 export function openTelegramLink(url: string): void {
