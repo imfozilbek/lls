@@ -120,13 +120,15 @@ export function ReceiptThumb({
                     setOpen(true)
                 }}
                 aria-label={t.receipt.open}
-                className="tap flex w-20 shrink-0 flex-col items-center gap-1"
+                className="tap flex shrink-0 flex-col items-center gap-1"
             >
                 {/* Whole, never cropped: the sum and the card digits may sit anywhere on it. */}
                 <span className="block h-24 w-20 overflow-hidden rounded-control bg-white ring-1 ring-black/10">
                     <img src={loaded.url} alt="" className="h-full w-full object-contain" />
                 </span>
-                <span className="text-xs font-semibold text-brand">{t.receipt.zoom}</span>
+                <span className="whitespace-nowrap text-xs font-semibold text-brand">
+                    {t.receipt.zoom}
+                </span>
             </button>
             {open ? <ReceiptViewer url={loaded.url} onClose={(): void => setOpen(false)} /> : null}
         </>

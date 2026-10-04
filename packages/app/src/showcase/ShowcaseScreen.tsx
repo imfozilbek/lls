@@ -130,25 +130,27 @@ function CategoryChips({
         return null
     }
     const names = t.categories as Record<string, string>
+    const chip = (key: Category | null, label: string): React.JSX.Element => (
+        <button
+            key={key ?? "all"}
+            type="button"
+            aria-pressed={active === key}
+            onClick={(): void => {
+                haptic.select()
+                setCategory(active === key ? null : key)
+            }}
+            className={cn(
+                "tap h-11 shrink-0 rounded-full px-4 text-sm font-semibold transition-colors duration-200",
+                active === key ? "bg-brand text-brand-ink" : "bg-tg-secondary",
+            )}
+        >
+            {label}
+        </button>
+    )
     return (
         <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)]">
-            {categories.map((category) => (
-                <button
-                    key={category}
-                    type="button"
-                    aria-pressed={active === category}
-                    onClick={(): void => {
-                        haptic.select()
-                        setCategory(active === category ? null : category)
-                    }}
-                    className={cn(
-                        "tap h-11 shrink-0 rounded-full px-4 text-sm font-semibold transition-colors duration-200",
-                        active === category ? "bg-brand text-brand-ink" : "bg-tg-secondary",
-                    )}
-                >
-                    {names[category] ?? category}
-                </button>
-            ))}
+            {chip(null, t.showcase.allCategories)}
+            {categories.map((category) => chip(category, names[category] ?? category))}
         </nav>
     )
 }

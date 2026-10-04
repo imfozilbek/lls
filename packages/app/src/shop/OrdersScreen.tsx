@@ -36,17 +36,20 @@ function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.J
                 className="tap flex w-full items-center gap-3 rounded-tile bg-tg-secondary p-4 text-left"
             >
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-baseline justify-between gap-2">
                         <span className="whitespace-nowrap font-semibold">
                             {fill(t.order.title, { n: order.number })}
                         </span>
-                        <OrderBadge order={order} />
-                    </div>
-                    <p className="mt-1 truncate text-sm text-tg-hint">{preview}</p>
-                    <p className="mt-2 flex justify-between text-sm">
-                        <span className="text-tg-hint">
+                        <span className="text-sm text-tg-hint">
                             {formatTime(order.createdAt, language)}
                         </span>
+                    </div>
+                    {/* On its own line: beside the number a long status wrapped and squeezed it. */}
+                    <div className="mt-1.5 flex">
+                        <OrderBadge order={order} />
+                    </div>
+                    <p className="mt-1.5 truncate text-sm text-tg-hint">{preview}</p>
+                    <p className="mt-1 flex justify-end text-sm">
                         <span className="font-semibold tabular-nums">
                             {formatMoney(order.total, language)}
                         </span>

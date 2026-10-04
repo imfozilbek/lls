@@ -47,3 +47,48 @@ export function AddressBlock({ order }: { order: OrderDTO }): React.JSX.Element 
         </div>
     )
 }
+
+const ICON_LINK =
+    "tap grid h-11 w-11 shrink-0 place-items-center rounded-full bg-tg-bg text-brand ring-1 ring-black/5"
+
+/**
+ * The owner's order list: address and landmark on one line, call and map as two round buttons.
+ * A card stays short in a rush; the full block is for the courier at the door.
+ */
+export function CompactAddress({ order }: { order: OrderDTO }): React.JSX.Element {
+    const t = useT()
+    const map = order.location ? mapUrl(order.location) : null
+    return (
+        <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+                <p className="line-clamp-2">
+                    <span className="font-medium">{order.address}</span>
+                    {order.landmark ? (
+                        <span className="text-tg-hint"> · {order.landmark}</span>
+                    ) : null}
+                </p>
+                {order.comment ? <p className="line-clamp-2 italic">«{order.comment}»</p> : null}
+            </div>
+            {order.customerPhone ? (
+                <a
+                    href={`tel:${order.customerPhone}`}
+                    aria-label={t.owner.call}
+                    className={ICON_LINK}
+                >
+                    <PhoneIcon size={20} />
+                </a>
+            ) : null}
+            {map ? (
+                <a
+                    href={map}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t.owner.map}
+                    className={ICON_LINK}
+                >
+                    <PinIcon size={20} />
+                </a>
+            ) : null}
+        </div>
+    )
+}

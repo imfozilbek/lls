@@ -14,6 +14,7 @@ import {
     ChevronIcon,
     ClockIcon,
     ImageIcon,
+    PhoneIcon,
     PinIcon,
     ScooterIcon,
 } from "../ui/icons.js"
@@ -58,6 +59,7 @@ function itemsOf(
     t: Dictionary["owner"]["ready"],
     state: {
         hasCard: boolean
+        hasPhone: boolean
         located: boolean
         hasHours: boolean
         products: number
@@ -72,6 +74,13 @@ function itemsOf(
             title: t.card,
             hint: t.cardHint,
             done: state.hasCard,
+        },
+        {
+            id: "phone",
+            icon: <PhoneIcon size={20} />,
+            title: t.phone,
+            hint: t.phoneHint,
+            done: state.hasPhone,
         },
         {
             id: "location",
@@ -233,6 +242,7 @@ export function ReadyCard(): React.JSX.Element | null {
         hasHours: shop.workingHours !== null,
         products: products.length,
         hasLogo: shop.logoKey !== undefined,
+        hasPhone: shop.contactPhone !== undefined,
         delivers: selfDelivery || couriers.some((courier) => courier.isActive),
     })
     const done = items.filter((item) => item.done).length

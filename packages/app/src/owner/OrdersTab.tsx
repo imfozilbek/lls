@@ -9,7 +9,7 @@ import { formatMoney, formatQuantity, formatTime } from "../lib/format.js"
 import { usePagedList } from "../lib/paged.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
-import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
+import { CompactAddress } from "../ui/contact-links.js"
 import {
     AlertIcon,
     CardIcon,
@@ -195,7 +195,7 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
     const actions = t.owner.actions as Record<string, string>
     const close = (): void => setSheet(null)
     return (
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="mt-3 flex flex-col gap-1">
             {next && waitsForMoney ? (
                 // No screenshot yet: possible, but not the main thing to do.
                 <Button
@@ -251,6 +251,8 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
     )
 }
 
+const MINUTE_MS = 60_000
+
 /** Who brings it: the shop's courier, a network courier, or the network is still looking. */
 function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
     const t = useT()
@@ -258,7 +260,22 @@ function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
         return (
             <p className="flex items-start gap-2 px-1 font-medium text-tg-subtitle">
                 <ScooterIcon size={18} className="mt-0.5 shrink-0 animate-pulse text-brand" />
-                <span className="min-w-0">{t.owner.networkSearching}</span>
+                <span className="min-w-0">
+                    {t.owner.networkSearching}
+                    {order.networkRequestedAt ? (
+                        <span className="block text-sm font-normal text-tg-hint">
+                            {fill(t.owner.networkWaited, {
+                                n: Math.max(
+                                    0,
+                                    Math.floor(
+                                        (Date.now() - Date.parse(order.networkRequestedAt)) /
+                                            MINUTE_MS,
+                                    ),
+                                ),
+                            })}
+                        </span>
+                    ) : null}
+                </span>
             </p>
         )
     }
@@ -294,16 +311,18 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
             )}
             data-needs-check={needsCheck(order) || undefined}
         >
-            <div className="flex items-center justify-between gap-2">
-                <span className="text-lg font-bold">
-                    {fill(t.order.title, { n: order.number })}
-                </span>
+            <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                    <span className="text-lg font-bold">
+                        {fill(t.order.title, { n: order.number })}
+                    </span>
+                    <p className="text-sm text-tg-hint">
+                        {formatTime(order.createdAt, language)} · {order.customerName}
+                    </p>
+                </div>
                 <OrderBadge order={order} forOwner />
             </div>
-            <p className="text-sm text-tg-hint">
-                {formatTime(order.createdAt, language)} · {order.customerName}
-            </p>
-            <ul className="mt-3 flex flex-col gap-1">
+            <ul className="mt-2 flex flex-col gap-0.5">
                 {order.items.map((item) => (
                     <li key={item.productId} className="flex gap-2">
                         <span className="shrink-0 font-semibold tabular-nums">
@@ -313,7 +332,7 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
                     </li>
                 ))}
             </ul>
-            <p className="mt-2 flex justify-between font-semibold">
+            <p className="mt-1.5 flex justify-between font-semibold">
                 <span>{t.cart.total}</span>
                 <span className="tabular-nums">{formatMoney(order.total, language)}</span>
             </p>
@@ -332,10 +351,9 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
                     {fill(t.owner.showcaseOrder, { sum: formatMoney(order.commission, language) })}
                 </p>
             ) : null}
-            <div className="mt-3 flex flex-col gap-2 text-sm">
-                <AddressBlock order={order} />
+            <div className="mt-3 flex flex-col gap-2 border-t border-tg-separator pt-3 text-sm">
+                <CompactAddress order={order} />
                 <CourierLine order={order} />
-                <ContactLinks order={order} />
             </div>
             <OrderActions order={order} onChange={onChange} onStale={onStale} />
         </li>
