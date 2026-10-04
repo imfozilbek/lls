@@ -5,6 +5,7 @@ import {
     OwnerChat,
     PaymentMethod,
     PaymentStatus,
+    cardSystemOf,
     toNetworkOrderDTO,
 } from "@zumda/core"
 
@@ -150,10 +151,12 @@ export class Notifier {
             return
         }
         const token = await this.shopToken(business.id)
+        const system = cardSystemOf(card.number)
         await this.tellCustomer(token, business, order, (t, language) =>
             fill(t.payByTransfer, {
                 n: order.number,
                 sum: `<b>${formatMoney(order.total, language)}</b>`,
+                system: system ? `${t.cardSystems[system]} ` : "",
                 card: card.number.replace(/(\d{4})(?=\d)/g, "$1 "),
                 holder: escapeHtml(card.holder),
             }),
