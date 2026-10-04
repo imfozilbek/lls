@@ -82,6 +82,7 @@ export interface NetworkOrderDTO {
     number: number
     /** What the order costs (already paid by transfer: nothing to take at the door). */
     total: number
+    /** Pieces to carry: the quantities of piece items, plus one package per weighed item. */
     itemsCount: number
     bottlesReturned: number
     /** Shop → customer, straight line, when both locations are known. */

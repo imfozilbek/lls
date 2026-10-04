@@ -250,7 +250,8 @@ describe("district network", () => {
             expect(list[0]).toMatchObject({
                 shopName: "Osh Markaz",
                 total: 80_000,
-                itemsCount: 1,
+                // Two portions of one dish: the courier carries two.
+                itemsCount: 2,
             })
             expect(list[0]?.distanceMeters).toBeGreaterThan(0)
             expect(JSON.stringify(list[0])).not.toContain("Navoiy")
