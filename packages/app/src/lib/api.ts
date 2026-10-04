@@ -192,6 +192,7 @@ export type ShopPatch = Partial<{
     brandColor: string
     address: string | null
     location: { latitude: number; longitude: number } | null
+    contactPhone: string | null
     delivery: {
         fee: number
         freeFrom?: number | null

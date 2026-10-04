@@ -23,6 +23,8 @@ export interface ShopPublicDTO {
     logoKey?: string
     address?: string
     location?: LocationDTO
+    /** E.164: the number customers call about an order, when the owner gave one. */
+    contactPhone?: string
     delivery: {
         fee: number
         freeFrom?: number
@@ -95,6 +97,7 @@ export function toShopPublicDTO(
         logoKey: business.logoKey,
         address: business.address,
         location: toLocationDTO(business.location),
+        contactPhone: business.contactPhone?.number,
         delivery: { fee: fee.amount, freeFrom: freeFrom?.amount, minOrder: minOrder?.amount },
         workingHours: business.workingHours.toJSON(),
         acceptingOrders: business.acceptingOrders,

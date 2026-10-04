@@ -22,6 +22,7 @@ import { BusinessRuleViolationError } from "../../domain/errors/business-rule.er
 import { ConflictError } from "../../domain/errors/conflict.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../domain/errors/not-found.error.js"
+import { ValidationError } from "../../domain/errors/validation.error.js"
 import { Location } from "../../domain/value-objects/location.js"
 import { NOON_MONDAY_UZ, OWNER_TG, STRANGER_TG, TEST_CARD, makeBusiness } from "../fixtures.js"
 import {
@@ -398,6 +399,32 @@ describe("shop use cases", () => {
             })
             expect(shop.location).toBeUndefined()
             expect(shop.workingHours).toBeNull()
+        })
+
+        it("saves the contact phone in E.164, clears it with null or empty text", async () => {
+            await businesses.save(makeBusiness())
+            const update = (contactPhone: string | null): Promise<{ contactPhone?: string }> =>
+                new UpdateShopUseCase(businesses, clock).execute({
+                    actorTelegramId: OWNER_TG,
+                    businessId: "biz-1",
+                    patch: { contactPhone },
+                })
+            expect((await update("90 123-45-67")).contactPhone).toBe("+998901234567")
+            expect((await businesses.findById("biz-1"))?.contactPhone?.number).toBe("+998901234567")
+            expect((await update("  ")).contactPhone).toBeUndefined()
+            await update("+998901234567")
+            expect((await update(null)).contactPhone).toBeUndefined()
+        })
+
+        it("rejects a contact phone that is not a number", async () => {
+            await businesses.save(makeBusiness())
+            await expect(
+                new UpdateShopUseCase(businesses, clock).execute({
+                    actorTelegramId: OWNER_TG,
+                    businessId: "biz-1",
+                    patch: { contactPhone: "12" },
+                }),
+            ).rejects.toThrow(ValidationError)
         })
 
         it("forbids strangers", async () => {

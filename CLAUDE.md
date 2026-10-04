@@ -103,7 +103,9 @@ cover each one's whole process; what exactly comes from the meeting with them.
   `pn:` in the bot). «Pul kelmadi» puts the order back to unpaid, counts it
   (`transfer_rejections`, shown to the owner on the customer's next transfers) and asks the
   customer to send again. No AI check of pictures: a fake or edited screenshot cannot be told
-  reliably.
+  reliably. When the owner gave a **contact phone** (optional, «Sozlamalar»), the customer's
+  order screen shows «Do'konga qo'ng'iroq» while the money is open (owner's decision, October
+  2026): the way out after «Pul kelmadi».
 - **Many cards, one shown.** A shop keeps as many cards as it needs (up to 20) and chooses the
   **payment card** customers are shown; it switches it at any moment (owner's decision). Every
   order keeps the card it was shown (`payment_card_*` snapshot). The payment card is never
@@ -377,7 +379,7 @@ Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through Z
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (grocery/food/service), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required to take orders), service fee rate (bps; plan), district_id, network_delivery (on by default) |
+| Business | id, slug, name, type (grocery/food/service), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (optional, E.164: customers call it about an order), delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required to take orders), service fee rate (bps; plan), district_id, network_delivery (on by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |

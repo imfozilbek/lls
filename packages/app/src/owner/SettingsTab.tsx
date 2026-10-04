@@ -1,4 +1,4 @@
-import { FEATURES, Feature } from "@zumda/core"
+import { FEATURES, Feature, Phone, formatPhone } from "@zumda/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
@@ -43,6 +43,8 @@ interface Form {
     brandColor: string
     address: string
     location: { latitude: number; longitude: number } | null
+    /** The number customers call about an order, as the owner typed it; empty = none. */
+    contactPhone: string
     fee: number | null
     freeFrom: number | null
     minOrder: number | null
@@ -54,6 +56,23 @@ interface Form {
 }
 
 const METERS_PER_KM = 1000
+const PHONE_TEXT = /^[+\d\s()-]*$/
+
+/** Empty, or a number the Worker will take: the same check as `Phone` in the core. */
+function isPhoneText(text: string): boolean {
+    if (!text.trim()) {
+        return true
+    }
+    if (!PHONE_TEXT.test(text)) {
+        return false
+    }
+    try {
+        Phone.create(text)
+        return true
+    } catch {
+        return false
+    }
+}
 const BPS_PER_PERCENT = 100
 const MAX_RADIUS_KM = 100
 
@@ -63,6 +82,7 @@ function formOf(shop: ShopOwnerDTO): Form {
         brandColor: shop.brandColor,
         address: shop.address ?? "",
         location: shop.location ?? null,
+        contactPhone: shop.contactPhone ? formatPhone(shop.contactPhone) : "",
         fee: shop.delivery.fee,
         freeFrom: shop.delivery.freeFrom ?? null,
         minOrder: shop.delivery.minOrder ?? null,
@@ -81,6 +101,7 @@ function patchOf(form: Form): ShopPatch {
         brandColor: form.brandColor,
         address: form.address.trim() || null,
         location: form.location,
+        contactPhone: form.contactPhone.trim() || null,
         delivery: {
             fee: form.fee ?? 0,
             freeFrom: form.freeFrom,
@@ -440,6 +461,65 @@ function FeatureFields({
     )
 }
 
+/** Logo, name, color and the number customers call. */
+function ShopFields({
+    shop,
+    onSaved,
+    form,
+    patch,
+}: {
+    shop: ShopOwnerDTO
+    onSaved(shop: ShopOwnerDTO): void
+    form: Form
+    patch(change: Partial<Form>): void
+}): React.JSX.Element {
+    const s = useT().owner.settings
+    const phoneOk = isPhoneText(form.contactPhone)
+    return (
+        <Section title={s.shop} id={sectionId("logo")}>
+            <LogoPicker shop={shop} onSaved={onSaved} />
+            <p className="-mt-1 px-1 text-sm text-tg-hint">{s.botPhotoHint}</p>
+            <Field label={s.name} htmlFor="shop-name">
+                <TextInput
+                    id="shop-name"
+                    value={form.name}
+                    maxLength={60}
+                    onChange={(e): void => patch({ name: e.target.value })}
+                />
+            </Field>
+            <Field label={s.color}>
+                <ColorPicker
+                    value={form.brandColor}
+                    onChange={(brandColor): void => patch({ brandColor })}
+                />
+            </Field>
+            <Field
+                label={s.contactPhone}
+                htmlFor="contact-phone"
+                hint={
+                    phoneOk ? (
+                        s.contactPhoneHint
+                    ) : (
+                        <span className="text-destructive">{s.contactPhoneBad}</span>
+                    )
+                }
+            >
+                <TextInput
+                    id="contact-phone"
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    placeholder="+998 90 123 45 67"
+                    value={form.contactPhone}
+                    maxLength={25}
+                    aria-invalid={!phoneOk}
+                    onChange={(e): void => patch({ contactPhone: e.target.value })}
+                />
+            </Field>
+        </Section>
+    )
+}
+
 function SettingsForm({
     shop,
     onSaved,
@@ -458,7 +538,8 @@ function SettingsForm({
         setSettingsDirty(dirty)
         return (): void => setSettingsDirty(false)
     }, [dirty, setSettingsDirty])
-    const valid = form.name.trim().length > 0 && hasOpenDay(form.hours)
+    const valid =
+        form.name.trim().length > 0 && hasOpenDay(form.hours) && isPhoneText(form.contactPhone)
 
     const save = async (): Promise<void> => {
         setSaving(true)
@@ -499,24 +580,7 @@ function SettingsForm({
 
     return (
         <>
-            <Section title={s.shop} id={sectionId("logo")}>
-                <LogoPicker shop={shop} onSaved={onSaved} />
-                <p className="-mt-1 px-1 text-sm text-tg-hint">{s.botPhotoHint}</p>
-                <Field label={s.name} htmlFor="shop-name">
-                    <TextInput
-                        id="shop-name"
-                        value={form.name}
-                        maxLength={60}
-                        onChange={(e): void => patch({ name: e.target.value })}
-                    />
-                </Field>
-                <Field label={s.color}>
-                    <ColorPicker
-                        value={form.brandColor}
-                        onChange={(brandColor): void => patch({ brandColor })}
-                    />
-                </Field>
-            </Section>
+            <ShopFields shop={shop} onSaved={onSaved} form={form} patch={patch} />
             <DeliveryFields form={form} patch={patch} />
             <Section title={s.hours} id={sectionId("hours")}>
                 <HoursEditor hours={form.hours} onChange={(hours): void => patch({ hours })} />

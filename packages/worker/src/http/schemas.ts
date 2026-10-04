@@ -146,6 +146,14 @@ export const shopPatchBody = z.object({
         .optional(),
     address: z.string().trim().max(200).nullable().optional(),
     location: locationSchema.nullable().optional(),
+    /** Digits, spaces, "+", "-", "()"; the core checks the number itself. "" removes it. */
+    contactPhone: z
+        .string()
+        .trim()
+        .max(25)
+        .regex(/^[+\d\s()-]*$/)
+        .nullable()
+        .optional(),
     delivery: z
         .object({
             fee: money,

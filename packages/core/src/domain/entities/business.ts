@@ -13,6 +13,7 @@ import { WorkingHours } from "../value-objects/working-hours.js"
 import type { BusinessType } from "../enums/business-type.js"
 import type { Location } from "../value-objects/location.js"
 import type { PayoutCard } from "../value-objects/payout-card.js"
+import type { Phone } from "../value-objects/phone.js"
 import type { Slug } from "../value-objects/slug.js"
 import type { TelegramId } from "../value-objects/telegram-id.js"
 
@@ -57,6 +58,8 @@ export interface BusinessProps {
     logoKey?: string
     address?: string
     location?: Location
+    /** The number customers call about an order (a transfer the owner did not see). Optional. */
+    contactPhone?: Phone
     delivery: DeliverySettings
     workingHours: WorkingHours
     features: Feature[]
@@ -110,6 +113,7 @@ export interface ProfilePatch {
     logoKey?: string | null
     address?: string | null
     location?: Location | null
+    contactPhone?: Phone | null
 }
 
 function validateDelivery(delivery: DeliverySettings): DeliverySettings {
@@ -188,6 +192,9 @@ export class Business {
     }
     get location(): Location | undefined {
         return this.props.location
+    }
+    get contactPhone(): Phone | undefined {
+        return this.props.contactPhone
     }
     get delivery(): DeliverySettings {
         return { ...this.props.delivery }
@@ -370,6 +377,9 @@ export class Business {
         }
         if (patch.location !== undefined) {
             this.props.location = patch.location ?? undefined
+        }
+        if (patch.contactPhone !== undefined) {
+            this.props.contactPhone = patch.contactPhone ?? undefined
         }
         this.touch()
     }

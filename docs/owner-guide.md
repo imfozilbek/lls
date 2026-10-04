@@ -102,6 +102,10 @@ Mijozlar **faqat kartangizga o'tkazma** bilan, **ish boshlanishidan oldin** to'l
 4. Pul kelmagan bo'lsa: **Yo'q, kelmadi**. Mijozga «Do'kon pulni topmadi» boradi va u chekni
    qayta yuboradi. Tayyorlamang. Kerak bo'lsa **❌ Bekor qilish**.
 
+**📞 Mijozlar uchun telefon.** «Sozlamalar» → «Do'kon» → «Mijozlar uchun telefon (ixtiyoriy)».
+Raqam kiritsangiz, to'lov kutilayotgan yoki tekshirilayotgan buyurtma sahifasida mijozga
+**Do'konga qo'ng'iroq** tugmasi chiqadi: pul qayerga ketganini tez aniqlaysiz.
+
 **⚠️ Ogohlantirishlar** (chek ostida va ilovada):
 - «Bu chek avval #12 buyurtmada yuborilgan»: xuddi shu rasm oldin ham yuborilgan. Ehtiyot bo'ling.
 - «Bu mijozning 2 ta o'tkazmasi avval topilmagan»: bu mijozga oldin «Pul kelmadi» deyilgan.

@@ -242,6 +242,38 @@ test("«Pul kelmadi»: the customer sends again; a screenshot seen before warns 
     await expect(page.getByText(CARD)).toBeVisible()
 })
 
+test("the owner's number: «Do'konga qo'ng'iroq» on the order the shop did not see paid", async ({
+    page,
+}) => {
+    await openOwner(page)
+    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    const phone = page.getByLabel("Mijozlar uchun telefon (ixtiyoriy)")
+    await phone.fill("90 12")
+    await expect(page.getByText("Raqam to'liq emas")).toBeVisible()
+    await expect(bottomButton(page)).toBeDisabled()
+    await phone.fill("90 123 45 67")
+    await bottomButton(page).click()
+    await expect(page.getByText("Saqlandi").first()).toBeVisible()
+    await expect(phone).toHaveValue("+998 90 123 45 67")
+
+    // The order «Pul kelmadi» left unpaid: the call is the filled way out.
+    const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
+    expect((await sendReceipt(PEOPLE.customer, FOOD, order.id)).status).toBe(200)
+    expect((await owner(`/owner/orders/${order.id}/payment`, { action: "rejected" })).status).toBe(
+        200,
+    )
+    await openApp(page, {
+        user: PEOPLE.customer,
+        shop: FOOD,
+        query: `?shop=${FOOD}&order=${order.id}`,
+    })
+    const call = page.getByRole("link", { name: /Do'konga qo'ng'iroq/ })
+    await expect(call).toHaveAttribute("href", "tel:+998901234567")
+    await expect(page.getByText("do'kon bilan to'g'ridan-to'g'ri gaplashing")).toBeVisible()
+
+    expect((await owner("/owner/shop", { contactPhone: null })).status).toBe(200)
+})
+
 test("from the bot: «Pul keldi» asks first, then one «Доставил» for the courier", async () => {
     const since = await lastSeq()
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 2 }])
@@ -308,8 +340,8 @@ test("a paid order cancelled: owed back until «Вернул»", async ({ page }
 test("the day adds up to the sum; the CSV report arrives in the owner's chat", async ({ page }) => {
     const today = await report()
     // Delivered today: one order for 100 000, paid by transfer before cooking. Two more are paid
-    // and accepted but not delivered, two still wait for the money: money counts on delivery.
-    expect(today.totals).toMatchObject({ placed: 5, delivered: 1, cancelled: 1, paid: 100_000 })
+    // and accepted but not delivered, three still wait for the money: money counts on delivery.
+    expect(today.totals).toMatchObject({ placed: 6, delivered: 1, cancelled: 1, paid: 100_000 })
     expect((today.totals["goods"] ?? 0) + (today.totals["delivery"] ?? 0)).toBe(100_000)
 
     const since = await lastSeq()
@@ -325,8 +357,8 @@ test("the day adds up to the sum; the CSV report arrives in the owner's chat", a
     const bytes = Buffer.from(csv?.base64 ?? "", "base64")
     expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf])
     const lines = bytes.toString("utf8").slice(1).trim().split("\r\n")
-    // Header + the 6 orders of this file, the cancelled one too.
-    expect(lines).toHaveLength(7)
+    // Header + the 7 orders of this file, the cancelled one too.
+    expect(lines).toHaveLength(8)
     expect(lines[0]).toContain("To'lov holati")
     expect(lines[0]).not.toContain("To'lov usuli")
 })
