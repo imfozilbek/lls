@@ -8,7 +8,7 @@ import { BRAND_SWATCHES, applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, hexToRgbChannels } from "../lib/format.js"
 import { compressImage } from "../lib/image.js"
-import { useBackButton, useMainAction } from "../lib/main-button.js"
+import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-button.js"
 import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
@@ -714,6 +714,7 @@ function useSettingsForm(
     const patch = (change: Partial<Form>): void => setForm((f) => ({ ...f, ...change }))
     const dirty = JSON.stringify(patchOf(form)) !== JSON.stringify(patchOf(formOf(shop)))
     const setSettingsDirty = useOwner((state) => state.setSettingsDirty)
+    useClosingGuard(dirty)
     useEffect(() => {
         setSettingsDirty(dirty)
         return (): void => setSettingsDirty(false)
@@ -869,7 +870,8 @@ function SettingsBody({
     }, [])
     useFocusGroup(open)
     const leave = async (): Promise<void> => {
-        if (dirty && !(await confirm(s.unsavedLeave))) {
+        const options = { yes: t.common.leave, no: t.common.stay, destructive: true }
+        if (dirty && !(await confirm(s.unsavedLeave, options))) {
             return
         }
         reset()

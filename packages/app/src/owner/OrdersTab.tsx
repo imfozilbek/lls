@@ -14,6 +14,7 @@ import { ZUMDA_NAME } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, formatQuantity, formatTime } from "../lib/format.js"
 import { usePagedList } from "../lib/paged.js"
+import { usePolling } from "../lib/polling.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { CompactAddress } from "../ui/contact-links.js"
@@ -512,18 +513,7 @@ function FocusedOrder({
 /** Orders of one filter; the active list refreshes calmly while it is on screen. */
 function useShopOrders(filter: Filter): PagedList<OrderDTO> {
     const list = usePagedList(filter, (page) => api.owner.orders(filter, page))
-    const { reload } = list
-    useEffect(() => {
-        if (filter !== "active") {
-            return undefined
-        }
-        const timer = window.setInterval(() => {
-            if (document.visibilityState === "visible") {
-                void reload()
-            }
-        }, POLL_MS)
-        return (): void => window.clearInterval(timer)
-    }, [filter, reload])
+    usePolling(list.reload, POLL_MS, filter === "active")
     return list
 }
 

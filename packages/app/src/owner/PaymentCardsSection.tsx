@@ -201,7 +201,8 @@ export function PaymentCardsSection({
     }
 
     const remove = async (id: string): Promise<void> => {
-        if (!(await confirm(s.removeCardConfirm))) {
+        const options = { yes: s.removeCard, destructive: true }
+        if (!(await confirm(s.removeCardConfirm, options))) {
             return
         }
         try {

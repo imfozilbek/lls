@@ -216,7 +216,11 @@ export function CartScreen(): React.JSX.Element {
                     type="button"
                     onClick={(): void => {
                         // The whole cart in one tap: worth one question first.
-                        void confirm(t.cart.clearAsk).then((yes) => {
+                        void confirm(t.cart.clearAsk, {
+                            yes: t.cart.clear,
+                            no: t.common.no,
+                            destructive: true,
+                        }).then((yes) => {
                             if (yes) {
                                 clear()
                             }

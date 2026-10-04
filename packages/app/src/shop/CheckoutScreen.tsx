@@ -5,7 +5,7 @@ import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api, loadCatalog } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, kmText } from "../lib/format.js"
-import { useMainAction } from "../lib/main-button.js"
+import { useClosingGuard, useMainAction } from "../lib/main-button.js"
 import { getLocation, haptic, requestContact, requestWriteAccess } from "../lib/telegram.js"
 import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
@@ -597,6 +597,8 @@ export function CheckoutScreen(): React.JSX.Element {
         delivery.bottlesReturned,
     )
     const { methods, method, setChosen } = usePaymentMethod(shop)
+    // A cart on its way to an order: closing the app by mistake asks first.
+    useClosingGuard(cart.count > 0)
     const { placing, place } = usePlaceOrder({ ...delivery, bottlesReturned }, method)
     const total = cart.subtotal + fee + deposit
     const missing = missingStep(t, {

@@ -8,7 +8,7 @@ import { sameAsMonday } from "./hours.js"
 import type { DayHours, Hours } from "./hours.js"
 
 const TIME_INPUT =
-    "field h-10 w-full min-w-0 rounded-[0.625rem] bg-tg-bg px-2 text-center text-sm tabular-nums"
+    "field h-10 w-full min-w-0 rounded-[0.625rem] bg-tg-bg px-2 text-center tabular-nums"
 
 function DayRow({
     label,

@@ -211,7 +211,7 @@ function TokenFields({
                         autoComplete="off"
                         autoCapitalize="off"
                         spellCheck={false}
-                        className="min-w-0 flex-1 font-mono text-sm"
+                        className="min-w-0 flex-1 font-mono"
                         onChange={(e): void => onToken(e.target.value.trim())}
                     />
                     <PasteButton onPaste={onToken} />

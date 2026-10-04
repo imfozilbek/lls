@@ -5,7 +5,7 @@ import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { updateBotPhoto } from "../lib/bot-photo.js"
 import { cn } from "../lib/cn.js"
-import { useBackButton, useMainAction } from "../lib/main-button.js"
+import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-button.js"
 import { getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { CheckIcon, DishIcon, PinIcon, ShopFrontIcon, ToolIcon } from "../ui/icons.js"
@@ -326,6 +326,8 @@ export function Wizard({
     useBackButton(
         sending ? null : (): void => (step > 1 ? setStep((step - 1) as Step) : onCancel()),
     )
+    // Halfway through the application: closing the app by mistake asks first.
+    useClosingGuard(step > 1 || draft.name.trim().length > 0)
 
     useMainAction(
         needsBotCreation(step, draft)

@@ -97,7 +97,11 @@ export function OwnerApp(): React.JSX.Element {
     // Edits in «Sozlamalar» are saved with the bottom button: leaving without it asks first.
     const changeTab = async (next: OwnerTab): Promise<void> => {
         if (tab === "settings" && next !== tab && settingsDirty) {
-            const leave = await confirm(t.owner.settings.unsavedLeave)
+            const leave = await confirm(t.owner.settings.unsavedLeave, {
+                yes: t.common.leave,
+                no: t.common.stay,
+                destructive: true,
+            })
             if (!leave) {
                 return
             }

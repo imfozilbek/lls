@@ -143,3 +143,36 @@ export function useBackButton(onBack: (() => void) | null): void {
         }
     }, [visible])
 }
+
+/** Screens with something to lose right now; while any, Telegram asks before closing the app. */
+let closingGuards = 0
+
+function syncClosingConfirmation(): void {
+    const app = webApp()
+    if (!app?.isVersionAtLeast("6.2")) {
+        return
+    }
+    if (closingGuards > 0) {
+        app.enableClosingConfirmation?.()
+    } else {
+        app.disableClosingConfirmation?.()
+    }
+}
+
+/**
+ * While `active`, closing the Mini App (swipe, ✕) asks first: a filled checkout, unsaved
+ * settings, an application halfway, a picked receipt. Several screens may hold it at once.
+ */
+export function useClosingGuard(active: boolean): void {
+    useEffect(() => {
+        if (!active) {
+            return undefined
+        }
+        closingGuards++
+        syncClosingConfirmation()
+        return (): void => {
+            closingGuards--
+            syncClosingConfirmation()
+        }
+    }, [active])
+}

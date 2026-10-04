@@ -15,10 +15,7 @@ import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "./lib/brand.js"
 import { useBackButton } from "./lib/main-button.js"
 import { webApp } from "./lib/telegram.js"
 import { CartScreen } from "./shop/CartScreen.js"
-import { CheckoutScreen } from "./shop/CheckoutScreen.js"
 import { MenuScreen } from "./shop/MenuScreen.js"
-import { OrderScreen } from "./shop/OrderScreen.js"
-import { OrdersScreen } from "./shop/OrdersScreen.js"
 import { useCart } from "./stores/cart.js"
 import { useCurrentRoute, useRouter } from "./stores/router.js"
 import { useSession } from "./stores/session.js"
@@ -29,6 +26,36 @@ import { BottomBar, ToastHost, WebBackBar } from "./ui/shell.js"
 
 import type { ShopVia, WebSession } from "./lib/api.js"
 import type { AdminTarget, LaunchParams } from "./lib/telegram.js"
+
+/**
+ * After the menu: checkout, the order and the order list are their own chunks, so the first
+ * screen opens faster on slow regional internet. They load in the background right after the
+ * shop is up, long before the customer taps through to them.
+ */
+const loadCheckout = (): Promise<typeof import("./shop/CheckoutScreen.js")> =>
+    import("./shop/CheckoutScreen.js")
+const loadOrder = (): Promise<typeof import("./shop/OrderScreen.js")> =>
+    import("./shop/OrderScreen.js")
+const loadOrders = (): Promise<typeof import("./shop/OrdersScreen.js")> =>
+    import("./shop/OrdersScreen.js")
+const CheckoutScreen = lazy(() => loadCheckout().then((m) => ({ default: m.CheckoutScreen })))
+const OrderScreen = lazy(() => loadOrder().then((m) => ({ default: m.OrderScreen })))
+const OrdersScreen = lazy(() => loadOrders().then((m) => ({ default: m.OrdersScreen })))
+
+/** A moment after the shop is on screen, so the menu's own requests go first. */
+const PREFETCH_AFTER_MS = 800
+
+function usePrefetchScreens(ready: boolean): void {
+    useEffect(() => {
+        if (!ready) {
+            return undefined
+        }
+        const timer = window.setTimeout(() => {
+            void Promise.all([loadCheckout(), loadOrder(), loadOrders()]).catch(() => undefined)
+        }, PREFETCH_AFTER_MS)
+        return (): void => window.clearTimeout(timer)
+    }, [ready])
+}
 
 // Customers never download these chunks.
 const OwnerApp = lazy(() => import("./owner/OwnerApp.js").then((m) => ({ default: m.OwnerApp })))
@@ -147,11 +174,23 @@ function Screen(): React.JSX.Element {
         case "cart":
             return <CartScreen />
         case "checkout":
-            return <CheckoutScreen />
+            return (
+                <Suspense fallback={null}>
+                    <CheckoutScreen />
+                </Suspense>
+            )
         case "order":
-            return <OrderScreen key={route.id} id={route.id} justPlaced={route.justPlaced} />
+            return (
+                <Suspense fallback={null}>
+                    <OrderScreen key={route.id} id={route.id} justPlaced={route.justPlaced} />
+                </Suspense>
+            )
         case "orders":
-            return <OrdersScreen />
+            return (
+                <Suspense fallback={null}>
+                    <OrdersScreen />
+                </Suspense>
+            )
         case "owner":
             return (
                 <Suspense fallback={<MenuSkeleton />}>
@@ -216,6 +255,7 @@ function ShopApp({
     const route = useCurrentRoute()
     useBackButton(depth > 1 ? back : (onExit ?? null))
     useOpenOrder(state.kind === "ready", order)
+    usePrefetchScreens(state.kind === "ready")
 
     if (state.kind === "loading") {
         return <MenuSkeleton />

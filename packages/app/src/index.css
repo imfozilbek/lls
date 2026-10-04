@@ -29,6 +29,8 @@
         -webkit-font-smoothing: antialiased;
         text-rendering: optimizeLegibility;
         overscroll-behavior-y: none;
+        /* No tap delay and no double-tap zoom: taps answer at once, like a native app. */
+        touch-action: manipulation;
     }
 
     body {
@@ -41,10 +43,28 @@
         text-wrap: balance;
     }
 
+    /*
+     * iOS zooms into any field under 16px on focus: every field is 16px, whatever its classes.
+     * The caret is always the text color: Telegram's iOS tint (white in a dark theme) would
+     * vanish on our light fields.
+     */
     input,
     textarea,
-    select {
-        font-size: 16px; /* prevents iOS zoom on focus */
+    select,
+    [contenteditable] {
+        font-size: 16px !important;
+        caret-color: var(--ui-text);
+    }
+
+    /* A long press on a button or a picture is a press, not a text selection or "save image". */
+    button,
+    [role="tab"],
+    [role="radio"],
+    a,
+    img {
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
     }
 
     :focus-visible {
@@ -60,7 +80,7 @@
     }
 
     .field {
-        @apply w-full rounded-control border border-transparent bg-tg-secondary px-4 py-3 text-base text-tg-text outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-tg-hint focus:border-brand focus:shadow-[0_0_0_3px_rgb(var(--brand-rgb,14_165_233)/0.18)];
+        @apply w-full rounded-control border border-transparent bg-tg-secondary px-4 py-3 text-[1rem] leading-[1.4rem] text-tg-text outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-tg-hint focus:border-brand focus:shadow-[0_0_0_3px_rgb(var(--brand-rgb,14_165_233)/0.18)];
     }
 
     .skeleton {

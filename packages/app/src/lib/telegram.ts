@@ -63,10 +63,36 @@ export interface WebApp {
     requestContact?(callback: (shared: boolean) => void): void
     requestWriteAccess?(callback: (allowed: boolean) => void): void
     showConfirm?(message: string, callback: (ok: boolean) => void): void
+    /** 6.2: our own words on the buttons (showConfirm uses Telegram's language). */
+    showPopup?(params: PopupParams, callback?: (buttonId: string) => void): void
+    /** 7.7: a downward swipe no longer collapses the app (our pull-to-refresh owns it). */
+    disableVerticalSwipes?(): void
+    /** 6.2: Telegram asks before closing while there is something to lose. */
+    enableClosingConfirmation?(): void
+    disableClosingConfirmation?(): void
+    /** 8.0: the app is collapsed or in the background while false. */
+    isActive?: boolean
+    onEvent?(event: string, handler: () => void): void
+    offEvent?(event: string, handler: () => void): void
+    /** 8.0: keeps the phone layout from turning sideways. */
+    lockOrientation?(): void
+    /** 8.0: the shop's icon on the phone's home screen. */
+    addToHomeScreen?(): void
+    checkHomeScreenStatus?(callback: (status: HomeScreenStatus) => void): void
+    /** 9.1: closes the keyboard. */
+    hideKeyboard?(): void
     openTelegramLink?(url: string): void
     /** Bot API 9.6: opens a prepared button's window, here «create a bot» (Managed Bots). */
     requestChat?(preparedId: string, callback?: (shared: boolean) => void): void
 }
+
+export interface PopupParams {
+    title?: string
+    message: string
+    buttons: { id: string; type: "default" | "ok" | "cancel" | "destructive"; text?: string }[]
+}
+
+export type HomeScreenStatus = "unsupported" | "unknown" | "added" | "missed"
 
 declare global {
     interface Window {
@@ -259,13 +285,122 @@ export function getLocation(): Promise<LocationData | null> {
     }, null)
 }
 
-export function confirm(message: string): Promise<boolean> {
+export interface ConfirmOptions {
+    /** The words on the yes button («Ha» by default). */
+    yes?: string
+    /** The words on the no button («Bekor qilish» by default). */
+    no?: string
+    /** The yes button is red: the action takes something away (cancel, remove). */
+    destructive?: boolean
+}
+
+/** The words a popup uses when the caller gives none; set by the app from its dictionary. */
+const popupWords = { yes: "Ha", no: "Bekor qilish" }
+
+export function setPopupWords(words: { yes: string; no: string }): void {
+    Object.assign(popupWords, words)
+}
+
+/**
+ * Asks yes or no. Inside Telegram: its own popup with our Uzbek words (showConfirm would label
+ * the buttons in Telegram's language) and a red button for what cannot be undone.
+ */
+export function confirm(message: string, options: ConfirmOptions = {}): Promise<boolean> {
     const app = webApp()
-    if (!app?.showConfirm || !app.isVersionAtLeast("6.2")) {
-        return Promise.resolve(window.confirm(message))
+    if (app?.showPopup && app.isVersionAtLeast("6.2")) {
+        const show = app.showPopup.bind(app)
+        return callbackPromise(
+            (done) =>
+                show(
+                    {
+                        message,
+                        buttons: [
+                            { id: "no", type: "default", text: options.no ?? popupWords.no },
+                            {
+                                id: "yes",
+                                type: options.destructive ? "destructive" : "default",
+                                text: options.yes ?? popupWords.yes,
+                            },
+                        ],
+                    },
+                    (id) => done(id === "yes"),
+                ),
+            false,
+        )
     }
-    const ask = app.showConfirm.bind(app)
-    return callbackPromise((done) => ask(message, done), false)
+    if (app?.showConfirm && app.isVersionAtLeast("6.2")) {
+        const ask = app.showConfirm.bind(app)
+        return callbackPromise((done) => ask(message, done), false)
+    }
+    return Promise.resolve(window.confirm(message))
+}
+
+/**
+ * Once, at start: a downward swipe refreshes instead of collapsing the app, and the phone layout
+ * stays upright. Older clients skip what they do not know.
+ */
+export function setUpNativeFeel(app: WebApp | null): void {
+    if (app?.isVersionAtLeast("7.7")) {
+        app.disableVerticalSwipes?.()
+    }
+    if (app?.isVersionAtLeast("8.0")) {
+        app.lockOrientation?.()
+    }
+}
+
+/** Closes the keyboard: Telegram's own call where it exists, else the field lets go of focus. */
+export function hideKeyboard(): void {
+    const app = webApp()
+    if (app?.hideKeyboard && app.isVersionAtLeast("9.1")) {
+        app.hideKeyboard()
+        return
+    }
+    const active = document.activeElement
+    if (active instanceof HTMLElement) {
+        active.blur()
+    }
+}
+
+/** 8.0: is the app on screen now (not collapsed, not in the background)? */
+export function isAppActive(): boolean {
+    const app = webApp()
+    if (app?.isActive === false) {
+        return false
+    }
+    return document.visibilityState === "visible"
+}
+
+/**
+ * Runs `handler` whenever the app comes back on screen: Telegram's `activated` (8.0) and the
+ * page's own visibility. Returns the unsubscribe.
+ */
+export function onAppActive(handler: () => void): () => void {
+    const app = webApp()
+    const onVisible = (): void => {
+        if (isAppActive()) {
+            handler()
+        }
+    }
+    document.addEventListener("visibilitychange", onVisible)
+    app?.onEvent?.("activated", handler)
+    return (): void => {
+        document.removeEventListener("visibilitychange", onVisible)
+        app?.offEvent?.("activated", handler)
+    }
+}
+
+/** 8.0: can the shop's icon still go to the phone's home screen? */
+export function canAddToHomeScreen(): Promise<boolean> {
+    const app = webApp()
+    if (!app?.checkHomeScreenStatus || !app.addToHomeScreen || !app.isVersionAtLeast("8.0")) {
+        return Promise.resolve(false)
+    }
+    const check = app.checkHomeScreenStatus.bind(app)
+    return callbackPromise((done) => check((status) => done(status === "missed")), false)
+}
+
+export function addToHomeScreen(): void {
+    webApp()?.addToHomeScreen?.()
 }
 
 export function openTelegramLink(url: string): void {
