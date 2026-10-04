@@ -4,6 +4,7 @@ import { Business } from "../../../domain/entities/business.js"
 import { BusinessStatus } from "../../../domain/enums/business-status.js"
 import { Feature } from "../../../domain/enums/feature.js"
 import { OrderChannel } from "../../../domain/enums/order-channel.js"
+import { OwnerChat } from "../../../domain/enums/owner-chat.js"
 import { PaymentMethod, PaymentOptions } from "../../../domain/enums/payment.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
@@ -195,5 +196,21 @@ describe("Business", () => {
                 delivery: { fee: Money.of(0) },
             }),
         ).toThrow(ValidationError)
+    })
+    it("knows whether its bot can write to the owner: whichever was seen last", () => {
+        const business = makeBusiness()
+        const updated = business.updatedAt
+        expect(business.ownerChat).toBe(OwnerChat.UNKNOWN)
+        expect(business.ownerChatClosed(new Date(1000))).toBe(true)
+        expect(business.ownerChat).toBe(OwnerChat.CLOSED)
+        // Refused again: nothing new to write.
+        expect(business.ownerChatClosed(new Date(2000))).toBe(false)
+        expect(business.ownerChatOpened(new Date(3000))).toBe(true)
+        expect(business.ownerChat).toBe(OwnerChat.OPEN)
+        expect(business.ownerChatOpened(new Date(4000))).toBe(false)
+        expect(business.ownerChatOpenAt).toEqual(new Date(4000))
+        expect(business.ownerChatClosedAt).toEqual(new Date(2000))
+        // Not an edit of the shop: its version stays.
+        expect(business.updatedAt).toBe(updated)
     })
 })

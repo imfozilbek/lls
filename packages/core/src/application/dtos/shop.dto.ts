@@ -6,6 +6,7 @@ import type { PayoutCardBook } from "../../domain/entities/payout-card-book.js"
 import type { BusinessStatus } from "../../domain/enums/business-status.js"
 import type { BusinessType } from "../../domain/enums/business-type.js"
 import type { Feature } from "../../domain/enums/feature.js"
+import type { OwnerChat } from "../../domain/enums/owner-chat.js"
 import type { PaymentMethod, PaymentOptions } from "../../domain/enums/payment.js"
 import type { WeeklySchedule } from "../../domain/value-objects/working-hours.js"
 
@@ -74,6 +75,8 @@ export interface ShopOwnerDTO extends ShopPublicDTO {
     inDistrict: boolean
     /** A rejected application: why, so the owner can fix it and apply again. */
     rejection?: { at: string; reason?: string }
+    /** Can the shop's own bot write to the owner (pressed Start in it)? */
+    ownerChat: OwnerChat
     createdAt: string
 }
 
@@ -142,6 +145,7 @@ export function toShopOwnerDTO(business: Business, now: Date): ShopOwnerDTO {
             at: business.rejection.at.toISOString(),
             reason: business.rejection.reason,
         },
+        ownerChat: business.ownerChat,
         createdAt: business.createdAt.toISOString(),
     }
 }

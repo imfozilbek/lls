@@ -17,4 +17,6 @@ export interface BusinessRepository {
     save(business: Business): Promise<void>
     /** Telegram issued the shop's bot a new token (a managed bot). The adapter encrypts it. */
     replaceBotToken(businessId: string, botToken: string): Promise<void>
+    /** Whether the shop's bot can write to its owner: not an edit, so no version check. */
+    saveOwnerChat(business: Business): Promise<void>
 }
