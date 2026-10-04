@@ -165,6 +165,58 @@ function nativeFeel(record: Recorder): { api: Record<string, unknown>; fire(even
     return { api, fire }
 }
 
+/**
+ * Speakers for the test: every bell the app rings is recorded as its frequency in
+ * `window.__sounds` (G5 = 783.99 Hz is the "zum" of the Zumda sound). Runs in the page.
+ */
+function installAudioStub(): void {
+    const played: number[] = []
+    class Param {
+        value = 0
+        setValueAtTime(): this {
+            return this
+        }
+        linearRampToValueAtTime(): this {
+            return this
+        }
+        exponentialRampToValueAtTime(): this {
+            return this
+        }
+    }
+    class Node {
+        connect<T>(next: T): T {
+            return next
+        }
+    }
+    class Oscillator extends Node {
+        type = "sine"
+        frequency = new Param()
+        start(): void {
+            played.push(this.frequency.value)
+        }
+        stop(): void {
+            // Nothing to stop: the test only records what started.
+        }
+    }
+    class Gain extends Node {
+        gain = new Param()
+    }
+    class Context {
+        currentTime = 0
+        destination = new Node()
+        resume(): Promise<void> {
+            return Promise.resolve()
+        }
+        createOscillator(): Oscillator {
+            return new Oscillator()
+        }
+        createGain(): Gain {
+            return new Gain()
+        }
+    }
+    Object.assign(window, { AudioContext: Context, __sounds: played })
+}
+
 /** Runs in the page before any app code. Records every call in `window.__tg`. */
 function installTelegramStub(config: StubConfig): void {
     interface Handlers {
@@ -300,6 +352,8 @@ export interface OpenedApp {
     pressMainButton(): Promise<void>
     /** Plays one of Telegram's events: the app collapsed («deactivated») or back («activated»). */
     fire(event: "activated" | "deactivated"): Promise<void>
+    /** How many times the Zumda sound's "zum" (G5) has rung so far. */
+    zums(): Promise<number>
 }
 
 function stubConfig(options: OpenOptions, initData: string): StubConfig {
@@ -374,6 +428,7 @@ export async function openApp(page: Page, options: OpenOptions): Promise<OpenedA
     if (config.theme) {
         await page.addInitScript(paintTheme, config.theme)
     }
+    await page.addInitScript(installAudioStub)
     await page.addInitScript(`window.__nativeFeel = ${nativeFeel.toString()}`)
     await page.addInitScript(installTelegramStub, config)
     if (Number(config.version) >= REQUEST_CHAT_VERSION) {
@@ -403,6 +458,13 @@ export async function openApp(page: Page, options: OpenOptions): Promise<OpenedA
         chat,
         calls: async () => (await tg()).calls,
         mainButton: async () => (await tg()).mainButton.params,
+        zums: () =>
+            page.evaluate(
+                () =>
+                    (window as unknown as { __sounds: number[] }).__sounds.filter(
+                        (hz) => Math.abs(hz - 783.99) < 0.01,
+                    ).length,
+            ),
         fire: (event) =>
             page.evaluate((name) => {
                 ;(window as unknown as { __tg: { fire(event: string): void } }).__tg.fire(name)
