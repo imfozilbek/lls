@@ -5,7 +5,7 @@
 import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
-import { botCalls, lastSeq, messagesTo } from "../support/telegram.js"
+import { botCalls, lastSeq, waitForMessage } from "../support/telegram.js"
 import { openApp } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
@@ -86,11 +86,9 @@ test("the owner gives three orders one way to one courier, in Zumda's order", as
     expect(asked.map(([, lat]) => lat.toFixed(4))).toEqual(
         [SHOP, north(0.5), north(1.5), north(1)].map((p) => p.latitude.toFixed(4)),
     )
-    // One message to the courier with the order of the stops.
-    const toCourier = await messagesTo(PEOPLE.courier.id, since)
-    expect(
-        toCourier.some((m) => m.text.includes(`#${numbers[1]} → #${numbers[0]} → #${numbers[2]}`)),
-    ).toBe(true)
+    // One message to the courier with the order of the stops (sent after the answer).
+    const order = `#${numbers[1]} → #${numbers[0]} → #${numbers[2]}`
+    await waitForMessage(PEOPLE.courier.id, order, since)
 })
 
 test("the courier sees the way, takes all at once, delivers stop by stop", async ({ page }) => {
