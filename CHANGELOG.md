@@ -7,6 +7,11 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### OpenRouteService's new address
+- **Changed (worker):** trips' way along the roads is asked at `api.heigit.org/openrouteservice`:
+  `api.openrouteservice.org` stops working in November 2026 (their announcement). The key stays
+  the same (account.heigit.org).
+
 ### The card's system
 - **Added:** Humo, Uzcard, Visa, Mastercard, UnionPay and Mir are told by the card's first digits
   (owner's decision): shown while the owner types the number, in the list of cards, to the
