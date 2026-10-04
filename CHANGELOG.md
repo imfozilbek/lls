@@ -7,6 +7,20 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### No paid order from outside the zone (UX phase 12, from the seventh critique)
+- **Changed (core, worker, app):** a shop with a delivery radius and its own location needs the
+  customer's pin (`LOCATION_REQUIRED`, 422) instead of skipping the check: an order from outside
+  the zone is never paid and then refunded. The radius reaches the storefront («3 km gacha
+  yetkazamiz») and checkout («Majburiy: do'kon 3 km gacha yetkazadi»); the out-of-zone error
+  carries the distance and the radius.
+- **Changed (core):** the network offer counts the pieces to carry (two portions are two), one
+  package per weighed item.
+- **Changed (app):** the cart's button says «Davom etish» and is never dead: below the minimum or
+  while the shop is closed a tap says why; the screenshot tip covers Android and iPhone; the
+  owner's «Pul keldi» without a screenshot is a visible button; «Ishga tayyor» marks the phone
+  and the logo «Ixtiyoriy» and goes away once the rest is done; the owner's menu shows every
+  unit.
+
 ### Remembered and steady (UX phase 11, from the sixth critique)
 - **Changed (app):** checkout remembers the map pin and, for water, the bottles handed back last
   time (never past what the order allows, never on an order without bottles); the bottles come
