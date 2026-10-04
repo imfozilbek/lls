@@ -110,8 +110,11 @@ describe("trips: several orders one way, one courier", () => {
         expect(summary?.html).toContain(`#${a.number} → #${b.number} → #${c.number}`)
         expect(summary?.token).toBe(env.COURIER_BOT_TOKEN)
 
-        const listed = await json<{ data: Trip[] }>(await as(OWNER)("/api/owner/trips"))
-        expect(listed.data.map((t) => t.id)).toEqual([trip.id])
+        const listed = await json<{ data: { trip: Trip; orders: Order[] }[] }>(
+            await as(OWNER)("/api/owner/trips"),
+        )
+        expect(listed.data.map((t) => t.trip.id)).toEqual([trip.id])
+        expect(listed.data[0]?.orders.map((o) => o.id)).toEqual([a.id, b.id, c.id])
         const home = await json<{ trips: Trip[] }>(await courier("/api/courier/home"))
         expect(home.trips.map((t) => t.stops)).toEqual([[a.id, b.id, c.id]])
 

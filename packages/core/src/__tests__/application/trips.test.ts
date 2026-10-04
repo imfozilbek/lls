@@ -155,7 +155,8 @@ describe("trips: several orders one way, one courier, stops in order", () => {
         expect(made.trip.route?.line).toHaveLength(4)
 
         const listed = await new ListShopTripsUseCase(deps()).execute(owner)
-        expect(listed.map((t) => t.id)).toEqual([made.trip.id])
+        expect(listed.map((t) => t.trip.id)).toEqual([made.trip.id])
+        expect(listed[0]?.orders).toHaveLength(3)
         const home = await new GetCourierHomeUseCase(deps()).execute({ telegramId: COURIER_TG })
         expect(home.trips.map((t) => t.stops)).toEqual([[near.id, middle.id, far.id]])
     })

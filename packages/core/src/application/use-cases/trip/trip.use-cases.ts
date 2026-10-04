@@ -244,9 +244,21 @@ export class RefreshTripRouteUseCase {
 export class ListShopTripsUseCase {
     constructor(private readonly deps: TripDeps) {}
 
-    /** The shop's trips still on the way: the owner sees which stops are done. */
-    async execute(input: { actorTelegramId: number; businessId: string }): Promise<TripDTO[]> {
+    /**
+     * The shop's trips still on the way, each with its orders (delivered ones too): the owner
+     * sees which stops are done and where the next one is.
+     */
+    async execute(input: {
+        actorTelegramId: number
+        businessId: string
+    }): Promise<{ trip: TripDTO; orders: OrderDTO[] }[]> {
         await requireOwnedBusiness(this.deps.businesses, input.businessId, input.actorTelegramId)
-        return (await this.deps.trips.listOpenByBusiness(input.businessId)).map(toTripDTO)
+        const trips = await this.deps.trips.listOpenByBusiness(input.businessId)
+        return Promise.all(
+            trips.map(async (trip) => ({
+                trip: toTripDTO(trip),
+                orders: (await loadOrders(this.deps.orders, trip.stops)).map(toOrderDTO),
+            })),
+        )
     }
 }
