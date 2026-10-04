@@ -29,6 +29,8 @@ import { BottomSpacer } from "../ui/shell.js"
 import { SoundSwitch } from "../ui/sound-switch.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
+import { TripCard } from "./TripCard.js"
+
 import type { Dictionary } from "../i18n/index.js"
 import type {
     CourierHomeDTO,
@@ -581,6 +583,16 @@ function Deliveries({
     const t = useT()
     const active = home.orders.filter(isActive)
     const done = home.orders.filter((o) => o.status === OrderStatus.DELIVERED)
+    // A trip's orders are one card; the others stay one card each.
+    const trips = home.trips.filter((trip) => active.some((o) => o.tripId === trip.id))
+    const inTrips = new Set(trips.flatMap((trip) => trip.stops))
+    const single = active.filter((o) => !inTrips.has(o.id))
+    const replaceMany = (orders: OrderDTO[]): void => {
+        for (const order of orders) {
+            replace(order)
+        }
+    }
+    const stale = (): void => void reload()
     // Orders nearby are already on screen above: «nothing to deliver» would contradict them.
     const offersNearby = home.profile.inNetwork && home.network.length > 0
     return (
@@ -593,12 +605,35 @@ function Deliveries({
                 />
             ) : (
                 <ul className="flex flex-col gap-3" aria-label={t.courier.active}>
-                    {active.map((order) => (
+                    {trips.map((trip) => (
+                        <TripCard
+                            key={trip.id}
+                            trip={trip}
+                            orders={home.orders}
+                            onChange={replaceMany}
+                            onStale={stale}
+                            renderStop={(order, showStep): React.JSX.Element => (
+                                <>
+                                    <AddressBlock order={order} />
+                                    <ContactLinks order={order} />
+                                    <Collect order={order} />
+                                    {showStep ? (
+                                        <StepButton
+                                            order={order}
+                                            onChange={replace}
+                                            onStale={stale}
+                                        />
+                                    ) : null}
+                                </>
+                            )}
+                        />
+                    ))}
+                    {single.map((order) => (
                         <DeliveryCard
                             key={order.id}
                             order={order}
                             onChange={replace}
-                            onStale={(): void => void reload()}
+                            onStale={stale}
                         />
                     ))}
                 </ul>
