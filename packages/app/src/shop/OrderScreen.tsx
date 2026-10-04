@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentStatus, isFinalStatus } from "@zumda/core"
+import { OrderStatus, PaymentStatus, formatPhone, isFinalStatus } from "@zumda/core"
 import { useCallback, useEffect, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -9,7 +9,7 @@ import { confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
+import { PhoneIcon, PinIcon, ScooterIcon, WifiOffIcon } from "../ui/icons.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusHero, StatusTimeline } from "../ui/order-status.js"
 import { CardBlock, PaymentLine } from "../ui/payment.js"
@@ -104,6 +104,32 @@ function RemindShop({
 }
 
 /**
+ * The shop's own number, when the owner gave one: a transfer the shop did not see is settled
+ * fastest by a call. A quiet second way under the card; after «Pul kelmadi» it says why to call.
+ */
+function CallShop({ problem }: { problem: boolean }): React.JSX.Element | null {
+    const t = useT()
+    const phone = useSession((state) => state.shop?.contactPhone)
+    if (!phone) {
+        return null
+    }
+    return (
+        <div className="flex flex-col gap-1.5">
+            <a
+                href={`tel:${phone}`}
+                onClick={(): void => haptic.tap()}
+                className="tap flex min-h-12 flex-wrap items-center justify-center gap-x-2 rounded-control bg-tg-secondary px-4 py-2 font-semibold"
+            >
+                <PhoneIcon size={18} className="text-brand" />
+                {t.pay.callShop}
+                <span className="font-normal tabular-nums text-tg-hint">{formatPhone(phone)}</span>
+            </a>
+            {problem ? <p className="px-1 text-sm text-tg-hint">{t.pay.callShopHint}</p> : null}
+        </div>
+    )
+}
+
+/**
  * Paid before the shop starts: until then the shop's card stays at hand with «O'tkazdim», which
  * asks for the screenshot of the transfer. After it the customer sees that the shop is checking,
  * and the screenshot they sent; «Pul kelmadi» from the shop brings the card back with a clear why.
@@ -153,6 +179,9 @@ function Payment({
                         onOpenSheet()
                     }}
                 />
+            ) : null}
+            {unpaid || checking ? (
+                <CallShop problem={unpaid && order.payment.rejections > 0} />
             ) : null}
         </Section>
     )
