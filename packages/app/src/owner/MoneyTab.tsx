@@ -103,11 +103,13 @@ function Totals({ report }: { report: MoneyReportDTO }): React.JSX.Element {
                 <Row label={m.delivery} value={sum(totals.delivery)} />
                 {totals.paidCash > 0 ? (
                     <>
-                        <Row
-                            label={m.byCard}
-                            value={sum(totals.paid - totals.paidCash)}
-                            icon={<CardIcon size={16} className="text-tg-hint" />}
-                        />
+                        {totals.paid > totals.paidCash ? (
+                            <Row
+                                label={m.byCard}
+                                value={sum(totals.paid - totals.paidCash)}
+                                icon={<CardIcon size={16} className="text-tg-hint" />}
+                            />
+                        ) : null}
                         <Row
                             label={m.byCash}
                             value={sum(totals.paidCash)}
