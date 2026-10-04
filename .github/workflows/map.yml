@@ -5,6 +5,10 @@ name: Map
 # map, and once a month for fresh roads and buildings. Only main of this repository.
 on:
     workflow_dispatch:
+    # The same by an event: `gh api -X POST repos/imfozilbek/lls/dispatches -f event_type=map`.
+    # Only someone with write access can send it; it always builds main. Its payload is never read.
+    repository_dispatch:
+        types: [map]
     schedule:
         - cron: "17 3 2 * *"
 
