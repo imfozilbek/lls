@@ -381,6 +381,13 @@ export class InMemoryOrders implements OrderRepository {
         stored.markNetworkAlerted(at)
         return true
     }
+    async activeVersion(businessId: string): Promise<string> {
+        const open = [...this.items.values()].filter(
+            (o) => o.businessId === businessId && ACTIVE_ORDER_STATUSES.includes(o.status),
+        )
+        const latest = Math.max(0, ...open.map((o) => o.updatedAt.getTime()))
+        return `${open.length}:${latest}`
+    }
     async listWaitingForNetwork(
         districtIds: readonly string[],
         limit: number,

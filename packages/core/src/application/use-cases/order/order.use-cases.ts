@@ -277,6 +277,22 @@ function statusesFor(filter: ShopOrdersFilter): readonly OrderStatus[] | undefin
     return filter === "done" ? FINISHED_STATUSES : undefined
 }
 
+/**
+ * What changes when the shop's open orders change: a cheap check the owner's screen polls; the
+ * list itself is read again only when this moved (the free plan counts every row read).
+ */
+export class ShopOrdersVersionUseCase {
+    constructor(
+        private readonly businesses: BusinessRepository,
+        private readonly orders: OrderRepository,
+    ) {}
+
+    async execute(input: { actorTelegramId: number; businessId: string }): Promise<string> {
+        await requireOwnedBusiness(this.businesses, input.businessId, input.actorTelegramId)
+        return this.orders.activeVersion(input.businessId)
+    }
+}
+
 export class ListShopOrdersUseCase {
     constructor(
         private readonly businesses: BusinessRepository,

@@ -55,6 +55,8 @@ export interface OrderRepository {
     }): Promise<number | undefined>
     /** Transfers of this customer an owner did not find («Pul kelmadi»), on other orders. */
     countTransferRejections(customerId: string, exceptOrderId: string): Promise<number>
+    /** Changes whenever an open order of the shop is added, moved or finished. */
+    activeVersion(businessId: string): Promise<string>
     /** Network orders nobody took yet, oldest first; `unalerted`: only those not reported late. */
     listWaitingForNetwork(
         districtIds: readonly string[],
