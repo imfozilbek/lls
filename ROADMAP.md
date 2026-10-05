@@ -193,10 +193,10 @@ Pilot: **food, water and grocery at the same time.**
       tayyor»; «Platforma» marks such shops
 - [x] The QR poster downloads in the app («Yuklab olish») and in a browser
 
-### M4q. A Zumda Shop QR on the poster 🔨 (owner's decisions, October 2026; goal 16)
+### M4q. A Zumda Shop QR on the poster ✅ (owner's decisions, October 2026; goal 16)
 - [x] «Zumda Shop uchun» QR (`startapp=m_<slug>`) opens the shop inside Zumda Shop; showcase
       money; a shop that left the showcase sends the person to its own bot
-- [ ] On production: a phone scan of one of the two businesses' QR; posters sent
+- [x] On production: a phone scan of one of the two businesses' QR; posters sent
 
 ### M4p. Mini App crashes are seen ✅ (owner's decision, October 2026: logs and errors first)
 - [x] Uncaught errors and rejections in the Mini App reach the server log (`client_error`) and
