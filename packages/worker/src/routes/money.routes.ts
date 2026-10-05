@@ -6,7 +6,7 @@ import { requireOwner, shopOf } from "../auth.js"
 import { ordersCsv, localDateTime } from "../http/csv.js"
 import { ApiError } from "../http/errors.js"
 import { looksLike, readImageBody, storePoster } from "../http/images.js"
-import { idParam, moneyQuery, onInvalid, paymentBody } from "../http/schemas.js"
+import { idParam, moneyQuery, onInvalid, paymentBody, posterQuery } from "../http/schemas.js"
 import { networkAfterStep, notifyPaymentConfirmed } from "../network-flow.js"
 import { escapeHtml } from "../telegram/gateway.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
@@ -116,8 +116,13 @@ export const moneyRoutes = new Hono<AppEnv>()
      * The QR poster drawn in the app comes back as a PNG file in the owner's chat, and is kept
      * for the app's «Yuklab olish» (`key`, public under /img).
      */
-    .post("/shop/poster", async (c) => {
+    .post("/shop/poster", zValidator("query", posterQuery, onInvalid), async (c) => {
         const business = shopOf(c)
+        const { kind } = c.req.valid("query")
+        // Zumda Shop's QR opens the shop through the showcase: only a shop that is in it.
+        if (kind === "zumda" && !business.isInShowcase()) {
+            throw new ApiError(422, "NOT_IN_SHOWCASE", "The shop is not in the Zumda showcase")
+        }
         const body = await readImageBody(c.req.raw)
         if (c.req.header("Content-Type") !== PNG || !looksLike(PNG, body)) {
             throw new ApiError(415, "UNSUPPORTED_IMAGE", "The poster must be a PNG image")
@@ -131,11 +136,13 @@ export const moneyRoutes = new Hono<AppEnv>()
         const delivered = await new Notifier(c.get("services")).fileToOwner(
             business,
             {
-                name: `${business.slug.value}-qr.png`,
+                name: `${business.slug.value}-${kind === "zumda" ? "zumda-" : ""}qr.png`,
                 contentType: PNG,
                 bytes: new Uint8Array(body),
             },
-            fill(t.posterCaption, { shop: escapeHtml(business.name) }),
+            fill(kind === "zumda" ? t.posterZumdaCaption : t.posterCaption, {
+                shop: escapeHtml(business.name),
+            }),
         )
         return c.json({ delivered, key })
     })
