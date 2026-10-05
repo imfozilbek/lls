@@ -183,7 +183,11 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
 - Havolani (`t.me/osh_markaz_bot`) Telegram guruhlaringizga, Instagram'ga, stikerga yozing.
 - **Sozlamalar → Chop etish uchun QR-kod**: do'kon nomi, logotipi va QR-kodli plakat ochiladi.
   **Yuklab olish** tugmasi uni telefoningizga saqlaydi, bot esa PNG faylni chatga ham yuboradi.
-  Chop etib peshtaxtaga, eshikka yopishtiring yoki Instagram'ga joylang.
+  Chop etib peshtaxtaga, eshikka yopishtiring yoki Instagram'ga joylang. Ikki xil QR bor:
+  - **Do'kon boti uchun**: mijoz to'g'ridan-to'g'ri botingizni ochadi;
+  - **Zumda Shop uchun** (do'kon Zumda vitrinasida bo'lsa): mijoz do'koningizni Zumda Shop'da
+    ochadi va u yerda boshqa do'konlarni ham ko'radi. Bunday buyurtma vitrina buyurtmasi:
+    vitrina komissiyasi bilan. Do'kon vitrinadan chiqsa, QR mijozni botingizga yuboradi.
 - **Botingizda Start bosing.** Telegram bot sizga birinchi bo'lib yoza olmaydi: botni bir marta
   oching va Start bosing. Shungacha buyurtmalar va fayllar Zumda Business'ga keladi, «Ishga
   tayyor»da esa «Botingizni oching» qadami turadi.

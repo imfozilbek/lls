@@ -253,4 +253,36 @@ describe("Zumda showcase", () => {
         await inShop(OWNER)(`/api/owner/products/${id}`, { method: "DELETE" })
         expect(await names("tandir")).toEqual([])
     })
+    it("a Zumda Shop QR: the poster only in the showcase, the shop's bot when it left", async () => {
+        const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13])
+        const poster = (kind: string): Promise<Response> =>
+            inShop(OWNER)(`/api/owner/shop/poster?kind=${kind}`, {
+                method: "POST",
+                headers: { "Content-Type": "image/png" },
+                body: png,
+            })
+        const outside = await poster("zumda")
+        expect(outside.status).toBe(422)
+        expect(await json(outside)).toMatchObject({ error: { code: "NOT_IN_SHOWCASE" } })
+        expect((await poster("other")).status).toBe(400)
+
+        await market(5)
+        expect((await poster("zumda")).status).toBe(200)
+        const sent = client.telegram.documents.at(-1)
+        expect(sent?.file.name).toBe(`${slug}-zumda-qr.png`)
+        expect(sent?.caption).toContain("Zumda Shop uchun QR-kod")
+        expect((await poster("shop")).status).toBe(200)
+        expect(client.telegram.documents.at(-1)?.caption).not.toContain("Zumda Shop")
+
+        // Scanned after the shop left the showcase: Zumda Shop sends the person to its own bot.
+        await market(null)
+        const bot = await viaPlatform(CUSTOMER)(`/api/showcase/shops/${slug}/bot`)
+        expect(await json(bot)).toEqual({ botUsername: SHOP_BOT.username, inShowcase: false })
+        expect((await viaPlatform(CUSTOMER)("/api/showcase/shops/no-such-shop/bot")).status).toBe(
+            404,
+        )
+        expect((await viaPlatform(CUSTOMER)("/api/showcase/shops/Bad_Slug/bot")).status).toBe(400)
+        // Only from the Zumda bot.
+        expect((await inShop(CUSTOMER)(`/api/showcase/shops/${slug}/bot`)).status).toBe(400)
+    })
 })

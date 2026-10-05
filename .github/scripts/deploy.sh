@@ -41,6 +41,8 @@ readonly WORKER_URL="https://${API_HOST}"
 # The Zumda | Business bot: its Login Widget signs owners in on business.zumda.shop (its domain is
 # set by hand once in @BotFather: /setdomain).
 readonly BUSINESS_BOT="zumdashop_business_bot"
+# Zumda | Shop: the poster's Zumda Shop QR opens a shop in it (`startapp=m_<slug>`).
+readonly SHOP_BOT="zumdashop_bot"
 readonly APP_ORIGIN="https://${APP_HOST}"
 readonly BUSINESS_ORIGIN="https://${BUSINESS_HOST}"
 readonly COURIER_ORIGIN="https://${COURIER_HOST}"
@@ -385,7 +387,8 @@ deploy_worker() {
 
 deploy_app() {
     log "Mini App"
-    local vars=("VITE_API_URL=${WORKER_URL}" "VITE_BUSINESS_BOT=${BUSINESS_BOT}")
+    local vars=("VITE_API_URL=${WORKER_URL}" "VITE_BUSINESS_BOT=${BUSINESS_BOT}"
+        "VITE_SHOP_BOT=${SHOP_BOT}")
     # Without them (R2's addresses not live yet) the app reads photos and the map via the Worker.
     if [[ -n "${MEDIA_URL:-}" ]]; then vars+=("VITE_MEDIA_URL=${MEDIA_URL}"); fi
     if [[ -n "${MAP_URL:-}" ]]; then vars+=("VITE_MAP_URL=${MAP_URL}"); fi

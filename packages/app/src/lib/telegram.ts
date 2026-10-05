@@ -186,17 +186,24 @@ export interface LaunchParams {
     admin: AdminTarget | null
 }
 
+/** `shop_<slug>`: the shop's own bot; `m_<slug>`: Zumda | Shop on that shop (its QR, goal 16). */
+const START_SHOP = /^shop_([a-z0-9-]{3,40})$/
+const START_MARKET_SHOP = /^m_([a-z0-9-]{3,40})$/
+
 export function readLaunchParams(url: URL, app: WebApp | null): LaunchParams {
-    const fromStart = app?.initDataUnsafe.start_param?.match(/^shop_([a-z0-9-]{3,40})$/)?.[1]
+    const start = app?.initDataUnsafe.start_param ?? ""
+    const fromStart = START_SHOP.exec(start)?.[1]
+    // Zumda Shop's main Mini App may open without `?mode=market`: the prefix says it is.
+    const marketShop = START_MARKET_SHOP.exec(start)?.[1]
     return {
-        shop: url.searchParams.get("shop") ?? fromStart ?? null,
+        shop: url.searchParams.get("shop") ?? marketShop ?? fromStart ?? null,
         business:
             url.hostname.startsWith(BUSINESS_HOST_PREFIX) ||
             ["business", "onboarding"].includes(url.searchParams.get("mode") ?? ""),
         courier:
             url.hostname.startsWith(COURIER_HOST_PREFIX) ||
             url.searchParams.get("mode") === "courier",
-        market: url.searchParams.get("mode") === "market",
+        market: url.searchParams.get("mode") === "market" || marketShop !== undefined,
         order: ID.test(url.searchParams.get("order") ?? "") ? url.searchParams.get("order") : null,
         admin: readAdminTarget(url.searchParams.get("admin")),
     }

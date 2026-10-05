@@ -292,3 +292,10 @@ export const clientErrorBody = z
         screen: z.string().max(CRASH_LIMITS.screen).regex(CRASH_SCREEN),
     })
     .strict()
+
+/** A shop's slug in a path (Slug's own rules: lowercase letters, digits and hyphens). */
+export const slugParam = z.object({ slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1,38}[a-z0-9]$/) })
+
+/** Which QR the poster carries: the shop's own bot, or Zumda Shop opening on the shop. */
+export const POSTER_KINDS = ["shop", "zumda"] as const
+export const posterQuery = z.object({ kind: z.enum(POSTER_KINDS).default("shop") })

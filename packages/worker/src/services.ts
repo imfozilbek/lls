@@ -32,6 +32,7 @@ import {
     ListShopOrdersUseCase,
     ShopOrdersVersionUseCase,
     ListShowcaseShopsUseCase,
+    ShopBotOfUseCase,
     MarkTransferSentUseCase,
     GetTransferReceiptUseCase,
     RemindTransferUseCase,
@@ -140,6 +141,7 @@ export interface UseCases {
     courierHome: GetCourierHomeUseCase
     courierAdvanceOrder: CourierAdvanceOrderUseCase
     listShowcaseShops: ListShowcaseShopsUseCase
+    shopBotOf: ShopBotOfUseCase
     searchShowcase: SearchShowcaseUseCase
     setMarketplaceTerms: SetMarketplaceTermsUseCase
     setDistrict: SetDistrictUseCase
@@ -275,6 +277,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             courierHome: new GetCourierHomeUseCase(network),
             courierAdvanceOrder: new CourierAdvanceOrderUseCase(orderAccess),
             listShowcaseShops: new ListShowcaseShopsUseCase(businesses, clock),
+            shopBotOf: new ShopBotOfUseCase(businesses),
             searchShowcase: new SearchShowcaseUseCase(businesses, products, clock),
             setMarketplaceTerms: new SetMarketplaceTermsUseCase(businesses, admins, clock),
             setDistrict: new SetDistrictUseCase(network, admins),

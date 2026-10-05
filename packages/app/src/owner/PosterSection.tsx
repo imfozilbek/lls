@@ -1,4 +1,4 @@
-import { Language } from "@zumda/core"
+import { BusinessStatus, Language } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { dictionaryFor, errorText, useT } from "../i18n/index.js"
@@ -9,7 +9,7 @@ import { AlertIcon, BotIcon, CheckIcon, QrIcon } from "../ui/icons.js"
 import { Button } from "../ui/primitives.js"
 import { Sheet } from "../ui/sheet.js"
 
-import type { OwnerDelivery } from "../lib/api.js"
+import type { OwnerDelivery, PosterKind } from "../lib/api.js"
 import type { ShopOwnerDTO } from "@zumda/core"
 
 interface Poster {
@@ -18,6 +18,7 @@ interface Poster {
     /** The same file on the Worker: what «Yuklab olish» saves. */
     url: string
     delivered: OwnerDelivery
+    kind: PosterKind
 }
 
 /** Where the poster went besides the download, and what to do when the bot could not write. */
@@ -79,7 +80,10 @@ function PosterSheet({
                 size="lg"
                 onClick={(): void => {
                     haptic.success()
-                    downloadFile(poster.url, `${shop.slug}-qr.png`)
+                    downloadFile(
+                        poster.url,
+                        `${shop.slug}-${poster.kind === "zumda" ? "zumda-" : ""}qr.png`,
+                    )
                 }}
             >
                 {s.posterDownload}
@@ -91,12 +95,15 @@ function PosterSheet({
 
 /**
  * A poster with the shop's QR for the counter, the door or Instagram: shown here to download,
- * and sent as a file to the owner's chat.
+ * and sent as a file to the owner's chat. Two QRs: the shop's own bot, or Zumda Shop opening on
+ * the shop (owner's decision, goal 16: only for a shop in the showcase, an order through it is
+ * a showcase order).
  */
 export function PosterSection({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
     const t = useT()
     const s = t.owner.settings
-    const [busy, setBusy] = useState(false)
+    const [busy, setBusy] = useState<PosterKind | null>(null)
+    const inShowcase = shop.status === BusinessStatus.ACTIVE && shop.marketplace !== undefined
     const [poster, setPoster] = useState<Poster | null>(null)
     useEffect(
         () => (): void => {
@@ -106,20 +113,26 @@ export function PosterSection({ shop }: { shop: ShopOwnerDTO }): React.JSX.Eleme
         },
         [poster],
     )
-    const send = async (): Promise<void> => {
-        setBusy(true)
+    const send = async (kind: PosterKind): Promise<void> => {
+        setBusy(kind)
         try {
             // Loaded on tap: the QR code library stays out of every other screen.
-            const { drawPoster } = await import("../lib/poster.js")
+            const { ZUMDA_SHOP_BOT, drawPoster, shopBotLink, zumdaShopLink } =
+                await import("../lib/poster.js")
+            const words = dictionaryFor(Language.UZ, shop.type)
+            const zumda = kind === "zumda"
             const png = await drawPoster({
                 shopName: shop.name,
-                botUsername: shop.botUsername,
+                link: zumda ? zumdaShopLink(shop.slug) : shopBotLink(shop.botUsername),
+                linkLabel: `t.me/${zumda ? ZUMDA_SHOP_BOT : shop.botUsername}`,
                 brandColor: shop.brandColor,
                 logoUrl: imageUrl(shop.logoKey) ?? null,
-                line: dictionaryFor(Language.UZ, shop.type).owner.settings.posterLine,
-                poweredBy: dictionaryFor(Language.UZ, shop.type).common.poweredBy,
+                line: zumda
+                    ? words.owner.settings.posterZumdaLine
+                    : words.owner.settings.posterLine,
+                poweredBy: words.common.poweredBy,
             })
-            const { delivered, key } = await api.owner.sendPoster(png)
+            const { delivered, key } = await api.owner.sendPoster(png, kind)
             if (delivered === "shop") {
                 haptic.success()
             } else {
@@ -129,12 +142,13 @@ export function PosterSection({ shop }: { shop: ShopOwnerDTO }): React.JSX.Eleme
                 preview: URL.createObjectURL(png),
                 url: imageUrl(key) ?? "",
                 delivered,
+                kind,
             })
         } catch (caught) {
             haptic.error()
             toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
         } finally {
-            setBusy(false)
+            setBusy(null)
         }
     }
     return (
@@ -147,14 +161,27 @@ export function PosterSection({ shop }: { shop: ShopOwnerDTO }): React.JSX.Eleme
                     <h2 className="font-semibold">{s.poster}</h2>
                     <p className="text-sm text-tg-hint">{s.posterHint}</p>
                 </div>
-                <Button
-                    variant="surface"
-                    loading={busy}
-                    className="self-start"
-                    onClick={(): void => void send()}
-                >
-                    {s.poster}
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                    <Button
+                        variant="surface"
+                        loading={busy === "shop"}
+                        disabled={busy !== null}
+                        onClick={(): void => void send("shop")}
+                    >
+                        {s.posterShop}
+                    </Button>
+                    <Button
+                        variant="surface"
+                        loading={busy === "zumda"}
+                        disabled={busy !== null || !inShowcase}
+                        onClick={(): void => void send("zumda")}
+                    >
+                        {s.posterZumda}
+                    </Button>
+                </div>
+                <p className="text-sm text-tg-hint">
+                    {inShowcase ? s.posterZumdaHint : s.posterZumdaOff}
+                </p>
             </div>
             {poster ? (
                 <PosterSheet shop={shop} poster={poster} onClose={(): void => setPoster(null)} />

@@ -237,6 +237,8 @@ const BASE = {
             channel: { shop_bot: "do'kon boti", marketplace: "Zumda vitrinasi" },
         },
         posterCaption: "🖨 {shop} uchun QR-kod. Chop eting yoki Instagramga joylang.",
+        posterZumdaCaption:
+            "🖨 {shop}: Zumda Shop uchun QR-kod. Skanerlagan odam do'koningizni Zumda Shop'da ochadi. Chop eting yoki Instagramga joylang.",
         ownerBotClosed:
             "⚠️ {bot} sizga yoza olmadi: siz unda hali Start bosmagansiz. Botingizni oching va Start bosing: keyingi xabarlar o'sha yerga keladi.",
         openShopBot: "🤖 {bot} ni ochish",
