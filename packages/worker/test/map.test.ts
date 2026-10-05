@@ -91,6 +91,9 @@ describe("/map", () => {
         expect(glyphs.status).toBe(200)
         expect(new Uint8Array(await glyphs.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]))
 
+        const bySlug = await get("/fonts/noto-sans-regular/0-255.pbf")
+        expect(new Uint8Array(await bySlug.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]))
+
         const missing = await get("/fonts/Noto%20Sans%20Regular/19968-20223.pbf")
         expect(missing.status).toBe(200)
         expect((await missing.arrayBuffer()).byteLength).toBe(0)

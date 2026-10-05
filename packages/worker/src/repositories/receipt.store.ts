@@ -8,7 +8,7 @@ const EXTENSIONS: Record<string, string> = {
     "image/png": "png",
 }
 
-/** Outside `shops/`: the public `/img` route never serves a receipt. */
+/** Their own private bucket (RECEIPTS): never on a public address, unlike `zumda-media`. */
 export const RECEIPT_KEY_PREFIX = "receipts/"
 
 function toHex(buffer: ArrayBuffer): string {

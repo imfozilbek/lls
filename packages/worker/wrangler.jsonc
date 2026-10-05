@@ -25,7 +25,12 @@
             "migrations_dir": "migrations",
         },
     ],
-    "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "zumda-media" }],
+    // BUCKET: public files (photos, logos, posters, the map), also served from media. and map.
+    // zumda.shop without the Worker. RECEIPTS: transfer screenshots, private, kept 30 days.
+    "r2_buckets": [
+        { "binding": "BUCKET", "bucket_name": "zumda-media" },
+        { "binding": "RECEIPTS", "bucket_name": "zumda-receipts" },
+    ],
     // Per-user limits for calls that cost D1 reads or ping admins (free tier counts rows read).
     "ratelimits": [
         {

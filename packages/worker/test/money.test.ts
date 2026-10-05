@@ -238,6 +238,12 @@ describe("money: transfer before the shop starts, report, files", () => {
         }
         const stranger = await as(STRANGER)(`/api/orders/${first.id}/receipt`)
         expect([403, 404]).toContain(stranger.status)
+        // In the private bucket only: the public one (media.zumda.shop) never holds a receipt.
+        const kept = await env.DB.prepare("SELECT receipt_key FROM orders WHERE id = ?")
+            .bind(first.id)
+            .first<{ receipt_key: string }>()
+        expect(await env.RECEIPTS.head(kept?.receipt_key ?? "")).not.toBeNull()
+        expect(await env.BUCKET.head(kept?.receipt_key ?? "")).toBeNull()
         // The order says when, never where the file lies.
         const dto = await json<Json>(await as(CUSTOMER)(`/api/orders/${first.id}`))
         expect(dto).toMatchObject({ payment: { receipt: { customerRejections: 0 } } })
@@ -288,6 +294,24 @@ describe("money: transfer before the shop starts, report, files", () => {
             method: "POST",
         })
         expect(stranger.status).toBe(403)
+    })
+
+    it("a screenshot kept past 30 days is gone: 410, not a failure", async () => {
+        const order = await json<Order>(await place())
+        await transferSent(order.id)
+        const row = await env.DB.prepare("SELECT receipt_key FROM orders WHERE id = ?")
+            .bind(order.id)
+            .first<{ receipt_key: string }>()
+        // The bucket's lifecycle deleted it on day 30.
+        await env.RECEIPTS.delete(row?.receipt_key ?? "")
+        const fresh = await as(CUSTOMER)(`/api/orders/${order.id}/receipt`)
+        expect(fresh.status).toBe(404)
+        await env.DB.prepare("UPDATE orders SET receipt_at = ? WHERE id = ?")
+            .bind(Date.now() - 31 * 24 * 60 * 60_000, order.id)
+            .run()
+        const old = await as(OWNER)(`/api/orders/${order.id}/receipt`)
+        expect(old.status).toBe(410)
+        expect(await json(old)).toMatchObject({ error: { code: "RECEIPT_EXPIRED" } })
     })
 
     it("Telegram refuses the picture: the owner still gets the sum and the buttons", async () => {

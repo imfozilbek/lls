@@ -202,7 +202,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const couriers = new D1CourierRepository(env.DB)
     const districts = new D1DistrictRepository(env.DB)
     const cards = new D1PayoutCardRepository(env.DB)
-    const receipts = new R2ReceiptStore(env.BUCKET)
+    const receipts = new R2ReceiptStore(env.RECEIPTS)
     const { clock, telegram } = deps
     const managedBots = new D1ManagedBotRepository(env.DB, env.TOKEN_ENC_KEY, clock)
     const admins = platformAdminIds(env)

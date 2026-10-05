@@ -1,4 +1,5 @@
 import { zValidator } from "@hono/zod-validator"
+import { receiptExpired } from "@zumda/core"
 import { Hono } from "hono"
 
 import { shopOf } from "../auth.js"
@@ -154,14 +155,20 @@ export const customerRoutes = new Hono<AppEnv>()
     /** The transfer screenshot: only the order's customer and the shop's owner, never cached. */
     .get("/orders/:id/receipt", zValidator("param", idParam, onInvalid), async (c) => {
         const services = c.get("services")
-        const key = await services.useCases.getTransferReceipt.execute({
+        const { key, sentAt } = await services.useCases.getTransferReceipt.execute({
             telegramId: c.get("auth").user.id,
             businessId: shopOf(c).id,
             orderId: c.req.valid("param").id,
         })
-        const object = await services.env.BUCKET.get(key)
+        const object = await services.env.RECEIPTS.get(key)
         if (!object) {
-            return c.json({ error: { code: "NOT_FOUND", message: "No receipt" } }, 404)
+            // Kept 30 days (the bucket's lifecycle deletes it): gone for good, not an error.
+            return receiptExpired(sentAt, services.clock.now())
+                ? c.json(
+                      { error: { code: "RECEIPT_EXPIRED", message: "The receipt was deleted" } },
+                      410,
+                  )
+                : c.json({ error: { code: "NOT_FOUND", message: "No receipt" } }, 404)
         }
         return new Response(object.body, {
             headers: {
