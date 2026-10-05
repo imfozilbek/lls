@@ -21,7 +21,9 @@
  *   map/sprites/light[@2x].{json,png}   icons
  *   map/current.json                    which map the app gets: written LAST, so the switch is
  *                                       atomic; the map before it stays, older ones are removed
- * The Worker serves them under /map (packages/worker/src/routes/map.routes.ts).
+ * R2 serves them itself at https://map.zumda.shop/map/... (the app in production, no Worker
+ * request); the Worker serves the same keys under /map for the stand and local dev
+ * (packages/worker/src/routes/map.routes.ts).
  *
  * Upload needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (wrangler reads them).
  */
@@ -194,56 +196,136 @@ function wrangler(args, options = {}) {
     })
 }
 
-function put(key, file, contentType) {
-    wrangler(["put", `${BUCKET}/${key}`, `--file=${file}`, `--content-type=${contentType}`], {
-        stdio: ["ignore", "ignore", "inherit"],
-    })
+/**
+ * How long a copy may be kept (R2 serves these headers on map.zumda.shop, and the Worker on the
+ * stand): a dated map file never changes; fonts and icons keep their names across maps; the
+ * pointer to the current map changes about once a month.
+ */
+const CACHE_MAP_FILE = "public, max-age=31536000, immutable"
+const CACHE_ASSET = "public, max-age=86400"
+const CACHE_CURRENT = "public, max-age=300"
+
+/** Throws instead of exiting: an upload that fails half way cleans up after itself. */
+function put(key, file, contentType, cacheControl) {
+    const result = spawnSync(
+        "bunx",
+        [
+            "wrangler",
+            "r2",
+            "object",
+            "put",
+            `${BUCKET}/${key}`,
+            `--file=${file}`,
+            `--content-type=${contentType}`,
+            `--cache-control=${cacheControl}`,
+            "--remote",
+        ],
+        { cwd: WORKER_DIR, stdio: ["ignore", "ignore", "inherit"] },
+    )
+    if (result.status !== 0) {
+        throw new Error(`upload of ${key} failed (${result.status ?? result.signal})`)
+    }
 }
 
-/** What R2 serves now, or null on the first run. */
+/** What R2 serves now, or null on the first run. Any other failure stops the run. */
 function currentInR2() {
     const result = spawnSync(
         "bunx",
         ["wrangler", "r2", "object", "get", `${BUCKET}/${CURRENT}`, "--remote", "--pipe"],
-        { cwd: WORKER_DIR, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+        { cwd: WORKER_DIR, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
     )
+    if (result.status !== 0) {
+        if (/does not exist|not found|NoSuchKey/i.test(result.stderr ?? "")) {
+            return null
+        }
+        // Unknown is not "nothing": guessing would delete or overwrite the map people use.
+        return fail(`cannot read ${CURRENT}: ${(result.stderr ?? "").trim().slice(0, 300)}`)
+    }
     try {
-        return result.status === 0 ? JSON.parse(result.stdout) : null
+        return JSON.parse(result.stdout)
     } catch {
-        return null
+        return fail(`${CURRENT} in R2 is not JSON`)
     }
 }
 
-function upload(outDir, current) {
+/** The map files in R2 (`map/uzbekistan-*.pmtiles`), through the Cloudflare API. */
+async function mapFilesInR2() {
+    const base = `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID}`
+    const files = []
+    let cursor = ""
+    do {
+        const query = new URLSearchParams({ prefix: `${PREFIX}/uzbekistan-`, per_page: "100" })
+        if (cursor) {
+            query.set("cursor", cursor)
+        }
+        const response = await fetch(`${base}/r2/buckets/${BUCKET}/objects?${query}`, {
+            headers: { Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN}` },
+        })
+        const body = await response.json()
+        if (!response.ok || !body.success) {
+            throw new Error(`cannot list the map files (HTTP ${response.status})`)
+        }
+        files.push(...body.result.map((object) => object.key.slice(PREFIX.length + 1)))
+        cursor = body.result_info?.is_truncated ? body.result_info.cursor : ""
+    } while (cursor)
+    return files
+}
+
+function remove(file) {
+    wrangler(["delete", `${BUCKET}/${PREFIX}/${file}`], { stdio: ["ignore", "ignore", "inherit"] })
+    log(`removed ${file}`)
+}
+
+function putAll(outDir, current) {
+    put(
+        `${PREFIX}/${current.file}`,
+        join(outDir, current.file),
+        "application/vnd.pmtiles",
+        CACHE_MAP_FILE,
+    )
+    for (const font of FONTS) {
+        for (const range of GLYPH_RANGES) {
+            const key = `${PREFIX}/fonts/${fontSlug(font)}/${range}.pbf`
+            const file = join(outDir, "fonts", font, `${range}.pbf`)
+            put(key, file, "application/x-protobuf", CACHE_ASSET)
+        }
+    }
+    for (const sprite of SPRITES) {
+        const type = sprite.endsWith(".png") ? "image/png" : "application/json"
+        put(`${PREFIX}/sprites/${sprite}`, join(outDir, "sprites", sprite), type, CACHE_ASSET)
+    }
+}
+
+async function upload(outDir, current) {
     if (!process.env.CLOUDFLARE_API_TOKEN || !process.env.CLOUDFLARE_ACCOUNT_ID) {
         fail("upload needs CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID")
     }
     const before = currentInR2()
     log(`uploading ${current.file} (now in R2: ${before?.file ?? "nothing"})`)
-    put(`${PREFIX}/${current.file}`, join(outDir, current.file), "application/vnd.pmtiles")
-    for (const font of FONTS) {
-        for (const range of GLYPH_RANGES) {
-            const key = `${PREFIX}/fonts/${fontSlug(font)}/${range}.pbf`
-            put(key, join(outDir, "fonts", font, `${range}.pbf`), "application/x-protobuf")
-        }
-    }
-    for (const sprite of SPRITES) {
-        const type = sprite.endsWith(".png") ? "image/png" : "application/json"
-        put(`${PREFIX}/sprites/${sprite}`, join(outDir, "sprites", sprite), type)
-    }
     const next = {
         ...current,
         previous: before?.file !== current.file ? before?.file : before?.previous,
     }
-    writeFileSync(join(outDir, "current.json"), `${JSON.stringify(next, null, 4)}\n`)
-    // Last: until now the app keeps getting the map before.
-    put(CURRENT, join(outDir, "current.json"), "application/json")
+    try {
+        putAll(outDir, current)
+        writeFileSync(join(outDir, "current.json"), `${JSON.stringify(next, null, 4)}\n`)
+        // Last: until now the app keeps getting the map before.
+        put(CURRENT, join(outDir, "current.json"), "application/json", CACHE_CURRENT)
+    } catch (error) {
+        // current.json still points to the old map: the new file is only taking room.
+        if (current.file !== before?.file && current.file !== before?.previous) {
+            remove(current.file)
+        }
+        fail(error instanceof Error ? error.message : String(error))
+    }
     log(`switched to ${current.file}`)
-    // Keep the map before (a session that opened it keeps reading it); remove the older one.
-    const stale = before?.previous
-    if (stale && stale !== next.file && stale !== next.previous) {
-        wrangler(["delete", `${BUCKET}/${PREFIX}/${stale}`])
-        log(`removed ${stale}`)
+    // Only the map and the one before it (a session that opened it keeps reading it) stay: a
+    // file left by any earlier failed or older run goes too, so R2 never grows month by month.
+    const keep = new Set([next.file, next.previous])
+    for (const file of await mapFilesInR2()) {
+        if (!keep.has(file)) {
+            remove(file)
+        }
     }
 }
 
@@ -274,7 +356,7 @@ async function main() {
             ? JSON.parse(readFileSync(built, "utf8"))
             : await build(outDir)
     if (option("upload", false) === true) {
-        upload(outDir, current)
+        await upload(outDir, current)
     }
     log(`done: ${outDir}`)
 }

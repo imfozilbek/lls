@@ -6,6 +6,7 @@ import {
     GetOrderUseCase,
     ListMyOrdersUseCase,
     ListShopOrdersUseCase,
+    ShopOrdersVersionUseCase,
 } from "../../application/use-cases/order/order.use-cases.js"
 import { ConfirmPaymentUseCase } from "../../application/use-cases/money/money.use-cases.js"
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
@@ -340,6 +341,28 @@ describe("order use cases", () => {
             expect(all.meta.total).toBe(1)
             await expect(
                 shopOrders.execute({ actorTelegramId: STRANGER_TG, businessId: "biz-1" }),
+            ).rejects.toThrow(ForbiddenError)
+
+            // The owner's screen polls this, and reads the list only when it moves.
+            const version = new ShopOrdersVersionUseCase(businesses, orders)
+            const before = await version.execute({ actorTelegramId: OWNER_TG, businessId: "biz-1" })
+            expect(await version.execute({ actorTelegramId: OWNER_TG, businessId: "biz-1" })).toBe(
+                before,
+            )
+            const order = active.data[0]
+            if (order) {
+                await new CancelOrderUseCase(deps()).execute({
+                    businessId: "biz-1",
+                    telegramId: OWNER_TG,
+                    orderId: order.id,
+                    reason: "Tugadi",
+                })
+                expect(
+                    await version.execute({ actorTelegramId: OWNER_TG, businessId: "biz-1" }),
+                ).not.toBe(before)
+            }
+            await expect(
+                version.execute({ actorTelegramId: STRANGER_TG, businessId: "biz-1" }),
             ).rejects.toThrow(ForbiddenError)
         })
     })

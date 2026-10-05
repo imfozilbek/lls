@@ -22,12 +22,13 @@ marketplace on top of both.
 | `@zumda/app` | ✅ Done | Storefront, checkout, tracking, owner section, courier screen, showcase, onboarding, «Mening bizneslarim», «Platforma», business.zumda.shop in a browser, «Pul», cash, map, trips, sound, poster download; Uzbek, light only; 84 tests; ~95 KB gzip initial JS |
 | CI | ✅ Done | format, lint, build, unit tests, coverage, 119 e2e scenarios on eight machines on every pull request; a push to `main` deploys |
 | Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
-| Deploy | ✅ Live | `api.`, `app.`, `business.`, `delivery.zumda.shop`; migrations up to `0015`; the map of Uzbekistan in R2 |
+| Deploy | ✅ Live | `api.`, `app.`, `business.`, `delivery.zumda.shop`, `media.` and `map.zumda.shop` (R2); migrations up to `0018`; the map of Uzbekistan in R2; fits the free plan (`docs/capacity.md`) |
 | Pilot (food, water, grocery) | 🔨 Started | 5 businesses in production (all bots made with «Bot yaratish»), 3 active couriers, 4 orders delivered and paid (one through the showcase); no district yet |
 
 **Blocking:** the meeting with the pilots and the owner's decisions below (goal 02). Owner tasks
-without code: the «Yakkabog'» district in «Platforma → Tumanlar», `ORS_API_KEY` for road routes,
-the Login Widget and Description Pictures in @BotFather (goal 15), a local `wrangler d1 export`.
+without code: the «Yakkabog'» district in «Platforma → Tumanlar», the Login Widget and
+Description Pictures in @BotFather (goal 15), a local `wrangler d1 export`, the right Zone >
+Cache Rules: Edit for the deploy's Cloudflare token (the map kept at the edge, `TODO.md` #25).
 
 **Owner decisions still open** (never invent them in code or docs):
 - service fee rate and base (goods, or goods + delivery), the pilots' rate;
@@ -191,6 +192,21 @@ Pilot: **food, water and grocery at the same time.**
       through Zumda | Business with the note to press Start; «Botingizni oching» in «Ishga
       tayyor»; «Platforma» marks such shops
 - [x] The QR poster downloads in the app («Yuklab olish») and in a browser
+
+### M4o. Zumda in Cloudflare's free plan ✅ (owner's decision, October 2026: no paid plans)
+- [x] The audit's 14 findings fixed or in `TODO.md` with the reason (#21 to #25)
+- [x] D1: a courier's screen, open trips, the network's waiting orders, «Pul», the owner's and
+      the customer's order lists and the screenshot check read index ranges, never the history;
+      no `COUNT(*)` of a history; a save writes only changed columns; the showcase search by a
+      word table (migrations `0016` to `0018`)
+- [x] Worker: one query to sign in, cached bot tokens, batched network offers, services only for
+      `/api` and `/tg`, 20% of logs; the owner polls a version (20 s), the customer 30 s, the
+      courier 45 s; search from 3 letters after 500 ms
+- [x] R2: transfer screenshots in their own private bucket, deleted after 30 days; photos and the
+      map from `media.` and `map.zumda.shop` (no Worker request); the map upload keeps two maps
+- [x] `docs/capacity.md`: the day of 1 000 people, 300 orders, 10 shops, 15 couriers, line by
+      line; `test/capacity.test.ts` measures rows read and written on six months of history
+- [ ] One day after the deploy: compare Cloudflare's analytics with `docs/capacity.md`
 
 ### M5. Deploy and pilot 🔨
 - [x] Idempotent deploy workflow (D1, R2, Pages, secrets, migrations, platform bot)

@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Deploys Zumda to Cloudflare. Idempotent: safe to run on every push to main.
 #
-# Creates what is missing (D1, R2, Pages project, the addresses api.zumda.shop and app.zumda.shop),
-# applies D1 migrations, deploys the Worker with its secrets, deploys the Mini App to Pages and
-# connects the three Zumda bots: Shop (customers), Business (owners, admins) and Kuryer.
+# Creates what is missing (D1, the R2 buckets, Pages project, the addresses api.zumda.shop and
+# app.zumda.shop), applies D1 migrations, deploys the Worker with its secrets, keeps transfer
+# screenshots in their own private bucket for 30 days, serves public files and the map straight
+# from R2 (media.zumda.shop, map.zumda.shop), deploys the Mini App to Pages and connects the
+# three Zumda bots: Shop (customers), Business (owners, admins) and Kuryer.
 #
 # Needs env: CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, PLATFORM_ADMIN_IDS,
 # COURIER_BOT_TOKEN, BUSINESS_BOT_TOKEN.
@@ -15,7 +17,13 @@ umask 077
 
 readonly WORKER="zumda-worker"
 readonly DATABASE="zumda"
+# Public files: photos, logos, posters, the map. Never a receipt (they show bank details).
 readonly BUCKET="zumda-media"
+# Transfer screenshots, private: only the Worker reads them. Kept 30 days (owner's decision,
+# October 2026; RECEIPT_KEEP_DAYS in @zumda/core).
+readonly RECEIPTS_BUCKET="zumda-receipts"
+readonly RECEIPT_PREFIX="receipts/"
+readonly RECEIPT_KEEP_SECONDS=$((30 * 24 * 60 * 60))
 readonly PAGES_PROJECT="zumda-app"
 readonly DB_PLACEHOLDER="00000000-0000-0000-0000-000000000000"
 # Zumda's own addresses. The Worker has no workers.dev address (wrangler.jsonc).
@@ -25,6 +33,9 @@ readonly API_HOST="api.${DOMAIN}"
 readonly APP_HOST="app.${DOMAIN}"
 readonly BUSINESS_HOST="business.${DOMAIN}"
 readonly COURIER_HOST="delivery.${DOMAIN}"
+# R2 serves these itself: no Worker request per photo or map piece (the free plan counts them).
+readonly MEDIA_HOST="media.${DOMAIN}"
+readonly MAP_HOST="map.${DOMAIN}"
 readonly APP_HOSTS=("$APP_HOST" "$BUSINESS_HOST" "$COURIER_HOST")
 readonly WORKER_URL="https://${API_HOST}"
 # The Zumda | Business bot: its Login Widget signs owners in on business.zumda.shop (its domain is
@@ -81,14 +92,67 @@ ensure_d1() {
     sed -i "s/${DB_PLACEHOLDER}/${DATABASE_ID}/" "${WORKER_DIR}/wrangler.jsonc"
 }
 
+# `ensure_r2 <bucket>`
 ensure_r2() {
-    log "R2 bucket '${BUCKET}'"
-    cf_call GET "/r2/buckets/${BUCKET}"
+    local bucket="$1"
+    log "R2 bucket '${bucket}'"
+    cf_call GET "/r2/buckets/${bucket}"
     if [[ "$CF_STATUS" == 200 ]]; then echo "exists"; return; fi
     [[ "$CF_STATUS" == 404 ]] || fail "Cannot read R2 (HTTP ${CF_STATUS}). Is R2 enabled for the account?"
-    cf_call POST "/r2/buckets" "$(jq -n --arg n "$BUCKET" '{name: $n}')"
-    [[ "$CF_STATUS" == 200 ]] || fail "Cannot create R2 bucket (HTTP ${CF_STATUS})."
+    cf_call POST "/r2/buckets" "$(jq -n --arg n "$bucket" '{name: $n}')"
+    [[ "$CF_STATUS" == 200 ]] || fail "Cannot create R2 bucket ${bucket} (HTTP ${CF_STATUS})."
     echo "created"
+}
+
+# R2 deletes a receipt 30 days after it came, by itself (no cron): storage never grows past a
+# month of screenshots. The rule list is ours alone, so it is set whole every time.
+receipts_lifecycle() {
+    log "R2 '${RECEIPTS_BUCKET}': keep 30 days"
+    cf_call PUT "/r2/buckets/${RECEIPTS_BUCKET}/lifecycle" "$(jq -n --argjson age "$RECEIPT_KEEP_SECONDS" \
+        '{rules: [{id: "receipts-30-days", enabled: true, conditions: {prefix: ""},
+          deleteObjectsTransition: {condition: {type: "Age", maxAge: $age}},
+          abortMultipartUploadsTransition: {condition: {type: "Age", maxAge: 604800}}}]}')"
+    [[ "$CF_STATUS" == 200 ]] || fail "Cannot set the lifecycle of ${RECEIPTS_BUCKET} (HTTP ${CF_STATUS}). Check the API token has R2 Edit."
+    echo "set"
+}
+
+# Prints the keys under `receipts/` still in the public bucket (receipts lived there before).
+media_receipt_keys() {
+    local cursor="" query
+    while :; do
+        query="prefix=${RECEIPT_PREFIX}&per_page=1000${cursor:+&cursor=${cursor}}"
+        cf_call GET "/r2/buckets/${BUCKET}/objects?${query}"
+        [[ "$CF_STATUS" == 200 ]] || fail "Cannot list ${BUCKET} (HTTP ${CF_STATUS})."
+        jq -r '.result[].key' <<<"$CF_BODY"
+        [[ "$(jq -r '.result_info.is_truncated // false' <<<"$CF_BODY")" == true ]] || break
+        cursor="$(jq -r '.result_info.cursor' <<<"$CF_BODY")"
+    done
+}
+
+# `move_receipts copy|move`: puts every old receipt into the private bucket under the same key
+# (D1 keeps the key). `copy` before the new Worker goes live (it reads only the private bucket),
+# `move` after it (also what the old Worker took meanwhile), deleting them from the public one.
+move_receipts() {
+    local mode="$1" key file type keys
+    log "Receipts into '${RECEIPTS_BUCKET}' (${mode})"
+    keys="$(media_receipt_keys)"
+    if [[ -z "$keys" ]]; then echo "none in ${BUCKET}"; return; fi
+    file="$(mktemp)"
+    while IFS= read -r key; do
+        case "$key" in
+            *.webp) type="image/webp" ;;
+            *.png) type="image/png" ;;
+            *) type="image/jpeg" ;;
+        esac
+        wrangler r2 object get "${BUCKET}/${key}" --remote --file "$file" >/dev/null
+        wrangler r2 object put "${RECEIPTS_BUCKET}/${key}" --remote --file "$file" \
+            --content-type "$type" --cache-control "private, no-store" >/dev/null
+        if [[ "$mode" == move ]]; then
+            wrangler r2 object delete "${BUCKET}/${key}" --remote >/dev/null
+        fi
+    done <<<"$keys"
+    rm -f "$file"
+    echo "$(wc -l <<<"$keys") receipt(s)"
 }
 
 ensure_pages() {
@@ -103,6 +167,16 @@ ensure_pages() {
     fi
     PAGES_HOST="$(jq -r '.result.subdomain' <<<"$CF_BODY")"
     echo "$PAGES_HOST"
+}
+
+# The id of the zumda.shop zone.
+zone_id() {
+    cf_call GET "/zones?name=${DOMAIN}"
+    [[ "$CF_STATUS" == 200 ]] || fail "Cannot read the zone ${DOMAIN} (HTTP ${CF_STATUS}). Check the API token has Zone Read."
+    local zone
+    zone="$(jq -r '.result[0].id // empty' <<<"$CF_BODY")"
+    [[ -n "$zone" ]] || fail "The zone ${DOMAIN} is not in this Cloudflare account."
+    echo "$zone"
 }
 
 # `ensure_app_domain <host>`: a Pages custom domain plus its DNS record. A domain added through the
@@ -121,11 +195,8 @@ ensure_app_domain() {
         fail "Cannot read the Pages domains (HTTP ${CF_STATUS}). Check the API token has Pages Edit."
     fi
 
-    cf_call GET "/zones?name=${DOMAIN}"
-    [[ "$CF_STATUS" == 200 ]] || fail "Cannot read the zone ${DOMAIN} (HTTP ${CF_STATUS}). Check the API token has Zone Read."
     local zone
-    zone="$(jq -r '.result[0].id // empty' <<<"$CF_BODY")"
-    [[ -n "$zone" ]] || fail "The zone ${DOMAIN} is not in this Cloudflare account."
+    zone="$(zone_id)"
     cf_call GET "/zones/${zone}/dns_records?name=${host}"
     [[ "$CF_STATUS" == 200 ]] || fail "Cannot read DNS records (HTTP ${CF_STATUS}). Check the API token has DNS Edit."
     if [[ "$(jq '.result | length' <<<"$CF_BODY")" == 0 ]]; then
@@ -135,6 +206,92 @@ ensure_app_domain() {
         echo "DNS record created: ${host} → ${PAGES_HOST}"
     else
         echo "DNS record exists"
+    fi
+}
+
+# Only the Mini App's addresses may read the public bucket from a page (the QR poster draws the
+# logo on a canvas; the map reads its file in byte ranges).
+media_cors() {
+    log "R2 '${BUCKET}': CORS"
+    cf_call PUT "/r2/buckets/${BUCKET}/cors" "$(jq -n --arg a "$APP_ORIGIN" --arg b "$BUSINESS_ORIGIN" \
+        --arg c "$COURIER_ORIGIN" \
+        '{rules: [{allowed: {origins: [$a, $b, $c], methods: ["GET", "HEAD"],
+          headers: ["Range", "If-None-Match"]},
+          exposeHeaders: ["ETag", "Content-Range", "Content-Length", "Accept-Ranges"],
+          maxAgeSeconds: 86400}]}')"
+    [[ "$CF_STATUS" == 200 ]] || fail "Cannot set CORS on ${BUCKET} (HTTP ${CF_STATUS}). Check the API token has R2 Edit."
+    echo "set"
+}
+
+# `ensure_r2_domain <host> <zone>`: the public bucket on its own address. Returns non-zero while
+# the address is not live yet (a new one takes a few minutes).
+ensure_r2_domain() {
+    local host="$1" zone="$2"
+    log "R2 address '${host}'"
+    cf_call GET "/r2/buckets/${BUCKET}/domains/custom/${host}"
+    if [[ "$CF_STATUS" == 404 ]]; then
+        cf_call POST "/r2/buckets/${BUCKET}/domains/custom" "$(jq -n --arg d "$host" --arg z "$zone" \
+            '{domain: $d, zoneId: $z, enabled: true, minTLS: "1.2"}')"
+        [[ "$CF_STATUS" == 200 ]] || fail "Cannot add ${host} to ${BUCKET} (HTTP ${CF_STATUS}): $(jq -c '.errors' <<<"$CF_BODY")"
+        echo "added"
+        return 1
+    fi
+    [[ "$CF_STATUS" == 200 ]] || fail "Cannot read the addresses of ${BUCKET} (HTTP ${CF_STATUS}). Check the API token has R2 Edit."
+    local ownership ssl
+    ownership="$(jq -r '.result.status.ownership // empty' <<<"$CF_BODY")"
+    ssl="$(jq -r '.result.status.ssl // empty' <<<"$CF_BODY")"
+    echo "exists: ownership ${ownership}, certificate ${ssl}"
+    [[ "$ownership" == active && "$ssl" == active ]]
+}
+
+# The map file is read in byte ranges: Cloudflare keeps it at the edge only with this rule (a
+# .pmtiles is not cached by default), so a range costs neither R2 nor the Worker. Without the
+# right on rules (Zone > Cache Rules: Edit) the map still works, straight from R2.
+map_cache_rule() {
+    local zone="$1" phase="http_request_cache_settings" ref="zumda_map_cache" rule ruleset
+    log "Cache rule for ${MAP_HOST}"
+    rule="$(jq -n --arg host "$MAP_HOST" --arg ref "$ref" \
+        '{ref: $ref, description: "Zumda map: keep at the edge", action: "set_cache_settings",
+          expression: "(http.host eq \"\($host)\")",
+          action_parameters: {cache: true, edge_ttl: {mode: "respect_origin"}}}')"
+    cf_call GET "/zones/${zone}/rulesets/phases/${phase}/entrypoint"
+    if [[ "$CF_STATUS" == 200 ]]; then
+        if jq -e --arg ref "$ref" '.result.rules[]? | select(.ref == $ref)' <<<"$CF_BODY" >/dev/null; then
+            echo "exists"
+            return
+        fi
+        ruleset="$(jq -r '.result.id' <<<"$CF_BODY")"
+        cf_call POST "/zones/${zone}/rulesets/${ruleset}/rules" "$rule"
+    elif [[ "$CF_STATUS" == 404 ]]; then
+        cf_call PUT "/zones/${zone}/rulesets/phases/${phase}/entrypoint" "$(jq -n --argjson r "$rule" '{rules: [$r]}')"
+    fi
+    if [[ "$CF_STATUS" == 200 ]]; then
+        echo "added"
+    else
+        echo "::warning::No cache rule for ${MAP_HOST} (HTTP ${CF_STATUS}): give the API token Zone > Cache Rules: Edit. The map works without it, read from R2 each time."
+    fi
+}
+
+# Sets MEDIA_URL and MAP_URL for the app once R2 serves the public bucket itself. Never while a
+# receipt is still in it: the address would make it public.
+public_files() {
+    MEDIA_URL=""
+    MAP_URL=""
+    if [[ -n "$(media_receipt_keys)" ]]; then
+        echo "::warning::Receipts are still in ${BUCKET}: ${MEDIA_HOST} and ${MAP_HOST} are not added. The app keeps reading through the Worker."
+        return
+    fi
+    local zone live=true
+    zone="$(zone_id)"
+    media_cors
+    ensure_r2_domain "$MEDIA_HOST" "$zone" || live=false
+    ensure_r2_domain "$MAP_HOST" "$zone" || live=false
+    map_cache_rule "$zone"
+    if [[ "$live" == true ]]; then
+        MEDIA_URL="https://${MEDIA_HOST}"
+        MAP_URL="https://${MAP_HOST}"
+    else
+        echo "::notice::${MEDIA_HOST} or ${MAP_HOST} is not live yet: the app reads through the Worker until the next deploy."
     fi
 }
 
@@ -228,7 +385,11 @@ deploy_worker() {
 
 deploy_app() {
     log "Mini App"
-    (cd "$APP_DIR" && VITE_API_URL="$WORKER_URL" VITE_BUSINESS_BOT="$BUSINESS_BOT" bun run build)
+    local vars=("VITE_API_URL=${WORKER_URL}" "VITE_BUSINESS_BOT=${BUSINESS_BOT}")
+    # Without them (R2's addresses not live yet) the app reads photos and the map via the Worker.
+    if [[ -n "${MEDIA_URL:-}" ]]; then vars+=("VITE_MEDIA_URL=${MEDIA_URL}"); fi
+    if [[ -n "${MAP_URL:-}" ]]; then vars+=("VITE_MAP_URL=${MAP_URL}"); fi
+    (cd "$APP_DIR" && env "${vars[@]}" bun run build)
     wrangler pages deploy "${APP_DIR}/dist" --project-name "$PAGES_PROJECT" --branch main \
         --commit-dirty=true
 }
@@ -412,12 +573,17 @@ main() {
         [[ -n "${!name:-}" ]] || fail "Secret ${name} is not set."
     done
     ensure_d1
-    ensure_r2
+    ensure_r2 "$BUCKET"
+    ensure_r2 "$RECEIPTS_BUCKET"
+    receipts_lifecycle
     ensure_pages
     for host in "${APP_HOSTS[@]}"; do
         ensure_app_domain "$host"
     done
+    move_receipts copy
     deploy_worker
+    move_receipts move
+    public_files
     deploy_app
     smoke_test
     connect_platform_bot

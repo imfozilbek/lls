@@ -107,6 +107,22 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
 const WITH_COURIER = `payment_method = 'cash' AND payment_status = 'paid'
     AND cash_courier_id IS NOT NULL AND cash_received_at IS NULL`
 
+/**
+ * «Pul»: transfers to check or to return. By (business, payment status): sorting by number would
+ * otherwise walk the shop's whole history to find the few open ones.
+ */
+export const OPEN_PAYMENTS_FROM = "orders INDEXED BY idx_orders_business_payment"
+export const OPEN_PAYMENTS_WHERE =
+    "business_id = ? AND payment_status IN ('awaiting', 'refund_due')"
+/** Cash a courier still holds: only those rows (partial index, migration 0018). */
+export const CASH_OPEN_FROM = "orders INDEXED BY idx_orders_cash_open"
+export const CASH_OPEN_WHERE = `business_id = ? AND ${WITH_COURIER}`
+
+/** Refused transfers of a customer: only the refused orders (partial index, migration 0018). */
+export const TRANSFER_REJECTIONS_SQL = `SELECT COALESCE(SUM(transfer_rejections), 0) AS total
+    FROM orders INDEXED BY idx_orders_customer_rejected
+    WHERE customer_id = ? AND id != ? AND transfer_rejections > 0`
+
 /** A courier can still take the order: from accepted until pickup. */
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
 
@@ -129,6 +145,72 @@ const EMPTY_TOTALS: MoneyTotals = {
 /** Most a courier's screen shows at once: today's work fits easily. */
 const COURIER_LIST_LIMIT = 50
 
+const FINAL_ORDER_STATUSES = ORDER_STATUSES.filter((s) => !ACTIVE_ORDER_STATUSES.includes(s))
+
+/** A page of orders, newest first; binds: the where's values, then limit and offset. */
+export function pageSql(from: string, where: string): string {
+    return `SELECT ${COLUMNS} FROM ${from} WHERE ${where} ORDER BY number DESC LIMIT ? OFFSET ?`
+}
+
+/** By (business_id, status, number): an «active» page never walks the shop's history. */
+export const BY_STATUS = "orders INDEXED BY idx_orders_business_status"
+
+export function shopStatusWhere(statuses: number): string {
+    return `business_id = ? AND status IN (${placeholders(statuses)})`
+}
+
+/**
+ * The owner's screen polls this every 20 s: only the shop's open orders, by
+ * `idx_orders_business_status`. Binds: shop, active statuses.
+ */
+export const ACTIVE_VERSION_SQL = `SELECT COUNT(*) AS open, MAX(updated_at) AS latest
+    FROM orders INDEXED BY idx_orders_business_status
+    WHERE business_id = ? AND status IN (${placeholders(ACTIVE_ORDER_STATUSES.length)})`
+
+/**
+ * Network orders nobody took yet: only the open ones are in `idx_orders_network_open` (0016), so
+ * finished history is never read. The statuses are literals: a partial index is used only when
+ * the query repeats its condition. Binds: district ids, limit.
+ */
+export function networkWaitingSql(districts: number, unalerted: boolean): string {
+    return `SELECT ${COLUMNS} FROM orders INDEXED BY idx_orders_network_open
+        WHERE network_requested_at IS NOT NULL AND courier_id IS NULL
+            AND status IN (${TAKEABLE.map((status) => `'${status}'`).join(", ")})
+            ${unalerted ? "AND network_alerted_at IS NULL" : ""}
+            AND business_id IN (SELECT id FROM businesses
+                WHERE district_id IN (${placeholders(districts)}))
+        ORDER BY network_requested_at ASC LIMIT ?`
+}
+
+/**
+ * A courier's orders: every open one, and today's finished ones. Two index ranges
+ * (`idx_orders_courier`: courier, status, updated_at), so the history of the link is never read.
+ * Binds: courier, active statuses, courier, final statuses, since, limit.
+ */
+export const COURIER_ORDERS_SQL = `SELECT ${COLUMNS} FROM (
+        SELECT ${COLUMNS} FROM orders
+        WHERE courier_id = ? AND status IN (${placeholders(ACTIVE_ORDER_STATUSES.length)})
+        UNION ALL
+        SELECT ${COLUMNS} FROM orders
+        WHERE courier_id = ? AND status IN (${placeholders(FINAL_ORDER_STATUSES.length)})
+            AND updated_at >= ?
+    ) ORDER BY number DESC LIMIT ?`
+
+export function courierOrdersBinds(
+    courierId: string,
+    since: Date,
+    limit = COURIER_LIST_LIMIT,
+): (string | number)[] {
+    return [
+        courierId,
+        ...ACTIVE_ORDER_STATUSES,
+        courierId,
+        ...FINAL_ORDER_STATUSES,
+        since.getTime(),
+        limit,
+    ]
+}
+
 function toItem(row: ItemRow): OrderItem {
     return OrderItem.create({
         productId: row.product_id,
@@ -141,6 +223,40 @@ function toItem(row: ItemRow): OrderItem {
 }
 
 const versions = new Versions<Order>()
+
+/** What a save may change, in the order of `mutableValues`. */
+const MUTABLE_COLUMNS = [
+    "status",
+    "courier_id",
+    "courier_name",
+    "cancel_reason",
+    "cancelled_by",
+    "payment_method",
+    "payment_status",
+    "paid_at",
+    "cash_courier_id",
+    "delivered_at",
+    "network_requested_at",
+    "network_alerted_at",
+    "delivery_fee_to",
+    "receipt_key",
+    "receipt_hash",
+    "receipt_at",
+    "receipt_reused_from",
+    "customer_rejections",
+    "transfer_rejections",
+    "transfer_reminded_at",
+    "cash_received_at",
+    "trip_id",
+    "trip_stop",
+] as const
+
+/**
+ * The values each loaded or saved order had: a save writes only the columns that changed. D1
+ * counts every index entry rewritten as a row written (the free plan's 100k a day), and `orders`
+ * has a dozen indexes: writing every column on each step rewrote nearly all of them.
+ */
+const written = new WeakMap<Order, (string | number | null)[]>()
 
 function toOrder(row: OrderRow, items: ItemRow[]): Order {
     const order = Order.reconstitute({
@@ -197,6 +313,7 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
+    written.set(order, mutableValues(order))
     return versions.remember(order, row.updated_at)
 }
 
@@ -289,6 +406,21 @@ function cardValues(order: Order): (string | null)[] {
     return [card?.number ?? null, card?.holder ?? null]
 }
 
+function mutableValues(order: Order): (string | number | null)[] {
+    return [
+        order.status,
+        order.courierId ?? null,
+        order.courierName ?? null,
+        order.cancelReason ?? null,
+        order.cancelledBy ?? null,
+        ...paymentValues(order),
+        ...networkValues(order),
+        ...receiptValues(order),
+        ...cashValues(order),
+        ...tripValues(order),
+    ]
+}
+
 function paymentValues(order: Order): (string | number | null)[] {
     const { payment } = order
     return [
@@ -349,6 +481,7 @@ export class D1OrderRepository implements OrderRepository {
         ]
         try {
             await this.db.batch(statements)
+            written.set(order, mutableValues(order))
             versions.remember(order, order.updatedAt.getTime())
             return true
         } catch (error) {
@@ -359,33 +492,30 @@ export class D1OrderRepository implements OrderRepository {
         }
     }
 
-    /** Writes only over the version this copy was loaded with: a newer change wins, 409 here. */
+    /**
+     * Writes only over the version this copy was loaded with (a newer change wins, 409 here), and
+     * only the columns that changed since it was loaded.
+     */
     async save(order: Order): Promise<void> {
         const { expected, version } = versions.next(order, order.updatedAt)
+        const values = mutableValues(order)
+        if (values.length !== MUTABLE_COLUMNS.length) {
+            // A column added to one list and not the other would write values into wrong columns.
+            throw new Error("MUTABLE_COLUMNS and mutableValues differ")
+        }
+        const before = written.get(order)
+        const changed = MUTABLE_COLUMNS.flatMap((column, index) =>
+            before !== undefined && before[index] === values[index]
+                ? []
+                : [{ column, value: values[index] ?? null }],
+        )
+        const set = [...changed.map(({ column }) => `${column} = ?`), "updated_at = ?"].join(", ")
         const guard = expected === undefined ? "" : " AND updated_at = ?"
         const result = await this.db
-            .prepare(
-                `UPDATE orders SET status = ?, courier_id = ?, courier_name = ?, cancel_reason = ?,
-                    cancelled_by = ?, payment_method = ?, payment_status = ?, paid_at = ?,
-                    cash_courier_id = ?, delivered_at = ?, updated_at = ?,
-                    network_requested_at = ?, network_alerted_at = ?, delivery_fee_to = ?,
-                    receipt_key = ?, receipt_hash = ?, receipt_at = ?, receipt_reused_from = ?,
-                    customer_rejections = ?, transfer_rejections = ?, transfer_reminded_at = ?,
-                    cash_received_at = ?, trip_id = ?, trip_stop = ?
-                 WHERE id = ?${guard}`,
-            )
+            .prepare(`UPDATE orders SET ${set} WHERE id = ?${guard}`)
             .bind(
-                order.status,
-                order.courierId ?? null,
-                order.courierName ?? null,
-                order.cancelReason ?? null,
-                order.cancelledBy ?? null,
-                ...paymentValues(order),
+                ...changed.map(({ value }) => value),
                 version,
-                ...networkValues(order),
-                ...receiptValues(order),
-                ...cashValues(order),
-                ...tripValues(order),
                 order.id,
                 ...(expected === undefined ? [] : [expected]),
             )
@@ -393,6 +523,7 @@ export class D1OrderRepository implements OrderRepository {
         if (result.meta.changes === 0) {
             throw ConflictError.stale("order", order.id)
         }
+        written.set(order, values)
         versions.remember(order, version)
     }
 
@@ -439,10 +570,7 @@ export class D1OrderRepository implements OrderRepository {
 
     async countTransferRejections(customerId: string, exceptOrderId: string): Promise<number> {
         const row = await this.db
-            .prepare(
-                `SELECT COALESCE(SUM(transfer_rejections), 0) AS total FROM orders
-                 WHERE customer_id = ? AND id != ?`,
-            )
+            .prepare(TRANSFER_REJECTIONS_SQL)
             .bind(customerId, exceptOrderId)
             .first<{ total: number }>()
         return row?.total ?? 0
@@ -460,19 +588,20 @@ export class D1OrderRepository implements OrderRepository {
         return result.meta.changes === 1
     }
 
-    async listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]> {
+    async listWaitingForNetwork(
+        districtIds: readonly string[],
+        limit: number,
+        options: { unalerted?: boolean } = {},
+    ): Promise<Order[]> {
         if (districtIds.length === 0) {
             return []
         }
-        return this.list(
-            `network_requested_at IS NOT NULL AND courier_id IS NULL
-                AND status IN (${placeholders(TAKEABLE.length)})
-                AND business_id IN (SELECT id FROM businesses
-                    WHERE district_id IN (${placeholders(districtIds.length)}))`,
-            [...TAKEABLE, ...districtIds],
-            "network_requested_at ASC",
-            limit,
-        )
+        const { results } = await this.db
+            .prepare(networkWaitingSql(districtIds.length, options.unalerted ?? false))
+            .bind(...districtIds, limit)
+            .all<OrderRow>()
+        const items = await this.itemsFor(results.map((o) => o.id))
+        return results.map((row) => toOrder(row, items.get(row.id) ?? []))
     }
 
     async networkShare(districtId: string, from: Date, to: Date): Promise<NetworkShare> {
@@ -495,20 +624,29 @@ export class D1OrderRepository implements OrderRepository {
         statuses: readonly OrderStatus[] | undefined,
         page: PageRequest,
     ): Promise<Page<Order>> {
-        const filter =
-            statuses === undefined ? "" : ` AND status IN (${placeholders(statuses.length)})`
-        return this.page(`business_id = ?${filter}`, [businessId, ...(statuses ?? [])], page)
+        if (statuses === undefined) {
+            return this.page("orders", "business_id = ?", [businessId], page)
+        }
+        return this.page(
+            BY_STATUS,
+            shopStatusWhere(statuses.length),
+            [businessId, ...statuses],
+            page,
+        )
+    }
+
+    async activeVersion(businessId: string): Promise<string> {
+        const row = await this.db
+            .prepare(ACTIVE_VERSION_SQL)
+            .bind(businessId, ...ACTIVE_ORDER_STATUSES)
+            .first<{ open: number; latest: number | null }>()
+        return `${row?.open ?? 0}:${row?.latest ?? 0}`
     }
 
     async listByCourier(courierId: string, since: Date): Promise<Order[]> {
-        const active = placeholders(ACTIVE_ORDER_STATUSES.length)
         const { results } = await this.db
-            .prepare(
-                `SELECT ${COLUMNS} FROM orders
-                 WHERE courier_id = ? AND (status IN (${active}) OR updated_at >= ?)
-                 ORDER BY number DESC LIMIT ?`,
-            )
-            .bind(courierId, ...ACTIVE_ORDER_STATUSES, since.getTime(), COURIER_LIST_LIMIT)
+            .prepare(COURIER_ORDERS_SQL)
+            .bind(...courierOrdersBinds(courierId, since))
             .all<OrderRow>()
         const items = await this.itemsFor(results.map((o) => o.id))
         return results.map((row) => toOrder(row, items.get(row.id) ?? []))
@@ -519,7 +657,12 @@ export class D1OrderRepository implements OrderRepository {
         businessId: string,
         page: PageRequest,
     ): Promise<Page<Order>> {
-        return this.page("customer_id = ? AND business_id = ?", [customerId, businessId], page)
+        return this.page(
+            "orders",
+            "customer_id = ? AND business_id = ?",
+            [customerId, businessId],
+            page,
+        )
     }
 
     /** Counts by creation time; money of delivered orders by delivery time. Two scans. */
@@ -558,16 +701,11 @@ export class D1OrderRepository implements OrderRepository {
     }
 
     async listOpenPayments(businessId: string, limit: number): Promise<Order[]> {
-        return this.list(
-            "business_id = ? AND payment_status IN ('awaiting', 'refund_due')",
-            [businessId],
-            "number ASC",
-            limit,
-        )
+        return this.list(OPEN_PAYMENTS_FROM, OPEN_PAYMENTS_WHERE, [businessId], "number ASC", limit)
     }
 
     async listCashWithCouriers(businessId: string, limit: number): Promise<Order[]> {
-        return this.list(`business_id = ? AND ${WITH_COURIER}`, [businessId], "number ASC", limit)
+        return this.list(CASH_OPEN_FROM, CASH_OPEN_WHERE, [businessId], "number ASC", limit)
     }
 
     async cashHeldBy(courierId: string): Promise<number> {
@@ -588,6 +726,7 @@ export class D1OrderRepository implements OrderRepository {
         limit: number,
     ): Promise<Order[]> {
         return this.list(
+            "orders",
             "business_id = ? AND created_at >= ? AND created_at < ?",
             [businessId, from.getTime(), to.getTime()],
             "number ASC",
@@ -615,35 +754,40 @@ export class D1OrderRepository implements OrderRepository {
     }
 
     private async list(
+        from: string,
         where: string,
         params: (string | number)[],
         order: string,
         limit: number,
     ): Promise<Order[]> {
         const { results } = await this.db
-            .prepare(`SELECT ${COLUMNS} FROM orders WHERE ${where} ORDER BY ${order} LIMIT ?`)
+            .prepare(`SELECT ${COLUMNS} FROM ${from} WHERE ${where} ORDER BY ${order} LIMIT ?`)
             .bind(...params, limit)
             .all<OrderRow>()
         const items = await this.itemsFor(results.map((o) => o.id))
         return results.map((row) => toOrder(row, items.get(row.id) ?? []))
     }
 
+    /**
+     * One page, newest first. Nothing is counted (a shop's or a customer's whole history would be
+     * read, and the free plan counts rows read): one row more says whether more follow, so
+     * `total` is a lower bound, all the app needs for «Yana».
+     */
     private async page(
+        from: string,
         where: string,
         params: (string | number)[],
         page: PageRequest,
     ): Promise<Page<Order>> {
-        const [rows, count] = await this.db.batch([
-            this.db
-                .prepare(
-                    `SELECT ${COLUMNS} FROM orders WHERE ${where}
-                     ORDER BY number DESC LIMIT ? OFFSET ?`,
-                )
-                .bind(...params, page.limit, offsetOf(page)),
-            this.db.prepare(`SELECT COUNT(*) AS total FROM orders WHERE ${where}`).bind(...params),
-        ])
-        const orders = (rows?.results ?? []) as OrderRow[]
-        const total = (count?.results[0] as { total: number } | undefined)?.total ?? 0
+        const offset = offsetOf(page)
+        const fetched = (
+            await this.db
+                .prepare(pageSql(from, where))
+                .bind(...params, page.limit + 1, offset)
+                .all<OrderRow>()
+        ).results
+        const orders = fetched.slice(0, page.limit)
+        const total = offset + orders.length + (fetched.length > page.limit ? 1 : 0)
         const items = await this.itemsFor(orders.map((o) => o.id))
         return {
             data: orders.map((row) => toOrder(row, items.get(row.id) ?? [])),

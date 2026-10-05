@@ -5,7 +5,7 @@ import { BusinessRuleViolationError } from "../../../domain/errors/business-rule
 import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { startOfLocalMonth } from "../../../domain/shared/time.js"
 import { Money } from "../../../domain/value-objects/money.js"
-import { Payment } from "../../../domain/value-objects/payment.js"
+import { Payment, receiptExpired } from "../../../domain/value-objects/payment.js"
 import { PayoutCard } from "../../../domain/value-objects/payout-card.js"
 
 const AT = new Date("2026-10-01T10:00:00Z")
@@ -175,5 +175,13 @@ describe("money helpers", () => {
         expect(startOfLocalMonth(new Date("2026-10-15T12:00:00Z")).toISOString()).toBe(
             "2026-09-30T19:00:00.000Z",
         )
+    })
+})
+
+describe("receiptExpired", () => {
+    it("keeps a screenshot 30 days, then it is gone", () => {
+        const day = 24 * 60 * 60 * 1000
+        expect(receiptExpired(AT, new Date(AT.getTime() + 29 * day))).toBe(false)
+        expect(receiptExpired(AT, new Date(AT.getTime() + 30 * day))).toBe(true)
     })
 })

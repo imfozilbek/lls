@@ -113,6 +113,7 @@ export const uz = {
         PAYMENT_NOT_REFUNDABLE: "Bu pul allaqachon qaytarilgan.",
         PAYMENT_NOT_REJECTABLE: "Bu o'tkazma allaqachon ko'rib chiqilgan. Ro'yxat yangilandi.",
         RECEIPT_REQUIRED: "O'tkazma chekining rasmini yuklang.",
+        RECEIPT_EXPIRED: "Chek 30 kun saqlanadi, bu chek o'chirilgan.",
         REMIND_TOO_SOON: "Do'konga yaqinda eslatildi. Birozdan keyin qayta urinib ko'ring.",
         ADMIN_ONLY: "Bu bo'lim faqat Zumda administratorlari uchun.",
         SHOP_ALREADY_ACTIVE: "Biznes allaqachon ishlayapti. Ro'yxat yangilandi.",
@@ -306,6 +307,7 @@ export const uz = {
         zoom: "Kattalashtirish",
         close: "Yopish",
         loadFailed: "Chekni yuklab bo'lmadi",
+        expired: "Chek o'chirilgan (30 kun saqlanadi)",
         none: "Chek yo'q",
     },
     order: {

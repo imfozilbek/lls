@@ -138,11 +138,25 @@ export async function verifyInitData(
     }
 }
 
+/**
+ * Kept for the isolate's life: importing the key and decrypting a bot token on every request
+ * cost CPU on the free plan's 10 ms. A token rotates by a new ciphertext, so a stale entry is
+ * never read; the map is emptied before it grows past a few hundred shops.
+ */
+const importedKeys = new Map<string, Promise<CryptoKey>>()
+const decrypted = new Map<string, string>()
+const DECRYPTED_MAX = 500
+
 async function aesKey(keyBase64: string): Promise<CryptoKey> {
-    return crypto.subtle.importKey("raw", fromBase64(keyBase64), "AES-GCM", false, [
-        "encrypt",
-        "decrypt",
-    ])
+    let key = importedKeys.get(keyBase64)
+    if (!key) {
+        key = crypto.subtle.importKey("raw", fromBase64(keyBase64), "AES-GCM", false, [
+            "encrypt",
+            "decrypt",
+        ])
+        importedKeys.set(keyBase64, key)
+    }
+    return key
 }
 
 /** AES-GCM; output is base64(iv ‖ ciphertext). */
@@ -160,6 +174,20 @@ export async function encryptSecret(plain: string, keyBase64: string): Promise<s
 }
 
 export async function decryptSecret(encrypted: string, keyBase64: string): Promise<string> {
+    const cacheKey = `${keyBase64}:${encrypted}`
+    const known = decrypted.get(cacheKey)
+    if (known !== undefined) {
+        return known
+    }
+    const plain = await decryptOnce(encrypted, keyBase64)
+    if (decrypted.size >= DECRYPTED_MAX) {
+        decrypted.clear()
+    }
+    decrypted.set(cacheKey, plain)
+    return plain
+}
+
+async function decryptOnce(encrypted: string, keyBase64: string): Promise<string> {
     const bytes = fromBase64(encrypted)
     const plain = await crypto.subtle.decrypt(
         { name: "AES-GCM", iv: bytes.slice(0, AES_IV_BYTES) },

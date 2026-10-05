@@ -1,7 +1,10 @@
 const MAX_SIDE = 1024
 const QUALITY = 0.82
-/** A bank screenshot is tall and full of small digits: it keeps more pixels than a photo. */
-const RECEIPT_SIDE = 1800
+/**
+ * A bank screenshot is tall and full of small digits: it keeps more pixels than a photo, yet
+ * 1280 px on its long side still reads the sum and the card (and keeps 30 days of them small).
+ */
+const RECEIPT_SIDE = 1280
 const RECEIPT_QUALITY = 0.86
 /** Under the Worker's 1.5 MB limit; a camera photo of a paper receipt may need a second try. */
 const RECEIPT_MAX_BYTES = 1_400_000

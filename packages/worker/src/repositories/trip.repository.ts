@@ -27,6 +27,26 @@ const OPEN_LIMIT = 50
 /** Five decimals: about a meter, and a short JSON. */
 const PRECISION = 1e5
 
+/**
+ * Open trips are found from their active orders (an index range), never by reading every trip of
+ * a shop or a courier ever made. Binds: the owners' ids, then the active statuses.
+ */
+function openTripsSql(where: string): string {
+    return `SELECT ${COLUMNS} FROM trips
+        WHERE id IN (
+            SELECT trip_id FROM orders
+            WHERE ${where} AND status IN (${placeholders(ACTIVE_ORDER_STATUSES.length)})
+                AND trip_id IS NOT NULL
+        )
+        ORDER BY created_at DESC LIMIT ${OPEN_LIMIT}`
+}
+
+export const OPEN_TRIPS_OF_BUSINESS_SQL = openTripsSql("business_id = ?")
+
+export function openTripsOfCouriersSql(count: number): string {
+    return openTripsSql(`courier_id IN (${placeholders(count)})`)
+}
+
 function encodeLine(line: readonly GeoPoint[]): string {
     return JSON.stringify(
         line.map((p) => [
@@ -113,33 +133,24 @@ export class D1TripRepository implements TripRepository {
     }
 
     listOpenByBusiness(businessId: string): Promise<Trip[]> {
-        return this.listOpen("t.business_id = ?", [businessId])
+        return this.listOpen(OPEN_TRIPS_OF_BUSINESS_SQL, [businessId, ...ACTIVE_ORDER_STATUSES])
     }
 
     listOpenByCouriers(courierIds: readonly string[]): Promise<Trip[]> {
         if (courierIds.length === 0) {
             return Promise.resolve([])
         }
-        return this.listOpen(`t.courier_id IN (${placeholders(courierIds.length)})`, [
+        return this.listOpen(openTripsOfCouriersSql(courierIds.length), [
             ...courierIds,
+            ...ACTIVE_ORDER_STATUSES,
         ])
     }
 
     /** Trips with at least one order still on the way, newest first. */
-    private async listOpen(where: string, values: string[]): Promise<Trip[]> {
-        const active = ACTIVE_ORDER_STATUSES
+    private async listOpen(sql: string, values: string[]): Promise<Trip[]> {
         const { results } = await this.db
-            .prepare(
-                `SELECT ${COLUMNS.split(", ")
-                    .map((c) => `t.${c}`)
-                    .join(", ")} FROM trips t
-                 WHERE ${where} AND EXISTS (
-                    SELECT 1 FROM orders o
-                    WHERE o.trip_id = t.id AND o.status IN (${placeholders(active.length)})
-                 )
-                 ORDER BY t.created_at DESC LIMIT ${OPEN_LIMIT}`,
-            )
-            .bind(...values, ...active)
+            .prepare(sql)
+            .bind(...values)
             .all<TripRow>()
         const stops = await this.stopsOf(results.map((r) => r.id))
         return results.map((row) => toTrip(row, stops.get(row.id) ?? []))

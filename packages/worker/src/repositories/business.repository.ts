@@ -19,7 +19,7 @@ import {
 
 import { decryptSecret, encryptSecret, randomToken } from "../crypto.js"
 
-import { Versions, bool, flag, oneOf, optional } from "./rows.js"
+import { IN_CHUNK, Versions, bool, flag, oneOf, optional, placeholders } from "./rows.js"
 
 import type { BusinessRepository, WeeklySchedule } from "@zumda/core"
 
@@ -70,6 +70,12 @@ const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_us
     marketplace_commission_bps, marketplace_joined_at, payout_card_number, payout_card_holder,
     district_id, network_delivery, payment_card_id, contact_phone, payment_options, rejected_at,
     review_note, owner_chat_open_at, owner_chat_closed_at, created_at, updated_at`
+
+interface SecretRow {
+    bot_id: number
+    bot_token_enc: string
+    webhook_secret: string
+}
 
 export interface BotCredentials {
     botId: number
@@ -196,8 +202,39 @@ export class D1BusinessRepository implements BusinessRepository {
         private readonly encryptionKey: string,
     ) {}
 
+    /**
+     * This request's copies: a use case, the auth and the notifier read the same shop many times
+     * (one repository per request, so nothing outlives it).
+     */
+    private readonly byId = new Map<string, Business | null>()
+    /** The token row read together with the shop: the auth needs both, in one query. */
+    private readonly secrets = new Map<string, SecretRow>()
+
     async findById(id: string): Promise<Business | null> {
+        if (this.byId.has(id)) {
+            return this.byId.get(id) ?? null
+        }
         return this.findOne("id = ?", id)
+    }
+
+    async findByIds(ids: readonly string[]): Promise<Business[]> {
+        const missing = ids.filter((id) => !this.byId.has(id))
+        for (let i = 0; i < missing.length; i += IN_CHUNK) {
+            const chunk = missing.slice(i, i + IN_CHUNK)
+            const { results } = await this.db
+                .prepare(
+                    `SELECT ${COLUMNS} FROM businesses WHERE id IN (${placeholders(chunk.length)})`,
+                )
+                .bind(...chunk)
+                .all<BusinessRow>()
+            for (const row of results) {
+                this.byId.set(row.id, toBusiness(row))
+            }
+        }
+        return ids.flatMap((id) => {
+            const business = this.byId.get(id)
+            return business ? [business] : []
+        })
     }
 
     async findBySlug(slug: string): Promise<Business | null> {
@@ -280,6 +317,7 @@ export class D1BusinessRepository implements BusinessRepository {
     }
 
     async replaceBotToken(businessId: string, botToken: string): Promise<void> {
+        this.secrets.delete(businessId)
         await this.db
             .prepare("UPDATE businesses SET bot_token_enc = ? WHERE id = ?")
             .bind(await encryptSecret(botToken, this.encryptionKey), businessId)
@@ -320,6 +358,7 @@ export class D1BusinessRepository implements BusinessRepository {
             .bind(...values, business.id, ...(expected === undefined ? [] : [expected]))
             .run()
         if (result.meta.changes === 0) {
+            this.byId.delete(business.id)
             throw ConflictError.stale("business", business.id)
         }
         versions.remember(business, version)
@@ -327,10 +366,14 @@ export class D1BusinessRepository implements BusinessRepository {
 
     /** Decrypted bot token and webhook secret. Never return these from the API. */
     async getBotCredentials(businessId: string): Promise<BotCredentials | null> {
-        const row = await this.db
-            .prepare("SELECT bot_id, bot_token_enc, webhook_secret FROM businesses WHERE id = ?")
-            .bind(businessId)
-            .first<{ bot_id: number; bot_token_enc: string; webhook_secret: string }>()
+        const row =
+            this.secrets.get(businessId) ??
+            (await this.db
+                .prepare(
+                    "SELECT bot_id, bot_token_enc, webhook_secret FROM businesses WHERE id = ?",
+                )
+                .bind(businessId)
+                .first<SecretRow>())
         if (!row) {
             return null
         }
@@ -343,9 +386,17 @@ export class D1BusinessRepository implements BusinessRepository {
 
     private async findOne(where: string, value: string | number): Promise<Business | null> {
         const row = await this.db
-            .prepare(`SELECT ${COLUMNS} FROM businesses WHERE ${where}`)
+            .prepare(
+                `SELECT ${COLUMNS}, bot_token_enc, webhook_secret FROM businesses WHERE ${where}`,
+            )
             .bind(value)
-            .first<BusinessRow>()
-        return row ? toBusiness(row) : null
+            .first<BusinessRow & SecretRow>()
+        if (!row) {
+            return null
+        }
+        const business = toBusiness(row)
+        this.byId.set(row.id, business)
+        this.secrets.set(row.id, row)
+        return business
     }
 }

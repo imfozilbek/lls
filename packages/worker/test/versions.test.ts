@@ -31,9 +31,10 @@ describe("a save writes only over the version it loaded", () => {
     })
 
     it("a business: an older copy gets a conflict, the newer change stays", async () => {
+        // Two requests: each has its own repository (and its own copy of the shop).
         const repository = new D1BusinessRepository(env.DB, env.TOKEN_ENC_KEY)
         const first = await repository.findById(shopId)
-        const second = await repository.findById(shopId)
+        const second = await new D1BusinessRepository(env.DB, env.TOKEN_ENC_KEY).findById(shopId)
         if (!first || !second) {
             throw new Error("shop not found")
         }
@@ -43,7 +44,7 @@ describe("a save writes only over the version it loaded", () => {
         const stale = await repository.save(second).catch((error: unknown) => error)
         expect(stale).toBeInstanceOf(ConflictError)
         expect((stale as ConflictError).reason).toBe("STALE")
-        const stored = await repository.findById(shopId)
+        const stored = await new D1BusinessRepository(env.DB, env.TOKEN_ENC_KEY).findById(shopId)
         expect(stored?.name).toBe("Yangi nom")
         expect(stored?.acceptingOrders).toBe(true)
         expect(stored?.status).toBe(BusinessStatus.ACTIVE)

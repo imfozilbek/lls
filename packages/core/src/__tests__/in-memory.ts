@@ -62,6 +62,12 @@ export class InMemoryBusinesses implements BusinessRepository {
     readonly items = new Map<string, Business>()
     readonly tokens = new Map<string, string>()
 
+    async findByIds(ids: readonly string[]): Promise<Business[]> {
+        return ids.flatMap((id) => {
+            const business = this.items.get(id)
+            return business ? [business] : []
+        })
+    }
     async findById(id: string): Promise<Business | null> {
         return this.items.get(id) ?? null
     }
@@ -375,10 +381,24 @@ export class InMemoryOrders implements OrderRepository {
         stored.markNetworkAlerted(at)
         return true
     }
-    async listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]> {
+    async activeVersion(businessId: string): Promise<string> {
+        const open = [...this.items.values()].filter(
+            (o) => o.businessId === businessId && ACTIVE_ORDER_STATUSES.includes(o.status),
+        )
+        const latest = Math.max(0, ...open.map((o) => o.updatedAt.getTime()))
+        return `${open.length}:${latest}`
+    }
+    async listWaitingForNetwork(
+        districtIds: readonly string[],
+        limit: number,
+        options: { unalerted?: boolean } = {},
+    ): Promise<Order[]> {
         return [...this.items.values()]
             .filter(
-                (o) => o.isWaitingForNetwork() && districtIds.includes(this.districtOf(o) ?? ""),
+                (o) =>
+                    o.isWaitingForNetwork() &&
+                    districtIds.includes(this.districtOf(o) ?? "") &&
+                    !(options.unalerted && o.networkAlertedAt),
             )
             .sort(
                 (a, b) =>

@@ -304,7 +304,13 @@ function signerToken(from: {
 }
 
 export function testClient(
-    options: { bots?: Record<string, BotInfo>; clock?: Clock; loginKeys?: LoginKeys } = {},
+    options: {
+        bots?: Record<string, BotInfo>
+        clock?: Clock
+        loginKeys?: LoginKeys
+        /** Another D1 in front of the real one (e.g. one that counts rows read). */
+        db?: D1Database
+    } = {},
 ): TestClient {
     const telegram = new FakeTelegram({
         [env.COURIER_BOT_TOKEN]: COURIER_BOT,
@@ -320,7 +326,8 @@ export function testClient(
 
     async function request(path: string, init: RequestInit = {}): Promise<Response> {
         const ctx = createExecutionContext()
-        const response = await app.request(path, init, env, ctx)
+        const bindings = options.db ? { ...env, DB: options.db } : env
+        const response = await app.request(path, init, bindings, ctx)
         await waitOnExecutionContext(ctx)
         return response
     }

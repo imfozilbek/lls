@@ -1,11 +1,12 @@
 import { Location } from "@zumda/core"
 import { useEffect, useState } from "react"
 
-import { API_URL } from "./api.js"
+import { MAP_URL } from "./api.js"
 
 /**
- * Zumda's own map (the Worker serves it from R2 under /map): only its name lives in the main
- * bundle. The map itself (MapLibre, ~250 KB) is the lazy `ui/map` chunk, loaded on the first map.
+ * Zumda's own map (R2 at map.zumda.shop; the Worker's /map on the stand): only its name lives in
+ * the main bundle. The map itself (MapLibre, ~250 KB) is the lazy `ui/map` chunk, loaded on the
+ * first map.
  */
 export interface Point {
     latitude: number
@@ -24,7 +25,7 @@ let info: Promise<MapInfo | null> | undefined
 
 /** Which map file is current; null when there is no map yet (the app works as before). */
 export function mapInfo(): Promise<MapInfo | null> {
-    info ??= fetch(`${API_URL}/map/current.json`)
+    info ??= fetch(`${MAP_URL}/current.json`)
         .then(async (response) => (response.ok ? ((await response.json()) as MapInfo) : null))
         .then((found) => (found && typeof found.file === "string" ? found : null))
         .catch(() => {

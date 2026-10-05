@@ -3,7 +3,9 @@
     "name": "zumda-worker",
     "main": "src/index.ts",
     "compatibility_date": "2026-09-01",
-    "observability": { "enabled": true },
+    // One request in five is logged: the alerts (src/alerts.ts) already bring every 5xx to the
+    // admins, and the free plan's log quota is shared by every project of the account.
+    "observability": { "enabled": true, "head_sampling_rate": 0.2 },
     // Production answers only at api.zumda.shop (the deploy adds it): no workers.dev or preview
     // address. Local `wrangler dev`, the tests and the e2e stand are not affected.
     "workers_dev": false,
@@ -23,7 +25,12 @@
             "migrations_dir": "migrations",
         },
     ],
-    "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "zumda-media" }],
+    // BUCKET: public files (photos, logos, posters, the map), also served from media. and map.
+    // zumda.shop without the Worker. RECEIPTS: transfer screenshots, private, kept 30 days.
+    "r2_buckets": [
+        { "binding": "BUCKET", "bucket_name": "zumda-media" },
+        { "binding": "RECEIPTS", "bucket_name": "zumda-receipts" },
+    ],
     // Per-user limits for calls that cost D1 reads or ping admins (free tier counts rows read).
     "ratelimits": [
         {

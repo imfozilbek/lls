@@ -20,7 +20,8 @@ import type { AppEnv, Bindings } from "../env.js"
 const PREFIX = "map"
 const CURRENT_KEY = `${PREFIX}/current.json`
 const MAP_FILE = /^uzbekistan-\d{8}\.pmtiles$/
-const FONT = /^Noto Sans (Regular|Medium|Italic)$/
+/** The style names its fonts by slug (as kept in R2, read from map.zumda.shop); old styles by name. */
+const FONT = /^(Noto Sans (Regular|Medium|Italic)|noto-sans-(regular|medium|italic))$/
 const GLYPH_RANGE = /^(\d{1,5})-(\d{1,5})\.pbf$/
 const SPRITE = /^light(@2x)?\.(json|png)$/
 const RANGE = /^bytes=(\d+)-(\d*)$/

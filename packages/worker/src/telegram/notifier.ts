@@ -1,4 +1,6 @@
 import {
+    DEFAULT_LANGUAGE,
+    LANGUAGES,
     Language,
     OrderChannel,
     OrderStatus,
@@ -396,24 +398,26 @@ export class Notifier {
         }
         const told = await this.services.networkOffers.recipients(orderId)
         const offer = toNetworkOrderDTO(order, business)
-        for (const telegramId of people.filter((id) => !told.has(id))) {
-            const language = await this.languageOf(telegramId)
-            const { messageId } = await this.services.telegram.sendMessage(
-                this.services.env.COURIER_BOT_TOKEN,
-                telegramId,
-                formatNetworkOffer(offer, language),
-                {
-                    keyboard: withAppButton(
-                        networkOfferKeyboard(orderId, textsFor(language)),
-                        this.courierAppButton(textsFor(language)),
-                    ),
-                },
-            )
-            await this.services.networkOffers.save(
-                orderId,
-                { telegramId, messageId },
-                this.services.clock.now(),
-            )
+        const sent: { telegramId: number; messageId: number }[] = []
+        try {
+            for (const telegramId of people.filter((id) => !told.has(id))) {
+                const language = await this.languageOf(telegramId)
+                const { messageId } = await this.services.telegram.sendMessage(
+                    this.services.env.COURIER_BOT_TOKEN,
+                    telegramId,
+                    formatNetworkOffer(offer, language),
+                    {
+                        keyboard: withAppButton(
+                            networkOfferKeyboard(orderId, textsFor(language)),
+                            this.courierAppButton(textsFor(language)),
+                        ),
+                    },
+                )
+                sent.push({ telegramId, messageId })
+            }
+        } finally {
+            // Whatever went out is kept, even if a later message failed: nobody gets it twice.
+            await this.services.networkOffers.saveMany(orderId, sent, this.services.clock.now())
         }
     }
 
@@ -1117,8 +1121,12 @@ export class Notifier {
 
     /** Everyone gets messages in the language they chose in the app (Uzbek by default). */
     private async languageOf(telegramId: number): Promise<Language> {
+        // One language in the product (Uzbek): no read per message until there is a choice.
+        if (LANGUAGES.length === 1) {
+            return DEFAULT_LANGUAGE
+        }
         const customer = await this.services.customers.findByTelegramId(telegramId)
-        return customer?.language ?? Language.UZ
+        return customer?.language ?? DEFAULT_LANGUAGE
     }
 }
 

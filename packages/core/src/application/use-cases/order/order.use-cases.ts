@@ -233,14 +233,14 @@ export class GetTransferReceiptUseCase {
         telegramId: number
         businessId: string
         orderId: string
-    }): Promise<string> {
+    }): Promise<{ key: string; sentAt: Date }> {
         const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
         const { role } = await participantOf(this.deps, order, input.telegramId)
-        const key = order.payment.receipt?.key
-        if (role === "courier" || !key) {
+        const receipt = order.payment.receipt
+        if (role === "courier" || !receipt) {
             throw EntityNotFoundError.order(order.id)
         }
-        return key
+        return { key: receipt.key, sentAt: receipt.at }
     }
 }
 
@@ -275,6 +275,22 @@ function statusesFor(filter: ShopOrdersFilter): readonly OrderStatus[] | undefin
         return ACTIVE_ORDER_STATUSES
     }
     return filter === "done" ? FINISHED_STATUSES : undefined
+}
+
+/**
+ * What changes when the shop's open orders change: a cheap check the owner's screen polls; the
+ * list itself is read again only when this moved (the free plan counts every row read).
+ */
+export class ShopOrdersVersionUseCase {
+    constructor(
+        private readonly businesses: BusinessRepository,
+        private readonly orders: OrderRepository,
+    ) {}
+
+    async execute(input: { actorTelegramId: number; businessId: string }): Promise<string> {
+        await requireOwnedBusiness(this.businesses, input.businessId, input.actorTelegramId)
+        return this.orders.activeVersion(input.businessId)
+    }
 }
 
 export class ListShopOrdersUseCase {
