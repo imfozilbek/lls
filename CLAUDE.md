@@ -406,8 +406,15 @@ wrangler.jsonc        # Bindings: DB (D1), BUCKET (R2), vars; run `wrangler type
 migrations/           # D1 SQL migrations
 ```
 No cron: add `scheduled()` only when a real client needs a timed job.
-Alerts: 5xx errors and failed notifications reach `PLATFORM_ADMIN_IDS` through Zumda | Business
-(`src/alerts.ts`, one per kind per 10 min). "Bot blocked by the user" is not an alert.
+Alerts: 5xx errors, failed notifications and Mini App crashes reach `PLATFORM_ADMIN_IDS` through
+Zumda | Business (`src/alerts.ts`, one per kind per 10 min). "Bot blocked by the user" is not an
+alert. Mini App crashes (owner's decision, October 2026: logs and errors first): the app listens to
+`error` and `unhandledrejection` (`lib/crashes.ts`) and sends only safe facts (`crashFacts`: the
+class, the message without digits or other alphabets, `file.js:line:column` of our bundle, the
+screen) once per kind a session, at most 5, text/plain without initData, to
+`POST /api/client-errors` (before sign-in, 10 a minute per address); the Worker cleans the text
+again (`safeCrashText` in core), logs one JSON line (`event: "client_error"`) and alerts the
+admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its import when it is on npm.
 ```
 ```
 

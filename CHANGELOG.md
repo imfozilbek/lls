@@ -7,6 +7,13 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Mini App crashes reach the admins
+- **Added:** an uncaught error or a lost promise in the Mini App is sent to
+  `POST /api/client-errors` (once per kind a session, at most 5, no preflight): the class, the
+  message without digits or other alphabets, the place in our bundle and the screen. The Worker
+  cleans it again, logs one JSON line (`client_error`) and alerts the admins through
+  Zumda | Business («Zumda ilovasida xato», once per 10 minutes). Never a phone, a name or a token.
+
 ### Zumda in Cloudflare's free plan
 - **Changed:** no paid plans (owner's decision); the account is shared by five projects, so
   Zumda keeps to its share: 35 000 Worker requests, 1.5 M rows read and 20 000 rows written a

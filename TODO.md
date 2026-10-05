@@ -4,7 +4,7 @@ Known shortcuts. Fix an item when a real shop hits it or before the stage that n
 
 | # | Where | Debt | Why it waits | Fix when |
 |---|-------|------|--------------|----------|
-| 2 | `app` bundle | Customer JS is ~99 KB gzip (+7 KB CSS) of the 100 KB budget; the map (MapLibre, ~300 KB) is a lazy chunk | React alone is ~61 KB | Before adding any customer-side dependency; measure after each `vite build` |
+| 2 | `app` bundle | Customer JS is ~99.6 KB gzip (+7 KB CSS) of the 100 KB budget; the map (MapLibre, ~300 KB) is a lazy chunk | React alone is ~61 KB | Before adding any customer-side dependency; measure after each `vite build` |
 | 4 | `worker/telegram/notifier.ts` | A failed notification is logged and the admins are alerted, but it is never retried | Customers also see the status in the app | If owners report missed order messages |
 | 6 | `app/owner/OrdersTab.tsx` | The 20 s refresh of active orders reloads only the first page | Active orders rarely exceed 20 | A shop regularly has > 20 open orders |
 | 8 | `worker` couriers | A courier removed by the owner keeps already assigned active orders; the owner must reassign them by hand | Rare in a small shop | If an owner reports a stuck order after removing a courier |
@@ -24,3 +24,4 @@ Known shortcuts. Fix an item when a real shop hits it or before the stage that n
 | 23 | `worker` showcase search | No 60 s edge cache of search answers (it was planned) | The word table already reads only matching products (~10 rows a search), and a cache would show a stop-listed product for a minute and save no Worker request | Searches become a visible share of D1 rows read |
 | 24 | Order lists | Pages use OFFSET: page 20 of finished orders reads ~870 rows | Deep pages are rare; the first pages read ~100 | Owners page deep often: keyset pages (`number < last`) |
 | 25 | Map cache | The map's byte ranges are kept at the edge only by a Cache Rule; the deploy's token may lack Zone > Cache Rules: Edit (it warns) | Without it the map still loads straight from R2 (~40 Class B reads an opening, far below 10 M a month) | Map openings near 8 000 a day: give the token the right, or add the rule by hand |
+| 26 | `app/lib/crashes.ts`, `crash-facts.ts` | Our own copy of the crash reporter (`crashFacts`, `listenForCrashes`) | The shared `@samiyev/kit/observe` is not on npm yet | It is on npm: replace both files with its import, keep `safeCrashText` rules |

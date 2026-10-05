@@ -80,6 +80,7 @@ Photos, logos and the map no longer reach the Worker: R2 serves them at `media.z
 | Couriers | 15 × 3 h × 80 / h + 300 × 2 actions | 4 200 | 4 200 |
 | Bots (button presses, `/start`, contacts) | | 1 000 | 1 000 |
 | Showcase searches | | 500 | 500 |
+| Mini App crash reports (`POST /api/client-errors`) | one per kind of crash a session, at most 5; no preflight (text/plain) | < 50 | < 200 |
 | CORS preflights (`OPTIONS`) | ~60% of the ~11 500 requests that are not repeated checks | 7 000 | 7 000 |
 | **Total** | | **~32 700** | **~40 000** |
 
@@ -141,6 +142,14 @@ one map upload (~110 objects). Class B (reads, 10 M a month free): photos are ca
 at `media.zumda.shop`; the map's byte ranges are cached when the Cache Rule could be set (the
 deploy warns when its token lacks Zone > Cache Rules: Edit), else ~40 reads a map opening, ~1 M a
 month at 800 openings a day.
+
+## Mini App crashes
+
+Each kind of crash is sent once a session (at most 5 a session), as a plain-text request with no
+CORS preflight, and the Worker keeps 10 a minute per address. A report reads nothing from D1 and
+writes one `alert_log` row when it alerts (once per 10 minutes per kind). Workers Logs keep 20%
+of requests (`head_sampling_rate`), so a log line may be missing; the admins' alert is the one
+that is always sent.
 
 ## Cron
 

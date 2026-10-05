@@ -193,6 +193,11 @@ Pilot: **food, water and grocery at the same time.**
       tayyor»; «Platforma» marks such shops
 - [x] The QR poster downloads in the app («Yuklab olish») and in a browser
 
+### M4p. Mini App crashes are seen ✅ (owner's decision, October 2026: logs and errors first)
+- [x] Uncaught errors and rejections in the Mini App reach the server log (`client_error`) and
+      the admins' alert; nothing about the person (no digits, no other alphabets, no identity)
+- [x] At most one request per kind of crash a session (5 at most), no CORS preflight
+
 ### M4o. Zumda in Cloudflare's free plan ✅ (owner's decision, October 2026: no paid plans)
 - [x] The audit's 14 findings fixed or in `TODO.md` with the reason (#21 to #25)
 - [x] D1: a courier's screen, open trips, the network's waiting orders, «Pul», the owner's and
