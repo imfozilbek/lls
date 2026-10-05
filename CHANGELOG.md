@@ -7,6 +7,15 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### A Zumda Shop QR on the poster (goal 16)
+- **Added:** «Sozlamalar» → «Chop etish uchun QR-kod» has two buttons: «Do'kon boti uchun» (as
+  before) and «Zumda Shop uchun», for a shop in the showcase. Its QR,
+  `t.me/zumdashop_bot?startapp=m_<slug>`, opens Zumda Shop right on that shop; Back leads to the
+  other shops; an order is a showcase order (owner's decisions: money as the showcase, the poster
+  in the shop's colors).
+- **Added:** a shop that left the showcase after printing: the person sees «Bu do'kon hozir
+  Zumda vitrinasida yo'q» and «Do'kon botini ochish» to the shop's own bot.
+
 ### Mini App crashes reach the admins
 - **Added:** an uncaught error or a lost promise in the Mini App is sent to
   `POST /api/client-errors` (once per kind a session, at most 5, no preflight): the class, the

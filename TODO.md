@@ -4,7 +4,7 @@ Known shortcuts. Fix an item when a real shop hits it or before the stage that n
 
 | # | Where | Debt | Why it waits | Fix when |
 |---|-------|------|--------------|----------|
-| 2 | `app` bundle | Customer JS is ~99.6 KB gzip (+7 KB CSS) of the 100 KB budget; the map (MapLibre, ~300 KB) is a lazy chunk | React alone is ~61 KB | Before adding any customer-side dependency; measure after each `vite build` |
+| 2 | `app` bundle | Customer JS is ~99.9 KB gzip (+7 KB CSS) of the 100 KB budget; the map (MapLibre, ~300 KB) is a lazy chunk | React alone is ~61 KB | Before adding any customer-side dependency; measure after each `vite build` |
 | 4 | `worker/telegram/notifier.ts` | A failed notification is logged and the admins are alerted, but it is never retried | Customers also see the status in the app | If owners report missed order messages |
 | 6 | `app/owner/OrdersTab.tsx` | The 20 s refresh of active orders reloads only the first page | Active orders rarely exceed 20 | A shop regularly has > 20 open orders |
 | 8 | `worker` couriers | A courier removed by the owner keeps already assigned active orders; the owner must reassign them by hand | Rare in a small shop | If an owner reports a stuck order after removing a courier |

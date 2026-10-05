@@ -551,7 +551,12 @@ bot alerts the admins and never moves the shop. Telegram may not announce a toke
 **Entry:** the shop bot's menu button opens `?shop=<slug>`. The Zumda courier bot opens
 `?mode=courier` (all the courier's shops in one screen). «Mening bizneslarim»: Zumda | Business
 opens `?mode=business` (old buttons: `?mode=onboarding`). Showcase: Zumda | Shop opens
-`?mode=market`.
+`?mode=market`. **A Zumda Shop QR** (goal 16, owner's decisions, October 2026): the poster may
+carry `t.me/zumdashop_bot?startapp=m_<slug>` («Sozlamalar» → «Zumda Shop uchun», only for a shop
+in the showcase); `m_<slug>` opens the showcase right on that shop (`readLaunchParams`), Back
+leads to the other shops, an order is a showcase one (`marketplace`, the deal's commission). A
+shop that left the showcase: «Bu do'kon hozir Zumda vitrinasida yo'q» and «Do'kon botini
+ochish» to its own bot (`GET /api/showcase/shops/:slug/bot`, active shops only).
 
 **Courier invite:** the owner creates a one-time link `t.me/<courier_bot>?start=c_<code>` (48 h).
 `/start c_<code>` in the Zumda courier bot (webhook `/tg/courier`) makes the sender a **pending**
