@@ -107,6 +107,22 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
 const WITH_COURIER = `payment_method = 'cash' AND payment_status = 'paid'
     AND cash_courier_id IS NOT NULL AND cash_received_at IS NULL`
 
+/**
+ * «Pul»: transfers to check or to return. By (business, payment status): sorting by number would
+ * otherwise walk the shop's whole history to find the few open ones.
+ */
+export const OPEN_PAYMENTS_FROM = "orders INDEXED BY idx_orders_business_payment"
+export const OPEN_PAYMENTS_WHERE =
+    "business_id = ? AND payment_status IN ('awaiting', 'refund_due')"
+/** Cash a courier still holds: only those rows (partial index, migration 0018). */
+export const CASH_OPEN_FROM = "orders INDEXED BY idx_orders_cash_open"
+export const CASH_OPEN_WHERE = `business_id = ? AND ${WITH_COURIER}`
+
+/** Refused transfers of a customer: only the refused orders (partial index, migration 0018). */
+export const TRANSFER_REJECTIONS_SQL = `SELECT COALESCE(SUM(transfer_rejections), 0) AS total
+    FROM orders INDEXED BY idx_orders_customer_rejected
+    WHERE customer_id = ? AND id != ? AND transfer_rejections > 0`
+
 /** A courier can still take the order: from accepted until pickup. */
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
 
@@ -208,6 +224,40 @@ function toItem(row: ItemRow): OrderItem {
 
 const versions = new Versions<Order>()
 
+/** What a save may change, in the order of `mutableValues`. */
+const MUTABLE_COLUMNS = [
+    "status",
+    "courier_id",
+    "courier_name",
+    "cancel_reason",
+    "cancelled_by",
+    "payment_method",
+    "payment_status",
+    "paid_at",
+    "cash_courier_id",
+    "delivered_at",
+    "network_requested_at",
+    "network_alerted_at",
+    "delivery_fee_to",
+    "receipt_key",
+    "receipt_hash",
+    "receipt_at",
+    "receipt_reused_from",
+    "customer_rejections",
+    "transfer_rejections",
+    "transfer_reminded_at",
+    "cash_received_at",
+    "trip_id",
+    "trip_stop",
+] as const
+
+/**
+ * The values each loaded or saved order had: a save writes only the columns that changed. D1
+ * counts every index entry rewritten as a row written (the free plan's 100k a day), and `orders`
+ * has a dozen indexes: writing every column on each step rewrote nearly all of them.
+ */
+const written = new WeakMap<Order, (string | number | null)[]>()
+
 function toOrder(row: OrderRow, items: ItemRow[]): Order {
     const order = Order.reconstitute({
         id: row.id,
@@ -263,6 +313,7 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
+    written.set(order, mutableValues(order))
     return versions.remember(order, row.updated_at)
 }
 
@@ -355,6 +406,21 @@ function cardValues(order: Order): (string | null)[] {
     return [card?.number ?? null, card?.holder ?? null]
 }
 
+function mutableValues(order: Order): (string | number | null)[] {
+    return [
+        order.status,
+        order.courierId ?? null,
+        order.courierName ?? null,
+        order.cancelReason ?? null,
+        order.cancelledBy ?? null,
+        ...paymentValues(order),
+        ...networkValues(order),
+        ...receiptValues(order),
+        ...cashValues(order),
+        ...tripValues(order),
+    ]
+}
+
 function paymentValues(order: Order): (string | number | null)[] {
     const { payment } = order
     return [
@@ -415,6 +481,7 @@ export class D1OrderRepository implements OrderRepository {
         ]
         try {
             await this.db.batch(statements)
+            written.set(order, mutableValues(order))
             versions.remember(order, order.updatedAt.getTime())
             return true
         } catch (error) {
@@ -425,33 +492,30 @@ export class D1OrderRepository implements OrderRepository {
         }
     }
 
-    /** Writes only over the version this copy was loaded with: a newer change wins, 409 here. */
+    /**
+     * Writes only over the version this copy was loaded with (a newer change wins, 409 here), and
+     * only the columns that changed since it was loaded.
+     */
     async save(order: Order): Promise<void> {
         const { expected, version } = versions.next(order, order.updatedAt)
+        const values = mutableValues(order)
+        if (values.length !== MUTABLE_COLUMNS.length) {
+            // A column added to one list and not the other would write values into wrong columns.
+            throw new Error("MUTABLE_COLUMNS and mutableValues differ")
+        }
+        const before = written.get(order)
+        const changed = MUTABLE_COLUMNS.flatMap((column, index) =>
+            before !== undefined && before[index] === values[index]
+                ? []
+                : [{ column, value: values[index] ?? null }],
+        )
+        const set = [...changed.map(({ column }) => `${column} = ?`), "updated_at = ?"].join(", ")
         const guard = expected === undefined ? "" : " AND updated_at = ?"
         const result = await this.db
-            .prepare(
-                `UPDATE orders SET status = ?, courier_id = ?, courier_name = ?, cancel_reason = ?,
-                    cancelled_by = ?, payment_method = ?, payment_status = ?, paid_at = ?,
-                    cash_courier_id = ?, delivered_at = ?, updated_at = ?,
-                    network_requested_at = ?, network_alerted_at = ?, delivery_fee_to = ?,
-                    receipt_key = ?, receipt_hash = ?, receipt_at = ?, receipt_reused_from = ?,
-                    customer_rejections = ?, transfer_rejections = ?, transfer_reminded_at = ?,
-                    cash_received_at = ?, trip_id = ?, trip_stop = ?
-                 WHERE id = ?${guard}`,
-            )
+            .prepare(`UPDATE orders SET ${set} WHERE id = ?${guard}`)
             .bind(
-                order.status,
-                order.courierId ?? null,
-                order.courierName ?? null,
-                order.cancelReason ?? null,
-                order.cancelledBy ?? null,
-                ...paymentValues(order),
+                ...changed.map(({ value }) => value),
                 version,
-                ...networkValues(order),
-                ...receiptValues(order),
-                ...cashValues(order),
-                ...tripValues(order),
                 order.id,
                 ...(expected === undefined ? [] : [expected]),
             )
@@ -459,6 +523,7 @@ export class D1OrderRepository implements OrderRepository {
         if (result.meta.changes === 0) {
             throw ConflictError.stale("order", order.id)
         }
+        written.set(order, values)
         versions.remember(order, version)
     }
 
@@ -505,10 +570,7 @@ export class D1OrderRepository implements OrderRepository {
 
     async countTransferRejections(customerId: string, exceptOrderId: string): Promise<number> {
         const row = await this.db
-            .prepare(
-                `SELECT COALESCE(SUM(transfer_rejections), 0) AS total FROM orders
-                 WHERE customer_id = ? AND id != ?`,
-            )
+            .prepare(TRANSFER_REJECTIONS_SQL)
             .bind(customerId, exceptOrderId)
             .first<{ total: number }>()
         return row?.total ?? 0
@@ -639,16 +701,11 @@ export class D1OrderRepository implements OrderRepository {
     }
 
     async listOpenPayments(businessId: string, limit: number): Promise<Order[]> {
-        return this.list(
-            "business_id = ? AND payment_status IN ('awaiting', 'refund_due')",
-            [businessId],
-            "number ASC",
-            limit,
-        )
+        return this.list(OPEN_PAYMENTS_FROM, OPEN_PAYMENTS_WHERE, [businessId], "number ASC", limit)
     }
 
     async listCashWithCouriers(businessId: string, limit: number): Promise<Order[]> {
-        return this.list(`business_id = ? AND ${WITH_COURIER}`, [businessId], "number ASC", limit)
+        return this.list(CASH_OPEN_FROM, CASH_OPEN_WHERE, [businessId], "number ASC", limit)
     }
 
     async cashHeldBy(courierId: string): Promise<number> {
@@ -669,6 +726,7 @@ export class D1OrderRepository implements OrderRepository {
         limit: number,
     ): Promise<Order[]> {
         return this.list(
+            "orders",
             "business_id = ? AND created_at >= ? AND created_at < ?",
             [businessId, from.getTime(), to.getTime()],
             "number ASC",
@@ -696,13 +754,14 @@ export class D1OrderRepository implements OrderRepository {
     }
 
     private async list(
+        from: string,
         where: string,
         params: (string | number)[],
         order: string,
         limit: number,
     ): Promise<Order[]> {
         const { results } = await this.db
-            .prepare(`SELECT ${COLUMNS} FROM orders WHERE ${where} ORDER BY ${order} LIMIT ?`)
+            .prepare(`SELECT ${COLUMNS} FROM ${from} WHERE ${where} ORDER BY ${order} LIMIT ?`)
             .bind(...params, limit)
             .all<OrderRow>()
         const items = await this.itemsFor(results.map((o) => o.id))
@@ -710,8 +769,9 @@ export class D1OrderRepository implements OrderRepository {
     }
 
     /**
-     * One page, newest first. The whole count only on the first page (the app keeps it); a later
-     * page reads one row more and says whether more follow: the free plan counts rows read.
+     * One page, newest first. Nothing is counted (a shop's or a customer's whole history would be
+     * read, and the free plan counts rows read): one row more says whether more follow, so
+     * `total` is a lower bound, all the app needs for «Yana».
      */
     private async page(
         from: string,
@@ -720,20 +780,14 @@ export class D1OrderRepository implements OrderRepository {
         page: PageRequest,
     ): Promise<Page<Order>> {
         const offset = offsetOf(page)
-        const select = this.db.prepare(pageSql(from, where)).bind(...params, page.limit + 1, offset)
-        const [rows, count] =
-            page.page === 1
-                ? await this.db.batch([
-                      select,
-                      this.db
-                          .prepare(`SELECT COUNT(*) AS total FROM ${from} WHERE ${where}`)
-                          .bind(...params),
-                  ])
-                : [await select.all()]
-        const fetched = (rows?.results ?? []) as OrderRow[]
+        const fetched = (
+            await this.db
+                .prepare(pageSql(from, where))
+                .bind(...params, page.limit + 1, offset)
+                .all<OrderRow>()
+        ).results
         const orders = fetched.slice(0, page.limit)
-        const counted = (count?.results[0] as { total: number } | undefined)?.total
-        const total = counted ?? offset + orders.length + (fetched.length > page.limit ? 1 : 0)
+        const total = offset + orders.length + (fetched.length > page.limit ? 1 : 0)
         const items = await this.itemsFor(orders.map((o) => o.id))
         return {
             data: orders.map((row) => toOrder(row, items.get(row.id) ?? [])),

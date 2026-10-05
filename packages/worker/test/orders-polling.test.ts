@@ -69,14 +69,14 @@ describe("owner orders: version and pages", () => {
         expect((await as(STRANGER)("/api/owner/orders/version")).status).toBe(403)
     })
 
-    it("the first page counts everything; a later page only says whether more follow", async () => {
+    it("no page counts the history: each says only whether more follow", async () => {
         for (let i = 0; i < 5; i++) {
             await place()
         }
         const first = (await (
             await as(OWNER)("/api/owner/orders?filter=active&page=1&limit=2")
         ).json()) as Page
-        expect(first.meta.total).toBe(5)
+        expect(first.meta.total).toBe(3) // two shown, at least one more
         expect(first.data.map((o) => o.number)).toEqual([5, 4])
         const second = (await (
             await as(OWNER)("/api/owner/orders?filter=active&page=2&limit=2")

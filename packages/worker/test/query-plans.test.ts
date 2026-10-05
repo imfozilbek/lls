@@ -8,6 +8,11 @@ import { describe, expect, it } from "vitest"
 import {
     ACTIVE_VERSION_SQL,
     BY_STATUS,
+    CASH_OPEN_FROM,
+    CASH_OPEN_WHERE,
+    OPEN_PAYMENTS_FROM,
+    OPEN_PAYMENTS_WHERE,
+    TRANSFER_REJECTIONS_SQL,
     COURIER_ORDERS_SQL,
     networkWaitingSql,
     pageSql,
@@ -90,5 +95,22 @@ describe("query plans", () => {
         expect(text).toContain("SEARCH product_words USING PRIMARY KEY (word>? AND word<?)")
         expect(text).toMatch(/SEARCH p USING INDEX sqlite_autoindex_products_1 \(id=\?\)/)
         expect(text).not.toMatch(/SCAN (p|products|b|businesses)\b/)
+    })
+
+    it("«Pul» lists only the open transfers and the cash couriers hold", async () => {
+        const list = (from: string, where: string): string =>
+            `SELECT id FROM ${from} WHERE ${where} ORDER BY number ASC LIMIT 20`
+        expectIndexed(await planOf(list(OPEN_PAYMENTS_FROM, OPEN_PAYMENTS_WHERE), ["shop-1"]), [
+            "idx_orders_business_payment (business_id=? AND payment_status=?)",
+        ])
+        expectIndexed(await planOf(list(CASH_OPEN_FROM, CASH_OPEN_WHERE), ["shop-1"]), [
+            "idx_orders_cash_open (business_id=?)",
+        ])
+    })
+
+    it("a new screenshot reads only the customer's refused transfers", async () => {
+        expectIndexed(await planOf(TRANSFER_REJECTIONS_SQL, ["customer-1", "order-1"]), [
+            "idx_orders_customer_rejected (customer_id=?)",
+        ])
     })
 })
