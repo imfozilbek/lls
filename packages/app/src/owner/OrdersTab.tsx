@@ -6,7 +6,7 @@ import {
     formatPhone,
     isFinalStatus,
 } from "@zumda/core"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
@@ -520,7 +520,17 @@ function FocusedOrder({
 /** Orders of one filter; the active list refreshes calmly while it is on screen. */
 function useShopOrders(filter: Filter): PagedList<OrderDTO> {
     const list = usePagedList(filter, (page) => api.owner.orders(filter, page))
-    usePolling(list.reload, POLL_MS, filter === "active")
+    // Every 20 s a one-line question «anything new?»; the list itself only when the answer moved.
+    const seen = useRef<string | null>(null)
+    const reload = list.reload
+    const check = useCallback(async (): Promise<void> => {
+        const { version } = await api.owner.ordersVersion()
+        if (version !== seen.current) {
+            seen.current = version
+            await reload()
+        }
+    }, [reload])
+    usePolling(check, POLL_MS, filter === "active")
     useRefresh(list.reload)
     // A new order, or a customer's «O'tkazdim»: the Zumda sound, like a taxi's new ride.
     const snapshot = useMemo(

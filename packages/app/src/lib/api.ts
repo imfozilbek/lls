@@ -341,6 +341,9 @@ export const api = {
         /** May the shop's bot write to the owner (pressed Start in it)? Asked quietly. */
         botCheck: (): Promise<{ ownerChat: OwnerChat }> =>
             request("POST", "/api/owner/shop/bot-check"),
+        /** Moves whenever an open order of the shop changes: the list is read only then. */
+        ordersVersion: (): Promise<{ version: string }> =>
+            request("GET", "/api/owner/orders/version"),
         orders: (filter: "active" | "done", page = 1): Promise<Page<OrderDTO>> =>
             request("GET", `/api/owner/orders${query({ filter, page })}`),
         setStatus: (

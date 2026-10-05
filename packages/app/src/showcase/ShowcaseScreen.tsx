@@ -1,4 +1,4 @@
-import { SUGGESTED_CATEGORIES } from "@zumda/core"
+import { SUGGESTED_CATEGORIES, searchText } from "@zumda/core"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { create } from "zustand"
 
@@ -23,8 +23,9 @@ import { ZumdaMark } from "../ui/zumda-mark.js"
 import type { Category, ShopPublicDTO, ShowcaseProductDTO } from "@zumda/core"
 
 /** Wait for a pause in typing before asking the server (and D1) again. */
-const TYPING_PAUSE_MS = 300
-const MIN_QUERY_LENGTH = 2
+const TYPING_PAUSE_MS = 500
+/** Counted in the search spelling: «ош» is "osh", three letters, so the commonest dish is found. */
+const MIN_QUERY_LENGTH = 3
 
 interface ShowcaseState {
     text: string
@@ -380,17 +381,12 @@ export function ShowcaseScreen({ onOpen }: { onOpen(slug: string): void }): Reac
         () => [...new Set((shops ?? []).flatMap((shop) => SUGGESTED_CATEGORIES[shop.type]))],
         [shops],
     )
-    const searching = query.length >= MIN_QUERY_LENGTH || category !== null
+    const longEnough = searchText(query).length >= MIN_QUERY_LENGTH
+    const searching = longEnough || category !== null
 
     let body: React.JSX.Element
     if (searching) {
-        body = (
-            <Results
-                query={query.length >= MIN_QUERY_LENGTH ? query : ""}
-                category={category}
-                onOpen={onOpen}
-            />
-        )
+        body = <Results query={longEnough ? query : ""} category={category} onOpen={onOpen} />
     } else if (error) {
         body = (
             <EmptyState

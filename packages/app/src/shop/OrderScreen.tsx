@@ -40,8 +40,11 @@ const ReceiptSheet = lazy(() =>
     import("./ReceiptSheet.js").then((m) => ({ default: m.ReceiptSheet })),
 )
 
-/** Status changes arrive by bot message too, so a calm 20 s refresh is enough (free-tier friendly). */
-const POLL_MS = 20_000
+/**
+ * Status changes arrive by bot message too, so a calm 30 s refresh is enough; it also refreshes
+ * on every return to the app (the free plan's budget).
+ */
+const POLL_MS = 30_000
 
 /** The screenshot already sent, when, and a way to send another while the shop checks. */
 function SentReceipt({
