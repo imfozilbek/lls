@@ -19,6 +19,18 @@ export interface TransferReceipt {
     customerRejections: number
 }
 
+/**
+ * Transfer screenshots are kept this long (owner's decision, October 2026): the storage deletes
+ * them by itself (R2 lifecycle of the receipts bucket), the order keeps its hash and time.
+ */
+export const RECEIPT_KEEP_DAYS = 30
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** The screenshot sent at `sentAt` is past its keeping time at `now`. */
+export function receiptExpired(sentAt: Date, now: Date): boolean {
+    return now.getTime() - sentAt.getTime() >= RECEIPT_KEEP_DAYS * DAY_MS
+}
+
 export interface PaymentProps {
     method: PaymentMethod
     status: PaymentStatus

@@ -233,14 +233,14 @@ export class GetTransferReceiptUseCase {
         telegramId: number
         businessId: string
         orderId: string
-    }): Promise<string> {
+    }): Promise<{ key: string; sentAt: Date }> {
         const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
         const { role } = await participantOf(this.deps, order, input.telegramId)
-        const key = order.payment.receipt?.key
-        if (role === "courier" || !key) {
+        const receipt = order.payment.receipt
+        if (role === "courier" || !receipt) {
             throw EntityNotFoundError.order(order.id)
         }
-        return key
+        return { key: receipt.key, sentAt: receipt.at }
     }
 }
 
