@@ -1,15 +1,21 @@
+import { receiptExpired } from "@zumda/core"
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 
 import { useT } from "../i18n/index.js"
-import { api } from "../lib/api.js"
+import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
 
 import { CloseIcon, ReceiptIcon } from "./icons.js"
 import { Skeleton } from "./primitives.js"
 
-type Loaded = { state: "loading" } | { state: "ready"; url: string } | { state: "failed" }
+type Loaded =
+    | { state: "loading" }
+    | { state: "ready"; url: string }
+    | { state: "failed" }
+    /** Kept 30 days, then deleted by the storage: nothing to load, nothing went wrong. */
+    | { state: "expired" }
 
 /**
  * The transfer screenshot of an order. It is private (never on a public address): the app reads
@@ -19,6 +25,10 @@ export function useReceiptUrl(orderId: string, sentAt: string | undefined): Load
     const [loaded, setLoaded] = useState<Loaded>({ state: "loading" })
     useEffect(() => {
         if (!sentAt) {
+            return undefined
+        }
+        if (receiptExpired(new Date(sentAt), new Date())) {
+            setLoaded({ state: "expired" })
             return undefined
         }
         let alive = true
@@ -31,9 +41,10 @@ export function useReceiptUrl(orderId: string, sentAt: string | undefined): Load
                     setLoaded({ state: "ready", url })
                 }
             })
-            .catch(() => {
+            .catch((error: unknown) => {
                 if (alive) {
-                    setLoaded({ state: "failed" })
+                    const gone = error instanceof ApiError && error.code === "RECEIPT_EXPIRED"
+                    setLoaded({ state: gone ? "expired" : "failed" })
                 }
             })
         return (): void => {
@@ -112,11 +123,11 @@ export function ReceiptThumb({
     if (loaded.state === "loading") {
         return <Skeleton className="h-24 w-20 shrink-0 rounded-control" />
     }
-    if (loaded.state === "failed") {
+    if (loaded.state === "failed" || loaded.state === "expired") {
         return (
             <span className="flex h-24 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-control bg-tg-secondary px-1 text-center text-xs text-tg-subtitle">
                 <ReceiptIcon size={20} />
-                {t.receipt.loadFailed}
+                {loaded.state === "expired" ? t.receipt.expired : t.receipt.loadFailed}
             </span>
         )
     }

@@ -26,6 +26,12 @@ import type {
 } from "@zumda/core"
 
 export const API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8787"
+/**
+ * Photos and the map come from R2's own addresses in production (no Worker request, the free
+ * plan's limit); the stand and local dev read them through the Worker. Both keep the same keys.
+ */
+const MEDIA_URL: string = import.meta.env.VITE_MEDIA_URL ?? `${API_URL}/img`
+export const MAP_URL: string = `${import.meta.env.VITE_MAP_URL ?? API_URL}/map`
 
 export class ApiError extends Error {
     constructor(
@@ -186,7 +192,7 @@ function query(params: Record<string, string | number | undefined>): string {
 }
 
 export function imageUrl(key: string | undefined): string | undefined {
-    return key ? `${API_URL}/img/${key}` : undefined
+    return key ? `${MEDIA_URL}/${key}` : undefined
 }
 
 export interface OrderLine {
