@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { CRASH_LIMITS, safeCrashText } from "../../../domain/shared/crash-text.js"
+import { CRASH_LIMITS, CRASH_WHERE, safeCrashText } from "../../../domain/shared/crash-text.js"
 
 describe("safeCrashText", () => {
     it("keeps the words of an error, drops a phone, an id and a Cyrillic name", () => {
@@ -20,5 +20,13 @@ describe("safeCrashText", () => {
     it("is never longer than the limit", () => {
         expect(safeCrashText("a ".repeat(500)).length).toBeLessThanOrEqual(CRASH_LIMITS.detail)
         expect(safeCrashText("abc def", 3)).toBe("abc")
+    })
+    it("a place is a file of our bundle and a position, nothing else", () => {
+        for (const ok of ["index-BzyS0hWw.js:12:3456", "CheckoutScreen.tsx:40:7", "a.mjs:1:1"]) {
+            expect(CRASH_WHERE.test(ok)).toBe(true)
+        }
+        for (const bad of ["https://x.y/a.js:1:1", "a.js:1", "a.css:1:1", "../a.js:1:1"]) {
+            expect(CRASH_WHERE.test(bad)).toBe(false)
+        }
     })
 })

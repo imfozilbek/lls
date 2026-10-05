@@ -20,8 +20,8 @@ export interface CrashFacts {
 
 export const CRASH_LIMITS = { name: 40, detail: 160, where: 80, screen: 40 } as const
 
-/** `file.js:12:34`: a file of our bundle and a position in it. */
-export const CRASH_WHERE = /^[\w.-]+\.m?js:\d{1,7}:\d{1,7}$/
+/** `file.js:12:34`: a file of our bundle (`.tsx` under the dev server) and a position in it. */
+export const CRASH_WHERE = /^[\w.-]+\.(?:m?js|jsx|tsx?):\d{1,7}:\d{1,7}$/
 export const CRASH_NAME = /^[A-Za-z]+$/
 export const CRASH_SCREEN = /^[a-z_:-]+$/
 
