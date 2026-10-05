@@ -672,8 +672,12 @@ document.innerHTML = x                 // XSS
 
 ## Free Tier Limits
 
-**⛔ No paid plans (owner's decision, October 2026).** The free limits are per account, and one
-account serves five projects (Rida, Zumda, ilk•ish, Uyim, Grantchi). Zumda's share for a day of
+**⛔ No paid plans now (owner's decision, October 2026).** The free limits are per account, and
+one account serves five projects (Rida, Zumda, ilk•ish, Uyim, Grantchi). **Upgrade when:** Workers
+requests of the whole account stay above 70,000 a day three days in a row; then the owner decides
+and turns on Workers Paid ($5/month per account) by hand, never automatically. The account's load
+is watched by one sensor in `imfozilbek/dream-infra` (`docs/07-usage-sensor.md`): Zumda builds no
+monitoring of its own for the plan's limits. The optimizations stay mandatory either way. Zumda's share for a day of
 1 000 active people, 300 orders, 10 shops, 15 couriers: the last column. The calculation, line by
 line, and the levers when a line nears its share: `docs/capacity.md`.
 

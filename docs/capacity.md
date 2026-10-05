@@ -1,6 +1,8 @@
 # Capacity: Zumda on Cloudflare's free plan
 
-Owner's decision (October 2026): no paid plans. One Cloudflare account serves five projects
+Owner's decision (October 2026): no paid plans now; when the account's Workers requests stay
+above 70 000 a day three days in a row, the owner decides on Workers Paid by hand (the sensor in
+`imfozilbek/dream-infra` watches it, `TODO.md` #19). One Cloudflare account serves five projects
 (Rida, Zumda, ilk•ish, Uyim, Grantchi), and the free limits are per account. This page shows
 that Zumda fits its share on a busy day, line by line, and how each number was found.
 
