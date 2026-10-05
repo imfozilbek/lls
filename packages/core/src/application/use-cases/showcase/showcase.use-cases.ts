@@ -14,6 +14,23 @@ import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
 import type { ProductRepository } from "../../ports/product-repository.js"
 
+/**
+ * A shop's own bot, by its slug, for a Zumda Shop QR of a shop that has since left the showcase:
+ * the person is sent to the shop's bot instead (owner's decision). Only an active shop: the bot's
+ * name is public anyway (it is on the shop's own QR).
+ */
+export class ShopBotOfUseCase {
+    constructor(private readonly businesses: BusinessRepository) {}
+
+    async execute(slug: string): Promise<{ botUsername: string; inShowcase: boolean }> {
+        const shop = await this.businesses.findBySlug(slug)
+        if (!shop?.isActive()) {
+            throw EntityNotFoundError.businessBySlug(slug)
+        }
+        return { botUsername: shop.bot.username, inShowcase: shop.isInShowcase() }
+    }
+}
+
 /** Shops of the Zumda showcase: open ones first, then by name. */
 export class ListShowcaseShopsUseCase {
     constructor(

@@ -4,6 +4,7 @@ import {
     ListShowcaseShopsUseCase,
     SearchShowcaseUseCase,
     SetMarketplaceTermsUseCase,
+    ShopBotOfUseCase,
 } from "../../application/use-cases/showcase/showcase.use-cases.js"
 import { Business } from "../../domain/entities/business.js"
 import { Product } from "../../domain/entities/product.js"
@@ -106,6 +107,18 @@ describe("Zumda showcase", () => {
         expect(produce.data.map((p) => p.name)).toEqual(["Pomidor"])
         expect((await search.execute({ text: " , " })).data).toEqual([])
         await expect(search.execute({ category: "cars" })).rejects.toBeInstanceOf(ValidationError)
+    })
+
+    it("tells an active shop's own bot, also outside the showcase", async () => {
+        const botOf = new ShopBotOfUseCase(businesses)
+        expect(await botOf.execute("toza-suv")).toEqual({
+            botUsername: "toza_suv_bot",
+            inShowcase: false,
+        })
+        expect((await botOf.execute("baraka")).inShowcase).toBe(true)
+        // Disabled or unknown: nothing to send the person to.
+        await expect(botOf.execute("yangi")).rejects.toBeInstanceOf(EntityNotFoundError)
+        await expect(botOf.execute("nope")).rejects.toBeInstanceOf(EntityNotFoundError)
     })
 
     it("lists showcase shops, open ones first", async () => {
