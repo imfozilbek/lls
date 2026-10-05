@@ -2,6 +2,11 @@ import {
     BUSINESS_STATUSES,
     BUSINESS_TYPES,
     CATEGORIES,
+    CRASH_KINDS,
+    CRASH_LIMITS,
+    CRASH_NAME,
+    CRASH_SCREEN,
+    CRASH_WHERE,
     FEATURES,
     LANGUAGES,
     MONEY_PERIODS,
@@ -276,3 +281,14 @@ export function onInvalid(result: ValidationResult, c: Context): Response | unde
         400,
     )
 }
+
+/** A Mini App crash (the app's `crashFacts`): short strings, nothing else. */
+export const clientErrorBody = z
+    .object({
+        kind: z.enum(CRASH_KINDS),
+        name: z.string().max(CRASH_LIMITS.name).regex(CRASH_NAME),
+        detail: z.string().max(CRASH_LIMITS.detail),
+        where: z.union([z.literal(""), z.string().max(CRASH_LIMITS.where).regex(CRASH_WHERE)]),
+        screen: z.string().max(CRASH_LIMITS.screen).regex(CRASH_SCREEN),
+    })
+    .strict()

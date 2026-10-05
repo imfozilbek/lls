@@ -13,6 +13,7 @@ import {
 } from "./auth.js"
 import { toErrorResponse } from "./http/errors.js"
 import { adminRoutes } from "./routes/admin.routes.js"
+import { clientErrorRoutes } from "./routes/client-errors.routes.js"
 import { courierRoutes } from "./routes/courier.routes.js"
 import { customerRoutes } from "./routes/customer.routes.js"
 import { imageRoutes } from "./routes/image.routes.js"
@@ -98,6 +99,8 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
 
     // Before `/api` and its initData check: this is where a browser gets its session.
     app.route("/api/business", webSessionRoutes)
+    // Before `/api` too: a Mini App crash may come before any sign-in.
+    app.route("/api/client-errors", clientErrorRoutes)
 
     const api = new Hono<AppEnv>()
         .use(authenticate)
