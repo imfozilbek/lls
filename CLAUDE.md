@@ -108,8 +108,10 @@ cover each one's whole process; what exactly comes from the meeting with them.
   cash order are refused (`NOT_A_TRANSFER`).
 - **The transfer screenshot (owner's decision, October 2026).** «O'tkazdim» carries the
   screenshot of the transfer (`RECEIPT_REQUIRED` without it); it is a hint, never proof: the
-  money on the card is. It is stored privately in R2 (`receipts/`, never under the public
-  `/img`), shown only to the order's customer and the shop's owner
+  money on the card is. It is stored in its own private R2 bucket `zumda-receipts` (never in the
+  public `zumda-media`), **kept 30 days** (owner's decision, October 2026: the bucket's lifecycle
+  deletes it, `RECEIPT_KEEP_DAYS`; then 410 `RECEIPT_EXPIRED`, the app says it was deleted),
+  1280 px on its long side, shown only to the order's customer and the shop's owner
   (`GET /api/orders/:id/receipt`), and sent to the owner as a photo with the sum and the card
   tail. Its SHA-256 warns when the same file came before (this shop, or this customer anywhere).
   «Pul keldi» always asks first (sheet in the app; `p:` → «Ha, … keldi» `pc:` / «Yo'q, kelmadi»
@@ -211,8 +213,9 @@ cover each one's whole process; what exactly comes from the meeting with them.
   Protomaps build (mirror `data.source.coop/protomaps/openstreetmap/v4.pmtiles`), cut by
   `go-pmtiles` (`scripts/map-data.mjs`, workflow «Map»: by hand and monthly) into R2
   `zumda-media/map/` (`uzbekistan-YYYYMMDD.pmtiles` z14, glyphs, icons, `current.json` last).
-  The Worker serves it (`/map/*`, byte ranges, edge cache); the app never calls an outside map
-  server. No search: the person moves the map under the pin; «Joylashuvim» comes from Telegram.
+  R2 serves it itself at `map.zumda.shop` (owner's decision, October 2026: no Worker request per
+  piece; bucket CORS for the app's addresses, a Cache Rule keeps it at the edge); the Worker's
+  `/map/*` serves the same keys on the stand. The app never calls an outside map server. No search: the person moves the map under the pin; «Joylashuvim» comes from Telegram.
   Picking: checkout, the application, «Sozlamalar → Manzil», «Tumanlar». Showing: the courier's
   card, the owner's order (map button), the customer's order, the storefront («Xarita»), trips.
   MapLibre is the lazy `ui/map` chunk; with no map yet every place works as before.
@@ -620,7 +623,10 @@ document.innerHTML = x                 // XSS
 - Verify Telegram initData on every request
 - Prices, totals, the service fee and `customerId` are computed on the server. Never trust them from the client
 - Check ownership on every route (owner edits only own shop, customer sees only own orders)
-- Frontend NEVER talks to D1/R2 directly. Only through the Worker
+- Frontend NEVER talks to D1/R2 directly. Only through the Worker. The one exception (owner's
+  decision, October 2026): public photos and the map are read from R2's own addresses
+  (`media.zumda.shop`, `map.zumda.shop`, the public bucket `zumda-media`), which never holds a
+  receipt; the deploy adds those addresses only while `zumda-media` has no `receipts/`
 - CORS: allow only the Mini App's three addresses (`APP_ORIGIN`, `BUSINESS_APP_ORIGIN`,
   `COURIER_APP_ORIGIN`)
 - Zumda | Business in a browser (business.zumda.shop): Telegram Login (OpenID Connect; the old
@@ -867,6 +873,7 @@ CI/CD: GitHub Actions. **⛔ Docker is PROHIBITED. No VPS.**
 
 ```
 Telegram ─► Mini App (Pages: app., business., delivery.zumda.shop) ─► Worker (api.zumda.shop) ─► D1 / R2
+Mini App ─► media.zumda.shop, map.zumda.shop (R2 `zumda-media` itself: photos, the map)
 Browser ─► business.zumda.shop (Telegram Login) ─► Worker ─► D1 / R2
 zumda.shop ─► Worker ─► 302 to t.me/zumdashop_bot (until the landing page)
 Telegram Bot API ─► /tg/:botId, /tg/platform, /tg/business, /tg/courier ─► Worker
@@ -887,7 +894,9 @@ avatars (`brand/*-avatar.jpg`, set only when the file changed: its hash is in D1
 the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method).
 
 - Addresses: `api.zumda.shop` and `zumda.shop` (Worker, Custom Domains); `app.`, `business.`,
-  `delivery.zumda.shop` (one Pages project); the deploy adds them and their DNS records. The Worker has no workers.dev address.
+  `delivery.zumda.shop` (one Pages project); `media.` and `map.zumda.shop` (R2 custom domains of
+  `zumda-media`); the deploy adds them and their DNS records. The Worker has no workers.dev
+  address. Buckets: `zumda-media` (public files) and `zumda-receipts` (private, 30 days).
 - Checks run on the pull request (`static` and `unit` side by side, e2e on eight machines; the
   required checks are `quality-gates` and `e2e`). A push to `main` only deploys (~30 s): the
   `main` ruleset takes a PR only with green checks on code up to date with `main`.
