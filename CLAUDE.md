@@ -462,6 +462,10 @@ cancelled  cancelled  cancelled  cancelled  cancelled
 // Schema changes ONLY via SQL migrations: packages/worker/migrations/*.sql
 // Always: parameterized queries, db.prepare(sql).bind(...)
 // Always: index every WHERE / ORDER BY column (free tier counts ROWS READ, not queries)
+// Every new or changed query: EXPLAIN QUERY PLAN in test/query-plans.test.ts (an index range,
+// never a scan of orders); a polled or opened screen: a row limit in test/capacity.test.ts
+// (six months of history). Never COUNT(*) a history; a save writes only changed columns
+// (D1 counts every index entry written)
 // Index: business_id, customer_id, status, created_at, telegram_id, slug
 // Multi-statement writes: db.batch([...]) (runs as one transaction)
 // Money: INTEGER (UZS). Timestamps: INTEGER (unix ms), UTC
@@ -490,7 +494,9 @@ the repository is public. Steps: `SECURITY.md` → "Backups and restore".
 | Update | PATCH | `/resources/:id` | 200/404 |
 | Delete | DELETE | `/resources/:id` | 204/404 |
 
-**List response (always):** `{ data: T[], meta: { page, limit, total } }`
+**List response (always):** `{ data: T[], meta: { page, limit, total } }`. Order lists never count
+the history: their `total` is a lower bound (offset + shown + 1 when more follow), enough for
+«Yana».
 
 **Error response (always):** `{ error: { code, message, details? } }`. For business rules `code` is
 the rule id (e.g. `PHONE_REQUIRED`, `SHOP_CLOSED`) so the app can show a translated message.
@@ -666,15 +672,22 @@ document.innerHTML = x                 // XSS
 
 ## Free Tier Limits
 
-| Service | Free limit | Upgrade when |
-|---------|-----------|--------------|
-| Workers | 100,000 requests/day, 10 ms CPU/request, 50 subrequests/request | > 70k requests/day → Workers Paid ($5/mo) |
-| D1 | 500 MB per database, 5M rows read/day, 100k rows written/day, 7-day Time Travel | DB > 400 MB or reads near limit |
-| R2 | 10 GB storage, free egress | > 8 GB |
-| Pages | Static hosting, `*.pages.dev` | Not needed |
-| Cron Triggers | 5 per account | - |
+**⛔ No paid plans (owner's decision, October 2026).** The free limits are per account, and one
+account serves five projects (Rida, Zumda, ilk•ish, Uyim, Grantchi). Zumda's share for a day of
+1 000 active people, 300 orders, 10 shops, 15 couriers: the last column. The calculation, line by
+line, and the levers when a line nears its share: `docs/capacity.md`.
 
-**⛔ Design to stay free:** no polling faster than 15 s, paginate lists, index queries.
+| Service | Free limit (account) | Zumda's share |
+|---------|-----------|--------------|
+| Workers | 100,000 requests/day, 10 ms CPU/request, 50 subrequests/request | 35,000 requests/day |
+| D1 | 500 MB per database, 5M rows read/day, 100k rows written/day, 7-day Time Travel | 1.5M read, 20,000 written/day (also after 6 months) |
+| R2 | 10 GB storage, free egress, 1M Class A + 10M Class B ops/month | 4 GB, not growing (receipts 30 days, two maps) |
+| Pages | Static hosting, `*.pages.dev` | - |
+| Cron Triggers | 5 per account | 0-1 |
+
+**⛔ Design to stay free:** no polling faster than 15 s (a polled screen checks a cheap version
+first), paginate lists, index queries, public files and the map from R2's own addresses (never
+through the Worker in production).
 
 ## Code Style (MANDATORY)
 
@@ -908,6 +921,7 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 | `ROADMAP.md` | Milestones, tasks with checkboxes |
 | `CHANGELOG.md` | Version history |
 | `TODO.md` | Technical debt (create when the first item appears) |
+| `docs/capacity.md` | The free plan's budget, line by line (update when a screen's queries or polling change) |
 
 ## Testing Checklist
 

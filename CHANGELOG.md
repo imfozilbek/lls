@@ -7,6 +7,29 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Zumda in Cloudflare's free plan
+- **Changed:** no paid plans (owner's decision); the account is shared by five projects, so
+  Zumda keeps to its share: 35 000 Worker requests, 1.5 M rows read and 20 000 rows written a
+  day, 4 GB in R2. `docs/capacity.md` shows the day of 1 000 people and 300 orders line by line;
+  `test/capacity.test.ts` measures every screen on six months of history.
+- **Fixed (worker):** screens that read a shop's whole history: «Pul» (10 862 rows to 45), the
+  first page of finished orders and of the customer's orders (no `COUNT(*)`), the courier's
+  screen and open trips, the district network's waiting orders, the transfer screenshot check,
+  the showcase search (a word table instead of `LIKE`). Migrations `0016` to `0018`.
+- **Changed (worker):** an order's save writes only the columns that changed (9 rows written a
+  step to 3-4); one query to sign in; bot tokens decrypted once per isolate; network offers in
+  one batch; 20% of request logs kept.
+- **Changed (app):** the owner's orders screen checks a small version every 20 s and reloads the
+  list only when it moved; the customer's order every 30 s, the courier's screen every 45 s; the
+  showcase searches from 3 letters (in the search spelling: «ош» is three) after 500 ms.
+- **Changed:** transfer screenshots live in their own private bucket `zumda-receipts` and are
+  deleted after 30 days (owner's decision); an old one says «Chek o'chirilgan (30 kun
+  saqlanadi)»; 1280 px on the long side.
+- **Changed:** photos and the map come straight from R2 at `media.zumda.shop` and
+  `map.zumda.shop` (owner's decision): no Worker request per photo or map piece. The deploy adds
+  the addresses, the bucket's CORS and a cache rule for the map; the map upload keeps only the
+  current map and the one before.
+
 ### OpenRouteService's new address
 - **Changed (worker):** trips' way along the roads is asked at `api.heigit.org/openrouteservice`:
   `api.openrouteservice.org` stops working in November 2026 (their announcement). The key stays
