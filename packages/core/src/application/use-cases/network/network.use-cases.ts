@@ -297,9 +297,16 @@ export class AutoRequestNetworkUseCase {
 export class ListNetworkOrdersUseCase {
     constructor(private readonly deps: NetworkDeps) {}
 
-    /** Network orders of the courier's districts waiting for «Беру». Empty outside the network. */
-    async execute(input: { telegramId: number }): Promise<NetworkOrderDTO[]> {
-        const { profile, links } = await requireNetworkProfile(this.deps.couriers, input.telegramId)
+    /**
+     * Network orders of the courier's districts waiting for «Беру». Empty outside the network.
+     * `known`: the profile and every link, already read by the courier's screen.
+     */
+    async execute(input: {
+        telegramId: number
+        known?: { profile: CourierProfile; links: Courier[] }
+    }): Promise<NetworkOrderDTO[]> {
+        const { profile, links } =
+            input.known ?? (await requireNetworkProfile(this.deps.couriers, input.telegramId))
         if (!profile.inNetwork) {
             return []
         }
@@ -316,9 +323,7 @@ export class ListNetworkOrdersUseCase {
         ).filter((order) => !blocked.has(order.businessId))
         const shopIds = [...new Set(orders.map((order) => order.businessId))]
         const shops = new Map(
-            (await Promise.all(shopIds.map((id) => this.deps.businesses.findById(id))))
-                .filter((shop): shop is Business => shop !== null)
-                .map((shop) => [shop.id, shop]),
+            (await this.deps.businesses.findByIds(shopIds)).map((shop) => [shop.id, shop]),
         )
         return orders.flatMap((order) => {
             const shop = shops.get(order.businessId)
@@ -387,18 +392,24 @@ export class OverdueNetworkOrdersUseCase {
         }
         const byId = new Map(districts.map((d) => [d.id, d]))
         const now = this.deps.clock.now()
-        const waiting = await this.deps.orders.listWaitingForNetwork(
-            districts.map((d) => d.id),
-            NETWORK_ORDERS_LIMIT,
+        const waiting = (
+            await this.deps.orders.listWaitingForNetwork(
+                districts.map((d) => d.id),
+                NETWORK_ORDERS_LIMIT,
+                { unalerted: true },
+            )
+        ).filter((order) => !order.networkAlertedAt && order.networkRequestedAt)
+        const shops = new Map(
+            (
+                await this.deps.businesses.findByIds([...new Set(waiting.map((o) => o.businessId))])
+            ).map((shop) => [shop.id, shop]),
         )
         const overdue: OverdueNetworkOrder[] = []
         for (const order of waiting) {
-            if (order.networkAlertedAt || !order.networkRequestedAt) {
-                continue
-            }
-            const business = await this.deps.businesses.findById(order.businessId)
+            const requestedAt = order.networkRequestedAt
+            const business = shops.get(order.businessId)
             const district = business?.districtId ? byId.get(business.districtId) : undefined
-            if (!business || !district || now < district.overdueAt(order.networkRequestedAt)) {
+            if (!requestedAt || !business || !district || now < district.overdueAt(requestedAt)) {
                 continue
             }
             // Never a full save from this copy: a «Беру» or a cancel may have landed meanwhile.

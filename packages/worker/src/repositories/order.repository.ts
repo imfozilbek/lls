@@ -129,6 +129,52 @@ const EMPTY_TOTALS: MoneyTotals = {
 /** Most a courier's screen shows at once: today's work fits easily. */
 const COURIER_LIST_LIMIT = 50
 
+const FINAL_ORDER_STATUSES = ORDER_STATUSES.filter((s) => !ACTIVE_ORDER_STATUSES.includes(s))
+
+/**
+ * Network orders nobody took yet: only the open ones are in `idx_orders_network_open` (0016), so
+ * finished history is never read. The statuses are literals: a partial index is used only when
+ * the query repeats its condition. Binds: district ids, limit.
+ */
+export function networkWaitingSql(districts: number, unalerted: boolean): string {
+    return `SELECT ${COLUMNS} FROM orders INDEXED BY idx_orders_network_open
+        WHERE network_requested_at IS NOT NULL AND courier_id IS NULL
+            AND status IN (${TAKEABLE.map((status) => `'${status}'`).join(", ")})
+            ${unalerted ? "AND network_alerted_at IS NULL" : ""}
+            AND business_id IN (SELECT id FROM businesses
+                WHERE district_id IN (${placeholders(districts)}))
+        ORDER BY network_requested_at ASC LIMIT ?`
+}
+
+/**
+ * A courier's orders: every open one, and today's finished ones. Two index ranges
+ * (`idx_orders_courier`: courier, status, updated_at), so the history of the link is never read.
+ * Binds: courier, active statuses, courier, final statuses, since, limit.
+ */
+export const COURIER_ORDERS_SQL = `SELECT ${COLUMNS} FROM (
+        SELECT ${COLUMNS} FROM orders
+        WHERE courier_id = ? AND status IN (${placeholders(ACTIVE_ORDER_STATUSES.length)})
+        UNION ALL
+        SELECT ${COLUMNS} FROM orders
+        WHERE courier_id = ? AND status IN (${placeholders(FINAL_ORDER_STATUSES.length)})
+            AND updated_at >= ?
+    ) ORDER BY number DESC LIMIT ?`
+
+export function courierOrdersBinds(
+    courierId: string,
+    since: Date,
+    limit = COURIER_LIST_LIMIT,
+): (string | number)[] {
+    return [
+        courierId,
+        ...ACTIVE_ORDER_STATUSES,
+        courierId,
+        ...FINAL_ORDER_STATUSES,
+        since.getTime(),
+        limit,
+    ]
+}
+
 function toItem(row: ItemRow): OrderItem {
     return OrderItem.create({
         productId: row.product_id,
@@ -460,19 +506,20 @@ export class D1OrderRepository implements OrderRepository {
         return result.meta.changes === 1
     }
 
-    async listWaitingForNetwork(districtIds: readonly string[], limit: number): Promise<Order[]> {
+    async listWaitingForNetwork(
+        districtIds: readonly string[],
+        limit: number,
+        options: { unalerted?: boolean } = {},
+    ): Promise<Order[]> {
         if (districtIds.length === 0) {
             return []
         }
-        return this.list(
-            `network_requested_at IS NOT NULL AND courier_id IS NULL
-                AND status IN (${placeholders(TAKEABLE.length)})
-                AND business_id IN (SELECT id FROM businesses
-                    WHERE district_id IN (${placeholders(districtIds.length)}))`,
-            [...TAKEABLE, ...districtIds],
-            "network_requested_at ASC",
-            limit,
-        )
+        const { results } = await this.db
+            .prepare(networkWaitingSql(districtIds.length, options.unalerted ?? false))
+            .bind(...districtIds, limit)
+            .all<OrderRow>()
+        const items = await this.itemsFor(results.map((o) => o.id))
+        return results.map((row) => toOrder(row, items.get(row.id) ?? []))
     }
 
     async networkShare(districtId: string, from: Date, to: Date): Promise<NetworkShare> {
@@ -501,14 +548,9 @@ export class D1OrderRepository implements OrderRepository {
     }
 
     async listByCourier(courierId: string, since: Date): Promise<Order[]> {
-        const active = placeholders(ACTIVE_ORDER_STATUSES.length)
         const { results } = await this.db
-            .prepare(
-                `SELECT ${COLUMNS} FROM orders
-                 WHERE courier_id = ? AND (status IN (${active}) OR updated_at >= ?)
-                 ORDER BY number DESC LIMIT ?`,
-            )
-            .bind(courierId, ...ACTIVE_ORDER_STATUSES, since.getTime(), COURIER_LIST_LIMIT)
+            .prepare(COURIER_ORDERS_SQL)
+            .bind(...courierOrdersBinds(courierId, since))
             .all<OrderRow>()
         const items = await this.itemsFor(results.map((o) => o.id))
         return results.map((row) => toOrder(row, items.get(row.id) ?? []))

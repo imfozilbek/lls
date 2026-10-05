@@ -316,9 +316,8 @@ export class GetCourierHomeUseCase {
         const profile = await requireCourierProfile(couriers, input.telegramId)
         const now = this.deps.clock.now()
         const since = startOfLocalDay(now)
-        const links = (await couriers.listByPerson(input.telegramId)).filter(
-            (l) => l.isActive || l.isNetwork,
-        )
+        const allLinks = await couriers.listByPerson(input.telegramId)
+        const links = allLinks.filter((l) => l.isActive || l.isNetwork)
         const perShop = await Promise.all(
             links.map(async (link) => {
                 const [business, list, cashToHand] = await Promise.all([
@@ -353,7 +352,10 @@ export class GetCourierHomeUseCase {
             orders: perShop
                 .flatMap((p) => p.shopOrders)
                 .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-            network: await new ListNetworkOrdersUseCase(this.deps).execute(input),
+            network: await new ListNetworkOrdersUseCase(this.deps).execute({
+                telegramId: input.telegramId,
+                known: { profile, links: allLinks },
+            }),
             trips: (await this.deps.trips.listOpenByCouriers(links.map((l) => l.id))).map(
                 toTripDTO,
             ),
