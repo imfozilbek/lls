@@ -30,6 +30,7 @@ import {
     ListMyShopsUseCase,
     ListProductsUseCase,
     ListShopOrdersUseCase,
+    ShopOrdersVersionUseCase,
     ListShowcaseShopsUseCase,
     MarkTransferSentUseCase,
     GetTransferReceiptUseCase,
@@ -121,6 +122,7 @@ export interface UseCases {
     rejectTransfer: RejectTransferUseCase
     listMyOrders: ListMyOrdersUseCase
     listShopOrders: ListShopOrdersUseCase
+    shopOrdersVersion: ShopOrdersVersionUseCase
     moneyReport: GetMoneyReportUseCase
     confirmPayment: ConfirmPaymentUseCase
     markRefunded: MarkRefundedUseCase
@@ -254,6 +256,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             remindTransfer: new RemindTransferUseCase({ ...orderAccess, receipts, clock }),
             listMyOrders: new ListMyOrdersUseCase(customers, orders),
             listShopOrders: new ListShopOrdersUseCase(businesses, orders),
+            shopOrdersVersion: new ShopOrdersVersionUseCase(businesses, orders),
             moneyReport: new GetMoneyReportUseCase(network),
             confirmPayment: new ConfirmPaymentUseCase(network),
             markRefunded: new MarkRefundedUseCase(network),

@@ -5,7 +5,15 @@
 import { env } from "cloudflare:workers"
 import { describe, expect, it } from "vitest"
 
-import { COURIER_ORDERS_SQL, networkWaitingSql } from "../src/repositories/order.repository.js"
+import {
+    ACTIVE_VERSION_SQL,
+    BY_STATUS,
+    COURIER_ORDERS_SQL,
+    networkWaitingSql,
+    pageSql,
+    shopStatusWhere,
+} from "../src/repositories/order.repository.js"
+import { SHOWCASE_BY_WORD_FROM, WORD_FILTER } from "../src/repositories/product.repository.js"
 import {
     OPEN_TRIPS_OF_BUSINESS_SQL,
     openTripsOfCouriersSql,
@@ -58,5 +66,29 @@ describe("query plans", () => {
             const plan = await planOf(networkWaitingSql(2, unalerted), ["d-1", "d-2", 30])
             expectIndexed(plan, ["idx_orders_network_open", "idx_businesses_district"])
         }
+    })
+
+    it("the owner's polled version and an «active» page read only open orders", async () => {
+        expectIndexed(await planOf(ACTIVE_VERSION_SQL, ["shop-1", ...ACTIVE]), [
+            "idx_orders_business_status",
+        ])
+        const plan = await planOf(pageSql(BY_STATUS, shopStatusWhere(ACTIVE.length)), [
+            "shop-1",
+            ...ACTIVE,
+            21,
+            0,
+        ])
+        expectIndexed(plan, ["idx_orders_business_status (business_id=? AND status=?)"])
+    })
+
+    it("a showcase search reads only the products whose words match", async () => {
+        const plan = await planOf(
+            `SELECT p.id ${SHOWCASE_BY_WORD_FROM} WHERE b.status = ? AND ${WORD_FILTER}`,
+            ["osh", "osh~", "active", "lag", "lag~"],
+        )
+        const text = plan.join("\n")
+        expect(text).toContain("SEARCH product_words USING PRIMARY KEY (word>? AND word<?)")
+        expect(text).toMatch(/SEARCH p USING INDEX sqlite_autoindex_products_1 \(id=\?\)/)
+        expect(text).not.toMatch(/SCAN (p|products|b|businesses)\b/)
     })
 })

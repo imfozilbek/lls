@@ -166,6 +166,12 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
             `${p.price}, ${quote(p.unit)}, ${p.step ?? 1}, ${p.returnable ? 1 : 0}, ` +
             `${quote(p.category)}, ${quote(` ${searchText(p.name)}`)}, ${index}, ${now}, ${now})`,
     )
+    // The showcase search reads these (the repository writes them on every save).
+    const words = (CATALOGS[shop.kind] ?? []).flatMap((p, index) =>
+        [...new Set(searchText(p.name).split(" "))]
+            .filter((word) => word.length > 0)
+            .map((word) => `(${quote(word)}, ${quote(`${shop.id}-p${index + 1}`)})`),
+    )
     return [
         `INSERT INTO businesses (id, slug, name, type, owner_telegram_id, status, bot_id,
             bot_username, bot_token_enc, webhook_secret, brand_color, address, latitude, longitude,
@@ -191,6 +197,7 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
             : []),
         `INSERT INTO products (id, business_id, name, price, unit, step, returnable, category,
             search_text, position, created_at, updated_at) VALUES ${products.join(",\n")};`,
+        `INSERT INTO product_words (word, product_id) VALUES ${words.join(",\n")};`,
         `INSERT INTO couriers (id, business_id, telegram_id, name, phone, is_active, status,
             created_at, updated_at) VALUES (${quote(`${shop.id}-courier`)}, ${quote(shop.id)},
             ${DEV_COURIER.id}, ${quote(DEV_COURIER.first_name)}, '+998901112233', 1, 'active',
@@ -231,6 +238,7 @@ async function seedSql(tokenKey: string): Promise<string> {
         "DELETE FROM alert_log;",
         "DELETE FROM customer_businesses;",
         "DELETE FROM customers;",
+        "DELETE FROM product_words;",
         "DELETE FROM products;",
         "DELETE FROM payout_cards;",
         "DELETE FROM businesses;",

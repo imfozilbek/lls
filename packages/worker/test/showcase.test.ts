@@ -233,4 +233,24 @@ describe("Zumda showcase", () => {
         expect(text?.html).toContain("do'konlar, oshxonalar va xizmatlar")
         expect(text?.options?.keyboard?.inline_keyboard).toHaveLength(1)
     })
+
+    it("a renamed product is found by its new words only; a deleted one is gone", async () => {
+        await market(5)
+        const names = async (q: string): Promise<string[]> =>
+            (
+                await json<{ data: { name: string }[] }>(
+                    await viaPlatform(CUSTOMER)(`/api/showcase/products?q=${q}`),
+                )
+            ).data.map((p) => p.name)
+        const id = await addProduct("Qozon kabob")
+        expect(await names("qoz")).toEqual(["Qozon kabob"])
+        await inShop(OWNER)(`/api/owner/products/${id}`, {
+            method: "PATCH",
+            json: { name: "Tandir go'sht" },
+        })
+        expect(await names("qoz")).toEqual([])
+        expect(await names("tandir+gosht")).toEqual(["Tandir go'sht"])
+        await inShop(OWNER)(`/api/owner/products/${id}`, { method: "DELETE" })
+        expect(await names("tandir")).toEqual([])
+    })
 })

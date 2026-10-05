@@ -19,6 +19,7 @@ const TABLES = [
     "alert_log",
     "customer_businesses",
     "customers",
+    "product_words",
     "products",
     "payout_cards",
     "businesses",

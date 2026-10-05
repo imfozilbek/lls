@@ -106,6 +106,15 @@ export const ownerRoutes = new Hono<AppEnv>()
         return c.json(shop)
     })
 
+    /** What the owner's screen polls: the list is read again only when this changes. */
+    .get("/orders/version", async (c) => {
+        const version = await c.get("services").useCases.shopOrdersVersion.execute({
+            actorTelegramId: c.get("auth").user.id,
+            businessId: shopOf(c).id,
+        })
+        return c.json({ version })
+    })
+
     .get("/orders", zValidator("query", ownerOrdersQuery, onInvalid), async (c) => {
         const page = await c.get("services").useCases.listShopOrders.execute({
             ...c.req.valid("query"),

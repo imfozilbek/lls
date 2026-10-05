@@ -131,6 +131,26 @@ const COURIER_LIST_LIMIT = 50
 
 const FINAL_ORDER_STATUSES = ORDER_STATUSES.filter((s) => !ACTIVE_ORDER_STATUSES.includes(s))
 
+/** A page of orders, newest first; binds: the where's values, then limit and offset. */
+export function pageSql(from: string, where: string): string {
+    return `SELECT ${COLUMNS} FROM ${from} WHERE ${where} ORDER BY number DESC LIMIT ? OFFSET ?`
+}
+
+/** By (business_id, status, number): an «active» page never walks the shop's history. */
+export const BY_STATUS = "orders INDEXED BY idx_orders_business_status"
+
+export function shopStatusWhere(statuses: number): string {
+    return `business_id = ? AND status IN (${placeholders(statuses)})`
+}
+
+/**
+ * The owner's screen polls this every 20 s: only the shop's open orders, by
+ * `idx_orders_business_status`. Binds: shop, active statuses.
+ */
+export const ACTIVE_VERSION_SQL = `SELECT COUNT(*) AS open, MAX(updated_at) AS latest
+    FROM orders INDEXED BY idx_orders_business_status
+    WHERE business_id = ? AND status IN (${placeholders(ACTIVE_ORDER_STATUSES.length)})`
+
 /**
  * Network orders nobody took yet: only the open ones are in `idx_orders_network_open` (0016), so
  * finished history is never read. The statuses are literals: a partial index is used only when
@@ -542,9 +562,23 @@ export class D1OrderRepository implements OrderRepository {
         statuses: readonly OrderStatus[] | undefined,
         page: PageRequest,
     ): Promise<Page<Order>> {
-        const filter =
-            statuses === undefined ? "" : ` AND status IN (${placeholders(statuses.length)})`
-        return this.page(`business_id = ?${filter}`, [businessId, ...(statuses ?? [])], page)
+        if (statuses === undefined) {
+            return this.page("orders", "business_id = ?", [businessId], page)
+        }
+        return this.page(
+            BY_STATUS,
+            shopStatusWhere(statuses.length),
+            [businessId, ...statuses],
+            page,
+        )
+    }
+
+    async activeVersion(businessId: string): Promise<string> {
+        const row = await this.db
+            .prepare(ACTIVE_VERSION_SQL)
+            .bind(businessId, ...ACTIVE_ORDER_STATUSES)
+            .first<{ open: number; latest: number | null }>()
+        return `${row?.open ?? 0}:${row?.latest ?? 0}`
     }
 
     async listByCourier(courierId: string, since: Date): Promise<Order[]> {
@@ -561,7 +595,12 @@ export class D1OrderRepository implements OrderRepository {
         businessId: string,
         page: PageRequest,
     ): Promise<Page<Order>> {
-        return this.page("customer_id = ? AND business_id = ?", [customerId, businessId], page)
+        return this.page(
+            "orders",
+            "customer_id = ? AND business_id = ?",
+            [customerId, businessId],
+            page,
+        )
     }
 
     /** Counts by creation time; money of delivered orders by delivery time. Two scans. */
@@ -670,22 +709,31 @@ export class D1OrderRepository implements OrderRepository {
         return results.map((row) => toOrder(row, items.get(row.id) ?? []))
     }
 
+    /**
+     * One page, newest first. The whole count only on the first page (the app keeps it); a later
+     * page reads one row more and says whether more follow: the free plan counts rows read.
+     */
     private async page(
+        from: string,
         where: string,
         params: (string | number)[],
         page: PageRequest,
     ): Promise<Page<Order>> {
-        const [rows, count] = await this.db.batch([
-            this.db
-                .prepare(
-                    `SELECT ${COLUMNS} FROM orders WHERE ${where}
-                     ORDER BY number DESC LIMIT ? OFFSET ?`,
-                )
-                .bind(...params, page.limit, offsetOf(page)),
-            this.db.prepare(`SELECT COUNT(*) AS total FROM orders WHERE ${where}`).bind(...params),
-        ])
-        const orders = (rows?.results ?? []) as OrderRow[]
-        const total = (count?.results[0] as { total: number } | undefined)?.total ?? 0
+        const offset = offsetOf(page)
+        const select = this.db.prepare(pageSql(from, where)).bind(...params, page.limit + 1, offset)
+        const [rows, count] =
+            page.page === 1
+                ? await this.db.batch([
+                      select,
+                      this.db
+                          .prepare(`SELECT COUNT(*) AS total FROM ${from} WHERE ${where}`)
+                          .bind(...params),
+                  ])
+                : [await select.all()]
+        const fetched = (rows?.results ?? []) as OrderRow[]
+        const orders = fetched.slice(0, page.limit)
+        const counted = (count?.results[0] as { total: number } | undefined)?.total
+        const total = counted ?? offset + orders.length + (fetched.length > page.limit ? 1 : 0)
         const items = await this.itemsFor(orders.map((o) => o.id))
         return {
             data: orders.map((row) => toOrder(row, items.get(row.id) ?? [])),

@@ -39,6 +39,33 @@ const JOINED_COLUMNS = COLUMNS.split(",")
 /** Enough for any real query, and far below D1's limit of bound parameters. */
 const MAX_SEARCH_WORDS = 6
 
+/** Words hold only [a-z0-9] (core searchText): every word starting with `prefix` sorts below this. */
+const AFTER_WORDS = "~"
+
+/** A word starts with `prefix`: binds for `word >= ? AND word < ?`. */
+function wordRange(prefix: string): [string, string] {
+    return [prefix, `${prefix}${AFTER_WORDS}`]
+}
+
+/**
+ * Showcase search driven by its first word (CROSS JOIN keeps that order): only the products that
+ * match are read, never every product of every showcase shop. Binds: the word's range first.
+ */
+export const SHOWCASE_BY_WORD_FROM = `FROM (
+        SELECT DISTINCT product_id FROM product_words WHERE word >= ? AND word < ?
+    ) AS m
+    CROSS JOIN products p ON p.id = m.product_id
+    CROSS JOIN businesses b ON b.id = p.business_id`
+
+/** Every further word of the search; binds: its range. */
+export const WORD_FILTER =
+    "p.id IN (SELECT product_id FROM product_words WHERE word >= ? AND word < ?)"
+
+/** The distinct words of a product's search text. */
+function wordsOf(text: string): string[] {
+    return [...new Set(text.split(" ").filter((word) => word.length > 0))]
+}
+
 function toProduct(row: ProductRow): Product {
     return Product.reconstitute({
         id: row.id,
@@ -122,34 +149,44 @@ export class D1ProductRepository implements ProductRepository {
     }
 
     async searchShowcase(search: ShowcaseSearch, page: PageRequest): Promise<Page<Product>> {
+        const words = search.words.slice(0, MAX_SEARCH_WORDS)
         const conditions = [
             "b.status = ?",
             "b.marketplace_commission_bps IS NOT NULL",
             "p.is_available = 1",
             "(p.unavailable_until IS NULL OR p.unavailable_until <= ?)",
         ]
-        const params: (string | number)[] = [BusinessStatus.ACTIVE, search.availableAt.getTime()]
+        const params: (string | number)[] = []
+        const [first, ...rest] = words
+        // The first word drives the read (its prefix range in product_words); the other words
+        // only filter what it found. Without words (a category alone): the showcase's products.
+        const from =
+            first === undefined
+                ? "FROM products p JOIN businesses b ON b.id = p.business_id"
+                : SHOWCASE_BY_WORD_FROM
+        if (first !== undefined) {
+            params.push(...wordRange(first))
+        }
+        params.push(BusinessStatus.ACTIVE, search.availableAt.getTime())
         if (search.category !== undefined) {
             conditions.push("p.category = ?")
             params.push(search.category)
         }
-        for (const word of search.words.slice(0, MAX_SEARCH_WORDS)) {
-            // Words hold only [a-z0-9] (see searchText), so no LIKE wildcards can slip in.
-            // The stored text starts with a space, so "% word%" matches the start of any word.
-            conditions.push("p.search_text LIKE ?")
-            params.push(`% ${word}%`)
+        for (const word of rest) {
+            conditions.push(WORD_FILTER)
+            params.push(...wordRange(word))
         }
-        const from = `FROM products p JOIN businesses b ON b.id = p.business_id
-            WHERE ${conditions.join(" AND ")}`
-        // One scan instead of two: the window function counts while the page is read.
+        const query = `${from} WHERE ${conditions.join(" AND ")}`
+        // One read instead of two: the window function counts while the page is read.
         const { results } = await this.db
             .prepare(
-                `SELECT ${JOINED_COLUMNS}, COUNT(*) OVER () AS total ${from}
+                `SELECT ${JOINED_COLUMNS}, COUNT(*) OVER () AS total ${query}
                  ORDER BY p.name LIMIT ? OFFSET ?`,
             )
             .bind(...params, page.limit, offsetOf(page))
             .all<ProductRow & { total: number }>()
-        const total = results[0]?.total ?? (offsetOf(page) > 0 ? await this.count(from, params) : 0)
+        const total =
+            results[0]?.total ?? (offsetOf(page) > 0 ? await this.count(query, params) : 0)
         return {
             data: results.map(toProduct),
             meta: { page: page.page, limit: page.limit, total },
@@ -157,16 +194,16 @@ export class D1ProductRepository implements ProductRepository {
     }
 
     /** Only for a page past the end: the window count above has no row to ride on. */
-    private async count(from: string, params: (string | number)[]): Promise<number> {
+    private async count(query: string, params: (string | number)[]): Promise<number> {
         const row = await this.db
-            .prepare(`SELECT COUNT(*) AS total ${from}`)
+            .prepare(`SELECT COUNT(*) AS total ${query}`)
             .bind(...params)
             .first<{ total: number }>()
         return row?.total ?? 0
     }
 
     async save(product: Product): Promise<void> {
-        await this.db
+        const upsert = this.db
             .prepare(
                 `INSERT INTO products (${COLUMNS}, search_text)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -197,10 +234,22 @@ export class D1ProductRepository implements ProductRepository {
                 product.updatedAt.getTime(),
                 ` ${product.searchText}`,
             )
-            .run()
+        // The product and its words change together (one batch is one transaction).
+        await this.db.batch([
+            upsert,
+            this.db.prepare("DELETE FROM product_words WHERE product_id = ?").bind(product.id),
+            ...wordsOf(product.searchText).map((word) =>
+                this.db
+                    .prepare("INSERT OR IGNORE INTO product_words (word, product_id) VALUES (?, ?)")
+                    .bind(word, product.id),
+            ),
+        ])
     }
 
     async delete(id: string): Promise<void> {
-        await this.db.prepare("DELETE FROM products WHERE id = ?").bind(id).run()
+        await this.db.batch([
+            this.db.prepare("DELETE FROM product_words WHERE product_id = ?").bind(id),
+            this.db.prepare("DELETE FROM products WHERE id = ?").bind(id),
+        ])
     }
 }
