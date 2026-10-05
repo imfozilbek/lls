@@ -31,6 +31,15 @@ export function keepOpenedPages<T>(list: T[] | null, first: Page<T>): T[] {
     return [...first.data, ...list.slice(first.meta.limit).filter((item) => !fresh.has(idOf(item)))]
 }
 
+/**
+ * `total` after a refresh of the first page. An order list's `total` is only a lower bound
+ * (offset + shown + 1 when more follow: the server never counts a whole history), so a fresh
+ * first page must not hide «Yana» under pages already opened beyond it.
+ */
+export function totalAfterRefresh<T>(previous: number, kept: number, first: Page<T>): number {
+    return kept > first.meta.limit ? Math.max(previous, first.meta.total) : first.meta.total
+}
+
 function codeOf(error: unknown): string {
     return error instanceof ApiError ? error.code : "generic"
 }
@@ -56,6 +65,8 @@ export function usePagedList<T>(
     const [total, setTotal] = useState(() => cached<Snapshot<T>>(cacheKey)?.total ?? 0)
     const totalRef = useRef(total)
     totalRef.current = total
+    const itemsRef = useRef(items)
+    itemsRef.current = items
     /** Every change of the list is this session's copy for the next visit. */
     const setItems = useCallback(
         (change: (list: T[] | null) => T[] | null): void => {
@@ -84,8 +95,10 @@ export function usePagedList<T>(
                 return
             }
             // A timer refresh keeps the pages the person already opened with «Yana».
-            totalRef.current = result.meta.total
-            setTotal(result.meta.total)
+            const kept = keepOpenedPages(itemsRef.current, result).length
+            const fresh = totalAfterRefresh(totalRef.current, kept, result)
+            totalRef.current = fresh
+            setTotal(fresh)
             setItems((list) => keepOpenedPages(list, result))
             setError(null)
         } catch (caught) {
