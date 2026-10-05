@@ -107,6 +107,8 @@ async function main(): Promise<void> {
         WORKER_DIR,
         WORKER_LOG,
     )
+    // The Zumda Shop QR names the fake Telegram's Zumda bot.
+    process.env.VITE_SHOP_BOT = "zumda_dev_bot"
     start("bunx", ["vite", "--port", String(APP_PORT), "--strictPort"], APP_DIR)
     await waitFor(`${WORKER_URL}/health`)
     await waitFor(APP_URL)

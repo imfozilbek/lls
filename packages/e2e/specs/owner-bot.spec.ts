@@ -26,7 +26,7 @@ async function openOwner(page: Page): Promise<ReturnType<typeof openApp>> {
 
 async function posterSheet(page: Page): Promise<ReturnType<Page["getByRole"]>> {
     await openSettings(page, "Havola, QR-kod va vitrina")
-    await page.getByRole("button", { name: "Chop etish uchun QR-kod" }).click()
+    await page.getByRole("button", { name: "Do'kon boti uchun" }).click()
     const sheet = page.getByRole("dialog", { name: "QR-kod tayyor" })
     await expect(sheet).toBeVisible()
     return sheet

@@ -63,6 +63,8 @@ export function signInitData(
 
 export interface OpenOptions {
     user: TgUser
+    /** Telegram's `startapp` value (e.g. `m_<slug>` of a Zumda Shop QR), signed into initData. */
+    startParam?: string
     /** Opened from this shop's bot; without it, from the Zumda bot. */
     shop?: string
     /** Opened from the Zumda courier bot (`?mode=courier`), whatever `shop` says. */
@@ -97,6 +99,8 @@ export interface OpenOptions {
 interface StubConfig {
     initData: string
     user: TgUser
+    /** What Telegram puts in `initDataUnsafe`: the user and the `startapp` value. */
+    unsafe: { user?: TgUser; start_param?: string }
     platform: string
     colorScheme: "light" | "dark"
     theme: Record<string, string> | null
@@ -263,7 +267,7 @@ function installTelegramStub(config: StubConfig): void {
     const native = (window as unknown as { __nativeFeel: typeof nativeFeel }).__nativeFeel(record)
     const webApp = {
         initData: config.initData,
-        initDataUnsafe: config.initData ? { user: config.user } : {},
+        initDataUnsafe: config.unsafe,
         version: config.version,
         platform: config.platform,
         colorScheme: config.colorScheme,
@@ -361,6 +365,12 @@ function stubConfig(options: OpenOptions, initData: string): StubConfig {
     return {
         initData,
         user: options.user,
+        unsafe: initData
+            ? {
+                  user: options.user,
+                  ...(options.startParam ? { start_param: options.startParam } : {}),
+              }
+            : {},
         platform: options.native ? "android" : "unknown",
         colorScheme: options.theme ?? "light",
         theme: options.theme === "dark" ? DARK_THEME : null,
@@ -397,7 +407,10 @@ function openedFrom(options: OpenOptions): { token: string; chat: Chat; query: s
 export async function openApp(page: Page, options: OpenOptions): Promise<OpenedApp> {
     const { token: botToken, chat, query: defaultQuery } = openedFrom(options)
     const token = options.signWith ?? botToken
-    const initData = options.noInitData ? "" : signInitData(options.user, token)
+    const extra: Record<string, string> = options.startParam
+        ? { start_param: options.startParam }
+        : {}
+    const initData = options.noInitData ? "" : signInitData(options.user, token, extra)
     const phone = options.phone ?? "+998901234567"
 
     const contact = {

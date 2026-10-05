@@ -470,7 +470,7 @@ test("the QR poster arrives as a PNG and its code opens the shop bot", async ({ 
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
     await openSettings(page, "Havola, QR-kod va vitrina")
-    await page.getByRole("button", { name: "Chop etish uchun QR-kod" }).click()
+    await page.getByRole("button", { name: "Do'kon boti uchun" }).click()
     await expect(page.getByText("Plakat bot bilan chatga ham yuborildi")).toBeVisible()
     const [poster] = await documentsTo(PEOPLE.foodOwner.id, since)
     expect(poster?.contentType).toBe("image/png")
