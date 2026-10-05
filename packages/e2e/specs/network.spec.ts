@@ -127,10 +127,14 @@ test("Otabek delivers in the app with one «Доставил»; the money is alr
     await expect(shop).toBeVisible()
     await expect(shop).not.toContainText("Qo'lingizda")
 
-    const report = (await (await owner("/owner/money", undefined, "GET")).json()) as {
-        totals: { delivered: number; paid: number }
-    }
-    expect(report.totals).toMatchObject({ delivered: 1, paid: 100_000 })
+    // «Yetkazdim» waits for the server; nothing on the screen above says it answered yet.
+    const totals = async (): Promise<{ delivered: number; paid: number }> =>
+        (
+            (await (await owner("/owner/money", undefined, "GET")).json()) as {
+                totals: { delivered: number; paid: number }
+            }
+        ).totals
+    await expect.poll(totals).toMatchObject({ delivered: 1, paid: 100_000 })
     // Not the shop's courier: its list stays its own.
     const list = (await (await owner("/owner/couriers", undefined, "GET")).json()) as {
         name: string
