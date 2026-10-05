@@ -5,7 +5,7 @@
  *   bun run stand          # from packages/e2e, or `bun run stand` from the repository root
  */
 import { spawn } from "node:child_process"
-import { rmSync } from "node:fs"
+import { appendFileSync, rmSync } from "node:fs"
 
 import {
     APP_DIR,
@@ -15,6 +15,7 @@ import {
     FAKE_TELEGRAM_URL,
     STATE_DIR,
     WORKER_DIR,
+    WORKER_LOG,
     WORKER_PORT,
     WORKER_URL,
 } from "./config.js"
@@ -28,8 +29,23 @@ const POLL_MS = 500
 
 const children: ChildProcess[] = []
 
-function start(command: string, args: string[], cwd: string): void {
-    const child = spawn(command, args, { cwd, stdio: "inherit", env: process.env })
+/** With `log`, the output also goes to that file (the specs read the Worker's log there). */
+function start(command: string, args: string[], cwd: string, log?: string): void {
+    const child = spawn(command, args, {
+        cwd,
+        stdio: log ? ["inherit", "pipe", "pipe"] : "inherit",
+        env: process.env,
+    })
+    if (log) {
+        child.stdout?.on("data", (chunk: Buffer) => {
+            process.stdout.write(chunk)
+            appendFileSync(log, chunk)
+        })
+        child.stderr?.on("data", (chunk: Buffer) => {
+            process.stderr.write(chunk)
+            appendFileSync(log, chunk)
+        })
+    }
     child.on("exit", (code) => {
         if (code !== null && code !== 0) {
             console.error(`${command} ${args.join(" ")} exited with ${code}`)
@@ -89,6 +105,7 @@ async function main(): Promise<void> {
             `ORS_API_BASE:${FAKE_TELEGRAM_URL}/ors`,
         ],
         WORKER_DIR,
+        WORKER_LOG,
     )
     start("bunx", ["vite", "--port", String(APP_PORT), "--strictPort"], APP_DIR)
     await waitFor(`${WORKER_URL}/health`)

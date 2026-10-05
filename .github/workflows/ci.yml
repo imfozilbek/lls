@@ -125,7 +125,7 @@ jobs:
             fail-fast: false
             matrix:
                 specs:
-                    - owner-orders.spec.ts smoke.spec.ts security.spec.ts
+                    - owner-orders.spec.ts smoke.spec.ts security.spec.ts crashes.spec.ts
                     - owner-shop.spec.ts map.spec.ts owner-bot.spec.ts
                     - money.spec.ts cash.spec.ts
                     - visual.spec.ts

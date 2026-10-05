@@ -20,6 +20,8 @@ export const WORKER_DIR = join(import.meta.dirname, "..", "..", "worker")
 export const APP_DIR = join(import.meta.dirname, "..", "..", "app")
 /** The stand's own local D1/R2 state, separate from `wrangler dev` of a developer. */
 export const STATE_DIR = join(import.meta.dirname, "..", ".state")
+/** Everything the Worker prints (`wrangler dev`): specs read the server log here. */
+export const WORKER_LOG = join(STATE_DIR, "worker.log")
 
 export const FAKE_TELEGRAM_PORT = 8081
 export const WORKER_PORT = 8787
