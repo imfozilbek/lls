@@ -80,6 +80,7 @@ const BASE = {
         onlyInApp: "Bu yerga xabarlar keladi, ish esa ilovada: pastdagi tugmani bosing 👇",
         alertServerError: "🚨 Zumda serverida xato",
         alertNotificationFailed: "🚨 Zumda: xabar yuborilmadi",
+        alertClientError: "🚨 Zumda ilovasida xato",
         alertQuiet: "Shu turdagi keyingi ogohlantirish {minutes} daqiqadan keyin.",
         applicationReceived: "✅ {shop} arizasi qabul qilindi. Tekshiruvdan so'ng xabar beramiz.",
         managedBotButton: "🤖 Bot yaratish",

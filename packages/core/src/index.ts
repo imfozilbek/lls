@@ -15,6 +15,7 @@ export * from "./domain/enums/payment.js"
 export * from "./domain/enums/unit.js"
 
 // Domain - Shared
+export * from "./domain/shared/crash-text.js"
 export * from "./domain/shared/search-text.js"
 export * from "./domain/shared/time.js"
 

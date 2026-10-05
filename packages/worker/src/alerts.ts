@@ -12,7 +12,13 @@ const MAX_DETAIL_LENGTH = 300
 /** Bot tokens look like `123456:AAH...`; they must never reach a chat. */
 const BOT_TOKEN_PATTERN = /\d{5,}:[\w-]{30,}/g
 
-export type AlertKind = "server_error" | "notification_failed"
+export type AlertKind = "server_error" | "notification_failed" | "client_error"
+
+const TITLES = {
+    server_error: "alertServerError",
+    notification_failed: "alertNotificationFailed",
+    client_error: "alertClientError",
+} as const satisfies Record<AlertKind, string>
 
 /**
  * Telegram answers "Forbidden" when a person blocked the bot or never started it, and
@@ -56,8 +62,7 @@ export async function alertAdmins(
         for (const adminId of platformAdminIds(services.env)) {
             const customer = await services.customers.findByTelegramId(adminId)
             const texts = textsFor(customer?.language ?? Language.UZ)
-            const title =
-                kind === "server_error" ? texts.alertServerError : texts.alertNotificationFailed
+            const title = texts[TITLES[kind]]
             const quiet = fill(texts.alertQuiet, { minutes: ALERT_QUIET_MS / 60_000 })
             await services.telegram.sendMessage(
                 services.env.BUSINESS_BOT_TOKEN,
