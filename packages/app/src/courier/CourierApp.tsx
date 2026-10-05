@@ -40,7 +40,11 @@ import type {
     OrderDTO,
 } from "@zumda/core"
 
-const POLL_MS = 20_000
+/**
+ * A new delivery reaches the courier at once as a bot message (with Telegram's sound); the
+ * screen itself refreshes every 45 s and on every return to the app: the free plan's budget.
+ */
+const POLL_MS = 45_000
 const METERS_PER_KM = 1000
 
 /** The one step a courier makes next, if any. */
