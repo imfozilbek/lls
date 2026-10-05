@@ -29,7 +29,7 @@ import { HttpTelegramGateway, telegramApiBase } from "./telegram/gateway.js"
 import { publishedKeys, telegramOauthBase } from "./telegram-login.js"
 
 import type { AppEnv, Bindings } from "./env.js"
-import type { ServiceDeps } from "./services.js"
+import type { ServiceDeps, Services } from "./services.js"
 
 /** The bare domain: it sends people to the customers' Zumda bot (the landing page comes later). */
 const ROOT_HOST = "zumda.shop"
@@ -55,15 +55,25 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         return undefined
     })
 
-    app.use(async (c, next) => {
-        gateway ??= new HttpTelegramGateway(undefined, telegramApiBase(c.env.TELEGRAM_API_BASE))
+    const servicesFor = (env: AppEnv["Bindings"]): Services => {
+        gateway ??= new HttpTelegramGateway(undefined, telegramApiBase(env.TELEGRAM_API_BASE))
         const deps: ServiceDeps = {
             telegram: overrides.telegram ?? gateway,
             clock,
             loginKeys:
-                overrides.loginKeys ?? publishedKeys(telegramOauthBase(c.env.TELEGRAM_OAUTH_BASE)),
+                overrides.loginKeys ?? publishedKeys(telegramOauthBase(env.TELEGRAM_OAUTH_BASE)),
         }
-        c.set("services", createServices(c.env, deps))
+        return createServices(env, deps)
+    }
+
+    // Only the API and the bots use the services: photos, the map, /health and a CORS preflight
+    // never build sixty objects for nothing.
+    app.use(async (c, next) => {
+        const path = new URL(c.req.url).pathname
+        const needed = path.startsWith("/api/") || path.startsWith("/tg/")
+        if (needed && c.req.method !== "OPTIONS") {
+            c.set("services", servicesFor(c.env))
+        }
         await next()
     })
 
@@ -111,7 +121,8 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         if (status >= 500 && !isRecipientProblem(error)) {
             console.error(error)
             const where = requestPlace(c.req.method, c.req.url)
-            c.executionCtx.waitUntil(alertAdmins(c.get("services"), "server_error", error, where))
+            const services = (c.var.services as Services | undefined) ?? servicesFor(c.env)
+            c.executionCtx.waitUntil(alertAdmins(services, "server_error", error, where))
         }
         return c.json(body, status)
     })

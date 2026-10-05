@@ -19,6 +19,25 @@ export class D1NetworkOfferRepository {
             .run()
     }
 
+    /** A whole fan-out's offers in one batch: one D1 call, not one per courier. */
+    async saveMany(orderId: string, offers: readonly NetworkOffer[], at: Date): Promise<void> {
+        if (offers.length === 0) {
+            return
+        }
+        await this.db.batch(
+            offers.map((offer) =>
+                this.db
+                    .prepare(
+                        `INSERT INTO network_offers (order_id, telegram_id, message_id, created_at)
+                         VALUES (?, ?, ?, ?)
+                         ON CONFLICT (order_id, telegram_id)
+                         DO UPDATE SET message_id = excluded.message_id`,
+                    )
+                    .bind(orderId, offer.telegramId, offer.messageId, at.getTime()),
+            ),
+        )
+    }
+
     async list(orderId: string): Promise<NetworkOffer[]> {
         const { results } = await this.db
             .prepare(

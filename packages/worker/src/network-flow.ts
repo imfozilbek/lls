@@ -31,8 +31,9 @@ export async function notifyOwnerStep(
     await notifier.orderChanged(business, order)
     if (request) {
         await notifier.networkRequested(request)
+        // Only a network event: an owner's ordinary step has nothing to do with late offers.
+        await reportOverdueNetworkOrders(services)
     }
-    await reportOverdueNetworkOrders(services)
 }
 
 /**
