@@ -150,6 +150,10 @@ export const uz = {
         manage: "Mening do'konim",
         notFoundTitle: "Do'kon topilmadi",
         notFoundText: "Havolani tekshiring yoki do'konni uning Telegram botidan oching.",
+        outsideShowcaseTitle: "Bu do'kon hozir Zumda vitrinasida yo'q",
+        outsideShowcaseText: "Buyurtmani do'konning o'z botida bering.",
+        openShopBot: "Do'kon botini ochish",
+        otherShops: "Boshqa do'konlar",
     },
     categories: {
         meals: "Taomlar",
@@ -646,6 +650,12 @@ export const uz = {
             posterDownload: "Yuklab olish",
             openBot: "Botni ochish",
             posterLine: "Telegram orqali buyurtma bering",
+            posterShop: "Do'kon boti uchun",
+            posterZumda: "Zumda Shop uchun",
+            posterZumdaHint:
+                "Zumda Shop uchun QR do'koningizni Zumda Shop'da ochadi: mijoz u yerda boshqa do'konlarni ham ko'radi.",
+            posterZumdaOff: "Zumda Shop uchun QR do'kon Zumda vitrinasiga qo'shilgach ishlaydi.",
+            posterZumdaLine: "Zumda Shop'da oching va buyurtma bering",
             copy: "Nusxa olish",
             copied: "Nusxa olindi",
             saved: "Saqlandi",

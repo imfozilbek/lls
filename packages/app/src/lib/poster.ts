@@ -22,7 +22,10 @@ const MARK_GAP = 12
 
 export interface PosterInput {
     shopName: string
-    botUsername: string
+    /** What the QR opens: the shop's bot, or Zumda Shop on the shop. */
+    link: string
+    /** The link as people read it under the QR, e.g. `t.me/zumdashop_bot`. */
+    linkLabel: string
     brandColor: string
     /** Full URL of the shop's logo, if it has one. */
     logoUrl: string | null
@@ -35,6 +38,17 @@ export interface PosterInput {
 /** The link the poster's QR opens: the shop's bot, where the menu button starts the shop. */
 export function shopBotLink(botUsername: string): string {
     return `https://t.me/${botUsername}`
+}
+
+/** Zumda | Shop, the customers' bot (the deploy sets it; the stand has its own). */
+export const ZUMDA_SHOP_BOT: string = import.meta.env.VITE_SHOP_BOT ?? "zumdashop_bot"
+
+/**
+ * Zumda Shop opening right on this shop (owner's decision, goal 16): its main Mini App gets
+ * `m_<slug>` and shows the shop inside the showcase; Back leads to the other shops.
+ */
+export function zumdaShopLink(slug: string): string {
+    return `https://t.me/${ZUMDA_SHOP_BOT}?startapp=m_${slug}`
 }
 
 function rgb(channels: string): string {
@@ -153,7 +167,7 @@ function drawFooter(ctx: CanvasRenderingContext2D, input: PosterInput, top: numb
     fitFont(ctx, input.line, 800, 54, 32)
     ctx.fillText(input.line, WIDTH / 2, top + 30)
     ctx.font = `600 34px ${FONT}`
-    ctx.fillText(`t.me/${input.botUsername}`, WIDTH / 2, top + 110)
+    ctx.fillText(input.linkLabel, WIDTH / 2, top + 110)
     drawPoweredBy(ctx, input.poweredBy)
 }
 
@@ -181,7 +195,7 @@ function render(input: PosterInput, logo: HTMLImageElement | null): HTMLCanvasEl
     ctx.fillRect(0, 0, WIDTH, HEIGHT)
     drawHeader(ctx, input, logo)
     const qrTop = HEADER - 80
-    drawQr(ctx, shopBotLink(input.botUsername), qrTop)
+    drawQr(ctx, input.link, qrTop)
     drawFooter(ctx, input, qrTop + QR_BOX + 100)
     return canvas
 }
@@ -200,7 +214,7 @@ function toPng(canvas: HTMLCanvasElement): Promise<Blob> {
     })
 }
 
-/** The shop's poster as a PNG: name, logo, a QR to the shop bot, a call to order in Telegram. */
+/** The shop's poster as a PNG: name, logo, a QR (its bot or Zumda Shop), a call to order. */
 export async function drawPoster(input: PosterInput): Promise<Blob> {
     await document.fonts.ready.catch(() => undefined)
     const logo = input.logoUrl ? await loadImage(input.logoUrl) : null

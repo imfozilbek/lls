@@ -31,6 +31,20 @@ describe("readLaunchParams", () => {
         expect(readLaunchParams(url, app("evil<script>")).shop).toBeNull()
     })
 
+    it("a Zumda Shop QR (m_<slug>) opens the showcase right on that shop", () => {
+        // The main Mini App of Zumda | Shop may open without ?mode=market.
+        const url = new URL("https://app.zumda.shop/")
+        expect(readLaunchParams(url, app("m_osh-markaz"))).toMatchObject({
+            shop: "osh-markaz",
+            market: true,
+        })
+        expect(readLaunchParams(url, app("m_<script>"))).toMatchObject({
+            shop: null,
+            market: false,
+        })
+        expect(readLaunchParams(url, app("shop_osh-markaz")).market).toBe(false)
+    })
+
     it("detects «Mening bizneslarim» opened from Zumda Business, and the old onboarding link", () => {
         for (const mode of ["business", "onboarding"]) {
             const url = new URL(`https://x.pages.dev/?mode=${mode}`)

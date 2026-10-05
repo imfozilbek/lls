@@ -45,6 +45,10 @@ const loadOrders = (): Promise<typeof import("./shop/OrdersScreen.js")> =>
 const CheckoutScreen = lazy(() => loadCheckout().then((m) => ({ default: m.CheckoutScreen })))
 const OrderScreen = lazy(() => loadOrder().then((m) => ({ default: m.OrderScreen })))
 const OrdersScreen = lazy(() => loadOrders().then((m) => ({ default: m.OrdersScreen })))
+/** Rare (a Zumda Shop QR of a shop that left the showcase): its own chunk. */
+const OutsideShowcase = lazy(() =>
+    import("./shop/OutsideShowcase.js").then((m) => ({ default: m.OutsideShowcase })),
+)
 
 /** A moment after the shop is on screen, so the menu's own requests go first. */
 const PREFETCH_AFTER_MS = 800
@@ -295,6 +299,13 @@ function ShopApp({
 
     if (state.kind === "loading") {
         return <MenuSkeleton />
+    }
+    if (state.kind === "error" && state.code === "ENTITY_NOT_FOUND" && via === "marketplace") {
+        return (
+            <Suspense fallback={<MenuSkeleton />}>
+                <OutsideShowcase slug={slug} onExit={onExit} />
+            </Suspense>
+        )
     }
     if (state.kind === "error" && state.code === "ENTITY_NOT_FOUND") {
         // A wrong link, or a shop that is not approved yet: retrying will not help.

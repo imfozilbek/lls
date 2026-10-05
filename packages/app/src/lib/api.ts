@@ -60,6 +60,9 @@ export type ShopVia = "marketplace" | "business"
  * Where a file for the owner arrived: the shop's own bot, Zumda | Business (the owner has not
  * pressed Start in the shop's bot), or nowhere.
  */
+/** The poster's QR: the shop's own bot, or Zumda Shop opening on the shop. */
+export type PosterKind = "shop" | "zumda"
+
 export type OwnerDelivery = "shop" | "business" | "none"
 
 let currentShop: string | null = null
@@ -342,8 +345,11 @@ export const api = {
         receiveCash: (orderId: string): Promise<OrderDTO> =>
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "cash_received" }),
         /** The bot sends the QR poster back to the owner's chat; `key` is it for the download. */
-        sendPoster: (png: Blob): Promise<{ delivered: OwnerDelivery; key: string }> =>
-            request("POST", "/api/owner/shop/poster", png),
+        sendPoster: (
+            png: Blob,
+            kind: PosterKind,
+        ): Promise<{ delivered: OwnerDelivery; key: string }> =>
+            request("POST", `/api/owner/shop/poster?kind=${kind}`, png),
         /** May the shop's bot write to the owner (pressed Start in it)? Asked quietly. */
         botCheck: (): Promise<{ ownerChat: OwnerChat }> =>
             request("POST", "/api/owner/shop/bot-check"),
@@ -420,6 +426,9 @@ export const api = {
 
     showcase: {
         shops: (): Promise<Page<ShopPublicDTO>> => request("GET", "/api/showcase/shops"),
+        /** A Zumda Shop QR of a shop that left the showcase: its own bot, to send the person to. */
+        shopBot: (slug: string): Promise<{ botUsername: string; inShowcase: boolean }> =>
+            request("GET", `/api/showcase/shops/${encodeURIComponent(slug)}/bot`),
         search: (
             query: { q?: string; category?: string },
             page: number,
