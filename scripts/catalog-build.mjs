@@ -236,20 +236,25 @@ const fold = (text) =>
 function verified() {
     const file = join(RESEARCH, "verify.json")
     if (!existsSync(file)) {
-        return { removed: new Set(), renamed: new Map() }
+        return { removed: new Set(), removedIn: new Map(), renamed: new Map() }
     }
     const verify = JSON.parse(readFileSync(file, "utf8"))
     const removed = new Set()
+    // A word right in one file and wrong in another (lochira: a bread, not a sweet by the kilo).
+    const removedIn = new Map()
     const renamed = new Map()
     for (const entry of [...(verify.nonfood ?? []), ...(verify.doubtful ?? [])]) {
         const key = fold(entry.name ?? entry.word ?? "")
+        if (entry.remove_in) {
+            removedIn.set(`${entry.remove_in}:${key}`, true)
+        }
         if (entry.decision === "remove") {
             removed.add(key)
         } else if (entry.decision === "rename" && entry.new_name) {
             renamed.set(key, entry.new_name)
         }
     }
-    return { removed, renamed }
+    return { removed, removedIn, renamed }
 }
 
 function categoryOf(file, section) {
@@ -279,6 +284,9 @@ function template(file, item, check) {
         throw new Error(`${item.name}: unit ${unit} is not in core`)
     }
     const name = check.renamed.get(fold(item.name)) ?? item.name
+    // A renamed word was wrong: its old spellings go too («Qo'y jaz» → «Jiz», no «jaz»).
+    const old = name === item.name ? null : fold(item.name).split(" ").at(-1)
+    const aliases = (item.aliases ?? []).filter((alias) => !old || !fold(alias).includes(old))
     let group = ""
     let variants = []
     const research = item.variants?.find((v) => v.options?.length >= 2)
@@ -292,7 +300,7 @@ function template(file, item, check) {
     const addons = unit === "kg" || unit === "g100" ? [] : (item.addons ?? [])
     const row = [
         name.charAt(0).toUpperCase() + name.slice(1),
-        (item.aliases ?? []).join("|"),
+        aliases.join("|"),
         category,
         unit,
         step,
@@ -306,8 +314,9 @@ function template(file, item, check) {
     return row
 }
 
-function excluded(item, check) {
+function excluded(file, item, check) {
     return (
+        check.removedIn.has(`${file}:${fold(item.name)}`) ||
         LICENSED_SECTIONS.has(item.category) ||
         LICENCE_WORDS.test(item.note ?? "") ||
         check.removed.has(fold(item.name))
@@ -320,8 +329,9 @@ function build() {
     const items = []
     for (const file of ["food.json", "grocery.json", "services.json", "nonfood-units.json"]) {
         for (const item of read(file).items) {
-            const key = fold(item.name)
-            if (seen.has(key) || excluded(item, check)) {
+            // Twins are told by the final name: a renamed word may meet one already there.
+            const key = fold(check.renamed.get(fold(item.name)) ?? item.name)
+            if (seen.has(key) || excluded(file, item, check)) {
                 continue
             }
             seen.add(key)
