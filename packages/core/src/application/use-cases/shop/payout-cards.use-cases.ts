@@ -54,9 +54,11 @@ export class AddPayoutCardUseCase {
             card: PayoutCard.create(input.number, input.holder),
             now: this.deps.clock.now(),
         })
-        await this.deps.cards.insert(business.id, saved)
+        // The first card becomes the payment card: the shop and the card go in one write.
         if (firstCard) {
-            await this.deps.businesses.save(business)
+            await this.deps.businesses.saveWithCard(business, saved)
+        } else {
+            await this.deps.cards.insert(business.id, saved)
         }
         return toPayoutCardsDTO(book, business)
     }

@@ -11,6 +11,37 @@ interface CardRow {
     created_at: number
 }
 
+const CARD_COLUMNS = "id, business_id, number, holder, created_at"
+
+/**
+ * The INSERT of one card. `afterUpdate`: only when the statement just before it in the same batch
+ * changed a row (the shop's guarded save), so a shop that lost its save never gets the card.
+ */
+export function cardInsert(
+    db: D1Database,
+    businessId: string,
+    saved: SavedPayoutCard,
+    afterUpdate = false,
+): D1PreparedStatement {
+    const values = [
+        saved.id,
+        businessId,
+        saved.card.number,
+        saved.card.holder,
+        saved.createdAt.getTime(),
+    ]
+    return afterUpdate
+        ? db
+              .prepare(
+                  `INSERT INTO payout_cards (${CARD_COLUMNS})
+                   SELECT ?, ?, ?, ?, ? WHERE changes() = 1`,
+              )
+              .bind(...values)
+        : db
+              .prepare(`INSERT INTO payout_cards (${CARD_COLUMNS}) VALUES (?, ?, ?, ?, ?)`)
+              .bind(...values)
+}
+
 export class D1PayoutCardRepository implements PayoutCardRepository {
     constructor(private readonly db: D1Database) {}
 
@@ -31,19 +62,7 @@ export class D1PayoutCardRepository implements PayoutCardRepository {
 
     async insert(businessId: string, saved: SavedPayoutCard): Promise<void> {
         try {
-            await this.db
-                .prepare(
-                    `INSERT INTO payout_cards (id, business_id, number, holder, created_at)
-                     VALUES (?, ?, ?, ?, ?)`,
-                )
-                .bind(
-                    saved.id,
-                    businessId,
-                    saved.card.number,
-                    saved.card.holder,
-                    saved.createdAt.getTime(),
-                )
-                .run()
+            await cardInsert(this.db, businessId, saved).run()
         } catch (error) {
             // The same card sent twice at once (a double tap): the person's own words, not 500.
             if (isUniqueViolation(error)) {

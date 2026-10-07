@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
 import {
@@ -107,8 +107,8 @@ describe("payout card use cases", () => {
     const owner = { actorTelegramId: OWNER_TG, businessId: "biz-1" }
 
     beforeEach(async () => {
-        businesses = new InMemoryBusinesses()
         cards = new InMemoryPayoutCards()
+        businesses = new InMemoryBusinesses(cards)
         await businesses.save(makeBusiness({ card: false }))
     })
 
@@ -138,6 +138,22 @@ describe("payout card use cases", () => {
         expect(
             (await new ListPayoutCardsUseCase(deps()).execute(owner)).cards.map((c) => c.id),
         ).toEqual([second])
+    })
+
+    it("the first card and the shop go in one write; a later card leaves the shop alone", async () => {
+        const together = vi.spyOn(businesses, "saveWithCard")
+        const saved = vi.spyOn(businesses, "save")
+        const alone = vi.spyOn(cards, "insert")
+        const add = new AddPayoutCardUseCase(deps())
+        await add.execute({ ...owner, ...FIRST })
+        expect(together).toHaveBeenCalledTimes(1)
+        expect(saved).not.toHaveBeenCalled()
+        alone.mockClear()
+        await add.execute({ ...owner, ...THIRD })
+        expect(together).toHaveBeenCalledTimes(1)
+        expect(saved).not.toHaveBeenCalled()
+        // The second card is only added to the list: the shop's payment card stays.
+        expect(alone).toHaveBeenCalledTimes(1)
     })
 
     it("only the owner; a typo in the number is refused", async () => {

@@ -1,4 +1,5 @@
 import {
+    BusinessRuleViolationError,
     ConflictError,
     BOT_SOURCES,
     BUSINESS_STATUSES,
@@ -19,6 +20,7 @@ import {
 
 import { decryptSecret, encryptSecret, randomToken } from "../crypto.js"
 
+import { cardInsert } from "./payout-card.repository.js"
 import {
     IN_CHUNK,
     Versions,
@@ -30,7 +32,7 @@ import {
     placeholders,
 } from "./rows.js"
 
-import type { BusinessRepository, WeeklySchedule } from "@zumda/core"
+import type { BusinessRepository, SavedPayoutCard, WeeklySchedule } from "@zumda/core"
 
 interface BusinessRow {
     id: string
@@ -299,10 +301,10 @@ export class D1BusinessRepository implements BusinessRepository {
         return results.map(toBusiness)
     }
 
-    async insert(business: Business, botToken: string): Promise<void> {
+    async insert(business: Business, botToken: string, firstCard?: SavedPayoutCard): Promise<void> {
         const tokenEncrypted = await encryptSecret(botToken, this.encryptionKey)
         try {
-            await this.db
+            const shop = this.db
                 .prepare(
                     `INSERT INTO businesses (name, status, brand_color, logo_key, address, latitude,
                         longitude, delivery_fee, free_delivery_from, min_order, delivery_radius_m,
@@ -328,7 +330,10 @@ export class D1BusinessRepository implements BusinessRepository {
                     business.createdAt.getTime(),
                     business.botSource,
                 )
-                .run()
+            // The shop and the card its application came with: one transaction.
+            await this.db.batch(
+                firstCard ? [shop, cardInsert(this.db, business.id, firstCard)] : [shop],
+            )
         } catch (error) {
             // The same application sent twice at once: the bot or the address is taken now.
             if (isUniqueViolation(error)) {
@@ -364,10 +369,39 @@ export class D1BusinessRepository implements BusinessRepository {
 
     /** Writes only over the version this copy was loaded with: a newer change wins, 409 here. */
     async save(business: Business): Promise<void> {
+        const { update, version } = this.guardedUpdate(business)
+        this.saved(business, version, (await update.run()).meta.changes)
+    }
+
+    /**
+     * The shop and its new card in one transaction: the card goes in only when the guarded save
+     * did (`changes() = 1`), and a card the shop already has undoes the save too.
+     */
+    async saveWithCard(business: Business, card: SavedPayoutCard): Promise<void> {
+        const { update, version } = this.guardedUpdate(business)
+        let changes: number
+        try {
+            const [result] = await this.db.batch([
+                update,
+                cardInsert(this.db, business.id, card, true),
+            ])
+            changes = result?.meta.changes ?? 0
+        } catch (error) {
+            if (isUniqueViolation(error)) {
+                // The same card sent twice at once: nothing was written, the copy is still current.
+                throw BusinessRuleViolationError.cardExists()
+            }
+            throw error
+        }
+        this.saved(business, version, changes)
+    }
+
+    /** The UPDATE of every changeable column, over the version this copy was loaded with. */
+    private guardedUpdate(business: Business): { update: D1PreparedStatement; version: number } {
         const { expected, version } = versions.next(business, business.updatedAt)
         const guard = expected === undefined ? "" : " AND updated_at = ?"
         const values = [...mutableValues(business).slice(0, -1), version]
-        const result = await this.db
+        const update = this.db
             .prepare(
                 `UPDATE businesses SET name = ?, status = ?, brand_color = ?, logo_key = ?,
                     address = ?, latitude = ?, longitude = ?, delivery_fee = ?,
@@ -381,8 +415,12 @@ export class D1BusinessRepository implements BusinessRepository {
                  WHERE id = ?${guard}`,
             )
             .bind(...values, business.id, ...(expected === undefined ? [] : [expected]))
-            .run()
-        if (result.meta.changes === 0) {
+        return { update, version }
+    }
+
+    /** A save that changed nothing lost to a newer one: 409, and this copy is forgotten. */
+    private saved(business: Business, version: number, changes: number): void {
+        if (changes === 0) {
             this.byId.delete(business.id)
             throw ConflictError.stale("business", business.id)
         }
