@@ -8,7 +8,7 @@ The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin pa
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
 ### The Zumda catalog and «Ro'yxat bilan qo'shish» (goal 17, parts 3 and 4)
-- **Added:** the product form starts with a search of the Zumda catalog: ~3 200 dishes,
+- **Added:** the product form starts with a search of the Zumda catalog: ~3 100 dishes,
   groceries, goods and services of Uzbekistan from the October 2026 research. A pick fills the
   name, category, unit, usual variants and offered add-ons; the owner writes only the prices.
   The catalog is a static file of the app, loaded on the first search (never in the customer's

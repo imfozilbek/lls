@@ -231,7 +231,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - One universal core for all business types. Vertical specifics = feature toggles per business:
   `reorder`, `bottleDeposit` (water), `weightItems` and `stopList` (grocery, food). Defaults come
   from the business type; the owner can switch them.
-- **The Zumda catalog (goal 17, owner's decisions, October 2026):** ~3 200 ready products and
+- **The Zumda catalog (goal 17, owner's decisions, October 2026):** ~3 100 ready products and
   services (names, aliases, category, unit, usual variants and add-ons; no prices, no photos),
   built by `scripts/catalog-build.mjs` from `docs/catalog-research/` into the app's static
   `public/catalog/v1.json` (loaded only when the owner searches; never in the customer's JS).
