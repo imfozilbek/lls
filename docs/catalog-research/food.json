@@ -1,0 +1,11141 @@
+{
+ "categories": [
+  {
+   "id": "osh",
+   "uz": "Osh va palov",
+   "note": "Palovning barcha turlari: choyxona, to'y, viloyat oshlari; porsiya (0,5/1) yoki marosim uchun kg"
+  },
+  {
+   "id": "shorva",
+   "uz": "Sho'rvalar va suyuq taomlar",
+   "note": "Sho'rva, mastava, moshxo'rda, manpar, xash; Yevropa va Osiyo sho'rvalari ham shu yerda"
+  },
+  {
+   "id": "xamir_taomlar",
+   "uz": "Lag'mon, manti, chuchvara",
+   "note": "Xamirli milliy va uyg'ur taomlari: lag'mon turlari, ganfan, manti, chuchvara, norin, beshbarmoq"
+  },
+  {
+   "id": "quyuq_taomlar",
+   "uz": "Quyuq taomlar",
+   "note": "Dimlama, qozon kabob, tandir go'sht, jiz, hasip, halim, dolma va boshqa ikkinchi taomlar"
+  },
+  {
+   "id": "kabob",
+   "uz": "Kabob va shashlik",
+   "note": "Mangal kaboblari; odatda 1 six (dona) bilan sotiladi, assorti esa kg yoki porsiya"
+  },
+  {
+   "id": "somsa",
+   "uz": "Somsa va milliy pishiriqlar",
+   "note": "Tandir somsa, qatlama somsa, viloyat somsalari, chiburek, gumma, belyash"
+  },
+  {
+   "id": "non",
+   "uz": "Nonlar",
+   "note": "Tandir non, patir, obi non, Samarqand noni, buxanka; butun yoki yarimta"
+  },
+  {
+   "id": "salat",
+   "uz": "Salatlar va gazaklar",
+   "note": "Osh yonidagi salatlar (achchiq-chuchuk, suzma, turp), kafe salatlari (Sezar, Yunon, Olivye)"
+  },
+  {
+   "id": "lavash_shaurma",
+   "uz": "Lavash, shaurma, donar",
+   "note": "Fast-fud: lavash mini/standart/katta, shaurma, donar, roll, pita"
+  },
+  {
+   "id": "burger_hotdog",
+   "uz": "Burger, hot-dog, sendvich",
+   "note": "Burgerlar, hot-doglar, sab, longer, sendvich, tost"
+  },
+  {
+   "id": "tovuq_snek",
+   "uz": "Tovuq va sneklar",
+   "note": "Kartoshka fri, naggets, strips, tovuq qanotlari, baskets, sneklar"
+  },
+  {
+   "id": "pitsa",
+   "uz": "Pitsa",
+   "note": "Pitsalar 25/30/35 sm, xamir turi va qo'shimchalar bilan; xachapuri, pide ham shu yerda"
+  },
+  {
+   "id": "sushi",
+   "uz": "Sushi va rollar",
+   "note": "Sovuq, qovurilgan (tempura) va pishirilgan rollar, nigiri, setlar, poke"
+  },
+  {
+   "id": "osiyo",
+   "uz": "Vok va Osiyo taomlari",
+   "note": "Vok, udon, funchoza, teriyaki, qovurilgan guruch"
+  },
+  {
+   "id": "yevropa",
+   "uz": "Yevropa taomlari",
+   "note": "Kafe va oshxonalardagi issiq taomlar: steyk, kotlet, befstroganov, pasta, shnitsel"
+  },
+  {
+   "id": "nonushta",
+   "uz": "Nonushta",
+   "note": "Quymoq, sirniki, omlet, bo'tqalar, shirchoy, qaymoq va non, nonushta setlari"
+  },
+  {
+   "id": "garnir",
+   "uz": "Garnirlar",
+   "note": "Guruch, grechka, pyure, makaron, qovurilgan kartoshka, grill sabzavotlar"
+  },
+  {
+   "id": "sous",
+   "uz": "Souslar",
+   "note": "Ketchup, mayonez, pishloqli, sarimsoqli, chili, barbekyu va boshqa souslar"
+  },
+  {
+   "id": "qoshimcha",
+   "uz": "Qo'shimchalar va qadoq",
+   "note": "Qazi, bedana tuxumi, qo'shimcha go'sht yoki pishloq, paket, idish, tort shamlari"
+  },
+  {
+   "id": "pishiriq",
+   "uz": "Pishiriqlar va bulochkalar",
+   "note": "Pirojki, bulochka, kruassan, keks, donat, pirog, pechene"
+  },
+  {
+   "id": "tort",
+   "uz": "Tortlar",
+   "note": "Butun tortlar (kg yoki dona), mini tortlar, buyurtma tortlar"
+  },
+  {
+   "id": "desert",
+   "uz": "Pirojnoe va desertlar",
+   "note": "Chizkeyk, ekler, tiramisu, kartoshka pirojnoe, makarons, brauni"
+  },
+  {
+   "id": "milliy_shirinlik",
+   "uz": "Milliy shirinliklar",
+   "note": "Chak-chak, holva, navvot, parvarda, nisholda, sumalak, pashmak, bo'g'irsoq"
+  },
+  {
+   "id": "muzqaymoq",
+   "uz": "Muzqaymoq",
+   "note": "Shar, stakancha, yumshoq muzqaymoq, sandey"
+  },
+  {
+   "id": "choy",
+   "uz": "Choy va issiq ichimliklar",
+   "note": "Ko'k choy, qora choy, limonli, mevali va o'tli choylar; stakan yoki choynak; kakao, issiq shokolad"
+  },
+  {
+   "id": "qahva",
+   "uz": "Qahva",
+   "note": "Espresso asosidagi ichimliklar, 0,2/0,3/0,4 l; sovuq qahva va frappe"
+  },
+  {
+   "id": "sovuq_ichimlik",
+   "uz": "Sovuq ichimliklar",
+   "note": "Gazli ichimliklar (shisha va quyma), limonadlar, moxito, kompot, sharbat, suv"
+  },
+  {
+   "id": "fresh",
+   "uz": "Fresh va smuzi",
+   "note": "Yangi siqilgan sharbatlar va smuzilar, 0,3/0,5 l"
+  },
+  {
+   "id": "sut_ichimlik",
+   "uz": "Sutli ichimliklar",
+   "note": "Ayron, qatiq, kefir, milksheyklar"
+  },
+  {
+   "id": "kombo",
+   "uz": "Kombo va setlar",
+   "note": "Kombo (taom + fri + ichimlik), oilaviy setlar, lanch-boks, biznes-lanch"
+  }
+ ],
+ "items": [
+  {
+   "name": "Choyxona oshi",
+   "aliases": [
+    "choyhona oshi",
+    "plov",
+    "palov",
+    "chayxana plov"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ],
+   "note": "Har kungi osh; 0,5, 0,7 yoki 1 porsiya"
+  },
+  {
+   "name": "To'y oshi",
+   "aliases": [
+    "toy oshi",
+    "tuy oshi",
+    "svadebny plov",
+    "bayram oshi"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ],
+   "note": "Porsiya, marosim uchun kg bilan ham"
+  },
+  {
+   "name": "Toshkent oshi",
+   "aliases": [
+    "tashkent plov",
+    "toshkent to'y oshi"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Samarqand oshi",
+   "aliases": [
+    "samarkand plov",
+    "samarqandcha osh",
+    "samosh"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ],
+   "note": "Go'sht va sabzi yuqorida, qatlam qilib"
+  },
+  {
+   "name": "Buxoro oshi",
+   "aliases": [
+    "buhoro oshi",
+    "buxoro palovi",
+    "bukhara plov"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Farg'ona oshi",
+   "aliases": [
+    "fargona oshi",
+    "fargona plov",
+    "fergana plov"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Andijon oshi",
+   "aliases": [
+    "andijan plov"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Namangan oshi",
+   "aliases": [
+    "namangan plov"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Xorazm oshi",
+   "aliases": [
+    "horazm oshi",
+    "xorazm palovi",
+    "khorezm plov"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Qashqadaryo oshi",
+   "aliases": [
+    "qarshi oshi",
+    "kashkadarya plov"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Devzira oshi",
+   "aliases": [
+    "devzira plov",
+    "andijon devzira oshi"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ],
+   "note": "Devzira guruchidan"
+  },
+  {
+   "name": "Qazili osh",
+   "aliases": [
+    "plov s kazy",
+    "osh qazi bilan"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Bedana tuxumli osh",
+   "aliases": [
+    "bedana tuhumli osh",
+    "plov s perepelinym yaytsom"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Qazi va bedana tuxumli osh",
+   "aliases": [
+    "qazi va bedana tuhumli osh",
+    "osh komplekt",
+    "plov komplekt"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ],
+   "note": "Komplekt: osh, qazi, bedana tuxumi"
+  },
+  {
+   "name": "Zig'ir oshi",
+   "aliases": [
+    "zigir oshi",
+    "zigir osh",
+    "payshanba oshi"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "0,7 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ],
+   "note": "Zig'ir yog'ida, payshanba kunlari"
+  },
+  {
+   "name": "Mayizli osh",
+   "aliases": [
+    "osh s izyumom"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Behili osh",
+   "aliases": [
+    "osh s aivoy"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "No'xatli osh",
+   "aliases": [
+    "noxatli osh",
+    "nohatli osh",
+    "nuxatli osh",
+    "nuhatli osh",
+    "plov s nutom"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Tovuqli osh",
+   "aliases": [
+    "plov s kuritsey"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Qo'y go'shtli osh",
+   "aliases": [
+    "qoy goshtli osh",
+    "quy gushtli osh",
+    "plov s baraninoy"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Kovatok palov",
+   "aliases": [
+    "kavatok palov",
+    "buxoro kovatok"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ],
+   "note": "Buxoro taomi"
+  },
+  {
+   "name": "Afg'on palov",
+   "aliases": [
+    "afgon palov",
+    "kabuli palov",
+    "afgan plov"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Qovurma palov",
+   "aliases": [
+    "qovurma osh"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ]
+  },
+  {
+   "name": "Shavla",
+   "aliases": [
+    "shovla"
+   ],
+   "category": "osh",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "note": "Guruchli bo'tqasimon taom"
+  },
+  {
+   "name": "Osh (kg)",
+   "aliases": [
+    "plov na kg",
+    "to'y oshi kg",
+    "osh buyurtma"
+   ],
+   "category": "osh",
+   "unit": "kg",
+   "addons": [
+    "qazi",
+    "bedana tuxumi",
+    "qo'shimcha go'sht",
+    "tuxum",
+    "achchiq qalampir"
+   ],
+   "note": "Marosim va buyurtma uchun kilogramm hisobida"
+  },
+  {
+   "name": "Osh qozonda (buyurtma)",
+   "aliases": [
+    "qozon osh",
+    "plov v kazane"
+   ],
+   "category": "osh",
+   "unit": "kg",
+   "note": "Marosimga butun qozon: 10, 20, 50 kg"
+  },
+  {
+   "name": "Sho'rva",
+   "aliases": [
+    "shorva",
+    "shurva",
+    "shurpa",
+    "mol go'shtli sho'rva"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Qo'y go'shtli sho'rva",
+   "aliases": [
+    "qoy goshtli shorva",
+    "quy gushtli shurva",
+    "shurpa iz baraniny"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Qaynatma sho'rva",
+   "aliases": [
+    "qaynatma shorva",
+    "qaynatma shurva"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Qovurma sho'rva",
+   "aliases": [
+    "qovurma shorva",
+    "qovurma shurva"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Tovuq sho'rva",
+   "aliases": [
+    "tovuq shorva",
+    "tovuq shurva",
+    "kuriny sup",
+    "tovuqli sho'rva"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "No'xat sho'rva",
+   "aliases": [
+    "noxat shorva",
+    "nohat shorva",
+    "nuxat shurva",
+    "nuhat shurva",
+    "nohat shurva",
+    "sup s nutom"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Ko'za sho'rva",
+   "aliases": [
+    "koza shorva",
+    "kuza shurva",
+    "kuza shurpa",
+    "kuza sho'rva"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "addons": [
+    "non",
+    "qatiq"
+   ],
+   "note": "Sopol ko'zada pishiriladi"
+  },
+  {
+   "name": "Mastava",
+   "aliases": [
+    "mastava shurva"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Moshxo'rda",
+   "aliases": [
+    "moshxorda",
+    "moshhorda",
+    "moshxurda",
+    "moshhurda",
+    "mashxurda",
+    "mashhurda"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Manpar",
+   "aliases": [
+    "mampar"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ],
+   "note": "Mayda xamir bo'laklari bilan"
+  },
+  {
+   "name": "Chuchvara sho'rva",
+   "aliases": [
+    "chuchvara shorva",
+    "chuchvara shurva",
+    "suyuq chuchvara"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Ugra osh",
+   "aliases": [
+    "ugra sho'rva",
+    "lapsha"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Qiymali sho'rva",
+   "aliases": [
+    "qiymali shorva",
+    "qiymali shurva",
+    "frikadelka sup",
+    "sup s frikadelkami"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Kufta sho'rva",
+   "aliases": [
+    "kufta shorva",
+    "kufta shurva"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Kartoshkali sho'rva",
+   "aliases": [
+    "kartoshkali shorva",
+    "kartoshkali shurva",
+    "kartoshka shurva"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Go'ja",
+   "aliases": [
+    "goja",
+    "guja",
+    "go'ja osh"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "note": "Jo'xori va qatiqli sho'rva"
+  },
+  {
+   "name": "Xash",
+   "aliases": [
+    "hash",
+    "xosh"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Kalla-pocha",
+   "aliases": [
+    "kalla pocha",
+    "kalla"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Chalop",
+   "aliases": [
+    "chalob"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "note": "Qatiqli sovuq sho'rva, yozda"
+  },
+  {
+   "name": "Okroshka",
+   "aliases": [],
+   "category": "shorva",
+   "unit": "portion",
+   "note": "Sovuq sho'rva"
+  },
+  {
+   "name": "Borshch",
+   "aliases": [
+    "borsh",
+    "borsch"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Solyanka",
+   "aliases": [
+    "solanka"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Tovuqli lapsha",
+   "aliases": [
+    "kurinaya lapsha",
+    "lapsha sho'rva"
+   ],
+   "category": "shorva",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "non",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Qovoqli krem-sho'rva",
+   "aliases": [
+    "qovoqli krem-shorva",
+    "qovoqli krem-shurva",
+    "krem sup iz tykvy"
+   ],
+   "category": "shorva",
+   "unit": "portion"
+  },
+  {
+   "name": "Yasmiqli krem-sho'rva",
+   "aliases": [
+    "yasmiqli krem-shorva",
+    "yasmiqli krem-shurva",
+    "chechevichny sup"
+   ],
+   "category": "shorva",
+   "unit": "portion"
+  },
+  {
+   "name": "Qo'ziqorinli krem-sho'rva",
+   "aliases": [
+    "qoziqorinli krem-shorva",
+    "quziqorinli krem-shurva",
+    "gribnoy krem sup"
+   ],
+   "category": "shorva",
+   "unit": "portion"
+  },
+  {
+   "name": "Xarcho",
+   "aliases": [
+    "harcho"
+   ],
+   "category": "shorva",
+   "unit": "portion"
+  },
+  {
+   "name": "Baliq sho'rva",
+   "aliases": [
+    "baliq shorva",
+    "baliq shurva",
+    "uxa",
+    "ukha"
+   ],
+   "category": "shorva",
+   "unit": "portion"
+  },
+  {
+   "name": "Tom yam",
+   "aliases": [
+    "tom yum"
+   ],
+   "category": "shorva",
+   "unit": "portion"
+  },
+  {
+   "name": "Ramen",
+   "aliases": [
+    "ramen mol go'shtli",
+    "ramen tovuqli"
+   ],
+   "category": "shorva",
+   "unit": "portion"
+  },
+  {
+   "name": "Miso sho'rva",
+   "aliases": [
+    "miso shorva",
+    "miso shurva",
+    "miso sup"
+   ],
+   "category": "shorva",
+   "unit": "portion"
+  },
+  {
+   "name": "Tovuq bulyoni",
+   "aliases": [
+    "kuriny bulon"
+   ],
+   "category": "shorva",
+   "unit": "portion"
+  },
+  {
+   "name": "Lag'mon",
+   "aliases": [
+    "lagmon",
+    "lagman"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ]
+  },
+  {
+   "name": "Uyg'ur lag'mon",
+   "aliases": [
+    "uygur lagmon",
+    "uygur lagman"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ]
+  },
+  {
+   "name": "Qovurilgan lag'mon",
+   "aliases": [
+    "qovurilgan lagmon",
+    "jareny lagman",
+    "qovurma lag'mon",
+    "boso lag'mon"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ]
+  },
+  {
+   "name": "Suyuq lag'mon",
+   "aliases": [
+    "suyuq lagmon",
+    "jidkiy lagman",
+    "sho'rva lag'mon"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ]
+  },
+  {
+   "name": "Guyru lag'mon",
+   "aliases": [
+    "guyru lagmon",
+    "guyru lagman",
+    "giyru lagman"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ]
+  },
+  {
+   "name": "Qaymoqli lag'mon",
+   "aliases": [
+    "qaymoqli lagmon",
+    "slivochny lagman"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ]
+  },
+  {
+   "name": "Ganfan",
+   "aliases": [
+    "ganpan",
+    "ganfan uygur"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ],
+   "note": "Guruch ustida go'shtli qovurma"
+  },
+  {
+   "name": "Guyru ganfan",
+   "aliases": [
+    "guyru ganpan"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ]
+  },
+  {
+   "name": "Ayrimsay",
+   "aliases": [
+    "ayrim say"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ],
+   "note": "Uyg'ur taomi"
+  },
+  {
+   "name": "Go'shtsay",
+   "aliases": [
+    "goshtsay",
+    "gushtsay"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ],
+   "note": "Uyg'ur taomi"
+  },
+  {
+   "name": "Tovuqsay",
+   "aliases": [
+    "tovuq say",
+    "kurica say"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ],
+   "note": "Uyg'ur taomi"
+  },
+  {
+   "name": "Sokoro",
+   "aliases": [
+    "soqoro",
+    "sokkoro"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ],
+   "note": "Uyg'ur taomi"
+  },
+  {
+   "name": "Sumboro",
+   "aliases": [
+    "sumbaro"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "achchiq qalampir",
+    "qo'shimcha go'sht",
+    "tuxum"
+   ],
+   "note": "Uyg'ur taomi"
+  },
+  {
+   "name": "Manti",
+   "aliases": [
+    "manty",
+    "manti go'shtli"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "1 dona",
+      "5 dona",
+      "10 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq",
+    "achchiq sous"
+   ],
+   "note": "Ko'pincha donasi bilan"
+  },
+  {
+   "name": "Qovoqli manti",
+   "aliases": [
+    "manty s tykvoy"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "1 dona",
+      "5 dona",
+      "10 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq",
+    "achchiq sous"
+   ]
+  },
+  {
+   "name": "Kartoshkali manti",
+   "aliases": [
+    "manty s kartoshkoy"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "1 dona",
+      "5 dona",
+      "10 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq",
+    "achchiq sous"
+   ]
+  },
+  {
+   "name": "Ko'katli manti",
+   "aliases": [
+    "kokatli manti",
+    "kukatli manti",
+    "ko'k manti"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "1 dona",
+      "5 dona",
+      "10 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq",
+    "achchiq sous"
+   ]
+  },
+  {
+   "name": "Uyg'ur manti",
+   "aliases": [
+    "uygur manti",
+    "uygur manty"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "1 dona",
+      "5 dona",
+      "10 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq",
+    "achchiq sous"
+   ]
+  },
+  {
+   "name": "Tovuqli manti",
+   "aliases": [
+    "manty s kuritsey"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "1 dona",
+      "5 dona",
+      "10 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq",
+    "achchiq sous"
+   ]
+  },
+  {
+   "name": "Qovurilgan manti",
+   "aliases": [
+    "jareny manty"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "1 dona",
+      "5 dona",
+      "10 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq",
+    "achchiq sous"
+   ]
+  },
+  {
+   "name": "Xonim",
+   "aliases": [
+    "honim",
+    "hanum",
+    "xanum"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "addons": [
+    "qaymoq",
+    "qatiq",
+    "achchiq sous"
+   ],
+   "note": "Go'shtli yoki kartoshkali o'rama"
+  },
+  {
+   "name": "Chuchvara",
+   "aliases": [
+    "pelmeni",
+    "pelmen"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Uy chuchvarasi",
+   "aliases": [
+    "domashnyaya chuchvara"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Qovurilgan chuchvara",
+   "aliases": [
+    "jarenye pelmeni"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Vareniki",
+   "aliases": [
+    "vareniki kartoshkali"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "addons": [
+    "qaymoq",
+    "qatiq"
+   ]
+  },
+  {
+   "name": "Norin",
+   "aliases": [
+    "naryn",
+    "norin go'shtli"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "note": "Sovuq yoki issiq"
+  },
+  {
+   "name": "Beshbarmoq",
+   "aliases": [
+    "beshbarmak"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Shivit oshi",
+   "aliases": [
+    "shivit osh",
+    "ukropnaya lapsha"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "note": "Xorazm taomi"
+  },
+  {
+   "name": "Tuxum barak",
+   "aliases": [
+    "tuhum barak",
+    "tuxumbarak",
+    "barak"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "note": "Xorazm taomi"
+  },
+  {
+   "name": "Kuksi",
+   "aliases": [
+    "kuk-si",
+    "kuksu"
+   ],
+   "category": "xamir_taomlar",
+   "unit": "portion",
+   "note": "Koreyscha sovuq lapsha"
+  },
+  {
+   "name": "Dimlama",
+   "aliases": [
+    "damlama",
+    "dimlama go'shtli"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Qozon kabob",
+   "aliases": [
+    "kazan kabob",
+    "qozon kabobi"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "Tovuqli qozon kabob",
+   "aliases": [
+    "kuriny kazan kabob"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "Tandir go'sht",
+   "aliases": [
+    "tandir gosht",
+    "tandir gusht",
+    "tandyr myaso"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "0,5 kg",
+      "1 kg"
+     ]
+    }
+   ],
+   "note": "Ko'pincha kg bilan"
+  },
+  {
+   "name": "Qo'zichoq tandir",
+   "aliases": [
+    "qozichoq tandir",
+    "quzichoq tandir",
+    "qo'zi tandir"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "0,5 kg",
+      "1 kg"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Tandir tovuq",
+   "aliases": [
+    "tandyr kurica",
+    "tovuq tandiri"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "pcs",
+   "note": "Butun yoki yarim tovuq"
+  },
+  {
+   "name": "Qo'y soni",
+   "aliases": [
+    "qoy soni",
+    "quy soni",
+    "baranya nojka",
+    "qo'y soni tandirda"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "pcs"
+  },
+  {
+   "name": "Jiz",
+   "aliases": [
+    "jiz-biz",
+    "jizz"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "0,5 kg",
+      "1 kg"
+     ]
+    }
+   ],
+   "note": "Qovurilgan go'sht va jigar"
+  },
+  {
+   "name": "Jarkop",
+   "aliases": [
+    "jarkob",
+    "jarkoba"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion"
+  },
+  {
+   "name": "Qovurdoq",
+   "aliases": [
+    "kovurdak"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Hasip",
+   "aliases": [
+    "xasip",
+    "khasip"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "note": "Qo'y ichagiga to'ldirilgan go'sht va guruch"
+  },
+  {
+   "name": "Halim",
+   "aliases": [
+    "xalim",
+    "halim go'shtli"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "note": "Bug'doy va go'shtli quyuq taom"
+  },
+  {
+   "name": "Moshkichiri",
+   "aliases": [
+    "mosh kichiri",
+    "moshkichri"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion"
+  },
+  {
+   "name": "Dolma",
+   "aliases": [
+    "dulma",
+    "tolma"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "note": "Uzum bargida"
+  },
+  {
+   "name": "Karam dolma",
+   "aliases": [
+    "golubtsy",
+    "karam dulma"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion"
+  },
+  {
+   "name": "Qalampir dolma",
+   "aliases": [
+    "farshirovanny perets"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion"
+  },
+  {
+   "name": "Dumgaza",
+   "aliases": [
+    "dumgaza go'sht"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion"
+  },
+  {
+   "name": "No'xat sho'rak",
+   "aliases": [
+    "noxat shorak",
+    "nohat shorak",
+    "nuxat shurak",
+    "nuhat shurak",
+    "nohot shurak",
+    "no'xat shurak"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion"
+  },
+  {
+   "name": "Yaxna go'sht",
+   "aliases": [
+    "yaxna gosht",
+    "yahna gosht",
+    "yaxna gusht",
+    "yahna gusht",
+    "otvarnoe myaso"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion"
+  },
+  {
+   "name": "Go'shtli assorti",
+   "aliases": [
+    "goshtli assorti",
+    "gushtli assorti",
+    "milliy assorti",
+    "myasnoe assorti"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "note": "Qazi, yaxna go'sht, til"
+  },
+  {
+   "name": "Qovurilgan baliq",
+   "aliases": [
+    "jarenaya ryba",
+    "baliq qovurma"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "0,5 kg",
+      "1 kg"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Mol jaz",
+   "aliases": [
+    "mol go'shti jaz",
+    "jaz"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "note": "Toshkent taomi"
+  },
+  {
+   "name": "Qo'y jaz",
+   "aliases": [
+    "qoy jaz",
+    "quy jaz",
+    "ovechiy jaz",
+    "qo'y go'shti jaz"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion",
+   "note": "Toshkent taomi"
+  },
+  {
+   "name": "Kartoshkali qovurma",
+   "aliases": [
+    "jarkoe s kartoshkoy"
+   ],
+   "category": "quyuq_taomlar",
+   "unit": "portion"
+  },
+  {
+   "name": "Bo'lak kabob",
+   "aliases": [
+    "bolak kabob",
+    "bulak kabob",
+    "kuskovoy shashlik",
+    "bo'lak shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Go'shti",
+     "options": [
+      "Mol go'shti",
+      "Qo'y go'shti"
+     ]
+    }
+   ],
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Qiyma kabob",
+   "aliases": [
+    "moloty shashlik",
+    "lyulya kabob",
+    "qiyma shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Jigar kabob",
+   "aliases": [
+    "shashlik iz pecheni",
+    "jigar shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Jigar charvi kabob",
+   "aliases": [
+    "charvi kabob",
+    "jigar charvi"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Tovuq kabob",
+   "aliases": [
+    "kuriny shashlik",
+    "tovuq shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Tovuq qanoti kabob",
+   "aliases": [
+    "shashlik iz krylyshek"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Tovuq soni kabob",
+   "aliases": [
+    "shashlik iz kurinyx bedr"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Qo'zichoq kabob",
+   "aliases": [
+    "qozichoq kabob",
+    "quzichoq kabob",
+    "shashlik iz yagnyonka"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Qovurg'a kabob",
+   "aliases": [
+    "qovurga kabob",
+    "koreyka",
+    "rebryshki"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Beshpanja",
+   "aliases": [
+    "besh panja"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Dumba kabob",
+   "aliases": [
+    "dumba shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six"
+  },
+  {
+   "name": "Kavkazcha bo'lak kabob",
+   "aliases": [
+    "kavkazcha bolak kabob",
+    "kavkazcha bulak kabob",
+    "kavkazskiy shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "1 six, katta bo'laklar"
+  },
+  {
+   "name": "Kavkazcha qiyma kabob",
+   "aliases": [
+    "kavkazskiy moloty shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "Pishloqli qiyma kabob",
+   "aliases": [
+    "moloty shashlik s syrom"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "G'ijduvon kabobi",
+   "aliases": [
+    "gijduvon kabobi",
+    "gijduvon kabob",
+    "gijduvanskiy shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ],
+   "note": "Buxoro kabobi"
+  },
+  {
+   "name": "Bedana kabob",
+   "aliases": [
+    "perepyolka",
+    "bedana shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "Baliq kabob",
+   "aliases": [
+    "shashlik iz ryby",
+    "laqqa baliq kabob"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "Qo'ziqorin kabob",
+   "aliases": [
+    "qoziqorin kabob",
+    "quziqorin kabob",
+    "gribny shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "Sabzavot kabob",
+   "aliases": [
+    "ovoshchnoy shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "Kartoshka kabob",
+   "aliases": [
+    "kartoshka shashlik"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "Sosiska kabob",
+   "aliases": [
+    "sosiski na mangale"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "Mangal assorti",
+   "aliases": [
+    "shashlik assorti",
+    "kabob assorti"
+   ],
+   "category": "kabob",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "0,5 kg",
+      "1 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "piyoz",
+    "non",
+    "sous"
+   ]
+  },
+  {
+   "name": "Tovuq grill",
+   "aliases": [
+    "kurica gril",
+    "gril tovuq"
+   ],
+   "category": "kabob",
+   "unit": "pcs",
+   "note": "Butun yoki yarim tovuq"
+  },
+  {
+   "name": "Kabob tuvakda",
+   "aliases": [
+    "shashlik v gorshochke"
+   ],
+   "category": "kabob",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Go'shti",
+     "options": [
+      "Mol go'shti",
+      "Qo'y go'shti"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Tovuqli kabob tuvakda",
+   "aliases": [
+    "kuriny shashlik v gorshochke"
+   ],
+   "category": "kabob",
+   "unit": "portion"
+  },
+  {
+   "name": "Adana kabob",
+   "aliases": [
+    "adana kebab"
+   ],
+   "category": "kabob",
+   "unit": "portion"
+  },
+  {
+   "name": "Iskandar kabob",
+   "aliases": [
+    "iskender kebab"
+   ],
+   "category": "kabob",
+   "unit": "portion"
+  },
+  {
+   "name": "Tovuq qanotlari (mangal)",
+   "aliases": [
+    "kurinye krylya gril"
+   ],
+   "category": "kabob",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "0,5 kg",
+      "1 kg"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Tandir somsa",
+   "aliases": [
+    "samsa",
+    "somsa",
+    "tandyr samsa"
+   ],
+   "category": "somsa",
+   "unit": "pcs",
+   "note": "Go'shtli"
+  },
+  {
+   "name": "Qo'y go'shtli somsa",
+   "aliases": [
+    "qoy goshtli somsa",
+    "quy gushtli somsa",
+    "samsa s baraninoy"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Mol go'shtli somsa",
+   "aliases": [
+    "mol goshtli somsa",
+    "mol gushtli somsa",
+    "samsa s govyadinoy"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Tovuqli somsa",
+   "aliases": [
+    "kurinaya samsa"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kartoshkali somsa",
+   "aliases": [
+    "samsa s kartoshkoy"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qovoqli somsa",
+   "aliases": [
+    "samsa s tykvoy"
+   ],
+   "category": "somsa",
+   "unit": "pcs",
+   "note": "Kuzda va qishda"
+  },
+  {
+   "name": "Ko'k somsa",
+   "aliases": [
+    "kok somsa",
+    "kuk somsa",
+    "ko'kat somsa",
+    "samsa s zelenyu"
+   ],
+   "category": "somsa",
+   "unit": "pcs",
+   "note": "Bahorda"
+  },
+  {
+   "name": "Qatlama somsa",
+   "aliases": [
+    "sloyonaya samsa",
+    "varaqi somsa"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qaymoqli somsa",
+   "aliases": [
+    "smetannaya samsa"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pishloqli somsa",
+   "aliases": [
+    "samsa s syrom"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qo'ziqorinli somsa",
+   "aliases": [
+    "qoziqorinli somsa",
+    "quziqorinli somsa",
+    "samsa s gribami"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Jizzax somsa",
+   "aliases": [
+    "jizzah somsa",
+    "jizzax samsasi",
+    "jizzakh samsa"
+   ],
+   "category": "somsa",
+   "unit": "pcs",
+   "note": "Katta, go'sht va dumba"
+  },
+  {
+   "name": "Buxoro somsa",
+   "aliases": [
+    "buhoro somsa",
+    "buxoro samsasi"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Olot somsa",
+   "aliases": [
+    "olot samsasi"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qarshi somsa",
+   "aliases": [
+    "qarshi samsasi"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Xorazm somsa",
+   "aliases": [
+    "horazm somsa",
+    "xorazm samsasi"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Mayda somsa",
+   "aliases": [
+    "mini samsa",
+    "to'y somsa"
+   ],
+   "category": "somsa",
+   "unit": "pcs",
+   "note": "Marosimlarga, ko'pincha 10 donadan"
+  },
+  {
+   "name": "Chiburek",
+   "aliases": [
+    "cheburek",
+    "chebureki"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Mini chiburek",
+   "aliases": [
+    "mini chebureki"
+   ],
+   "category": "somsa",
+   "unit": "portion"
+  },
+  {
+   "name": "Gumma",
+   "aliases": [
+    "gumma kartoshkali",
+    "gumma go'shtli"
+   ],
+   "category": "somsa",
+   "unit": "pcs",
+   "note": "Qovurilgan pishiriq"
+  },
+  {
+   "name": "Belyash",
+   "aliases": [
+    "belyashi"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qatlama",
+   "aliases": [
+    "katlama"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Go'shtli qatlama",
+   "aliases": [
+    "goshtli qatlama",
+    "gushtli qatlama",
+    "katlama s myasom"
+   ],
+   "category": "somsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Yupqa",
+   "aliases": [
+    "yupqa xorazm"
+   ],
+   "category": "somsa",
+   "unit": "pcs",
+   "note": "Xorazm yupqasi, ko'katli"
+  },
+  {
+   "name": "Tandir non",
+   "aliases": [
+    "lepyoshka",
+    "non",
+    "tandyr non"
+   ],
+   "category": "non",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Butun",
+      "Yarimta",
+      "Chorak"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Patir non",
+   "aliases": [
+    "patir"
+   ],
+   "category": "non",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Butun",
+      "Yarimta",
+      "Chorak"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Samarqand noni",
+   "aliases": [
+    "samarkand non",
+    "samarqand patiri"
+   ],
+   "category": "non",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Butun",
+      "Yarimta",
+      "Chorak"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Sariyog'li patir",
+   "aliases": [
+    "sariyogli patir",
+    "patir s maslom",
+    "maslyany non"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "Obi non",
+   "aliases": [
+    "obi-non"
+   ],
+   "category": "non",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Butun",
+      "Yarimta",
+      "Chorak"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Shirmoy non",
+   "aliases": [
+    "shirmoy"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "Go'shtli non",
+   "aliases": [
+    "goshtli non",
+    "gushtli non",
+    "myasnaya lepyoshka",
+    "go'shtli patir"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "Piyozli non",
+   "aliases": [
+    "piyozli patir"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qatlama patir",
+   "aliases": [
+    "katlama patir"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kunjutli non",
+   "aliases": [
+    "non kunjutli"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "G'ijda non",
+   "aliases": [
+    "gijda non",
+    "gijda"
+   ],
+   "category": "non",
+   "unit": "pcs",
+   "note": "Buxoro noni"
+  },
+  {
+   "name": "Buxanka non",
+   "aliases": [
+    "buhanka non",
+    "buxanka",
+    "baton",
+    "kirpichik"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "Baget",
+   "aliases": [
+    "baguette",
+    "baton baget"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "Chiabatta",
+   "aliases": [
+    "chabatta",
+    "ciabatta"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "Tost noni",
+   "aliases": [
+    "tostovy xleb"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kepakli non",
+   "aliases": [
+    "otrubnoy xleb",
+    "kepakli buxanka"
+   ],
+   "category": "non",
+   "unit": "pcs"
+  },
+  {
+   "name": "Sarimsoqli non",
+   "aliases": [
+    "chesnochny xleb",
+    "garlic bread"
+   ],
+   "category": "non",
+   "unit": "portion"
+  },
+  {
+   "name": "Achchiq-chuchuk",
+   "aliases": [
+    "achichuk",
+    "achik chuchuk",
+    "shakarob"
+   ],
+   "category": "salat",
+   "unit": "portion",
+   "note": "Osh yoniga"
+  },
+  {
+   "name": "Bahor salati",
+   "aliases": [
+    "bahor",
+    "vesenniy salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Sabzavotli salat",
+   "aliases": [
+    "ovoshchnoy salat",
+    "yangi salat",
+    "svejiy salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Sabzavot assorti",
+   "aliases": [
+    "ovoshchnoe assorti"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Tuzlama assorti",
+   "aliases": [
+    "solene",
+    "solyonoe assorti",
+    "tuzlangan sabzavot"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Marinadlangan assorti",
+   "aliases": [
+    "marinovannoe assorti"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Suzma",
+   "aliases": [
+    "suzma salat",
+    "suzma ko'katli"
+   ],
+   "category": "salat",
+   "unit": "portion",
+   "note": "Osh yoniga"
+  },
+  {
+   "name": "Qatiq",
+   "aliases": [
+    "katyk"
+   ],
+   "category": "salat",
+   "unit": "portion",
+   "note": "Osh yoniga"
+  },
+  {
+   "name": "Anzur piyoz",
+   "aliases": [
+    "anzur",
+    "anzur luk"
+   ],
+   "category": "salat",
+   "unit": "portion",
+   "note": "Osh yoniga"
+  },
+  {
+   "name": "Turp salati",
+   "aliases": [
+    "turup",
+    "rediska salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Anor va turp salati",
+   "aliases": [
+    "turp anorli"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Turp va tuxum salati",
+   "aliases": [
+    "turp va tuhum salati",
+    "turp tuxumli"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Karam va qalampir salati",
+   "aliases": [
+    "karam salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Chiroqchi salati",
+   "aliases": [
+    "chiroqchi",
+    "chirokchi salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Toshkent salati",
+   "aliases": [
+    "tashkent salat"
+   ],
+   "category": "salat",
+   "unit": "portion",
+   "note": "Turp va mol go'shti"
+  },
+  {
+   "name": "Sezar salati",
+   "aliases": [
+    "sezar",
+    "cezar",
+    "caesar",
+    "tovuqli sezar"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Krevetkali Sezar",
+   "aliases": [
+    "sezar s krevetkami"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Lososli Sezar",
+   "aliases": [
+    "sezar s lososem"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Yunon salati",
+   "aliases": [
+    "grecheskiy salat",
+    "grek salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Olivye",
+   "aliases": [
+    "olivie",
+    "olivye salati"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Erkaklar kaprizi",
+   "aliases": [
+    "mujskoy kapriz",
+    "mujskoy"
+   ],
+   "category": "salat",
+   "unit": "portion",
+   "note": "Go'sht, tuxum, piyoz"
+  },
+  {
+   "name": "Ayollar kaprizi",
+   "aliases": [
+    "damskiy kapriz"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Mimoza salati",
+   "aliases": [
+    "mimoza"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Shuba salati",
+   "aliases": [
+    "seld pod shuboy",
+    "shuba"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Krab salati",
+   "aliases": [
+    "krabovy salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Fransuz salati",
+   "aliases": [
+    "francuzskiy salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Yapon salati",
+   "aliases": [
+    "yaponskiy salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Koreyscha sabzi",
+   "aliases": [
+    "morkovcha",
+    "koreyskaya morkov"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Chuka salati",
+   "aliases": [
+    "chuka"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Vitamin salati",
+   "aliases": [
+    "vitaminny salat",
+    "karam salati"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Kolslou",
+   "aliases": [
+    "coleslaw",
+    "karamli salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Qizil karam salati",
+   "aliases": [
+    "salat iz krasnoy kapusty"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Qo'ziqorinli salat",
+   "aliases": [
+    "qoziqorinli salat",
+    "quziqorinli salat",
+    "gribnoy salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Rukkola salati",
+   "aliases": [
+    "salat s rukkoloy"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Lavlagi salati",
+   "aliases": [
+    "svekla salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Vinegret",
+   "aliases": [],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Tovuqli salat",
+   "aliases": [
+    "kuriny salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Mol go'shtli issiq salat",
+   "aliases": [
+    "mol goshtli issiq salat",
+    "mol gushtli issiq salat",
+    "tyopliy salat s govyadinoy"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Baqlajonli salat",
+   "aliases": [
+    "salat s baklajanami",
+    "qarsildoq baqlajon"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Funchoza salati",
+   "aliases": [
+    "funchoza"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Parhez salati",
+   "aliases": [
+    "dieta salat"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Pomidor assorti",
+   "aliases": [
+    "tomatnoe assorti"
+   ],
+   "category": "salat",
+   "unit": "portion"
+  },
+  {
+   "name": "Lavash",
+   "aliases": [
+    "lavash mol go'shtli",
+    "lavash govyadina"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart",
+      "Katta"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Tovuqli lavash",
+   "aliases": [
+    "lavash s kuritsey"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart",
+      "Katta"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Pishloqli lavash",
+   "aliases": [
+    "lavash s syrom"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart",
+      "Katta"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Pishloqli tovuqli lavash",
+   "aliases": [
+    "lavash s kuritsey i syrom"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart",
+      "Katta"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Achchiq lavash",
+   "aliases": [
+    "ostry lavash"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart",
+      "Katta"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Achchiq tovuqli lavash",
+   "aliases": [
+    "ostry lavash s kuritsey"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart",
+      "Katta"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Tandir lavash",
+   "aliases": [
+    "tandyr lavash"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Pishloqli tandir lavash",
+   "aliases": [
+    "tandyr lavash s syrom"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Qazili lavash",
+   "aliases": [
+    "lavash s kazy"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart",
+      "Katta"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Shaurma",
+   "aliases": [
+    "shaurma mol go'shtli",
+    "shaverma",
+    "shawarma"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Tovuqli shaurma",
+   "aliases": [
+    "shaurma s kuritsey"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Pishloqli shaurma",
+   "aliases": [
+    "shaurma s syrom"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Achchiq shaurma",
+   "aliases": [
+    "ostraya shaurma"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Achchiq tovuqli shaurma",
+   "aliases": [
+    "ostraya shaurma s kuritsey"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Pita donar",
+   "aliases": [
+    "pita doner",
+    "pita"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Donar kebab",
+   "aliases": [
+    "doner kebab",
+    "donar tarelka"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "portion",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ],
+   "note": "Likopchada: go'sht, fri, salat"
+  },
+  {
+   "name": "Tovuqli donar kebab",
+   "aliases": [
+    "donar s kuritsey"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "portion",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Donar boks",
+   "aliases": [
+    "doner box",
+    "donar-boks"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "portion",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Nonli donar",
+   "aliases": [
+    "german donar",
+    "doner v xlebe"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Tovuqli nonli donar",
+   "aliases": [
+    "german donar tovuqli"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Donar roll",
+   "aliases": [
+    "doner roll"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Tovuqli donar roll",
+   "aliases": [
+    "doner roll kuriny"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Sezar roll",
+   "aliases": [
+    "cezar roll"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs"
+  },
+  {
+   "name": "Go'shtli roll",
+   "aliases": [
+    "goshtli roll",
+    "gushtli roll",
+    "gusht roll"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha go'sht",
+    "xalapeno",
+    "achchiq sous",
+    "sarimsoqli sous"
+   ]
+  },
+  {
+   "name": "Kesadilya",
+   "aliases": [
+    "kesadilya tovuqli",
+    "quesadilla"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs"
+  },
+  {
+   "name": "Burrito",
+   "aliases": [
+    "burito"
+   ],
+   "category": "lavash_shaurma",
+   "unit": "pcs"
+  },
+  {
+   "name": "Gamburger",
+   "aliases": [
+    "hamburger",
+    "burger"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Chizburger",
+   "aliases": [
+    "cheeseburger"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Dabl burger",
+   "aliases": [
+    "double burger",
+    "dablburger"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Dabl chizburger",
+   "aliases": [
+    "double cheeseburger"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Tovuqli burger",
+   "aliases": [
+    "chiken burger",
+    "chicken burger"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Achchiq tovuqli burger",
+   "aliases": [
+    "ostry chiken burger"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Katta burger",
+   "aliases": [
+    "big burger",
+    "bigburger"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Mol go'shtli burger",
+   "aliases": [
+    "mol goshtli burger",
+    "mol gushtli burger",
+    "beef burger",
+    "go'shtli burger"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Mini burger",
+   "aliases": [],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Baliqli burger",
+   "aliases": [
+    "fish burger"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Hot-dog",
+   "aliases": [
+    "hotdog",
+    "hot dog",
+    "xot-dog"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "ketchup",
+    "xantal",
+    "xalapeno"
+   ]
+  },
+  {
+   "name": "Pishloqli hot-dog",
+   "aliases": [
+    "chiz-dog",
+    "hot-dog s syrom"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "ketchup",
+    "xantal",
+    "xalapeno"
+   ]
+  },
+  {
+   "name": "Dabl hot-dog",
+   "aliases": [
+    "double hot-dog"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "ketchup",
+    "xantal",
+    "xalapeno"
+   ]
+  },
+  {
+   "name": "Katta hot-dog",
+   "aliases": [
+    "korolevskiy hot-dog",
+    "king dog"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "ketchup",
+    "xantal",
+    "xalapeno"
+   ]
+  },
+  {
+   "name": "Daniya hot-dogi",
+   "aliases": [
+    "datskiy hot-dog"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "ketchup",
+    "xantal",
+    "xalapeno"
+   ]
+  },
+  {
+   "name": "Fransuz hot-dogi",
+   "aliases": [
+    "francuzskiy hot-dog"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "ketchup",
+    "xantal",
+    "xalapeno"
+   ]
+  },
+  {
+   "name": "Korn-dog",
+   "aliases": [
+    "corn dog",
+    "korndog"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs"
+  },
+  {
+   "name": "Sab",
+   "aliases": [
+    "sab mol go'shtli",
+    "sub"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "ketchup",
+    "xantal",
+    "xalapeno"
+   ],
+   "note": "Uzun bulkada go'sht"
+  },
+  {
+   "name": "Tovuqli sab",
+   "aliases": [
+    "sab s kuritsey"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "ketchup",
+    "xantal",
+    "xalapeno"
+   ]
+  },
+  {
+   "name": "Pishloqli sab",
+   "aliases": [
+    "sab s syrom"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "ketchup",
+    "xantal",
+    "xalapeno"
+   ]
+  },
+  {
+   "name": "Tovuqli longer",
+   "aliases": [
+    "longer",
+    "looonger"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "addons": [
+    "pishloq",
+    "qo'shimcha kotlet",
+    "xalapeno",
+    "tuzlangan bodring",
+    "sous"
+   ]
+  },
+  {
+   "name": "Klab sendvich",
+   "aliases": [
+    "club sandwich",
+    "klab-sendvich"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs",
+   "note": "Fri bilan yoki frisiz"
+  },
+  {
+   "name": "Tovuqli sendvich",
+   "aliases": [
+    "sendvich s kuritsey"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kruassan sendvich",
+   "aliases": [
+    "sendvich-kruassan"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs"
+  },
+  {
+   "name": "Chiabatta sendvich",
+   "aliases": [
+    "chiabatta s govyadinoy",
+    "chiabatta tovuqli"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pishloqli tost",
+   "aliases": [
+    "tost s syrom"
+   ],
+   "category": "burger_hotdog",
+   "unit": "pcs"
+  },
+  {
+   "name": "Panini",
+   "aliases": [],
+   "category": "burger_hotdog",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kartoshka fri",
+   "aliases": [
+    "fri",
+    "kartofel fri",
+    "free"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart",
+      "Katta"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloqli sous",
+    "ketchup"
+   ]
+  },
+  {
+   "name": "Qishloqcha kartoshka",
+   "aliases": [
+    "po-derevenski",
+    "kartofel po derevenski"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Mini",
+      "Standart",
+      "Katta"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloqli sous",
+    "ketchup"
+   ]
+  },
+  {
+   "name": "Naggets",
+   "aliases": [
+    "nagets",
+    "naggetslar",
+    "nuggets"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "6 dona",
+      "8 dona",
+      "10 dona",
+      "18 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloqli sous",
+    "ketchup"
+   ]
+  },
+  {
+   "name": "Strips",
+   "aliases": [
+    "stripsy",
+    "stripslar",
+    "tovuq strips"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "3 dona",
+      "5 dona",
+      "7 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloqli sous",
+    "ketchup"
+   ]
+  },
+  {
+   "name": "Tovuq qanotlari",
+   "aliases": [
+    "krylyshki",
+    "qanotchalar",
+    "achchiq qanotlar"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "3 dona",
+      "5 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloqli sous",
+    "ketchup"
+   ]
+  },
+  {
+   "name": "Tovuq oyoqchalari",
+   "aliases": [
+    "nojki",
+    "kurinye nojki"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "3 dona",
+      "5 dona",
+      "7 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloqli sous",
+    "ketchup"
+   ]
+  },
+  {
+   "name": "Qarsildoq tovuq",
+   "aliases": [
+    "kfc tovuq",
+    "xrustyashaya kurica"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Porsiya",
+     "options": [
+      "0,5 porsiya",
+      "1 porsiya"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloqli sous",
+    "ketchup"
+   ],
+   "note": "Milliy oshxonalarda \"KFC\" deb ham yoziladi"
+  },
+  {
+   "name": "Tovuq bayts",
+   "aliases": [
+    "baytsy",
+    "popkorn tovuq"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "3 dona",
+      "5 dona",
+      "7 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloqli sous",
+    "ketchup"
+   ]
+  },
+  {
+   "name": "Tovuq baskets",
+   "aliases": [
+    "basket",
+    "bucket"
+   ],
+   "category": "tovuq_snek",
+   "unit": "set",
+   "note": "Qanot, oyoqcha, strips aralash"
+  },
+  {
+   "name": "Pishloqli tayoqchalar",
+   "aliases": [
+    "syrnye palochki"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion"
+  },
+  {
+   "name": "Piyoz halqalari",
+   "aliases": [
+    "lukovye kolca",
+    "onion rings"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion"
+  },
+  {
+   "name": "Kartoshka smayliklar",
+   "aliases": [
+    "smayliki"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion"
+  },
+  {
+   "name": "Xeshbraun",
+   "aliases": [
+    "heshbraun",
+    "hashbrown"
+   ],
+   "category": "tovuq_snek",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kartoshka sharchalari",
+   "aliases": [
+    "xrustyashie shariki"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "3 dona",
+      "5 dona",
+      "7 dona"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Miks boks",
+   "aliases": [
+    "mix box",
+    "mikst boks"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion",
+   "note": "Fri, naggets, strips aralash"
+  },
+  {
+   "name": "Naggets boks",
+   "aliases": [
+    "nuggets box"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion"
+  },
+  {
+   "name": "Nachos",
+   "aliases": [],
+   "category": "tovuq_snek",
+   "unit": "portion"
+  },
+  {
+   "name": "Pishloqli sharchalar",
+   "aliases": [
+    "syrnye shariki"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion"
+  },
+  {
+   "name": "Qovurilgan krevetka",
+   "aliases": [
+    "krevetki v klyare"
+   ],
+   "category": "tovuq_snek",
+   "unit": "portion"
+  },
+  {
+   "name": "Margarita pitsa",
+   "aliases": [
+    "margarita",
+    "pizza margarita",
+    "pitsa"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Pepperoni pitsa",
+   "aliases": [
+    "pepperoni",
+    "pizza pepperoni"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Dabl pepperoni pitsa",
+   "aliases": [
+    "double pepperoni"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "To'rt pishloq pitsa",
+   "aliases": [
+    "tort pishloq pitsa",
+    "turt pishloq pitsa",
+    "4 syra",
+    "quattro formaggi",
+    "to'rt pishloqli"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Pishloqli pitsa",
+   "aliases": [
+    "syrnaya pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "To'rt fasl pitsa",
+   "aliases": [
+    "tort fasl pitsa",
+    "turt fasl pitsa",
+    "4 sezona",
+    "chetyre sezona"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Assorti pitsa",
+   "aliases": [
+    "pizza assorti"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Go'shtli pitsa",
+   "aliases": [
+    "goshtli pitsa",
+    "gushtli pitsa",
+    "myasnaya pizza",
+    "miks go'shtli pitsa"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Tovuqli pitsa",
+   "aliases": [
+    "kurinaya pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Tovuq va qo'ziqorinli pitsa",
+   "aliases": [
+    "tovuq va qoziqorinli pitsa",
+    "tovuq va quziqorinli pitsa",
+    "kurica s gribami"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Barbekyu tovuqli pitsa",
+   "aliases": [
+    "bbq pizza",
+    "barbekyu pitsa"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Rench tovuqli pitsa",
+   "aliases": [
+    "ranch pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Alfredo pitsa",
+   "aliases": [
+    "alfredo"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Gavayi pitsa",
+   "aliases": [
+    "gavayskaya pizza",
+    "hawaii"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ],
+   "note": "Ananasli"
+  },
+  {
+   "name": "Meksika pitsa",
+   "aliases": [
+    "meksikanskaya pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Xalapeno pitsa",
+   "aliases": [
+    "halapeno pitsa",
+    "halapeno pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Achchiq pitsa",
+   "aliases": [
+    "diablo",
+    "dyablo",
+    "chili pitsa"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Donar pitsa",
+   "aliases": [
+    "doner pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Tovuqli donar pitsa",
+   "aliases": [
+    "kuriny donar pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Kebab pitsa",
+   "aliases": [
+    "kebab pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Chizburger pitsa",
+   "aliases": [
+    "cheeseburger pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Sabzavotli pitsa",
+   "aliases": [
+    "vegetarianskaya pizza",
+    "vegetarian pitsa"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Qo'ziqorinli pitsa",
+   "aliases": [
+    "qoziqorinli pitsa",
+    "quziqorinli pitsa",
+    "gribnaya pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Qazili pitsa",
+   "aliases": [
+    "pizza s kazy"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Miks pitsa",
+   "aliases": [
+    "super miks",
+    "kombo pitsa"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Sezar pitsa",
+   "aliases": [
+    "cezar pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Qishloqcha pitsa",
+   "aliases": [
+    "derevenskaya pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "addons": [
+    "pishloq",
+    "qo'ziqorin",
+    "pomidor",
+    "zaytun",
+    "xalapeno",
+    "tovuq",
+    "mol go'shti",
+    "kolbasa",
+    "ananas",
+    "bulg'or qalampiri",
+    "tuzlangan bodring"
+   ]
+  },
+  {
+   "name": "Yarim-yarim pitsa",
+   "aliases": [
+    "pizza iz polovinok"
+   ],
+   "category": "pitsa",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "25 sm",
+      "30 sm",
+      "35 sm"
+     ]
+    },
+    {
+     "group": "Xamiri",
+     "options": [
+      "Oddiy",
+      "Yupqa",
+      "Havodor",
+      "Pishloqli bort",
+      "Hot-dog bort"
+     ]
+    }
+   ],
+   "note": "Ikki xil ta'm bitta pitsada"
+  },
+  {
+   "name": "Bolalar pitsasi",
+   "aliases": [
+    "detskaya pizza"
+   ],
+   "category": "pitsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kaltsone",
+   "aliases": [
+    "calzone",
+    "kalcone"
+   ],
+   "category": "pitsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Ajarcha xachapuri",
+   "aliases": [
+    "ajarcha hachapuri",
+    "xachapuri po-adjarski",
+    "hachapuri"
+   ],
+   "category": "pitsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Imeretincha xachapuri",
+   "aliases": [
+    "imeretincha hachapuri",
+    "xachapuri po-imeretinski"
+   ],
+   "category": "pitsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pide",
+   "aliases": [
+    "turk pide"
+   ],
+   "category": "pitsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Lahmajun",
+   "aliases": [
+    "lahmacun"
+   ],
+   "category": "pitsa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pepperoni rollar",
+   "aliases": [
+    "pepperoni roll"
+   ],
+   "category": "pitsa",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "3 dona",
+      "5 dona",
+      "7 dona"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Filadelfiya rol",
+   "aliases": [
+    "filadelfiya",
+    "philadelphia",
+    "filadelfiya klassik"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ],
+   "note": "8 dona"
+  },
+  {
+   "name": "Avokadoli filadelfiya",
+   "aliases": [
+    "filadelfiya avokado"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Ugorli filadelfiya",
+   "aliases": [
+    "filadelfiya s ugrem",
+    "filadelfiya unagi"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Kaliforniya rol",
+   "aliases": [
+    "kaliforniya",
+    "california",
+    "kaliforniya krab"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Masagoli kaliforniya",
+   "aliases": [
+    "kaliforniya v masago"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Kunjutli kaliforniya",
+   "aliases": [
+    "kaliforniya s kunjutom"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Kappa maki",
+   "aliases": [
+    "bodringli maki"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Syake maki",
+   "aliases": [
+    "sake maki",
+    "lososli maki"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Tekka maki",
+   "aliases": [
+    "tunets maki"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Avokado maki",
+   "aliases": [
+    "avokadoli maki"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Tovuqli rol",
+   "aliases": [
+    "chicken roll",
+    "chiken rol"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Pishloqli rol",
+   "aliases": [
+    "chiz rol",
+    "cheese roll"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Spays syake rol",
+   "aliases": [
+    "spicy sake"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Spays ugor rol",
+   "aliases": [
+    "spicy unagi"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Ajdar rol",
+   "aliases": [
+    "drakon rol",
+    "dragon roll"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Kamalak rol",
+   "aliases": [
+    "raduga",
+    "rainbow roll"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Lososli tempura rol",
+   "aliases": [
+    "jareny rol s lososem",
+    "tempura losos"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ],
+   "note": "Qovurilgan rol"
+  },
+  {
+   "name": "Krevetkali tempura rol",
+   "aliases": [
+    "tempura krevetka"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Tovuqli tempura rol",
+   "aliases": [
+    "tempura s kuritsey"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Krabli tempura rol",
+   "aliases": [
+    "tempura krab"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Ugorli tempura rol",
+   "aliases": [
+    "tempura ugor"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Lososli pishirilgan rol",
+   "aliases": [
+    "zapechyonny rol s lososem"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Krevetkali pishirilgan rol",
+   "aliases": [
+    "zapechyonny s krevetkoy"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Tovuqli pishirilgan rol",
+   "aliases": [
+    "zapechyonny s kuritsey"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Ugorli pishirilgan rol",
+   "aliases": [
+    "zapechyonny s ugrem"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Krabli pishirilgan rol",
+   "aliases": [
+    "zapechyonny s krabom"
+   ],
+   "category": "sushi",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "4 dona",
+      "8 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Lososli nigiri",
+   "aliases": [
+    "syake nigiri",
+    "sushi losos"
+   ],
+   "category": "sushi",
+   "unit": "pcs",
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Ugorli nigiri",
+   "aliases": [
+    "unagi nigiri"
+   ],
+   "category": "sushi",
+   "unit": "pcs",
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Krevetkali nigiri",
+   "aliases": [
+    "ebi nigiri"
+   ],
+   "category": "sushi",
+   "unit": "pcs",
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Tunetsli nigiri",
+   "aliases": [
+    "maguro nigiri"
+   ],
+   "category": "sushi",
+   "unit": "pcs",
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Gunkan",
+   "aliases": [
+    "gunkan maki"
+   ],
+   "category": "sushi",
+   "unit": "pcs",
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Onigiri",
+   "aliases": [
+    "onigiri lososli",
+    "onigiri tovuqli"
+   ],
+   "category": "sushi",
+   "unit": "pcs"
+  },
+  {
+   "name": "Sushi set",
+   "aliases": [
+    "rollar seti"
+   ],
+   "category": "sushi",
+   "unit": "set",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "16 dona",
+      "24 dona",
+      "32 dona",
+      "48 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Pishirilgan rollar seti",
+   "aliases": [
+    "zapechenny set"
+   ],
+   "category": "sushi",
+   "unit": "set",
+   "variants": [
+    {
+     "group": "Soni",
+     "options": [
+      "16 dona",
+      "24 dona",
+      "32 dona",
+      "48 dona"
+     ]
+    }
+   ],
+   "addons": [
+    "soya sousi",
+    "imbir",
+    "vasabi",
+    "spays sous"
+   ]
+  },
+  {
+   "name": "Lososli poke",
+   "aliases": [
+    "poke boul losos",
+    "poke bowl"
+   ],
+   "category": "sushi",
+   "unit": "portion"
+  },
+  {
+   "name": "Tovuqli poke",
+   "aliases": [
+    "poke s kuritsey"
+   ],
+   "category": "sushi",
+   "unit": "portion"
+  },
+  {
+   "name": "Tovuqli vok",
+   "aliases": [
+    "vok s kuritsey",
+    "wok"
+   ],
+   "category": "osiyo",
+   "unit": "portion"
+  },
+  {
+   "name": "Mol go'shtli vok",
+   "aliases": [
+    "mol goshtli vok",
+    "mol gushtli vok",
+    "vok s govyadinoy"
+   ],
+   "category": "osiyo",
+   "unit": "portion"
+  },
+  {
+   "name": "Dengiz mahsulotli vok",
+   "aliases": [
+    "vok s moreproduktami"
+   ],
+   "category": "osiyo",
+   "unit": "portion"
+  },
+  {
+   "name": "Sabzavotli vok",
+   "aliases": [
+    "vok s ovoshchami"
+   ],
+   "category": "osiyo",
+   "unit": "portion"
+  },
+  {
+   "name": "Tovuqli udon",
+   "aliases": [
+    "udon s kuritsey"
+   ],
+   "category": "osiyo",
+   "unit": "portion"
+  },
+  {
+   "name": "Mol go'shtli udon",
+   "aliases": [
+    "mol goshtli udon",
+    "mol gushtli udon",
+    "udon s govyadinoy"
+   ],
+   "category": "osiyo",
+   "unit": "portion"
+  },
+  {
+   "name": "Dengiz mahsulotli udon",
+   "aliases": [
+    "udon s moreproduktami"
+   ],
+   "category": "osiyo",
+   "unit": "portion"
+  },
+  {
+   "name": "Funchoza",
+   "aliases": [
+    "funchoza go'shtli"
+   ],
+   "category": "osiyo",
+   "unit": "portion"
+  },
+  {
+   "name": "Teriyaki tovuq",
+   "aliases": [
+    "kurica teriyaki",
+    "teriyaki"
+   ],
+   "category": "osiyo",
+   "unit": "portion",
+   "note": "Guruch bilan"
+  },
+  {
+   "name": "Qovurilgan guruch",
+   "aliases": [
+    "jareny ris",
+    "fried rice"
+   ],
+   "category": "osiyo",
+   "unit": "portion"
+  },
+  {
+   "name": "Befstroganov",
+   "aliases": [
+    "befstrogan",
+    "beef stroganov"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Bifshteks",
+   "aliases": [],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Gulyash",
+   "aliases": [],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Kiyevcha kotlet",
+   "aliases": [
+    "kotleta po-kievski",
+    "kiev kotlet"
+   ],
+   "category": "yevropa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Mol go'shti kotleti",
+   "aliases": [
+    "mol goshti kotleti",
+    "mol gushti kotleti",
+    "kotleta govyajya",
+    "go'shtli kotlet"
+   ],
+   "category": "yevropa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Tovuq kotleti",
+   "aliases": [
+    "kurinaya kotleta"
+   ],
+   "category": "yevropa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pishloqli kotlet",
+   "aliases": [
+    "kotleta s mocarelloy"
+   ],
+   "category": "yevropa",
+   "unit": "pcs"
+  },
+  {
+   "name": "Tefteli",
+   "aliases": [
+    "frikadelki"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Mol go'shti steyki",
+   "aliases": [
+    "mol goshti steyki",
+    "mol gushti steyki",
+    "steyk",
+    "steak"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Ribay steyk",
+   "aliases": [
+    "ribeye",
+    "ribay"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Qovurilgan losos",
+   "aliases": [
+    "losos steyk",
+    "losos teriyaki"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Grill tovuq filesi",
+   "aliases": [
+    "kurinoe file gril"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Qaymoqli sousda tovuq",
+   "aliases": [
+    "kurica v slivochnom souse"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Fransuzcha go'sht",
+   "aliases": [
+    "fransuzcha gosht",
+    "fransuzcha gusht",
+    "myaso po-francuzski"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Tuvakda go'sht",
+   "aliases": [
+    "tuvakda gosht",
+    "tuvakda gusht",
+    "jarkoe v gorshochke"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Tovuq tabaka",
+   "aliases": [
+    "cyplyonok tabaka"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Shnitsel",
+   "aliases": [
+    "shnicel"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Chaxoxbili",
+   "aliases": [
+    "chahohbili"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Ojaxuri",
+   "aliases": [
+    "ojahuri",
+    "odjahuri"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Karbonara",
+   "aliases": [
+    "spagetti karbonara",
+    "carbonara"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Bolonyeze",
+   "aliases": [
+    "spagetti bolonyeze",
+    "bolognese"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Tovuq va qo'ziqorinli fettuchini",
+   "aliases": [
+    "tovuq va qoziqorinli fettuchini",
+    "tovuq va quziqorinli fettuchini",
+    "fettuchini",
+    "fettucini"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Alfredo pasta",
+   "aliases": [
+    "alfredo"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Lososli pasta",
+   "aliases": [
+    "fettuchini s syomgoy"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Lazanya",
+   "aliases": [
+    "lasagna"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Flotcha makaron",
+   "aliases": [
+    "makarony po-flotski"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Go'shtli grechka",
+   "aliases": [
+    "goshtli grechka",
+    "gushtli grechka",
+    "grechka po-kupecheski"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Baliq filesi",
+   "aliases": [
+    "file ryby"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Kotlet pyure bilan",
+   "aliases": [
+    "pyure s kotletoy"
+   ],
+   "category": "yevropa",
+   "unit": "portion"
+  },
+  {
+   "name": "Quymoq",
+   "aliases": [
+    "blinchiki",
+    "blin"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Tvorogli quymoq",
+   "aliases": [
+    "blinchiki s tvorogom"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Go'shtli quymoq",
+   "aliases": [
+    "goshtli quymoq",
+    "gushtli quymoq",
+    "blinchiki s myasom"
+   ],
+   "category": "nonushta",
+   "unit": "pcs"
+  },
+  {
+   "name": "Bananli quymoq",
+   "aliases": [
+    "blinchiki s bananom"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Pankeyk",
+   "aliases": [
+    "pancake",
+    "pankeyklar"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Sirniki",
+   "aliases": [
+    "syrniki"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Omlet",
+   "aliases": [],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Qovurilgan tuxum",
+   "aliases": [
+    "qovurilgan tuhum",
+    "yaichnica",
+    "glazunya"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Shakshuka",
+   "aliases": [],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Sutli guruch bo'tqa",
+   "aliases": [
+    "sutli guruch botqa",
+    "sutli guruch butqa",
+    "sut osh",
+    "molochnaya risovaya kasha"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Suli bo'tqa",
+   "aliases": [
+    "suli botqa",
+    "suli butqa",
+    "ovsyanka",
+    "ovsyanaya kasha"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Grechka bo'tqa",
+   "aliases": [
+    "grechka botqa",
+    "grechka butqa",
+    "grechnevaya kasha"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Manna bo'tqa",
+   "aliases": [
+    "manna botqa",
+    "manna butqa",
+    "mannaya kasha"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Shirchoy",
+   "aliases": [
+    "shir choy",
+    "sutli choy non bilan"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Qaymoq non bilan",
+   "aliases": [
+    "qaymoq",
+    "kaymak"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Asal va qaymoq",
+   "aliases": [
+    "asal qaymoq"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Tvorog qaymoq bilan",
+   "aliases": [
+    "tvorog so smetanoy"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Avokado tost",
+   "aliases": [
+    "avocado toast"
+   ],
+   "category": "nonushta",
+   "unit": "pcs"
+  },
+  {
+   "name": "Skrembl",
+   "aliases": [
+    "scramble"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Nonushta seti",
+   "aliases": [
+    "zavtrak",
+    "ingliz nonushtasi",
+    "nonushta"
+   ],
+   "category": "nonushta",
+   "unit": "set"
+  },
+  {
+   "name": "Vafli",
+   "aliases": [],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Granola yogurt bilan",
+   "aliases": [
+    "granola"
+   ],
+   "category": "nonushta",
+   "unit": "portion"
+  },
+  {
+   "name": "Guruch",
+   "aliases": [
+    "ris",
+    "otvarnoy ris",
+    "qaynatilgan guruch"
+   ],
+   "category": "garnir",
+   "unit": "portion"
+  },
+  {
+   "name": "Sabzavotli guruch",
+   "aliases": [
+    "ris s ovoshchami"
+   ],
+   "category": "garnir",
+   "unit": "portion"
+  },
+  {
+   "name": "Makkajo'xorili guruch",
+   "aliases": [
+    "makkajoxorili guruch",
+    "makkajohorili guruch",
+    "makkajuxorili guruch",
+    "makkajuhorili guruch",
+    "ris s kukuruzoy"
+   ],
+   "category": "garnir",
+   "unit": "portion"
+  },
+  {
+   "name": "Grechka",
+   "aliases": [],
+   "category": "garnir",
+   "unit": "portion"
+  },
+  {
+   "name": "Kartoshka pyure",
+   "aliases": [
+    "pyure",
+    "kartofelnoe pyure"
+   ],
+   "category": "garnir",
+   "unit": "portion"
+  },
+  {
+   "name": "Qovurilgan kartoshka",
+   "aliases": [
+    "jarenaya kartoshka"
+   ],
+   "category": "garnir",
+   "unit": "portion"
+  },
+  {
+   "name": "Makaron",
+   "aliases": [
+    "makarony",
+    "spagetti"
+   ],
+   "category": "garnir",
+   "unit": "portion"
+  },
+  {
+   "name": "Grill sabzavotlar",
+   "aliases": [
+    "ovoshchi gril"
+   ],
+   "category": "garnir",
+   "unit": "portion"
+  },
+  {
+   "name": "Bulgur",
+   "aliases": [],
+   "category": "garnir",
+   "unit": "portion"
+  },
+  {
+   "name": "Bug'da pishgan sabzavotlar",
+   "aliases": [
+    "bugda pishgan sabzavotlar",
+    "ovoshchi na paru"
+   ],
+   "category": "garnir",
+   "unit": "portion"
+  },
+  {
+   "name": "Ketchup",
+   "aliases": [
+    "kecup"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Achchiq ketchup",
+   "aliases": [
+    "ketchup chili"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Mayonez",
+   "aliases": [],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pishloqli sous",
+   "aliases": [
+    "syrny sous",
+    "cheese sauce"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Sarimsoqli sous",
+   "aliases": [
+    "chesnochny sous",
+    "chesnok sous"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Chili sous",
+   "aliases": [
+    "chili"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Barbekyu sous",
+   "aliases": [
+    "bbq",
+    "barbekyu"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Shirin-nordon sous",
+   "aliases": [
+    "kislo-sladkiy sous"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Sezar sousi",
+   "aliases": [
+    "cezar sous"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Yunon sousi",
+   "aliases": [
+    "grecheskiy sous"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Tar-tar sousi",
+   "aliases": [
+    "tartar"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Rench sousi",
+   "aliases": [
+    "ranch"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Xalapeno",
+   "aliases": [
+    "halapeno",
+    "jalapeno"
+   ],
+   "category": "sous",
+   "unit": "portion"
+  },
+  {
+   "name": "Achchiq qalampir sousi",
+   "aliases": [
+    "ostry sous",
+    "qalampir"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pomidorli sous",
+   "aliases": [
+    "tomatny sous"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Soya sousi",
+   "aliases": [
+    "soevy sous"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Imbir",
+   "aliases": [
+    "marinadlangan imbir",
+    "imbir sushi"
+   ],
+   "category": "sous",
+   "unit": "portion"
+  },
+  {
+   "name": "Vasabi",
+   "aliases": [
+    "wasabi"
+   ],
+   "category": "sous",
+   "unit": "portion"
+  },
+  {
+   "name": "Teriyaki sousi",
+   "aliases": [
+    "teriyaki"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Spays sous",
+   "aliases": [
+    "spicy sous"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qaymoq (smetana)",
+   "aliases": [
+    "smetana"
+   ],
+   "category": "sous",
+   "unit": "portion"
+  },
+  {
+   "name": "Xantal",
+   "aliases": [
+    "hantal",
+    "gorchica",
+    "gorchitsa"
+   ],
+   "category": "sous",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qazi",
+   "aliases": [
+    "kazy",
+    "qazi bo'lagi"
+   ],
+   "category": "qoshimcha",
+   "unit": "pcs",
+   "note": "Osh yoniga"
+  },
+  {
+   "name": "Bedana tuxumi",
+   "aliases": [
+    "bedana tuhumi",
+    "perepelinoe yayco",
+    "bedana tuxum"
+   ],
+   "category": "qoshimcha",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qaynatilgan tuxum",
+   "aliases": [
+    "qaynatilgan tuhum",
+    "varyonoe yayco"
+   ],
+   "category": "qoshimcha",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qo'shimcha go'sht",
+   "aliases": [
+    "qoshimcha gosht",
+    "qushimcha gusht",
+    "dop go'sht",
+    "dop myaso"
+   ],
+   "category": "qoshimcha",
+   "unit": "portion"
+  },
+  {
+   "name": "Qo'shimcha pishloq",
+   "aliases": [
+    "qoshimcha pishloq",
+    "qushimcha pishloq",
+    "dop syr",
+    "pishloq"
+   ],
+   "category": "qoshimcha",
+   "unit": "portion"
+  },
+  {
+   "name": "Yangi achchiq qalampir",
+   "aliases": [
+    "ostry perec",
+    "qalampir"
+   ],
+   "category": "qoshimcha",
+   "unit": "pcs"
+  },
+  {
+   "name": "Limon bo'lagi",
+   "aliases": [
+    "limon bolagi",
+    "limon bulagi",
+    "limon"
+   ],
+   "category": "qoshimcha",
+   "unit": "pcs"
+  },
+  {
+   "name": "Paket",
+   "aliases": [
+    "kraft paket",
+    "pakket"
+   ],
+   "category": "qoshimcha",
+   "unit": "pcs"
+  },
+  {
+   "name": "Bir martalik idish",
+   "aliases": [
+    "konteyner",
+    "odnorazovaya posuda"
+   ],
+   "category": "qoshimcha",
+   "unit": "pcs"
+  },
+  {
+   "name": "Bir martalik stakan",
+   "aliases": [
+    "odnorazovy stakan"
+   ],
+   "category": "qoshimcha",
+   "unit": "pcs"
+  },
+  {
+   "name": "Qoshiq-sanchqi to'plami",
+   "aliases": [
+    "qoshiq-sanchqi toplami",
+    "qoshiq-sanchqi tuplami",
+    "stolovye pribory"
+   ],
+   "category": "qoshimcha",
+   "unit": "set"
+  },
+  {
+   "name": "Tort shamlari",
+   "aliases": [
+    "svechi",
+    "shamlar"
+   ],
+   "category": "qoshimcha",
+   "unit": "set"
+  },
+  {
+   "name": "Go'shtli pirojki",
+   "aliases": [
+    "goshtli pirojki",
+    "gushtli pirojki",
+    "pirojki s myasom",
+    "pirojok"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kartoshkali pirojki",
+   "aliases": [
+    "pirojki s kartoshkoy"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Karamli pirojki",
+   "aliases": [
+    "pirojki s kapustoy"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Tuxumli pirojki",
+   "aliases": [
+    "tuhumli pirojki",
+    "pirojki s yaycom"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Olmali pirojki",
+   "aliases": [
+    "pirojki s yablokom"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Jemli pirojki",
+   "aliases": [
+    "pirojki s povidlom"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pishirilgan pirojki",
+   "aliases": [
+    "pechyonye pirojki"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Xamirdagi sosiska",
+   "aliases": [
+    "hamirdagi sosiska",
+    "sosiska v teste"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pishloqli xachapuri",
+   "aliases": [
+    "pishloqli hachapuri",
+    "xachapuri s syrom"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Balish",
+   "aliases": [],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kartoshkali rastegay",
+   "aliases": [
+    "rastegay"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kish",
+   "aliases": [
+    "quiche"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pitsa bo'lagi",
+   "aliases": [
+    "pitsa bolagi",
+    "pitsa bulagi",
+    "otkrytaya pizza",
+    "pitsa bo'lak"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Bulochka",
+   "aliases": [
+    "bulka"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Ko'knorili bulochka",
+   "aliases": [
+    "koknorili bulochka",
+    "kuknorili bulochka",
+    "bulochka s makom"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Quyultirilgan sutli bulochka",
+   "aliases": [
+    "bulochka so sgushchenkoy"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Olmali bulochka",
+   "aliases": [
+    "bulochka s yablokom"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Yong'oqli bulochka",
+   "aliases": [
+    "yongoqli bulochka",
+    "bulochka s orexom"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Mayizli bulochka",
+   "aliases": [
+    "bulochka s izyumom"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pishloqli bulochka",
+   "aliases": [
+    "syrnaya bulochka"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Vatrushka",
+   "aliases": [
+    "vatrushka tvorogli"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Sinnabon",
+   "aliases": [
+    "sinnamon roll",
+    "darchinli bulochka"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kruassan",
+   "aliases": [
+    "kruasan",
+    "croissant"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Shokoladli kruassan",
+   "aliases": [
+    "kruassan shokoladny"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Bodomli kruassan",
+   "aliases": [
+    "mindalny kruassan"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pistali kruassan",
+   "aliases": [
+    "fistashkovy kruassan"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Shokoladli maffin",
+   "aliases": [
+    "maffin",
+    "muffin"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Mevali maffin",
+   "aliases": [
+    "maffin lesnye yagody"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Keks",
+   "aliases": [
+    "keks mayizli"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Donat",
+   "aliases": [
+    "donut",
+    "ponchik",
+    "ponchik donat"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Ta'mi",
+     "options": [
+      "Karamelli",
+      "Qulupnayli",
+      "Shokoladli",
+      "Yong'oqli"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Olmali pirog",
+   "aliases": [
+    "yablochny pirog",
+    "sharlotka"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs",
+   "note": "Butun yoki bo'lak"
+  },
+  {
+   "name": "Gilosli pirog",
+   "aliases": [
+    "vishnyovy pirog"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Tvorogli pirog",
+   "aliases": [
+    "tvorojny pirog"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kurabye",
+   "aliases": [
+    "kurabe"
+   ],
+   "category": "pishiriq",
+   "unit": "kg"
+  },
+  {
+   "name": "Suli pechenyesi",
+   "aliases": [
+    "ovsyanoe pechene"
+   ],
+   "category": "pishiriq",
+   "unit": "kg"
+  },
+  {
+   "name": "Pechene assorti",
+   "aliases": [
+    "pechene",
+    "pechenye"
+   ],
+   "category": "pishiriq",
+   "unit": "kg"
+  },
+  {
+   "name": "Rogalik",
+   "aliases": [
+    "rogaliki so sgushchenkoy"
+   ],
+   "category": "pishiriq",
+   "unit": "kg"
+  },
+  {
+   "name": "Quyultirilgan sutli trubochka",
+   "aliases": [
+    "trubochka so sgushchenkoy"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kukis",
+   "aliases": [
+    "cookies"
+   ],
+   "category": "pishiriq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Napoleon torti",
+   "aliases": [
+    "napoleon",
+    "napoleon tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Medovik",
+   "aliases": [
+    "asalli tort",
+    "medovik tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Qush suti torti",
+   "aliases": [
+    "ptichye moloko"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Praga torti",
+   "aliases": [
+    "praga"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Shokoladli tort",
+   "aliases": [
+    "chocolate tort",
+    "shokolad tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Snikers torti",
+   "aliases": [
+    "snikers tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Kiyev torti",
+   "aliases": [
+    "kievskiy tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Tiramisu torti",
+   "aliases": [
+    "tiramisu tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Qizil baxmal torti",
+   "aliases": [
+    "qizil bahmal torti",
+    "red velvet",
+    "krasny barxat"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Mevali tort",
+   "aliases": [
+    "fruktovy tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Rezavor mevali tort",
+   "aliases": [
+    "berry tort",
+    "yagodny tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Shokolad-bananli tort",
+   "aliases": [
+    "shokoladno-bananovy tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Yong'oq-asalli tort",
+   "aliases": [
+    "yongoq-asalli tort",
+    "orexovo-medovy tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Karamel-asalli tort",
+   "aliases": [
+    "karamelno-medovy tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Limonli tort",
+   "aliases": [
+    "limonny tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Tvorogli tort",
+   "aliases": [
+    "tvorojno-biskvitny tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Beze torti",
+   "aliases": [
+    "merengovy tort",
+    "beze tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Pancho torti",
+   "aliases": [
+    "pancho"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Smetannik",
+   "aliases": [
+    "qaymoqli tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Afg'on torti",
+   "aliases": [
+    "afgon torti",
+    "afganskiy tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Oreo torti",
+   "aliases": [
+    "oreo tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Zebra torti",
+   "aliases": [
+    "zebra"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Rafaello torti",
+   "aliases": [
+    "rafaello tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Bento tort",
+   "aliases": [
+    "bento"
+   ],
+   "category": "tort",
+   "unit": "pcs",
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ],
+   "note": "Kichik tort 1-2 kishiga"
+  },
+  {
+   "name": "Mini tort",
+   "aliases": [],
+   "category": "tort",
+   "unit": "pcs",
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ]
+  },
+  {
+   "name": "Bolalar torti (buyurtma)",
+   "aliases": [
+    "detskiy tort",
+    "mastikali tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "variants": [
+    {
+     "group": "Og'irligi",
+     "options": [
+      "1 kg",
+      "1,5 kg",
+      "2 kg",
+      "3 kg"
+     ]
+    }
+   ],
+   "addons": [
+    "yozuv",
+    "shamlar"
+   ],
+   "note": "Oldindan buyurtma"
+  },
+  {
+   "name": "To'y torti (buyurtma)",
+   "aliases": [
+    "toy torti (buyurtma)",
+    "tuy torti (buyurtma)",
+    "svadebny tort",
+    "to'y tort"
+   ],
+   "category": "tort",
+   "unit": "kg",
+   "note": "Oldindan buyurtma, ko'p qavatli"
+  },
+  {
+   "name": "Nyu-York chizkeyki",
+   "aliases": [
+    "chizkeyk",
+    "cheesecake",
+    "nyu york"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "San-Sebastyan chizkeyki",
+   "aliases": [
+    "san sebastian",
+    "basque cheesecake"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Oreo chizkeyki",
+   "aliases": [
+    "chizkeyk oreo"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Lotus chizkeyki",
+   "aliases": [
+    "chizkeyk lotus"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Tiramisu",
+   "aliases": [],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Ekler",
+   "aliases": [
+    "eclair"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Mini eklerlar",
+   "aliases": [
+    "profitroli",
+    "mini ekler"
+   ],
+   "category": "desert",
+   "unit": "portion"
+  },
+  {
+   "name": "Kartoshka pirojnoe",
+   "aliases": [
+    "pirojnoe kartoshka",
+    "kartoshka"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Brauni",
+   "aliases": [
+    "brownie"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Medovik bo'lagi",
+   "aliases": [
+    "medovik bolagi",
+    "medovik bulagi",
+    "medovik pirojnoe"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Napoleon bo'lagi",
+   "aliases": [
+    "napoleon bolagi",
+    "napoleon bulagi",
+    "napoleon pirojnoe"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Chumoli uyasi",
+   "aliases": [
+    "muraveynik"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Makarons",
+   "aliases": [
+    "macarons",
+    "makaruns"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Beze",
+   "aliases": [
+    "merenga"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Biskvit rulet",
+   "aliases": [
+    "rulet"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Tartaletka",
+   "aliases": [
+    "tartaletka mevali"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Panna-kotta",
+   "aliases": [
+    "panna kotta"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Shokoladli fondan",
+   "aliases": [
+    "fondan"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Shokoladli muss",
+   "aliases": [
+    "muss"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Trayfl",
+   "aliases": [
+    "trifle"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Pavlova",
+   "aliases": [],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kapkeyk",
+   "aliases": [
+    "cupcake"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Keyk-pops",
+   "aliases": [
+    "cake pops",
+    "keykpops"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Mevali salat",
+   "aliases": [
+    "fruktovy salat"
+   ],
+   "category": "desert",
+   "unit": "portion"
+  },
+  {
+   "name": "Shokoladli pirojnoe",
+   "aliases": [
+    "shokoladnoe pirojnoe"
+   ],
+   "category": "desert",
+   "unit": "pcs"
+  },
+  {
+   "name": "Chak-chak",
+   "aliases": [
+    "chak chak",
+    "chakchak"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Holva",
+   "aliases": [
+    "halva",
+    "xolva",
+    "kunjutli holva"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Yong'oqli holva",
+   "aliases": [
+    "yongoqli holva",
+    "halva s orexom"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Pashmak",
+   "aliases": [
+    "pishmak"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Navvot",
+   "aliases": [
+    "novvot",
+    "navvat",
+    "novvot shakar"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Parvarda",
+   "aliases": [],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Nisholda",
+   "aliases": [
+    "nishalda"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "portion",
+   "note": "Ramazon va Navro'zda"
+  },
+  {
+   "name": "Sumalak",
+   "aliases": [],
+   "category": "milliy_shirinlik",
+   "unit": "portion",
+   "note": "Navro'zda"
+  },
+  {
+   "name": "Halvaytar",
+   "aliases": [
+    "halvaitar",
+    "xalvaytar"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "portion"
+  },
+  {
+   "name": "Bo'g'irsoq",
+   "aliases": [
+    "bogirsoq",
+    "bugirsoq",
+    "boursak"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Shakarpara",
+   "aliases": [],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Pahlava",
+   "aliases": [
+    "paxlava"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Turk pahlavasi",
+   "aliases": [
+    "turetskaya paxlava"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Hashtak",
+   "aliases": [
+    "xashtak"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "O'rama",
+   "aliases": [
+    "orama",
+    "urama"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Mo'yqalam",
+   "aliases": [
+    "moyqalam",
+    "muyqalam"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Tulumba",
+   "aliases": [],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Kozinaki",
+   "aliases": [
+    "kozinak",
+    "kunjutli qand"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Mayizli shirinlik",
+   "aliases": [
+    "izyum v shokolade"
+   ],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Lochira",
+   "aliases": [],
+   "category": "milliy_shirinlik",
+   "unit": "kg"
+  },
+  {
+   "name": "Muzqaymoq",
+   "aliases": [
+    "morojenoe",
+    "muzqaymoq shar"
+   ],
+   "category": "muzqaymoq",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "1 shar",
+      "2 shar",
+      "3 shar"
+     ]
+    }
+   ],
+   "addons": [
+    "shokolad",
+    "yong'oq",
+    "sirop",
+    "meva"
+   ]
+  },
+  {
+   "name": "Plombir",
+   "aliases": [],
+   "category": "muzqaymoq",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "1 shar",
+      "2 shar",
+      "3 shar"
+     ]
+    }
+   ],
+   "addons": [
+    "shokolad",
+    "yong'oq",
+    "sirop",
+    "meva"
+   ]
+  },
+  {
+   "name": "Vanilli muzqaymoq",
+   "aliases": [
+    "vanilnoe morojenoe"
+   ],
+   "category": "muzqaymoq",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "1 shar",
+      "2 shar",
+      "3 shar"
+     ]
+    }
+   ],
+   "addons": [
+    "shokolad",
+    "yong'oq",
+    "sirop",
+    "meva"
+   ]
+  },
+  {
+   "name": "Shokoladli muzqaymoq",
+   "aliases": [
+    "shokoladnoe morojenoe"
+   ],
+   "category": "muzqaymoq",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "1 shar",
+      "2 shar",
+      "3 shar"
+     ]
+    }
+   ],
+   "addons": [
+    "shokolad",
+    "yong'oq",
+    "sirop",
+    "meva"
+   ]
+  },
+  {
+   "name": "Qulupnayli muzqaymoq",
+   "aliases": [
+    "klubnichnoe morojenoe"
+   ],
+   "category": "muzqaymoq",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "1 shar",
+      "2 shar",
+      "3 shar"
+     ]
+    }
+   ],
+   "addons": [
+    "shokolad",
+    "yong'oq",
+    "sirop",
+    "meva"
+   ]
+  },
+  {
+   "name": "Pistali muzqaymoq",
+   "aliases": [
+    "fistashkovoe morojenoe"
+   ],
+   "category": "muzqaymoq",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "1 shar",
+      "2 shar",
+      "3 shar"
+     ]
+    }
+   ],
+   "addons": [
+    "shokolad",
+    "yong'oq",
+    "sirop",
+    "meva"
+   ]
+  },
+  {
+   "name": "Karamelli muzqaymoq",
+   "aliases": [
+    "karamelnoe morojenoe"
+   ],
+   "category": "muzqaymoq",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "1 shar",
+      "2 shar",
+      "3 shar"
+     ]
+    }
+   ],
+   "addons": [
+    "shokolad",
+    "yong'oq",
+    "sirop",
+    "meva"
+   ]
+  },
+  {
+   "name": "Yumshoq muzqaymoq",
+   "aliases": [
+    "rojok",
+    "softi",
+    "myagkoe morojenoe"
+   ],
+   "category": "muzqaymoq",
+   "unit": "pcs",
+   "addons": [
+    "shokolad",
+    "yong'oq",
+    "sirop",
+    "meva"
+   ]
+  },
+  {
+   "name": "Vafli stakanchadagi muzqaymoq",
+   "aliases": [
+    "stakanchik"
+   ],
+   "category": "muzqaymoq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Eskimo",
+   "aliases": [],
+   "category": "muzqaymoq",
+   "unit": "pcs"
+  },
+  {
+   "name": "Sandey",
+   "aliases": [
+    "sundae"
+   ],
+   "category": "muzqaymoq",
+   "unit": "portion",
+   "addons": [
+    "shokolad",
+    "yong'oq",
+    "sirop",
+    "meva"
+   ]
+  },
+  {
+   "name": "Sorbet",
+   "aliases": [],
+   "category": "muzqaymoq",
+   "unit": "portion",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "1 shar",
+      "2 shar",
+      "3 shar"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ko'k choy",
+   "aliases": [
+    "kok choy",
+    "kuk choy",
+    "zelyony chay",
+    "yashil choy"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan",
+      "Choynak"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ],
+   "note": "Choyxonada choynak bilan"
+  },
+  {
+   "name": "Qora choy",
+   "aliases": [
+    "chyorny chay",
+    "kora choy"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan",
+      "Choynak"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ]
+  },
+  {
+   "name": "Limonli ko'k choy",
+   "aliases": [
+    "limonli kok choy",
+    "limonli kuk choy",
+    "zelyony chay s limonom"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan 0,3 l",
+      "Stakan 0,4 l",
+      "Choynak"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ]
+  },
+  {
+   "name": "Limonli qora choy",
+   "aliases": [
+    "chyorny chay s limonom",
+    "limonli choy"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan 0,3 l",
+      "Stakan 0,4 l",
+      "Choynak"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ]
+  },
+  {
+   "name": "Sutli choy",
+   "aliases": [
+    "chay s molokom"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan",
+      "Choynak"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Na'matakli choy",
+   "aliases": [
+    "namatakli choy",
+    "namatak choy",
+    "chay s shipovnikom"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan",
+      "Choynak"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ]
+  },
+  {
+   "name": "Zanjabilli choy",
+   "aliases": [
+    "imbirli choy",
+    "imbir choy"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan 0,3 l",
+      "Stakan 0,4 l",
+      "Choynak"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ]
+  },
+  {
+   "name": "Zanjabil-limon-asal choyi",
+   "aliases": [
+    "imbir limon asal"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan 0,3 l",
+      "Stakan 0,4 l",
+      "Choynak"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Yalpizli choy",
+   "aliases": [
+    "myatny chay"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan",
+      "Choynak"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ]
+  },
+  {
+   "name": "Kiyik o'tli choy",
+   "aliases": [
+    "kiyik otli choy",
+    "kiyik utli choy",
+    "chabrec",
+    "kiyik o't"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan",
+      "Choynak"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ]
+  },
+  {
+   "name": "Tog' choyi",
+   "aliases": [
+    "tog choyi",
+    "travyanoy chay",
+    "o'tli choy"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan",
+      "Choynak"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ]
+  },
+  {
+   "name": "Jasminli choy",
+   "aliases": [
+    "jasminovy chay"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan",
+      "Choynak"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ]
+  },
+  {
+   "name": "Malinali choy",
+   "aliases": [
+    "malinovy chay"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan 0,3 l",
+      "Stakan 0,4 l",
+      "Choynak"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Mango-marakuya choyi",
+   "aliases": [
+    "mango marakuya"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan 0,3 l",
+      "Stakan 0,4 l",
+      "Choynak"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Rezavor mevali choy",
+   "aliases": [
+    "yagodny chay",
+    "mevali choy"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan 0,3 l",
+      "Stakan 0,4 l",
+      "Choynak"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Olcha punshi",
+   "aliases": [
+    "punsh",
+    "glintveyn bezalkogolny"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "note": "Alkogolsiz"
+  },
+  {
+   "name": "Feyxoa ichimligi",
+   "aliases": [
+    "feyhoa ichimligi",
+    "feyxoa"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Kakao",
+   "aliases": [],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Issiq shokolad",
+   "aliases": [
+    "goryachiy shokolad"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Issiq sut",
+   "aliases": [
+    "goryachee moloko"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "limon",
+    "asal",
+    "shakar",
+    "navvot",
+    "yalpiz"
+   ]
+  },
+  {
+   "name": "Choy latte",
+   "aliases": [
+    "chai latte"
+   ],
+   "category": "choy",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Espresso",
+   "aliases": [
+    "ekspresso"
+   ],
+   "category": "qahva",
+   "unit": "pcs"
+  },
+  {
+   "name": "Dabl espresso",
+   "aliases": [
+    "double espresso",
+    "ikkitalik espresso"
+   ],
+   "category": "qahva",
+   "unit": "pcs"
+  },
+  {
+   "name": "Amerikano",
+   "aliases": [
+    "americano",
+    "amerikano kofe"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,2 l",
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Kapuchino",
+   "aliases": [
+    "cappuccino",
+    "kapuchchino"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,2 l",
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Latte",
+   "aliases": [],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,2 l",
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Flet uayt",
+   "aliases": [
+    "flat white",
+    "flet vayt"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Makiato",
+   "aliases": [
+    "macchiato"
+   ],
+   "category": "qahva",
+   "unit": "pcs"
+  },
+  {
+   "name": "Latte makiato",
+   "aliases": [
+    "latte macchiato"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Mokko",
+   "aliases": [
+    "mocha",
+    "mokka"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Raf",
+   "aliases": [
+    "raf kofe"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Asalli raf",
+   "aliases": [
+    "raf medovy"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Pishloqli raf",
+   "aliases": [
+    "chiz raf",
+    "cheese raf"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ispancha latte",
+   "aliases": [
+    "ispanskiy latte",
+    "spanish latte"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Kokosli latte",
+   "aliases": [
+    "kokosovy latte"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Siropli latte",
+   "aliases": [
+    "latte s siropom"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Siropli kapuchino",
+   "aliases": [
+    "kapuchino s siropom"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Karamelli kapuchino",
+   "aliases": [
+    "kapuchino karamel"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Matcha latte",
+   "aliases": [
+    "matcha"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Qahva 3 in 1",
+   "aliases": [
+    "kofe 3 v 1",
+    "3v1"
+   ],
+   "category": "qahva",
+   "unit": "pcs"
+  },
+  {
+   "name": "Eruvchan qahva",
+   "aliases": [
+    "rastvorimy kofe"
+   ],
+   "category": "qahva",
+   "unit": "pcs"
+  },
+  {
+   "name": "Turkcha qahva",
+   "aliases": [
+    "kofe po-turecki",
+    "turk kofe"
+   ],
+   "category": "qahva",
+   "unit": "pcs"
+  },
+  {
+   "name": "Glyase",
+   "aliases": [
+    "kofe glyase"
+   ],
+   "category": "qahva",
+   "unit": "pcs"
+  },
+  {
+   "name": "Ays amerikano",
+   "aliases": [
+    "ice americano",
+    "sovuq amerikano"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Ays latte",
+   "aliases": [
+    "ice latte"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Ays kapuchino",
+   "aliases": [
+    "ice cappuccino"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Ays kofe",
+   "aliases": [
+    "ice coffee",
+    "muzli qahva"
+   ],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l"
+     ]
+    }
+   ],
+   "addons": [
+    "sirop: karamel",
+    "sirop: vanil",
+    "sirop: o'rmon yong'og'i",
+    "sirop: kokos",
+    "qo'shimcha espresso",
+    "o'simlik suti"
+   ]
+  },
+  {
+   "name": "Frappe",
+   "aliases": [],
+   "category": "qahva",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Ta'mi",
+     "options": [
+      "Klassik",
+      "Karamelli",
+      "Shokoladli"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Bambl",
+   "aliases": [
+    "bumble",
+    "bambl kofe"
+   ],
+   "category": "qahva",
+   "unit": "pcs"
+  },
+  {
+   "name": "Espresso tonik",
+   "aliases": [
+    "espresso tonic"
+   ],
+   "category": "qahva",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kortado",
+   "aliases": [
+    "cortado"
+   ],
+   "category": "qahva",
+   "unit": "pcs"
+  },
+  {
+   "name": "Kola",
+   "aliases": [
+    "coca-cola",
+    "pepsi",
+    "koka kola"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,25 l",
+      "0,5 l",
+      "1 l",
+      "1,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Quyma kola",
+   "aliases": [
+    "kola razliv",
+    "kola stakanda"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Apelsinli gazli ichimlik",
+   "aliases": [
+    "fanta",
+    "mirinda"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,25 l",
+      "0,5 l",
+      "1 l",
+      "1,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Limonli gazli ichimlik",
+   "aliases": [
+    "sprite",
+    "sprayt",
+    "7up"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,25 l",
+      "0,5 l",
+      "1 l",
+      "1,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Tarxun",
+   "aliases": [
+    "tarhun",
+    "tarxun gazli suv"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,25 l",
+      "0,5 l",
+      "1 l",
+      "1,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Dyushes",
+   "aliases": [
+    "dushes"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,25 l",
+      "0,5 l",
+      "1 l",
+      "1,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Mineral suv",
+   "aliases": [
+    "chortoq",
+    "gazli suv",
+    "mineralka"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,25 l",
+      "0,5 l",
+      "1 l",
+      "1,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Suv (gazsiz)",
+   "aliases": [
+    "bonaqua",
+    "gazsiz suv",
+    "voda"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,25 l",
+      "0,5 l",
+      "1 l",
+      "1,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Muzli choy",
+   "aliases": [
+    "ays ti",
+    "ice tea",
+    "fuse tea",
+    "lipton"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Ta'mi",
+     "options": [
+      "Limon",
+      "Shaftoli",
+      "Mango",
+      "Rezavor"
+     ]
+    },
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Limonad",
+   "aliases": [
+    "limonad klassik"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Moxito",
+   "aliases": [
+    "mohito",
+    "mojito",
+    "moxito alkogolsiz"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Qulupnayli moxito",
+   "aliases": [
+    "qulupnayli mohito",
+    "klubnichny moxito"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Anorli limonad",
+   "aliases": [
+    "granatovy limonad"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Mango-marakuya limonad",
+   "aliases": [
+    "mango limonad"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Tarxun limonad",
+   "aliases": [
+    "tarhun limonad",
+    "limonad tarxun"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Sitrusli limonad",
+   "aliases": [
+    "citrus limonad"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,4 l",
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Kompot",
+   "aliases": [
+    "olcha kompot"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Ta'mi",
+     "options": [
+      "Olcha",
+      "Olma",
+      "O'rik",
+      "Mevali"
+     ]
+    },
+    {
+     "group": "Hajmi",
+     "options": [
+      "Stakan",
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ],
+   "note": "Uyda tayyorlangan"
+  },
+  {
+   "name": "Sharbat",
+   "aliases": [
+    "sok",
+    "sharbat paketda"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Ta'mi",
+     "options": [
+      "Olma",
+      "Shaftoli",
+      "Olcha",
+      "Apelsin",
+      "Multifrukt",
+      "Ananas"
+     ]
+    },
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,2 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Pomidor sharbati",
+   "aliases": [
+    "tomatny sok"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ],
+   "note": "Osh yoniga"
+  },
+  {
+   "name": "Kvas",
+   "aliases": [],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Mors",
+   "aliases": [],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Energetik ichimlik",
+   "aliases": [
+    "energetik"
+   ],
+   "category": "sovuq_ichimlik",
+   "unit": "pcs"
+  },
+  {
+   "name": "Apelsin fresh",
+   "aliases": [
+    "apelsinoviy fresh",
+    "orange fresh"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Olma fresh",
+   "aliases": [
+    "yablochny fresh"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Sabzi fresh",
+   "aliases": [
+    "morkovny fresh"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Olma-sabzi fresh",
+   "aliases": [
+    "yablochno-morkovny fresh"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Apelsin-olma fresh",
+   "aliases": [
+    "apelsinovo-yablochny fresh"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Anor fresh",
+   "aliases": [
+    "granatovy fresh",
+    "anor sharbati"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Greypfrut fresh",
+   "aliases": [
+    "greypfrut"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ananas fresh",
+   "aliases": [
+    "ananasovy fresh"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Tarvuz fresh",
+   "aliases": [
+    "arbuzny fresh"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ],
+   "note": "Yozda"
+  },
+  {
+   "name": "Mevali smuzi",
+   "aliases": [
+    "smuzi",
+    "smoothie"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Banan-qulupnay smuzi",
+   "aliases": [
+    "banan klubnika smuzi"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ko'kat smuzi",
+   "aliases": [
+    "kokat smuzi",
+    "kukat smuzi",
+    "detoks smuzi",
+    "zelyony smuzi"
+   ],
+   "category": "fresh",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,5 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ayron",
+   "aliases": [
+    "ayran",
+    "ayron ichimlik"
+   ],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Qatiq (ichimlik)",
+   "aliases": [
+    "katyk",
+    "qatiq stakan"
+   ],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Kefir",
+   "aliases": [],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,5 l",
+      "1 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Milksheyk",
+   "aliases": [
+    "molochny kokteyl",
+    "milkshake",
+    "sutli kokteyl"
+   ],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq (ko'pik)",
+    "sirop"
+   ]
+  },
+  {
+   "name": "Vanilli milksheyk",
+   "aliases": [
+    "vanilny kokteyl"
+   ],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq (ko'pik)",
+    "sirop"
+   ]
+  },
+  {
+   "name": "Shokoladli milksheyk",
+   "aliases": [
+    "shokoladny kokteyl"
+   ],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq (ko'pik)",
+    "sirop"
+   ]
+  },
+  {
+   "name": "Qulupnayli milksheyk",
+   "aliases": [
+    "klubnichny kokteyl"
+   ],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq (ko'pik)",
+    "sirop"
+   ]
+  },
+  {
+   "name": "Bananli milksheyk",
+   "aliases": [
+    "bananovy kokteyl"
+   ],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq (ko'pik)",
+    "sirop"
+   ]
+  },
+  {
+   "name": "Karamelli milksheyk",
+   "aliases": [
+    "karamelny kokteyl"
+   ],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq (ko'pik)",
+    "sirop"
+   ]
+  },
+  {
+   "name": "Pechenyeli milksheyk",
+   "aliases": [
+    "oreo kokteyl"
+   ],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ],
+   "addons": [
+    "qaymoq (ko'pik)",
+    "sirop"
+   ]
+  },
+  {
+   "name": "Babl ti",
+   "aliases": [
+    "bubble tea",
+    "babl choy"
+   ],
+   "category": "sut_ichimlik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "0,3 l",
+      "0,4 l"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Lavash kombo",
+   "aliases": [
+    "lavash + fri + ichimlik"
+   ],
+   "category": "kombo",
+   "unit": "set",
+   "note": "Lavash, kartoshka fri, ichimlik"
+  },
+  {
+   "name": "Burger kombo",
+   "aliases": [
+    "burger + fri + ichimlik"
+   ],
+   "category": "kombo",
+   "unit": "set"
+  },
+  {
+   "name": "Hot-dog kombo",
+   "aliases": [
+    "hot-dog + fri + ichimlik"
+   ],
+   "category": "kombo",
+   "unit": "set"
+  },
+  {
+   "name": "Shaurma kombo",
+   "aliases": [
+    "shaurma + fri + ichimlik"
+   ],
+   "category": "kombo",
+   "unit": "set"
+  },
+  {
+   "name": "Osh kombo",
+   "aliases": [
+    "osh + salat + non + ichimlik",
+    "plov kombo"
+   ],
+   "category": "kombo",
+   "unit": "set",
+   "note": "Osh, salat, non, choy yoki ichimlik"
+  },
+  {
+   "name": "Ikki kishilik set",
+   "aliases": [
+    "set dlya dvoix",
+    "juftlik seti"
+   ],
+   "category": "kombo",
+   "unit": "set"
+  },
+  {
+   "name": "Oilaviy set",
+   "aliases": [
+    "semeyny set",
+    "katta set"
+   ],
+   "category": "kombo",
+   "unit": "set"
+  },
+  {
+   "name": "Bolalar boksi",
+   "aliases": [
+    "kids box",
+    "detskiy boks"
+   ],
+   "category": "kombo",
+   "unit": "set"
+  },
+  {
+   "name": "Lanch-boks",
+   "aliases": [
+    "lanch boks",
+    "lunch box"
+   ],
+   "category": "kombo",
+   "unit": "set"
+  },
+  {
+   "name": "Biznes-lanch",
+   "aliases": [
+    "biznes lanch",
+    "kompleks tushlik"
+   ],
+   "category": "kombo",
+   "unit": "set",
+   "note": "Birinchi, ikkinchi taom, salat, ichimlik"
+  },
+  {
+   "name": "Pitsa kombo",
+   "aliases": [
+    "2 pitsa",
+    "pizza kombo"
+   ],
+   "category": "kombo",
+   "unit": "set"
+  },
+  {
+   "name": "Kabob seti",
+   "aliases": [
+    "shashlik set"
+   ],
+   "category": "kombo",
+   "unit": "set"
+  },
+  {
+   "name": "Iftorlik seti",
+   "aliases": [
+    "iftar set",
+    "ramazon seti"
+   ],
+   "category": "kombo",
+   "unit": "set",
+   "note": "Ramazonda"
+  },
+  {
+   "name": "Naggets kombo",
+   "aliases": [
+    "kombo naggets"
+   ],
+   "category": "kombo",
+   "unit": "set"
+  }
+ ],
+ "sources": [
+  "https://wolt.com/en/uzb/tashkent/restaurant/evos-navoi",
+  "https://wolt.com/en/uzb/samarkand/restaurant/evos-doshkolniy-sam",
+  "https://wolt.com/en/uzb/tashkent/restaurant/maxway-megaplanet",
+  "https://wolt.com/en/uzb/tashkent/restaurant/oqtepa-lavash-chopon-ota",
+  "https://wolt.com/en/uzb/tashkent/restaurant/bellissimo-pizza-chilonzor-19",
+  "https://wolt.com/en/uzb/tashkent/restaurant/kfc-oazis",
+  "https://wolt.com/en/uzb/tashkent/restaurant/zuzu-pizza-bashlyk",
+  "https://wolt.com/en/uzb/tashkent/venue/safia-bakery-rakat",
+  "https://wolt.com/en/uzb/tashkent/restaurant/coffee-boomtash",
+  "https://wolt.com/en/uzb/tashkent/restaurant/black-time-coffee-mirabat",
+  "https://wolt.com/en/uzb/tashkent/restaurant/faxr-milliy-taomlari",
+  "https://wolt.com/en/uzb/tashkent/restaurant/anvar-milliy-taomlariuzb",
+  "https://wolt.com/en/uzb/tashkent/restaurant/nilufar-milliy-taomlar",
+  "https://wolt.com/uz/uzb/tashkent/restaurant/ixlos-milliy-taom",
+  "https://wolt.com/en/uzb/tashkent/restaurant/muqimiy-milliy-taomlari",
+  "https://wolt.com/en/uzb/tashkent/restaurant/zigir-osh-payshanba-qushbegi",
+  "https://wolt.com/en/uzb/tashkent/restaurant/the-plov-osh",
+  "https://wolt.com/en/uzb/tashkent/restaurant/plov-city-uchtepa-tash",
+  "https://wolt.com/en/uzb/tashkent/restaurant/plov-time",
+  "https://wolt.com/en/uzb/tashkent/restaurant/osh-posh-shahristan",
+  "https://wolt.com/en/uzb/tashkent/restaurant/yashnobod-somsa-osh-markazi",
+  "https://wolt.com/en/uzb/tashkent/restaurant/gold-toy-osh",
+  "https://wolt.com/en/uzb/tashkent/restaurant/bomba-sushi",
+  "https://wolt.com/en/uzb/tashkent/restaurant/sushi-by-amina",
+  "https://wolt.com/en/uzb/tashkent/restaurant/wok-lagman-sushi",
+  "https://gov.uz/oz/pages/national_foods",
+  "https://voyage.uz/guides/guide-uzbek-plov/",
+  "https://anhor.uz/uzl/news/andijon-devzira-oshi/",
+  "https://www.afisha.uz/uz/gorod/2026/04/14/qudalaga-ikkita-osh",
+  "https://www.afisha.uz/uz/restaurants/2025/01/30/payplov",
+  "https://www.afisha.uz/uz/gorod/2026/02/06/osh",
+  "https://www.afisha.uz/ru/restaurants/2025/05/23/oqtepa-lavash",
+  "https://www.centralasia-travel.com/en/countries/uzbekistan/cuisine/somsa/",
+  "https://en.wikipedia.org/wiki/Samsa_(food)"
+ ],
+ "findings": "Menu structure: Uzbek delivery menus (Wolt/Express24/Yandex Eats) group by dish type, not by course: national places use Osh/Palov, Birinchi taomlar (sho'rva, mastava, manpar, xash), Ikkinchi taomlar (lag'mon, manti, norin, qozon kabob, dimlama), Shashlik/Kabob, Somsa, Salatlar, Non, Ichimliklar; uyg'ur dishes (ganfan, guyru lag'mon, ayrimsay, go'shtsay, sokoro, sumboro) often have their own section. Fast-food chains: Lavash, Shaurma, Donar, Burger, Hot-dog, Sneklar (fri, naggets, strips), Kombo/Box, Souslar, Ichimliklar, Desertlar. Plov specialists sell almost only osh + salads + non + drinks. Units: most dishes are by portion; osh is sold as 0,5 / 0,7 / 1 porsiya, often as a 'komplekt' with qazi and bedana tuxumi, and by kg (and whole qozon) for events; tandir go'sht, mangal assorti, qanotlar and fried fish are often by kg or 0,5 kg; kabob is by 1 six (piece); manti and somsa by piece; some national places size by people (1 kishilik / 2 kishilik); tortlar by kg (1/1,5/2 kg) or whole, mini and bento by piece; chak-chak, holva, navvot, pechene by kg; choy by stakan or choynak. Sizes: lavash Mini / Standart / Katta (S/M/L at some chains), shaurma Mini / Standart; pizza 25 / 30 / 35 sm (kichik / o'rta / katta) with xamir choice (oddiy, yupqa, havodor, pishloqli bort, hot-dog bort); fri mini/standart/katta; naggets 4-18 dona, strips 3/5/7, qanotlar 3/5/8; coffee 0,2 / 0,3 / 0,4 l; quyma ichimlik 0,3 / 0,4 / 0,5 l; bottles 0,25 / 0,5 / 1 / 1,5 l; rolls 8 dona, sets 16-48 dona; non butun / yarimta / chorak. Add-ons: pishloq (most common), qo'shimcha go'sht, xalapeno, achchiq/sarimsoqli/pishloqli sous for fast food; qazi, bedana tuxumi, qo'shimcha go'sht, achchiq qalampir for osh; pizza toppings (qo'ziqorin, zaytun, kolbasa, ananas, tovuq, mol go'shti, bulg'or qalampiri); coffee syrups (karamel, vanil, yong'oq, kokos) and extra espresso; qaymoq/qatiq for manti and chuchvara. Combos: taom + fri + ichimlik (with a drink choice), 'box' sets, juftlik/2 kishilik, oilaviy set, kids box, lanch-boks, Ramazon iftorlik setlari; plov places sell 'osh + salat + non + ichimlik' combos. Packaging (paket, idish) is often a paid line. Spelling: real Uzbek-language menus write Kartoshka fri, Naggets, Pishloqli sous, Sarimsoqli sous, Xalapeno, Amerikano, Kapuchino, Pitsa, Lavash, Shaurma, Quyma (draft) drinks; many menus are Russian-first, so Russian-Latin spellings (plov, lagman, samsa, shashlik, shurpa, pelmeni) are kept as aliases. Brand drinks (Coca-Cola, Fanta, Chortoq) are kept as aliases of generic items."
+}

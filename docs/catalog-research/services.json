@@ -1,0 +1,9973 @@
+{
+ "categories": [
+  {
+   "id": "gilam_yumshoq_mebel",
+   "uz": "Gilam va yumshoq mebel yuvish",
+   "note": "Gilam m2 bo'yicha (o'lchab, uzunlik x en), divan o'rin bo'yicha; olib ketish-olib kelish ko'pincha bepul"
+  },
+  {
+   "id": "avtomoyka",
+   "uz": "Avtomoyka va detayling",
+   "note": "Narx mashina sinfiga qarab: kichik, sedan, krossover, jip, miniven; navbat yoki vaqtga yozilish"
+  },
+  {
+   "id": "avtoservis",
+   "uz": "Avtoservis",
+   "note": "Ko'p ishlar diagnostikadan keyin narxlanadi; ehtiyot qism alohida"
+  },
+  {
+   "id": "shinomontaj",
+   "uz": "Shinomontaj va vulkanizatsiya",
+   "note": "Narx disk o'lchami (R13-R19+) va g'ildirak soniga qarab; ko'chma vulkanizatsiya 24/7"
+  },
+  {
+   "id": "avto_qoshimcha",
+   "uz": "Avto qo'shimcha xizmatlar",
+   "note": "Tonirovka, metan/propan o'rnatish, avto oyna, signalizatsiya, avto kalit"
+  },
+  {
+   "id": "elektrik",
+   "uz": "Elektrik xizmatlari",
+   "note": "Nuqta bo'yicha (rozetka, viklyuchatel), metr bo'yicha (kabel), chaqiruv narxi alohida"
+  },
+  {
+   "id": "santexnik",
+   "uz": "Santexnik xizmatlari",
+   "note": "Dona bo'yicha o'rnatish, metr bo'yicha quvur; aniq narx usta ko'rgandan keyin; tungi chaqiruv qimmatroq"
+  },
+  {
+   "id": "payvandlash",
+   "uz": "Payvandlash va metall ishlari",
+   "note": "Ko'pincha o'lchab, metr yoki m2 bo'yicha, yoki kelishilgan narx"
+  },
+  {
+   "id": "qurilish_tamir",
+   "uz": "Qurilish va uy ta'miri",
+   "note": "Asosan m2 bo'yicha (kafel, bo'yoq, shpaklyovka, gipsokarton), materiallar alohida, o'lchovdan keyin"
+  },
+  {
+   "id": "konditsioner_isitish",
+   "uz": "Konditsioner va isitish",
+   "note": "Konditsioner quvvati (7-24) bo'yicha; mavsumiy talab (bahor-yoz tozalash, kuz kotyol)"
+  },
+  {
+   "id": "eshik_deraza",
+   "uz": "Eshik, deraza, plastik oyna",
+   "note": "Plastik oyna m2 bo'yicha, o'lchovdan keyin; eshik o'rnatish dona bo'yicha"
+  },
+  {
+   "id": "mebel",
+   "uz": "Mebel yig'ish, ta'mirlash va tayyorlash",
+   "note": "Yig'ish dona yoki soat bo'yicha; buyurtma mebel o'lchovdan keyin (pogon metr)"
+  },
+  {
+   "id": "maishiy_texnika",
+   "uz": "Maishiy texnika ta'miri",
+   "note": "Chaqiruv va diagnostika narxi + ta'mir narxi ko'rgandan keyin; ehtiyot qism alohida"
+  },
+  {
+   "id": "telefon_kompyuter",
+   "uz": "Telefon, kompyuter va elektronika",
+   "note": "Ekran va batareya almashtirish model bo'yicha; diagnostika ko'pincha bepul yoki arzon"
+  },
+  {
+   "id": "tozalash",
+   "uz": "Tozalash (klining)",
+   "note": "Uy va ofis m2 bo'yicha, oyna m2 bo'yicha, ba'zan xona soni bo'yicha; vaqtga yozilish"
+  },
+  {
+   "id": "kimyoviy_tozalash_kir",
+   "uz": "Kimyoviy tozalash, kir yuvish va dazmollash",
+   "note": "Kiyim dona bo'yicha, kir kg bo'yicha"
+  },
+  {
+   "id": "tikuvchilik",
+   "uz": "Tikuvchilik va kiyim ta'miri",
+   "note": "Ta'mir dona bo'yicha; tikish o'lchov olingandan keyin; parda metr bo'yicha"
+  },
+  {
+   "id": "maishiy_mayda",
+   "uz": "Poyabzal, kalit, soat va zargarlik ustaxonasi",
+   "note": "Dona bo'yicha, ko'pincha ko'rgandan keyin"
+  },
+  {
+   "id": "sartarosh_erkak",
+   "uz": "Erkaklar sartaroshxonasi",
+   "note": "Seans bo'yicha, vaqtga yozilish; bolalar arzonroq"
+  },
+  {
+   "id": "gozallik",
+   "uz": "Go'zallik saloni (ayollar)",
+   "note": "Seans bo'yicha; soch uzunligiga qarab; vaqtga yozilish shart"
+  },
+  {
+   "id": "massaj_spa",
+   "uz": "Massaj, SPA va sog'lomlashtirish",
+   "note": "Seans (30/60/90 daqiqa) yoki kurs (10 seans) bo'yicha; tibbiy massaj litsenziyali mutaxassisda"
+  },
+  {
+   "id": "toy_tadbir",
+   "uz": "To'y va tadbir xizmatlari",
+   "note": "Kun, tadbir yoki soat bo'yicha; sana oldindan band qilinadi, avans olinadi"
+  },
+  {
+   "id": "oshpaz_keytering",
+   "uz": "Oshpaz va keytering",
+   "note": "Osh kg guruch bo'yicha (masalliq mijozdan yoki oshpazdan), keytering kishi bo'yicha"
+  },
+  {
+   "id": "yuk_tashish",
+   "uz": "Yuk tashish, ko'chish va maxsus texnika",
+   "note": "Reys yoki soat bo'yicha, mashina turiga qarab; shahar tashqarisi km bo'yicha; gruzchik soat bo'yicha"
+  },
+  {
+   "id": "taksi_yetkazish",
+   "uz": "Taksi, transfer va yetkazib berish",
+   "note": "Reys yoki km bo'yicha; shaharlararo kishi bo'yicha"
+  },
+  {
+   "id": "talim",
+   "uz": "O'qitish va kurslar",
+   "note": "Dars yoki oy bo'yicha; guruh yoki yakka"
+  },
+  {
+   "id": "tibbiy_uyda",
+   "uz": "Uyda tibbiy va parvarish xizmatlari",
+   "note": "Diqqat: tibbiy xizmatlar litsenziya talab qiladi (regulated). Faqat litsenziyali muassasa yoki mutaxassis"
+  },
+  {
+   "id": "hayvonlar",
+   "uz": "Uy hayvonlari va chorva xizmatlari",
+   "note": "Veterinariya litsenziya talab qiladi (regulated); grooming va boqish erkin"
+  },
+  {
+   "id": "qishloq_xojaligi",
+   "uz": "Qishloq xo'jaligi xizmatlari",
+   "note": "Sotix yoki gektar bo'yicha (haydash, ekish, o'rish), mavsumiy; soat bo'yicha texnika ijarasi"
+  },
+  {
+   "id": "quduq_suv_gaz",
+   "uz": "Quduq, suv va gaz ulash",
+   "note": "Quduq metr bo'yicha (chuqurlik); gaz ulash faqat ruxsatli tashkilot orqali (regulated)"
+  },
+  {
+   "id": "bog_hovli",
+   "uz": "Bog' va hovli ishlari",
+   "note": "Daraxt dona bo'yicha, maysazor m2 yoki sotix bo'yicha"
+  },
+  {
+   "id": "pechat_dizayn",
+   "uz": "Nusxa, pechat, reklama va dizayn",
+   "note": "Varaq, dona yoki m2 bo'yicha (banner)"
+  },
+  {
+   "id": "ijara",
+   "uz": "Ijara (prokat)",
+   "note": "Kun yoki tadbir bo'yicha; dona bo'yicha (stol, stul, idish)"
+  },
+  {
+   "id": "dezinfeksiya",
+   "uz": "Dezinfeksiya va zararkunandalarga qarshi",
+   "note": "Xona soni yoki m2 bo'yicha; SES ruxsati bo'lgan tashkilot (regulated)"
+  },
+  {
+   "id": "hujjat_tarjima",
+   "uz": "Hujjat, tarjima va biznes xizmatlari",
+   "note": "Varaq yoki dona bo'yicha; notarial va yuridik xizmatlar litsenziyali (regulated)"
+  },
+  {
+   "id": "enaga_qarovchi",
+   "uz": "Enaga, qarovchi va uy yordamchisi",
+   "note": "Soat, kun yoki oy bo'yicha"
+  }
+ ],
+ "items": [
+  {
+   "name": "Gilam yuvish",
+   "aliases": [
+    "gilam yuvush",
+    "kover",
+    "stirka kovrov",
+    "gilam"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "m2",
+   "variants": [
+    {
+     "group": "Gilam turi",
+     "options": [
+      "Mahalliy",
+      "Import (akril, viskoza)",
+      "Jun",
+      "Ipak",
+      "Qo'lda to'qilgan"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Uzunlik x en bo'yicha o'lchab hisoblanadi; ko'pincha olib ketish va olib kelish bepul"
+  },
+  {
+   "name": "Gilam yuvish (tezkor, 24 soatda)",
+   "aliases": [
+    "ekspress gilam",
+    "tez gilam yuvish",
+    "srochno kover"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "m2",
+   "variants": [
+    {
+     "group": "Gilam turi",
+     "options": [
+      "Mahalliy",
+      "Import (akril, viskoza)",
+      "Jun",
+      "Ipak",
+      "Qo'lda to'qilgan"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gilamni uyda yuvish (joyida)",
+   "aliases": [
+    "gilam uyda yuvish",
+    "joyida gilam",
+    "vyezd kover"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "m2",
+   "variants": [
+    {
+     "group": "Gilam turi",
+     "options": [
+      "Mahalliy",
+      "Import (akril, viskoza)",
+      "Jun",
+      "Ipak",
+      "Qo'lda to'qilgan"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Ko'pincha eng kam hajm bor (20-30 m2)"
+  },
+  {
+   "name": "Gilam kimyoviy tozalash",
+   "aliases": [
+    "gilam ximchistka",
+    "gilam kimyoviy",
+    "ximchistka kovra"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "m2",
+   "variants": [
+    {
+     "group": "Gilam turi",
+     "options": [
+      "Mahalliy",
+      "Import (akril, viskoza)",
+      "Jun",
+      "Ipak",
+      "Qo'lda to'qilgan"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Palos (kovrolin) tozalash",
+   "aliases": [
+    "palos",
+    "kovrolin",
+    "kovrolin chistka",
+    "pol gilam"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Sholcha va polos yuvish",
+   "aliases": [
+    "sholcha",
+    "polos",
+    "dorojka",
+    "yo'lak gilam"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gilam chetini tikish (overlok)",
+   "aliases": [
+    "overlok",
+    "gilam cheti",
+    "gilam obshivka",
+    "kromka"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gilam ta'miri (yirtiq, kuygan joy)",
+   "aliases": [
+    "gilam remont",
+    "gilam ta'mir",
+    "gilam yamash"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Gilam hidini ketkazish (mushuk, it)",
+   "aliases": [
+    "gilam hid",
+    "zapax",
+    "siydik hidi"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Divan kimyoviy tozalash",
+   "aliases": [
+    "divan ximchistka",
+    "divan yuvish",
+    "divan tozalash",
+    "ximchistka divana"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'rinlar soni",
+     "options": [
+      "2 o'rinli",
+      "3 o'rinli",
+      "4 o'rinli",
+      "5 o'rinli",
+      "Burchak divan"
+     ]
+    },
+    {
+     "group": "Mato",
+     "options": [
+      "Mato",
+      "Teri",
+      "Ekoteri"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kreslo kimyoviy tozalash",
+   "aliases": [
+    "kreslo ximchistka",
+    "kreslo yuvish"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Mato",
+     "options": [
+      "Mato",
+      "Teri",
+      "Ekoteri"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Stul kimyoviy tozalash",
+   "aliases": [
+    "stul ximchistka",
+    "stul yuvish",
+    "stulya"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Matras kimyoviy tozalash",
+   "aliases": [
+    "matras ximchistka",
+    "matras yuvish",
+    "matrats"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Bir kishilik",
+      "Bir yarim kishilik",
+      "Ikki kishilik"
+     ]
+    },
+    {
+     "group": "Tomonlari",
+     "options": [
+      "Bir tomoni",
+      "Ikki tomoni"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Puf va banketka tozalash",
+   "aliases": [
+    "puf",
+    "banketka",
+    "pufik"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'rpa yuvish",
+   "aliases": [
+    "ko'rpa",
+    "korpa yuvish",
+    "odeyalo",
+    "yorgan"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "Bir kishilik",
+      "Ikki kishilik"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'rpacha yuvish",
+   "aliases": [
+    "ko'rpacha",
+    "korpacha",
+    "tushak"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yostiq yuvish",
+   "aliases": [
+    "yostiq",
+    "podushka",
+    "yostiq tozalash"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Parda yuvish",
+   "aliases": [
+    "shtora",
+    "tyul",
+    "parda tozalash"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Parda yechib-ilib berish",
+   "aliases": [
+    "parda ilish",
+    "shtora snyat"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Avtomobil o'rindig'i (bolalar) tozalash",
+   "aliases": [
+    "avtokreslo",
+    "bolalar o'rindig'i"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bolalar aravachasi tozalash",
+   "aliases": [
+    "aravacha",
+    "kolyaska ximchistka",
+    "kolyaska"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Chamadon tozalash",
+   "aliases": [
+    "chamadon",
+    "chemodan"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yumshoq o'yinchoq yuvish",
+   "aliases": [
+    "o'yinchoq",
+    "igrushka"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gilamni olib ketish va olib kelish",
+   "aliases": [
+    "gilam dostavka",
+    "olib ketish",
+    "vyvoz kovra"
+   ],
+   "category": "gilam_yumshoq_mebel",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ko'pincha bepul, uzoq qishloqlar uchun haq olinadi"
+  },
+  {
+   "name": "Kuzov yuvish",
+   "aliases": [
+    "moyka",
+    "avtomoyka",
+    "kuzov",
+    "tashqi yuvish",
+    "moyka kuzova"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kompleks yuvish (kuzov va salon)",
+   "aliases": [
+    "kompleks moyka",
+    "to'liq yuvish",
+    "standart moyka"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ikki fazali yuvish",
+   "aliases": [
+    "2 faza",
+    "dvuxfaznaya moyka",
+    "ikki faza"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uch fazali yuvish",
+   "aliases": [
+    "3 faza",
+    "trexfaznaya moyka",
+    "uch faza"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ekspress yuvish",
+   "aliases": [
+    "ekspress",
+    "tez moyka"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Texnik yuvish (kontaktsiz)",
+   "aliases": [
+    "texnik moyka",
+    "beskontakt",
+    "kontaktsiz"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Motor yuvish",
+   "aliases": [
+    "motor moyka",
+    "dvigatel yuvish",
+    "moyka dvigatelya"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Salon tozalash (ichki)",
+   "aliases": [
+    "salon",
+    "ichki tozalash",
+    "pylesos",
+    "salon tozalash"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Salon kimyoviy tozalash",
+   "aliases": [
+    "salon ximchistka",
+    "ximchistka salona",
+    "kimyoviy tozalash"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "O'rindiqlar kimyoviy tozalash",
+   "aliases": [
+    "sidenye",
+    "o'rindiq ximchistka"
+   ],
+   "category": "avtomoyka",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Mato",
+     "options": [
+      "Mato",
+      "Teri",
+      "Ekoteri"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Shift (potolok) tozalash",
+   "aliases": [
+    "potolok",
+    "shift"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gilamchalarni yuvish",
+   "aliases": [
+    "kovrik",
+    "gilamcha",
+    "polik"
+   ],
+   "category": "avtomoyka",
+   "unit": "set",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bagajnik tozalash",
+   "aliases": [
+    "bagajnik",
+    "bagaj"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kuzov polirovkasi",
+   "aliases": [
+    "polirovka",
+    "polirovka kuzova",
+    "jilo"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Abraziv polirovka (chiziqlarni ketkazish)",
+   "aliases": [
+    "abraziv polirovka",
+    "chiziq ketkazish",
+    "tsarapina"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Fara polirovkasi",
+   "aliases": [
+    "fara polirovka",
+    "far",
+    "fonar"
+   ],
+   "category": "avtomoyka",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Avto oyna polirovkasi",
+   "aliases": [
+    "steklo polirovka",
+    "oyna polirovka"
+   ],
+   "category": "avtomoyka",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Vosk qoplash",
+   "aliases": [
+    "vosk",
+    "voskovka",
+    "goryachiy vosk"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Keramik qoplama",
+   "aliases": [
+    "keramika",
+    "keramik",
+    "nanokeramika"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Suyuq shisha qoplama",
+   "aliases": [
+    "jidkoe steklo",
+    "suyuq shisha"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Teri salonni parvarish qilish",
+   "aliases": [
+    "teri salon",
+    "koja"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Antidojd (oyna)",
+   "aliases": [
+    "antidojd",
+    "anti yomg'ir"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Quruq tuman (hid ketkazish)",
+   "aliases": [
+    "suxoy tuman",
+    "quruq tuman",
+    "hid ketkazish"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ozonlash",
+   "aliases": [
+    "ozonatsiya",
+    "ozon"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Detayling (to'liq)",
+   "aliases": [
+    "deteyling",
+    "detailing",
+    "detayling"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Antikor ishlov berish",
+   "aliases": [
+    "antikor",
+    "antikorroziya",
+    "pastki qism"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Diskni chuqur tozalash",
+   "aliases": [
+    "disk tozalash",
+    "disk moyka"
+   ],
+   "category": "avtomoyka",
+   "unit": "set",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Chiqib yuvish (ko'chma moyka)",
+   "aliases": [
+    "vyezdnaya moyka",
+    "uyda moyka",
+    "ko'chma moyka"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mototsikl yuvish",
+   "aliases": [
+    "moto moyka",
+    "mototsikl",
+    "skuter"
+   ],
+   "category": "avtomoyka",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yuk mashinasi yuvish",
+   "aliases": [
+    "gruzovik",
+    "fura",
+    "yuk mashina moyka"
+   ],
+   "category": "avtomoyka",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina",
+     "options": [
+      "Damas, Labo",
+      "Gazel",
+      "Isuzu",
+      "Kamaz, fura",
+      "Avtobus"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gilam yuvish (avtomoykada)",
+   "aliases": [
+    "moykada gilam"
+   ],
+   "category": "avtomoyka",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tumanlarda avtomoykalar gilam ham yuvadi"
+  },
+  {
+   "name": "Kompyuter diagnostikasi",
+   "aliases": [
+    "diagnostika",
+    "kompyuter diagnostika",
+    "skaner"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Moy almashtirish (motor)",
+   "aliases": [
+    "moy almashtirish",
+    "zamena masla",
+    "maslo",
+    "moy"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Moy va filtr alohida"
+  },
+  {
+   "name": "Moy filtri almashtirish",
+   "aliases": [
+    "filtr",
+    "maslyaniy filtr"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Havo filtri almashtirish",
+   "aliases": [
+    "vozdushniy filtr",
+    "havo filtr"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Salon filtri almashtirish",
+   "aliases": [
+    "salonniy filtr",
+    "salon filtr"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Karobka moyi almashtirish",
+   "aliases": [
+    "karobka moy",
+    "korobka maslo",
+    "ATF"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Karobka",
+     "options": [
+      "Mexanika",
+      "Avtomat"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Antifriz almashtirish",
+   "aliases": [
+    "antifriz",
+    "tosol",
+    "sovutish suyuqligi"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tormoz suyuqligi almashtirish",
+   "aliases": [
+    "tormoz suyuqlik",
+    "tormoznaya jidkost"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tormoz kolodkasi almashtirish",
+   "aliases": [
+    "kolodka",
+    "tormoz",
+    "tormoz kolodka"
+   ],
+   "category": "avtoservis",
+   "unit": "set",
+   "variants": [
+    {
+     "group": "O'qi",
+     "options": [
+      "Old",
+      "Orqa"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tormoz disklarini almashtirish",
+   "aliases": [
+    "tormoz disk",
+    "disk tormoz"
+   ],
+   "category": "avtoservis",
+   "unit": "set",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Svecha almashtirish",
+   "aliases": [
+    "svecha",
+    "sveja",
+    "svechi"
+   ],
+   "category": "avtoservis",
+   "unit": "set",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "GRM tasmasi (remen) almashtirish",
+   "aliases": [
+    "grm",
+    "remen grm",
+    "tasma"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Generator remeni almashtirish",
+   "aliases": [
+    "generator remen",
+    "privod remen"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Motor ta'miri (kapital)",
+   "aliases": [
+    "kapitalka",
+    "kapremont",
+    "motor ta'mir",
+    "dvigatel remont",
+    "motorist"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Golovka ta'miri",
+   "aliases": [
+    "golovka",
+    "GBTs",
+    "golovka bloka"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Xodovoy ta'miri",
+   "aliases": [
+    "xodovoy",
+    "xodovka",
+    "podveska",
+    "xadavoy"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Amortizator almashtirish",
+   "aliases": [
+    "amortizator",
+    "stoyka"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Sharovoy almashtirish",
+   "aliases": [
+    "sharovoy",
+    "sharovaya opora"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Rulevoy nakonechnik almashtirish",
+   "aliases": [
+    "nakonechnik",
+    "rul"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Stupitsa podshipnigi almashtirish",
+   "aliases": [
+    "stupitsa",
+    "podshipnik"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Razval-sxojdeniye",
+   "aliases": [
+    "razval",
+    "sxod razval",
+    "razval sxojdeniye"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Karobka ta'miri (mexanika)",
+   "aliases": [
+    "karobka remont",
+    "kpp"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Avtomat karobka ta'miri",
+   "aliases": [
+    "akpp",
+    "avtomat karobka",
+    "variator"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Stseplenie almashtirish",
+   "aliases": [
+    "stseplenie",
+    "sseplenie",
+    "diskli"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Glushitel ta'miri",
+   "aliases": [
+    "glushitel",
+    "vixlop"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Radiator ta'miri",
+   "aliases": [
+    "radiator",
+    "radiator remont"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Avtoelektrik xizmati",
+   "aliases": [
+    "avtoelektrik",
+    "avto elektrik",
+    "elektrika avto"
+   ],
+   "category": "avtoservis",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Akkumulyator zaryadlash",
+   "aliases": [
+    "akkumulyator",
+    "akkumlyator",
+    "zaryad"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Akkumulyator almashtirish va o'rnatish",
+   "aliases": [
+    "akkumulyator almashtirish"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Starter ta'miri",
+   "aliases": [
+    "starter"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Generator ta'miri",
+   "aliases": [
+    "generator"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Avto konditsioner zapravkasi",
+   "aliases": [
+    "avto konditsioner",
+    "freon avto",
+    "konditsioner zapravka"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Injektor tozalash",
+   "aliases": [
+    "injektor",
+    "forsunka"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Motor programma (chip tyuning)",
+   "aliases": [
+    "chip tyuning",
+    "proshivka",
+    "chip"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kuzov ta'miri (rixtovka)",
+   "aliases": [
+    "rixtovka",
+    "kuzov remont",
+    "kuzovshik"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Detal bo'yash (kraska)",
+   "aliases": [
+    "kraska",
+    "bo'yash",
+    "malyar avto",
+    "pokraska"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true,
+   "note": "Detal bo'yicha: eshik, kapot, bamper"
+  },
+  {
+   "name": "To'liq bo'yash",
+   "aliases": [
+    "to'liq kraska",
+    "polnaya pokraska"
+   ],
+   "category": "avtoservis",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Kichik (Matiz, Spark)",
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Bamper ta'miri (payvand, plastik)",
+   "aliases": [
+    "bamper",
+    "plastik payka"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Vmyatina to'g'rilash (bo'yoqsiz)",
+   "aliases": [
+    "vmyatina",
+    "PDR",
+    "bo'yoqsiz"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Mototsikl ta'miri",
+   "aliases": [
+    "moto remont",
+    "mototsikl",
+    "skuter remont"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Velosiped ta'miri",
+   "aliases": [
+    "velosiped",
+    "velo remont"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Elektrosamokat ta'miri",
+   "aliases": [
+    "samokat",
+    "elektrosamokat"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Motoblok va kultivator ta'miri",
+   "aliases": [
+    "motoblok",
+    "kultivator"
+   ],
+   "category": "avtoservis",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Usta chaqirish (yo'lda)",
+   "aliases": [
+    "avtomaster vyzov",
+    "yo'lda usta",
+    "avariya yordam"
+   ],
+   "category": "avtoservis",
+   "unit": "call",
+   "variants": [
+    {
+     "group": "Vaqti",
+     "options": [
+      "Kunduzi",
+      "Kechasi (21:00 dan keyin)"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Shinomontaj (to'liq to'plam)",
+   "aliases": [
+    "shinomontaj",
+    "shina almashtirish",
+    "balon almashtirish",
+    "rezina"
+   ],
+   "category": "shinomontaj",
+   "unit": "set",
+   "variants": [
+    {
+     "group": "Disk o'lchami",
+     "options": [
+      "R13",
+      "R14",
+      "R15",
+      "R16",
+      "R17",
+      "R18",
+      "R19 va katta"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "4 g'ildirak"
+  },
+  {
+   "name": "Bitta g'ildirakni yechib-taqish",
+   "aliases": [
+    "koleso",
+    "g'ildirak"
+   ],
+   "category": "shinomontaj",
+   "unit": "wheel",
+   "variants": [
+    {
+     "group": "Disk o'lchami",
+     "options": [
+      "R13",
+      "R14",
+      "R15",
+      "R16",
+      "R17",
+      "R18",
+      "R19 va katta"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Balansirovka",
+   "aliases": [
+    "balans"
+   ],
+   "category": "shinomontaj",
+   "unit": "wheel",
+   "variants": [
+    {
+     "group": "Disk o'lchami",
+     "options": [
+      "R13",
+      "R14",
+      "R15",
+      "R16",
+      "R17",
+      "R18",
+      "R19 va katta"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Vulkanizatsiya (teshik yamash)",
+   "aliases": [
+    "vulkanizatsiya",
+    "vulkanizatsya",
+    "balon yamash",
+    "prokol",
+    "latka"
+   ],
+   "category": "shinomontaj",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Disk o'lchami",
+     "options": [
+      "R13",
+      "R14",
+      "R15",
+      "R16",
+      "R17",
+      "R18",
+      "R19 va katta"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Jgut qo'yish",
+   "aliases": [
+    "jgut"
+   ],
+   "category": "shinomontaj",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Disk to'g'rilash (prokatka)",
+   "aliases": [
+    "disk prokatka",
+    "disk to'g'rilash",
+    "rixtovka diska"
+   ],
+   "category": "shinomontaj",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Disk o'lchami",
+     "options": [
+      "R13",
+      "R14",
+      "R15",
+      "R16",
+      "R17",
+      "R18",
+      "R19 va katta"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Shinaga havo damlash",
+   "aliases": [
+    "nasos",
+    "havo",
+    "podkachka"
+   ],
+   "category": "shinomontaj",
+   "unit": "wheel",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Azot damlash",
+   "aliases": [
+    "azot"
+   ],
+   "category": "shinomontaj",
+   "unit": "wheel",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'chma vulkanizatsiya",
+   "aliases": [
+    "vyezdnoy shinomontaj",
+    "24/7 vulkanizatsiya"
+   ],
+   "category": "shinomontaj",
+   "unit": "call",
+   "variants": [
+    {
+     "group": "Vaqti",
+     "options": [
+      "Kunduzi",
+      "Kechasi (21:00 dan keyin)"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yuk mashinasi shinomontaji",
+   "aliases": [
+    "gruzovoy shinomontaj",
+    "yuk shina"
+   ],
+   "category": "shinomontaj",
+   "unit": "wheel",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Shinalarni saqlash",
+   "aliases": [
+    "xranenie shin",
+    "shina saqlash"
+   ],
+   "category": "shinomontaj",
+   "unit": "set",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Mavsum bo'yicha"
+  },
+  {
+   "name": "Tonirovka",
+   "aliases": [
+    "plyonka"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "car",
+   "variants": [
+    {
+     "group": "Qaysi oynalar",
+     "options": [
+      "Orqa oynalar",
+      "Yon oynalar",
+      "To'liq"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Tonirovka uchun ruxsatnoma talab qilinadi"
+  },
+  {
+   "name": "Atermal plyonka",
+   "aliases": [
+    "atermal",
+    "atermalka"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Metan uskunasi o'rnatish",
+   "aliases": [
+    "metan",
+    "metan ustanovka",
+    "gaz ballon",
+    "metan o'rnatish"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Gaz uskunasi sertifikatlangan ustaxonada o'rnatiladi"
+  },
+  {
+   "name": "Propan uskunasi o'rnatish",
+   "aliases": [
+    "propan",
+    "propan ustanovka"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gaz ballon attestatsiyasi",
+   "aliases": [
+    "ballon proverka",
+    "attestatsiya",
+    "ballon tekshiruv"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Avto oyna almashtirish",
+   "aliases": [
+    "lobovoy",
+    "lobovoe steklo",
+    "old oyna"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Avto oyna darzini ta'mirlash",
+   "aliases": [
+    "skol",
+    "treshchina",
+    "oyna darz"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Signalizatsiya o'rnatish",
+   "aliases": [
+    "signalizatsiya",
+    "signalka",
+    "avtozapusk"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Avto magnitola o'rnatish",
+   "aliases": [
+    "magnitola",
+    "monitor avto",
+    "android magnitola"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Orqa kamera o'rnatish",
+   "aliases": [
+    "kamera zadnego xoda",
+    "orqa kamera",
+    "parktronik"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Avto kalit tayyorlash",
+   "aliases": [
+    "avto kalit",
+    "chip kalit",
+    "klyuch avto"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Salon peretyajka",
+   "aliases": [
+    "peretyajka",
+    "salon tikish",
+    "chexol"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Chexol tikish",
+   "aliases": [
+    "chexol",
+    "avto chexol"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "set",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bronplyonka",
+   "aliases": [
+    "zashitnaya plyonka",
+    "PPF"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Shumoizolyatsiya",
+   "aliases": [
+    "shumka"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Evakuator",
+   "aliases": [
+    "evakuatsiya",
+    "evakuator xizmati"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Masofa bo'yicha (km) ham hisoblanadi"
+  },
+  {
+   "name": "Yuritib berish (prikurit)",
+   "aliases": [
+    "prikurit",
+    "prikurka",
+    "akkumulyator o'tirib qoldi"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Texnik ko'rik bo'yicha yordam",
+   "aliases": [
+    "texosmotr",
+    "texko'rik"
+   ],
+   "category": "avto_qoshimcha",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Elektrik chaqirish",
+   "aliases": [
+    "elektrik",
+    "elektrik vyzov",
+    "elektrik xizmati",
+    "elektromontaj"
+   ],
+   "category": "elektrik",
+   "unit": "call",
+   "variants": [
+    {
+     "group": "Vaqti",
+     "options": [
+      "Kunduzi",
+      "Kechasi (21:00 dan keyin)"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Rozetka o'rnatish",
+   "aliases": [
+    "rozetka",
+    "rozetka almashtirish",
+    "rozetka ustanovka"
+   ],
+   "category": "elektrik",
+   "unit": "point",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Viklyuchatel o'rnatish",
+   "aliases": [
+    "viklyuchatel",
+    "vklyuchatel",
+    "o'chirgich"
+   ],
+   "category": "elektrik",
+   "unit": "point",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Lyustra o'rnatish",
+   "aliases": [
+    "lyustra",
+    "qandil",
+    "svetilnik"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Spot chiroq o'rnatish",
+   "aliases": [
+    "spot",
+    "tochechniy",
+    "nuqtali chiroq"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "LED lenta o'rnatish",
+   "aliases": [
+    "led lenta",
+    "lenta",
+    "podsvetka"
+   ],
+   "category": "elektrik",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Elektr simini tortish (ochiq)",
+   "aliases": [
+    "provodka",
+    "sim tortish",
+    "kabel"
+   ],
+   "category": "elektrik",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Elektr simini devor ichidan tortish (shtroba)",
+   "aliases": [
+    "shtroba",
+    "skritaya provodka",
+    "devor ichidan"
+   ],
+   "category": "elektrik",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kvartira elektr montaji (to'liq)",
+   "aliases": [
+    "elektromontaj",
+    "provodka kvartira",
+    "to'liq elektr"
+   ],
+   "category": "elektrik",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Avtomat (shit) o'rnatish",
+   "aliases": [
+    "avtomat",
+    "shit",
+    "schitok",
+    "elektr shit"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Elektr hisoblagich o'rnatish",
+   "aliases": [
+    "schyotchik",
+    "hisoblagich",
+    "elektr hisoblagich"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Hududiy elektr tarmoqlari bilan kelishiladi"
+  },
+  {
+   "name": "Qisqa tutashuvni topish va tuzatish",
+   "aliases": [
+    "qisqa tutashuv",
+    "zamikaniya",
+    "tok yo'q"
+   ],
+   "category": "elektrik",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Stabilizator o'rnatish",
+   "aliases": [
+    "stabilizator",
+    "voltaj"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Elektr isitgich (boyler) ulash",
+   "aliases": [
+    "boyler ulash",
+    "suv isitgich"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Elektr plita ulash",
+   "aliases": [
+    "elektroplita",
+    "plita ulash"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'cha yoritgichi o'rnatish",
+   "aliases": [
+    "fonar",
+    "projektor",
+    "ko'cha chiroq"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yerga ulash (zazemleniye)",
+   "aliases": [
+    "zazemleniye",
+    "yerga ulash"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Quyosh paneli o'rnatish",
+   "aliases": [
+    "quyosh panel",
+    "solnechnaya panel",
+    "solar"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true,
+   "note": "Narx kVt bo'yicha ham hisoblanadi"
+  },
+  {
+   "name": "Generator ulash",
+   "aliases": [
+    "zaxira tok"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Videokuzatuv o'rnatish",
+   "aliases": [
+    "kamera o'rnatish",
+    "videonablyudenie",
+    "videokuzatuv",
+    "CCTV"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Kamera bo'yicha"
+  },
+  {
+   "name": "Domofon o'rnatish",
+   "aliases": [
+    "domofon",
+    "videodomofon"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Wi-Fi router o'rnatish va sozlash",
+   "aliases": [
+    "wifi",
+    "router",
+    "internet sozlash"
+   ],
+   "category": "elektrik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Internet kabel tortish",
+   "aliases": [
+    "lan kabel",
+    "internet kabel",
+    "vitaya para"
+   ],
+   "category": "elektrik",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Santexnik chaqirish",
+   "aliases": [
+    "santexnik",
+    "santehnik",
+    "santexnik vyzov",
+    "santexnik xizmati",
+    "chilangar"
+   ],
+   "category": "santexnik",
+   "unit": "call",
+   "variants": [
+    {
+     "group": "Vaqti",
+     "options": [
+      "Kunduzi",
+      "Kechasi (21:00 dan keyin)"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Unitaz o'rnatish",
+   "aliases": [
+    "unitaz",
+    "unitaz ustanovka",
+    "hojatxona"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Unitaz ta'miri",
+   "aliases": [
+    "unitaz remont",
+    "bachok",
+    "unitaz ta'mir"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Installyatsiya (osma unitaz) o'rnatish",
+   "aliases": [
+    "installyatsiya",
+    "podvesnoy unitaz",
+    "osma unitaz"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Rakovina o'rnatish",
+   "aliases": [
+    "rakovina",
+    "umivalnik",
+    "qo'l yuvgich"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Smesitel o'rnatish",
+   "aliases": [
+    "smesitel",
+    "smestitel",
+    "kran",
+    "jo'mrak"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Smesitel ta'miri",
+   "aliases": [
+    "smesitel remont",
+    "kran oqyapti"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Vanna o'rnatish",
+   "aliases": [
+    "vanna",
+    "vanna ustanovka"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Dush kabina o'rnatish",
+   "aliases": [
+    "dush kabina",
+    "dushevaya",
+    "dush"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Jakuzi o'rnatish",
+   "aliases": [
+    "jakuzi",
+    "gidromassaj vanna"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bide o'rnatish",
+   "aliases": [
+    "bide"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Sifon o'rnatish",
+   "aliases": [
+    "sifon"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tiqilishni ochish (kanalizatsiya)",
+   "aliases": [
+    "zasor",
+    "tiqilish",
+    "kanalizatsiya tozalash",
+    "prochistka"
+   ],
+   "category": "santexnik",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kanalizatsiya quvurini almashtirish",
+   "aliases": [
+    "kanalizatsiya",
+    "kanalizatsiya almashtirish"
+   ],
+   "category": "santexnik",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Suv quvuri tortish",
+   "aliases": [
+    "truba",
+    "vodoprovod",
+    "suv quvuri",
+    "polipropilen"
+   ],
+   "category": "santexnik",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Quvur ta'miri (oqish)",
+   "aliases": [
+    "teshik",
+    "oqish",
+    "protechka",
+    "quvur ta'mir"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Suv hisoblagich o'rnatish",
+   "aliases": [
+    "suv schyotchik",
+    "suv hisoblagich"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Suv isitgich (boyler) o'rnatish",
+   "aliases": [
+    "boyler",
+    "vodonagrevatel",
+    "suv isitgich"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kir yuvish mashinasini ulash",
+   "aliases": [
+    "stiralka ulash",
+    "kir mashina ulash"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Idish yuvish mashinasini ulash",
+   "aliases": [
+    "posudomoyka ulash"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Suv nasosi o'rnatish",
+   "aliases": [
+    "nasos",
+    "suv nasos",
+    "nasos ustanovka"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Suv filtri o'rnatish",
+   "aliases": [
+    "filtr",
+    "osmos",
+    "suv filtr"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Issiq pol o'rnatish (suvli)",
+   "aliases": [
+    "issiq pol",
+    "teplyy pol",
+    "tyopliy pol"
+   ],
+   "category": "santexnik",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Radiator (batareya) o'rnatish",
+   "aliases": [
+    "batareya",
+    "radiator",
+    "otopleniye"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Isitish tizimi montaji",
+   "aliases": [
+    "otopleniye",
+    "isitish tizimi",
+    "kotyol tizim"
+   ],
+   "category": "santexnik",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Hojatxona va vannaxona santexnikasi (to'liq)",
+   "aliases": [
+    "vannaxona to'liq",
+    "sanuzel pod klyuch"
+   ],
+   "category": "santexnik",
+   "unit": "room",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Septik (o'ra) o'rnatish",
+   "aliases": [
+    "septik",
+    "o'ra",
+    "kanalizatsiya chuqur"
+   ],
+   "category": "santexnik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Assenizator (o'ra tortish)",
+   "aliases": [
+    "assenizator",
+    "o'ra tozalash",
+    "vakuum mashina"
+   ],
+   "category": "santexnik",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "3-4 m3",
+      "6-8 m3",
+      "10 m3"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kanalizatsiya kamera bilan tekshirish",
+   "aliases": [
+    "videodiagnostika truba"
+   ],
+   "category": "santexnik",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Payvandchi chaqirish",
+   "aliases": [
+    "payvandchi",
+    "svarka",
+    "svarshik",
+    "payvand",
+    "payvandlash"
+   ],
+   "category": "payvandlash",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Darvoza tayyorlash",
+   "aliases": [
+    "darvoza",
+    "vorota",
+    "temir darvoza"
+   ],
+   "category": "payvandlash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Avtomatik darvoza o'rnatish",
+   "aliases": [
+    "avtomatik darvoza",
+    "otkatnye vorota",
+    "avtomatika darvoza"
+   ],
+   "category": "payvandlash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Panjara (reshotka) tayyorlash",
+   "aliases": [
+    "reshotka",
+    "panjara",
+    "deraza panjara"
+   ],
+   "category": "payvandlash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Temir zinapoya tayyorlash",
+   "aliases": [
+    "zinapoya",
+    "lestnitsa",
+    "metall zina"
+   ],
+   "category": "payvandlash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Naves (ayvon tomi) qurish",
+   "aliases": [
+    "naves",
+    "ayvon",
+    "soyabon",
+    "polikarbonat"
+   ],
+   "category": "payvandlash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Temir eshik tayyorlash",
+   "aliases": [
+    "temir eshik",
+    "metall eshik"
+   ],
+   "category": "payvandlash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Temir to'siq (zabor)",
+   "aliases": [
+    "zabor",
+    "to'siq",
+    "setka rabitsa",
+    "profnastil zabor"
+   ],
+   "category": "payvandlash",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Ko'chma payvand ishi",
+   "aliases": [
+    "vyezdnaya svarka",
+    "joyida payvand"
+   ],
+   "category": "payvandlash",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Argon payvand",
+   "aliases": [
+    "argon",
+    "argonnaya svarka",
+    "alyumin payvand"
+   ],
+   "category": "payvandlash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Metall karkas qurish",
+   "aliases": [
+    "karkas",
+    "metallokonstruktsiya"
+   ],
+   "category": "payvandlash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Tom yopish (profnastil)",
+   "aliases": [
+    "krovlya",
+    "tom yopish",
+    "profnastil",
+    "shifer"
+   ],
+   "category": "payvandlash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Temir qozon va o'choq tayyorlash",
+   "aliases": [
+    "o'choq",
+    "qozon o'choq",
+    "mangal"
+   ],
+   "category": "payvandlash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Metall kesish va egish",
+   "aliases": [
+    "metall kesish",
+    "gibka"
+   ],
+   "category": "payvandlash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kafel yotqizish (pol)",
+   "aliases": [
+    "kafel",
+    "plitka",
+    "kafelshik",
+    "ukladka plitki"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kafel yotqizish (devor)",
+   "aliases": [
+    "kafel devor",
+    "plitka stena"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Keramogranit yotqizish",
+   "aliases": [
+    "keramogranit"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Laminat yotqizish",
+   "aliases": [
+    "laminat",
+    "laminat ukladka"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Linoleum yotqizish",
+   "aliases": [
+    "linoleum"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Parket yotqizish",
+   "aliases": [
+    "parket",
+    "parket ukladka"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Pol styajkasi",
+   "aliases": [
+    "styajka",
+    "pol quyish",
+    "nalivnoy pol"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Devor shpaklyovkasi",
+   "aliases": [
+    "shpaklyovka",
+    "shpatlyovka",
+    "shpaklevka"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Devor suvoqi (shtukaturka)",
+   "aliases": [
+    "suvoq",
+    "shtukaturka",
+    "suvoqchi"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Devor bo'yash",
+   "aliases": [
+    "bo'yoq",
+    "bo'yoqchi",
+    "malyar",
+    "pokraska",
+    "kraska devor"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Shift bo'yash",
+   "aliases": [
+    "potolok bo'yash",
+    "shift bo'yoq"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gulqog'oz (oboy) yopishtirish",
+   "aliases": [
+    "oboy",
+    "gulqog'oz",
+    "oboychik"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gipsokarton devor (peregorodka)",
+   "aliases": [
+    "gipsokarton",
+    "gipsakarton",
+    "gips devor",
+    "peregorodka"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gipsokarton shift",
+   "aliases": [
+    "gipsokarton potolok",
+    "gips shift"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Natyajnoy potolok",
+   "aliases": [
+    "natyajnoy",
+    "tortma shift"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Armstrong shift",
+   "aliases": [
+    "armstrong"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Dekorativ suvoq",
+   "aliases": [
+    "dekorativnaya shtukaturka",
+    "venetsianka",
+    "dekor suvoq"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gisht terish",
+   "aliases": [
+    "g'isht terish",
+    "kladka",
+    "kirpich",
+    "g'isht"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m3",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ba'zan dona g'isht yoki m2 bo'yicha"
+  },
+  {
+   "name": "Blok terish (penoblok, gazoblok)",
+   "aliases": [
+    "penoblok",
+    "gazoblok",
+    "blok"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m3",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Poydevor quyish",
+   "aliases": [
+    "fundament",
+    "poydevor"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m3",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Beton quyish",
+   "aliases": [
+    "beton"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m3",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Armatura bog'lash",
+   "aliases": [
+    "armatura"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uy qurish (kalit topshirish)",
+   "aliases": [
+    "uy qurish",
+    "pod klyuch",
+    "qurilish",
+    "hovli uy qurish"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kvartira ta'miri (kalit topshirish)",
+   "aliases": [
+    "remont kvartiri",
+    "kvartira remont",
+    "evroremont"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kosmetik ta'mir",
+   "aliases": [
+    "kosmetik remont",
+    "yengil ta'mir"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Vannaxona ta'miri",
+   "aliases": [
+    "vannaxona remont",
+    "sanuzel remont"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "room",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Demontaj (buzish ishlari)",
+   "aliases": [
+    "demontaj",
+    "buzish",
+    "snos"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Qurilish chiqindisini olib chiqish",
+   "aliases": [
+    "musor vyvoz",
+    "chiqindi",
+    "stroymusor"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Mashina",
+     "options": [
+      "Damas",
+      "Labo",
+      "Gazel",
+      "Isuzu",
+      "Kamaz"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Olmos bilan teshish (almaznoe sverlenie)",
+   "aliases": [
+    "almaz teshik",
+    "almaznoe burenie",
+    "beton teshish"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Beton kesish",
+   "aliases": [
+    "rezka betona"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tom ta'miri",
+   "aliases": [
+    "tom ta'mir",
+    "krovlya remont",
+    "tom oqyapti"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Gidroizolyatsiya",
+   "aliases": [
+    "namlikdan himoya"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Fasad issiqlik izolyatsiyasi",
+   "aliases": [
+    "uteplenie",
+    "fasad",
+    "issiqlik izolyatsiya",
+    "penoplast"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Fasad qoplash (alyukobond, travertin)",
+   "aliases": [
+    "alyukobond",
+    "travertin",
+    "fasad qoplash"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Plitka (brusschatka) yotqizish",
+   "aliases": [
+    "brusschatka",
+    "trotuar plitka",
+    "hovli plitka"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Asfalt yotqizish",
+   "aliases": [
+    "asfalt"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Ganch o'ymakorligi",
+   "aliases": [
+    "ganch",
+    "ganchkor",
+    "o'ymakor"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Yog'och o'ymakorligi",
+   "aliases": [
+    "o'ymakor",
+    "naqqosh"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Arxitektor va loyiha",
+   "aliases": [
+    "arxitektor",
+    "loyiha",
+    "proekt",
+    "chizma"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Dizayn-loyiha (interyer)",
+   "aliases": [
+    "dizayner",
+    "interyer dizayn",
+    "3d dizayn"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mastera (usta) soatbay",
+   "aliases": [
+    "muj na chas",
+    "master na chas",
+    "soatbay usta",
+    "usta"
+   ],
+   "category": "qurilish_tamir",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ko'pincha kamida 2 soat"
+  },
+  {
+   "name": "Konditsioner o'rnatish",
+   "aliases": [
+    "konditsioner",
+    "kondisioner",
+    "split"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Quvvati",
+     "options": [
+      "7 (20 m2 gacha)",
+      "9 (25 m2 gacha)",
+      "12 (35 m2 gacha)",
+      "18 (50 m2 gacha)",
+      "24 (70 m2 gacha)"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Konditsioner yechish (demontaj)",
+   "aliases": [
+    "konditsioner yechish",
+    "demontaj kondey"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Quvvati",
+     "options": [
+      "7 (20 m2 gacha)",
+      "9 (25 m2 gacha)",
+      "12 (35 m2 gacha)",
+      "18 (50 m2 gacha)",
+      "24 (70 m2 gacha)"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Konditsioner tozalash",
+   "aliases": [
+    "chistka kondisionera",
+    "konditsioner yuvish"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Quvvati",
+     "options": [
+      "7 (20 m2 gacha)",
+      "9 (25 m2 gacha)",
+      "12 (35 m2 gacha)",
+      "18 (50 m2 gacha)",
+      "24 (70 m2 gacha)"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Konditsionerga freon to'ldirish",
+   "aliases": [
+    "freon",
+    "zapravka kondisionera",
+    "gaz to'ldirish"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Quvvati",
+     "options": [
+      "7 (20 m2 gacha)",
+      "9 (25 m2 gacha)",
+      "12 (35 m2 gacha)",
+      "18 (50 m2 gacha)",
+      "24 (70 m2 gacha)"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Konditsioner ta'miri",
+   "aliases": [
+    "konditsioner remont",
+    "konditsioner ishlamayapti"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Konditsioner trassasini uzaytirish",
+   "aliases": [
+    "trassa",
+    "truba kondey"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ventilyatsiya o'rnatish",
+   "aliases": [
+    "ventilyatsiya",
+    "vytyajka",
+    "havo almashtirish"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Gaz kotyol o'rnatish",
+   "aliases": [
+    "kotyol",
+    "kotel",
+    "gaz kotyol",
+    "kotyol o'rnatish"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Gazga ulash gaz ta'minoti tashkiloti ruxsati bilan"
+  },
+  {
+   "name": "Gaz kotyol ta'miri",
+   "aliases": [
+    "kotyol remont",
+    "kotyol ta'mir"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Gaz kotyol profilaktikasi",
+   "aliases": [
+    "kotyol tozalash",
+    "kotyol servis"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gaz kolonka ta'miri",
+   "aliases": [
+    "kolonka",
+    "gaz kolonka"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Pech (o'choq, pechka) qurish",
+   "aliases": [
+    "pechka",
+    "pech",
+    "sandal"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Mo'ri (dimoxod) tozalash",
+   "aliases": [
+    "dimoxod",
+    "mo'ri",
+    "truba tozalash"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Teplovoy nasos o'rnatish",
+   "aliases": [
+    "teplovoy nasos"
+   ],
+   "category": "konditsioner_isitish",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Plastik oyna tayyorlash va o'rnatish",
+   "aliases": [
+    "plastik oyna",
+    "plastikoviy okno",
+    "okna",
+    "akfa"
+   ],
+   "category": "eshik_deraza",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true,
+   "note": "O'lchovchi keladi, narx o'lchovdan keyin"
+  },
+  {
+   "name": "Alyumin oyna va vitraj",
+   "aliases": [
+    "alyumin",
+    "vitraj",
+    "alyumin oyna"
+   ],
+   "category": "eshik_deraza",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Plastik eshik o'rnatish",
+   "aliases": [
+    "plastik eshik"
+   ],
+   "category": "eshik_deraza",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Plastik oyna ta'miri va sozlash",
+   "aliases": [
+    "regulirovka okon",
+    "oyna sozlash",
+    "furnitura"
+   ],
+   "category": "eshik_deraza",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Oyna rezinkasini almashtirish",
+   "aliases": [
+    "uplotnitel",
+    "rezinka"
+   ],
+   "category": "eshik_deraza",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Pashsha to'ri (setka) o'rnatish",
+   "aliases": [
+    "setka",
+    "moskitnaya setka",
+    "pashsha to'r"
+   ],
+   "category": "eshik_deraza",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Balkon yopish",
+   "aliases": [
+    "balkon",
+    "osteklenie balkona"
+   ],
+   "category": "eshik_deraza",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Jalyuzi o'rnatish",
+   "aliases": [
+    "jalyuzi",
+    "rolshtora",
+    "rulonniye shtory"
+   ],
+   "category": "eshik_deraza",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Eshik o'rnatish (ichki)",
+   "aliases": [
+    "eshik o'rnatish",
+    "mejkomnatnaya dver",
+    "ichki eshik"
+   ],
+   "category": "eshik_deraza",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Eshik turi",
+     "options": [
+      "Yog'och",
+      "Metall",
+      "Plastik"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kirish eshigi o'rnatish",
+   "aliases": [
+    "kirish eshik",
+    "vxodnaya dver",
+    "bronya eshik"
+   ],
+   "category": "eshik_deraza",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Eshik turi",
+     "options": [
+      "Yog'och",
+      "Metall",
+      "Plastik"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Eshik qulfini o'rnatish",
+   "aliases": [
+    "zamok",
+    "qulf o'rnatish",
+    "zamok ustanovka"
+   ],
+   "category": "eshik_deraza",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qulf ochish",
+   "aliases": [
+    "vskrytie zamkov",
+    "eshik ochish",
+    "zamok ochish"
+   ],
+   "category": "eshik_deraza",
+   "unit": "call",
+   "variants": [
+    {
+     "group": "Vaqti",
+     "options": [
+      "Kunduzi",
+      "Kechasi (21:00 dan keyin)"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Hujjatni ko'rsatish talab qilinadi"
+  },
+  {
+   "name": "Oyna (shisha) kesish va almashtirish",
+   "aliases": [
+    "shisha",
+    "steklo",
+    "oyna almashtirish"
+   ],
+   "category": "eshik_deraza",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'zgu tayyorlash",
+   "aliases": [
+    "ko'zgu",
+    "zerkalo"
+   ],
+   "category": "eshik_deraza",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Shisha eshik va dush to'sig'i",
+   "aliases": [
+    "shisha eshik",
+    "steklyannaya dver",
+    "dush to'siq"
+   ],
+   "category": "eshik_deraza",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Rolstavni (darvoza jalyuzi)",
+   "aliases": [
+    "rolstavni",
+    "rolvorota"
+   ],
+   "category": "eshik_deraza",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Mebel yig'ish",
+   "aliases": [
+    "sborka mebeli",
+    "mebelshik"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Shkaf yig'ish",
+   "aliases": [
+    "shkaf-kupe"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Karavot yig'ish",
+   "aliases": [
+    "karavot",
+    "krovat sborka"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Oshxona mebeli yig'ish",
+   "aliases": [
+    "kuxnya sborka",
+    "oshxona yig'ish"
+   ],
+   "category": "mebel",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Pogon metr bo'yicha"
+  },
+  {
+   "name": "Mebelni qismlarga ajratish (ko'chish uchun)",
+   "aliases": [
+    "razborka mebeli",
+    "mebel ajratish"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Oshxona mebeli tayyorlash",
+   "aliases": [
+    "kuxnya na zakaz",
+    "oshxona mebel",
+    "kuxnya"
+   ],
+   "category": "mebel",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": true,
+   "note": "Pogon metr bo'yicha, o'lchovdan keyin"
+  },
+  {
+   "name": "Shkaf-kupe tayyorlash",
+   "aliases": [
+    "shkaf kupe",
+    "garderob"
+   ],
+   "category": "mebel",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Buyurtma mebel tayyorlash",
+   "aliases": [
+    "mebel na zakaz",
+    "buyurtma mebel"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Yumshoq mebel peretyajkasi",
+   "aliases": [
+    "peretyajka",
+    "divan peretyajka",
+    "mebel qoplash"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'rinlar soni",
+     "options": [
+      "2 o'rinli",
+      "3 o'rinli",
+      "4 o'rinli",
+      "5 o'rinli",
+      "Burchak divan"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Mebel ta'miri",
+   "aliases": [
+    "mebel remont",
+    "mebel ta'mir",
+    "restavratsiya"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Stol-stul ta'miri",
+   "aliases": [
+    "stul ta'mir",
+    "stol ta'mir"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Mebel furniturasini almashtirish",
+   "aliases": [
+    "furnitura",
+    "petlya",
+    "dovodchik"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Televizorni devorga osish",
+   "aliases": [
+    "televizor osish",
+    "kronshteyn",
+    "tv osish"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Karniz o'rnatish",
+   "aliases": [
+    "karniz",
+    "parda karniz"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Polka va javon osish",
+   "aliases": [
+    "polka",
+    "javon"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Duradgorlik ishlari",
+   "aliases": [
+    "duradgor",
+    "plotnik",
+    "stolyar",
+    "yog'och ishi"
+   ],
+   "category": "mebel",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kir yuvish mashinasi ta'miri",
+   "aliases": [
+    "stiralka",
+    "kir mashina",
+    "kir yuvish mashina",
+    "stiralnaya mashina remont"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Turi",
+     "options": [
+      "Avtomat",
+      "Yarim avtomat"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Muzlatgich ta'miri",
+   "aliases": [
+    "muzlatgich",
+    "xolodilnik",
+    "xolodilnik remont"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Turi",
+     "options": [
+      "Bir kamerali",
+      "Ikki kamerali",
+      "No Frost",
+      "Muzlatkich (morozilnik)"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Muzlatgichga freon to'ldirish",
+   "aliases": [
+    "xolodilnik freon",
+    "muzlatgich gaz"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Televizor ta'miri",
+   "aliases": [
+    "televizor",
+    "televizor remont",
+    "tv remont"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Diagonali",
+     "options": [
+      "32 dyuymgacha",
+      "40-50 dyuym",
+      "55-65 dyuym",
+      "65 dyuymdan katta"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Gaz plita ta'miri",
+   "aliases": [
+    "gaz plita",
+    "plita remont"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Elektr plita va duxovka ta'miri",
+   "aliases": [
+    "duxovka",
+    "elektroplita remont"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Mikroto'lqinli pech ta'miri",
+   "aliases": [
+    "mikrovolnovka",
+    "pech remont"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Changyutgich ta'miri",
+   "aliases": [
+    "pylesos",
+    "changyutgich",
+    "robot pylesos"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Idish yuvish mashinasi ta'miri",
+   "aliases": [
+    "posudomoyka",
+    "posudomoechnaya"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Suv isitgich (boyler) ta'miri",
+   "aliases": [
+    "boyler remont",
+    "vodonagrevatel remont"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Dazmol va mayda texnika ta'miri",
+   "aliases": [
+    "dazmol",
+    "utyug",
+    "blender",
+    "fen",
+    "mayda texnika"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Tikuv mashinasi ta'miri",
+   "aliases": [
+    "tikuv mashina",
+    "shveynaya mashina remont"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Sputnik antenna o'rnatish va sozlash",
+   "aliases": [
+    "sputnik",
+    "tarelka",
+    "antenna",
+    "sputnik sozlash"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Elektr asbob ta'miri",
+   "aliases": [
+    "drel",
+    "perforator",
+    "bolgarka remont"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Usta chaqirish (maishiy texnika)",
+   "aliases": [
+    "master vyzov",
+    "uyga usta",
+    "diagnostika"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ta'mir qilinsa ko'pincha chaqiruv bepul"
+  },
+  {
+   "name": "Muzqaymoq va savdo muzlatgichi ta'miri",
+   "aliases": [
+    "vitrina xolodilnik",
+    "promyshlenniy xolodilnik"
+   ],
+   "category": "maishiy_texnika",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Telefon ekranini almashtirish",
+   "aliases": [
+    "ekran almashtirish",
+    "displey",
+    "ekran",
+    "zamena ekrana"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Telefon",
+     "options": [
+      "Android",
+      "iPhone"
+     ]
+    }
+   ],
+   "price_after_inspection": true,
+   "note": "Narx telefon modeliga qarab"
+  },
+  {
+   "name": "Telefon oynasini almashtirish",
+   "aliases": [
+    "steklo almashtirish",
+    "oyna telefon"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Telefon",
+     "options": [
+      "Android",
+      "iPhone"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Telefon batareyasini almashtirish",
+   "aliases": [
+    "batareya",
+    "akkumulyator telefon",
+    "batareyka"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Telefon",
+     "options": [
+      "Android",
+      "iPhone"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Zaryad uyasini almashtirish",
+   "aliases": [
+    "zaryad uyasi",
+    "razyom",
+    "port"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Telefon",
+     "options": [
+      "Android",
+      "iPhone"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Telefon dasturini o'rnatish (proshivka)",
+   "aliases": [
+    "proshivka",
+    "dastur",
+    "telefon dastur"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Telefon",
+     "options": [
+      "Android",
+      "iPhone"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Telefonni suvdan keyin tiklash",
+   "aliases": [
+    "suvga tushdi",
+    "namlik"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Himoya oynasi yopishtirish",
+   "aliases": [
+    "zashitnoe steklo",
+    "himoya oyna",
+    "plyonka"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Telefon kamerasi ta'miri",
+   "aliases": [
+    "kamera telefon"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kompyuter ta'miri",
+   "aliases": [
+    "kompyuter",
+    "kompyuter remont",
+    "PK remont"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Noutbuk ta'miri",
+   "aliases": [
+    "noutbuk",
+    "notebook",
+    "laptop"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Windows o'rnatish",
+   "aliases": [
+    "windows",
+    "vindovs",
+    "operatsion tizim",
+    "pereustanovka"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Dasturlar o'rnatish",
+   "aliases": [
+    "dastur o'rnatish",
+    "programma",
+    "ofis"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kompyuterni changdan tozalash",
+   "aliases": [
+    "chistka noutbuka",
+    "termopasta"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ma'lumotlarni tiklash",
+   "aliases": [
+    "vosstanovlenie dannyx",
+    "ma'lumot tiklash",
+    "fleshka tiklash"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Planshet ta'miri",
+   "aliases": [
+    "planshet"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Printer ta'miri",
+   "aliases": [
+    "printer remont"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kartrij to'ldirish",
+   "aliases": [
+    "kartrij",
+    "zapravka kartridja"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Fotoaparat va kamera ta'miri",
+   "aliases": [
+    "fotoapparat",
+    "kamera remont"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Audio texnika ta'miri",
+   "aliases": [
+    "kolonka",
+    "usilitel",
+    "audio"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "O'yin pristavkasi ta'miri",
+   "aliases": [
+    "playstation",
+    "pristavka",
+    "xbox"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kompyuter yig'ish",
+   "aliases": [
+    "sborka pk"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Lokal tarmoq o'rnatish",
+   "aliases": [
+    "lokalka",
+    "set",
+    "tarmoq"
+   ],
+   "category": "telefon_kompyuter",
+   "unit": "point",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uyni umumiy tozalash",
+   "aliases": [
+    "uborka",
+    "general uborka",
+    "uy tozalash",
+    "klining",
+    "kliing"
+   ],
+   "category": "tozalash",
+   "unit": "m2",
+   "variants": [
+    {
+     "group": "Xonalar soni",
+     "options": [
+      "1 xonali",
+      "2 xonali",
+      "3 xonali",
+      "4 xonali",
+      "Hovli uy"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uyni muntazam tozalash",
+   "aliases": [
+    "podderjivayushchaya uborka",
+    "muntazam tozalash"
+   ],
+   "category": "tozalash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ta'mirdan keyin tozalash",
+   "aliases": [
+    "remontdan keyin",
+    "posle remonta",
+    "qurilishdan keyin"
+   ],
+   "category": "tozalash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'chib kirish/chiqishda tozalash",
+   "aliases": [
+    "pereezd uborka",
+    "ko'chishdan keyin"
+   ],
+   "category": "tozalash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Hovli uyni tozalash",
+   "aliases": [
+    "kottej",
+    "hovli tozalash",
+    "uchastka"
+   ],
+   "category": "tozalash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ofis tozalash",
+   "aliases": [
+    "ofis uborka"
+   ],
+   "category": "tozalash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Do'kon va restoran tozalash",
+   "aliases": [
+    "do'kon tozalash",
+    "restoran uborka"
+   ],
+   "category": "tozalash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Oyna yuvish",
+   "aliases": [
+    "moyka okon",
+    "deraza yuvish"
+   ],
+   "category": "tozalash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Fasad yuvish (alpinist)",
+   "aliases": [
+    "fasad yuvish",
+    "promalp",
+    "alpinist"
+   ],
+   "category": "tozalash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Oshxonani chuqur tozalash",
+   "aliases": [
+    "kuxnya tozalash",
+    "oshxona yog'"
+   ],
+   "category": "tozalash",
+   "unit": "room",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Vannaxona va hojatxonani tozalash",
+   "aliases": [
+    "vannaxona tozalash",
+    "sanuzel"
+   ],
+   "category": "tozalash",
+   "unit": "room",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Muzlatgich ichini tozalash",
+   "aliases": [
+    "muzlatgich tozalash"
+   ],
+   "category": "tozalash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Duxovka va plitani tozalash",
+   "aliases": [
+    "duxovka tozalash",
+    "plita tozalash"
+   ],
+   "category": "tozalash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Dazmollash (uyda)",
+   "aliases": [
+    "dazmollash",
+    "glajka"
+   ],
+   "category": "tozalash",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Chiqindi olib chiqish",
+   "aliases": [
+    "musor vyvoz",
+    "chiqindi",
+    "axlat olib chiqish"
+   ],
+   "category": "tozalash",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Mashina",
+     "options": [
+      "Damas",
+      "Labo",
+      "Gazel",
+      "Isuzu",
+      "Kamaz"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qor tozalash",
+   "aliases": [
+    "qor",
+    "sneg uborka"
+   ],
+   "category": "tozalash",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tom va tarnov tozalash",
+   "aliases": [
+    "tarnov",
+    "vodostok"
+   ],
+   "category": "tozalash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Hovuz tozalash",
+   "aliases": [
+    "basseyn",
+    "hovuz",
+    "basseyn chistka"
+   ],
+   "category": "tozalash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Suv baki tozalash",
+   "aliases": [
+    "bak tozalash",
+    "suv idish"
+   ],
+   "category": "tozalash",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uy yordamchisi soatbay",
+   "aliases": [
+    "domrabotnitsa",
+    "uy yordamchi",
+    "jena na chas"
+   ],
+   "category": "tozalash",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Kamida 2 soat"
+  },
+  {
+   "name": "Kiyim kimyoviy tozalash",
+   "aliases": [
+    "ximchistka",
+    "kimyoviy tozalash",
+    "quruq tozalash",
+    "suxaya chistka"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kostyum kimyoviy tozalash",
+   "aliases": [
+    "kostyum",
+    "kostyum ximchistka"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Turi",
+     "options": [
+      "Ikki qismli",
+      "Uch qismli"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Palto va kurtka tozalash",
+   "aliases": [
+    "palto",
+    "kurtka",
+    "puxovik"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mo'yna va teri kiyim tozalash",
+   "aliases": [
+    "shuba",
+    "dublyonka",
+    "teri kurtka",
+    "mo'yna"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kelinlik ko'ylagi tozalash",
+   "aliases": [
+    "kelinlik ko'ylak",
+    "svadebnoe plate"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'ylak va kofta tozalash",
+   "aliases": [
+    "ko'ylak",
+    "kofta",
+    "plate"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Chopon va to'n tozalash",
+   "aliases": [
+    "chopon",
+    "to'n"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kir yuvish (kg bo'yicha)",
+   "aliases": [
+    "kir yuvish",
+    "stirka",
+    "prachechnaya",
+    "kir"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kir yuvish va dazmollash",
+   "aliases": [
+    "stirka i glajka",
+    "kir dazmol"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Dazmollash",
+   "aliases": [
+    "dazmol",
+    "glajka"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'ylak dazmollash",
+   "aliases": [
+    "rubashka dazmol"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'rpa-to'shak yuvish",
+   "aliases": [
+    "postelnoe",
+    "choyshab",
+    "postelnoe bele"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "set",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Dog' ketkazish",
+   "aliases": [
+    "dog'",
+    "pyatno"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Oyoq kiyim tozalash",
+   "aliases": [
+    "krossovka yuvish",
+    "obuv chistka",
+    "poyabzal tozalash"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Restoran va mehmonxona kirini yuvish",
+   "aliases": [
+    "dasturxon",
+    "skatert",
+    "mehmonxona kir"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kiyimni bo'yash",
+   "aliases": [
+    "kiyim bo'yash",
+    "okraska odejdy"
+   ],
+   "category": "kimyoviy_tozalash_kir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kiyim tikish (buyurtma)",
+   "aliases": [
+    "tikish",
+    "poshiv",
+    "tikuvchi",
+    "atelye",
+    "atele"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Kiyim",
+     "options": [
+      "Erkaklar",
+      "Ayollar",
+      "Bolalar"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Milliy ko'ylak tikish",
+   "aliases": [
+    "milliy ko'ylak",
+    "atlas ko'ylak",
+    "adras"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kelinlik ko'ylagi tikish",
+   "aliases": [
+    "kelinlik",
+    "svadebnoe plate"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Erkaklar kostyumi tikish",
+   "aliases": [
+    "kostyum tikish"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Maktab formasi tikish",
+   "aliases": [
+    "maktab forma",
+    "shkolnaya forma"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ish kiyimi (forma) tikish",
+   "aliases": [
+    "spetsovka",
+    "forma",
+    "uniforma"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Chopon tikish",
+   "aliases": [
+    "chopon",
+    "to'n tikish"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Shim qisqartirish",
+   "aliases": [
+    "podshit bryuki",
+    "shim bo'yi"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Shim belini toraytirish yoki kengaytirish",
+   "aliases": [
+    "ushit",
+    "kengaytirish"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kiyimni toraytirish",
+   "aliases": [
+    "ushit",
+    "toraytirish"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Zamok (molniya) almashtirish",
+   "aliases": [
+    "zamok",
+    "molniya",
+    "zamochok"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Kiyim",
+     "options": [
+      "Shim",
+      "Kurtka",
+      "Palto",
+      "Sumka"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yeng qisqartirish",
+   "aliases": [
+    "yeng",
+    "rukav"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tugma qadash",
+   "aliases": [
+    "tugma",
+    "pugovitsa"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yirtiqni yamash",
+   "aliases": [
+    "yamash",
+    "shtopka",
+    "latka"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Parda tikish",
+   "aliases": [
+    "parda",
+    "shtora tikish",
+    "tyul tikish"
+   ],
+   "category": "tikuvchilik",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Ko'rpa qavish",
+   "aliases": [
+    "ko'rpa tikish",
+    "odeyalo tikish"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'rpacha tikish",
+   "aliases": [
+    "ko'rpacha"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yostiq jild tikish",
+   "aliases": [
+    "yostiq jild",
+    "navolochka"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Choyshab to'plami tikish",
+   "aliases": [
+    "postelnoe tikish"
+   ],
+   "category": "tikuvchilik",
+   "unit": "set",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mebel g'ilofi (chexol) tikish",
+   "aliases": [
+    "chexol divan",
+    "g'ilof"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kashta tikish",
+   "aliases": [
+    "kashta",
+    "vishivka",
+    "so'zana"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Mashinada kashta (logotip)",
+   "aliases": [
+    "mashinniy vishivka",
+    "logotip tikish"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Sumka ta'miri",
+   "aliases": [
+    "sumka remont",
+    "sumka"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kurtka astarini almashtirish",
+   "aliases": [
+    "podkladka",
+    "astar"
+   ],
+   "category": "tikuvchilik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Poyabzal ta'miri",
+   "aliases": [
+    "etik",
+    "poyabzal",
+    "obuv remont",
+    "etikdo'z",
+    "sapojnik"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Poyabzal",
+     "options": [
+      "Erkaklar",
+      "Ayollar",
+      "Bolalar"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Poshna (kabluk) almashtirish",
+   "aliases": [
+    "kabluk",
+    "poshna",
+    "naboyka"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tag charm (podoshva) yopishtirish",
+   "aliases": [
+    "podoshva",
+    "tag charm",
+    "prokleyka"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Poyabzal zamogini almashtirish",
+   "aliases": [
+    "obuv molniya",
+    "etik zamok"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Poyabzalni bo'yash",
+   "aliases": [
+    "obuv pokraska"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kalit tayyorlash",
+   "aliases": [
+    "kalit",
+    "klyuch",
+    "dublikat klyucha",
+    "kalit nusxa"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Kalit turi",
+     "options": [
+      "Oddiy",
+      "Lazerli",
+      "Domofon kaliti",
+      "Chip"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Domofon kaliti nusxasi",
+   "aliases": [
+    "domofon klyuch",
+    "tabletka",
+    "domofon kalit"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soat ta'miri",
+   "aliases": [
+    "soat",
+    "soat ta'mir",
+    "chasovshik",
+    "remont chasov"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Soat batareyasini almashtirish",
+   "aliases": [
+    "soat batareyka",
+    "batareyka chasov"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soat bilaguzugini qisqartirish",
+   "aliases": [
+    "braslet",
+    "remeshok"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Zargarlik buyumi ta'miri",
+   "aliases": [
+    "zargar",
+    "yuvelir",
+    "uzuk ta'mir",
+    "tilla ta'mir"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Uzuk o'lchamini o'zgartirish",
+   "aliases": [
+    "uzuk kattalashtirish",
+    "uzuk"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Pichoq va qaychi charxlash",
+   "aliases": [
+    "charxlash",
+    "pichoq",
+    "zatochka",
+    "qaychi"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soyabon (zontik) ta'miri",
+   "aliases": [
+    "zontik",
+    "soyabon"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'zoynak ta'miri",
+   "aliases": [
+    "ochki",
+    "ko'zoynak"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gravirovka",
+   "aliases": [
+    "nomi yozish"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Muhr va shtamp tayyorlash",
+   "aliases": [
+    "pechat",
+    "muhr",
+    "shtamp"
+   ],
+   "category": "maishiy_mayda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tashkilot muhri hujjat bilan"
+  },
+  {
+   "name": "Erkaklar soch olishi",
+   "aliases": [
+    "soch olish",
+    "strijka",
+    "sartarosh",
+    "barber",
+    "parikmaxer"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mashinkada soch olish",
+   "aliases": [
+    "mashinka",
+    "nol",
+    "pod mashinku"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Model soch olish",
+   "aliases": [
+    "model strijka",
+    "fade",
+    "feyd"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bolalar soch olishi",
+   "aliases": [
+    "bolalar strijka",
+    "detskaya strijka",
+    "bola soch"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soqol olish",
+   "aliases": [
+    "soqol",
+    "britie",
+    "ustara"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soqolga shakl berish",
+   "aliases": [
+    "boroda",
+    "soqol shakl",
+    "boroda modelirovanie"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soch va soqol (kompleks)",
+   "aliases": [
+    "strijka i boroda",
+    "kompleks"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soch yuvish va ukladka",
+   "aliases": [
+    "ukladka",
+    "soch yuvish"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soch bo'yash (erkaklar)",
+   "aliases": [
+    "tonirovka sedini",
+    "oq sochni bo'yash"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yuz parvarishi (erkaklar)",
+   "aliases": [
+    "maska",
+    "chernaya maska",
+    "yuz tozalash"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uyga chiqib soch olish",
+   "aliases": [
+    "vyezd strijka",
+    "uyga sartarosh"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kuyov soch turmagi",
+   "aliases": [
+    "kuyov",
+    "jenix"
+   ],
+   "category": "sartarosh_erkak",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ayollar soch olishi",
+   "aliases": [
+    "ayollar strijka",
+    "jenskaya strijka",
+    "sartarosh ayol"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Soch uzunligi",
+     "options": [
+      "Qisqa",
+      "O'rta",
+      "Uzun"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uchlarini olish",
+   "aliases": [
+    "kontsy",
+    "uchini olish"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soch bo'yash",
+   "aliases": [
+    "okrashivanie",
+    "kraska"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Soch uzunligi",
+     "options": [
+      "Qisqa",
+      "O'rta",
+      "Uzun"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Melirovka",
+   "aliases": [
+    "balayaj",
+    "shatush",
+    "ombre"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Soch uzunligi",
+     "options": [
+      "Qisqa",
+      "O'rta",
+      "Uzun"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soch turmagi (prichyoska)",
+   "aliases": [
+    "prichyoska",
+    "turmak",
+    "ukladka"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Soch uzunligi",
+     "options": [
+      "Qisqa",
+      "O'rta",
+      "Uzun"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kelin soch turmagi",
+   "aliases": [
+    "svadebnaya prichyoska",
+    "kelin turmak"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Keratin to'g'rilash",
+   "aliases": [
+    "keratin",
+    "botoks soch",
+    "keratin vyprimlenie"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Soch uzunligi",
+     "options": [
+      "Qisqa",
+      "O'rta",
+      "Uzun"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Soch o'stirish (narashivanie)",
+   "aliases": [
+    "narashivanie volos",
+    "soch o'stirish"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Ximiya (soch jingalak)",
+   "aliases": [
+    "ximiya",
+    "zavivka",
+    "jingalak"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Soch uzunligi",
+     "options": [
+      "Qisqa",
+      "O'rta",
+      "Uzun"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Manikyur",
+   "aliases": [
+    "manikur",
+    "manikyur gel",
+    "tirnoq"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Qoplama",
+     "options": [
+      "Qoplamasiz",
+      "Oddiy lak",
+      "Gel-lak"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Pedikyur",
+   "aliases": [
+    "pedikur"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Qoplama",
+     "options": [
+      "Qoplamasiz",
+      "Oddiy lak",
+      "Gel-lak"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tirnoq o'stirish (narashivanie)",
+   "aliases": [
+    "narashivanie nogtey",
+    "akril",
+    "nogti"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tirnoq dizayni",
+   "aliases": [
+    "dizayn nogtey",
+    "risunok"
+   ],
+   "category": "gozallik",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Bir tirnoq bo'yicha"
+  },
+  {
+   "name": "Gel-lakni olib tashlash",
+   "aliases": [
+    "snyatie",
+    "gel lak olish"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qosh korreksiyasi",
+   "aliases": [
+    "qosh",
+    "brovi",
+    "korrektsiya brovey"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qosh bo'yash (xna)",
+   "aliases": [
+    "qosh bo'yash",
+    "xna brovi",
+    "okrashivanie brovey"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qosh laminatsiyasi",
+   "aliases": [
+    "laminatsiya brovey",
+    "qosh laminatsiya"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kiprik o'stirish",
+   "aliases": [
+    "narashivanie resnits",
+    "kiprik",
+    "resnitsy"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "Klassika",
+      "2D",
+      "3D",
+      "Hollywood"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kiprik laminatsiyasi",
+   "aliases": [
+    "laminatsiya resnits",
+    "kiprik laminatsiya"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Permanent makiyaj (qosh, lab)",
+   "aliases": [
+    "permanent",
+    "tatuaj",
+    "pudroviy brovi"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Joyi",
+     "options": [
+      "Qosh",
+      "Lab",
+      "Ko'z"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Makiyaj",
+   "aliases": [
+    "makiaj",
+    "vizajist",
+    "meyk"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kelin makiyaji",
+   "aliases": [
+    "svadebniy makiyaj",
+    "kelin makiyaj",
+    "kelin bezash"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kelin bezash (makiyaj va turmak)",
+   "aliases": [
+    "kelin obraz",
+    "kelin tayyorlash"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ko'pincha uyga chiqib"
+  },
+  {
+   "name": "Yuz tozalash",
+   "aliases": [
+    "chistka litsa",
+    "kosmetolog"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Piling",
+   "aliases": [
+    "pilling"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yuz massaji",
+   "aliases": [
+    "massaj litsa",
+    "yuz massaj"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yuz parvarishi (maska)",
+   "aliases": [
+    "uxod",
+    "maska litsa"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Depilyatsiya (mum, shakar)",
+   "aliases": [
+    "depilyatsiya",
+    "shugaring",
+    "vosk",
+    "epilyatsiya"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Joyi",
+     "options": [
+      "Qo'ltiq",
+      "Oyoq",
+      "Qo'l",
+      "Bikini",
+      "Yuz"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Lazer epilyatsiya",
+   "aliases": [
+    "lazer",
+    "lazernaya epilyatsiya"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Joyi",
+     "options": [
+      "Qo'ltiq",
+      "Oyoq",
+      "Qo'l",
+      "Bikini",
+      "Yuz"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Apparat kosmetologiyasi: litsenziya talab qilinishi mumkin"
+  },
+  {
+   "name": "Kosmetologik in'ektsiyalar",
+   "aliases": [
+    "botoks",
+    "filler",
+    "inyeksiya",
+    "biorevitalizatsiya"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tibbiy amaliyot: faqat litsenziyali shifokor (regulated)"
+  },
+  {
+   "name": "Xina (mehndi) chizish",
+   "aliases": [
+    "xina",
+    "mehndi",
+    "xna"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Quloq teshish",
+   "aliases": [
+    "prokol ushey",
+    "pirsing"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Steril sharoit; ba'zi hududlarda tibbiy ruxsat talab qilinadi"
+  },
+  {
+   "name": "Tatuirovka",
+   "aliases": [
+    "tatu"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Uyga chiqib manikyur",
+   "aliases": [
+    "vyezd manikyur",
+    "uyda manikyur"
+   ],
+   "category": "gozallik",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Qoplama",
+     "options": [
+      "Qoplamasiz",
+      "Oddiy lak",
+      "Gel-lak"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Klassik massaj",
+   "aliases": [
+    "massaj",
+    "massajist"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Davomiyligi",
+     "options": [
+      "30 daqiqa",
+      "60 daqiqa",
+      "90 daqiqa"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bel va bo'yin massaji",
+   "aliases": [
+    "spina massaj",
+    "bel massaj",
+    "bo'yin"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Davomiyligi",
+     "options": [
+      "30 daqiqa",
+      "60 daqiqa",
+      "90 daqiqa"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Relaks massaj",
+   "aliases": [
+    "relaks",
+    "rasslablyayushchiy"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Davomiyligi",
+     "options": [
+      "30 daqiqa",
+      "60 daqiqa",
+      "90 daqiqa"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Antitsellyulit massaj",
+   "aliases": [
+    "antitsellyulitniy",
+    "tsellyulit"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Davomiyligi",
+     "options": [
+      "30 daqiqa",
+      "60 daqiqa",
+      "90 daqiqa"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bolalar massaji",
+   "aliases": [
+    "detskiy massaj",
+    "chaqaloq massaj"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tibbiy (davolovchi) bolalar massaji litsenziyali mutaxassisda"
+  },
+  {
+   "name": "Sport massaji",
+   "aliases": [
+    "sport massaj"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Davomiyligi",
+     "options": [
+      "30 daqiqa",
+      "60 daqiqa",
+      "90 daqiqa"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Oyoq massaji",
+   "aliases": [
+    "oyoq",
+    "stop massaj"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Davomiyligi",
+     "options": [
+      "30 daqiqa",
+      "60 daqiqa",
+      "90 daqiqa"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uyga chiqib massaj",
+   "aliases": [
+    "vyezd massaj",
+    "uyda massaj"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Davomiyligi",
+     "options": [
+      "30 daqiqa",
+      "60 daqiqa",
+      "90 daqiqa"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Massaj kursi (10 seans)",
+   "aliases": [
+    "massaj kurs",
+    "10 seans"
+   ],
+   "category": "massaj_spa",
+   "unit": "set",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Hammom va sauna",
+   "aliases": [
+    "sauna",
+    "hammom",
+    "banya",
+    "parnoy"
+   ],
+   "category": "massaj_spa",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Soat bo'yicha band qilinadi"
+  },
+  {
+   "name": "Hijoma",
+   "aliases": [
+    "xijoma",
+    "qon oldirish",
+    "banka"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tibbiy muolaja: litsenziyali mutaxassis (regulated)"
+  },
+  {
+   "name": "Banka qo'yish",
+   "aliases": [
+    "banka",
+    "vakuum massaj"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Manual terapiya",
+   "aliases": [
+    "manualshik",
+    "suyakchi",
+    "ilmoq"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tibbiy faoliyat: litsenziya talab qilinadi (regulated)"
+  },
+  {
+   "name": "Fitnes va trener (yakka)",
+   "aliases": [
+    "trener",
+    "fitnes",
+    "personalniy trener"
+   ],
+   "category": "massaj_spa",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Sport zali abonementi",
+   "aliases": [
+    "trenajor zal",
+    "sport zal",
+    "abonement"
+   ],
+   "category": "massaj_spa",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "To'y fotografi",
+   "aliases": [
+    "fotograf",
+    "to'y fotograf",
+    "svadebniy fotograf",
+    "foto"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [
+    {
+     "group": "Davomiyligi",
+     "options": [
+      "Faqat nikoh / FHDYo",
+      "Yarim kun",
+      "To'liq kun",
+      "Ikki kun"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "To'y videografi (operator)",
+   "aliases": [
+    "videograf",
+    "operator",
+    "videooperator",
+    "video s'yomka"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [
+    {
+     "group": "Davomiyligi",
+     "options": [
+      "Faqat nikoh / FHDYo",
+      "Yarim kun",
+      "To'liq kun",
+      "Ikki kun"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Foto va video (to'plam)",
+   "aliases": [
+    "foto video",
+    "paket"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [
+    {
+     "group": "Davomiyligi",
+     "options": [
+      "Faqat nikoh / FHDYo",
+      "Yarim kun",
+      "To'liq kun",
+      "Ikki kun"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Love story suratga olish",
+   "aliases": [
+    "love story",
+    "lav stori"
+   ],
+   "category": "toy_tadbir",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Dron bilan suratga olish",
+   "aliases": [
+    "dron",
+    "kvadrokopter",
+    "aero"
+   ],
+   "category": "toy_tadbir",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Fotosessiya (studiya)",
+   "aliases": [
+    "fotostudiya",
+    "fotosessiya",
+    "studiya"
+   ],
+   "category": "toy_tadbir",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bolalar fotosessiyasi",
+   "aliases": [
+    "detskaya fotosessiya",
+    "bolalar foto"
+   ],
+   "category": "toy_tadbir",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Hujjat uchun surat",
+   "aliases": [
+    "3x4",
+    "foto na dokumenty",
+    "pasport surat",
+    "rasm 3x4"
+   ],
+   "category": "toy_tadbir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Videoni montaj qilish",
+   "aliases": [
+    "montaj",
+    "video montaj",
+    "klip"
+   ],
+   "category": "toy_tadbir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tamada (boshlovchi)",
+   "aliases": [
+    "tamada",
+    "boshlovchi",
+    "vedushchiy"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Xonanda (qo'shiqchi)",
+   "aliases": [
+    "xonanda",
+    "qo'shiqchi",
+    "artist",
+    "pevets"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Karnay-surnay",
+   "aliases": [
+    "karnay",
+    "surnay",
+    "karnay surnay",
+    "karnaychi"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Doira va nog'ora guruhi",
+   "aliases": [
+    "doira",
+    "nog'ora",
+    "doirachi"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "DJ xizmati",
+   "aliases": [
+    "dj",
+    "didjey",
+    "muzyka"
+   ],
+   "category": "toy_tadbir",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Musiqa ansambli",
+   "aliases": [
+    "ansambl",
+    "muzikachilar",
+    "sozanda"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Raqqosa va raqs guruhi",
+   "aliases": [
+    "raqqosa",
+    "tanets",
+    "raqs"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ovoz apparatura ijarasi",
+   "aliases": [
+    "apparatura",
+    "kolonka ijara",
+    "zvuk"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "To'yxona (zal) ijarasi",
+   "aliases": [
+    "to'yxona",
+    "restoran zal",
+    "banketniy zal"
+   ],
+   "category": "toy_tadbir",
+   "unit": "person",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Kishi bo'yicha yoki zal bo'yicha; sana band qilinadi"
+  },
+  {
+   "name": "To'y dekori",
+   "aliases": [
+    "dekor",
+    "bezash",
+    "oformlenie",
+    "to'y bezash"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Shar bilan bezash",
+   "aliases": [
+    "shar",
+    "sharlar",
+    "shariki",
+    "shar bezak"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gul bilan bezash",
+   "aliases": [
+    "gul bezak",
+    "floristika",
+    "tsvety"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kelin-kuyov stoli (prezidium) bezagi",
+   "aliases": [
+    "prezidium",
+    "kelin stol"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kortej mashinalari",
+   "aliases": [
+    "kortej",
+    "limuzin",
+    "to'y mashina"
+   ],
+   "category": "toy_tadbir",
+   "unit": "hour",
+   "variants": [
+    {
+     "group": "Mashina",
+     "options": [
+      "Sedan",
+      "Premium",
+      "Limuzin"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mashina bezash (to'y)",
+   "aliases": [
+    "mashina bezash",
+    "lenta mashina"
+   ],
+   "category": "toy_tadbir",
+   "unit": "car",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Animator",
+   "aliases": [
+    "bolalar animator",
+    "kloun"
+   ],
+   "category": "toy_tadbir",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bolalar tug'ilgan kunini tashkil etish",
+   "aliases": [
+    "tug'ilgan kun",
+    "den rojdeniya",
+    "bolalar bayram"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Tadbirni to'liq tashkil etish",
+   "aliases": [
+    "event",
+    "organizatsiya",
+    "tadbir tashkil"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Salyut va fayershou",
+   "aliases": [
+    "salyut",
+    "feyerverk",
+    "fayer shou"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Pirotexnika ruxsatnoma talab qiladi"
+  },
+  {
+   "name": "Ko'pik va tutun shou",
+   "aliases": [
+    "tutun",
+    "dim",
+    "konfetti"
+   ],
+   "category": "toy_tadbir",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Taklifnoma tayyorlash",
+   "aliases": [
+    "taklifnoma",
+    "priglashenie",
+    "taklifnoma chop"
+   ],
+   "category": "toy_tadbir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Elektron taklifnoma",
+   "aliases": [
+    "video taklifnoma"
+   ],
+   "category": "toy_tadbir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tort tayyorlash (buyurtma)",
+   "aliases": [
+    "tort",
+    "to'y torti",
+    "tort zakaz"
+   ],
+   "category": "toy_tadbir",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Kg bo'yicha"
+  },
+  {
+   "name": "Diktor (ovoz berish)",
+   "aliases": [
+    "diktor",
+    "ozvuchka"
+   ],
+   "category": "toy_tadbir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Rassom (portret)",
+   "aliases": [
+    "rassom",
+    "portret",
+    "rasm chizish"
+   ],
+   "category": "toy_tadbir",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Oshpaz xizmati (osh damlash)",
+   "aliases": [
+    "oshpaz",
+    "osh",
+    "palov",
+    "to'y oshi",
+    "osh damlash"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Guruch kg bo'yicha; masalliq odatda mijozdan"
+  },
+  {
+   "name": "Nahor oshi tayyorlash",
+   "aliases": [
+    "nahor oshi",
+    "ertalabki osh"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qozon-tovoq va jihoz bilan oshpaz",
+   "aliases": [
+    "qozon bilan",
+    "jihoz bilan oshpaz"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Osh tayyorlash (masalliqi bilan)",
+   "aliases": [
+    "tayyor osh",
+    "osh zakaz"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Somsa yopish (tandir)",
+   "aliases": [
+    "somsa",
+    "tandir somsa"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Non yopish (buyurtma)",
+   "aliases": [
+    "non",
+    "tandir non",
+    "patir"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Keytering (banket)",
+   "aliases": [
+    "keytering",
+    "catering",
+    "banket"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "person",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kofe-breyk",
+   "aliases": [
+    "kofe breyk",
+    "coffee break"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "person",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Sumalak pishirish",
+   "aliases": [
+    "sumalak"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Halim va kabob tayyorlash",
+   "aliases": [
+    "halim",
+    "kabob",
+    "shashlik"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qozon kabob (butun qo'y)",
+   "aliases": [
+    "butun qo'y",
+    "tandir go'sht"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Mol so'yish va go'sht maydalash",
+   "aliases": [
+    "qassob",
+    "so'yish",
+    "go'sht maydalash",
+    "myasnik"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hayvon",
+     "options": [
+      "Qo'y",
+      "Echki",
+      "Mol"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ofitsiant xizmati",
+   "aliases": [
+    "ofitsiant",
+    "xizmatchi",
+    "afitsiant"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "person",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tadbir yoki soat bo'yicha"
+  },
+  {
+   "name": "Idish yuvuvchi (tadbir)",
+   "aliases": [
+    "idish yuvish",
+    "posudomoyshitsa"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uyga oshpaz (kunlik)",
+   "aliases": [
+    "povar na dom",
+    "uy oshpaz"
+   ],
+   "category": "oshpaz_keytering",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yuk tashish",
+   "aliases": [
+    "gruzoperevozka",
+    "gruzovoy",
+    "yuk"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Mashina",
+     "options": [
+      "Damas",
+      "Labo",
+      "Gazel",
+      "Isuzu",
+      "Kamaz"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Shahar ichida reys yoki soat; shahar tashqarisi km bo'yicha"
+  },
+  {
+   "name": "Damas yuk tashish",
+   "aliases": [
+    "damas",
+    "damas yuk",
+    "damas xizmati"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Labo yuk tashish",
+   "aliases": [
+    "labo",
+    "labo yuk",
+    "labo xizmati"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gazel yuk tashish",
+   "aliases": [
+    "gazel",
+    "gazel yuk"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Isuzu yuk tashish",
+   "aliases": [
+    "isuzu",
+    "isuzu yuk"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kamaz va samosval",
+   "aliases": [
+    "kamaz",
+    "samosval",
+    "zil",
+    "shag'al"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Shahar tashqarisiga yuk tashish",
+   "aliases": [
+    "mejgorod",
+    "viloyatga yuk",
+    "shaharlararo yuk"
+   ],
+   "category": "yuk_tashish",
+   "unit": "km",
+   "variants": [
+    {
+     "group": "Mashina",
+     "options": [
+      "Damas",
+      "Labo",
+      "Gazel",
+      "Isuzu",
+      "Kamaz"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Gruzchik (yuk ortuvchi)",
+   "aliases": [
+    "gruzchik",
+    "yuk ortish",
+    "gruzchiki",
+    "hammol"
+   ],
+   "category": "yuk_tashish",
+   "unit": "hour",
+   "variants": [
+    {
+     "group": "Qavat",
+     "options": [
+      "Lift bor",
+      "Liftsiz 1-3 qavat",
+      "Liftsiz 4 qavatdan yuqori"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Bir kishi bo'yicha soat, ko'pincha kamida 2 soat"
+  },
+  {
+   "name": "Uy ko'chirish",
+   "aliases": [
+    "pereezd",
+    "ko'chish",
+    "kvartira pereezd"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Xonalar soni",
+     "options": [
+      "1 xonali",
+      "2 xonali",
+      "3 xonali",
+      "4 xonali",
+      "Hovli uy"
+     ]
+    }
+   ],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Ofis ko'chirish",
+   "aliases": [
+    "ofis pereezd"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Pianino va og'ir yuk tashish",
+   "aliases": [
+    "pianino",
+    "seyf",
+    "og'ir yuk"
+   ],
+   "category": "yuk_tashish",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Mebel tashish",
+   "aliases": [
+    "mebel dostavka"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Mashina",
+     "options": [
+      "Damas",
+      "Labo",
+      "Gazel",
+      "Isuzu",
+      "Kamaz"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qurilish materiali yetkazish",
+   "aliases": [
+    "stroymaterial",
+    "qum",
+    "sement",
+    "g'isht tashish"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Mashina",
+     "options": [
+      "Damas",
+      "Labo",
+      "Gazel",
+      "Isuzu",
+      "Kamaz"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ekskavator ijarasi",
+   "aliases": [
+    "ekskavator",
+    "ekskovator",
+    "yer qazish"
+   ],
+   "category": "yuk_tashish",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Traktor ekskavator (JCB)",
+   "aliases": [
+    "jcb",
+    "pogruzchik ekskavator",
+    "traktor ekskavator"
+   ],
+   "category": "yuk_tashish",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Avtokran",
+   "aliases": [
+    "kran"
+   ],
+   "category": "yuk_tashish",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Manipulyator",
+   "aliases": [],
+   "category": "yuk_tashish",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Avtovishka",
+   "aliases": [
+    "vishka"
+   ],
+   "category": "yuk_tashish",
+   "unit": "hour",
+   "variants": [
+    {
+     "group": "Balandligi",
+     "options": [
+      "17 m",
+      "28 m",
+      "45 m"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Pogruzchik (yuklagich)",
+   "aliases": [
+    "pogruzchik",
+    "frontal",
+    "bobcat"
+   ],
+   "category": "yuk_tashish",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Avtokara (forklift)",
+   "aliases": [
+    "avtokara",
+    "pogruzchik vilochniy",
+    "forklift"
+   ],
+   "category": "yuk_tashish",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Beton nasos",
+   "aliases": [
+    "betononasos"
+   ],
+   "category": "yuk_tashish",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Suv tashish (suv mashinasi)",
+   "aliases": [
+    "suv tashish",
+    "vodovoz",
+    "suv mashina",
+    "bochka"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Hajmi",
+     "options": [
+      "5 t",
+      "10 t",
+      "20 t"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tuproq va qum tashish",
+   "aliases": [
+    "tuproq",
+    "qum",
+    "chernozem"
+   ],
+   "category": "yuk_tashish",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Mashina",
+     "options": [
+      "Damas",
+      "Labo",
+      "Gazel",
+      "Isuzu",
+      "Kamaz"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Taksi (tuman ichida)",
+   "aliases": [
+    "taksi",
+    "taxi",
+    "taksi chaqirish"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Shaharlararo taksi",
+   "aliases": [
+    "mejgorod taksi",
+    "shaharlararo",
+    "toshkentga taksi"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "person",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Joy bo'yicha yoki butun mashina"
+  },
+  {
+   "name": "Aeroport transfer",
+   "aliases": [
+    "aeroport",
+    "transfer",
+    "vokzal"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yo'lovchi tashish (avtobus, mikroavtobus)",
+   "aliases": [
+    "avtobus ijara",
+    "mikroavtobus",
+    "yo'lovchi tashish"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Transport",
+     "options": [
+      "Miniven (7 joy)",
+      "Mikroavtobus (15-20 joy)",
+      "Avtobus (30-50 joy)"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Hushyor haydovchi",
+   "aliases": [
+    "trezviy voditel"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Shaxsiy haydovchi",
+   "aliases": [
+    "voditel"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kuryer yetkazib berish",
+   "aliases": [
+    "kuryer",
+    "dostavka",
+    "yetkazib berish",
+    "kurer"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Hujjat va posilka yetkazish",
+   "aliases": [
+    "posilka",
+    "hujjat yetkazish"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Dori va mahsulot olib kelish",
+   "aliases": [
+    "dori olib kelish",
+    "mahsulot olib kelish",
+    "bozorlik"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Avtomobil ijarasi",
+   "aliases": [
+    "arenda avto",
+    "mashina ijara",
+    "prokat avto"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "day",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Haydovchi bilan mashina ijarasi",
+   "aliases": [
+    "mashina voditel bilan"
+   ],
+   "category": "taksi_yetkazish",
+   "unit": "day",
+   "variants": [
+    {
+     "group": "Mashina turi",
+     "options": [
+      "Sedan",
+      "Krossover",
+      "Jip",
+      "Miniven"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Matematika repetitori",
+   "aliases": [
+    "matematika",
+    "repetitor",
+    "mat",
+    "algebra"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Daraja",
+     "options": [
+      "1-4 sinf",
+      "5-9 sinf",
+      "10-11 sinf",
+      "Abituriyent",
+      "Kattalar"
+     ]
+    },
+    {
+     "group": "Format",
+     "options": [
+      "Yakka",
+      "Guruhda",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ingliz tili",
+   "aliases": [
+    "english",
+    "angliyskiy",
+    "IELTS"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Daraja",
+     "options": [
+      "1-4 sinf",
+      "5-9 sinf",
+      "10-11 sinf",
+      "Abituriyent",
+      "Kattalar"
+     ]
+    },
+    {
+     "group": "Format",
+     "options": [
+      "Yakka",
+      "Guruhda",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Rus tili",
+   "aliases": [
+    "russkiy"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Daraja",
+     "options": [
+      "1-4 sinf",
+      "5-9 sinf",
+      "10-11 sinf",
+      "Abituriyent",
+      "Kattalar"
+     ]
+    },
+    {
+     "group": "Format",
+     "options": [
+      "Yakka",
+      "Guruhda",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ona tili va adabiyot",
+   "aliases": [
+    "ona tili",
+    "adabiyot"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Daraja",
+     "options": [
+      "1-4 sinf",
+      "5-9 sinf",
+      "10-11 sinf",
+      "Abituriyent",
+      "Kattalar"
+     ]
+    },
+    {
+     "group": "Format",
+     "options": [
+      "Yakka",
+      "Guruhda",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kimyo repetitori",
+   "aliases": [
+    "kimyo",
+    "ximiya"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Daraja",
+     "options": [
+      "1-4 sinf",
+      "5-9 sinf",
+      "10-11 sinf",
+      "Abituriyent",
+      "Kattalar"
+     ]
+    },
+    {
+     "group": "Format",
+     "options": [
+      "Yakka",
+      "Guruhda",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Biologiya repetitori",
+   "aliases": [
+    "biologiya"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Daraja",
+     "options": [
+      "1-4 sinf",
+      "5-9 sinf",
+      "10-11 sinf",
+      "Abituriyent",
+      "Kattalar"
+     ]
+    },
+    {
+     "group": "Format",
+     "options": [
+      "Yakka",
+      "Guruhda",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Fizika repetitori",
+   "aliases": [
+    "fizika"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Daraja",
+     "options": [
+      "1-4 sinf",
+      "5-9 sinf",
+      "10-11 sinf",
+      "Abituriyent",
+      "Kattalar"
+     ]
+    },
+    {
+     "group": "Format",
+     "options": [
+      "Yakka",
+      "Guruhda",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tarix repetitori",
+   "aliases": [
+    "tarix",
+    "istoriya"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Daraja",
+     "options": [
+      "1-4 sinf",
+      "5-9 sinf",
+      "10-11 sinf",
+      "Abituriyent",
+      "Kattalar"
+     ]
+    },
+    {
+     "group": "Format",
+     "options": [
+      "Yakka",
+      "Guruhda",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Arab tili",
+   "aliases": [
+    "arabskiy"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Koreys, nemis va boshqa tillar",
+   "aliases": [
+    "koreys tili",
+    "nemis tili",
+    "turk tili"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Abituriyentlarni tayyorlash (DTM)",
+   "aliases": [
+    "abituriyent",
+    "DTM",
+    "test tayyorlov",
+    "attestatsiya"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "IELTS va CEFR tayyorlov",
+   "aliases": [
+    "IELTS",
+    "CEFR",
+    "multilevel"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "SAT tayyorlov",
+   "aliases": [
+    "SAT"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Boshlang'ich sinf va maktabga tayyorlov",
+   "aliases": [
+    "maktabga tayyorlov",
+    "podgotovka k shkole",
+    "1 sinf"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kompyuter savodxonligi kursi",
+   "aliases": [
+    "kompyuter kurs",
+    "word excel",
+    "operator"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Dasturlash kursi",
+   "aliases": [
+    "IT kurs",
+    "dasturlash",
+    "programmirovanie"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Buxgalteriya kursi (1C)",
+   "aliases": [
+    "1C",
+    "buxgalteriya kurs"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Avtomaktab va instruktor",
+   "aliases": [
+    "avtoinstruktor",
+    "avtoshkola",
+    "haydovchilik",
+    "prava"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Karobka",
+     "options": [
+      "Mexanika",
+      "Avtomat"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Prava olish uchun litsenziyali avtomaktab"
+  },
+  {
+   "name": "Musiqa darslari",
+   "aliases": [
+    "musiqa",
+    "pianino",
+    "gitara",
+    "dutor",
+    "rubob"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Raqs darslari",
+   "aliases": [
+    "raqs",
+    "tantsy"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Sport seksiyasi (kurash, futbol, boks)",
+   "aliases": [
+    "sport seksiya",
+    "kurash",
+    "boks",
+    "futbol",
+    "karate"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Suzish darslari",
+   "aliases": [
+    "suzish",
+    "basseyn darsi"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tikuvchilik kursi",
+   "aliases": [
+    "tikuvchilik kurs",
+    "kroy"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Sartaroshlik va manikyur kursi",
+   "aliases": [
+    "barber kurs",
+    "manikyur kurs",
+    "kosmetologiya kurs"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Oshpazlik va qandolatchilik kursi",
+   "aliases": [
+    "oshpazlik kurs",
+    "konditer kurs"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qur'on va tajvid darslari",
+   "aliases": [
+    "qur'on",
+    "tajvid",
+    "qorilik"
+   ],
+   "category": "talim",
+   "unit": "month",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Logoped",
+   "aliases": [
+    "nutq",
+    "defektolog"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Psixolog maslahati",
+   "aliases": [
+    "psixolog",
+    "psiholog"
+   ],
+   "category": "talim",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uy vazifasiga yordam",
+   "aliases": [
+    "uy vazifa",
+    "domashka"
+   ],
+   "category": "talim",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Rasm chizish darslari",
+   "aliases": [
+    "rasm",
+    "risovanie"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Shaxmat darslari",
+   "aliases": [
+    "shaxmat",
+    "shashka"
+   ],
+   "category": "talim",
+   "unit": "lesson",
+   "variants": [
+    {
+     "group": "Format",
+     "options": [
+      "Guruhda",
+      "Yakka",
+      "Onlayn"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Hamshira uyga (ukol qo'yish)",
+   "aliases": [
+    "ukol",
+    "hamshira",
+    "medsestra",
+    "injeksiya"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tibbiy xizmat: litsenziya talab qilinadi (regulated)"
+  },
+  {
+   "name": "Tomchi (kapelnitsa) qo'yish",
+   "aliases": [
+    "kapelnitsa",
+    "tomchi",
+    "sistema"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tibbiy xizmat: litsenziya talab qilinadi (regulated)"
+  },
+  {
+   "name": "Uyga shifokor chaqirish",
+   "aliases": [
+    "vrach na dom",
+    "doktor uyga",
+    "shifokor"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tibbiy xizmat: litsenziya talab qilinadi (regulated)"
+  },
+  {
+   "name": "Uyda tahlil topshirish (qon olish)",
+   "aliases": [
+    "analiz na domu",
+    "qon tahlil",
+    "laboratoriya"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Litsenziyali laboratoriya (regulated)"
+  },
+  {
+   "name": "Bog'lov (perevyazka)",
+   "aliases": [
+    "perevyazka",
+    "bog'lov"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tibbiy xizmat (regulated)"
+  },
+  {
+   "name": "Bosim va qand o'lchash",
+   "aliases": [
+    "davleniye",
+    "qand o'lchash"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Davolovchi massaj",
+   "aliases": [
+    "lechebniy massaj",
+    "tibbiy massaj"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tibbiy massaj: litsenziyali mutaxassis (regulated)"
+  },
+  {
+   "name": "Uyda fizioterapiya va LFK",
+   "aliases": [
+    "lfk",
+    "fizioterapiya",
+    "reabilitatsiya"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Tibbiy (regulated)"
+  },
+  {
+   "name": "Sunnat to'yi uchun sunnat qilish",
+   "aliases": [
+    "sunnat",
+    "xatna",
+    "obrezanie"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Faqat litsenziyali shifokor yoki klinika (regulated)"
+  },
+  {
+   "name": "Tish shifokori",
+   "aliases": [
+    "stomatolog",
+    "tish",
+    "tish davolash"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": true,
+   "note": "Tibbiy (regulated)"
+  },
+  {
+   "name": "Ko'z tekshiruvi va ko'zoynak tanlash",
+   "aliases": [
+    "optika",
+    "ko'zoynak",
+    "zrenie"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ko'z tekshiruvi: tibbiy (regulated)"
+  },
+  {
+   "name": "Tez yordam bo'lmagan bemor tashish",
+   "aliases": [
+    "bemor tashish",
+    "perevozka bolnyx"
+   ],
+   "category": "tibbiy_uyda",
+   "unit": "trip",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Maxsus transport, ruxsat talab qilinishi mumkin"
+  },
+  {
+   "name": "Veterinar chaqirish",
+   "aliases": [
+    "veterinar",
+    "vetvrach",
+    "mol doktor"
+   ],
+   "category": "hayvonlar",
+   "unit": "call",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Veterinariya faoliyati litsenziyali (regulated)"
+  },
+  {
+   "name": "Hayvonlarni emlash",
+   "aliases": [
+    "vaktsina",
+    "emlash",
+    "privivka"
+   ],
+   "category": "hayvonlar",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hayvon",
+     "options": [
+      "Mushuk",
+      "Kichik it",
+      "Katta it"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Veterinar (regulated)"
+  },
+  {
+   "name": "Chorva emlash va davolash",
+   "aliases": [
+    "mol davolash",
+    "qo'y davolash",
+    "chorva"
+   ],
+   "category": "hayvonlar",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Veterinar (regulated)"
+  },
+  {
+   "name": "Sun'iy urug'lantirish",
+   "aliases": [
+    "osemenenie"
+   ],
+   "category": "hayvonlar",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Veterinar (regulated)"
+  },
+  {
+   "name": "Hayvon sterilizatsiyasi",
+   "aliases": [
+    "sterilizatsiya",
+    "kastratsiya"
+   ],
+   "category": "hayvonlar",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "Hayvon",
+     "options": [
+      "Mushuk",
+      "Kichik it",
+      "Katta it"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Veterinar (regulated)"
+  },
+  {
+   "name": "Grooming (it, mushuk junini olish)",
+   "aliases": [
+    "gruming",
+    "grooming",
+    "it soch olish",
+    "strijka sobak"
+   ],
+   "category": "hayvonlar",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Hayvon",
+     "options": [
+      "Mushuk",
+      "Kichik it",
+      "Katta it"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Hayvonni yuvish",
+   "aliases": [
+    "myt sobak",
+    "it yuvish"
+   ],
+   "category": "hayvonlar",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Hayvon",
+     "options": [
+      "Mushuk",
+      "Kichik it",
+      "Katta it"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tirnoq olish (hayvon)",
+   "aliases": [
+    "kogti"
+   ],
+   "category": "hayvonlar",
+   "unit": "session",
+   "variants": [
+    {
+     "group": "Hayvon",
+     "options": [
+      "Mushuk",
+      "Kichik it",
+      "Katta it"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Hayvonni vaqtincha boqish (passajirlik)",
+   "aliases": [
+    "zooxostel",
+    "perederjka",
+    "it boqish"
+   ],
+   "category": "hayvonlar",
+   "unit": "day",
+   "variants": [
+    {
+     "group": "Hayvon",
+     "options": [
+      "Mushuk",
+      "Kichik it",
+      "Katta it"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "It sayr qildirish",
+   "aliases": [
+    "vigul sobak",
+    "it sayr"
+   ],
+   "category": "hayvonlar",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "It o'rgatish (kinolog)",
+   "aliases": [
+    "kinolog",
+    "dressirovka",
+    "it o'rgatish"
+   ],
+   "category": "hayvonlar",
+   "unit": "lesson",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qo'y qirqish (jun olish)",
+   "aliases": [
+    "qo'y qirqish",
+    "strijka ovets",
+    "jun olish"
+   ],
+   "category": "hayvonlar",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mol tuyog'ini tozalash",
+   "aliases": [
+    "tuyoq",
+    "kopyto",
+    "tuyoq kesish"
+   ],
+   "category": "hayvonlar",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Chorva boqish (podachi)",
+   "aliases": [
+    "podachi",
+    "cho'pon",
+    "mol boqish"
+   ],
+   "category": "hayvonlar",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Bosh soni bo'yicha"
+  },
+  {
+   "name": "Traktor bilan yer haydash",
+   "aliases": [
+    "yer haydash",
+    "traktor",
+    "shudgor",
+    "vspashka",
+    "plug"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "sotix",
+   "variants": [
+    {
+     "group": "Yer",
+     "options": [
+      "Tomorqa",
+      "Dala"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "Tomorqa sotix bo'yicha, dala gektar bo'yicha"
+  },
+  {
+   "name": "Yer haydash (gektar)",
+   "aliases": [
+    "shudgor gektar",
+    "dala haydash"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "hectare",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mini traktor va motoblok bilan haydash",
+   "aliases": [
+    "mini traktor",
+    "motoblok",
+    "kultivator"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "sotix",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Chizellash va boronalash",
+   "aliases": [
+    "borona",
+    "chizel",
+    "molalash",
+    "tekislash"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "hectare",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yer tekislash (lazerli)",
+   "aliases": [
+    "planirovka",
+    "lazer tekislash"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "hectare",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kultivatsiya (qator orasini yumshatish)",
+   "aliases": [
+    "kultivatsiya",
+    "kultivator"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "hectare",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ekish (seyalka)",
+   "aliases": [
+    "ekish",
+    "seyalka",
+    "chigit ekish",
+    "bug'doy ekish"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "hectare",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kombayn bilan o'rish (bug'doy)",
+   "aliases": [
+    "kombayn",
+    "o'rish",
+    "galla o'rish",
+    "uborka zerna"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "hectare",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Paxta terish mashinasi",
+   "aliases": [
+    "paxta terish",
+    "xlopkouborka"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "hectare",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Pichan o'rish va presslash",
+   "aliases": [
+    "pichan",
+    "press",
+    "senoo",
+    "toy bosish"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Toy (dona) yoki gektar bo'yicha"
+  },
+  {
+   "name": "Dori sepish (opryskivanie)",
+   "aliases": [
+    "dori sepish",
+    "opryskivanie",
+    "pestitsid"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "hectare",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Pestitsidlar bilan ishlash qoidaga muvofiq"
+  },
+  {
+   "name": "Dron bilan dori sepish",
+   "aliases": [
+    "agrodron",
+    "dron sepish"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "hectare",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "O'g'it sepish",
+   "aliases": [
+    "o'g'it",
+    "udobrenie",
+    "go'ng sepish"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "hectare",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Go'ng tashish",
+   "aliases": [
+    "go'ng",
+    "navoz"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "trip",
+   "variants": [
+    {
+     "group": "Mashina",
+     "options": [
+      "Damas",
+      "Labo",
+      "Gazel",
+      "Isuzu",
+      "Kamaz"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kartoshka ekish va kavlash",
+   "aliases": [
+    "kartoshka",
+    "kartoshka kavlash"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "sotix",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tomchilatib sug'orish o'rnatish",
+   "aliases": [
+    "tomchilatib",
+    "kapelnoe oroshenie",
+    "drip"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "sotix",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Issiqxona qurish",
+   "aliases": [
+    "teplitsa",
+    "issiqxona"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Daraxtlarni butash va payvandlash",
+   "aliases": [
+    "butash",
+    "obrezka",
+    "payvand daraxt",
+    "privivka derevev"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mardikor (dala ishchisi)",
+   "aliases": [
+    "mardikor",
+    "ishchi",
+    "dala ishi",
+    "kunbay"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Don tegirmonda tortish",
+   "aliases": [
+    "tegirmon",
+    "un tortish",
+    "mel'nitsa"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yem maydalash",
+   "aliases": [
+    "yem",
+    "drobilka"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Sholi oqlash",
+   "aliases": [
+    "sholi",
+    "guruch oqlash"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Arpa va makka yanchish",
+   "aliases": [
+    "makka",
+    "yanchish",
+    "obmolot"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "kg",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Asalari parvarishi va asal olish",
+   "aliases": [
+    "asalari",
+    "pchela",
+    "asal olish"
+   ],
+   "category": "qishloq_xojaligi",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Quduq qazish (burg'ulash)",
+   "aliases": [
+    "quduq",
+    "skvajina",
+    "burenie",
+    "quduq qazish",
+    "burg'ulash"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Metr bo'yicha (chuqurlik); quvur va nasos alohida"
+  },
+  {
+   "name": "Qo'lda quduq qazish",
+   "aliases": [
+    "qo'lda quduq",
+    "kolodets"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Quduqni tozalash",
+   "aliases": [
+    "skvajina chistka",
+    "quduq tozalash",
+    "prokachka"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Quduqqa nasos o'rnatish",
+   "aliases": [
+    "nasos quduq",
+    "glubinniy nasos"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Suv quvurini uyga ulash",
+   "aliases": [
+    "suv ulash",
+    "vodoprovod ulash"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Suv ta'minoti tashkiloti ruxsati bilan"
+  },
+  {
+   "name": "Gaz quvurini ulash",
+   "aliases": [
+    "gaz ulash",
+    "gaz truba",
+    "gazga ulash"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Faqat ruxsatli tashkilot (Hududgaztaminot) orqali (regulated)"
+  },
+  {
+   "name": "Gaz hisoblagich o'rnatish",
+   "aliases": [
+    "gaz schyotchik",
+    "gaz hisoblagich"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ruxsatli tashkilot (regulated)"
+  },
+  {
+   "name": "Gaz plitani ulash",
+   "aliases": [
+    "gaz plita ulash"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ruxsatli gaz ustasi (regulated)"
+  },
+  {
+   "name": "Ariq va zovur qazish",
+   "aliases": [
+    "ariq",
+    "zovur",
+    "kanava"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Chuqur qazish (yer ishi)",
+   "aliases": [
+    "chuqur",
+    "zemlyanye raboty",
+    "yer qazish"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "m3",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Suv omborchasi (bak) o'rnatish",
+   "aliases": [
+    "suv baki",
+    "yemkost",
+    "bak"
+   ],
+   "category": "quduq_suv_gaz",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Daraxt kesish",
+   "aliases": [
+    "spil derevev",
+    "daraxt"
+   ],
+   "category": "bog_hovli",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Kundani kovlab olish",
+   "aliases": [
+    "kunda",
+    "pen",
+    "korchevanie"
+   ],
+   "category": "bog_hovli",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Maysa o'rish",
+   "aliases": [
+    "maysa",
+    "gazon",
+    "pokos travy",
+    "o't o'rish"
+   ],
+   "category": "bog_hovli",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Maysazor ekish (gazon)",
+   "aliases": [
+    "gazon ekish",
+    "rulonniy gazon"
+   ],
+   "category": "bog_hovli",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bog'bon xizmati",
+   "aliases": [
+    "bog'bon",
+    "sadovnik",
+    "landshaft"
+   ],
+   "category": "bog_hovli",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Landshaft dizayni",
+   "aliases": [
+    "landshaft",
+    "landshaft dizayn"
+   ],
+   "category": "bog_hovli",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Hovli obodonlashtirish",
+   "aliases": [
+    "blagoustroystvo",
+    "hovli"
+   ],
+   "category": "bog_hovli",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Tok (uzum) ishkomi qurish",
+   "aliases": [
+    "ishkom",
+    "tok",
+    "uzum so'risi"
+   ],
+   "category": "bog_hovli",
+   "unit": "m",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Uzumni ochish va ko'mish",
+   "aliases": [
+    "tok ochish",
+    "tok ko'mish"
+   ],
+   "category": "bog_hovli",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'chat o'tkazish",
+   "aliases": [
+    "ko'chat",
+    "saja"
+   ],
+   "category": "bog_hovli",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Nusxa ko'chirish (kserokopiya)",
+   "aliases": [
+    "kserokopiya",
+    "kseroks",
+    "nusxa",
+    "kopiya"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "page",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "A4",
+      "A3"
+     ]
+    },
+    {
+     "group": "Rangi",
+     "options": [
+      "Oq-qora",
+      "Rangli"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Chop etish (printer)",
+   "aliases": [
+    "pechat",
+    "raspechatka",
+    "print",
+    "chop etish"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "page",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "A4",
+      "A3"
+     ]
+    },
+    {
+     "group": "Rangi",
+     "options": [
+      "Oq-qora",
+      "Rangli"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Skanerlash",
+   "aliases": [
+    "skaner"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "page",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Laminatsiya",
+   "aliases": [
+    "laminirovanie"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "A5",
+      "A4",
+      "A3"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Pereplyot (spiral, muqova)",
+   "aliases": [
+    "pereplyot",
+    "spiral",
+    "muqova"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Rangli fotosurat chop etish",
+   "aliases": [
+    "foto pechat",
+    "surat chiqarish"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "pcs",
+   "variants": [
+    {
+     "group": "O'lchami",
+     "options": [
+      "10x15",
+      "15x21",
+      "A4"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Banner chop etish",
+   "aliases": [
+    "banner",
+    "bannernaya pechat"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Vizitka",
+   "aliases": [
+    "vizitkalar"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ko'pincha 100 yoki 1000 dona to'plam"
+  },
+  {
+   "name": "Flayer va buklet",
+   "aliases": [
+    "flayer",
+    "listovka",
+    "buklet"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Futbolka va krujkaga rasm bosish",
+   "aliases": [
+    "futbolka pechat",
+    "krujka",
+    "sublimatsiya"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Reklama lavhasi (vyveska)",
+   "aliases": [
+    "vyveska",
+    "lavha",
+    "reklama",
+    "obyomnye bukvy"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Logotip va dizayn",
+   "aliases": [
+    "logotip",
+    "dizayn",
+    "grafik dizayn"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ijtimoiy tarmoq (SMM) xizmati",
+   "aliases": [
+    "smm",
+    "instagram",
+    "telegram kanal"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Sayt yaratish",
+   "aliases": [
+    "sayt",
+    "veb sayt",
+    "landing"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Telegram bot yaratish",
+   "aliases": [
+    "bot",
+    "telegram bot"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Video reklama tayyorlash",
+   "aliases": [
+    "reklama video",
+    "rolik"
+   ],
+   "category": "pechat_dizayn",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Stol-stul ijarasi",
+   "aliases": [
+    "stol stul",
+    "stul ijara",
+    "arenda stolov"
+   ],
+   "category": "ijara",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Idish-tovoq ijarasi",
+   "aliases": [
+    "idish ijara",
+    "posuda arenda",
+    "qozon ijara"
+   ],
+   "category": "ijara",
+   "unit": "set",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qozon ijarasi",
+   "aliases": [
+    "qozon",
+    "kazan arenda"
+   ],
+   "category": "ijara",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Chodir (shatyor) ijarasi",
+   "aliases": [
+    "shatyor",
+    "chodir",
+    "palatka"
+   ],
+   "category": "ijara",
+   "unit": "event",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Milliy kiyim ijarasi",
+   "aliases": [
+    "milliy kiyim",
+    "chopon ijara",
+    "do'ppi"
+   ],
+   "category": "ijara",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kelinlik ko'ylagi ijarasi",
+   "aliases": [
+    "kelinlik ijara",
+    "svadebnoe plate prokat"
+   ],
+   "category": "ijara",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kostyum ijarasi",
+   "aliases": [
+    "kostyum prokat"
+   ],
+   "category": "ijara",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Qurilish asbob-uskunasi ijarasi",
+   "aliases": [
+    "perforator ijara",
+    "asbob ijara",
+    "instrument prokat"
+   ],
+   "category": "ijara",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Lesa (havoza) ijarasi",
+   "aliases": [
+    "lesa",
+    "havoza"
+   ],
+   "category": "ijara",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Beton aralashtirgich ijarasi",
+   "aliases": [
+    "betonomeshalka",
+    "beton aralashtirgich"
+   ],
+   "category": "ijara",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Generator ijarasi",
+   "aliases": [
+    "generator arenda"
+   ],
+   "category": "ijara",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bolalar o'yinchoq va batut ijarasi",
+   "aliases": [
+    "batut",
+    "naduvnoy batut"
+   ],
+   "category": "ijara",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kino-proyektor ijarasi",
+   "aliases": [
+    "proyektor",
+    "ekran ijara"
+   ],
+   "category": "ijara",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mehmon uyi (kunlik)",
+   "aliases": [
+    "kvartira posutochno",
+    "kunlik uy",
+    "mehmonxona"
+   ],
+   "category": "ijara",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Tarakan va hasharotlarga qarshi ishlov",
+   "aliases": [
+    "tarakan",
+    "dezinseksiya",
+    "hasharot",
+    "klop"
+   ],
+   "category": "dezinfeksiya",
+   "unit": "room",
+   "variants": [
+    {
+     "group": "Xonalar soni",
+     "options": [
+      "1 xonali",
+      "2 xonali",
+      "3 xonali",
+      "4 xonali",
+      "Hovli uy"
+     ]
+    }
+   ],
+   "price_after_inspection": false,
+   "note": "SES ruxsatnomasi bo'lgan tashkilot (regulated)"
+  },
+  {
+   "name": "Kalamush va sichqonga qarshi (deratizatsiya)",
+   "aliases": [
+    "kalamush",
+    "sichqon",
+    "deratizatsiya"
+   ],
+   "category": "dezinfeksiya",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ruxsatli tashkilot (regulated)"
+  },
+  {
+   "name": "Dezinfeksiya",
+   "aliases": [
+    "dezinfektsiya",
+    "obrabotka"
+   ],
+   "category": "dezinfeksiya",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Ruxsatli tashkilot (regulated)"
+  },
+  {
+   "name": "Chumoli va termitga qarshi",
+   "aliases": [
+    "chumoli",
+    "termit"
+   ],
+   "category": "dezinfeksiya",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Pashsha va chivinga qarshi (hovli)",
+   "aliases": [
+    "chivin",
+    "pashsha",
+    "komar"
+   ],
+   "category": "dezinfeksiya",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Mog'orga qarshi ishlov",
+   "aliases": [
+    "mog'or",
+    "plesen",
+    "grib"
+   ],
+   "category": "dezinfeksiya",
+   "unit": "m2",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Hujjat tarjimasi",
+   "aliases": [
+    "tarjima",
+    "perevod",
+    "tarjimon"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "page",
+   "variants": [
+    {
+     "group": "Til",
+     "options": [
+      "Rus",
+      "Ingliz",
+      "Turk",
+      "Arab",
+      "Koreys"
+     ]
+    }
+   ],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Notarial tasdiqlangan tarjima",
+   "aliases": [
+    "notarial tarjima",
+    "notarius"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "page",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Notarius tasdig'i (regulated)"
+  },
+  {
+   "name": "Matn terish",
+   "aliases": [
+    "nabor teksta"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "page",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Rezyume tayyorlash",
+   "aliases": [
+    "rezyume",
+    "resume",
+    "CV"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ariza va hujjat to'ldirish",
+   "aliases": [
+    "ariza",
+    "hujjat to'ldirish",
+    "blank"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Davlat xizmatlari (my.gov.uz) bo'yicha yordam",
+   "aliases": [
+    "my gov",
+    "davlat xizmatlari",
+    "yagona portal"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Viza va xorijga ketish hujjatlari",
+   "aliases": [
+    "viza",
+    "anketa",
+    "migratsiya"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Buxgalteriya xizmati",
+   "aliases": [
+    "buxgalter",
+    "buxgalteriya",
+    "hisobot topshirish"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": true
+  },
+  {
+   "name": "Soliq hisoboti topshirish",
+   "aliases": [
+    "soliq",
+    "deklaratsiya",
+    "nalog"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Yuridik maslahat",
+   "aliases": [
+    "yurist",
+    "advokat",
+    "yuridik"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "session",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Advokatlik faoliyati litsenziyali (regulated)"
+  },
+  {
+   "name": "Firma (MChJ, YaTT) ochish",
+   "aliases": [
+    "firma ochish",
+    "YaTT",
+    "MChJ",
+    "registratsiya"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Kurs ishi va referat yozish",
+   "aliases": [
+    "referat",
+    "kurs ishi",
+    "slayd",
+    "prezentatsiya"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Ko'chmas mulk rieltori",
+   "aliases": [
+    "rieltor",
+    "makler",
+    "uy sotish"
+   ],
+   "category": "hujjat_tarjima",
+   "unit": "pcs",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Komissiya foiz bo'yicha"
+  },
+  {
+   "name": "Enaga (bola qarovchi)",
+   "aliases": [
+    "enaga",
+    "nyanya",
+    "bola qarash"
+   ],
+   "category": "enaga_qarovchi",
+   "unit": "hour",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Soat, kun yoki oy bo'yicha"
+  },
+  {
+   "name": "Enaga (oylik)",
+   "aliases": [
+    "enaga oylik",
+    "nyanya na mesyats"
+   ],
+   "category": "enaga_qarovchi",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Keksalarga qarovchi (sidelka)",
+   "aliases": [
+    "sidelka",
+    "qarovchi",
+    "keksa qarash"
+   ],
+   "category": "enaga_qarovchi",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bemorga qarovchi",
+   "aliases": [
+    "bemor qarash",
+    "uxod za bolnymi"
+   ],
+   "category": "enaga_qarovchi",
+   "unit": "day",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uy yordamchisi (oylik)",
+   "aliases": [
+    "domrabotnitsa",
+    "xizmatkor"
+   ],
+   "category": "enaga_qarovchi",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Bolalar bog'chasi (xususiy)",
+   "aliases": [
+    "bog'cha",
+    "detskiy sad",
+    "xususiy bog'cha"
+   ],
+   "category": "enaga_qarovchi",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": false,
+   "note": "Litsenziya talab qilinadi (regulated)"
+  },
+  {
+   "name": "Bolalarni maktabga olib borish",
+   "aliases": [
+    "maktabga olib borish",
+    "bola tashish"
+   ],
+   "category": "enaga_qarovchi",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": false
+  },
+  {
+   "name": "Uyni qo'riqlash (qorovul)",
+   "aliases": [
+    "qorovul",
+    "storoj",
+    "oxrana"
+   ],
+   "category": "enaga_qarovchi",
+   "unit": "month",
+   "variants": [],
+   "price_after_inspection": false
+  }
+ ],
+ "sources": [
+  "https://www.olx.uz/uslugi/",
+  "https://www.olx.uz/uslugi/bytovye-uslugi/",
+  "https://www.olx.uz/uslugi/stroitelstvo-otdelka-remont/",
+  "https://www.olx.uz/uslugi/avto-moto-uslugi/",
+  "https://www.olx.uz/oz/uslugi/krasota-zdorove/",
+  "https://www.olx.uz/oz/uslugi/razvlechenie-foto-video/",
+  "https://www.olx.uz/uslugi/perevozki-arenda-transporta/",
+  "https://www.olx.uz/uslugi/obsluzhivanie-remont-tehniki/",
+  "https://www.olx.uz/uslugi/obrazovanie/",
+  "https://www.olx.uz/oz/uslugi/q-gilam-yuvish/",
+  "https://www.olx.uz/oz/uslugi/q-traktor-xizmati/",
+  "https://www.afisha.uz/uz/gorod/2024/01/26/yuvamiz",
+  "https://gaya.uz/uz/gilam-yuvish.html",
+  "https://fabrikachistoti.uz/uz/price.html",
+  "https://stirka-kovrov.uz/uz/",
+  "https://ishonch-gilam-yuvish.uz/index-uz.html",
+  "https://ezzy.uz/uz",
+  "https://ezzy.uz/uz/hourly/husband",
+  "https://www.ustabor.uz/uz/blog/2026-yilda-toshkentda-santexnik-chaqirish-narxi-haqiqiy-narxlar-va-xizmatlar-tahlili",
+  "https://www.ustabor.uz/en/ustabor-service/ustanovit-rozetki",
+  "https://www.ustabor.uz/uz/catalog/plumbing",
+  "https://santexnikka.uz/santexnikanarxlari.php",
+  "https://www.prom.uz/uz/section/ustanovka-i-remont-konditsionerov/",
+  "https://www.prom.uz/uz/section/burovye-raboty/syrdarinskaya-oblast/",
+  "https://www.afisha.uz/uz/gorod/2025/09/11/fotostudiyalar",
+  "https://www.afisha.uz/uz/gorod/2024/11/28/oromijoney",
+  "https://www.afisha.uz/uz/gorod/2026/05/06/osh",
+  "https://anhor.uz/uzl/news/sartaroshxona-xizmatlari-narxi/",
+  "https://stat.uz/en/press-center/news-of-committee/45414-toshkent-shahrida-kir-yuvish-va-kimyoviy-tozalash-xizmatlaridan-foydalanishga-talab-yuqori-4"
+ ],
+ "findings": "Pricing units seen in Uzbek price lists and OLX.uz listings: (1) per m2: carpets (gilam yuvish 10,000-20,000 so'm/m2 in regional and budget shops, 33,000-44,000 in Tashkent premium; import, wool and silk carpets cost more; express 24 h is double; at-home washing has a minimum of 20-30 m2), cleaning (klining 12,000-35,000 so'm/m2 by type: regular, general, after renovation), windows (from 15,000/m2), curtains, and almost all finishing work (kafel, shpaklyovka, bo'yoq, gipsokarton, laminat, styajka), plastic windows, banners. (2) per car class: car wash, salon cleaning, polishing and detailing are priced by class (small: Matiz/Spark/Nexia; sedan: Cobalt/Lacetti/Gentra; crossover; jeep; minivan/Damas), e.g. sedan 60,000-140,000, jeep 70,000-180,000, salon chemical 400,000-500,000, detailing 1.5-1.8 mln so'm; two-phase and three-phase wash are common package names. (3) per wheel size: shinomontaj and balansirovka by R13-R19+, per wheel or per set of 4. (4) per piece (dona) / per point (nuqta): plumbing installs (unitaz 250,000-300,000, smesitel from 130,000-160,000, rakovina from 230,000), electrical points (rozetka about 62,000 per point), sofa cleaning by seats, mattress by size, alterations. (5) per meter: pipes (35,000-45,000 so'm/m), cable, overlok, curtains, kitchen furniture (pogon metr), well drilling (by depth). (6) per call-out (chaqiruv): plumber, electrician, appliance and auto masters charge a call or diagnosis (50,000-150,000), night and urgent calls +30% or 150,000-300,000; the final price is set after inspection (price_after_inspection). (7) per hour: handyman ('muj na chas', usually minimum 2 h), loaders (gruzchik per person-hour), special machinery (ekskavator, kran, avtovishka), DJ, kortej, animator, sauna. (8) per trip (reys): cargo by vehicle (Damas, Labo, Gazel, Isuzu, Kamaz), out-of-town by km; evakuator; assenizator by tank size. (9) per session: barber, beauty, massage (30/60/90 min), lessons; per month: courses, tutoring packages, nanny. (10) per event/day: wedding photo/video (studio sessions 1.2-1.7 mln), tamada, karnay-surnay, decor; to'yxona per person. (11) per kg: osh by kg of rice (cook's service, ingredients usually from the client), laundry by kg, cake by kg, milling. (12) per sotix / hectare: plowing, sowing, combine harvesting, spraying. Most OLX listings say 'kelishilgan narx' (negotiable) or 'dan' (from): templates need a 'from' price flag and an 'after inspection/measurement' flag; many shops offer free pickup and delivery (carpets) or free call-out if repaired. Needed units: pcs, m2, m, m3, hour, day, month, car, wheel, set, point, call, trip, km, kg, page, session, lesson, event, person, room, sotix, hectare. Time-slot booking is needed for: barber and beauty (manikyur, kiprik, makiyaj), massage and sauna, car wash and detailing, tutoring and lessons, photo studio, call-out masters (santexnik, elektrik, konditsioner), cleaning, at-home carpet washing; date booking (with advance payment) for weddings and events (photo/video, tamada, to'yxona, karnay, oshpaz), moving, special machinery and field work (seasonal). Regulated (need a licence or permit, mark in the catalog): medical services at home (ukol, kapelnitsa, doctor, lab), manual therapy and hijoma, cosmetological injections, circumcision (sunnat), dentistry, veterinary, disinfection and pest control (SES), gas connection and gas meters, notarial and legal services, private kindergartens, pyrotechnics, car gas equipment (certified shops), tinting (permit for the car)."
+}
