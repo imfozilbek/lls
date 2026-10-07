@@ -61,6 +61,16 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   (`managed_bot` → `getManagedBotToken`); the owner never sees a token. A bot from BotFather still
   connects by pasting its token («Menda bot bor»). Order messages to the owner come from the
   shop's own bot.
+- **Demo shops («Namuna», owner's decision, October 2026):** reached only by their own bot link.
+  - **Made:** a platform admin makes a live shop a demo in «Platforma» («Namuna qilish»,
+    `PUT /api/admin/shops/:id/demo`), from its kind's sample (`demoTemplate`: food, grocery,
+    water, service, store; the same catalogs as the stand). It gets the sample's catalog and logo,
+    hours the whole day and the test card `0000 0000 0000 0000` «NAMUNA KARTA»; the owner becomes
+    its courier. There is no way back.
+  - **Kept apart:** never in the showcase, never in a district or the network. Its storefront, its
+    test card, the owner's order card and every bot message say its orders are not real. Its
+    orders never count in a customer's refusals or receipt warnings at other shops.
+  - **Reset:** «Namunani tozalash» deletes its orders and puts the sample back.
 - **«Mening bizneslarim».** Zumda | Business opens the Mini App with `?mode=business`: all of the
   owner's businesses, and the full owner section of any of them right there (`X-Bot: business`).
 - **One Worker serves all bots:** webhook `/tg/:botId` for shop bots, `/tg/platform` for
