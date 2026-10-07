@@ -31,7 +31,7 @@ const STEMS: readonly [Category, readonly string[]][] = [
         ["kofe", "qahva", "coffee", "latte", "kapuchino", "amerikano", "кофе", "латте", "капучино"],
     ],
     ["tea", ["choy", "чай"]],
-    ["juices", ["sharbat", "сок"]],
+    ["juices", ["sharbat", "kompot", "сок", "компот"]],
     ["drinks", ["kola", "cola", "ichimlik", "напит", "лимонад"]],
     ["cheese", ["pishloq", "сыр"]],
     ["eggs", ["tuxum", "яйц"]],

@@ -373,6 +373,11 @@ export const api = {
             request("GET", `/api/owner/products${query({ page, limit: 100 })}`),
         createProduct: (input: ProductInput): Promise<ProductDTO> =>
             request("POST", "/api/owner/products", input),
+        /** «Ro'yxat bilan qo'shish»: up to 50 plain products in one request. */
+        createProducts: (
+            items: Omit<ProductInput, "options" | "position">[],
+        ): Promise<{ created: ProductDTO[]; skipped: string[] }> =>
+            request("POST", "/api/owner/products/bulk", { items }),
         updateProduct: (
             id: string,
             patch: Omit<Partial<ProductInput>, "description"> & {

@@ -24,7 +24,7 @@ import { confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { CheckIcon, CopyIcon, PlusIcon, SearchIcon, TrashIcon } from "../ui/icons.js"
+import { CheckIcon, CopyIcon, ListIcon, PlusIcon, SearchIcon, TrashIcon } from "../ui/icons.js"
 import {
     Button,
     Field,
@@ -750,6 +750,22 @@ function useSave(input: {
     }
 }
 
+/** «Ro'yxat bilan»: many products at once, one a line (goal 17). */
+function BulkLink(): React.JSX.Element {
+    const t = useT()
+    const push = useRouter((state) => state.push)
+    return (
+        <button
+            type="button"
+            onClick={(): void => push({ name: "bulk" })}
+            className="tap flex min-h-11 shrink-0 items-center gap-1.5 rounded-full bg-brand/10 px-3 text-sm font-semibold text-brand active:bg-brand/20"
+        >
+            <ListIcon size={16} />
+            {t.owner.product.bulkShort}
+        </button>
+    )
+}
+
 function EditorForm({ product: initial }: { product: ProductDTO | undefined }): React.JSX.Element {
     const t = useT()
     const { draft, patch, restart, dirty, copy } = useEditorState(initial)
@@ -789,6 +805,7 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
                         {t.owner.product.fromCatalog}
                     </span>
                 ) : null}
+                {!product && searching ? <BulkLink /> : null}
             </div>
             {searching ? (
                 <CatalogSearch

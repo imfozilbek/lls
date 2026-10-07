@@ -21,6 +21,8 @@ interface Indexed {
     /** Name words, then alias words, each folded (see `fold`). */
     name: string
     aliases: string
+    /** Each alias on its own, folded: for an exact match. */
+    aliasNames: string[]
 }
 
 type Row = [string, string, string, string, number?, string?, string[]?, string[]?]
@@ -61,6 +63,7 @@ export function indexCatalog(rows: readonly Row[]): Indexed[] {
                 template,
                 name: fold(row[0]),
                 aliases: fold(row[1].replace(/\|/g, " ")),
+                aliasNames: row[1] ? row[1].split("|").map((alias) => fold(alias).trim()) : [],
             })
         }
     }
@@ -112,4 +115,18 @@ export function searchCatalog(
         .sort((a, b) => a.rank - b.rank || a.template.name.length - b.template.name.length)
         .slice(0, RESULTS)
         .map((f) => f.template)
+}
+
+/** The catalog by name and by alias, as people write them: for a list typed line by line. */
+export function byName(catalog: readonly Indexed[]): (name: string) => Template | undefined {
+    const names = new Map<string, Template>()
+    for (const item of catalog) {
+        for (const key of [item.name, ...item.aliasNames]) {
+            const clean = key.trim()
+            if (clean && !names.has(clean)) {
+                names.set(clean, item.template)
+            }
+        }
+    }
+    return (name) => names.get(fold(name).trim())
 }

@@ -76,6 +76,9 @@ const ProductEditor = lazy(() =>
         default: m.ProductEditor,
     })),
 )
+const BulkAdd = lazy(() =>
+    withStaff(() => import("./owner/BulkAdd.js")).then((m) => ({ default: m.BulkAdd })),
+)
 const CourierApp = lazy(() =>
     withStaff(() => import("./courier/CourierApp.js")).then((m) => ({ default: m.CourierApp })),
 )
@@ -248,6 +251,12 @@ function Screen(): React.JSX.Element {
             return (
                 <Suspense fallback={<MenuSkeleton />}>
                     <ProductEditor id={route.id} />
+                </Suspense>
+            )
+        case "bulk":
+            return (
+                <Suspense fallback={<MenuSkeleton />}>
+                    <BulkAdd />
                 </Suspense>
             )
         default:

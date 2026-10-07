@@ -185,6 +185,23 @@ export const staffUz = {
             copy: "Nusxa olish",
             copied: "Nusxa: o'zgartiring va saqlang",
             unsavedLeave: "Kiritilganlar saqlanmaydi. Chiqib ketasizmi?",
+            bulk: "Ro'yxat bilan qo'shish",
+            bulkShort: "Ro'yxat bilan",
+            bulkHint:
+                "Har qatorga bitta mahsulot: nomi va narxi. Kg, litr yoki dona bo'lsa, oxiriga yozing. Rasmlarni keyin qo'shasiz.",
+            bulkPlaceholder: "Lag'mon 38000\nManti 30000\nKompot 15000 litr",
+            bulkReady: "Tayyor: {n} ta",
+            bulkAdd: "{n} ta mahsulotni qo'shish",
+            bulkNothing: "Qatorga nomi va narxini yozing",
+            bulkAdded: "{n} ta mahsulot qo'shildi",
+            bulkSkipped: "{n} tasi do'konda bor edi",
+            bulkLeft: "Qolgan qatorlarni tuzating",
+            bulkErrors: {
+                noPrice: "Narxini yozing: «{name} 5000»",
+                badPrice: "Narx butun so'mda bo'lsin",
+                twin: "Ro'yxatda ikki marta",
+                longName: "Nomi juda uzun",
+            },
         },
         money: {
             periods: { today: "Bugun", week: "7 kun", month: "Shu oy" },
