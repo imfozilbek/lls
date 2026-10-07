@@ -36,7 +36,8 @@ test("the owner gives a latte sizes and a syrup; the price lives in the sizes", 
     await page.getByRole("button", { name: "Mening do'konim" }).click()
     await page.getByRole("tab", { name: "Menyu" }).click()
     await bottomButton(page).click() // «Mahsulot qo'shish»
-    await page.getByLabel("Nomi").fill("Latte")
+    await page.getByLabel("Katalogdan qidirish").fill("Latte")
+    await page.getByRole("button", { name: "«Latte» deb o'zim yozaman" }).click()
     await page.getByRole("button", { name: /Variantlar/ }).click()
     await page.getByLabel("Nima tanlanadi?").fill("Hajmi")
     const names = page.getByLabel("Variant nomi")

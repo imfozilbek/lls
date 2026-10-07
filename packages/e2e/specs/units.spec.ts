@@ -26,8 +26,13 @@ test("the owner prices pepper per 100 g; the step follows the unit", async ({ pa
     await page.getByRole("tab", { name: "Katalog" }).click()
     await bottomButton(page).click() // «Mahsulot qo'shish»
     await expect(page.getByRole("heading", { name: "Yangi mahsulot" })).toBeVisible()
-    await page.getByLabel("Nomi").fill("Qora murch")
-    await page.getByRole("button", { name: "100 g", exact: true }).click()
+    // From the Zumda catalog: pepper comes priced per 100 g, sold by 100 g.
+    await page.getByLabel("Katalogdan qidirish").fill("murch")
+    await page
+        .getByRole("button", { name: /^Qora murch/ })
+        .first()
+        .click()
+    await expect(page.getByLabel("Nomi")).toHaveValue("Qora murch")
     await expect(page.getByLabel("100 g narxi")).toBeVisible()
     await page.getByLabel("100 g narxi").fill("6000")
     // Steps of a 100 g item: 50 g, 100 g (chosen), 250 g, 500 g.
