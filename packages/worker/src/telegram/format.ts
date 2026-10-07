@@ -20,6 +20,8 @@ import type { BusinessType, Language, NetworkOrderDTO, OrderDTO, OrderItemDTO } 
 export interface Reader {
     language: Language
     type: BusinessType
+    /** The order is of a demo shop («Namuna»): every card says it is not real. */
+    demo?: boolean
 }
 
 const GRAMS_PER_KG = 1000
@@ -116,7 +118,12 @@ export function paymentLine(order: OrderDTO, t: BotTexts): string {
 export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
     const { language } = reader
     const t = textsFor(language, reader.type)
-    const lines = [`<b>${t.order} #${order.number}</b>`, "", ...itemLines(order, t, language)]
+    const lines = [
+        ...(reader.demo ? [t.demoOrder] : []),
+        `<b>${t.order} #${order.number}</b>`,
+        "",
+        ...itemLines(order, t, language),
+    ]
     const delivery = order.deliveryFee === 0 ? t.free : formatMoney(order.deliveryFee, language)
     lines.push(`${t.delivery}: ${delivery}`)
     if (order.depositTotal > 0) {

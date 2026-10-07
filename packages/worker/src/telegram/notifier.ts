@@ -980,11 +980,13 @@ export class Notifier {
         if (!customer) {
             return
         }
-        const text = compose(textsFor(customer.language, business.type), customer.language)
-        if (!text) {
+        const composed = compose(textsFor(customer.language, business.type), customer.language)
+        if (!composed) {
             return
         }
         const t = textsFor(customer.language, business.type)
+        // A demo shop's every message says it: nobody takes a demo order for a real one.
+        const text = business.isDemo() ? `${t.demoOrder}\n${composed}` : composed
         const origin = this.services.env.APP_ORIGIN
         const slug = business.slug.value
         // A showcase customer started only the Zumda bot, so the Zumda bot writes, naming the shop.
@@ -1139,7 +1141,11 @@ export class Notifier {
     }
 
     private async readerFor(telegramId: number, business: Business): Promise<Reader> {
-        return { language: await this.languageOf(telegramId), type: business.type }
+        return {
+            language: await this.languageOf(telegramId),
+            type: business.type,
+            demo: business.isDemo(),
+        }
     }
 
     /** Everyone gets messages in the language they chose in the app (Uzbek by default). */

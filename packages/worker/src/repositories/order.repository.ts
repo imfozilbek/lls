@@ -120,10 +120,23 @@ export const OPEN_PAYMENTS_WHERE =
 export const CASH_OPEN_FROM = "orders INDEXED BY idx_orders_cash_open"
 export const CASH_OPEN_WHERE = `business_id = ? AND ${WITH_COURIER}`
 
+/** Demo shops («Namuna»): their orders are not real, so a customer's history never counts them. */
+const DEMO_SHOPS = "SELECT id FROM businesses WHERE demo_at IS NOT NULL"
+
 /** Refused transfers of a customer: only the refused orders (partial index, migration 0018). */
 export const TRANSFER_REJECTIONS_SQL = `SELECT COALESCE(SUM(transfer_rejections), 0) AS total
     FROM orders INDEXED BY idx_orders_customer_rejected
-    WHERE customer_id = ? AND id != ? AND transfer_rejections > 0`
+    WHERE customer_id = ? AND id != ? AND transfer_rejections > 0
+      AND business_id NOT IN (${DEMO_SHOPS})`
+
+/**
+ * The same screenshot came before: in this shop, or from this customer at a real shop (a demo's
+ * orders are not real, so they never warn a real one).
+ */
+export const RECEIPT_REUSE_SQL = `SELECT business_id, number FROM orders
+    WHERE receipt_hash = ? AND id != ?
+      AND (business_id = ? OR (customer_id = ? AND business_id NOT IN (${DEMO_SHOPS})))
+    ORDER BY created_at LIMIT 1`
 
 /** A courier can still take the order: from accepted until pickup. */
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
@@ -560,11 +573,7 @@ export class D1OrderRepository implements OrderRepository {
         customerId: string
     }): Promise<number | undefined> {
         const row = await this.db
-            .prepare(
-                `SELECT business_id, number FROM orders
-                 WHERE receipt_hash = ? AND id != ? AND (business_id = ? OR customer_id = ?)
-                 ORDER BY created_at LIMIT 1`,
-            )
+            .prepare(RECEIPT_REUSE_SQL)
             .bind(input.hash, input.orderId, input.businessId, input.customerId)
             .first<{ business_id: string; number: number }>()
         if (!row) {
@@ -607,6 +616,20 @@ export class D1OrderRepository implements OrderRepository {
             .all<OrderRow>()
         const items = await this.itemsFor(results.map((o) => o.id))
         return results.map((row) => toOrder(row, items.get(row.id) ?? []))
+    }
+
+    async deleteAllOfBusiness(businessId: string): Promise<void> {
+        const ofShop = "SELECT id FROM orders WHERE business_id = ?"
+        await this.db.batch([
+            this.db
+                .prepare(`DELETE FROM order_items WHERE order_id IN (${ofShop})`)
+                .bind(businessId),
+            this.db
+                .prepare(`DELETE FROM network_offers WHERE order_id IN (${ofShop})`)
+                .bind(businessId),
+            this.db.prepare("DELETE FROM orders WHERE business_id = ?").bind(businessId),
+            this.db.prepare("DELETE FROM trips WHERE business_id = ?").bind(businessId),
+        ])
     }
 
     async networkShare(districtId: string, from: Date, to: Date): Promise<NetworkShare> {

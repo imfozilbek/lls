@@ -52,6 +52,8 @@ import {
     ReviewShopUseCase,
     SearchShowcaseUseCase,
     SetMarketplaceTermsUseCase,
+    MakeDemoShopUseCase,
+    ResetDemoShopUseCase,
     UpdateCustomerUseCase,
     UpdateProductUseCase,
     UpdateShopUseCase,
@@ -85,7 +87,7 @@ import { OrsRoutePlanner } from "./routing.js"
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
 import type { LoginKeys } from "./telegram-login.js"
-import type { Clock, TripDeps } from "@zumda/core"
+import type { Clock, DemoShopDeps, TripDeps } from "@zumda/core"
 
 export interface ServiceDeps {
     telegram: TelegramGateway
@@ -146,6 +148,8 @@ export interface UseCases {
     shopBotOf: ShopBotOfUseCase
     searchShowcase: SearchShowcaseUseCase
     setMarketplaceTerms: SetMarketplaceTermsUseCase
+    makeDemoShop: MakeDemoShopUseCase
+    resetDemoShop: ResetDemoShopUseCase
     setDistrict: SetDistrictUseCase
     setNetworkMembership: SetNetworkMembershipUseCase
     offerNetwork: OfferNetworkUseCase
@@ -194,6 +198,18 @@ function tripUseCases(deps: TripDeps): TripUseCases {
         pickUpTrip: new PickUpTripUseCase(deps),
         refreshTripRoute: new RefreshTripRouteUseCase(deps),
         listShopTrips: new ListShopTripsUseCase(deps),
+    }
+}
+
+type AdminUseCases = Pick<UseCases, "setMarketplaceTerms" | "makeDemoShop" | "resetDemoShop">
+
+/** «Platforma» on one shop: its showcase deal, and making it a demo or starting the demo again. */
+function adminUseCases(deps: DemoShopDeps): AdminUseCases {
+    const { businesses, platformAdminIds, clock } = deps
+    return {
+        setMarketplaceTerms: new SetMarketplaceTermsUseCase(businesses, platformAdminIds, clock),
+        makeDemoShop: new MakeDemoShopUseCase(deps),
+        resetDemoShop: new ResetDemoShopUseCase(deps),
     }
 }
 
@@ -282,7 +298,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             listShowcaseShops: new ListShowcaseShopsUseCase(businesses, clock),
             shopBotOf: new ShopBotOfUseCase(businesses),
             searchShowcase: new SearchShowcaseUseCase(businesses, products, clock),
-            setMarketplaceTerms: new SetMarketplaceTermsUseCase(businesses, admins, clock),
+            ...adminUseCases({ ...cardBook, products, couriers, orders, platformAdminIds: admins }),
             setDistrict: new SetDistrictUseCase(network, admins),
             setNetworkMembership: new SetNetworkMembershipUseCase(network),
             offerNetwork: new OfferNetworkUseCase(network),

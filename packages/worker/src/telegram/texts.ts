@@ -10,6 +10,7 @@ const BASE = {
     [Language.UZ]: {
         currency: "so'm",
         newOrder: "🆕 Yangi buyurtma",
+        demoOrder: "🧪 Namuna buyurtma: haqiqiy emas, pul o'tkazilmaydi",
         order: "Buyurtma",
         delivery: "Yetkazib berish",
         deposit: "Idish garovi",
