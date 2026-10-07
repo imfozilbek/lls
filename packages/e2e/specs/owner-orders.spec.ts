@@ -91,6 +91,9 @@ test("cancel with a reason: the customer sees the reason", async ({ page }) => {
         .getByRole("dialog")
         .getByRole("button", { name: "Bekor qilish", exact: true })
         .click()
+    // Cancelled: it leaves «Faol» at once and waits in «Yakunlangan».
+    await expect(card(page, order.number)).toBeHidden()
+    await page.getByRole("tab", { name: "Yakunlangan" }).click()
     await expect(card(page, order.number)).toContainText("Bekor qilindi")
     await waitForMessage(PEOPLE.customer.id, "bekor qilindi", since)
 
