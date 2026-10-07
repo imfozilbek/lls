@@ -310,7 +310,7 @@ export function OrderMapButton({
     const t = useT()
     const markers = useMemo(() => orderMarkers(t, shop, customer), [t, shop, customer])
     return (
-        <MapButton markers={markers} href={href} label={t.owner.map} className={className}>
+        <MapButton markers={markers} href={href} label={t.shop.map} className={className}>
             {children}
         </MapButton>
     )

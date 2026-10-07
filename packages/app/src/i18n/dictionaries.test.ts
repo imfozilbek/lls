@@ -2,8 +2,13 @@ import { describe, expect, it } from "vitest"
 
 import { BUSINESS_TYPES, BusinessType, LANGUAGES, Language } from "@zumda/core"
 
+import "./staff-register.js"
+
 import { dictionaryFor } from "./index.js"
-import { uz } from "./uz.js"
+import { staffUz } from "./staff.js"
+import { uz as base } from "./uz.js"
+
+const uz = { ...base, ...staffUz }
 
 /** "a.b.c" → value, for every leaf; arrays count as leaves with their length. */
 function leaves(value: unknown, prefix = ""): Map<string, unknown> {

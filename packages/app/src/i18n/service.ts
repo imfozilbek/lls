@@ -1,11 +1,14 @@
-import type { Dictionary } from "./uz.js"
+import type { StaffDictionary } from "./staff.js"
+import type { uz } from "./uz.js"
 
-type Overrides = {
-    [K in keyof Dictionary]?: Dictionary[K] extends object ? Partial<Dictionary[K]> : never
+type Dictionary = typeof uz
+
+type Overrides<D> = {
+    [K in keyof D]?: D[K] extends object ? Partial<D[K]> : never
 }
 
 /** Words that differ for services: a list of services, "being done", "done". */
-export const SERVICE_UZ = (base: Dictionary): Overrides => ({
+export const SERVICE_UZ = (base: Dictionary): Overrides<Dictionary> => ({
     shop: { ...base.shop, emptyTitle: "Xizmatlar hali yo'q" },
     cart: {
         ...base.cart,
@@ -21,6 +24,10 @@ export const SERVICE_UZ = (base: Dictionary): Overrides => ({
             delivered: "Bajarildi. Rahmat!",
         },
     },
+})
+
+/** The same kind of words for the owner and the courier (lazy, with `staff.ts`). */
+export const SERVICE_STAFF = (base: StaffDictionary): Overrides<StaffDictionary> => ({
     owner: {
         ...base.owner,
         tabs: { ...base.owner.tabs, menu: "Xizmatlar" },
