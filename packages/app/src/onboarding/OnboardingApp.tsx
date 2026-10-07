@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
-import { ApiError, api, imageUrl } from "../lib/api.js"
-import { ZUMDA_BRAND_COLOR, applyBrand, readableInk } from "../lib/brand.js"
+import { ApiError, api } from "../lib/api.js"
+import { ZUMDA_BRAND_COLOR, applyBrand } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
-import { hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
@@ -13,6 +12,7 @@ import { toast } from "../stores/toast.js"
 import { BotIcon, ChevronIcon, ShieldIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, PoweredBy, Section, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { ShopLogo } from "../ui/shop-logo.js"
 
 import { Wizard } from "./Wizard.js"
 
@@ -30,7 +30,6 @@ function ShopRow({
     onOpen(slug: string): void
 }): React.JSX.Element {
     const t = useT().onboarding
-    const logo = imageUrl(shop.logoKey)
     const active = shop.status === "active"
     const label = shop.rejection ? t.rejected : t.status[shop.status]
     return (
@@ -43,19 +42,12 @@ function ShopRow({
                 }}
                 className="tap flex w-full items-center gap-3 rounded-tile bg-tg-secondary p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
             >
-                {logo ? (
-                    <img src={logo} alt="" className="h-12 w-12 rounded-control object-cover" />
-                ) : (
-                    <span
-                        className="grid h-12 w-12 place-items-center rounded-control text-lg font-bold"
-                        style={{
-                            backgroundColor: shop.brandColor,
-                            color: `rgb(${readableInk(hexToRgbChannels(shop.brandColor) ?? "")})`,
-                        }}
-                    >
-                        {shop.name.trim().charAt(0).toUpperCase()}
-                    </span>
-                )}
+                <ShopLogo
+                    name={shop.name}
+                    logoKey={shop.logoKey}
+                    color={shop.brandColor}
+                    className="h-12 w-12 rounded-control text-lg"
+                />
                 <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold">{shop.name}</span>
                     <span className="block truncate text-sm text-tg-hint">

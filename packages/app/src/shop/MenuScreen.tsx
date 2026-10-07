@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { create } from "zustand"
 
 import { fill, useLanguage, useT } from "../i18n/index.js"
-import { api, imageUrl } from "../lib/api.js"
+import { api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, formatQuantity, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
@@ -26,6 +26,7 @@ import { MapButton } from "../ui/maps.js"
 import { EmptyState, PoweredBy, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { ShopLogo } from "../ui/shop-logo.js"
 
 import { ProductSheet, hasOptions } from "./ProductSheet.js"
 
@@ -35,20 +36,12 @@ import type { MapMarker } from "../ui/maps.js"
 import type { Language, ProductDTO } from "@zumda/core"
 
 function ShopAvatar({ shop }: { shop: Shop }): React.JSX.Element {
-    const logo = imageUrl(shop.logoKey)
-    if (logo) {
-        return (
-            <img
-                src={logo}
-                alt=""
-                className="h-14 w-14 shrink-0 rounded-[1.1rem] object-cover shadow-sm"
-            />
-        )
-    }
     return (
-        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[1.1rem] bg-brand text-2xl font-bold text-brand-ink">
-            {shop.name.trim().charAt(0).toUpperCase()}
-        </span>
+        <ShopLogo
+            name={shop.name}
+            logoKey={shop.logoKey}
+            className="h-14 w-14 rounded-[1.1rem] text-2xl shadow-sm"
+        />
     )
 }
 

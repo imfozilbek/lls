@@ -591,6 +591,42 @@ describe("inside a shop", () => {
         expect((await client.request("/img/secrets/../x")).status).toBe(404)
     })
 
+    it("a new logo stays; replacing it removes only the old file (6 October 2026)", async () => {
+        const webp = (tail: number): Uint8Array =>
+            new Uint8Array([...ascii("RIFF"), 4, 0, 0, 0, ...ascii("WEBP"), tail])
+        const upload = async (tail: number): Promise<string> => {
+            const response = await asOwner()("/api/owner/shop/logo", {
+                method: "PUT",
+                headers: { "Content-Type": "image/webp" },
+                body: webp(tail),
+            })
+            expect(response.status).toBe(200)
+            return (await json<{ logoKey: string }>(response)).logoKey
+        }
+        const first = await upload(1)
+        expect((await client.request(`/img/${first}`)).status).toBe(200)
+        const second = await upload(2)
+        expect(second).not.toBe(first)
+        expect((await client.request(`/img/${second}`)).status).toBe(200)
+        expect(await env.BUCKET.get(first)).toBeNull()
+    })
+
+    it("a new product photo stays; the replaced one goes", async () => {
+        const osh = await addProduct("Osh", 35_000)
+        const upload = async (tail: number): Promise<string> => {
+            const response = await asOwner()(`/api/owner/products/${osh}/image`, {
+                method: "PUT",
+                headers: { "Content-Type": "image/webp" },
+                body: new Uint8Array([...ascii("RIFF"), 4, 0, 0, 0, ...ascii("WEBP"), tail]),
+            })
+            return (await json<{ imageKey: string }>(response)).imageKey
+        }
+        const first = await upload(1)
+        const second = await upload(2)
+        expect((await client.request(`/img/${second}`)).status).toBe(200)
+        expect(await env.BUCKET.get(first)).toBeNull()
+    })
+
     it("deleting a product returns 204", async () => {
         const osh = await addProduct("Osh", 35_000)
         const response = await asOwner()(`/api/owner/products/${osh}`, { method: "DELETE" })

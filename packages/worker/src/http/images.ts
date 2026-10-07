@@ -149,6 +149,21 @@ export async function storePoster(
 
 const POSTER_HASH_BYTES = 8
 
+/**
+ * After a new picture is saved, the one it replaced goes. The previous key must be read before
+ * the use case runs: it changes the entity in place, and the same object may be the one the
+ * route holds (6 October 2026: every new logo deleted itself).
+ */
+export async function replaceImage(
+    bucket: R2Bucket,
+    previousKey: string | undefined,
+    currentKey: string | undefined,
+): Promise<void> {
+    if (previousKey && previousKey !== currentKey) {
+        await deleteImage(bucket, previousKey)
+    }
+}
+
 export async function deleteImage(bucket: R2Bucket, key: string | undefined): Promise<void> {
     if (key?.startsWith(IMAGE_KEY_PREFIX)) {
         await bucket.delete(key)

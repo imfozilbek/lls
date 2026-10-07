@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { imageUrl } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
+import { reportMissingImage } from "../lib/crashes.js"
 
 import { CategoryIcon } from "./icons.js"
 
@@ -74,7 +75,10 @@ export function ProductImage({
                         seen.add(src)
                         setLoadedSrc(src)
                     }}
-                    onError={(): void => setFailedSrc(src)}
+                    onError={(): void => {
+                        setFailedSrc(src)
+                        void reportMissingImage(src, "product")
+                    }}
                     className={cn(
                         "absolute inset-0 h-full w-full object-cover",
                         !known && "transition-opacity duration-300 ease-out-quart",

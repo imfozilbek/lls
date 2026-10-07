@@ -4,7 +4,7 @@ import { Hono } from "hono"
 
 import { requireOwner, shopOf } from "../auth.js"
 import { ApiError } from "../http/errors.js"
-import { deleteImage, readImageBody, readJpeg, storeImage } from "../http/images.js"
+import { deleteImage, readImageBody, readJpeg, replaceImage, storeImage } from "../http/images.js"
 import { rateLimit } from "../http/rate-limit.js"
 import {
     assignCourierBody,
@@ -92,6 +92,8 @@ export const ownerRoutes = new Hono<AppEnv>()
 
     .put("/shop/logo", async (c) => {
         const business = shopOf(c)
+        // Read now: the use case below changes this same object.
+        const previousKey = business.logoKey
         const services = c.get("services")
         const key = await storeImage(
             c.env.BUCKET,
@@ -104,7 +106,7 @@ export const ownerRoutes = new Hono<AppEnv>()
             businessId: business.id,
             patch: { logoKey: key },
         })
-        await deleteImage(c.env.BUCKET, business.logoKey)
+        await replaceImage(c.env.BUCKET, previousKey, key)
         return c.json(shop)
     })
 
@@ -401,6 +403,7 @@ export const ownerRoutes = new Hono<AppEnv>()
         if (!previous?.belongsTo(business.id)) {
             throw EntityNotFoundError.product(productId)
         }
+        const previousKey = previous.imageKey
         const key = await storeImage(
             c.env.BUCKET,
             `shops/${business.id}/products`,
@@ -413,20 +416,20 @@ export const ownerRoutes = new Hono<AppEnv>()
             productId,
             patch: { imageKey: key },
         })
-        await deleteImage(c.env.BUCKET, previous?.imageKey)
+        await replaceImage(c.env.BUCKET, previousKey, key)
         return c.json(product)
     })
 
     .delete("/products/:id/image", zValidator("param", idParam, onInvalid), async (c) => {
         const { useCases, products } = c.get("services")
         const productId = c.req.valid("param").id
-        const previous = await products.findById(productId)
+        const previousKey = (await products.findById(productId))?.imageKey
         const product = await useCases.updateProduct.execute({
             actorTelegramId: c.get("auth").user.id,
             businessId: shopOf(c).id,
             productId,
             patch: { imageKey: null },
         })
-        await deleteImage(c.env.BUCKET, previous?.imageKey)
+        await replaceImage(c.env.BUCKET, previousKey, undefined)
         return c.json(product)
     })

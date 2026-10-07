@@ -2,12 +2,11 @@ import { formatPhone } from "@zumda/core"
 import { useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
-import { ApiError, imageUrl } from "../lib/api.js"
-import { readableInk } from "../lib/brand.js"
-import { hexToRgbChannels } from "../lib/format.js"
+import { ApiError } from "../lib/api.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { PhoneIcon } from "../ui/icons.js"
+import { ShopLogo } from "../ui/shop-logo.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { AdminShopResult } from "../lib/api.js"
@@ -15,19 +14,13 @@ import type { PlatformShopDTO } from "@zumda/core"
 
 /** The shop's logo, or its first letter on its own color. */
 export function ShopBadge({ shop }: { shop: PlatformShopDTO }): React.JSX.Element {
-    const logo = imageUrl(shop.logoKey)
-    if (logo) {
-        return <img src={logo} alt="" className="h-12 w-12 shrink-0 rounded-control object-cover" />
-    }
-    const ink = readableInk(hexToRgbChannels(shop.brandColor) ?? "")
     return (
-        <span
-            className="grid h-12 w-12 shrink-0 place-items-center rounded-control text-lg font-bold"
-            style={{ backgroundColor: shop.brandColor, color: `rgb(${ink})` }}
-            aria-hidden
-        >
-            {shop.name.trim().charAt(0).toUpperCase()}
-        </span>
+        <ShopLogo
+            name={shop.name}
+            logoKey={shop.logoKey}
+            color={shop.brandColor}
+            className="h-12 w-12 rounded-control text-lg"
+        />
     )
 }
 
