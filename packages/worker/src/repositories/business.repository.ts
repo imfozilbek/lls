@@ -205,6 +205,15 @@ function mutableValues(b: Business): (string | number | null)[] {
     ]
 }
 
+/**
+ * The showcase's shops: a deal, live, and something on sale. A shop with no product yet stays
+ * out, so the showcase never opens an empty shop; the check reads one catalog index entry.
+ */
+export const SHOWCASE_SHOPS = `SELECT ${COLUMNS} FROM businesses
+     WHERE marketplace_commission_bps IS NOT NULL AND status = ?
+       AND EXISTS (SELECT 1 FROM products p WHERE p.business_id = businesses.id)
+     ORDER BY name`
+
 export class D1BusinessRepository implements BusinessRepository {
     constructor(
         private readonly db: D1Database,
@@ -266,10 +275,7 @@ export class D1BusinessRepository implements BusinessRepository {
 
     async listInShowcase(): Promise<Business[]> {
         const { results } = await this.db
-            .prepare(
-                `SELECT ${COLUMNS} FROM businesses
-                 WHERE marketplace_commission_bps IS NOT NULL AND status = ? ORDER BY name`,
-            )
+            .prepare(SHOWCASE_SHOPS)
             .bind(BusinessStatus.ACTIVE)
             .all<BusinessRow>()
         return results.map(toBusiness)

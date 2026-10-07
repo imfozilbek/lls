@@ -20,7 +20,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
     is saved before its road is planned;
   - a new file is removed when saving it fails; old QR posters go;
   - a network courier keeps the order carried after a new invite of the same shop;
-  - «Tuman qo'shish» with an existing name is refused (`DISTRICT_EXISTS`), never a silent move.
+  - «Tuman qo'shish» with an existing name is refused (`DISTRICT_EXISTS`), never a silent move;
+  - the showcase lists only shops with something on sale: never an empty shop.
 - **Fixed (customers):**
   - a checkout tapped again after a lost answer returns the order already placed
     (`clientOrderId`), never a second order;
