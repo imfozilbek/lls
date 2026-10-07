@@ -3,3 +3,4 @@ node_modules
 coverage
 *.md
 worker-configuration.d.ts
+packages/app/public/catalog/
