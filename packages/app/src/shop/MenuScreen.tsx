@@ -60,7 +60,13 @@ function hoursToday(shop: Shop, t: Dictionary): string | null {
     }
     const day = WEEKDAYS[toLocalTime(new Date()).weekday]
     const range = day ? shop.workingHours[day] : undefined
-    return range ? fill(t.shop.hoursToday, { from: range.open, to: range.close }) : t.shop.dayOff
+    if (!range) {
+        return t.shop.dayOff
+    }
+    // The same opening and closing time is the whole day (as the server counts it).
+    return range.open === range.close
+        ? t.shop.openAllDay
+        : fill(t.shop.hoursToday, { from: range.open, to: range.close })
 }
 
 /** Short facts customers need before ordering: delivery price, free-from, minimum, hours. */

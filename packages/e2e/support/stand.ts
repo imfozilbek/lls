@@ -14,6 +14,8 @@ export const WATER = "toza-suv-dev"
 export const GROCERY = "baraka-market-dev"
 /** A service business (carpet and car cleaning) of the seed. */
 export const SERVICE = "toza-gilam-dev"
+/** A shop of goods that are not food («Do'kon (mollar)»), taking both a card and cash. */
+export const STORE = "uy-bozori-dev"
 
 /** People of the stand. Owners and the courier come from the seed (same Telegram ids). */
 export const PEOPLE = {
@@ -24,6 +26,7 @@ export const PEOPLE = {
     waterOwner: { id: 1002, first_name: "Dilshod", language_code: "ru" },
     groceryOwner: { id: 1003, first_name: "Nodira", language_code: "ru" },
     serviceOwner: { id: 1004, first_name: "Jasur", language_code: "ru" },
+    storeOwner: { id: 1005, first_name: "Feruza", language_code: "ru" },
     courier: { id: 3003, first_name: "Jasur", language_code: "ru" },
     newCourier: { id: 3004, first_name: "Bobur", language_code: "ru" },
     /** District network couriers from the seed: Otabek (water shop), Sherzod (grocery). */
@@ -121,11 +124,28 @@ export async function apiAs(
         headers["Content-Type"] = "application/json"
         body = JSON.stringify(options.json)
     }
-    return fetch(`${WORKER_URL}/api${path}`, {
+    return fetchOnce(`${WORKER_URL}/api${path}`, {
         method: options.method ?? "GET",
         headers,
         body,
     })
+}
+
+/**
+ * The local Worker closes a kept-alive connection that waited a few seconds (a spec's `runSql`),
+ * and Node may send the next request on it just then: "other side closed" before the request was
+ * read. That one case is sent again on a new connection; any answer, or any other error, is not.
+ */
+async function fetchOnce(url: string, init: RequestInit): Promise<Response> {
+    try {
+        return await fetch(url, init)
+    } catch (error) {
+        const code = (error as { cause?: { code?: string } }).cause?.code
+        if (code !== "UND_ERR_SOCKET") {
+            throw error
+        }
+        return fetch(url, init)
+    }
 }
 
 export interface PlacedOrder {

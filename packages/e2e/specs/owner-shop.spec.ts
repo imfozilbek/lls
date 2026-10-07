@@ -5,6 +5,7 @@
 import { expect, test } from "@playwright/test"
 
 import { shopBySlug } from "../stand/config.js"
+import { runSql } from "../stand/seed.js"
 import { pngImage } from "../support/images.js"
 import { FOOD, PEOPLE, SERVICE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import { courierChat, lastSeq, shopChat, waitForCall, waitForMessage } from "../support/telegram.js"
@@ -26,6 +27,8 @@ test.beforeAll(resetStand)
 test("«Ishga tayyor»: a shop open around the clock ticks «Ish vaqti» with one button", async ({
     page,
 }) => {
+    // The demo shop is ready to work: its hours are taken away to see the step.
+    runSql("UPDATE businesses SET working_hours = NULL WHERE id = 'dev-food'")
     await openOwner(page)
     const folded = page.getByRole("button", { expanded: false }).filter({ hasText: "Ishga tayyor" })
     if (await folded.count()) {

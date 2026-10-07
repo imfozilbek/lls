@@ -128,7 +128,7 @@ jobs:
                     - owner-orders.spec.ts smoke.spec.ts security.spec.ts crashes.spec.ts
                     - owner-shop.spec.ts map.spec.ts owner-bot.spec.ts
                     - money.spec.ts cash.spec.ts
-                    - visual.spec.ts
+                    - visual.spec.ts demo-shops.spec.ts
                     - customer-shop.spec.ts gestures.spec.ts sound.spec.ts
                     - showcase.spec.ts managed-bots.spec.ts business-web.spec.ts platform.spec.ts zumda-qr.spec.ts variants.spec.ts
                     - customer-edges.spec.ts onboarding-admin.spec.ts units.spec.ts catalog.spec.ts bulk.spec.ts audit-fixes.spec.ts

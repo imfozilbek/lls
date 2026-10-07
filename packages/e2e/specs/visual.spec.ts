@@ -113,7 +113,7 @@ for (const theme of ["light"] as const) {
         await expect(page.getByText("Do'konlarim")).toBeVisible()
         await snap(page, "20-courier", theme)
         await openApp(page, { user: PEOPLE.customer, query: "?mode=market", theme })
-        await expect(page.getByText("Do'konlar · 2")).toBeVisible()
+        await expect(page.getByText("Do'konlar · 3")).toBeVisible()
         await snap(page, "21-showcase", theme)
         await page.getByRole("textbox", { name: "Mahsulot qidirish" }).fill("ош")
         await expect(page.getByRole("button", { name: /To'y oshi/ })).toBeVisible()

@@ -7,6 +7,18 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Demo shops: one of every kind, ready to work
+- The stand's demo data has a shop of every kind of business: Osh Markaz (restaurant), Baraka
+  Market (grocery), Toza Suv (water: a grocery store with bottles), Toza Gilam (services) and the
+  new Uy Bozori («Do'kon (mollar)», takes a card and cash).
+- Each one has nothing left in «Ishga tayyor»:
+  - card, hours, contact phone, logo (`scripts/demo-logos/`, put into the local R2 on every
+    seed), at least three products and a courier;
+  - its own address in Yakkabog'.
+- Their catalogs show what their kind can do: portions with add-ons, 100 g spices, car sizes,
+  lamp wattages, metres of cable, pairs, product descriptions.
+- A shop open from `00:00` to `00:00` reads «Bugun kecha-kunduz ochiq» on its storefront.
+
 ### What people would hit: the audit of 7 October 2026
 - **Fixed (server):**
   - an old application card in Zumda | Business no longer turns a live shop off or a turned-off

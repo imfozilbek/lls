@@ -10,8 +10,8 @@ export function buildCore(): void {
 }
 
 /**
- * Resets the stand's local D1 to the three demo shops (food, water, grocery). `migrate` once, on a
- * fresh database; later resets only replace the data (saves a wrangler run per spec).
+ * Resets the stand's local D1 (and the demo logos in R2) to the five demo shops. `migrate` once,
+ * on a fresh database; later resets only replace the data (saves a wrangler run per spec).
  */
 export function seed({ migrate = false }: { migrate?: boolean } = {}): void {
     const args = migrate ? ["scripts/seed-dev.ts"] : ["scripts/seed-dev.ts", "--data-only"]
