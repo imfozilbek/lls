@@ -293,6 +293,22 @@ describe("shop use cases", () => {
             expect(rejected.rejection).toBeUndefined()
         })
 
+        it("an old application card decides nothing once the shop was decided", async () => {
+            const business = makeBusiness({ active: true })
+            await businesses.save(business)
+            const review = new ReviewShopUseCase(businesses, [ADMIN_TG], clock)
+            const card = {
+                actorTelegramId: ADMIN_TG,
+                businessId: business.id,
+                onlyPending: true,
+            } as const
+            await expect(review.execute({ ...card, decision: "reject" })).rejects.toMatchObject({
+                reason: "SHOP_ALREADY_REVIEWED",
+                details: { status: BusinessStatus.ACTIVE },
+            })
+            expect((await businesses.findById(business.id))?.status).toBe(BusinessStatus.ACTIVE)
+        })
+
         it("a rejected application carries the reason; the owner fixes it and applies again", async () => {
             const business = makeBusiness({ active: false })
             await businesses.save(business)

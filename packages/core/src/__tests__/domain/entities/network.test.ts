@@ -152,6 +152,9 @@ describe("network consent and shop settings", () => {
         // A new invite of that shop turns the person into a candidate of its own.
         link.rejoin(NOW)
         expect(link.isPending).toBe(true)
+        // ...and still finishes the order it carries while the owner decides.
+        expect(link.deliversFor("biz-1")).toBe(true)
+        expect(link.worksFor("biz-1")).toBe(false)
     })
 })
 

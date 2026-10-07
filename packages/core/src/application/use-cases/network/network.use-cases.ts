@@ -3,6 +3,7 @@ import { District, districtOf } from "../../../domain/entities/district.js"
 import { OrderStatus, isFinalStatus } from "../../../domain/enums/order-status.js"
 import { packagesOf } from "../../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
+import { ConflictError } from "../../../domain/errors/conflict.error.js"
 import { ForbiddenError } from "../../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
@@ -135,11 +136,16 @@ export class SetDistrictUseCase {
         center?: { latitude: number; longitude: number }
         radiusKm?: number
         waitMinutes?: number
+        /** «Tuman qo'shish»: a name that exists is refused, never a silent move of that district. */
+        isNew?: boolean
     }): Promise<{ district: District; shops: number }> {
         requireAdmin(this.platformAdminIds, input.actorTelegramId)
         const { districts } = this.deps
         const now = this.deps.clock.now()
         let district = await districts.findByName(input.name.trim())
+        if (district && input.isNew) {
+            throw ConflictError.districtExists(district.name)
+        }
         const center =
             input.center && Location.create(input.center.latitude, input.center.longitude)
         const radius = input.radiusKm === undefined ? undefined : input.radiusKm * METERS_PER_KM

@@ -51,6 +51,11 @@ export interface PlaceOrderInput {
     paymentMethod?: PaymentMethod
     /** Decided by the server from which bot opened the app; never sent by the client. */
     channel?: OrderChannel
+    /**
+     * One id per checkout from the app: when the answer was lost on a weak network and the
+     * customer taps again, the order already placed comes back instead of a second one.
+     */
+    clientOrderId?: string
 }
 
 export interface PlaceOrderDeps {
@@ -121,6 +126,10 @@ export class PlaceOrderUseCase {
         const now = clock.now()
 
         const business = await requireBusiness(businesses, input.businessId)
+        const again = await this.alreadyPlaced(input, business.id)
+        if (again) {
+            return again
+        }
         business.assertCanAcceptOrders(now)
         const paymentMethod = business.paymentMethodFor(input.paymentMethod)
 
@@ -161,9 +170,10 @@ export class PlaceOrderUseCase {
             : 0
         const depositTotal = business.depositFor(returnable, bottlesReturned)
 
+        const id = await this.newOrderId(input.clientOrderId)
         for (let attempt = 0; attempt < MAX_NUMBER_ATTEMPTS; attempt++) {
             const order = Order.place({
-                id: crypto.randomUUID(),
+                id,
                 businessId: business.id,
                 customerId: customer.id,
                 number: await orders.nextNumber(business.id),
@@ -189,7 +199,36 @@ export class PlaceOrderUseCase {
                 await customers.sharePhoneWith(customer.id, business.id, now)
                 return toOrderDTO(order)
             }
+            // The same checkout sent twice at once: the other request placed it.
+            const twin = await this.alreadyPlaced(input, business.id)
+            if (twin) {
+                return twin
+            }
         }
         throw new ConflictError("Could not assign an order number, please try again")
+    }
+
+    /** The checkout's own id when it is free, a fresh one otherwise. */
+    private async newOrderId(clientOrderId: string | undefined): Promise<string> {
+        if (clientOrderId && !(await this.deps.orders.findById(clientOrderId))) {
+            return clientOrderId
+        }
+        return crypto.randomUUID()
+    }
+
+    /** The order this checkout already placed, if the same customer placed it in this shop. */
+    private async alreadyPlaced(
+        input: PlaceOrderInput,
+        businessId: string,
+    ): Promise<OrderDTO | null> {
+        if (!input.clientOrderId) {
+            return null
+        }
+        const order = await this.deps.orders.findById(input.clientOrderId)
+        if (!order || order.businessId !== businessId) {
+            return null
+        }
+        const customer = await this.deps.customers.findByTelegramId(input.user.id)
+        return customer && order.customerId === customer.id ? toOrderDTO(order) : null
     }
 }
