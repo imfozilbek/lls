@@ -169,8 +169,16 @@ export class InMemoryProducts implements ProductRepository {
             .sort((a, b) => a.name.localeCompare(b.name))
         return paginate(matching, page)
     }
+    async namesOf(businessId: string): Promise<string[]> {
+        return [...this.items.values()].filter((p) => p.belongsTo(businessId)).map((p) => p.name)
+    }
     async save(product: Product): Promise<void> {
         this.items.set(product.id, product)
+    }
+    async saveMany(products: readonly Product[]): Promise<void> {
+        for (const product of products) {
+            this.items.set(product.id, product)
+        }
     }
     async delete(id: string): Promise<void> {
         this.items.delete(id)
