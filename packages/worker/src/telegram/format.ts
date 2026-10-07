@@ -5,6 +5,7 @@ import {
     PaymentStatus,
     Unit,
     formatPhone,
+    isWeightUnit,
     mapUrl,
 } from "@zumda/core"
 
@@ -30,13 +31,17 @@ export function formatMoney(amount: number, language: Language): string {
     return `${grouped} ${textsFor(language).currency}`
 }
 
-/** "× 2" for pieces, "× 1,5 kg" for weight items (quantity is in grams). */
+/**
+ * "× 2" for pieces, "× 1,5 kg" for kilograms, "× 300 g" for goods priced per 100 g or per gram
+ * (quantities of weight are grams), "× 12 m²" for everything else that has a word.
+ */
 function quantityLabel(item: OrderItemDTO, t: BotTexts): string {
-    if (item.unit !== Unit.KG) {
-        return `× ${item.quantity}`
+    if (item.unit === Unit.KG || (isWeightUnit(item.unit) && item.quantity >= GRAMS_PER_KG)) {
+        const kg = String(item.quantity / GRAMS_PER_KG).replace(".", ",")
+        return `× ${kg} ${t.kg}`
     }
-    const kg = String(item.quantity / GRAMS_PER_KG).replace(".", ",")
-    return `× ${kg} ${t.kg}`
+    const word = t.units[item.unit]
+    return word ? `× ${item.quantity} ${word}` : `× ${item.quantity}`
 }
 
 /** Lines a card lists before «… va yana N ta»: a message is at most 4096 characters. */

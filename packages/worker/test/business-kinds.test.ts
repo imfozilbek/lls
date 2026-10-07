@@ -42,5 +42,8 @@ describe("kinds of business: grocery store, restaurant, service", () => {
         expect(service.customerStatus.delivered).toContain("bajarildi")
         expect(service.shopTypes[BusinessType.SERVICE]).toBe("xizmat ko'rsatish")
         expect(grocery.shopTypes[BusinessType.GROCERY]).toBe("oziq-ovqat do'koni")
+        expect(grocery.shopTypes[BusinessType.STORE]).toBe("do'kon")
+        // A goods store speaks the neutral words of a catalog.
+        expect(textsFor(Language.UZ, BusinessType.STORE).openMenu).toBe("🛒 Katalogni ochish")
     })
 })

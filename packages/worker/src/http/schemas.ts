@@ -90,7 +90,7 @@ export const productBody = z.object({
     price: z.number().int().min(1).max(100_000_000),
     unit: z.enum(UNITS),
     category: z.enum(CATEGORIES),
-    step: z.number().int().min(10).max(10_000).optional(),
+    step: z.number().int().min(1).max(10_000).optional(),
     returnable: z.boolean().optional(),
     position: z.number().int().min(0).max(100_000).optional(),
 })
