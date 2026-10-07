@@ -52,6 +52,8 @@ export interface ShopPublicDTO {
     paymentMethods: PaymentMethod[]
     /** Waiting for Zumda's approval: the storefront opens, orders do not («Tez orada ochiladi»). */
     opensSoon: boolean
+    /** A demo shop («Namuna»): its orders are not real, its card is a test card. */
+    demo: boolean
 }
 
 export interface PayoutCardDTO {
@@ -125,6 +127,7 @@ export function toShopPublicDTO(
         paymentOptions: business.paymentOptions,
         paymentMethods: business.paymentMethods(),
         opensSoon: business.isPending(),
+        demo: business.isDemo(),
     }
 }
 

@@ -1,5 +1,6 @@
 export * from "./courier/courier.use-cases.js"
 export * from "./customer/customer.use-cases.js"
+export * from "./demo/demo.use-cases.js"
 export * from "./order/order.use-cases.js"
 export * from "./order/place-order.use-case.js"
 export * from "./product/product.use-cases.js"

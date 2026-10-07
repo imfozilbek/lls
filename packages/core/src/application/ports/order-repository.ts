@@ -65,6 +65,8 @@ export interface OrderRepository {
     ): Promise<Order[]>
     /** Delivered orders of a district in [from, to): all, and those a network courier took. */
     networkShare(districtId: string, from: Date, to: Date): Promise<NetworkShare>
+    /** A demo shop starts again: every order of it (and its lines, offers, trips) is gone. */
+    deleteAllOfBusiness(businessId: string): Promise<void>
 }
 
 export interface NetworkShare {
