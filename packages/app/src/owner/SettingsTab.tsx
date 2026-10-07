@@ -2,7 +2,7 @@ import { FEATURES, Feature, Phone, formatPhone } from "@zumda/core"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
-import { ApiError, api, imageUrl } from "../lib/api.js"
+import { ApiError, api } from "../lib/api.js"
 import { updateBotPhoto } from "../lib/bot-photo.js"
 import { BRAND_SWATCHES, applyBrand, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
@@ -26,6 +26,7 @@ import {
     TextInput,
 } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { ShopLogo } from "../ui/shop-logo.js"
 import { SoundSwitch } from "../ui/sound-switch.js"
 
 import { CouriersSection, NetworkSection } from "./CouriersSection.js"
@@ -233,7 +234,6 @@ function LogoPicker({
     const t = useT()
     const input = useRef<HTMLInputElement>(null)
     const [busy, setBusy] = useState(false)
-    const logo = imageUrl(shop.logoKey)
 
     const pick = async (file: File | undefined): Promise<void> => {
         if (!file) {
@@ -255,13 +255,11 @@ function LogoPicker({
 
     return (
         <div className="flex items-center gap-4">
-            {logo ? (
-                <img src={logo} alt="" className="h-16 w-16 rounded-[1.25rem] object-cover" />
-            ) : (
-                <span className="grid h-16 w-16 place-items-center rounded-[1.25rem] bg-brand text-2xl font-bold text-brand-ink">
-                    {shop.name.trim().charAt(0).toUpperCase()}
-                </span>
-            )}
+            <ShopLogo
+                name={shop.name}
+                logoKey={shop.logoKey}
+                className="h-16 w-16 rounded-[1.25rem] text-2xl"
+            />
             <Button variant="secondary" loading={busy} onClick={(): void => input.current?.click()}>
                 {t.owner.settings.logo}
             </Button>

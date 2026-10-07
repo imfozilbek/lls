@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { crashFacts, ownPlace, safeScreen } from "./crash-facts.js"
-import { listenForCrashes } from "./crashes.js"
+import { listenForCrashes, reportMissingImage } from "./crashes.js"
 
 import type { CrashFacts } from "@zumda/core"
 
@@ -98,5 +98,40 @@ describe("listenForCrashes", () => {
             ORIGIN,
         )
         expect(() => fire(target, "unhandledrejection", { reason: "x" })).not.toThrow()
+    })
+})
+
+describe("a picture the page could not show", () => {
+    const answer =
+        (status: number): typeof fetch =>
+        (): Promise<Response> =>
+            Promise.resolve(new Response(null, { status }))
+
+    it("reaches the admins only when the file is gone (404), once a session per kind", async () => {
+        const sent: CrashFacts[] = []
+        const seen = new Set<string>()
+        const send = (facts: CrashFacts): number => sent.push(facts)
+        const src = "https://media.zumda.shop/shops/s/logo/a.jpg"
+        await reportMissingImage(src, "logo", send, answer(404), seen)
+        await reportMissingImage(src, "logo", send, answer(404), seen)
+        expect(sent).toEqual([
+            expect.objectContaining({
+                kind: "error",
+                name: "ImageMissing",
+                detail: "logo",
+                where: "",
+            }),
+        ])
+        // The address is never in the report.
+        expect(JSON.stringify(sent)).not.toContain("media.zumda.shop")
+    })
+
+    it("a weak network or a file that is there tells nothing", async () => {
+        const sent: CrashFacts[] = []
+        const send = (facts: CrashFacts): number => sent.push(facts)
+        const offline: typeof fetch = () => Promise.reject(new TypeError("Failed to fetch"))
+        await reportMissingImage("x", "product", send, offline, new Set())
+        await reportMissingImage("x", "product", send, answer(200), new Set())
+        expect(sent).toEqual([])
     })
 })

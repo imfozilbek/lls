@@ -10,6 +10,11 @@ import type { CrashFacts, CrashKind } from "@zumda/core"
 
 /** Even a crash loop costs the free plan at most this many requests a session. */
 const MAX_REPORTS = 5
+const MISSING = 404
+
+/** The screen of the last `listenForCrashes`: a missing picture is told with it too. */
+let screenNow: () => string = () => "unknown"
+const missingSeen = new Set<string>()
 
 /** Sends the facts once, even while the page closes; never fails. */
 export function sendCrash(facts: CrashFacts): void {
@@ -33,6 +38,7 @@ export function listenForCrashes(
     target: EventTarget = window,
     origin: string = window.location.origin,
 ): () => void {
+    screenNow = screen
     const seen = new Set<string>()
     const report = (reason: unknown, kind: CrashKind): void => {
         const facts = crashFacts(reason, kind, screen(), origin)
@@ -64,4 +70,35 @@ export function listenForCrashes(
         target.removeEventListener("error", onError)
         target.removeEventListener("unhandledrejection", onRejection)
     }
+}
+
+/**
+ * A logo or a photo the page could not show. Asked once more with HEAD: only a file that is
+ * really gone (404) reaches the admins, a weak mobile network never does. Once a session per
+ * kind of picture; the address stays out of the report.
+ */
+export function reportMissingImage(
+    src: string,
+    what: "logo" | "product",
+    send: (facts: CrashFacts) => void = sendCrash,
+    request: typeof fetch = fetch,
+    seen: Set<string> = missingSeen,
+): Promise<void> {
+    if (seen.has(what)) {
+        return Promise.resolve()
+    }
+    seen.add(what)
+    return request(src, { method: "HEAD", cache: "no-store" })
+        .then((response) => {
+            if (response.status === MISSING) {
+                send({
+                    kind: "error",
+                    name: "ImageMissing",
+                    detail: what,
+                    where: "",
+                    screen: screenNow(),
+                })
+            }
+        })
+        .catch(() => undefined)
 }
