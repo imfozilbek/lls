@@ -1,5 +1,5 @@
 import { CATEGORIES } from "../enums/category.js"
-import { DEFAULT_KG_STEP, UNITS, Unit } from "../enums/unit.js"
+import { UNITS, Unit, defaultStep, isWeightUnit } from "../enums/unit.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { optionalText, requireInteger, requireOneOf, requireText } from "../shared/guards.js"
 import { searchText } from "../shared/search-text.js"
@@ -14,8 +14,9 @@ const MAX_PRICE = 100_000_000
 const MAX_POSITION = 100_000
 /** A line holds at most 99 steps: 99 pieces, or 49.5 kg with a 500 g step. */
 const MAX_STEPS_PER_LINE = 99
-const MIN_KG_STEP = 10
-const MAX_KG_STEP = 10_000
+/** Weight steps: 10 g to 10 kg, or a single gram for goods priced per gram (saffron). */
+const MIN_WEIGHT_STEP = 10
+const MAX_WEIGHT_STEP = 10_000
 
 export interface ProductProps {
     id: string
@@ -62,12 +63,13 @@ export interface ProductPatch {
     position?: number
 }
 
-/** Weight items sell in gram steps (default 500 g); everything else sells by the piece. */
+/** Weight items sell in gram steps (500 g, 100 g, 1 g by default); everything else by one. */
 function validStep(unit: Unit, step: number | undefined): number {
-    if (unit !== Unit.KG) {
+    if (!isWeightUnit(unit)) {
         return 1
     }
-    return requireInteger("step", step ?? DEFAULT_KG_STEP, MIN_KG_STEP, MAX_KG_STEP)
+    const min = unit === Unit.GRAM ? 1 : MIN_WEIGHT_STEP
+    return requireInteger("step", step ?? defaultStep(unit), min, MAX_WEIGHT_STEP)
 }
 
 function validPrice(amount: number): Money {
@@ -184,7 +186,7 @@ export class Product {
             this.props.unit = requireOneOf("unit", patch.unit, UNITS)
         }
         if (patch.unit !== undefined || patch.step !== undefined) {
-            const keepStep = this.props.unit === Unit.KG && this.props.step > 1
+            const keepStep = isWeightUnit(this.props.unit) && this.props.step > 1
             this.props.step = validStep(
                 this.props.unit,
                 patch.step ?? (keepStep ? this.props.step : undefined),

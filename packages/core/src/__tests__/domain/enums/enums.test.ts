@@ -2,14 +2,29 @@ import { describe, expect, it } from "vitest"
 
 import {
     DEFAULT_FEATURES,
+    SHELF_OF,
     SUGGESTED_CATEGORIES,
     SUGGESTED_UNITS,
 } from "../../../domain/enums/business-profile.js"
 import { BUSINESS_TYPES, BusinessType } from "../../../domain/enums/business-type.js"
-import { CATEGORIES } from "../../../domain/enums/category.js"
+import {
+    CATEGORIES,
+    CATEGORY_GROUPS,
+    CategoryGroup,
+    categoriesOf,
+    categoryGroup,
+} from "../../../domain/enums/category.js"
 import { Feature } from "../../../domain/enums/feature.js"
 import { Language, languageFromTelegram, toLanguage } from "../../../domain/enums/language.js"
-import { UNITS, Unit, unitScale } from "../../../domain/enums/unit.js"
+import {
+    UNITS,
+    Unit,
+    defaultStep,
+    isBottleUnit,
+    isWeightUnit,
+    packagesOf,
+    unitScale,
+} from "../../../domain/enums/unit.js"
 import {
     ACTIVE_ORDER_STATUSES,
     OrderStatus,
@@ -77,12 +92,16 @@ describe("business profiles", () => {
         expect(SUGGESTED_UNITS[BusinessType.SERVICE][0]).toBe(Unit.PIECE)
     })
 
-    it("three kinds: a grocery store (water too), a restaurant, a service", () => {
+    it("four kinds: a grocery store (water too), a restaurant, a service, a goods store", () => {
         expect(BUSINESS_TYPES).toEqual([
             BusinessType.GROCERY,
             BusinessType.FOOD,
             BusinessType.SERVICE,
+            BusinessType.STORE,
         ])
+        expect(SUGGESTED_CATEGORIES[BusinessType.STORE][0]).toBe("household")
+        expect(SUGGESTED_UNITS[BusinessType.STORE]).toContain(Unit.METRE)
+        expect(SHELF_OF[BusinessType.STORE]).toBe(CategoryGroup.GOODS)
         // A water shop is a grocery store: 19 l bottles and the water category are offered there,
         // and the bottle deposit is a switch the owner turns on.
         expect(SUGGESTED_UNITS[BusinessType.GROCERY]).toContain(Unit.BOTTLE_19L)
@@ -91,9 +110,46 @@ describe("business profiles", () => {
         expect(SUGGESTED_CATEGORIES[BusinessType.SERVICE]).toContain("cleaning")
     })
 
-    it("counts kilograms in grams", () => {
+    it("counts weight in grams: a price per kg, per 100 g or per gram", () => {
         expect(unitScale(Unit.KG)).toBe(1000)
+        expect(unitScale(Unit.G100)).toBe(100)
+        expect(unitScale(Unit.GRAM)).toBe(1)
         expect(unitScale(Unit.PIECE)).toBe(1)
+        expect(unitScale(Unit.SQUARE_METRE)).toBe(1)
+        expect([Unit.KG, Unit.G100, Unit.GRAM].every(isWeightUnit)).toBe(true)
+        expect(isWeightUnit(Unit.LITER)).toBe(false)
+        expect(defaultStep(Unit.KG)).toBe(500)
+        expect(defaultStep(Unit.G100)).toBe(100)
+        expect(defaultStep(Unit.GRAM)).toBe(1)
+        expect(defaultStep(Unit.PACK)).toBe(1)
+    })
+
+    it("a courier carries pieces as counted, a measured line as one package", () => {
+        expect(packagesOf(Unit.PIECE, 3)).toBe(3)
+        expect(packagesOf(Unit.BOTTLE_20L, 2)).toBe(2)
+        expect(packagesOf(Unit.KG, 1500)).toBe(1)
+        expect(packagesOf(Unit.SQUARE_METRE, 12)).toBe(1)
+        expect(packagesOf(Unit.HOUR, 3)).toBe(1)
+        expect(isBottleUnit(Unit.BOTTLE_20L)).toBe(true)
+        expect(isBottleUnit(Unit.LITER)).toBe(false)
+    })
+
+    it("every category stands on one shelf; ids are unique and old ones stay", () => {
+        expect(new Set(CATEGORIES).size).toBe(CATEGORIES.length)
+        const shelves = CATEGORY_GROUPS.flatMap((group) => categoriesOf(group))
+        expect(shelves.sort()).toEqual([...CATEGORIES].sort())
+        expect(categoryGroup("osh")).toBe(CategoryGroup.FOOD)
+        expect(categoryGroup("spices")).toBe(CategoryGroup.GROCERY)
+        expect(categoryGroup("building")).toBe(CategoryGroup.GOODS)
+        expect(categoryGroup("carpet")).toBe(CategoryGroup.SERVICES)
+        expect(categoryGroup("other")).toBe(CategoryGroup.SERVICES)
+        // The first taxonomy's ids are stored in products and orders: never renamed.
+        for (const id of ["meals", "soups", "water", "groceries", "household", "beauty", "other"]) {
+            expect(CATEGORIES).toContain(id)
+        }
+        for (const type of BUSINESS_TYPES) {
+            expect(SUGGESTED_CATEGORIES[type].every((c) => CATEGORIES.includes(c))).toBe(true)
+        }
     })
 })
 

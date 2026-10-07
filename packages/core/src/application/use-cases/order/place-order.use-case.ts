@@ -2,6 +2,7 @@ import { OrderItem } from "../../../domain/entities/order-item.js"
 import { MAX_ORDER_LINES, Order, subtotalOf } from "../../../domain/entities/order.js"
 import { Feature } from "../../../domain/enums/feature.js"
 import { OrderChannel } from "../../../domain/enums/order-channel.js"
+import { packagesOf } from "../../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../../domain/errors/conflict.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
@@ -84,7 +85,8 @@ function buildItems(lines: OrderLineInput[], products: Product[], now: Date): Pr
         }
         product.assertQuantity(line.quantity)
         if (product.returnable) {
-            returnable += line.quantity
+            // Bottles are counted; a returnable weight or measure line is one container.
+            returnable += packagesOf(product.unit, line.quantity)
         }
         return OrderItem.create({
             productId: product.id,

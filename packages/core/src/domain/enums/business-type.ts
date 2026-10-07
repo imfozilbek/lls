@@ -9,6 +9,8 @@ export enum BusinessType {
     FOOD = "food",
     /** «Xizmat ko'rsatish»: services (cleaning, car care, repair...). */
     SERVICE = "service",
+    /** «Do'kon»: goods that are not food (household, building, flowers...): goal 17. */
+    STORE = "store",
 }
 
 export const BUSINESS_TYPES: readonly BusinessType[] = Object.values(BusinessType)
