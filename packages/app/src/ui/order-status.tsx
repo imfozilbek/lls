@@ -36,6 +36,7 @@ const PREPARING_ICON: Record<BusinessType, (size: number) => ReactNode> = {
     [BusinessType.FOOD]: (s) => <ChefIcon size={s} />,
     [BusinessType.SERVICE]: (s) => <ToolIcon size={s} />,
     [BusinessType.GROCERY]: (s) => <BoxIcon size={s} />,
+    [BusinessType.STORE]: (s) => <BoxIcon size={s} />,
 }
 
 function useIcon(): (status: OrderStatus, size: number) => ReactNode {

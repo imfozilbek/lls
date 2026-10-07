@@ -43,12 +43,32 @@ export function hexToRgbChannels(hex: string): string | null {
     return `${(value >> 16) & 255} ${(value >> 8) & 255} ${value & 255}`
 }
 
-/** "2" for pieces, "1,5 kg" / "1,5 кг" for weight items (quantity in grams). */
-export function formatQuantity(quantity: number, unit: string, kgLabel: string): string {
-    if (unit !== "kg") {
+const GRAMS_PER_KG = 1000
+/** Counted as they are: "2" pieces, portions, litres or bottles need no word in a stepper. */
+const COUNTED = new Set(["pcs", "portion", "l", "bottle_19l", "bottle_20l"])
+const WEIGHT = new Set(["kg", "g100", "g"])
+
+/**
+ * A quantity as people say it: "2" for pieces, "1,5 kg" for kilograms (quantity in grams), "300 g"
+ * for goods priced per 100 g or per gram (from 1 kg on, in kilograms), "12 m²" for the rest.
+ * `units` is the dictionary's unit words (`t.units`).
+ */
+export function formatQuantity(
+    quantity: number,
+    unit: string,
+    units: Record<string, string>,
+): string {
+    if (WEIGHT.has(unit)) {
+        if (unit === "kg" || quantity >= GRAMS_PER_KG) {
+            return `${String(quantity / GRAMS_PER_KG).replace(".", ",")} ${units["kg"] ?? "kg"}`
+        }
+        return `${quantity} ${units["g"] ?? "g"}`
+    }
+    if (COUNTED.has(unit)) {
         return String(quantity)
     }
-    return `${String(quantity / 1000).replace(".", ",")} ${kgLabel}`
+    const word = units[unit]
+    return word ? `${quantity} ${word}` : String(quantity)
 }
 
 const METERS_PER_KM = 1000

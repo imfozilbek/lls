@@ -1,4 +1,4 @@
-import { unitScale } from "@zumda/core"
+import { packagesOf, unitScale } from "@zumda/core"
 import { create } from "zustand"
 
 import type { ProductDTO } from "@zumda/core"
@@ -167,7 +167,10 @@ export function summarize(lines: CartLines, catalog: readonly ProductDTO[]): Car
         unavailable,
         count: available.length,
         subtotal: available.reduce((sum, l) => sum + l.total, 0),
-        returnable: available.reduce((sum, l) => sum + (l.product.returnable ? l.quantity : 0), 0),
+        returnable: available.reduce(
+            (sum, l) => sum + (l.product.returnable ? packagesOf(l.product.unit, l.quantity) : 0),
+            0,
+        ),
     }
 }
 

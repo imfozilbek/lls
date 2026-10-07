@@ -371,7 +371,7 @@ function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
             {shown.map((item) => (
                 <li key={item.productId} className="flex gap-2">
                     <span className="shrink-0 font-semibold tabular-nums">
-                        {formatQuantity(item.quantity, item.unit, t.units.kg)}×
+                        {formatQuantity(item.quantity, item.unit, t.units)}×
                     </span>
                     <span className="flex-1">{item.name}</span>
                 </li>

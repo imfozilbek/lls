@@ -1,16 +1,20 @@
 import {
     CATEGORIES,
-    DEFAULT_KG_STEP,
+    CATEGORY_GROUPS,
     Feature,
-    GRAMS_PER_KG,
+    SHELF_OF,
     SUGGESTED_CATEGORIES,
     SUGGESTED_UNITS,
     UNITS,
     Unit,
+    categoriesOf,
+    defaultStep,
+    isBottleUnit,
+    isWeightUnit,
 } from "@zumda/core"
 import { useEffect, useRef, useState } from "react"
 
-import { errorText, useT } from "../i18n/index.js"
+import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { guessCategory } from "../lib/category-guess.js"
 import { cn } from "../lib/cn.js"
@@ -40,8 +44,26 @@ import { useOwner } from "./store.js"
 import type { ProductInput } from "../lib/api.js"
 import type { BusinessType, Category, ProductDTO } from "@zumda/core"
 
-/** Selling steps offered for weight items, in grams. */
-const KG_STEPS = [100, 250, 500, GRAMS_PER_KG] as const
+/** Selling steps offered for weight items, in grams: by the kilo, by 100 g, by the gram. */
+const WEIGHT_STEPS: Partial<Record<Unit, readonly number[]>> = {
+    [Unit.KG]: [100, 250, 500, 1000],
+    [Unit.G100]: [50, 100, 250, 500],
+    [Unit.GRAM]: [1, 5, 10, 50],
+}
+
+/** «Narxi» for pieces, «1 kg narxi», «100 g narxi», «1 m² narxi» for what is measured. */
+function priceLabel(unit: Unit, t: ReturnType<typeof useT>): string {
+    if (unit === Unit.PIECE || unit === Unit.PORTION || isBottleUnit(unit)) {
+        return t.owner.product.price
+    }
+    const word = (t.units as Record<string, string>)[unit] ?? unit
+    return fill(t.owner.product.priceFor, { unit: unit === Unit.G100 ? word : `1 ${word}` })
+}
+
+/** A new unit keeps a weight step that still fits it, otherwise starts from its own. */
+function stepFor(unit: Unit, step: number): number {
+    return WEIGHT_STEPS[unit]?.includes(step) ? step : defaultStep(unit)
+}
 
 interface Draft {
     name: string
@@ -49,7 +71,7 @@ interface Draft {
     price: number | null
     unit: Unit
     category: Category
-    /** Selling step in grams; used only for kg. */
+    /** Selling step in grams; used only for weight units. */
     step: number
     returnable: boolean
     isAvailable: boolean
@@ -68,8 +90,8 @@ function newDraft(type: BusinessType | undefined): Draft {
         price: null,
         unit,
         category: (type && SUGGESTED_CATEGORIES[type][0]) || "other",
-        step: DEFAULT_KG_STEP,
-        returnable: unit === Unit.BOTTLE_19L,
+        step: defaultStep(unit),
+        returnable: isBottleUnit(unit),
         isAvailable: true,
         photo: null,
     }
@@ -85,7 +107,7 @@ function draftOf(product: ProductDTO | undefined, type: BusinessType | undefined
         price: product.price,
         unit: product.unit,
         category: product.category,
-        step: product.unit === Unit.KG ? product.step : DEFAULT_KG_STEP,
+        step: isWeightUnit(product.unit) ? product.step : defaultStep(product.unit),
         returnable: product.returnable,
         isAvailable: product.isAvailable,
         photo: null,
@@ -220,7 +242,7 @@ async function saveFields(product: ProductDTO | undefined, draft: Draft): Promis
         unit: draft.unit,
         category: draft.category,
         returnable: draft.returnable,
-        ...(draft.unit === Unit.KG ? { step: draft.step } : {}),
+        ...(isWeightUnit(draft.unit) ? { step: draft.step } : {}),
     }
     if (!product) {
         return api.owner.createProduct(input)
@@ -324,7 +346,10 @@ function ProductExtras({
 }
 
 /** The shop's own units first; a unit set earlier stays visible even if it is not suggested. */
-function unitOptions(type: BusinessType | undefined, current: Unit): readonly Unit[] {
+function unitOptions(type: BusinessType | undefined, current: Unit, all: boolean): readonly Unit[] {
+    if (all) {
+        return UNITS
+    }
     const suggested = type ? SUGGESTED_UNITS[type] : UNITS
     return suggested.includes(current) ? suggested : [...suggested, current]
 }
@@ -345,6 +370,38 @@ function likelyCategories(
     return likely.includes(value) ? likely : [value, ...likely.slice(0, LIKELY_CATEGORIES - 1)]
 }
 
+/** Every category, shelf by shelf, the shop's own shelf first: no wall of 100 chips. */
+function AllCategories({
+    value,
+    onChange,
+}: {
+    value: Category
+    onChange(category: Category): void
+}): React.JSX.Element {
+    const t = useT()
+    const type = useSession((state) => state.shop?.type)
+    const categories = t.categories as Record<string, string>
+    const own = type ? SHELF_OF[type] : undefined
+    const shelves = own ? [own, ...CATEGORY_GROUPS.filter((g) => g !== own)] : CATEGORY_GROUPS
+    return (
+        <div className="flex flex-col gap-4">
+            {shelves.map((group) => (
+                <div key={group} className="flex flex-col gap-2">
+                    <h3 className="px-1 text-sm font-semibold text-tg-hint">
+                        {t.owner.product.groups[group]}
+                    </h3>
+                    <Chips
+                        value={value}
+                        options={categoriesOf(group)}
+                        label={(c): string => categories[c] ?? c}
+                        onChange={onChange}
+                    />
+                </div>
+            ))}
+        </div>
+    )
+}
+
 function CategoryField({
     value,
     name,
@@ -361,20 +418,24 @@ function CategoryField({
     const categories = t.categories as Record<string, string>
     return (
         <Section title={t.owner.product.category}>
-            <Chips
-                value={value}
-                options={all ? CATEGORIES : likelyCategories(name, suggested, value)}
-                label={(c): string => categories[c] ?? c}
-                onChange={onChange}
-            />
-            {all ? null : (
-                <button
-                    type="button"
-                    onClick={(): void => setAll(true)}
-                    className="tap self-start px-1 py-2 text-sm font-medium text-brand"
-                >
-                    {t.owner.product.moreCategories}
-                </button>
+            {all ? (
+                <AllCategories value={value} onChange={onChange} />
+            ) : (
+                <>
+                    <Chips
+                        value={value}
+                        options={likelyCategories(name, suggested, value)}
+                        label={(c): string => categories[c] ?? c}
+                        onChange={onChange}
+                    />
+                    <button
+                        type="button"
+                        onClick={(): void => setAll(true)}
+                        className="tap self-start px-1 py-2 text-sm font-medium text-brand"
+                    >
+                        {t.owner.product.moreCategories}
+                    </button>
+                </>
             )}
         </Section>
     )
@@ -392,22 +453,39 @@ function KindFields({
     const shop = useSession((state) => state.shop)
     const units = t.units as Record<string, string>
     const deposit = shop?.features.includes(Feature.BOTTLE_DEPOSIT) ?? false
+    const [allUnits, setAllUnits] = useState(false)
+    const steps = WEIGHT_STEPS[draft.unit]
     return (
         <>
             <Section title={t.owner.product.unit}>
                 <Chips
                     value={draft.unit}
-                    options={unitOptions(shop?.type, draft.unit)}
+                    options={unitOptions(shop?.type, draft.unit, allUnits)}
                     label={(u): string => units[u] ?? u}
-                    onChange={(unit): void => patch({ unit })}
+                    onChange={(unit): void =>
+                        patch({
+                            unit,
+                            step: stepFor(unit, draft.step),
+                            ...(isBottleUnit(unit) ? { returnable: true } : {}),
+                        })
+                    }
                 />
+                {allUnits ? null : (
+                    <button
+                        type="button"
+                        onClick={(): void => setAllUnits(true)}
+                        className="tap self-start px-1 py-2 text-sm font-medium text-brand"
+                    >
+                        {t.owner.product.moreUnits}
+                    </button>
+                )}
             </Section>
-            {draft.unit === Unit.KG ? (
+            {steps ? (
                 <Section title={t.owner.product.step}>
                     <Chips
                         value={String(draft.step)}
-                        options={KG_STEPS.map(String)}
-                        label={(g): string => formatQuantity(Number(g), Unit.KG, t.units.kg)}
+                        options={steps.map(String)}
+                        label={(g): string => formatQuantity(Number(g), draft.unit, units)}
                         onChange={(g): void => patch({ step: Number(g) })}
                     />
                 </Section>
@@ -526,7 +604,7 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
                 />
             </Field>
             <Field
-                label={draft.unit === Unit.KG ? t.owner.product.pricePerKg : t.owner.product.price}
+                label={priceLabel(draft.unit, t)}
                 htmlFor="product-price"
                 hint={t.owner.product.priceHint}
             >

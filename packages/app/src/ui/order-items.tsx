@@ -13,7 +13,7 @@ export function OrderItems({ order }: { order: OrderDTO }): React.JSX.Element {
                 {order.items.map((item) => (
                     <li key={item.productId} className="flex gap-3">
                         <span className="shrink-0 font-semibold tabular-nums text-tg-hint">
-                            {formatQuantity(item.quantity, item.unit, t.units.kg)}×
+                            {formatQuantity(item.quantity, item.unit, t.units)}×
                         </span>
                         <span className="min-w-0 flex-1">{item.name}</span>
                         <span className="shrink-0 tabular-nums">

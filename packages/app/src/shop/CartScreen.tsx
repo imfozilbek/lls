@@ -54,7 +54,7 @@ function Line({ line, faded }: { line: CartLine; faded?: boolean }): React.JSX.E
             ) : (
                 <Stepper
                     quantity={line.quantity}
-                    display={formatQuantity(line.quantity, product.unit, t.units.kg)}
+                    display={formatQuantity(line.quantity, product.unit, t.units)}
                     onAdd={(): void => add(product.id, product.step)}
                     onRemove={(): void => remove(product.id, product.step)}
                     label={product.name}

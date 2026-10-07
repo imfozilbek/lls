@@ -420,7 +420,7 @@ function ProductTile({
                     <div className="absolute bottom-2 right-2">
                         <Stepper
                             quantity={quantity}
-                            display={formatQuantity(quantity, product.unit, t.units.kg)}
+                            display={formatQuantity(quantity, product.unit, t.units)}
                             onAdd={(): void => add(product.id, product.step)}
                             onRemove={(): void => remove(product.id, product.step)}
                             label={product.name}
@@ -505,7 +505,7 @@ function ProductListRow({ product }: { product: ProductDTO }): React.JSX.Element
             ) : (
                 <Stepper
                     quantity={quantity}
-                    display={formatQuantity(quantity, product.unit, t.units.kg)}
+                    display={formatQuantity(quantity, product.unit, t.units)}
                     onAdd={(): void => add(product.id, product.step)}
                     onRemove={(): void => remove(product.id, product.step)}
                     label={product.name}
