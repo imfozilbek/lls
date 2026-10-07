@@ -12,20 +12,19 @@ import {
     isBottleUnit,
     isWeightUnit,
 } from "@zumda/core"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { guessCategory } from "../lib/category-guess.js"
 import { cn } from "../lib/cn.js"
 import { formatQuantity } from "../lib/format.js"
-import { compressImage } from "../lib/image.js"
-import { useMainAction } from "../lib/main-button.js"
+import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-button.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { ImageIcon, TrashIcon } from "../ui/icons.js"
+import { CheckIcon, CopyIcon, PlusIcon, SearchIcon, TrashIcon } from "../ui/icons.js"
 import {
     Button,
     Field,
@@ -36,20 +35,23 @@ import {
     TextArea,
     TextInput,
 } from "../ui/primitives.js"
-import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import { CatalogSearch } from "./CatalogSearch.js"
 import {
     NO_OPTIONS,
     OptionsEditor,
+    newId,
     hasVariants,
     optionsBody,
     optionsDraftOf,
     optionsValid,
 } from "./OptionsEditor.js"
+import { ProductPreview } from "./ProductPreview.js"
 import { useOwner } from "./store.js"
 
 import type { OptionsDraft } from "./OptionsEditor.js"
+import type { Template } from "./catalog.js"
 import type { ProductInput } from "../lib/api.js"
 import type { BusinessType, Category, ProductDTO, ProductOptionsProps } from "@zumda/core"
 
@@ -90,6 +92,8 @@ interface Draft {
     categoryPicked?: boolean
     /** Variants and add-ons as they are typed. */
     options: OptionsDraft
+    /** Add-ons people usually take with the catalog product picked: offered, never added. */
+    suggestedAddons?: string[]
 }
 
 /** A new product starts with the first unit and category that fit the shop, so it rarely needs a tap. */
@@ -161,92 +165,6 @@ function Chips<T extends string>({
     )
 }
 
-function PhotoPicker({
-    product,
-    draft,
-    onChange,
-}: {
-    product: ProductDTO | undefined
-    draft: Draft
-    onChange(photo: Draft["photo"]): void
-}): React.JSX.Element {
-    const t = useT()
-    const input = useRef<HTMLInputElement>(null)
-    const [preview, setPreview] = useState<string | null>(null)
-    const [busy, setBusy] = useState(false)
-
-    useEffect(() => {
-        if (!(draft.photo instanceof Blob)) {
-            setPreview(null)
-            return undefined
-        }
-        const url = URL.createObjectURL(draft.photo)
-        setPreview(url)
-        return (): void => URL.revokeObjectURL(url)
-    }, [draft.photo])
-
-    const pick = async (file: File | undefined): Promise<void> => {
-        if (!file) {
-            return
-        }
-        setBusy(true)
-        try {
-            onChange(await compressImage(file))
-        } catch {
-            toast(t.owner.product.photoFailed, "error")
-        } finally {
-            setBusy(false)
-        }
-    }
-
-    const current = draft.photo === "remove" ? undefined : product?.imageKey
-    const hasPhoto = preview !== null || current !== undefined
-    return (
-        <div className="flex items-center gap-4">
-            {preview ? (
-                <img src={preview} alt="" className="h-24 w-24 rounded-tile object-cover" />
-            ) : (
-                <ProductImage
-                    imageKey={current}
-                    category={draft.category}
-                    alt=""
-                    className="h-24 w-24 shrink-0 rounded-tile"
-                />
-            )}
-            <div className="flex flex-col items-start gap-2">
-                <Button
-                    variant="secondary"
-                    icon={<ImageIcon size={18} />}
-                    loading={busy}
-                    onClick={(): void => input.current?.click()}
-                >
-                    {hasPhoto ? t.owner.product.changePhoto : t.owner.product.addPhoto}
-                </Button>
-                {hasPhoto ? (
-                    <button
-                        type="button"
-                        onClick={(): void => onChange(current ? "remove" : null)}
-                        className="tap px-1 text-sm font-medium text-tg-destructive"
-                    >
-                        {t.owner.product.removePhoto}
-                    </button>
-                ) : null}
-            </div>
-            <input
-                ref={input}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(event): void => {
-                    void pick(event.target.files?.[0])
-                    event.target.value = ""
-                }}
-            />
-        </div>
-    )
-}
-
-/** Creates or updates the product's fields. */
 /** With variants the product costs as its cheapest one; the server checks it again. */
 function priceOf(draft: Draft): number {
     const body = optionsBody(draft.options)
@@ -325,6 +243,15 @@ export function ProductEditor({ id }: { id: string | null }): React.JSX.Element 
     return <EditorForm key={product?.id ?? "new"} product={product} />
 }
 
+/** «Nusxa olish»: a new product starting from another one, without its photo. */
+function useCopy(product: ProductDTO | undefined): ProductDTO | undefined {
+    const [copy] = useState(() => (product ? null : useOwner.getState().copyOf))
+    useEffect(() => {
+        useOwner.getState().copyProduct(null)
+    }, [])
+    return copy ?? undefined
+}
+
 function ProductExtras({
     product,
     available,
@@ -338,7 +265,9 @@ function ProductExtras({
 }): React.JSX.Element {
     const t = useT()
     const back = useRouter((state) => state.back)
+    const push = useRouter((state) => state.push)
     const drop = useOwner((state) => state.drop)
+    const copyProduct = useOwner((state) => state.copyProduct)
     const remove = async (): Promise<void> => {
         const options = { yes: t.common.delete, destructive: true }
         if (!(await confirm(t.owner.product.deleteConfirm, options))) {
@@ -363,6 +292,17 @@ function ProductExtras({
                     label={t.owner.product.available}
                 />
             </label>
+            <Button
+                variant="secondary"
+                icon={<CopyIcon size={18} />}
+                onClick={(): void => {
+                    haptic.tap()
+                    copyProduct(product)
+                    push({ name: "product", id: null })
+                }}
+            >
+                {t.owner.product.copy}
+            </Button>
             <Button
                 variant="danger"
                 icon={<TrashIcon size={18} />}
@@ -547,9 +487,11 @@ function KindFields({
 function PriceField({
     draft,
     patch,
+    error,
 }: {
     draft: Draft
     patch(change: Partial<Draft>): void
+    error: boolean
 }): React.JSX.Element {
     const t = useT()
     if (hasVariants(draft.options)) {
@@ -559,7 +501,13 @@ function PriceField({
         <Field
             label={priceLabel(draft.unit, t)}
             htmlFor="product-price"
-            hint={t.owner.product.priceHint}
+            hint={
+                error ? (
+                    <span className="text-tg-destructive">{t.owner.product.needPrice}</span>
+                ) : (
+                    t.owner.product.priceHint
+                )
+            }
         >
             <MoneyInput
                 id="product-price"
@@ -570,130 +518,384 @@ function PriceField({
     )
 }
 
-/** Never a dead button: a tap says what is missing (the name first, then the price). */
+/** What makes a draft worth guarding: everything but the photo, which counts once picked. */
+function fingerprint(draft: Draft): string {
+    const { photo, suggestedAddons: _offered, categoryPicked: _picked, ...rest } = draft
+    return JSON.stringify({ ...rest, photo: photo === null ? null : "changed" })
+}
+
+/** The template's words, unit, step and variants (their prices are the owner's). */
+function fromTemplate(draft: Draft, template: Template): Draft {
+    const variants = template.variants.length >= 2 ? template.variants : []
+    return {
+        ...draft,
+        name: template.name,
+        category: template.category,
+        categoryPicked: true,
+        unit: template.unit,
+        step: template.step ?? defaultStep(template.unit),
+        returnable: isBottleUnit(template.unit),
+        options: {
+            group: variants.length > 0 ? (template.group ?? "") : "",
+            variants: variants.map((name) => ({ id: newId(), name, price: null })),
+            addons: [],
+        },
+        suggestedAddons: template.addons,
+    }
+}
+
+/** What is missing, in the order the owner fills the form; null when it can be saved. */
+function missing(draft: Draft): "name" | "variants" | "price" | null {
+    if (draft.name.trim().length === 0) {
+        return "name"
+    }
+    if (!optionsValid(draft.options)) {
+        return "variants"
+    }
+    return hasVariants(draft.options) || (draft.price ?? 0) > 0 ? null : "price"
+}
+
+/** Never a dead button: a tap says what is missing and marks the field. */
 function useSaveAction(input: {
-    valid: boolean
+    draft: Draft
     saving: boolean
-    name: string
-    /** The variants are the problem: fewer than two, or one without a price. */
-    variantsWrong: boolean
+    onMissing(): void
     save(): Promise<void>
 }): void {
     const t = useT()
-    const { valid, saving, name, variantsWrong, save } = input
+    const { draft, saving, onMissing, save } = input
+    const p = t.owner.product
     useMainAction({
         text: saving ? t.common.saving : t.common.save,
         onClick: (): void => {
-            if (valid) {
+            const gap = missing(draft)
+            if (!gap) {
                 void save()
                 return
             }
             haptic.error()
-            const p = t.owner.product
-            toast(
-                name.trim().length === 0
-                    ? p.needName
-                    : variantsWrong
-                      ? p.needVariants
-                      : p.needPrice,
-                "error",
-            )
+            onMissing()
+            toast({ name: p.needName, variants: p.needVariants, price: p.needPrice }[gap], "error")
         },
         loading: saving,
     })
 }
 
-function EditorForm({ product: initial }: { product: ProductDTO | undefined }): React.JSX.Element {
+/** Leaving with changes asks first; closing the app warns too. */
+function useDraftGuard(dirty: boolean): void {
+    const t = useT()
+    const back = useRouter((state) => state.back)
+    useClosingGuard(dirty)
+    useBackButton(
+        dirty
+            ? (): void => {
+                  const options = { yes: t.common.leave, no: t.common.stay, destructive: true }
+                  void confirm(t.owner.product.unsavedLeave, options).then((leave) => {
+                      if (leave) {
+                          back()
+                      }
+                  })
+              }
+            : null,
+    )
+}
+
+function useEditorState(initial: ProductDTO | undefined): {
+    draft: Draft
+    patch(change: Partial<Draft>): void
+    restart(next: Draft): void
+    dirty: boolean
+    copy: ProductDTO | undefined
+} {
+    const shopType = useSession((state) => state.shop?.type)
+    const copy = useCopy(initial)
+    const [start, setStart] = useState<Draft>(() =>
+        copy ? { ...draftOf(copy, shopType), isAvailable: true } : draftOf(initial, shopType),
+    )
+    const [draft, setDraft] = useState<Draft>(start)
+    return {
+        draft,
+        patch: (change): void => setDraft((d) => ({ ...d, ...change })),
+        restart: (next): void => {
+            setStart(next)
+            setDraft(next)
+        },
+        dirty: fingerprint(draft) !== fingerprint(start),
+        copy,
+    }
+}
+
+function Description({
+    value,
+    onChange,
+}: {
+    value: string
+    onChange(value: string): void
+}): React.JSX.Element {
+    const t = useT()
+    const p = t.owner.product
+    const [open, setOpen] = useState(value.length > 0)
+    if (!open) {
+        return (
+            <button
+                type="button"
+                onClick={(): void => setOpen(true)}
+                className="tap flex items-center gap-3 rounded-tile border-[1.5px] border-dashed border-tg-separator p-3.5 text-left"
+            >
+                <span className="min-w-0 flex-1">
+                    <span className="block font-semibold">{p.description}</span>
+                    <span className="block text-sm text-tg-hint">{p.descriptionHint}</span>
+                </span>
+                <PlusIcon size={20} className="shrink-0 text-tg-hint" />
+            </button>
+        )
+    }
+    return (
+        <Field label={p.description} htmlFor="product-description">
+            <TextArea
+                id="product-description"
+                value={value}
+                maxLength={500}
+                placeholder={p.descriptionHint}
+                onChange={(e): void => onChange(e.target.value)}
+            />
+        </Field>
+    )
+}
+
+function NameField({
+    draft,
+    product,
+    error,
+    patch,
+}: {
+    draft: Draft
+    product: ProductDTO | undefined
+    error: boolean
+    patch(change: Partial<Draft>): void
+}): React.JSX.Element {
+    const t = useT()
+    return (
+        <Field
+            label={t.owner.product.name}
+            htmlFor="product-name"
+            hint={
+                error ? (
+                    <span className="text-tg-destructive">{t.owner.product.needName}</span>
+                ) : undefined
+            }
+        >
+            <TextInput
+                id="product-name"
+                value={draft.name}
+                maxLength={80}
+                placeholder={t.owner.product.namePlaceholder}
+                onChange={(e): void => {
+                    const name = e.target.value
+                    // A new product follows its name until the owner picks a category.
+                    const guess = product || draft.categoryPicked ? null : guessCategory(name)
+                    patch(guess ? { name, category: guess } : { name })
+                }}
+            />
+        </Field>
+    )
+}
+
+/** Saves the draft; `next` keeps the screen for one more product of the same unit and category. */
+function useSave(input: {
+    draft: Draft
+    product: ProductDTO | undefined
+    saving: boolean
+    setSaving(saving: boolean): void
+    restart(next: Draft): void
+    onSaved(): void
+    onMissing(): void
+}): (next?: boolean) => Promise<void> {
     const t = useT()
     const back = useRouter((state) => state.back)
     const shopType = useSession((state) => state.shop?.type)
     const upsert = useOwner((state) => state.upsert)
-    const [draft, setDraft] = useState<Draft>(() => draftOf(initial, shopType))
-    // Once created, the product exists: a retry after a failed photo upload must not create it again.
-    const [product, setProduct] = useState(initial)
-    const [saving, setSaving] = useState(false)
-    const patch = (change: Partial<Draft>): void => setDraft((d) => ({ ...d, ...change }))
-    const variantsWrong = !optionsValid(draft.options)
-    const valid =
-        draft.name.trim().length > 0 &&
-        !variantsWrong &&
-        (hasVariants(draft.options) || (draft.price ?? 0) > 0)
-
-    const fail = (caught: unknown): void => {
-        haptic.error()
-        toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
-    }
-
-    const save = async (): Promise<void> => {
-        if (saving) {
+    const { draft, product, saving, setSaving, restart, onSaved, onMissing } = input
+    return async (next = false): Promise<void> => {
+        if (saving || missing(draft)) {
+            onMissing()
             return
         }
         setSaving(true)
         try {
             const fields = await saveFields(product, draft)
-            setProduct(fields)
-            upsert(fields)
             upsert(await savePhoto(fields, draft.photo))
             haptic.success()
             toast(t.owner.settings.saved, "success")
-            back()
+            if (!next) {
+                restart(draft)
+                back()
+                return
+            }
+            // The next one starts where this one was: same unit and category, the search open.
+            restart({
+                ...newDraft(shopType),
+                unit: draft.unit,
+                step: draft.step,
+                category: draft.category,
+            })
+            onSaved()
+            window.scrollTo({ top: 0 })
         } catch (caught) {
-            fail(caught)
+            haptic.error()
+            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
         } finally {
             setSaving(false)
         }
     }
+}
 
-    useSaveAction({ valid, saving, name: draft.name, variantsWrong, save })
+function EditorForm({ product: initial }: { product: ProductDTO | undefined }): React.JSX.Element {
+    const t = useT()
+    const { draft, patch, restart, dirty, copy } = useEditorState(initial)
+    // Once created, the product exists: a retry after a failed photo upload must not create it again.
+    const [product, setProduct] = useState(initial)
+    const [saving, setSaving] = useState(false)
+    const [searching, setSearching] = useState(!initial && !copy)
+    const [tried, setTried] = useState(false)
+    useDraftGuard(dirty && !saving)
+
+    const save = useSave({
+        draft,
+        product,
+        saving,
+        setSaving,
+        restart,
+        onSaved: (): void => {
+            setProduct(undefined)
+            setSearching(true)
+            setTried(false)
+        },
+        onMissing: (): void => setTried(true),
+    })
+
+    useSaveAction({ draft, saving, onMissing: () => setTried(true), save })
+    const gap = tried ? missing(draft) : null
 
     return (
         <main className="flex flex-col gap-6 px-4 pt-4">
-            <h1 className="text-2xl font-bold">
-                {product ? t.owner.product.edit : t.owner.product.new}
-            </h1>
-            <PhotoPicker
-                product={product}
-                draft={draft}
-                onChange={(photo): void => patch({ photo })}
-            />
-            <Field label={t.owner.product.name} htmlFor="product-name">
-                <TextInput
-                    id="product-name"
-                    value={draft.name}
-                    maxLength={80}
-                    placeholder={t.owner.product.namePlaceholder}
-                    onChange={(e): void => {
-                        const name = e.target.value
-                        // A new product follows its name until the owner picks a category.
-                        const guess = product || draft.categoryPicked ? null : guessCategory(name)
-                        patch(guess ? { name, category: guess } : { name })
+            <div className="flex items-center justify-between gap-3">
+                <h1 className="text-2xl font-bold">
+                    {product ? t.owner.product.edit : t.owner.product.new}
+                </h1>
+                {!product && !searching && draft.categoryPicked && draft.suggestedAddons ? (
+                    <span className="flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-1 text-sm font-semibold text-brand">
+                        <CheckIcon size={14} />
+                        {t.owner.product.fromCatalog}
+                    </span>
+                ) : null}
+            </div>
+            {searching ? (
+                <CatalogSearch
+                    onPick={(template): void => {
+                        restart(draft)
+                        patch(fromTemplate(draft, template))
+                        setSearching(false)
+                    }}
+                    onOwn={(name): void => {
+                        patch({ name, ...(draft.categoryPicked ? {} : nameGuess(name)) })
+                        setSearching(false)
                     }}
                 />
-            </Field>
-            <PriceField draft={draft} patch={patch} />
-            <KindFields draft={draft} patch={patch} />
-            <OptionsEditor
-                draft={draft.options}
-                addons={!isWeightUnit(draft.unit)}
-                onChange={(options): void => patch({ options })}
-            />
-            <Field label={t.owner.product.description} htmlFor="product-description">
-                <TextArea
-                    id="product-description"
-                    value={draft.description}
-                    maxLength={500}
-                    onChange={(e): void => patch({ description: e.target.value })}
+            ) : (
+                <EditorFields
+                    draft={draft}
+                    product={product}
+                    gap={gap}
+                    patch={patch}
+                    onSearch={product ? undefined : (): void => setSearching(true)}
+                    onSaveNext={product ? undefined : (): void => void save(true)}
+                    saving={saving}
                 />
-            </Field>
+            )}
             {product ? (
                 <ProductExtras
                     product={product}
                     available={draft.isAvailable}
                     onAvailable={(isAvailable): void => patch({ isAvailable })}
-                    onError={fail}
+                    onError={(caught): void =>
+                        toast(
+                            errorText(t, caught instanceof ApiError ? caught.code : "generic"),
+                            "error",
+                        )
+                    }
                 />
             ) : null}
             <BottomSpacer />
         </main>
+    )
+}
+
+/** A typed name moves the category, like typing it in the field. */
+function nameGuess(name: string): Partial<Draft> {
+    const guess = guessCategory(name)
+    return guess ? { category: guess } : {}
+}
+
+function EditorFields({
+    draft,
+    product,
+    gap,
+    patch,
+    onSearch,
+    onSaveNext,
+    saving,
+}: {
+    draft: Draft
+    product: ProductDTO | undefined
+    gap: ReturnType<typeof missing>
+    patch(change: Partial<Draft>): void
+    onSearch?: () => void
+    onSaveNext?: () => void
+    saving: boolean
+}): React.JSX.Element {
+    const t = useT()
+    const prices = new Set(optionsBody(draft.options)?.variants.map((v) => v.price))
+    return (
+        <>
+            <ProductPreview
+                product={product}
+                name={draft.name}
+                price={hasVariants(draft.options) ? priceOf(draft) : draft.price}
+                unit={draft.unit}
+                category={draft.category}
+                priceFrom={prices.size > 1}
+                photo={draft.photo}
+                onPhoto={(photo): void => patch({ photo })}
+            />
+            <NameField draft={draft} product={product} error={gap === "name"} patch={patch} />
+            <PriceField draft={draft} patch={patch} error={gap === "price"} />
+            <KindFields draft={draft} patch={patch} />
+            <OptionsEditor
+                draft={draft.options}
+                addons={!isWeightUnit(draft.unit)}
+                suggestions={draft.suggestedAddons}
+                onChange={(options): void => patch({ options })}
+            />
+            <Description
+                value={draft.description}
+                onChange={(description): void => patch({ description })}
+            />
+            {onSaveNext ? (
+                <Button variant="secondary" loading={saving} onClick={onSaveNext}>
+                    {t.owner.product.saveAndNext}
+                </Button>
+            ) : null}
+            {onSearch ? (
+                <button
+                    type="button"
+                    onClick={onSearch}
+                    className="tap flex min-h-11 items-center gap-2 self-start rounded-control px-1 font-semibold text-brand"
+                >
+                    <SearchIcon size={18} />
+                    {t.owner.product.searchAgain}
+                </button>
+            ) : null}
+        </>
     )
 }

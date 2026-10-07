@@ -21,7 +21,7 @@ export interface OptionsDraft {
 export const NO_OPTIONS: OptionsDraft = { group: "", variants: [], addons: [] }
 
 /** A short id the server accepts (`[a-z0-9]{1,12}`): new rows get one, kept rows keep theirs. */
-function newId(): string {
+export function newId(): string {
     return Math.random().toString(36).slice(2, 10) || "o1"
 }
 
@@ -109,11 +109,14 @@ function Rows({
     rows,
     namePlaceholder,
     nameLabel,
+    free = false,
     onChange,
 }: {
     rows: OptionRow[]
     namePlaceholder: string
     nameLabel: string
+    /** Add-ons: an empty price is «bepul», and the field says so. */
+    free?: boolean
     onChange(rows: OptionRow[]): void
 }): React.JSX.Element {
     const t = useT()
@@ -134,6 +137,7 @@ function Rows({
                     <div className="w-36 shrink-0">
                         <MoneyInput
                             value={row.price}
+                            placeholder={free ? t.common.free : undefined}
                             label={fill(t.owner.product.optionPrice, { name: row.name || "…" })}
                             onChange={(price): void => set(index, { price })}
                         />
@@ -191,16 +195,21 @@ function Group({
 export function OptionsEditor({
     draft,
     addons,
+    suggestions = [],
     onChange,
 }: {
     draft: OptionsDraft
     /** False for weight items: they sell by the gram, add-ons do not fit. */
     addons: boolean
+    /** Add-ons people usually take with a catalog product: one tap adds a row. */
+    suggestions?: readonly string[]
     onChange(draft: OptionsDraft): void
 }): React.JSX.Element {
     const t = useT()
     const p = t.owner.product
-    const row = (): OptionRow => ({ id: newId(), name: "", price: null })
+    const row = (name = ""): OptionRow => ({ id: newId(), name, price: null })
+    const taken = new Set(draft.addons.map((a) => a.name.trim().toLowerCase()))
+    const offered = addons ? suggestions.filter((name) => !taken.has(name.toLowerCase())) : []
     return (
         <>
             {draft.variants.length === 0 ? (
@@ -253,10 +262,32 @@ export function OptionsEditor({
                         rows={draft.addons}
                         nameLabel={p.addonName}
                         namePlaceholder={p.addonPlaceholder}
+                        free
                         onChange={(rows): void => onChange({ ...draft, addons: rows })}
                     />
                 </Group>
             )}
+            {offered.length > 0 ? (
+                <div className="flex flex-col gap-2">
+                    <p className="px-1 text-sm font-semibold text-tg-hint">{p.usualAddons}</p>
+                    <div className="flex flex-wrap gap-2">
+                        {offered.map((name) => (
+                            <button
+                                key={name}
+                                type="button"
+                                onClick={(): void => {
+                                    haptic.tap()
+                                    onChange({ ...draft, addons: [...draft.addons, row(name)] })
+                                }}
+                                className="tap flex h-10 items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-tg-separator px-3 text-sm"
+                            >
+                                <PlusIcon size={16} />
+                                {name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            ) : null}
         </>
     )
 }
