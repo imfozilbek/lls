@@ -1,4 +1,5 @@
 import {
+    ConflictError,
     ACTIVE_ORDER_STATUSES,
     COURIER_STATUSES,
     Courier,
@@ -12,7 +13,7 @@ import {
 
 import { sha256Hex } from "../crypto.js"
 
-import { flag, oneOf, optional } from "./rows.js"
+import { flag, isUniqueViolation, oneOf, optional } from "./rows.js"
 
 import type { CourierRepository, Weekday } from "@zumda/core"
 
@@ -135,30 +136,39 @@ export class D1CourierRepository implements CourierRepository {
      * until a later release drops them.
      */
     async save(courier: Courier): Promise<void> {
-        await this.db
-            .prepare(
-                `INSERT INTO couriers (id, business_id, telegram_id, name, phone, is_active, status,
-                    work_days, off_until, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                 ON CONFLICT (id) DO UPDATE SET name = excluded.name, phone = excluded.phone,
-                    is_active = excluded.is_active, status = excluded.status,
-                    work_days = excluded.work_days, off_until = excluded.off_until,
-                    updated_at = excluded.updated_at`,
-            )
-            .bind(
-                courier.id,
-                courier.businessId,
-                courier.telegramId.value,
-                courier.name,
-                courier.phone?.number ?? null,
-                flag(courier.isActive),
-                courier.status,
-                courier.workDays.join(","),
-                courier.offUntil?.getTime() ?? null,
-                courier.createdAt.getTime(),
-                courier.updatedAt.getTime(),
-            )
-            .run()
+        try {
+            await this.db
+                .prepare(
+                    `INSERT INTO couriers (id, business_id, telegram_id, name, phone, is_active, status,
+                        work_days, off_until, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     ON CONFLICT (id) DO UPDATE SET name = excluded.name, phone = excluded.phone,
+                        is_active = excluded.is_active, status = excluded.status,
+                        work_days = excluded.work_days, off_until = excluded.off_until,
+                        updated_at = excluded.updated_at`,
+                )
+                .bind(
+                    courier.id,
+                    courier.businessId,
+                    courier.telegramId.value,
+                    courier.name,
+                    courier.phone?.number ?? null,
+                    flag(courier.isActive),
+                    courier.status,
+                    courier.workDays.join(","),
+                    courier.offUntil?.getTime() ?? null,
+                    courier.createdAt.getTime(),
+                    courier.updatedAt.getTime(),
+                )
+                .run()
+        } catch (error) {
+            // A second link of the same person and shop at once («Беру» tapped twice): the other
+            // request made it; this one is told the order changed, never a 500.
+            if (isUniqueViolation(error)) {
+                throw ConflictError.stale("courier", courier.id)
+            }
+            throw error
+        }
     }
 
     async findProfile(telegramId: number): Promise<CourierProfile | null> {

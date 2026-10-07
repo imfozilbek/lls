@@ -144,10 +144,38 @@ export async function storePoster(
             contentDisposition: `attachment; filename="${business.slug}-qr.png"`,
         },
     })
+    await prunePosters(bucket, business.id, key)
     return key
 }
 
 const POSTER_HASH_BYTES = 8
+/** Older posters go after this: the other kind (shop bot / Zumda Shop) may be downloading now. */
+const POSTER_KEEP_MS = 60 * 60 * 1000
+
+/** Each new design used to stay in the public bucket for good; only the recent ones stay now. */
+async function prunePosters(bucket: R2Bucket, businessId: string, current: string): Promise<void> {
+    const listed = await bucket.list({ prefix: `${IMAGE_KEY_PREFIX}${businessId}/poster-` })
+    const old = listed.objects
+        .filter((o) => o.key !== current && Date.now() - o.uploaded.getTime() > POSTER_KEEP_MS)
+        .map((o) => o.key)
+    if (old.length > 0) {
+        await bucket.delete(old)
+    }
+}
+
+/** The new file goes again when saving its key failed: nothing points at it. */
+export async function withStoredImage<T>(
+    bucket: R2Bucket,
+    key: string,
+    save: () => Promise<T>,
+): Promise<T> {
+    try {
+        return await save()
+    } catch (error) {
+        await bucket.delete(key)
+        throw error
+    }
+}
 
 /**
  * After a new picture is saved, the one it replaced goes. The previous key must be read before

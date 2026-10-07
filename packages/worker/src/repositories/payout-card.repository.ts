@@ -1,4 +1,6 @@
-import { MAX_PAYOUT_CARDS, PayoutCard } from "@zumda/core"
+import { BusinessRuleViolationError, MAX_PAYOUT_CARDS, PayoutCard } from "@zumda/core"
+
+import { isUniqueViolation } from "./rows.js"
 
 import type { PayoutCardRepository, SavedPayoutCard } from "@zumda/core"
 
@@ -28,19 +30,27 @@ export class D1PayoutCardRepository implements PayoutCardRepository {
     }
 
     async insert(businessId: string, saved: SavedPayoutCard): Promise<void> {
-        await this.db
-            .prepare(
-                `INSERT INTO payout_cards (id, business_id, number, holder, created_at)
-                 VALUES (?, ?, ?, ?, ?)`,
-            )
-            .bind(
-                saved.id,
-                businessId,
-                saved.card.number,
-                saved.card.holder,
-                saved.createdAt.getTime(),
-            )
-            .run()
+        try {
+            await this.db
+                .prepare(
+                    `INSERT INTO payout_cards (id, business_id, number, holder, created_at)
+                     VALUES (?, ?, ?, ?, ?)`,
+                )
+                .bind(
+                    saved.id,
+                    businessId,
+                    saved.card.number,
+                    saved.card.holder,
+                    saved.createdAt.getTime(),
+                )
+                .run()
+        } catch (error) {
+            // The same card sent twice at once (a double tap): the person's own words, not 500.
+            if (isUniqueViolation(error)) {
+                throw BusinessRuleViolationError.cardExists()
+            }
+            throw error
+        }
     }
 
     async delete(businessId: string, id: string): Promise<void> {

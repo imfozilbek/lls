@@ -19,7 +19,16 @@ import {
 
 import { decryptSecret, encryptSecret, randomToken } from "../crypto.js"
 
-import { IN_CHUNK, Versions, bool, flag, oneOf, optional, placeholders } from "./rows.js"
+import {
+    IN_CHUNK,
+    Versions,
+    bool,
+    flag,
+    isUniqueViolation,
+    oneOf,
+    optional,
+    placeholders,
+} from "./rows.js"
 
 import type { BusinessRepository, WeeklySchedule } from "@zumda/core"
 
@@ -286,33 +295,43 @@ export class D1BusinessRepository implements BusinessRepository {
 
     async insert(business: Business, botToken: string): Promise<void> {
         const tokenEncrypted = await encryptSecret(botToken, this.encryptionKey)
-        await this.db
-            .prepare(
-                `INSERT INTO businesses (name, status, brand_color, logo_key, address, latitude,
-                    longitude, delivery_fee, free_delivery_from, min_order, delivery_radius_m,
-                    working_hours, features, accepting_orders, bottle_deposit,
-                    marketplace_commission_bps, marketplace_joined_at, payout_card_number,
-                    payout_card_holder, district_id, network_delivery, payment_card_id,
-                    contact_phone, payment_options, rejected_at, review_note, updated_at,
-                    id, slug, type, owner_telegram_id, bot_id, bot_username, bot_token_enc,
-                    webhook_secret, created_at, bot_source)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            )
-            .bind(
-                ...mutableValues(business),
-                business.id,
-                business.slug.value,
-                business.type,
-                business.ownerTelegramId.value,
-                business.bot.id,
-                business.bot.username,
-                tokenEncrypted,
-                randomToken(),
-                business.createdAt.getTime(),
-                business.botSource,
-            )
-            .run()
+        try {
+            await this.db
+                .prepare(
+                    `INSERT INTO businesses (name, status, brand_color, logo_key, address, latitude,
+                        longitude, delivery_fee, free_delivery_from, min_order, delivery_radius_m,
+                        working_hours, features, accepting_orders, bottle_deposit,
+                        marketplace_commission_bps, marketplace_joined_at, payout_card_number,
+                        payout_card_holder, district_id, network_delivery, payment_card_id,
+                        contact_phone, payment_options, rejected_at, review_note, updated_at,
+                        id, slug, type, owner_telegram_id, bot_id, bot_username, bot_token_enc,
+                        webhook_secret, created_at, bot_source)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                )
+                .bind(
+                    ...mutableValues(business),
+                    business.id,
+                    business.slug.value,
+                    business.type,
+                    business.ownerTelegramId.value,
+                    business.bot.id,
+                    business.bot.username,
+                    tokenEncrypted,
+                    randomToken(),
+                    business.createdAt.getTime(),
+                    business.botSource,
+                )
+                .run()
+        } catch (error) {
+            // The same application sent twice at once: the bot or the address is taken now.
+            if (isUniqueViolation(error)) {
+                throw String(error).includes("bot_id")
+                    ? ConflictError.botAlreadyConnected(business.bot.id)
+                    : ConflictError.slugTaken(business.slug.value)
+            }
+            throw error
+        }
         versions.remember(business, business.updatedAt.getTime())
     }
 

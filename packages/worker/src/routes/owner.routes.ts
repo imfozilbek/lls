@@ -4,7 +4,14 @@ import { Hono } from "hono"
 
 import { requireOwner, shopOf } from "../auth.js"
 import { ApiError } from "../http/errors.js"
-import { deleteImage, readImageBody, readJpeg, replaceImage, storeImage } from "../http/images.js"
+import {
+    deleteImage,
+    readImageBody,
+    readJpeg,
+    replaceImage,
+    storeImage,
+    withStoredImage,
+} from "../http/images.js"
 import { rateLimit } from "../http/rate-limit.js"
 import {
     assignCourierBody,
@@ -28,6 +35,7 @@ import { Notifier, inBackground } from "../telegram/notifier.js"
 
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
+import type { Context } from "hono"
 
 /** Sets the picture the app drew; Telegram's refusal is a 502 the app can name. */
 export async function setShopBotPhoto(
@@ -48,6 +56,24 @@ export async function setShopBotPhoto(
 }
 
 /** "Мой магазин": only the owner of the shop from `X-Shop`. */
+/** The trips orders just left (moved to a courier or another trip): their way is planned again. */
+function refreshLeftTrips(
+    c: Context<AppEnv>,
+    left: readonly (string | undefined)[],
+    now: string | undefined,
+): void {
+    const services = c.get("services")
+    for (const tripId of new Set(left)) {
+        if (tripId && tripId !== now) {
+            inBackground(
+                c.executionCtx,
+                services,
+                services.useCases.refreshTripRoute.execute({ tripId }),
+            )
+        }
+    }
+}
+
 export const ownerRoutes = new Hono<AppEnv>()
     .use(requireOwner)
 
@@ -101,11 +127,13 @@ export const ownerRoutes = new Hono<AppEnv>()
             c.req.header("Content-Type"),
             await readImageBody(c.req.raw),
         )
-        const shop = await services.useCases.updateShop.execute({
-            actorTelegramId: c.get("auth").user.id,
-            businessId: business.id,
-            patch: { logoKey: key },
-        })
+        const shop = await withStoredImage(c.env.BUCKET, key, () =>
+            services.useCases.updateShop.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: business.id,
+                patch: { logoKey: key },
+            }),
+        )
         await replaceImage(c.env.BUCKET, previousKey, key)
         return c.json(shop)
     })
@@ -212,6 +240,8 @@ export const ownerRoutes = new Hono<AppEnv>()
                 services,
                 new Notifier(services).courierAssigned(business, order, previous?.courierId),
             )
+            // Given to a courier by itself, the order left its trip: that trip's way changes.
+            refreshLeftTrips(c, [previous?.tripId], order.tripId)
             return c.json(order)
         },
     )
@@ -233,6 +263,11 @@ export const ownerRoutes = new Hono<AppEnv>()
             c.executionCtx,
             services,
             new Notifier(services).tripAssigned(business, trip, previous),
+        )
+        refreshLeftTrips(
+            c,
+            before.map((o) => o?.tripId),
+            trip.trip.id,
         )
         return c.json({ trip: trip.trip, orders: trip.orders }, 201)
     })
@@ -410,12 +445,14 @@ export const ownerRoutes = new Hono<AppEnv>()
             c.req.header("Content-Type"),
             await readImageBody(c.req.raw),
         )
-        const product = await useCases.updateProduct.execute({
-            actorTelegramId: c.get("auth").user.id,
-            businessId: business.id,
-            productId,
-            patch: { imageKey: key },
-        })
+        const product = await withStoredImage(c.env.BUCKET, key, () =>
+            useCases.updateProduct.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: business.id,
+                productId,
+                patch: { imageKey: key },
+            }),
+        )
         await replaceImage(c.env.BUCKET, previousKey, key)
         return c.json(product)
     })

@@ -128,6 +128,9 @@ const BASE = {
         shopRejected: "😔 {shop} arizasi rad etildi.",
         shopRejectedReason: "Sabab: {reason}",
         shopRejectedNext: "Tuzating va «Mening bizneslarim»da arizani qayta yuboring.",
+        shopNotWorking: "{shop} hozir Zumda'da ishlamayapti. Keyinroq qaytib ko'ring.",
+        shopDisabled:
+            "⏸ {shop} Zumda'da vaqtincha o'chirildi: mijozlar uni ko'rmaydi. Savol bo'lsa, Zumda'ga yozing.",
         openShop: "🏪 Biznesni ochish",
         newShop: "🏪 Yangi biznes",
         shopTypes: {

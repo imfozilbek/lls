@@ -1,4 +1,4 @@
-import { ForbiddenError, languageFromTelegram } from "@zumda/core"
+import { ForbiddenError, OrderStatus, languageFromTelegram } from "@zumda/core"
 import { Hono } from "hono"
 
 import { timingSafeEqual } from "../crypto.js"
@@ -113,6 +113,15 @@ async function handleShopMessage(
         texts.openMenu,
         shopAppUrl(services.env.APP_ORIGIN, business.slug.value),
     )
+    // A shop turned off (or a rejected application): its app answers 404, so no button to it.
+    if (!business.isVisibleTo(from.id)) {
+        await services.telegram.sendMessage(
+            token,
+            message.chat.id,
+            fill(texts.shopNotWorking, { shop: `<b>${escapeHtml(business.name)}</b>` }),
+        )
+        return
+    }
     if (!isStart(message.text)) {
         await services.telegram.sendMessage(token, message.chat.id, texts.onlyInApp, { keyboard })
         return
@@ -156,14 +165,23 @@ async function handleOrderCallback(
     }
     const step = await networkAfterStep(services, order)
     // Notify first: if answering the button fails, the owner card and the customer still update.
-    if (action.kind === "paid") {
-        await notifyPaymentConfirmed(services, business, step.order, step.request)
-    } else if (action.kind === "notPaid") {
-        await new Notifier(services).transferRejected(business, order)
-    } else {
-        await notifyOwnerStep(services, business, step.order, step.request)
+    // A failed notification (a customer blocked the bot) still answers the button: the step is
+    // done, and a spinning button would say otherwise.
+    try {
+        if (action.kind === "paid") {
+            await notifyPaymentConfirmed(services, business, step.order, step.request)
+        } else if (action.kind === "notPaid") {
+            await new Notifier(services).transferRejected(business, order)
+        } else {
+            await notifyOwnerStep(services, business, step.order, step.request)
+        }
+    } finally {
+        await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
     }
-    await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
+    // A stop cancelled from the chat leaves the trip's way, as from the app.
+    if (order.tripId && order.status === OrderStatus.CANCELLED) {
+        await services.useCases.refreshTripRoute.execute({ tripId: order.tripId })
+    }
 }
 
 /** «Pul keldi» in the chat asks first: the sum and the card to check in the bank app. */

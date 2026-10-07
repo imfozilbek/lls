@@ -11,7 +11,7 @@ import {
     shiftBody,
 } from "../http/schemas.js"
 import { notifyNetworkClaim } from "../network-flow.js"
-import { Notifier, inBackground } from "../telegram/notifier.js"
+import { Notifier, everyOne, inBackground } from "../telegram/notifier.js"
 
 import type { AppEnv } from "../env.js"
 
@@ -109,9 +109,11 @@ export const courierRoutes = new Hono<AppEnv>()
             inBackground(
                 c.executionCtx,
                 services,
-                trip.orders.reduce(
-                    (chain, order) => chain.then(() => notifier.orderChanged(business, order)),
-                    Promise.resolve(),
+                // Each stop on its own: one blocked customer must not silence the others.
+                everyOne(
+                    trip.orders.map(
+                        (order) => (): Promise<void> => notifier.orderChanged(business, order),
+                    ),
                 ),
             )
         }
