@@ -23,6 +23,7 @@ import { IN_CHUNK, Versions, isUniqueViolation, oneOf, optional, placeholders } 
 
 import type {
     CancelledBy,
+    ChosenOptions,
     MoneyTotals,
     NetworkShare,
     OrderRepository,
@@ -89,6 +90,7 @@ interface ItemRow {
     category: string
     unit_price: number
     quantity: number
+    options: string | null
 }
 
 /** Who gets a Telegram card for an order; each card is edited in place on status changes. */
@@ -126,7 +128,8 @@ export const TRANSFER_REJECTIONS_SQL = `SELECT COALESCE(SUM(transfer_rejections)
 /** A courier can still take the order: from accepted until pickup. */
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
 
-const ITEM_COLUMNS = "order_id, line, product_id, name, unit, category, unit_price, quantity"
+const ITEM_COLUMNS =
+    "order_id, line, product_id, name, unit, category, unit_price, quantity, options"
 
 const CANCELLED_BY: readonly CancelledBy[] = ["customer", "owner"]
 
@@ -219,6 +222,7 @@ function toItem(row: ItemRow): OrderItem {
         category: oneOf(row.category, CATEGORIES, "category"),
         unitPrice: Money.of(row.unit_price),
         quantity: row.quantity,
+        options: row.options === null ? undefined : (JSON.parse(row.options) as ChosenOptions),
     })
 }
 
@@ -464,7 +468,7 @@ export class D1OrderRepository implements OrderRepository {
                 this.db
                     .prepare(
                         `INSERT INTO order_items (${ITEM_COLUMNS}, total)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     )
                     .bind(
                         order.id,
@@ -475,6 +479,7 @@ export class D1OrderRepository implements OrderRepository {
                         item.category,
                         item.unitPrice.amount,
                         item.quantity,
+                        item.options ? JSON.stringify(item.options) : null,
                         item.total.amount,
                     ),
             ),

@@ -5,6 +5,7 @@ import {
     PaymentStatus,
     Unit,
     formatPhone,
+    isWeightUnit,
     mapUrl,
 } from "@zumda/core"
 
@@ -30,13 +31,29 @@ export function formatMoney(amount: number, language: Language): string {
     return `${grouped} ${textsFor(language).currency}`
 }
 
-/** "× 2" for pieces, "× 1,5 kg" for weight items (quantity is in grams). */
+/**
+ * "× 2" for pieces, "× 1,5 kg" for kilograms, "× 300 g" for goods priced per 100 g or per gram
+ * (quantities of weight are grams), "× 12 m²" for everything else that has a word.
+ */
 function quantityLabel(item: OrderItemDTO, t: BotTexts): string {
-    if (item.unit !== Unit.KG) {
-        return `× ${item.quantity}`
+    if (item.unit === Unit.KG || (isWeightUnit(item.unit) && item.quantity >= GRAMS_PER_KG)) {
+        const kg = String(item.quantity / GRAMS_PER_KG).replace(".", ",")
+        return `× ${kg} ${t.kg}`
     }
-    const kg = String(item.quantity / GRAMS_PER_KG).replace(".", ",")
-    return `× ${kg} ${t.kg}`
+    const word = t.units[item.unit]
+    return word ? `× ${item.quantity} ${word}` : `× ${item.quantity}`
+}
+
+/** «Latte (0,4 l · Karamel sirop)»: the name with the variant and add-ons picked. */
+function itemName(item: OrderItemDTO): string {
+    const name = escapeHtml(item.name)
+    return item.options ? `${name} (${escapeHtml(item.options.label)})` : name
+}
+
+/** «Latte (0,4 l · Karamel sirop) × 2», plain text: a cell of the owner's CSV. */
+export function plainItem(item: OrderItemDTO, t: BotTexts): string {
+    const name = item.options ? `${item.name} (${item.options.label})` : item.name
+    return `${name} ${quantityLabel(item, t)}`
 }
 
 /** Lines a card lists before «… va yana N ta»: a message is at most 4096 characters. */
@@ -47,7 +64,7 @@ function itemLines(order: OrderDTO, t: BotTexts, language: Language): string[] {
         .slice(0, MAX_CARD_ITEMS)
         .map(
             (item) =>
-                `${escapeHtml(item.name)} ${quantityLabel(item, t)}: ${formatMoney(item.total, language)}`,
+                `${itemName(item)} ${quantityLabel(item, t)}: ${formatMoney(item.total, language)}`,
         )
     const hidden = order.items.length - shown.length
     return hidden > 0 ? [...shown, fill(t.moreItems, { n: hidden })] : shown

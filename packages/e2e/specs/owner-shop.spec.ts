@@ -52,16 +52,20 @@ test("catalog: add a product with a photo; customers see it at once", async ({ p
     await bottomButton(page).click()
     await expect(page.getByText("Mahsulot nomini yozing")).toBeVisible()
 
+    // A name the catalog does not need: the owner keeps the typed words.
+    await page.getByLabel("Katalogdan qidirish").fill("Manti")
+    await page.getByRole("button", { name: "«Manti» deb o'zim yozaman" }).click()
+    await expect(page.getByLabel("Nomi")).toHaveValue("Manti")
     await page.locator('input[type="file"]').setInputFiles({
         name: "manti.png",
         mimeType: "image/png",
         buffer: pngImage(400),
     })
     await expect(page.getByRole("button", { name: "Almashtirish" })).toBeVisible()
-    await page.getByLabel("Nomi").fill("Manti")
     await page.getByLabel("Narxi").fill("30000")
     await expect(page.getByLabel("Narxi")).toHaveValue("30 000")
     await page.getByRole("button", { name: "Taomlar", exact: true }).click()
+    await page.getByRole("button", { name: /^Tavsif/ }).click()
     await page.getByLabel("Tavsif").fill("5 dona, qovoqli")
     await bottomButton(page).click()
     await expect(page.getByText("Saqlandi")).toBeVisible()

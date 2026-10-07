@@ -1,4 +1,4 @@
-import { BusinessType, Language, OrderStatus } from "@zumda/core"
+import { BusinessType, Language, OrderStatus, Unit } from "@zumda/core"
 
 type StatusTexts = Partial<Record<OrderStatus, string>>
 
@@ -25,6 +25,36 @@ const BASE = {
         cancel: "❌ Bekor qilish",
         reason: "Sabab",
         kg: "kg",
+        g: "g",
+        /** The word after a quantity in a card; pieces and bottles are just counted. */
+        units: {
+            [Unit.PIECE]: "",
+            [Unit.PORTION]: "porsiya",
+            [Unit.KG]: "kg",
+            [Unit.G100]: "g",
+            [Unit.GRAM]: "g",
+            [Unit.LITER]: "l",
+            [Unit.BOTTLE_19L]: "",
+            [Unit.BOTTLE_20L]: "",
+            [Unit.PACK]: "qadoq",
+            [Unit.BOX]: "quti",
+            [Unit.BUNCH]: "bog'",
+            [Unit.SET]: "to'plam",
+            [Unit.PAIR]: "juft",
+            [Unit.TRAY]: "lotok",
+            [Unit.SACK]: "qop",
+            [Unit.ROLL]: "rulon",
+            [Unit.SHEET]: "list",
+            [Unit.METRE]: "m",
+            [Unit.SQUARE_METRE]: "m²",
+            [Unit.CUBIC_METRE]: "m³",
+            [Unit.HOUR]: "soat",
+            [Unit.DAY]: "kun",
+            [Unit.MONTH]: "oy",
+            [Unit.SESSION]: "seans",
+            [Unit.TRIP]: "reys",
+            [Unit.SOTIX]: "sotix",
+        } satisfies Record<Unit, string>,
         statusNames: {
             [OrderStatus.PENDING]: "🆕 Yangi",
             [OrderStatus.ACCEPTED]: "✅ Qabul qilindi",
@@ -104,7 +134,8 @@ const BASE = {
             [BusinessType.GROCERY]: "oziq-ovqat do'koni",
             [BusinessType.FOOD]: "restoran",
             [BusinessType.SERVICE]: "xizmat ko'rsatish",
-        } as Record<BusinessType, string>,
+            [BusinessType.STORE]: "do'kon",
+        } satisfies Record<BusinessType, string>,
         ownerLabel: "Egasi",
         approve: "✅ Tasdiqlash",
         reject: "❌ Rad etish",
@@ -225,6 +256,7 @@ const BASE = {
                 "Kuryer",
                 "Kanal",
                 "Zumda komissiyasi",
+                "Mahsulotlar",
             ],
             payment: {
                 unpaid: "to'lanmagan",

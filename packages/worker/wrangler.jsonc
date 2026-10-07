@@ -49,5 +49,11 @@
             "namespace_id": "1003",
             "simple": { "limit": 10, "period": 60 },
         },
+        // «Ro'yxat bilan qo'shish»: up to 50 products a list, a few lists a minute (D1 writes).
+        {
+            "name": "BULK_LIMITER",
+            "namespace_id": "1004",
+            "simple": { "limit": 5, "period": 60 },
+        },
     ],
 }

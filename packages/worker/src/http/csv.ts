@@ -1,5 +1,7 @@
 import { UZ_UTC_OFFSET_MINUTES, formatPhone } from "@zumda/core"
 
+import { plainItem } from "../telegram/format.js"
+
 import type { BotTexts } from "../telegram/texts.js"
 import type { OrderDTO } from "@zumda/core"
 
@@ -47,6 +49,7 @@ export function ordersCsv(orders: readonly OrderDTO[], t: BotTexts): string {
         o.courierName ?? "",
         c.channel[o.channel],
         o.commission,
+        o.items.map((item) => plainItem(item, t)).join(", "),
     ])
     const lines = [c.headers, ...rows].map((row) => row.map(cell).join(SEPARATOR))
     return BOM + lines.join("\r\n") + "\r\n"

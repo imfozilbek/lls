@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { OrderItem } from "../../../domain/entities/order-item.js"
 import { Product } from "../../../domain/entities/product.js"
 import { Language } from "../../../domain/enums/language.js"
 import { Unit } from "../../../domain/enums/unit.js"
@@ -100,6 +101,72 @@ describe("Product for grocery and water", () => {
         expect(product.step).toBe(250)
         product.update({ unit: Unit.PIECE })
         expect(product.step).toBe(1)
+    })
+
+    it("sells by 100 g and by the gram: 300 g of pepper at 6 000 per 100 g is 18 000", () => {
+        const pepper = Product.create({
+            id: "p-pepper",
+            businessId: "biz-1",
+            name: "Qora murch",
+            price: 6_000,
+            unit: Unit.G100,
+            category: "spices",
+        })
+        expect(pepper.step).toBe(100)
+        pepper.assertQuantity(300)
+        expect(() => pepper.assertQuantity(150)).toThrow(ValidationError)
+        const line = OrderItem.create({
+            productId: pepper.id,
+            name: pepper.name,
+            unit: pepper.unit,
+            category: pepper.category,
+            unitPrice: pepper.price,
+            quantity: 300,
+        })
+        expect(line.total.amount).toBe(18_000)
+
+        const saffron = Product.create({
+            id: "p-saffron",
+            businessId: "biz-1",
+            name: "Zafaron",
+            price: 45_000,
+            unit: Unit.GRAM,
+            category: "spices",
+        })
+        expect(saffron.step).toBe(1)
+        saffron.assertQuantity(2)
+        const two = OrderItem.create({
+            productId: saffron.id,
+            name: saffron.name,
+            unit: saffron.unit,
+            category: saffron.category,
+            unitPrice: saffron.price,
+            quantity: 2,
+        })
+        expect(two.total.amount).toBe(90_000)
+    })
+
+    it("measures and time sell by whole units: 12 m² of carpet, 3 hours", () => {
+        const carpet = Product.create({
+            id: "p-carpet",
+            businessId: "biz-1",
+            name: "Gilam yuvish",
+            price: 12_000,
+            unit: Unit.SQUARE_METRE,
+            category: "carpet",
+            step: 500,
+        })
+        expect(carpet.step).toBe(1)
+        carpet.assertQuantity(12)
+        const line = OrderItem.create({
+            productId: carpet.id,
+            name: carpet.name,
+            unit: carpet.unit,
+            category: carpet.category,
+            unitPrice: carpet.price,
+            quantity: 12,
+        })
+        expect(line.total.amount).toBe(144_000)
     })
 
     it("stop-list for today ends at the next Tashkent midnight", () => {

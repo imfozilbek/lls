@@ -407,8 +407,10 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect([...(csv?.file.bytes.slice(0, 3) ?? [])]).toEqual([0xef, 0xbb, 0xbf])
         const text = new TextDecoder().decode(csv?.file.bytes)
         const [header, row] = text.split("\r\n")
-        expect(header?.split(";")).toHaveLength(16)
+        expect(header?.split(";")).toHaveLength(17)
         expect(row).toContain(";80000;karta;")
+        // The goods with their units and picks, as in the bot's messages.
+        expect(row?.split(";").at(-1)).toMatch(/× \d/)
 
         const png = new Uint8Array([...PNG_HEADER, 0, 0, 0, 13])
         const poster = await as(OWNER)("/api/owner/shop/poster", {

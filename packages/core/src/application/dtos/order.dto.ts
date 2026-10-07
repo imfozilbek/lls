@@ -8,6 +8,7 @@ import type { OrderChannel } from "../../domain/enums/order-channel.js"
 import type { OrderStatus } from "../../domain/enums/order-status.js"
 import type { PaymentMethod, PaymentStatus } from "../../domain/enums/payment.js"
 import type { Unit } from "../../domain/enums/unit.js"
+import type { ChosenOptions } from "../../domain/value-objects/product-options.js"
 
 export interface OrderItemDTO {
     productId: string
@@ -16,9 +17,11 @@ export interface OrderItemDTO {
     category: Category
     /** Per piece, or per kilogram for `kg`. */
     unitPrice: number
-    /** Pieces, or grams for `kg`. */
+    /** Pieces, or grams for weight units. */
     quantity: number
     total: number
+    /** The variant and add-ons picked: «0,4 l · Karamel sirop»; ids for «Takrorlash». */
+    options?: ChosenOptions
 }
 
 export interface OrderDTO {
@@ -100,6 +103,7 @@ export function toOrderDTO(order: Order): OrderDTO {
             unitPrice: item.unitPrice.amount,
             quantity: item.quantity,
             total: item.total.amount,
+            ...(item.options ? { options: item.options } : {}),
         })),
         subtotal: order.subtotal.amount,
         deliveryFee: order.deliveryFee.amount,

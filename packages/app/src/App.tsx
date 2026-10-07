@@ -65,25 +65,38 @@ function usePrefetchScreens(ready: boolean): void {
     }, [ready])
 }
 
-// Customers never download these chunks.
-const OwnerApp = lazy(() => import("./owner/OwnerApp.js").then((m) => ({ default: m.OwnerApp })))
+// Customers never download these chunks, nor the staff's words they bring (`staff-register`).
+const withStaff = <T,>(load: () => Promise<T>): Promise<T> =>
+    import("./i18n/staff-register.js").then(load)
+const OwnerApp = lazy(() =>
+    withStaff(() => import("./owner/OwnerApp.js")).then((m) => ({ default: m.OwnerApp })),
+)
 const ProductEditor = lazy(() =>
-    import("./owner/ProductEditor.js").then((m) => ({ default: m.ProductEditor })),
+    withStaff(() => import("./owner/ProductEditor.js")).then((m) => ({
+        default: m.ProductEditor,
+    })),
+)
+const BulkAdd = lazy(() =>
+    withStaff(() => import("./owner/BulkAdd.js")).then((m) => ({ default: m.BulkAdd })),
 )
 const CourierApp = lazy(() =>
-    import("./courier/CourierApp.js").then((m) => ({ default: m.CourierApp })),
+    withStaff(() => import("./courier/CourierApp.js")).then((m) => ({ default: m.CourierApp })),
 )
 const ShowcaseScreen = lazy(() =>
-    import("./showcase/ShowcaseScreen.js").then((m) => ({ default: m.ShowcaseScreen })),
+    withStaff(() => import("./showcase/ShowcaseScreen.js")).then((m) => ({
+        default: m.ShowcaseScreen,
+    })),
 )
 const WebSignIn = lazy(() =>
     import("./business/WebSignIn.js").then((m) => ({ default: m.WebSignIn })),
 )
 const OnboardingApp = lazy(() =>
-    import("./onboarding/OnboardingApp.js").then((m) => ({ default: m.OnboardingApp })),
+    withStaff(() => import("./onboarding/OnboardingApp.js")).then((m) => ({
+        default: m.OnboardingApp,
+    })),
 )
 const PlatformApp = lazy(() =>
-    import("./platform/PlatformApp.js").then((m) => ({ default: m.PlatformApp })),
+    withStaff(() => import("./platform/PlatformApp.js")).then((m) => ({ default: m.PlatformApp })),
 )
 
 const SCREEN_IN: Record<Direction, string> = {
@@ -165,7 +178,7 @@ function useShopBootstrap(
                 session.setShop(shop)
                 session.setMe(me)
                 session.setCatalog(products)
-                const removed = useCart.getState().prune(products.map((p) => p.id))
+                const removed = useCart.getState().prune(products)
                 if (removed > 0) {
                     toast(fill(dictionaryFor(me.language).cart.removed, { n: removed }))
                 }
@@ -238,6 +251,12 @@ function Screen(): React.JSX.Element {
             return (
                 <Suspense fallback={<MenuSkeleton />}>
                     <ProductEditor id={route.id} />
+                </Suspense>
+            )
+        case "bulk":
+            return (
+                <Suspense fallback={<MenuSkeleton />}>
+                    <BulkAdd />
                 </Suspense>
             )
         default:

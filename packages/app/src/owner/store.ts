@@ -25,6 +25,9 @@ interface OwnerState {
     /** Active orders on the first page of «Buyurtmalar»: `null` until it loads. */
     activeOrders: number | null
     setActiveOrders(count: number): void
+    /** «Nusxa olish»: the product a new one starts from (the editor takes it once). */
+    copyOf: ProductDTO | null
+    copyProduct(product: ProductDTO | null): void
     /** «Sozlamalar» has edits not saved yet: leaving the tab asks first. */
     settingsDirty: boolean
     setSettingsDirty(dirty: boolean): void
@@ -57,6 +60,8 @@ export const useOwner = create<OwnerState>((set, get) => ({
     couriers: null,
     activeOrders: null,
     setActiveOrders: (count): void => set({ activeOrders: count }),
+    copyOf: null,
+    copyProduct: (product): void => set({ copyOf: product }),
     settingsDirty: false,
     setSettingsDirty: (dirty): void => set({ settingsDirty: dirty }),
     bindShop: (id): void => {

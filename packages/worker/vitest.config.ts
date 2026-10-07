@@ -43,6 +43,10 @@ export default defineConfig(async () => {
                             namespace_id: "1003",
                             simple: { limit: 1000, period: 60 },
                         },
+                        BULK_LIMITER: {
+                            namespace_id: "1004",
+                            simple: { limit: 1000, period: 60 },
+                        },
                         TEST_TIGHT_LIMITER: {
                             namespace_id: "9001",
                             simple: { limit: 2, period: 60 },

@@ -31,6 +31,22 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    /** The product comes in variants (sizes, kinds): the customer must pick one. */
+    static variantRequired(productId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError("VARIANT_REQUIRED", "Pick one of the variants", {
+            productId,
+        })
+    }
+
+    /** A variant or an add-on the product no longer has (the owner changed it). */
+    static optionUnavailable(productId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "OPTION_UNAVAILABLE",
+            `An option of product "${productId}" is not available`,
+            { productId },
+        )
+    }
+
     static shopNotActive(businessId: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError("SHOP_NOT_ACTIVE", "Shop is not active", {
             businessId,

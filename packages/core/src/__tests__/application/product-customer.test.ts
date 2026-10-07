@@ -10,6 +10,7 @@ import {
 } from "../../application/use-cases/customer/customer.use-cases.js"
 import {
     CreateProductUseCase,
+    CreateProductsUseCase,
     DeleteProductUseCase,
     ListProductsUseCase,
     UpdateProductUseCase,
@@ -55,6 +56,53 @@ describe("product use cases", () => {
         })
         expect(product.price).toBe(30_000)
         expect(products.items.size).toBe(1)
+    })
+
+    it("a list of products at once: twins in the list or the shop are skipped, not doubled", async () => {
+        await products.save(makeProduct({ name: "Non" }))
+        const bulk = new CreateProductsUseCase(businesses, products)
+        const row = (
+            name: string,
+            price: number,
+        ): {
+            name: string
+            price: number
+            unit: string
+            category: string
+        } => ({ name, price, unit: "portion", category: "meals" })
+        const result = await bulk.execute({
+            actorTelegramId: OWNER_TG,
+            businessId: "biz-1",
+            items: [
+                row("Lag'mon", 38_000),
+                row("Manti", 30_000),
+                row("lagmon", 1),
+                row("non", 4_000),
+            ],
+        })
+        expect(result.created.map((p) => p.name)).toEqual(["Lag'mon", "Manti"])
+        expect(result.skipped).toEqual(["lagmon", "non"])
+        expect(products.items.size).toBe(3)
+
+        // A wrong row stops the whole list: nothing half-saved.
+        await expect(
+            bulk.execute({
+                actorTelegramId: OWNER_TG,
+                businessId: "biz-1",
+                items: [row("Somsa", 8_000), row("Choy", 0)],
+            }),
+        ).rejects.toThrow(ValidationError)
+        expect(products.items.size).toBe(3)
+        await expect(
+            bulk.execute({
+                actorTelegramId: STRANGER_TG,
+                businessId: "biz-1",
+                items: [row("X", 1)],
+            }),
+        ).rejects.toThrow(ForbiddenError)
+        await expect(
+            bulk.execute({ actorTelegramId: OWNER_TG, businessId: "biz-1", items: [] }),
+        ).rejects.toThrow(ValidationError)
     })
 
     it("strangers cannot create, update or delete", async () => {

@@ -271,6 +271,8 @@ function usePlaceOrder(
                 items: summarize(lines, catalog).lines.map((l) => ({
                     productId: l.product.id,
                     quantity: l.quantity,
+                    ...(l.pick?.variantId ? { variantId: l.pick.variantId } : {}),
+                    ...(l.pick?.addonIds.length ? { addonIds: l.pick.addonIds } : {}),
                 })),
                 // A pin and a landmark are an address in a mahalla: the landmark stands in.
                 address: delivery.address.trim() || delivery.landmark.trim(),
@@ -296,11 +298,11 @@ function usePlaceOrder(
             haptic.error()
             const code = error instanceof ApiError ? error.code : "generic"
             toast(errorText(t, code), "error")
-            if (code === "PRODUCT_NOT_AVAILABLE") {
+            if (code === "PRODUCT_NOT_AVAILABLE" || code === "OPTION_UNAVAILABLE") {
                 loadCatalog()
                     .then((products) => {
                         setCatalog(products)
-                        useCart.getState().prune(products.map((p) => p.id))
+                        useCart.getState().prune(products)
                     })
                     .catch(() => undefined)
             }

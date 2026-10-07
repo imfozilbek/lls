@@ -38,6 +38,9 @@ function Line({ line, faded }: { line: CartLine; faded?: boolean }): React.JSX.E
             />
             <div className="min-w-0 flex-1">
                 <p className="line-clamp-2 font-medium leading-snug">{product.name}</p>
+                {line.label ? (
+                    <p className="line-clamp-2 text-sm text-tg-subtitle">{line.label}</p>
+                ) : null}
                 <p className="mt-0.5 text-sm text-tg-hint">
                     {faded ? t.cart.unavailable : formatMoney(line.total, language)}
                 </p>
@@ -45,7 +48,7 @@ function Line({ line, faded }: { line: CartLine; faded?: boolean }): React.JSX.E
             {faded ? (
                 <button
                     type="button"
-                    onClick={(): void => setQuantity(product.id, 0)}
+                    onClick={(): void => setQuantity(line.key, 0)}
                     aria-label={t.common.delete}
                     className="tap grid h-11 w-11 place-items-center rounded-full bg-tg-secondary text-tg-hint"
                 >
@@ -54,9 +57,9 @@ function Line({ line, faded }: { line: CartLine; faded?: boolean }): React.JSX.E
             ) : (
                 <Stepper
                     quantity={line.quantity}
-                    display={formatQuantity(line.quantity, product.unit, t.units.kg)}
-                    onAdd={(): void => add(product.id, product.step)}
-                    onRemove={(): void => remove(product.id, product.step)}
+                    display={formatQuantity(line.quantity, product.unit, t.units)}
+                    onAdd={(): void => add(line.key, product.step)}
+                    onRemove={(): void => remove(line.key, product.step)}
                     label={product.name}
                 />
             )}
@@ -233,10 +236,10 @@ export function CartScreen(): React.JSX.Element {
             </div>
             <ul className="mt-2 divide-y divide-tg-separator">
                 {cart.lines.map((line) => (
-                    <Line key={line.product.id} line={line} />
+                    <Line key={line.key} line={line} />
                 ))}
                 {cart.unavailable.map((line) => (
-                    <Line key={line.product.id} line={line} faded />
+                    <Line key={line.key} line={line} faded />
                 ))}
             </ul>
             {nudge ? (

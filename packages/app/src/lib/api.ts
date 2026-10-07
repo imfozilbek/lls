@@ -2,6 +2,7 @@ import { webApp } from "./telegram.js"
 
 import type { Shop } from "../stores/session.js"
 import type {
+    ProductOptionsProps,
     BusinessStatus,
     DistrictStats,
     PlatformShopDTO,
@@ -201,6 +202,9 @@ export function imageUrl(key: string | undefined): string | undefined {
 export interface OrderLine {
     productId: string
     quantity: number
+    /** Ids only: the server prices the variant and the add-ons. */
+    variantId?: string
+    addonIds?: string[]
 }
 
 export interface PlaceOrderBody {
@@ -243,6 +247,8 @@ export interface ProductInput {
     step?: number
     returnable?: boolean
     position?: number
+    /** Variants and add-ons; `null` on an update drops them. */
+    options?: ProductOptionsProps | null
 }
 
 /** A browser session of Zumda | Business. */
@@ -367,6 +373,11 @@ export const api = {
             request("GET", `/api/owner/products${query({ page, limit: 100 })}`),
         createProduct: (input: ProductInput): Promise<ProductDTO> =>
             request("POST", "/api/owner/products", input),
+        /** «Ro'yxat bilan qo'shish»: up to 50 plain products in one request. */
+        createProducts: (
+            items: Omit<ProductInput, "options" | "position">[],
+        ): Promise<{ created: ProductDTO[]; skipped: string[] }> =>
+            request("POST", "/api/owner/products/bulk", { items }),
         updateProduct: (
             id: string,
             patch: Omit<Partial<ProductInput>, "description"> & {

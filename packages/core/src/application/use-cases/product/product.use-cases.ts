@@ -1,12 +1,14 @@
 import { Product } from "../../../domain/entities/product.js"
 import { CATEGORIES } from "../../../domain/enums/category.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
+import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { requireOneOf } from "../../../domain/shared/guards.js"
 import { mapPage, normalizePage } from "../../dtos/pagination.js"
 import { toProductDTO } from "../../dtos/product.dto.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
 import type { ProductPatch } from "../../../domain/entities/product.js"
+import type { ProductOptionsProps } from "../../../domain/value-objects/product-options.js"
 import type { Page } from "../../dtos/pagination.js"
 import type { ProductDTO } from "../../dtos/product.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
@@ -24,6 +26,7 @@ export interface CreateProductInput {
     step?: number
     returnable?: boolean
     position?: number
+    options?: ProductOptionsProps
 }
 
 export class CreateProductUseCase {
@@ -45,9 +48,74 @@ export class CreateProductUseCase {
             step: input.step,
             returnable: input.returnable,
             position: input.position,
+            options: input.options,
         })
         await this.products.save(product)
         return toProductDTO(product)
+    }
+}
+
+/** At most this many products in one list: one D1 batch, far below the free plan's daily writes. */
+export const MAX_PRODUCTS_AT_ONCE = 50
+
+export interface CreateProductsInput {
+    actorTelegramId: number
+    businessId: string
+    items: Omit<CreateProductInput, "actorTelegramId" | "businessId">[]
+}
+
+export interface CreatedProducts {
+    created: ProductDTO[]
+    /** Names already in the shop or twice in the list: left out, the shop keeps one of each. */
+    skipped: string[]
+}
+
+/** The same name as people read it: no case, no apostrophe, one space. */
+function sameName(name: string): string {
+    return name
+        .toLowerCase()
+        .replace(/['ʻʼ‘’`]/g, "")
+        .replace(/\s+/g, " ")
+        .trim()
+}
+
+/**
+ * «Ro'yxat bilan qo'shish»: many products in one go (goal 17). Every row is checked first; any
+ * wrong row stops the whole list, so nothing half-saved. Twins are skipped, never doubled.
+ */
+export class CreateProductsUseCase {
+    constructor(
+        private readonly businesses: BusinessRepository,
+        private readonly products: ProductRepository,
+    ) {}
+
+    async execute(input: CreateProductsInput): Promise<CreatedProducts> {
+        if (input.items.length === 0 || input.items.length > MAX_PRODUCTS_AT_ONCE) {
+            throw ValidationError.fromField(
+                "items",
+                `From 1 to ${MAX_PRODUCTS_AT_ONCE} products`,
+                input.items.length,
+            )
+        }
+        await requireOwnedBusiness(this.businesses, input.businessId, input.actorTelegramId)
+        const taken = new Set((await this.products.namesOf(input.businessId)).map(sameName))
+        const fresh: Product[] = []
+        const skipped: string[] = []
+        for (const item of input.items) {
+            const key = sameName(item.name)
+            if (taken.has(key)) {
+                skipped.push(item.name.trim())
+                continue
+            }
+            taken.add(key)
+            fresh.push(
+                Product.create({ ...item, id: crypto.randomUUID(), businessId: input.businessId }),
+            )
+        }
+        if (fresh.length > 0) {
+            await this.products.saveMany(fresh)
+        }
+        return { created: fresh.map(toProductDTO), skipped }
     }
 }
 

@@ -4,7 +4,7 @@ Known shortcuts. Fix an item when a real shop hits it or before the stage that n
 
 | # | Where | Debt | Why it waits | Fix when |
 |---|-------|------|--------------|----------|
-| 2 | `app` bundle | Customer JS is ~99.9 KB gzip (+7 KB CSS) of the 100 KB budget; the map (MapLibre, ~300 KB) is a lazy chunk | React alone is ~61 KB | Before adding any customer-side dependency; measure after each `vite build` |
+| 2 | `app` bundle | Customer JS is ~98.3 KB gzip (+7 KB CSS) of the 100 KB budget (the build fails above it: `scripts/check-bundle.mjs`); the staff's words and the map (MapLibre, ~300 KB) are lazy chunks | React alone is ~61 KB | Before adding any customer-side dependency |
 | 4 | `worker/telegram/notifier.ts` | A failed notification is logged and the admins are alerted, but it is never retried | Customers also see the status in the app | If owners report missed order messages |
 | 6 | `app/owner/OrdersTab.tsx` | The 20 s refresh of active orders reloads only the first page | Active orders rarely exceed 20 | A shop regularly has > 20 open orders |
 | 8 | `worker` couriers | A courier removed by the owner keeps already assigned active orders; the owner must reassign them by hand | Rare in a small shop | If an owner reports a stuck order after removing a courier |
@@ -25,3 +25,4 @@ Known shortcuts. Fix an item when a real shop hits it or before the stage that n
 | 24 | Order lists | Pages use OFFSET: page 20 of finished orders reads ~870 rows | Deep pages are rare; the first pages read ~100 | Owners page deep often: keyset pages (`number < last`) |
 | 25 | Map cache | The map's byte ranges are kept at the edge only by a Cache Rule; the deploy's token may lack Zone > Cache Rules: Edit (it warns) | Without it the map still loads straight from R2 (~40 Class B reads an opening, far below 10 M a month) | Map openings near 8 000 a day: give the token the right, or add the rule by hand |
 | 26 | `app/lib/crashes.ts`, `crash-facts.ts` | Our own copy of the crash reporter (`crashFacts`, `listenForCrashes`) | The shared `@samiyev/kit/observe` is not on npm yet | It is on npm: replace both files with its import, keep `safeCrashText` rules |
+| 27 | `app/ui/icons.tsx` categories | 12 own line icons for the new category groups; the other new categories borrow the icon of their group (`CATEGORY_LOOKS_LIKE`) | The photo is what sells; the icon only shows while there is none | Owners of a shelf ask for its own pictures, or a designer draws the full set |

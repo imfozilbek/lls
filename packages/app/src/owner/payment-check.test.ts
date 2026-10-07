@@ -1,11 +1,15 @@
 import { PaymentStatus } from "@zumda/core"
 import { describe, expect, it } from "vitest"
 
-import { uz } from "../i18n/uz.js"
+import { staffUz } from "../i18n/staff.js"
+import { uz as base } from "../i18n/uz.js"
 
 import { paymentWarnings } from "./PaymentCheck.js"
 
+import type { Dictionary } from "../i18n/uz.js"
 import type { OrderDTO } from "@zumda/core"
+
+const uz = { ...base, ...staffUz } as Dictionary
 
 function order(payment: Partial<OrderDTO["payment"]>): OrderDTO {
     return {

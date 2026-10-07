@@ -7,6 +7,42 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The Zumda catalog and «Ro'yxat bilan qo'shish» (goal 17, parts 3 and 4)
+- **Added:** the product form starts with a search of the Zumda catalog: ~3 100 dishes,
+  groceries, goods and services of Uzbekistan from the October 2026 research. A pick fills the
+  name, category, unit, usual variants and offered add-ons; the owner writes only the prices.
+  The catalog is a static file of the app, loaded on the first search (never in the customer's
+  JS). Licensed services are left out; unconfirmed words are removed.
+- **Added:** «Mijoz shunday ko'radi»: the customer's row, live while the owner types, with the
+  photo button; «Saqlash va yana qo'shish»; «Nusxa olish»; a typed draft asks before «back».
+- **Added:** «Ro'yxat bilan qo'shish»: one product a line («Lag'mon 38000», «Pomidor 12000 kg»),
+  a preview with the wrong lines marked, up to 50 at once in one D1 batch
+  (`POST /api/owner/products/bulk`, 5 a minute); a name the shop already has is skipped.
+- **Added:** the owner's CSV has a «Mahsulotlar» column: the goods with their picks and units
+  («Latte (0,4 l · Sirop) × 2, Qora murch × 300 g»).
+
+### Variants and add-ons (goal 17, part 2)
+- **Added:** a product may have variants (one is picked, each with its own price: «0,3 / 0,4 /
+  0,5 l», «Kichik / Katta», a car class) and add-ons (several, priced on top, or «bepul»). The
+  owner opens «Variantlar» and «Qo'shimchalar» in the product form; with variants the product
+  costs as its cheapest one and the storefront says «… so'm dan».
+- **Added:** the customer picks in the product's sheet («Savatga · 22 000 so'm»); each pick is
+  its own cart line; the server prices it again from the ids (`VARIANT_REQUIRED`,
+  `OPTION_UNAVAILABLE`); the order line keeps the pick («0,4 l · Karamel sirop») for the owner,
+  the courier, the bot and «Takrorlash». Migration `0019` (two nullable columns).
+
+### Any product of any kind: units, grams, categories (goal 17, part 1)
+- **Added:** units for every kind of goods and services: 100 g and 1 g (spices, nuts, sweets;
+  saffron), 20 l bottles, qadoq, quti, bog', to'plam, juft, lotok, qop, rulon, list, metr, m²,
+  m³, soat, kun, oy, seans, reys, sotix. «Boshqa» in the product form shows them all; the price
+  label follows the unit («100 g narxi», «1 m² narxi»); weight items sell in gram steps.
+- **Added:** 114 shared categories on four shelves (Ovqat, Oziq-ovqat, Mollar, Xizmatlar), with
+  pictures for the new groups; «Boshqa bo'limlar» shows them shelf by shelf.
+- **Added:** the kind of business «Do'kon (mollar)» for goods that are not food.
+- **Changed:** bot messages name the unit: «× 300 g», «× 12 m²», «× 2 soat».
+- **Changed:** the owner's, courier's and «Platforma» words load with their screens; a customer's
+  first JS dropped from 99.9 to 93.8 KB, and the build now fails above 100 KB.
+
 ### A Zumda Shop QR on the poster (goal 16)
 - **Added:** «Sozlamalar» → «Chop etish uchun QR-kod» has two buttons: «Do'kon boti uchun» (as
   before) and «Zumda Shop uchun», for a shop in the showcase. Its QR,

@@ -9,6 +9,8 @@ export type Route =
     | { name: "owner" }
     /** Owner's product editor; `id: null` creates a new product. */
     | { name: "product"; id: string | null }
+    /** «Ro'yxat bilan qo'shish»: many products typed as lines. */
+    | { name: "bulk" }
 
 /** Which way the last move went: screens slide in from that side. */
 export type Direction = "forward" | "back" | "none"

@@ -56,12 +56,24 @@ describe("colors", () => {
 })
 
 describe("formatQuantity", () => {
-    it("shows grams as kilograms with a comma", () => {
-        expect(formatQuantity(1500, "kg", "kg")).toBe("1,5 kg")
-        expect(formatQuantity(250, "kg", "кг")).toBe("0,25 кг")
+    const units = { kg: "kg", g: "g", m2: "m²", hour: "soat", pack: "qadoq" }
+
+    it("shows grams of a kilogram item as kilograms with a comma", () => {
+        expect(formatQuantity(1500, "kg", units)).toBe("1,5 kg")
+        expect(formatQuantity(250, "kg", units)).toBe("0,25 kg")
     })
 
-    it("shows pieces as they are", () => {
-        expect(formatQuantity(3, "pcs", "kg")).toBe("3")
+    it("shows goods by 100 g or by the gram in grams, from a kilogram in kilograms", () => {
+        expect(formatQuantity(300, "g100", units)).toBe("300 g")
+        expect(formatQuantity(1200, "g100", units)).toBe("1,2 kg")
+        expect(formatQuantity(2, "g", units)).toBe("2 g")
+    })
+
+    it("counts pieces, portions and bottles; names measures and time", () => {
+        expect(formatQuantity(3, "pcs", units)).toBe("3")
+        expect(formatQuantity(2, "bottle_20l", units)).toBe("2")
+        expect(formatQuantity(12, "m2", units)).toBe("12 m²")
+        expect(formatQuantity(2, "hour", units)).toBe("2 soat")
+        expect(formatQuantity(4, "pack", units)).toBe("4 qadoq")
     })
 })

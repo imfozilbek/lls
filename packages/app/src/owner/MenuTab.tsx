@@ -12,7 +12,7 @@ import { CatalogSearch, SEARCH_FROM, matches } from "../shop/MenuScreen.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { BagIcon, ClockIcon, ImageIcon, WifiOffIcon } from "../ui/icons.js"
+import { BagIcon, ClockIcon, ImageIcon, ListIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, Skeleton, Switch } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
@@ -308,6 +308,11 @@ export function MenuTab(): React.JSX.Element {
                 art={<BagIcon size={44} />}
                 title={t.owner.menuEmpty}
                 text={t.owner.menuEmptyText}
+                action={
+                    <Button variant="secondary" onClick={(): void => push({ name: "bulk" })}>
+                        {t.owner.product.bulk}
+                    </Button>
+                }
             />
         )
     }
@@ -326,6 +331,14 @@ export function MenuTab(): React.JSX.Element {
                     {fill(t.owner.addPhotos, { n: noPhoto })}
                 </p>
             ) : null}
+            <button
+                type="button"
+                onClick={(): void => push({ name: "bulk" })}
+                className="tap mt-2 flex min-h-11 w-full items-center gap-2 rounded-control px-1 text-sm font-semibold text-brand active:bg-brand/10"
+            >
+                <ListIcon size={18} />
+                {t.owner.product.bulk}
+            </button>
             <ProductGroups products={products} query={query} />
             <BottomSpacer />
         </section>

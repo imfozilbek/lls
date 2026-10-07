@@ -8,7 +8,7 @@ import { cn } from "../lib/cn.js"
 import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-button.js"
 import { getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
-import { CheckIcon, DishIcon, PinIcon, ShopFrontIcon, ToolIcon } from "../ui/icons.js"
+import { BagIcon, CheckIcon, DishIcon, PinIcon, ShopFrontIcon, ToolIcon } from "../ui/icons.js"
 import { PlacePick } from "../ui/maps.js"
 import { Button, Field, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
@@ -27,6 +27,7 @@ const KIND_ICONS: Record<BusinessType, React.JSX.Element> = {
     [BusinessType.GROCERY]: <ShopFrontIcon size={20} />,
     [BusinessType.FOOD]: <DishIcon size={20} />,
     [BusinessType.SERVICE]: <ToolIcon size={20} />,
+    [BusinessType.STORE]: <BagIcon size={20} />,
 }
 type Step = 1 | 2 | 3
 

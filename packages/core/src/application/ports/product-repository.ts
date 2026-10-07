@@ -30,6 +30,10 @@ export interface ProductRepository {
      * Sorted by name.
      */
     searchShowcase(search: ShowcaseSearch, page: PageRequest): Promise<Page<Product>>
+    /** The names of every product of the shop (hidden ones too): to keep a list without twins. */
+    namesOf(businessId: string): Promise<string[]>
     save(product: Product): Promise<void>
+    /** Several new products at once, all or none (one transaction). */
+    saveMany(products: readonly Product[]): Promise<void>
     delete(id: string): Promise<void>
 }
