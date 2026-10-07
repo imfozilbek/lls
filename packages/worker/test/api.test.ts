@@ -427,6 +427,28 @@ describe("inside a shop", () => {
         expect(money.totals).toMatchObject({ placed: 1, cancelled: 1 })
     })
 
+    it("a checkout sent again after a lost answer returns its order, with no second message", async () => {
+        const osh = await addProduct("Osh", 35_000)
+        await givePhone()
+        const body = {
+            items: [{ productId: osh, quantity: 2 }],
+            address: "Navoiy 12",
+            clientOrderId: "5f0c2a8e-7b6d-4c1e-9f3a-2b4c6d8e0a1b",
+        }
+        const first = await asCustomer()("/api/orders", { method: "POST", json: body })
+        expect(first.status).toBe(201)
+        const placed = await json<{ id: string; number: number }>(first)
+        const told = client.telegram.sent.length
+        const again = await asCustomer()("/api/orders", { method: "POST", json: body })
+        expect(again.status).toBe(200)
+        expect(await json<{ id: string; number: number }>(again)).toMatchObject(placed)
+        expect(client.telegram.sent.length).toBe(told)
+        const count = await env.DB.prepare("SELECT COUNT(*) AS n FROM orders").first<{
+            n: number
+        }>()
+        expect(count?.n).toBe(1)
+    })
+
     it("an order of one shop cannot be read or changed through another shop", async () => {
         const osh = await addProduct("Osh", 35_000)
         await givePhone()

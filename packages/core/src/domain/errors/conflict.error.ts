@@ -2,7 +2,13 @@ import { DomainError } from "./domain-error.js"
 
 /** The `reason` goes to the app as the error code, so each conflict has its own words. */
 export type ConflictReason =
-    "CONFLICT" | "BOT_TAKEN" | "SLUG_TAKEN" | "COURIER_ALREADY_REVIEWED" | "STALE"
+    | "CONFLICT"
+    | "BOT_TAKEN"
+    | "SLUG_TAKEN"
+    | "COURIER_ALREADY_REVIEWED"
+    | "SHOP_ALREADY_REVIEWED"
+    | "DISTRICT_EXISTS"
+    | "STALE"
 
 export class ConflictError extends DomainError {
     readonly code = "CONFLICT"
@@ -33,6 +39,20 @@ export class ConflictError extends DomainError {
             { courierId },
             "COURIER_ALREADY_REVIEWED",
         )
+    }
+
+    /** An old application card: the shop was approved, rejected or turned off since. */
+    static shopAlreadyReviewed(businessId: string, status: string): ConflictError {
+        return new ConflictError(
+            "This application was already decided",
+            { businessId, status },
+            "SHOP_ALREADY_REVIEWED",
+        )
+    }
+
+    /** A new district with the name of one that exists: change that one instead. */
+    static districtExists(name: string): ConflictError {
+        return new ConflictError(`District "${name}" already exists`, { name }, "DISTRICT_EXISTS")
     }
 
     /** Someone changed the same record a moment earlier: load it again and retry. */

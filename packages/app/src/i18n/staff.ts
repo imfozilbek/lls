@@ -3,6 +3,44 @@
  * that use them (registered by `staff-register.ts`), so a customer never downloads them.
  */
 export const staffUz = {
+    /** Error words only staff screens can meet: merged into `errors` when the chunk loads. */
+    staffErrors: {
+        ORDER_NOT_ASSIGNABLE: "Yo'lga chiqqan buyurtmaga kuryer tayinlab bo'lmaydi.",
+        COURIER_NOT_AVAILABLE: "Bu kuryer hozir buyurtma ola olmaydi.",
+        NETWORK_ORDER_TAKEN: "Bu buyurtmani boshqa kuryer allaqachon oldi.",
+        NO_DISTRICT: "Do'koningiz hali Zumda tarmog'i tumanlaridan tashqarida.",
+        INVITE_USED: "Bu taklif havolasi allaqachon ishlatilgan.",
+        INVITE_EXPIRED: "Taklif havolasi eskirgan. Yangisini yarating.",
+        INVALID_BOT_TOKEN: "Token noto'g'ri. BotFather'dan to'liq nusxa oling.",
+        BOT_TAKEN: "Bu bot allaqachon ulangan.",
+        SLUG_TAKEN: "Bu manzil band. Boshqa nom bilan urinib ko'ring.",
+        COURIER_ALREADY_REVIEWED: "Bu kuryer allaqachon ko'rib chiqilgan.",
+        TELEGRAM_FAILED: "Telegram hozir javob bermadi. Birozdan keyin qayta urinib ko'ring.",
+        SHOP_NOT_REJECTED: "Ariza allaqachon qayta yuborilgan.",
+        BOT_PHOTO_FAILED: "Telegram bot rasmini qabul qilmadi. Keyinroq qayta urinib ko'ring.",
+        CARD_EXISTS: "Bu karta allaqachon qo'shilgan.",
+        PAYOUT_CARD_LIMIT: "Kartalar soni chegarasiga yetdi: avval keraksizini o'chiring.",
+        PAYMENT_CARD_IN_USE: "Mijozlar shu kartaga to'laydi: avval boshqasini tanlang.",
+        PAYMENT_REQUIRED: "O'tkazma hali kelmadi: avval «Pul keldi» ni belgilang.",
+        PAYMENT_NOT_CONFIRMABLE: "Bu to'lov allaqachon belgilangan. Ro'yxat yangilandi.",
+        PAYMENT_NOT_REFUNDABLE: "Bu pul allaqachon qaytarilgan.",
+        PAYMENT_NOT_REJECTABLE: "Bu o'tkazma allaqachon ko'rib chiqilgan. Ro'yxat yangilandi.",
+        ADMIN_ONLY: "Bu bo'lim faqat Zumda administratorlari uchun.",
+        SHOP_ALREADY_ACTIVE: "Biznes allaqachon ishlayapti. Ro'yxat yangilandi.",
+        SHOP_ALREADY_REVIEWED: "Bu ariza allaqachon ko'rib chiqilgan. Ro'yxat yangilandi.",
+        DISTRICT_EXISTS: "Bu nomli tuman bor. Uni ro'yxatdan ochib o'zgartiring.",
+        CASH_NOT_WITH_COURIER: "Bu naqd pul allaqachon olingan. Ro'yxat yangilandi.",
+        CASH_NOT_FOR_NETWORK:
+            "Naqd buyurtma tuman tarmog'iga berilmaydi: o'z kuryeringiz olib boradi.",
+        NOT_A_TRANSFER: "Bu buyurtma naqd pulga: o'tkazma kerak emas.",
+        NOT_FOR_TRIP:
+            "Buyurtmalardan biri allaqachon boshqa yo'lda yoki tarmoqda. Ro'yxat yangilandi.",
+        TRIP_STOPS: "Yo'l o'zgargan: bir manzil yetkazildi. Ro'yxat yangilandi.",
+        TRIP_NOT_READY: "Hamma buyurtmalar hali tayyor emas. Ro'yxat yangilandi.",
+        NOT_IN_SHOWCASE: "Do'kon hozir Zumda vitrinasida emas.",
+        BUSINESS_BOT_ONLY: "Bu bo'lim Zumda | Business botida ochiladi.",
+        PLATFORM_ONLY: "Bu bo'lim Zumda | Business botida ochiladi.",
+    },
     trip: {
         sameWay: "Shu yo'nalishda yana {n} ta",
         title: "Bir yo'nalish",
@@ -227,6 +265,8 @@ export const staffUz = {
             confirmCancelled: "Pul keldi",
             refundsTitle: "Mijozlarga qaytarish",
             refunded: "Qaytardim",
+            refundConfirm:
+                "#{n} buyurtma uchun {sum} mijozga qaytarildimi? Buni ortga qaytarib bo'lmaydi.",
             export: "Excel uchun hisobot",
             exportSent: "Hisobot bot bilan chatga yuborildi",
             exportSentBusiness:
@@ -298,6 +338,8 @@ export const staffUz = {
             contactPhoneHint:
                 "To'lov bo'yicha savol bo'lsa, mijoz buyurtma sahifasidan shu raqamga qo'ng'iroq qiladi.",
             contactPhoneBad: "Raqam to'liq emas: masalan, +998 90 123 45 67",
+            needShopName: "Do'kon nomini yozing",
+            needOpenDay: "«Ish vaqti»da kamida bitta kunni yoqing",
             location: "Do'kon joylashuvi",
             setLocation: "Joylashuvni yangilash",
             couriers: "Kuryerlar",
@@ -544,8 +586,12 @@ export const staffUz = {
         commissionHint: "Faqat vitrina orqali sotilgan tovarlardan. O'z boti orqali sotuv bepul.",
         showcaseSaved: "Vitrina saqlandi",
         showcaseOff: "Vitrinadan olindi",
-        noDistricts: "Hali tumanlar yo'q",
-        noDistrictsText: "Tuman: markaz va radius. Ichidagi do'konlar kuryerlarni bo'lishadi.",
+        showcaseOffConfirm:
+            "{shop} Zumda vitrinasidan olinsinmi? Mijozlar uni qidiruvda ko'rmaydi.",
+        showcaseOffYes: "Vitrinadan olish",
+        noDistricts: "Tuman tarmog'i ishlamayapti: hali tuman yo'q",
+        noDistrictsText:
+            "Kuryerlar tarmoqqa rozi bo'lsa ham, tumansiz buyurtma olmaydi. Tuman qo'shing: markaz va radius; ichidagi do'konlar kuryerlarni bo'lishadi.",
         addDistrict: "Yangi tuman",
         editDistrict: "Tumanni o'zgartirish",
         districtName: "Tuman nomi",

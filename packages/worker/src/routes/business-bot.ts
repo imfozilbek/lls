@@ -3,14 +3,14 @@
  * message open «Mening bizneslarim»; platform admins approve applications with the card's buttons
  * and do everything else in «Platforma» (owner's decision: bots notify, the Mini App acts).
  */
-import { DomainError, languageFromTelegram } from "@zumda/core"
+import { ConflictError, DomainError, languageFromTelegram } from "@zumda/core"
 
 import { appKeyboard, businessAppUrl } from "../telegram/app-links.js"
 import { parseReviewCallback } from "../telegram/format.js"
 import { escapeHtml } from "../telegram/gateway.js"
 import { connectReviewedShop, warnBotNotConnected } from "../telegram/shop-connection.js"
 import { textsFor } from "../telegram/texts.js"
-import { isStart } from "../telegram/updates.js"
+import { callbackErrorText, isStart } from "../telegram/updates.js"
 import { sendWelcome, welcomePictureUrl } from "../telegram/welcome.js"
 
 import type { Services } from "../services.js"
@@ -31,13 +31,15 @@ export async function handleReviewCallback(
         await services.telegram.answerCallback(token, callback.id)
         return
     }
+    const texts = textsFor(languageFromTelegram(callback.from.language_code))
     try {
         const shop = await services.useCases.reviewShop.execute({
             actorTelegramId: callback.from.id,
             businessId: review.businessId,
             decision: review.decision,
+            // An old card (another admin decided, or «Platforma» did) never changes a decided shop.
+            onlyPending: true,
         })
-        const texts = textsFor(languageFromTelegram(callback.from.language_code))
         // Connect the shop bot first: a failed card edit or answer must not skip it.
         const bot = await connectReviewedShop(services, shop, workerOrigin)
         if (!bot.connected) {
@@ -57,8 +59,17 @@ export async function handleReviewCallback(
         if (!(error instanceof DomainError)) {
             throw error
         }
-        await services.telegram.answerCallback(token, callback.id, error.message)
+        await services.telegram.answerCallback(token, callback.id, reviewRefusal(error, texts))
     }
+}
+
+/** What an admin reads when the card's button cannot act: the shop's status now, in Uzbek. */
+function reviewRefusal(error: DomainError, texts: ReturnType<typeof textsFor>): string {
+    if (error instanceof ConflictError && error.reason === "SHOP_ALREADY_REVIEWED") {
+        const status = error.details?.["status"] as keyof typeof texts.shopStatus | undefined
+        return status ? texts.shopStatus[status] : texts.callbackOutdated
+    }
+    return callbackErrorText(error, texts)
 }
 
 /** Zumda Business: `/start` gets the welcome; anything else, one line pointing to the app. */

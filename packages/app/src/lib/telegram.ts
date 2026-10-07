@@ -220,6 +220,12 @@ function callbackPromise<T>(start: (done: (value: T) => void) => void, fallback:
 }
 
 /** Asks Telegram to share the user's phone with the shop bot. Resolves false if declined. */
+/** Telegram before 6.9 cannot share a contact from a Mini App: the person must update it. */
+export function canRequestContact(): boolean {
+    const app = webApp()
+    return Boolean(app?.requestContact) && (app?.isVersionAtLeast("6.9") ?? false)
+}
+
 export function requestContact(): Promise<boolean> {
     const app = webApp()
     if (!app?.requestContact) {

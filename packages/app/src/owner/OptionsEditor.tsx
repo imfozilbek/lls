@@ -1,3 +1,5 @@
+import { OPTION_LIMITS } from "@zumda/core"
+
 import { useT, fill } from "../i18n/index.js"
 import { haptic } from "../lib/telegram.js"
 import { CloseIcon, ListIcon, PlusIcon } from "../ui/icons.js"
@@ -167,7 +169,8 @@ function Group({
     hint: string
     children: React.ReactNode
     more: string
-    onMore(): void
+    /** Absent once the limit is reached: the server takes 10 variants and 15 add-ons. */
+    onMore?: () => void
 }): React.JSX.Element {
     return (
         <section className="flex flex-col gap-2 rounded-tile bg-tg-secondary p-3">
@@ -176,15 +179,52 @@ function Group({
                 <span className="text-right text-sm text-tg-hint">{hint}</span>
             </div>
             {children}
-            <button
-                type="button"
-                onClick={onMore}
-                className="tap flex min-h-11 items-center gap-1.5 self-start rounded-control px-1 font-semibold text-brand"
-            >
-                <PlusIcon size={18} />
-                {more}
-            </button>
+            {onMore ? (
+                <button
+                    type="button"
+                    onClick={onMore}
+                    className="tap flex min-h-11 items-center gap-1.5 self-start rounded-control px-1 font-semibold text-brand"
+                >
+                    <PlusIcon size={18} />
+                    {more}
+                </button>
+            ) : null}
         </section>
+    )
+}
+
+/** The add-ons such a product usually has, one tap each; never added by themselves. */
+function UsualAddons({
+    names,
+    onAdd,
+}: {
+    names: readonly string[]
+    onAdd(name: string): void
+}): React.JSX.Element | null {
+    const t = useT()
+    if (names.length === 0) {
+        return null
+    }
+    return (
+        <div className="flex flex-col gap-2">
+            <p className="px-1 text-sm font-semibold text-tg-hint">{t.owner.product.usualAddons}</p>
+            <div className="flex flex-wrap gap-2">
+                {names.map((name) => (
+                    <button
+                        key={name}
+                        type="button"
+                        onClick={(): void => {
+                            haptic.tap()
+                            onAdd(name)
+                        }}
+                        className="tap flex h-10 items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-tg-separator px-3 text-sm"
+                    >
+                        <PlusIcon size={16} />
+                        {name}
+                    </button>
+                ))}
+            </div>
+        </div>
     )
 }
 
@@ -209,7 +249,10 @@ export function OptionsEditor({
     const p = t.owner.product
     const row = (name = ""): OptionRow => ({ id: newId(), name, price: null })
     const taken = new Set(draft.addons.map((a) => a.name.trim().toLowerCase()))
-    const offered = addons ? suggestions.filter((name) => !taken.has(name.toLowerCase())) : []
+    const offered =
+        addons && draft.addons.length < OPTION_LIMITS.addons
+            ? suggestions.filter((name) => !taken.has(name.toLowerCase()))
+            : []
     return (
         <>
             {draft.variants.length === 0 ? (
@@ -224,8 +267,11 @@ export function OptionsEditor({
                     title={p.variants}
                     hint={p.variantsHint}
                     more={p.addVariant}
-                    onMore={(): void =>
-                        onChange({ ...draft, variants: [...draft.variants, row()] })
+                    onMore={
+                        draft.variants.length < OPTION_LIMITS.variants
+                            ? (): void =>
+                                  onChange({ ...draft, variants: [...draft.variants, row()] })
+                            : undefined
                     }
                 >
                     <TextInput
@@ -256,7 +302,11 @@ export function OptionsEditor({
                     title={p.addons}
                     hint={p.addonsHint}
                     more={p.addAddon}
-                    onMore={(): void => onChange({ ...draft, addons: [...draft.addons, row()] })}
+                    onMore={
+                        draft.addons.length < OPTION_LIMITS.addons
+                            ? (): void => onChange({ ...draft, addons: [...draft.addons, row()] })
+                            : undefined
+                    }
                 >
                     <Rows
                         rows={draft.addons}
@@ -267,27 +317,10 @@ export function OptionsEditor({
                     />
                 </Group>
             )}
-            {offered.length > 0 ? (
-                <div className="flex flex-col gap-2">
-                    <p className="px-1 text-sm font-semibold text-tg-hint">{p.usualAddons}</p>
-                    <div className="flex flex-wrap gap-2">
-                        {offered.map((name) => (
-                            <button
-                                key={name}
-                                type="button"
-                                onClick={(): void => {
-                                    haptic.tap()
-                                    onChange({ ...draft, addons: [...draft.addons, row(name)] })
-                                }}
-                                className="tap flex h-10 items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-tg-separator px-3 text-sm"
-                            >
-                                <PlusIcon size={16} />
-                                {name}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-            ) : null}
+            <UsualAddons
+                names={offered}
+                onAdd={(name): void => onChange({ ...draft, addons: [...draft.addons, row(name)] })}
+            />
         </>
     )
 }

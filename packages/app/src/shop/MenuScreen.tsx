@@ -1,4 +1,12 @@
-import { WEEKDAYS, isFinalStatus, mapUrl, searchText, searchWords, toLocalTime } from "@zumda/core"
+import {
+    WEEKDAYS,
+    isFinalStatus,
+    isWeightUnit,
+    mapUrl,
+    searchText,
+    searchWords,
+    toLocalTime,
+} from "@zumda/core"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { create } from "zustand"
 
@@ -388,7 +396,15 @@ function PickButton({
             className={cn("tap grid place-items-center rounded-full", className)}
         >
             {quantity > 0 ? (
-                <span className="text-sm font-bold tabular-nums">{quantity}</span>
+                // Weight items count grams: «1,5 kg», never «1500».
+                <span
+                    className={cn(
+                        "font-bold tabular-nums",
+                        isWeightUnit(product.unit) ? "text-[0.7rem] leading-tight" : "text-sm",
+                    )}
+                >
+                    {formatQuantity(quantity, product.unit, t.units)}
+                </span>
             ) : (
                 <PlusIcon size={22} strokeWidth={2.25} />
             )}
@@ -583,13 +599,17 @@ export function MenuScreen(): React.JSX.Element {
     const [query, setQuery] = useState("")
 
     const categories = useMemo(() => [...new Set(catalog.map((p) => p.category))], [catalog])
+    // A category that left the catalog (after a refresh) never keeps filtering it empty.
+    const active = category && (categories as string[]).includes(category) ? category : null
     const words = searchWords(query)
     const visible = catalog.filter(
-        (p) => (!category || p.category === category) && (words.length === 0 || matches(p, words)),
+        (p) => (!active || p.category === active) && (words.length === 0 || matches(p, words)),
     )
     const cart = summarize(lines, catalog)
     const detail = useProductDetail((state) => state.product)
     useFocusedProduct(catalog)
+    // Leaving the menu closes the product: it never pops open again on the next visit.
+    useEffect(() => (): void => useProductDetail.getState().show(null), [])
 
     useMainAction(
         cart.count > 0
@@ -609,7 +629,7 @@ export function MenuScreen(): React.JSX.Element {
             {catalog.length > SEARCH_FROM ? (
                 <CatalogSearch value={query} onChange={setQuery} />
             ) : null}
-            <CategoryChips categories={categories} active={category} onChange={setCategory} />
+            <CategoryChips categories={categories} active={active} onChange={setCategory} />
             {catalog.length === 0 ? (
                 <EmptyState
                     art={<BagIcon size={44} />}

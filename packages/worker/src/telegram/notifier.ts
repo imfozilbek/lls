@@ -82,7 +82,7 @@ function unchanged(error: unknown): boolean {
 }
 
 /** Runs every step even if one fails; the first failure is reported after all of them ran. */
-async function everyOne(steps: readonly (() => Promise<void>)[]): Promise<void> {
+export async function everyOne(steps: readonly (() => Promise<void>)[]): Promise<void> {
     const failures: unknown[] = []
     for (const step of steps) {
         try {
@@ -274,8 +274,11 @@ export class Notifier {
         await everyOne([
             (): Promise<void> => this.orderChangedForOwner(token, business, order),
             (): Promise<void> => this.refreshCourierCard(business, order, messages.courier),
+            // Cancelled, or moved on without the network (the owner took it himself): «Беру» goes.
             (): Promise<void> =>
-                cancelled ? this.closeNetworkOffers(business, order) : Promise.resolve(),
+                cancelled || !order.waitingForNetwork
+                    ? this.closeNetworkOffers(business, order)
+                    : Promise.resolve(),
             (): Promise<void> =>
                 cancelled && order.cancelledBy === "customer"
                     ? this.toOwner(
@@ -329,9 +332,16 @@ export class Notifier {
         trip: TripResult,
         previousCouriers: ReadonlyMap<string, string | undefined>,
     ): Promise<void> {
-        for (const order of trip.orders) {
-            await this.courierAssigned(business, order, previousCouriers.get(order.id))
-        }
+        // Each order on its own: one blocked customer must not keep the rest of the trip silent.
+        const cards = trip.orders.map(
+            (order): (() => Promise<void>) =>
+                (): Promise<void> =>
+                    this.courierAssigned(business, order, previousCouriers.get(order.id)),
+        )
+        await everyOne([...cards, (): Promise<void> => this.tripMessage(business, trip)])
+    }
+
+    private async tripMessage(business: Business, trip: TripResult): Promise<void> {
         const chatId = trip.courierTelegramId
         const t = textsFor((await this.readerFor(chatId, business)).language)
         const numbers = new Map(trip.orders.map((o) => [o.id, o.number]))
@@ -459,19 +469,22 @@ export class Notifier {
         }
         await this.services.networkOffers.clear(order.id)
         const shop = escapeHtml(business.name)
-        for (const offer of offers) {
-            const t = textsFor(await this.languageOf(offer.telegramId))
-            const text = fill(offer.telegramId === winner ? t.networkYours : t.networkTaken, {
-                n: order.number,
-                shop,
-            })
-            await this.services.telegram.editMessage(
-                this.services.env.COURIER_BOT_TOKEN,
-                offer.telegramId,
-                offer.messageId,
-                text,
-            )
-        }
+        // Each offer on its own: one deleted message must not leave the others saying «Беру».
+        await everyOne(
+            offers.map((offer) => async (): Promise<void> => {
+                const t = textsFor(await this.languageOf(offer.telegramId))
+                const text = fill(offer.telegramId === winner ? t.networkYours : t.networkTaken, {
+                    n: order.number,
+                    shop,
+                })
+                await this.services.telegram.editMessage(
+                    this.services.env.COURIER_BOT_TOKEN,
+                    offer.telegramId,
+                    offer.messageId,
+                    text,
+                )
+            }),
+        )
     }
 
     /** Nobody took these network orders in time: each shop and the admins hear it once. */
@@ -808,6 +821,16 @@ export class Notifier {
         const businessToken = this.services.env.BUSINESS_BOT_TOKEN
         const texts = textsFor(await this.languageOf(shop.ownerTelegramId), shop.type)
         const name = `<b>${escapeHtml(shop.name)}</b>`
+        if (shop.status !== "active" && !shop.rejection) {
+            // A live shop turned off: not a rejected application.
+            await this.services.telegram.sendMessage(
+                businessToken,
+                shop.ownerTelegramId,
+                fill(texts.shopDisabled, { shop: name }),
+                { keyboard: this.businessesKeyboard(texts) },
+            )
+            return
+        }
         if (shop.status !== "active") {
             const reason = shop.rejection?.reason
             const lines = [

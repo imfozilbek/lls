@@ -129,15 +129,11 @@ function ClosedNote({ shop }: { shop: Shop | null }): React.JSX.Element | null {
     if (!shop || shop.isOpen) {
         return null
     }
+    // The same reason as the toast: one order of checks, in `closedReason`.
+    const reason = closedReason(shop)
     return (
         <p className="mt-3 text-center text-sm text-tg-hint">
-            {shop.opensSoon
-                ? t.shop.opensSoon
-                : shop.paymentMethods.length === 0
-                  ? t.errors.NO_PAYOUT_CARD
-                  : shop.acceptingOrders
-                    ? t.errors.SHOP_CLOSED
-                    : t.errors.NOT_ACCEPTING_ORDERS}
+            {reason === "SHOP_NOT_ACTIVE" ? t.shop.opensSoon : errorText(t, reason)}
         </p>
     )
 }

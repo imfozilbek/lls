@@ -6,7 +6,7 @@ import { ApiError, api } from "../lib/api.js"
 import { updateBotPhoto } from "../lib/bot-photo.js"
 import { cn } from "../lib/cn.js"
 import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-button.js"
-import { getLocation, haptic } from "../lib/telegram.js"
+import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { BagIcon, CheckIcon, DishIcon, PinIcon, ShopFrontIcon, ToolIcon } from "../ui/icons.js"
 import { PlacePick } from "../ui/maps.js"
@@ -277,6 +277,39 @@ function createAction(
     }
 }
 
+/** Back: the step before, and from the first step out, asking first when a name is typed. */
+function useWizardBack(input: {
+    sending: boolean
+    step: Step
+    name: string
+    setStep(step: Step): void
+    onCancel(): void
+}): void {
+    const t = useT()
+    const { sending, step, name, setStep, onCancel } = input
+    useBackButton(
+        sending
+            ? null
+            : (): void => {
+                  if (step > 1) {
+                      setStep((step - 1) as Step)
+                      return
+                  }
+                  if (!name.trim()) {
+                      onCancel()
+                      return
+                  }
+                  // A typed name is the start of an application: asked before it is dropped.
+                  const options = { yes: t.common.leave, no: t.common.stay, destructive: true }
+                  void confirm(t.owner.product.unsavedLeave, options).then((leave) => {
+                      if (leave) {
+                          onCancel()
+                      }
+                  })
+              },
+    )
+}
+
 /**
  * Three short steps: the business, its bot, where it is. The rest (the card, the fee, hours,
  * products) waits in «Ishga tayyor», right in the owner section the wizard opens.
@@ -324,8 +357,9 @@ export function Wizard({
             toast(errorText(t, code), "error")
             const back = stepAfterError(code)
             if (back) {
-                // The managed bot was taken or is gone: choose the bot again.
+                // The managed bot was taken or is gone: choose the bot again, not show it as made.
                 patch({ managedBot: null })
+                flow.forget()
                 setStep(back)
             }
         } finally {
@@ -333,9 +367,7 @@ export function Wizard({
         }
     }
 
-    useBackButton(
-        sending ? null : (): void => (step > 1 ? setStep((step - 1) as Step) : onCancel()),
-    )
+    useWizardBack({ sending, step, name: draft.name, setStep, onCancel })
     // Halfway through the application: closing the app by mistake asks first.
     useClosingGuard(step > 1 || draft.name.trim().length > 0)
 

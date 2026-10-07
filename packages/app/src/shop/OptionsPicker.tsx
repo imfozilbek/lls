@@ -2,9 +2,9 @@ import { useState } from "react"
 
 import { fill, useLanguage, useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
-import { formatMoney } from "../lib/format.js"
+import { formatMoney, formatQuantity } from "../lib/format.js"
 import { haptic } from "../lib/telegram.js"
-import { lineKey, lineTotal, pickPrice, useCart } from "../stores/cart.js"
+import { MAX_STEPS, lineKey, lineTotal, pickPrice, useCart } from "../stores/cart.js"
 import { CheckIcon } from "../ui/icons.js"
 import { Button, Stepper } from "../ui/primitives.js"
 
@@ -135,6 +135,9 @@ export function OptionsPicker({
     const [count, setCount] = useState(1)
     const pick = { ...(variantId ? { variantId } : {}), addonIds }
     const unitPrice = pickPrice(product, pick)?.unitPrice ?? product.price
+    // A line holds at most 99 steps: the picker never offers more than this pick can still add.
+    const inCart = useCart((state) => state.lines[lineKey(product.id, pick)] ?? 0)
+    const room = Math.max(MAX_STEPS - Math.floor(inCart / product.step), 1)
     const toggle = (id: string): void =>
         setAddonIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
     return (
@@ -147,17 +150,23 @@ export function OptionsPicker({
             ) : null}
             <div className="flex items-center gap-3">
                 <Stepper
-                    quantity={count}
-                    onAdd={(): void => setCount((n) => Math.min(n + 1, 99))}
-                    onRemove={(): void => setCount((n) => Math.max(n - 1, 1))}
+                    quantity={Math.min(count, room)}
+                    onAdd={(): void => setCount((n) => Math.min(n + 1, room))}
+                    onRemove={(): void => setCount((n) => Math.max(Math.min(n, room) - 1, 1))}
                     label={product.name}
+                    // Weight items: «1,5 kg», never «3» steps of 500 g.
+                    display={formatQuantity(
+                        product.step * Math.min(count, room),
+                        product.unit,
+                        t.units,
+                    )}
                 />
                 <Button
                     className="flex-1"
                     onClick={(): void => {
                         haptic.success()
                         const key = lineKey(product.id, pick)
-                        for (let i = 0; i < count; i++) {
+                        for (let i = 0; i < Math.min(count, room); i++) {
                             add(key, product.step)
                         }
                         onDone()
@@ -165,7 +174,7 @@ export function OptionsPicker({
                 >
                     {fill(t.shop.toCart, {
                         sum: formatMoney(
-                            lineTotal(product, product.step * count, unitPrice),
+                            lineTotal(product, product.step * Math.min(count, room), unitPrice),
                             language,
                         ),
                     })}

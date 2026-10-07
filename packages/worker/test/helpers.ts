@@ -180,11 +180,14 @@ export class FakeTelegram implements TelegramGateway {
         this.managedTokens.set(botId, token)
         return token
     }
-    async answerCallback(_token: string, callbackQueryId: string): Promise<void> {
+    /** What each answered button said (its toast), in order. */
+    readonly answerTexts: (string | undefined)[] = []
+    async answerCallback(_token: string, callbackQueryId: string, text?: string): Promise<void> {
         if (this.failReplies) {
             throw new TelegramApiError("answerCallbackQuery", "Bad Request: query is too old")
         }
         this.answered.push(callbackQueryId)
+        this.answerTexts.push(text)
     }
     readonly photoFiles: {
         token: string

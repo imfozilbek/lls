@@ -211,11 +211,16 @@ export interface PlaceOrderBody {
     items: OrderLine[]
     address: string
     landmark?: string
-    location?: { latitude: number; longitude: number }
+    location?: {
+        latitude: number
+        longitude: number
+    }
     comment?: string
     bottlesReturned?: number
     /** The customer's choice when the shop takes both; the server checks the shop takes it. */
     paymentMethod?: PaymentMethod
+    /** One id per checkout: a retry after a lost answer returns the order already placed. */
+    clientOrderId?: string
 }
 
 export type ShopPatch = Partial<{
@@ -493,6 +498,8 @@ export interface DistrictInput {
     center?: { latitude: number; longitude: number }
     radiusKm?: number
     waitMinutes?: number
+    /** «Yangi tuman»: a name that exists is refused, never a silent move of that district. */
+    isNew?: boolean
 }
 
 /** «Platforma»: platform admins only (the Worker checks it on every call). */

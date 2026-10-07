@@ -157,6 +157,54 @@ describe("Zumda Business bot", () => {
     })
 })
 
+describe("Zumda Business bot: an old application card", () => {
+    it("decides nothing once the shop was decided: a live shop stays live", async () => {
+        const client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
+        const shop = await createActiveShop(client)
+        await client.request(
+            "/tg/business",
+            update(
+                { callback_query: { id: "old-card", from: ADMIN, data: `r:${shop.id}:reject` } },
+                env.BUSINESS_WEBHOOK_SECRET,
+            ),
+        )
+        const status = await env.DB.prepare("SELECT status FROM businesses WHERE id = ?")
+            .bind(shop.id)
+            .first<{ status: string }>()
+        expect(status?.status).toBe("active")
+        // The admin reads the shop's status now, in Uzbek, never an English error.
+        expect(client.telegram.answerTexts.at(-1)).toBe("✅ Tasdiqlandi")
+    })
+})
+
+describe("a turned-off shop's bot", () => {
+    it("says it does not work now, with no button to an app that would answer 404", async () => {
+        const client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
+        const shop = await createActiveShop(client)
+        await env.DB.prepare("UPDATE businesses SET status = 'disabled' WHERE id = ?")
+            .bind(shop.id)
+            .run()
+        await client.request(
+            `/tg/${SHOP_BOT.id}`,
+            update(
+                {
+                    message: {
+                        message_id: 1,
+                        chat: { id: CUSTOMER.id },
+                        from: CUSTOMER,
+                        text: "/start",
+                    },
+                },
+                await webhookSecret(),
+            ),
+        )
+        const reply = client.telegram.sent.at(-1)
+        expect(reply?.chatId).toBe(CUSTOMER.id)
+        expect(reply?.html).toContain("ishlamayapti")
+        expect(reply?.options?.keyboard).toBeUndefined()
+    })
+})
+
 describe("Zumda Business bot: a failed connection on approval", () => {
     let client: TestClient
 

@@ -710,12 +710,14 @@ function useSave(input: {
     restart(next: Draft): void
     onSaved(): void
     onMissing(): void
+    /** The product once it exists: a retry after a failed photo updates it, never adds a twin. */
+    remember(product: ProductDTO): void
 }): (next?: boolean) => Promise<void> {
     const t = useT()
     const back = useRouter((state) => state.back)
     const shopType = useSession((state) => state.shop?.type)
     const upsert = useOwner((state) => state.upsert)
-    const { draft, product, saving, setSaving, restart, onSaved, onMissing } = input
+    const { draft, product, saving, setSaving, restart, onSaved, onMissing, remember } = input
     return async (next = false): Promise<void> => {
         if (saving || missing(draft)) {
             onMissing()
@@ -724,6 +726,8 @@ function useSave(input: {
         setSaving(true)
         try {
             const fields = await saveFields(product, draft)
+            upsert(fields)
+            remember(fields)
             upsert(await savePhoto(fields, draft.photo))
             haptic.success()
             toast(t.owner.settings.saved, "success")
@@ -788,6 +792,7 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
             setTried(false)
         },
         onMissing: (): void => setTried(true),
+        remember: setProduct,
     })
 
     useSaveAction({ draft, saving, onMissing: () => setTried(true), save })

@@ -250,7 +250,10 @@ test("the owner's number: «Do'konga qo'ng'iroq» on the order the shop did not 
     const phone = page.getByLabel("Mijozlar uchun telefon (ixtiyoriy)")
     await phone.fill("90 12")
     await expect(page.getByText("Raqam to'liq emas")).toBeVisible()
-    await expect(bottomButton(page)).toBeDisabled()
+    // Never a dead button: the tap says what is wrong and saves nothing.
+    await bottomButton(page).click()
+    await expect(page.getByText("Raqam to'liq emas")).toHaveCount(2)
+    await expect(page.getByText("Saqlandi")).toBeHidden()
     await phone.fill("90 123 45 67")
     await bottomButton(page).click()
     await expect(page.getByText("Saqlandi").first()).toBeVisible()

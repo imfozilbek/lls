@@ -58,13 +58,21 @@ export const customerRoutes = new Hono<AppEnv>()
     .post("/orders", zValidator("json", placeOrderBody, onInvalid), async (c) => {
         const services = c.get("services")
         const business = shopOf(c)
+        const body = c.req.valid("json")
+        // The same checkout sent again (its answer was lost): the order and its messages exist.
+        const repeated = body.clientOrderId
+            ? (await services.orders.findById(body.clientOrderId)) !== null
+            : false
         const order = await services.useCases.placeOrder.execute({
-            ...c.req.valid("json"),
+            ...body,
             user: c.get("auth").user,
             businessId: business.id,
             // Fixed by the bot that signed the request: own bot = never commissioned.
             channel: c.get("auth").channel,
         })
+        if (repeated) {
+            return c.json(order, 200)
+        }
         const notifier = new Notifier(services)
         inBackground(c.executionCtx, services, notifier.orderPlaced(business, order))
         inBackground(c.executionCtx, services, notifier.askForTransfer(business, order))

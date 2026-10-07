@@ -157,9 +157,12 @@ export class CreateTripUseCase {
             order.assignCourier(courier, now)
             order.joinTrip(trip.id, index + 1)
         }
-        await planRoute(deps, trip, shop, orders)
+        // Saved first, the way planned after: the road service may take seconds, and the orders
+        // loaded above must not wait for it (a change meanwhile would refuse them as stale).
         await deps.trips.insert(trip)
         await Promise.all(orders.map((order) => deps.orders.save(order)))
+        await planRoute(deps, trip, shop, orders)
+        await deps.trips.save(trip)
         return result(trip, orders, courier)
     }
 }

@@ -81,6 +81,8 @@ export const placeOrderBody = z.object({
     bottlesReturned: z.number().int().min(0).max(99).optional(),
     /** The customer's choice when the shop takes both; the shop checks it takes it. */
     paymentMethod: z.enum(PAYMENT_METHODS).optional(),
+    /** One id per checkout: sent again after a lost answer, it returns the order placed. */
+    clientOrderId: z.string().uuid().optional(),
 })
 
 export const customerCancelBody = z.object({
@@ -297,6 +299,8 @@ export const districtBody = z.object({
     center: locationSchema.optional(),
     radiusKm: z.number().min(0.5).max(200).optional(),
     waitMinutes: z.number().int().min(1).max(240).optional(),
+    /** «Tuman qo'shish»: refused when the name exists (DISTRICT_EXISTS). */
+    isNew: z.boolean().optional(),
 })
 
 interface ValidationResult {

@@ -261,7 +261,8 @@ function useCourierActions(): CourierActions {
     const review = async (courier: CourierDTO, approve: boolean): Promise<void> => {
         try {
             await api.owner.reviewCourier(courier.id, approve)
-            await loadCouriers()
+            // Done on the server: a failed reload must not show it as failed.
+            await loadCouriers().catch(() => undefined)
             haptic.success()
             if (approve) {
                 toast(s.approved)
@@ -293,7 +294,7 @@ function useCourierActions(): CourierActions {
         }
         try {
             await api.owner.removeCourier(courier.id)
-            await loadCouriers()
+            await loadCouriers().catch(() => undefined)
             haptic.success()
         } catch (caught) {
             failToast(t, caught)
@@ -314,6 +315,8 @@ export function NetworkSection({
     const t = useT()
     const s = t.owner.settings
     const [value, setValue] = useState(shop.networkDelivery)
+    // A pull to refresh (or a save elsewhere) brings the shop again: the switch follows it.
+    useEffect(() => setValue(shop.networkDelivery), [shop.networkDelivery])
     const change = async (next: boolean): Promise<void> => {
         setValue(next)
         try {

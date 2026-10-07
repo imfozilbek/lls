@@ -105,6 +105,15 @@ describe("Zumda showcase", () => {
         expect(ended.shop.marketplace).toBeUndefined()
     })
 
+    it("a showcase shop with nothing on sale yet is not listed", async () => {
+        await market(5)
+        await env.DB.prepare("DELETE FROM products WHERE business_id = ?").bind(shopId).run()
+        const shops = await json<{ data: unknown[] }>(
+            await viaPlatform(CUSTOMER)("/api/showcase/shops"),
+        )
+        expect(shops.data).toEqual([])
+    })
+
     it("search finds products in any alphabet, lists shops, hides stop-listed items", async () => {
         await market(5)
         const shops = await json<{ data: { slug: string }[] }>(

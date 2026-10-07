@@ -263,8 +263,19 @@ function OpenPayments({
     const t = useT()
     const m = t.owner.money
     const { busy, run } = useAction(reload)
+    const language = useLanguage()
     const [checking, setChecking] = useState<OrderDTO | null>(null)
     const refresh = (): void => void reload()
+    // «Qaytardim» cannot be undone: a mis-tap would drop money the customer is owed.
+    const refund = async (order: OrderDTO): Promise<void> => {
+        const text = fill(m.refundConfirm, {
+            n: order.number,
+            sum: formatMoney(order.total, language),
+        })
+        if (await confirm(text, { yes: m.refunded, destructive: true })) {
+            await run(order.id, () => api.owner.markRefunded(order.id))
+        }
+    }
     if (report.awaiting.length + report.refunds.length + report.courierCash.length === 0) {
         return (
             <p className="flex items-center gap-2 px-1 text-sm text-tg-hint">
@@ -303,9 +314,7 @@ function OpenPayments({
                                 variant="danger"
                                 className="grow"
                                 loading={busy === order.id}
-                                onClick={(): void =>
-                                    void run(order.id, () => api.owner.markRefunded(order.id))
-                                }
+                                onClick={(): void => void refund(order)}
                             >
                                 {m.refunded}
                             </Button>

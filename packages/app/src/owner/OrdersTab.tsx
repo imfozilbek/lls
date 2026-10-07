@@ -35,7 +35,15 @@ import {
 import { LoadMore } from "../ui/load-more.js"
 import { OrderBadge } from "../ui/order-status.js"
 import { PaymentLine } from "../ui/payment.js"
-import { Button, EmptyState, Field, Segmented, Skeleton, TextInput } from "../ui/primitives.js"
+import {
+    Button,
+    EmptyState,
+    Field,
+    Segmented,
+    Skeleton,
+    Spinner,
+    TextInput,
+} from "../ui/primitives.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
@@ -90,8 +98,13 @@ function CourierSheet({
     }, [loadCouriers])
 
     const replaceCourier = useOwner((state) => state.replaceCourier)
+    // The sheet stays until the server answers: the card's buttons are not pressed meanwhile.
+    const [pending, setPending] = useState(false)
     const assign = async (courierId: string | "network", backToday = false): Promise<void> => {
-        onClose()
+        if (pending) {
+            return
+        }
+        setPending(true)
         try {
             if (backToday && courierId !== "network") {
                 // Switched off for today, maybe by mistake: picking them is the owner's yes.
@@ -106,11 +119,15 @@ function CourierSheet({
         } catch (caught) {
             failToast(t, caught)
             onStale()
+        } finally {
+            setPending(false)
+            onClose()
         }
     }
 
     return (
-        <Sheet title={t.owner.assign} onClose={onClose}>
+        <Sheet title={t.owner.assign} onClose={pending ? (): void => undefined : onClose}>
+            {pending ? <Spinner className="mx-auto my-2" /> : null}
             {couriers === null ? <Skeleton className="h-[52px]" /> : null}
             {active?.length === 0 ? <p className="text-tg-hint">{t.owner.noCouriers}</p> : null}
             {active?.map((courier) => {
@@ -129,7 +146,7 @@ function CourierSheet({
                                     ? formatPhone(courier.phone)
                                     : undefined
                         }
-                        disabled={courier.unavailableReason !== null && !offToday}
+                        disabled={pending || (courier.unavailableReason !== null && !offToday)}
                         onClick={(): void => void assign(courier.id, offToday)}
                     />
                 )
@@ -141,6 +158,7 @@ function CourierSheet({
                 <SheetOption
                     label={t.owner.toNetwork}
                     hint={t.owner.toNetworkHint}
+                    disabled={pending}
                     onClick={(): void => void assign("network")}
                 />
             )}
@@ -466,14 +484,22 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
 /** The order a bot message opened: first, outlined, until the owner puts it away. */
 function FocusedOrder({
     id,
+    fresh,
     onChange,
 }: {
     id: string
+    /** The same order in the list the 20 s check refreshes: «O'tkazdim» shows here at once. */
+    fresh: OrderDTO | undefined
     onChange(order: OrderDTO): void
 }): React.JSX.Element | null {
     const t = useT()
     const focusOrder = useOwner((state) => state.focusOrder)
     const [order, setOrder] = useCachedState<OrderDTO>(`owner-order:${id}`)
+    useEffect(() => {
+        if (fresh) {
+            setOrder(fresh)
+        }
+    }, [fresh, setOrder])
     useEffect(() => {
         api.order(id)
             .then(setOrder)
@@ -594,15 +620,30 @@ function ToCheckBanner({ count }: { count: number }): React.JSX.Element | null {
     )
 }
 
-export function OrdersTab(): React.JSX.Element {
-    const t = useT()
-    const [filter, setFilter] = useState<Filter>("active")
-    const focusId = useOwner((state) => state.focusOrderId)
+/** The list on screen: the queue order, what needs a check, and edits kept in place. */
+function useOrdersView(
+    filter: Filter,
+    focusId: string | null,
+): {
+    list: PagedList<OrderDTO>
+    orders: OrderDTO[] | null
+    toCheck: number
+    focused: OrderDTO | undefined
+    replace(order: OrderDTO): void
+    replaceMany(changed: OrderDTO[]): void
+} {
     const list = useShopOrders(filter)
     const orders = list.items ? ownerQueue(list.items, focusId, filter === "active") : null
-    const toCheck = orders?.filter(needsCheck).length ?? 0
+    // The order opened from a message counts too: it may be the one waiting for a check.
+    const toCheck = list.items?.filter(needsCheck).length ?? 0
+    const focused = list.items?.find((o) => o.id === focusId)
+    // A finished order leaves «Faol» at once, not on the next check 20 s later.
     const replace = (order: OrderDTO): void =>
-        list.update((items) => items.map((o) => (o.id === order.id ? order : o)))
+        list.update((items) =>
+            filter === "active" && isFinalStatus(order.status)
+                ? items.filter((o) => o.id !== order.id)
+                : items.map((o) => (o.id === order.id ? order : o)),
+        )
     const update = list.update
     const replaceMany = useCallback(
         (changed: OrderDTO[]): void => {
@@ -611,6 +652,14 @@ export function OrdersTab(): React.JSX.Element {
         },
         [update],
     )
+    return { list, orders, toCheck, focused, replace, replaceMany }
+}
+
+export function OrdersTab(): React.JSX.Element {
+    const t = useT()
+    const [filter, setFilter] = useState<Filter>("active")
+    const focusId = useOwner((state) => state.focusOrderId)
+    const { list, orders, toCheck, focused, replace, replaceMany } = useOrdersView(filter, focusId)
     const shopPlace = useSession((state) => state.shop?.location)
     const refresh = (): void => void list.reload()
     // Orders waiting: «Ishga tayyor» folds into one line so the orders come first.
@@ -675,7 +724,9 @@ export function OrdersTab(): React.JSX.Element {
 
     return (
         <section className="flex flex-col gap-4 px-4 pt-2">
-            {focusId ? <FocusedOrder key={focusId} id={focusId} onChange={replace} /> : null}
+            {focusId ? (
+                <FocusedOrder key={focusId} id={focusId} fresh={focused} onChange={replace} />
+            ) : null}
             <Segmented<Filter>
                 value={filter}
                 onChange={setFilter}

@@ -7,6 +7,44 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### What people would hit: the audit of 7 October 2026
+- **Fixed (server):**
+  - an old application card in Zumda | Business no longer turns a live shop off or a turned-off
+    one on;
+  - a turned-off shop's owner hears «o'chirildi», not «ariza rad etildi», and its bot says it does
+    not work now instead of opening an app that answers 404;
+  - a failed message (a customer blocked the bot) no longer silences the rest of a trip or leaves
+    a bot button spinning;
+  - double taps («Беру», a card, an application) answer in words instead of 500;
+  - a trip's road follows its stops after a cancel from the chat or a reassignment, and a trip
+    is saved before its road is planned;
+  - a new file is removed when saving it fails; old QR posters go;
+  - a network courier keeps the order carried after a new invite of the same shop;
+  - «Tuman qo'shish» with an existing name is refused (`DISTRICT_EXISTS`), never a silent move;
+  - the showcase lists only shops with something on sale: never an empty shop.
+- **Fixed (customers):**
+  - a checkout tapped again after a lost answer returns the order already placed
+    (`clientOrderId`), never a second order;
+  - a sheet hides Telegram's big button under it, so «O'tkazdim» behind the receipt sheet no
+    longer does nothing;
+  - the cart fits a changed step or unit and reloads after a deleted product;
+  - a changed way of paying reloads the shop;
+  - «Raqamni yuborish» says when Telegram is too old or the number did not come;
+  - weight items with sizes read in grams;
+  - Back closes the receipt picture first;
+  - the showcase shows «… dan» and keeps its list.
+- **Fixed (staff):**
+  - a photo that failed never makes a product twice;
+  - the order opened from a message refreshes with the list;
+  - «Sozlamalar» says what is missing instead of a dead button;
+  - «Qaytardim» and taking a shop out of the showcase ask first;
+  - successful actions are no longer shown as failed;
+  - the courier screen keeps fresh data;
+  - the application wizard forgets a taken bot;
+  - variants and add-ons stop at the server's limits.
+- **Added:** every error code the server sends has its own Uzbek sentence (a test reads the
+  server's codes); staff-only words load with the staff's chunks.
+
 ### A new logo deleted itself (fixed, 7 October 2026)
 - **Fixed:** since 5 October every new shop logo was deleted right after it was saved: the route
   read the "old" key from the same object the use case had just changed. The replaced picture is

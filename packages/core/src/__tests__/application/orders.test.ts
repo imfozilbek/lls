@@ -106,6 +106,17 @@ describe("order use cases", () => {
             expect(customers.links.size).toBe(1)
         })
 
+        it("the same checkout sent again returns the order already placed", async () => {
+            const clientOrderId = "7a0e9c3a-5b1d-4f6e-9a2b-1c3d4e5f6a7b"
+            const first = await placeOrder.execute(input({ clientOrderId }))
+            const again = await placeOrder.execute(input({ clientOrderId }))
+            expect(again.id).toBe(first.id)
+            expect(first.id).toBe(clientOrderId)
+            expect(again.number).toBe(1)
+            // Another checkout is another order.
+            expect((await placeOrder.execute(input())).number).toBe(2)
+        })
+
         it("merges duplicate lines and numbers orders per shop", async () => {
             const first = await placeOrder.execute(
                 input({

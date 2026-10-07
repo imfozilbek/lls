@@ -219,8 +219,8 @@ function useHome(): {
     home: CourierHomeDTO | null
     error: string | null
     reload(): Promise<void>
-    replace(order: OrderDTO): void
-    setHome(home: CourierHomeDTO): void
+    replace(changed: OrderDTO | OrderDTO[]): void
+    setHome(change: (home: CourierHomeDTO) => CourierHomeDTO): void
 } {
     const [home, setHome] = useState<CourierHomeDTO | null>(null)
     const [error, setError] = useState<string | null>(null)
@@ -251,21 +251,29 @@ function useHome(): {
         [home],
     )
     useRingOnNews("courier-home", snapshot, "order", (state) => state === OrderStatus.READY)
-    const replace = (order: OrderDTO): void => {
+    // Many at once (a trip's «Hammasini oldim»): one swap, one reload, the shop's place kept.
+    const replace = (changed: OrderDTO | OrderDTO[]): void => {
+        const byId = new Map((Array.isArray(changed) ? changed : [changed]).map((o) => [o.id, o]))
         setHome((current) =>
             current
                 ? {
                       ...current,
-                      orders: current.orders.map((o) =>
-                          o.id === order.id ? { ...order, shopName: o.shopName } : o,
-                      ),
+                      orders: current.orders.map((o) => {
+                          const next = byId.get(o.id)
+                          return next
+                              ? { ...next, shopName: o.shopName, shopLocation: o.shopLocation }
+                              : o
+                      }),
                   }
                 : current,
         )
         // Cash taken at the door adds to what the courier holds for that shop.
         void reload()
     }
-    return { home, error, reload, replace, setHome }
+    // A change from a card applies to the screen as it is now: a poll that landed meanwhile stays.
+    const updateHome = (change: (home: CourierHomeDTO) => CourierHomeDTO): void =>
+        setHome((current) => (current ? change(current) : current))
+    return { home, error, reload, replace, setHome: updateHome }
 }
 
 /** "Я на смене": shops give orders only to couriers on shift; it ends at midnight. */
@@ -274,7 +282,7 @@ function ShiftCard({
     onChange,
 }: {
     home: CourierHomeDTO
-    onChange(home: CourierHomeDTO): void
+    onChange(change: (home: CourierHomeDTO) => CourierHomeDTO): void
 }): React.JSX.Element {
     const t = useT()
     const [busy, setBusy] = useState(false)
@@ -286,7 +294,7 @@ function ShiftCard({
         setBusy(true)
         try {
             const profile = await api.courier.shift(onShift)
-            onChange({ ...home, profile })
+            onChange((h) => ({ ...h, profile }))
             haptic.success()
         } catch (caught) {
             haptic.error()
@@ -323,7 +331,7 @@ function NetworkCard({
     onChange,
 }: {
     home: CourierHomeDTO
-    onChange(home: CourierHomeDTO): void
+    onChange(change: (home: CourierHomeDTO) => CourierHomeDTO): void
 }): React.JSX.Element {
     const t = useT()
     const [busy, setBusy] = useState(false)
@@ -334,7 +342,7 @@ function NetworkCard({
         setBusy(true)
         try {
             const profile = await api.courier.network(inNetwork)
-            onChange({ ...home, profile, network: inNetwork ? home.network : [] })
+            onChange((h) => ({ ...h, profile, network: inNetwork ? h.network : [] }))
             haptic.success()
         } catch (caught) {
             haptic.error()
@@ -533,7 +541,7 @@ function VehicleField({
     onChange,
 }: {
     home: CourierHomeDTO
-    onChange(home: CourierHomeDTO): void
+    onChange(change: (home: CourierHomeDTO) => CourierHomeDTO): void
 }): React.JSX.Element {
     const t = useT()
     const saved = home.profile.vehicle ?? ""
@@ -547,7 +555,7 @@ function VehicleField({
         try {
             const profile = await api.courier.profile(text.trim() || null)
             lastSaved.current = profile.vehicle ?? ""
-            onChange({ ...home, profile })
+            onChange((h) => ({ ...h, profile }))
             haptic.success()
             toast(t.courier.vehicleSaved, "success")
         } catch (caught) {
@@ -581,7 +589,7 @@ function Deliveries({
     reload,
 }: {
     home: CourierHomeDTO
-    replace(order: OrderDTO): void
+    replace(changed: OrderDTO | OrderDTO[]): void
     reload(): Promise<void>
 }): React.JSX.Element {
     const t = useT()
@@ -591,11 +599,7 @@ function Deliveries({
     const trips = home.trips.filter((trip) => active.some((o) => o.tripId === trip.id))
     const inTrips = new Set(trips.flatMap((trip) => trip.stops))
     const single = active.filter((o) => !inTrips.has(o.id))
-    const replaceMany = (orders: OrderDTO[]): void => {
-        for (const order of orders) {
-            replace(order)
-        }
-    }
+    const replaceMany = (orders: OrderDTO[]): void => replace(orders)
     const stale = (): void => void reload()
     // Orders nearby are already on screen above: «nothing to deliver» would contradict them.
     const offersNearby = home.profile.inNetwork && home.network.length > 0

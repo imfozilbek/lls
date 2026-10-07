@@ -176,6 +176,15 @@ describe("district network", () => {
         expect((await platform(OWNER)("/api/admin/districts")).status).toBe(403)
         expect((await setDistrict({ name: "Sirdaryo", waitMinutes: 15 })).status).toBe(400)
         expect((await setDistrict({ name: "<script>", radiusKm: 5 })).status).toBe(400)
+        // «Tuman qo'shish» with a name that exists never moves that district.
+        const twin = await setDistrict({
+            name: "guliston",
+            center: { latitude: 41.3, longitude: 69.2 },
+            radiusKm: 5,
+            isNew: true,
+        })
+        expect(twin.status).toBe(409)
+        expect(await json(twin)).toMatchObject({ error: { code: "DISTRICT_EXISTS" } })
         const changed = await setDistrict({ name: "Guliston", waitMinutes: 15 })
         expect(await json<{ waitMinutes: number; shops: number }>(changed)).toMatchObject({
             waitMinutes: 15,

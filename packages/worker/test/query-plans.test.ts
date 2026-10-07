@@ -5,6 +5,7 @@
 import { env } from "cloudflare:workers"
 import { describe, expect, it } from "vitest"
 
+import { SHOWCASE_SHOPS } from "../src/repositories/business.repository.js"
 import {
     ACTIVE_VERSION_SQL,
     BY_STATUS,
@@ -48,6 +49,12 @@ const ACTIVE = ["pending", "accepted", "preparing", "ready", "picked_up"]
 const FINAL = ["delivered", "cancelled"]
 
 describe("query plans", () => {
+    it("the showcase's shops check one catalog entry each, never the products' rows", async () => {
+        const plan = (await planOf(SHOWCASE_SHOPS, ["active"])).join("\n")
+        expect(plan).toContain("USING COVERING INDEX idx_products_catalog")
+        expect(plan).not.toMatch(/SCAN products\b/)
+    })
+
     it("a shop's product names for a list: the catalog index alone, no product row", async () => {
         const plan = await planOf(NAMES_OF, ["biz-1"])
         expect(plan.join("\n")).toContain("USING COVERING INDEX idx_products_catalog")

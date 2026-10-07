@@ -137,6 +137,17 @@ function write(shop: string | null, lines: CartLines): void {
 }
 
 /** One cart per shop, so switching between shop bots never mixes or wipes carts. */
+/**
+ * A quantity the product still sells: a multiple of its step, at most 99 steps. The owner may
+ * have changed the step or the unit since the line was put in the cart; the nearest valid
+ * quantity takes its place (never 0), so the order is not refused for a field nobody sees.
+ */
+export function fitQuantity(quantity: number, step: number): number {
+    const unit = step > 0 ? step : 1
+    const steps = Math.min(Math.max(Math.round(quantity / unit), 1), MAX_STEPS)
+    return steps * unit
+}
+
 export const useCart = create<CartState>((set, get) => {
     const update = (lines: CartLines): void => {
         write(get().shop, lines)
@@ -180,7 +191,7 @@ export const useCart = create<CartState>((set, get) => {
                     ? { variantId: item.options.variantId, addonIds: item.options.addonIds }
                     : undefined
                 if (product && pickPrice(product, pick)) {
-                    lines[lineKey(item.productId, pick)] = item.quantity
+                    lines[lineKey(item.productId, pick)] = fitQuantity(item.quantity, product.step)
                 } else {
                     skipped++
                 }
@@ -189,22 +200,30 @@ export const useCart = create<CartState>((set, get) => {
             return skipped
         },
         prune: (catalog): number => {
-            // Sold out today stays in the cart (shown apart); gone or changed products leave it.
+            // Products no longer in the catalog (gone, or sold out today) and picks the shop
+            // changed leave the cart; a quantity off the product's new step is fitted to it.
             const known = new Map(catalog.map((p) => [p.id, p]))
             const lines = { ...get().lines }
-            const gone = Object.keys(lines).filter((key) => {
+            let gone = 0
+            let fitted = false
+            for (const [key, quantity] of Object.entries(lines)) {
                 const { productId, pick } = parseKey(key)
                 const product = known.get(productId)
-                return !product || !pickPrice(product, pick)
-            })
-            if (gone.length === 0) {
-                return 0
+                if (!product || !pickPrice(product, pick)) {
+                    delete lines[key]
+                    gone++
+                    continue
+                }
+                const fit = fitQuantity(quantity, product.step)
+                if (fit !== quantity) {
+                    lines[key] = fit
+                    fitted = true
+                }
             }
-            for (const id of gone) {
-                delete lines[id]
+            if (gone > 0 || fitted) {
+                update(lines)
             }
-            update(lines)
-            return gone.length
+            return gone
         },
     }
 })

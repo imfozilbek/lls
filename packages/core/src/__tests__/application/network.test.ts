@@ -160,6 +160,17 @@ describe("district network", () => {
             })
             expect(moved.shops).toBe(1)
             expect((await businesses.findById("biz-2"))?.districtId).toBeUndefined()
+            // «Tuman qo'shish» with a name that exists never moves that district.
+            await expect(
+                set.execute({
+                    ...admin,
+                    name: " guliston ",
+                    center: TASHKENT,
+                    radiusKm: 9,
+                    isNew: true,
+                }),
+            ).rejects.toMatchObject({ reason: "DISTRICT_EXISTS" })
+            expect((await districts.findByName("guliston"))?.radiusMeters).toBe(5000)
             const waiting = await set.execute({ ...admin, name: "Guliston", waitMinutes: 15 })
             expect(waiting.district.waitMinutes).toBe(15)
             await expect(

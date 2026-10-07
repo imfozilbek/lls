@@ -94,6 +94,8 @@ export function dictionaryFor(language: Language, type?: BusinessType): Dictiona
         ...base,
         ...overlay?.(base),
         ...(staff ? { ...staff, ...staffOverlay?.(staff) } : {}),
+        // Staff-only error words join the customer's ones (both are looked up by `errorText`).
+        errors: { ...base.errors, ...staff?.staffErrors },
     } as Dictionary
     built.set(key, dictionary)
     return dictionary

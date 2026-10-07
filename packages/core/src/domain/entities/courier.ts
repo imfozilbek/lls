@@ -129,9 +129,14 @@ export class Courier {
         return this.isActive && this.props.businessId === businessId
     }
 
-    /** May move this shop's orders assigned to them: its own courier, or a network one. */
+    /**
+     * May move this shop's orders assigned to them: its own courier, a network one, or one whose
+     * new invite of the same shop waits (a network courier carrying its order keeps it).
+     */
     deliversFor(businessId: string): boolean {
-        return (this.isActive || this.isNetwork) && this.props.businessId === businessId
+        const status = this.props.status
+        const carries = this.isActive || this.isNetwork || status === CourierStatus.PENDING
+        return carries && this.props.businessId === businessId
     }
 
     /** A new invite of the same shop: a removed courier asks again; an active one stays. */

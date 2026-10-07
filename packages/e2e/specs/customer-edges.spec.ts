@@ -123,7 +123,7 @@ test("a stop-listed item disappears; one that ran out in the cart is removed wit
     await page.reload()
     await expect(page.getByRole("heading", { name: "Lag'mon" })).toBeHidden()
     await expect(
-        page.getByText("Savatdagi 1 ta mahsulot tugab qoldi, ularni olib tashladik."),
+        page.getByText("Savatdagi 1 ta mahsulot endi yo'q yoki o'zgardi, ularni olib tashladik."),
     ).toBeVisible()
     await expect(bottomButton(page)).toContainText("Savat · 1")
     await ownerPatch("/owner/products/dev-food-p2", { isAvailable: true })
