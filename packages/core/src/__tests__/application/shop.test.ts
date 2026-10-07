@@ -61,8 +61,8 @@ describe("shop use cases", () => {
     let districts: InMemoryDistricts
 
     beforeEach(() => {
-        businesses = new InMemoryBusinesses()
         cards = new InMemoryPayoutCards()
+        businesses = new InMemoryBusinesses(cards)
         managedBots = new InMemoryManagedBots()
         districts = new InMemoryDistricts()
     })
@@ -72,7 +72,6 @@ describe("shop use cases", () => {
             const shop = await new RegisterShopUseCase(
                 businesses,
                 clock,
-                cards,
                 managedBots,
                 districts,
             ).execute(registration())
@@ -92,13 +91,7 @@ describe("shop use cases", () => {
         })
 
         it("adds a suffix when the slug is taken", async () => {
-            const useCase = new RegisterShopUseCase(
-                businesses,
-                clock,
-                cards,
-                managedBots,
-                districts,
-            )
+            const useCase = new RegisterShopUseCase(businesses, clock, managedBots, districts)
             await useCase.execute(registration())
             const second = await useCase.execute(
                 registration({ bot: { id: 556, username: "osh_markaz_bot", token: "x" } }),
@@ -107,13 +100,7 @@ describe("shop use cases", () => {
         })
 
         it("rejects a bot that is already connected", async () => {
-            const useCase = new RegisterShopUseCase(
-                businesses,
-                clock,
-                cards,
-                managedBots,
-                districts,
-            )
+            const useCase = new RegisterShopUseCase(businesses, clock, managedBots, districts)
             await useCase.execute(registration())
             await expect(useCase.execute(registration())).rejects.toThrow(ConflictError)
         })
@@ -130,7 +117,6 @@ describe("shop use cases", () => {
             const shop = await new RegisterShopUseCase(
                 businesses,
                 clock,
-                cards,
                 managedBots,
                 districts,
             ).execute(registration({ payoutCard: undefined, deliveryFee: undefined }))
@@ -141,7 +127,6 @@ describe("shop use cases", () => {
             const far = await new RegisterShopUseCase(
                 businesses,
                 clock,
-                cards,
                 managedBots,
                 districts,
             ).execute(
@@ -157,7 +142,6 @@ describe("shop use cases", () => {
             const shop = await new RegisterShopUseCase(
                 businesses,
                 clock,
-                cards,
                 managedBots,
                 districts,
             ).execute(registration())
@@ -188,13 +172,7 @@ describe("shop use cases", () => {
 
         it("the owner applies with it: the token never comes from the client", async () => {
             await created()
-            const register = new RegisterShopUseCase(
-                businesses,
-                clock,
-                cards,
-                managedBots,
-                districts,
-            )
+            const register = new RegisterShopUseCase(businesses, clock, managedBots, districts)
             const shop = await register.execute(registration({ bot: { managedBotId: 777 } }))
             expect(shop.managedBot).toBe(true)
             expect(shop.botUsername).toBe("Osh_Saroy_bot")
@@ -209,13 +187,7 @@ describe("shop use cases", () => {
 
         it("nobody applies with a bot they did not create, or one that does not exist", async () => {
             await created()
-            const register = new RegisterShopUseCase(
-                businesses,
-                clock,
-                cards,
-                managedBots,
-                districts,
-            )
+            const register = new RegisterShopUseCase(businesses, clock, managedBots, districts)
             await expect(
                 register.execute(
                     registration({ ownerTelegramId: STRANGER_TG, bot: { managedBotId: 777 } }),
@@ -231,7 +203,6 @@ describe("shop use cases", () => {
             const shop = await new RegisterShopUseCase(
                 businesses,
                 clock,
-                cards,
                 managedBots,
                 districts,
             ).execute(registration({ bot: { managedBotId: 777 } }))

@@ -18,7 +18,6 @@ import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
 import type { DistrictRepository } from "../../ports/district-repository.js"
 import type { ManagedBotRepository } from "../../ports/managed-bot-repository.js"
-import type { PayoutCardRepository } from "../../ports/payout-card-repository.js"
 
 const MAX_SLUG_ATTEMPTS = 20
 
@@ -57,7 +56,6 @@ export class RegisterShopUseCase {
     constructor(
         private readonly businesses: BusinessRepository,
         private readonly clock: Clock,
-        private readonly cards: PayoutCardRepository,
         private readonly managedBots: ManagedBotRepository,
         private readonly districts: DistrictRepository,
     ) {}
@@ -91,10 +89,7 @@ export class RegisterShopUseCase {
         // A shop with a location belongs to its district at once: the network can serve it.
         business.setDistrict(await districtIdFor(this.districts, location))
         const card = input.payoutCard && this.firstCard(business, input.payoutCard)
-        await this.businesses.insert(business, bot.token)
-        if (card) {
-            await this.cards.insert(business.id, card)
-        }
+        await this.businesses.insert(business, bot.token, card)
         if (bot.source === BotSource.MANAGED) {
             await this.managedBots.claim(bot.id, business.id)
         }

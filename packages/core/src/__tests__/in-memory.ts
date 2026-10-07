@@ -62,6 +62,9 @@ export class InMemoryBusinesses implements BusinessRepository {
     readonly items = new Map<string, Business>()
     readonly tokens = new Map<string, string>()
 
+    /** The shop's card list, written together with the shop (the first card). */
+    constructor(private readonly cards = new InMemoryPayoutCards()) {}
+
     async findByIds(ids: readonly string[]): Promise<Business[]> {
         return ids.flatMap((id) => {
             const business = this.items.get(id)
@@ -92,12 +95,19 @@ export class InMemoryBusinesses implements BusinessRepository {
     async listWithLocation(): Promise<Business[]> {
         return [...this.items.values()].filter((b) => b.location !== undefined)
     }
-    async insert(business: Business, botToken: string): Promise<void> {
+    async insert(business: Business, botToken: string, firstCard?: SavedPayoutCard): Promise<void> {
         this.items.set(business.id, business)
         this.tokens.set(business.id, botToken)
+        if (firstCard) {
+            await this.cards.insert(business.id, firstCard)
+        }
     }
     async save(business: Business): Promise<void> {
         this.items.set(business.id, business)
+    }
+    async saveWithCard(business: Business, card: SavedPayoutCard): Promise<void> {
+        this.items.set(business.id, business)
+        await this.cards.insert(business.id, card)
     }
     async replaceBotToken(businessId: string, botToken: string): Promise<void> {
         this.tokens.set(businessId, botToken)
