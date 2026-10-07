@@ -368,12 +368,17 @@ function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
     const shown = all || hidden <= 1 ? order.items : order.items.slice(0, SHOWN_ITEMS)
     return (
         <ul className="mt-2 flex flex-col gap-0.5">
-            {shown.map((item) => (
-                <li key={item.productId} className="flex gap-2">
+            {shown.map((item, line) => (
+                <li key={line} className="flex gap-2">
                     <span className="shrink-0 font-semibold tabular-nums">
                         {formatQuantity(item.quantity, item.unit, t.units)}×
                     </span>
-                    <span className="flex-1">{item.name}</span>
+                    <span className="flex-1">
+                        {item.name}
+                        {item.options ? (
+                            <span className="text-tg-subtitle"> ({item.options.label})</span>
+                        ) : null}
+                    </span>
                 </li>
             ))}
             {shown.length < order.items.length ? (

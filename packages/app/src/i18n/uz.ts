@@ -56,6 +56,8 @@ export const uz = {
         NOT_ACCEPTING_ORDERS: "Do'kon hozir buyurtma qabul qilmayapti.",
         SHOP_NOT_ACTIVE: "Do'kon hali ishga tushmagan.",
         PRODUCT_NOT_AVAILABLE: "Savatdagi mahsulotlardan biri tugab qoldi.",
+        VARIANT_REQUIRED: "Mahsulotning turini tanlang.",
+        OPTION_UNAVAILABLE: "Do'kon mahsulotni o'zgartirdi. Savatni tekshiring.",
         MIN_ORDER_NOT_REACHED: "Buyurtma minimal summadan kam.",
         OUTSIDE_DELIVERY_ZONE:
             "Bu joy do'kon yetkazadigan hududdan tashqarida: yaqinroq manzil tanlang.",
@@ -116,6 +118,11 @@ export const uz = {
         hoursToday: "Bugun {from}–{to}",
         dayOff: "Bugun dam olish kuni",
         all: "Hammasi",
+        /** «15 000 so'm dan»: a product with variants costs from its cheapest one. */
+        from: "dan",
+        addons: "Qo'shimchalar",
+        variant: "Turini tanlang",
+        toCart: "Savatga · {sum}",
         add: "Qo'shish",
         emptyTitle: "Katalog hali bo'sh",
         emptyText: "Do'kon tez orada mahsulotlarni qo'shadi.",

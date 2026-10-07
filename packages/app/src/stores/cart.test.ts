@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { MAX_STEPS, deliveryFee, lineTotal, summarize, useCart } from "./cart.js"
+import {
+    MAX_STEPS,
+    deliveryFee,
+    lineKey,
+    lineTotal,
+    pickPrice,
+    productOfKey,
+    summarize,
+    useCart,
+} from "./cart.js"
 
 import type { ProductDTO } from "@zumda/core"
 
@@ -147,11 +156,57 @@ describe("prune", () => {
         useCart.getState().load("osh")
     })
 
-    it("drops products that are no longer on sale and reports how many", () => {
+    it("drops products that left the catalog and reports how many", () => {
         useCart.getState().setQuantity("a", 2)
         useCart.getState().setQuantity("gone", 1)
-        expect(useCart.getState().prune(["a", "b"])).toBe(1)
+        expect(useCart.getState().prune([product("a", 1), product("b", 1)])).toBe(1)
         expect(useCart.getState().lines).toEqual({ a: 2 })
-        expect(useCart.getState().prune(["a"])).toBe(0)
+        expect(useCart.getState().prune([product("a", 1)])).toBe(0)
+    })
+
+    it("drops a pick whose variant the owner removed", () => {
+        useCart.getState().setQuantity(lineKey("latte", { variantId: "m", addonIds: [] }), 1)
+        useCart.getState().setQuantity(lineKey("latte", { variantId: "xl", addonIds: [] }), 1)
+        expect(useCart.getState().prune([latte()])).toBe(1)
+        expect(Object.keys(useCart.getState().lines)).toEqual(["latte~m~"])
+    })
+})
+
+function latte(): ProductDTO {
+    return {
+        ...product("latte", 15_000),
+        options: {
+            group: "Hajmi",
+            variants: [
+                { id: "s", name: "0,3 l", price: 15_000 },
+                { id: "m", name: "0,4 l", price: 18_000 },
+            ],
+            addons: [
+                { id: "syrup", name: "Karamel sirop", price: 4_000 },
+                { id: "free", name: "Shakarsiz", price: 0 },
+            ],
+        },
+    }
+}
+
+describe("variants and add-ons in the cart", () => {
+    it("a pick is its own line, priced like the server and named for the customer", () => {
+        const key = lineKey("latte", { variantId: "m", addonIds: ["syrup", "free"] })
+        expect(key).toBe("latte~m~free.syrup")
+        expect(productOfKey(key)).toBe("latte")
+        const cart = summarize({ [key]: 2, "latte~s~": 1 }, [latte()])
+        expect(cart.lines.map((l) => [l.label, l.total])).toEqual([
+            ["0,4 l · Karamel sirop, Shakarsiz", 44_000],
+            ["0,3 l", 15_000],
+        ])
+        expect(cart.subtotal).toBe(59_000)
+    })
+
+    it("a pick that no longer fits is shown apart, and the plain product needs a variant", () => {
+        expect(pickPrice(latte(), undefined)).toBeNull()
+        expect(pickPrice(latte(), { variantId: "m", addonIds: ["gold"] })).toBeNull()
+        const cart = summarize({ "latte~xl~": 1 }, [latte()])
+        expect(cart.lines).toHaveLength(0)
+        expect(cart.unavailable).toHaveLength(1)
     })
 })

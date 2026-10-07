@@ -10,12 +10,19 @@ export function OrderItems({ order }: { order: OrderDTO }): React.JSX.Element {
     return (
         <div className="rounded-tile bg-tg-secondary p-4">
             <ul className="flex flex-col gap-2">
-                {order.items.map((item) => (
-                    <li key={item.productId} className="flex gap-3">
+                {order.items.map((item, line) => (
+                    <li key={line} className="flex gap-3">
                         <span className="shrink-0 font-semibold tabular-nums text-tg-hint">
                             {formatQuantity(item.quantity, item.unit, t.units)}×
                         </span>
-                        <span className="min-w-0 flex-1">{item.name}</span>
+                        <span className="min-w-0 flex-1">
+                            {item.name}
+                            {item.options ? (
+                                <span className="block text-sm text-tg-subtitle">
+                                    {item.options.label}
+                                </span>
+                            ) : null}
+                        </span>
                         <span className="shrink-0 tabular-nums">
                             {formatMoney(item.total, language)}
                         </span>

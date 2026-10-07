@@ -39,10 +39,19 @@ import {
 import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import {
+    NO_OPTIONS,
+    OptionsEditor,
+    hasVariants,
+    optionsBody,
+    optionsDraftOf,
+    optionsValid,
+} from "./OptionsEditor.js"
 import { useOwner } from "./store.js"
 
+import type { OptionsDraft } from "./OptionsEditor.js"
 import type { ProductInput } from "../lib/api.js"
-import type { BusinessType, Category, ProductDTO } from "@zumda/core"
+import type { BusinessType, Category, ProductDTO, ProductOptionsProps } from "@zumda/core"
 
 /** Selling steps offered for weight items, in grams: by the kilo, by 100 g, by the gram. */
 const WEIGHT_STEPS: Partial<Record<Unit, readonly number[]>> = {
@@ -79,6 +88,8 @@ interface Draft {
     photo: Blob | "remove" | null
     /** The owner chose the category: the name no longer moves it. */
     categoryPicked?: boolean
+    /** Variants and add-ons as they are typed. */
+    options: OptionsDraft
 }
 
 /** A new product starts with the first unit and category that fit the shop, so it rarely needs a tap. */
@@ -94,6 +105,7 @@ function newDraft(type: BusinessType | undefined): Draft {
         returnable: isBottleUnit(unit),
         isAvailable: true,
         photo: null,
+        options: NO_OPTIONS,
     }
 }
 
@@ -111,6 +123,7 @@ function draftOf(product: ProductDTO | undefined, type: BusinessType | undefined
         returnable: product.returnable,
         isAvailable: product.isAvailable,
         photo: null,
+        options: optionsDraftOf(product.options),
     }
 }
 
@@ -234,21 +247,37 @@ function PhotoPicker({
 }
 
 /** Creates or updates the product's fields. */
+/** With variants the product costs as its cheapest one; the server checks it again. */
+function priceOf(draft: Draft): number {
+    const body = optionsBody(draft.options)
+    const lowest = body?.variants.length ? Math.min(...body.variants.map((v) => v.price)) : null
+    return lowest ?? draft.price ?? 0
+}
+
+/** Variants and add-ons for the API; a weight item drops its add-ons (it sells by the gram). */
+function optionsFor(draft: Draft): ProductOptionsProps | null {
+    const options = isWeightUnit(draft.unit) ? { ...draft.options, addons: [] } : draft.options
+    return optionsBody(options)
+}
+
 async function saveFields(product: ProductDTO | undefined, draft: Draft): Promise<ProductDTO> {
+    const options = optionsFor(draft)
     const input: ProductInput = {
         name: draft.name.trim(),
         description: draft.description.trim() || undefined,
-        price: draft.price ?? 0,
+        price: priceOf(draft),
         unit: draft.unit,
         category: draft.category,
         returnable: draft.returnable,
         ...(isWeightUnit(draft.unit) ? { step: draft.step } : {}),
     }
     if (!product) {
-        return api.owner.createProduct(input)
+        return api.owner.createProduct(options ? { ...input, options } : input)
     }
     return api.owner.updateProduct(product.id, {
         ...input,
+        // null drops the variants and add-ons the product had.
+        options,
         description: input.description ?? null,
         // Sent only when changed: showing a product again also clears today's stop-list mark.
         ...(draft.isAvailable !== product.isAvailable ? { isAvailable: draft.isAvailable } : {}),
@@ -514,15 +543,44 @@ function KindFields({
     )
 }
 
+/** The price, or a word that it lives in the variants (the cheapest one is shown). */
+function PriceField({
+    draft,
+    patch,
+}: {
+    draft: Draft
+    patch(change: Partial<Draft>): void
+}): React.JSX.Element {
+    const t = useT()
+    if (hasVariants(draft.options)) {
+        return <p className="px-1 text-sm text-tg-hint">{t.owner.product.priceInVariants}</p>
+    }
+    return (
+        <Field
+            label={priceLabel(draft.unit, t)}
+            htmlFor="product-price"
+            hint={t.owner.product.priceHint}
+        >
+            <MoneyInput
+                id="product-price"
+                value={draft.price}
+                onChange={(price): void => patch({ price })}
+            />
+        </Field>
+    )
+}
+
 /** Never a dead button: a tap says what is missing (the name first, then the price). */
 function useSaveAction(input: {
     valid: boolean
     saving: boolean
     name: string
+    /** The variants are the problem: fewer than two, or one without a price. */
+    variantsWrong: boolean
     save(): Promise<void>
 }): void {
     const t = useT()
-    const { valid, saving, name, save } = input
+    const { valid, saving, name, variantsWrong, save } = input
     useMainAction({
         text: saving ? t.common.saving : t.common.save,
         onClick: (): void => {
@@ -531,8 +589,13 @@ function useSaveAction(input: {
                 return
             }
             haptic.error()
+            const p = t.owner.product
             toast(
-                name.trim().length === 0 ? t.owner.product.needName : t.owner.product.needPrice,
+                name.trim().length === 0
+                    ? p.needName
+                    : variantsWrong
+                      ? p.needVariants
+                      : p.needPrice,
                 "error",
             )
         },
@@ -550,7 +613,11 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
     const [product, setProduct] = useState(initial)
     const [saving, setSaving] = useState(false)
     const patch = (change: Partial<Draft>): void => setDraft((d) => ({ ...d, ...change }))
-    const valid = draft.name.trim().length > 0 && (draft.price ?? 0) > 0
+    const variantsWrong = !optionsValid(draft.options)
+    const valid =
+        draft.name.trim().length > 0 &&
+        !variantsWrong &&
+        (hasVariants(draft.options) || (draft.price ?? 0) > 0)
 
     const fail = (caught: unknown): void => {
         haptic.error()
@@ -577,7 +644,7 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
         }
     }
 
-    useSaveAction({ valid, saving, name: draft.name, save })
+    useSaveAction({ valid, saving, name: draft.name, variantsWrong, save })
 
     return (
         <main className="flex flex-col gap-6 px-4 pt-4">
@@ -603,18 +670,13 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
                     }}
                 />
             </Field>
-            <Field
-                label={priceLabel(draft.unit, t)}
-                htmlFor="product-price"
-                hint={t.owner.product.priceHint}
-            >
-                <MoneyInput
-                    id="product-price"
-                    value={draft.price}
-                    onChange={(price): void => patch({ price })}
-                />
-            </Field>
+            <PriceField draft={draft} patch={patch} />
             <KindFields draft={draft} patch={patch} />
+            <OptionsEditor
+                draft={draft.options}
+                addons={!isWeightUnit(draft.unit)}
+                onChange={(options): void => patch({ options })}
+            />
             <Field label={t.owner.product.description} htmlFor="product-description">
                 <TextArea
                     id="product-description"

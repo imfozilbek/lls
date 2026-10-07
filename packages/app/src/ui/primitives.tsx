@@ -183,11 +183,14 @@ export function MoneyInput({
     onChange,
     id,
     placeholder,
+    label,
 }: {
     value: number | null
     onChange(value: number | null): void
     id?: string
     placeholder?: string
+    /** For a field without a visible label (a row of a list). */
+    label?: string
 }): React.JSX.Element {
     const language = useLanguage()
     const shown = value === null ? "" : String(value).replace(/\B(?=(\d{3})+(?!\d))/g, " ")
@@ -196,6 +199,7 @@ export function MoneyInput({
             <input
                 id={id}
                 inputMode="numeric"
+                aria-label={label}
                 className="field pr-16 tabular-nums"
                 value={shown}
                 placeholder={placeholder}

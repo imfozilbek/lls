@@ -9,7 +9,7 @@ import { formatMoney, formatQuantity, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
-import { summarize, useCart } from "../stores/cart.js"
+import { productOfKey, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import {
@@ -27,7 +27,7 @@ import { EmptyState, PoweredBy, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
 
-import { ProductSheet } from "./ProductSheet.js"
+import { ProductSheet, hasOptions } from "./ProductSheet.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { Shop } from "../stores/session.js"
@@ -347,6 +347,62 @@ function openDetail(product: ProductDTO): void {
     useProductDetail.getState().show(product)
 }
 
+/** How much of a product is in the cart: every pick of it together when it has options. */
+function useInCart(product: ProductDTO): number {
+    return useCart((state) =>
+        hasOptions(product)
+            ? Object.entries(state.lines).reduce(
+                  (sum, [key, quantity]) =>
+                      productOfKey(key) === product.id ? sum + quantity : sum,
+                  0,
+              )
+            : (state.lines[product.id] ?? 0),
+    )
+}
+
+/** «/ porsiya», or «dan» for a product whose variants cost differently (from the cheapest). */
+function PriceLine({ product }: { product: ProductDTO }): React.JSX.Element {
+    const t = useT()
+    const language = useLanguage()
+    const prices = new Set(product.options?.variants.map((v) => v.price))
+    const unit = (t.units as Record<string, string>)[product.unit] ?? product.unit
+    return (
+        <p className="mt-0.5 text-sm">
+            <span className="font-semibold">{formatMoney(product.price, language)}</span>
+            <span className="text-tg-hint">
+                {prices.size > 1 ? ` ${t.shop.from}` : ` / ${unit}`}
+            </span>
+        </p>
+    )
+}
+
+/** A product with options is picked in its sheet: its «+» opens it and shows how many are in. */
+function PickButton({
+    product,
+    quantity,
+    className,
+}: {
+    product: ProductDTO
+    quantity: number
+    className: string
+}): React.JSX.Element {
+    const t = useT()
+    return (
+        <button
+            type="button"
+            onClick={(): void => openDetail(product)}
+            aria-label={`${t.shop.add}: ${product.name}`}
+            className={cn("tap grid place-items-center rounded-full", className)}
+        >
+            {quantity > 0 ? (
+                <span className="text-sm font-bold tabular-nums">{quantity}</span>
+            ) : (
+                <PlusIcon size={22} strokeWidth={2.25} />
+            )}
+        </button>
+    )
+}
+
 function productAnchor(id: string): string {
     return `product-${id}`
 }
@@ -381,11 +437,9 @@ function ProductTile({
     index: number
 }): React.JSX.Element {
     const t = useT()
-    const language = useLanguage()
-    const quantity = useCart((state) => state.lines[product.id] ?? 0)
+    const quantity = useInCart(product)
     const add = useCart((state) => state.add)
     const remove = useCart((state) => state.remove)
-    const unit = (t.units as Record<string, string>)[product.unit] ?? product.unit
     const glowing = useProductDetail((state) => state.glowId === product.id)
     return (
         <article
@@ -404,7 +458,13 @@ function ProductTile({
                     name={product.name}
                     className="aspect-[4/3] rounded-tile"
                 />
-                {quantity === 0 ? (
+                {hasOptions(product) ? (
+                    <PickButton
+                        product={product}
+                        quantity={quantity}
+                        className="absolute bottom-2 right-2 h-11 w-11 bg-tg-bg text-brand shadow-md"
+                    />
+                ) : quantity === 0 ? (
                     <button
                         type="button"
                         onClick={(): void => {
@@ -439,10 +499,7 @@ function ProductTile({
                         {product.description}
                     </p>
                 ) : null}
-                <p className="mt-0.5 text-sm">
-                    <span className="font-semibold">{formatMoney(product.price, language)}</span>
-                    <span className="text-tg-hint"> / {unit}</span>
-                </p>
+                <PriceLine product={product} />
             </button>
         </article>
     )
@@ -454,11 +511,9 @@ function ProductTile({
  */
 function ProductListRow({ product }: { product: ProductDTO }): React.JSX.Element {
     const t = useT()
-    const language = useLanguage()
-    const quantity = useCart((state) => state.lines[product.id] ?? 0)
+    const quantity = useInCart(product)
     const add = useCart((state) => state.add)
     const remove = useCart((state) => state.remove)
-    const unit = (t.units as Record<string, string>)[product.unit] ?? product.unit
     const glowing = useProductDetail((state) => state.glowId === product.id)
     return (
         <li
@@ -485,12 +540,15 @@ function ProductListRow({ product }: { product: ProductDTO }): React.JSX.Element
                 {product.description ? (
                     <p className="line-clamp-1 text-sm text-tg-hint">{product.description}</p>
                 ) : null}
-                <p className="text-sm">
-                    <span className="font-semibold">{formatMoney(product.price, language)}</span>
-                    <span className="text-tg-hint"> / {unit}</span>
-                </p>
+                <PriceLine product={product} />
             </button>
-            {quantity === 0 ? (
+            {hasOptions(product) ? (
+                <PickButton
+                    product={product}
+                    quantity={quantity}
+                    className="h-11 w-11 shrink-0 bg-brand/10 text-brand"
+                />
+            ) : quantity === 0 ? (
                 <button
                     type="button"
                     onClick={(): void => {

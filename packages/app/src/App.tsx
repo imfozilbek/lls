@@ -175,7 +175,7 @@ function useShopBootstrap(
                 session.setShop(shop)
                 session.setMe(me)
                 session.setCatalog(products)
-                const removed = useCart.getState().prune(products.map((p) => p.id))
+                const removed = useCart.getState().prune(products)
                 if (removed > 0) {
                     toast(fill(dictionaryFor(me.language).cart.removed, { n: removed }))
                 }
