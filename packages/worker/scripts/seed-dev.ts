@@ -130,7 +130,7 @@ const CATALOGS: Record<DevShop["kind"], readonly DemoProduct[]> = {
         item("Olma", 14_000, "kg", "produce", { step: 500 }),
     ],
     service: [
-        item("Gilam yuvish (kv. metr)", 12_000, "pcs", "cleaning"),
+        item("Gilam yuvish (kv. metr)", 12_000, "m2", "carpet"),
         item("Avtomobil yuvish", 60_000, "pcs", "car_care"),
         item("Divan tozalash", 150_000, "pcs", "cleaning"),
         item("Ko'rpa yuvish", 40_000, "pcs", "laundry", {
