@@ -196,7 +196,7 @@ Pilot: **food, water and grocery at the same time.**
 ### M4r. Any product in a minute: the Zumda catalog 🔨 (goal 17)
 - [x] Owner's decisions 1-5 of goal 17
 - [x] Grams (100 g, 1 g) and new units, 114 categories on four shelves, the goods store kind
-- [ ] Variants and add-ons
+- [x] Variants and add-ons
 - [ ] Catalog search in the product form
 - [ ] Add a list of products at once
 
