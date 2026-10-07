@@ -168,6 +168,7 @@ function Payment({
     // The card this order was shown: the owner may have switched the payment card since.
     const shopCard = useSession((state) => state.shop?.payoutCard)
     const shopName = useSession((state) => state.shop?.name)
+    const demo = useSession((state) => state.shop?.demo ?? false)
     const card = order.payment.card ?? shopCard
     const open = order.status !== OrderStatus.CANCELLED
     if (order.payment.method === "cash") {
@@ -191,6 +192,7 @@ function Payment({
                     total={order.total}
                     shopName={shopName}
                     again={order.payment.rejections > 0}
+                    demo={demo}
                 />
             ) : null}
             {checking ? (

@@ -21,6 +21,7 @@ import {
 } from "../ui/primitives.js"
 import { Sheet } from "../ui/sheet.js"
 
+import { DemoBlock } from "./DemoBlock.js"
 import { OwnerLine, ShopHead, botToast, useBusy } from "./shared.js"
 
 import type { PlatformShopDTO } from "@zumda/core"
@@ -325,7 +326,9 @@ function LiveShopCard({
                     {t.platform.ownerChatClosed}
                 </p>
             ) : null}
-            {live ? <ShowcaseBlock shop={shop} onDone={onDone} /> : null}
+            {/* A demo is never in the showcase: its block is «Namuna» instead. */}
+            {live && !shop.demo ? <ShowcaseBlock shop={shop} onDone={onDone} /> : null}
+            {live ? <DemoBlock shop={shop} onDone={onDone} /> : null}
             <div className="flex flex-wrap gap-2">
                 {live ? (
                     <Button
@@ -483,7 +486,7 @@ export function ShopsTab({
             <ul className="flex flex-col gap-3">
                 {shops.map((shop) => (
                     <LiveShopCard
-                        key={`${shop.id}:${shop.marketplace?.commissionBps ?? "off"}`}
+                        key={`${shop.id}:${shop.marketplace?.commissionBps ?? "off"}:${shop.demo}`}
                         shop={shop}
                         focused={shop.id === focusId}
                         onDone={(): void => void reload()}

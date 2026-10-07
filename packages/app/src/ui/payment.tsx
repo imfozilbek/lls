@@ -6,7 +6,7 @@ import { formatMoney } from "../lib/format.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 
-import { CardIcon, CashIcon, CopyIcon, ShieldIcon } from "./icons.js"
+import { AlertIcon, CardIcon, CashIcon, CopyIcon, ShieldIcon } from "./icons.js"
 import { Button } from "./primitives.js"
 
 import type { OrderDTO } from "@zumda/core"
@@ -98,6 +98,7 @@ export function CardBlock({
     total,
     shopName,
     again = false,
+    demo = false,
 }: {
     card: { number: string; holder: string }
     total: number
@@ -105,6 +106,8 @@ export function CardBlock({
     shopName?: string
     /** The shop did not see the money: check it and send the screenshot again. */
     again?: boolean
+    /** A demo shop («Namuna»): its card is a test card, nobody transfers to it. */
+    demo?: boolean
 }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -138,7 +141,12 @@ export function CardBlock({
                 {groupCard(card.number)}
             </p>
             <p className="font-medium uppercase text-tg-subtitle">{card.holder}</p>
-            {shopName ? (
+            {demo ? (
+                <p className="mt-1 flex items-start gap-1.5 text-sm font-semibold text-tg-destructive">
+                    <AlertIcon size={16} className="mt-0.5 shrink-0" />
+                    {t.pay.demoCard}
+                </p>
+            ) : shopName ? (
                 <p className="mt-1 flex items-center gap-1.5 text-sm font-medium">
                     <ShieldIcon size={16} className="shrink-0 text-success" />
                     {fill(t.pay.cardOwner, { shop: shopName })}

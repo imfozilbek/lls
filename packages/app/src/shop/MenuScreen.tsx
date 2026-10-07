@@ -243,6 +243,14 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
             <p className="mt-3 text-sm text-tg-subtitle">
                 {shopFacts(shop, t, language).join(" · ")}
             </p>
+            {shop.demo ? (
+                <p
+                    role="note"
+                    className="mt-3 rounded-control bg-warning/15 px-3 py-2 text-sm font-semibold"
+                >
+                    {t.shop.demo}
+                </p>
+            ) : null}
             <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 text-sm [scrollbar-width:none]">
                 <HeaderAction
                     icon={<ReceiptIcon size={16} />}
