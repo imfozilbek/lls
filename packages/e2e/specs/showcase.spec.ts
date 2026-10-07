@@ -44,9 +44,10 @@ test("Zumda Business greets owners with «Mening bizneslarim»", async () => {
 test("shops with a deal are listed; search works in Latin and Cyrillic", async ({ page }) => {
     await openApp(page, { user: PEOPLE.customer, query: "?mode=market" })
     await expect(page.getByRole("heading", { name: "Tumaningiz do'konlari" })).toBeVisible()
-    await expect(page.getByText("Do'konlar · 2")).toBeVisible()
+    await expect(page.getByText("Do'konlar · 3")).toBeVisible()
     await expect(page.getByRole("button", { name: /Osh Markaz/ })).toBeVisible()
     await expect(page.getByRole("button", { name: /Baraka Market/ })).toBeVisible()
+    await expect(page.getByRole("button", { name: /Uy Bozori/ })).toBeVisible()
     await expect(page.getByRole("button", { name: /Toza Suv/ })).toBeHidden()
 
     await search(page).fill("ош")
@@ -57,7 +58,7 @@ test("shops with a deal are listed; search works in Latin and Cyrillic", async (
     // Water is not in the showcase: its products are not found.
     await expect(page.getByText("Hech narsa topilmadi")).toBeVisible()
     await page.getByRole("button", { name: "Tozalash" }).click()
-    await expect(page.getByText("Do'konlar · 2")).toBeVisible()
+    await expect(page.getByText("Do'konlar · 3")).toBeVisible()
 
     await page.getByRole("button", { name: "Sho'rvalar" }).click()
     // The products (name, then price): the category chips carry dish names too («Lag'mon, manti...»).
@@ -163,13 +164,13 @@ test("the admin adds and removes a shop in «Platforma»; others cannot", async 
 
     const shopper = await page.context().newPage()
     await openApp(shopper, { user: PEOPLE.customer, query: "?mode=market" })
-    await expect(shopper.getByText("Do'konlar · 3")).toBeVisible()
+    await expect(shopper.getByText("Do'konlar · 4")).toBeVisible()
 
     await card.getByRole("switch", { name: "Zumda vitrinasida" }).click()
     await expect(page.getByText("Vitrinadan olindi")).toBeVisible()
     await waitForMessage(PEOPLE.waterOwner.id, "vitrinasidan olindi", since)
     await shopper.reload()
-    await expect(shopper.getByText("Do'konlar · 2")).toBeVisible()
+    await expect(shopper.getByText("Do'konlar · 3")).toBeVisible()
 })
 
 test("search is rate-limited per person", async ({ page }) => {

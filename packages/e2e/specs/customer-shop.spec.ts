@@ -53,7 +53,8 @@ test.describe("customer of a food shop", () => {
         await expect(page.getByRole("heading", { name: "Osh Markaz" })).toBeVisible()
         await expect(page.getByText(/Yetkazish 10\s000/)).toBeVisible()
         await expect(page.getByText(/Minimal 40\s000/)).toBeVisible()
-        await expect(page.getByText("Ochiq")).toBeVisible()
+        await expect(page.getByText("Ochiq", { exact: true })).toBeVisible()
+        await expect(page.getByText(/Bugun kecha-kunduz ochiq/)).toBeVisible()
 
         // Categories filter the menu.
         await page.getByRole("button", { name: "Sho'rvalar" }).click()
