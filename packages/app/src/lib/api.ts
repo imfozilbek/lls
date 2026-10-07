@@ -498,6 +498,8 @@ export interface DistrictInput {
     center?: { latitude: number; longitude: number }
     radiusKm?: number
     waitMinutes?: number
+    /** «Yangi tuman»: a name that exists is refused, never a silent move of that district. */
+    isNew?: boolean
 }
 
 /** «Platforma»: platform admins only (the Worker checks it on every call). */

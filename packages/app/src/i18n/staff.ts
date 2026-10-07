@@ -265,6 +265,8 @@ export const staffUz = {
             confirmCancelled: "Pul keldi",
             refundsTitle: "Mijozlarga qaytarish",
             refunded: "Qaytardim",
+            refundConfirm:
+                "#{n} buyurtma uchun {sum} mijozga qaytarildimi? Buni ortga qaytarib bo'lmaydi.",
             export: "Excel uchun hisobot",
             exportSent: "Hisobot bot bilan chatga yuborildi",
             exportSentBusiness:
@@ -336,6 +338,8 @@ export const staffUz = {
             contactPhoneHint:
                 "To'lov bo'yicha savol bo'lsa, mijoz buyurtma sahifasidan shu raqamga qo'ng'iroq qiladi.",
             contactPhoneBad: "Raqam to'liq emas: masalan, +998 90 123 45 67",
+            needShopName: "Do'kon nomini yozing",
+            needOpenDay: "«Ish vaqti»da kamida bitta kunni yoqing",
             location: "Do'kon joylashuvi",
             setLocation: "Joylashuvni yangilash",
             couriers: "Kuryerlar",
@@ -582,8 +586,12 @@ export const staffUz = {
         commissionHint: "Faqat vitrina orqali sotilgan tovarlardan. O'z boti orqali sotuv bepul.",
         showcaseSaved: "Vitrina saqlandi",
         showcaseOff: "Vitrinadan olindi",
-        noDistricts: "Hali tumanlar yo'q",
-        noDistrictsText: "Tuman: markaz va radius. Ichidagi do'konlar kuryerlarni bo'lishadi.",
+        showcaseOffConfirm:
+            "{shop} Zumda vitrinasidan olinsinmi? Mijozlar uni qidiruvda ko'rmaydi.",
+        showcaseOffYes: "Vitrinadan olish",
+        noDistricts: "Tuman tarmog'i ishlamayapti: hali tuman yo'q",
+        noDistrictsText:
+            "Kuryerlar tarmoqqa rozi bo'lsa ham, tumansiz buyurtma olmaydi. Tuman qo'shing: markaz va radius; ichidagi do'konlar kuryerlarni bo'lishadi.",
         addDistrict: "Yangi tuman",
         editDistrict: "Tumanni o'zgartirish",
         districtName: "Tuman nomi",

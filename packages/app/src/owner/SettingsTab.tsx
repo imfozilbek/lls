@@ -183,6 +183,8 @@ function AcceptingCard({
 }): React.JSX.Element {
     const t = useT()
     const [value, setValue] = useState(shop.acceptingOrders)
+    // A pull to refresh (or a save elsewhere) brings the shop again: the switch follows it.
+    useEffect(() => setValue(shop.acceptingOrders), [shop.acceptingOrders])
     const change = async (next: boolean): Promise<void> => {
         setValue(next)
         try {
@@ -539,7 +541,7 @@ function ShopFields({
                     phoneOk ? (
                         s.contactPhoneHint
                     ) : (
-                        <span className="text-destructive">{s.contactPhoneBad}</span>
+                        <span className="text-tg-destructive">{s.contactPhoneBad}</span>
                     )
                 }
             >
@@ -746,8 +748,15 @@ function useSettingsForm(
         setSettingsDirty(dirty)
         return (): void => setSettingsDirty(false)
     }, [dirty, setSettingsDirty])
-    const valid =
-        form.name.trim().length > 0 && hasOpenDay(form.hours) && isPhoneText(form.contactPhone)
+    // Never a dead button: a tap says what is missing instead.
+    const missing =
+        form.name.trim().length === 0
+            ? s.needShopName
+            : !hasOpenDay(form.hours)
+              ? s.needOpenDay
+              : !isPhoneText(form.contactPhone)
+                ? s.contactPhoneBad
+                : null
 
     const save = async (): Promise<void> => {
         setSaving(true)
@@ -779,9 +788,15 @@ function useSettingsForm(
         dirty
             ? {
                   text: saving ? t.common.saving : t.common.save,
-                  onClick: (): void => void save(),
+                  onClick: (): void => {
+                      if (missing) {
+                          haptic.error()
+                          toast(missing, "error")
+                          return
+                      }
+                      void save()
+                  },
                   loading: saving,
-                  disabled: !valid,
               }
             : null,
     )

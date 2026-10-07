@@ -76,6 +76,23 @@ function RowView({ row }: { row: BulkRow }): React.JSX.Element {
     )
 }
 
+/** One toast at a time: what was added, what was there already, what is left to fix. */
+function addedText(
+    p: { bulkAdded: string; bulkSkipped: string; bulkLeft: string },
+    created: number,
+    skipped: number,
+    left: number,
+): string {
+    const parts = created > 0 ? [fill(p.bulkAdded, { n: created })] : []
+    if (skipped > 0) {
+        parts.push(fill(p.bulkSkipped, { n: skipped }))
+    }
+    if (left > 0) {
+        parts.push(p.bulkLeft)
+    }
+    return parts.join(". ")
+}
+
 /**
  * «Ro'yxat bilan qo'shish» (goal 17): one product a line, «Nomi narx [birlik]». The catalog gives
  * the category and the unit; a wrong line stays in the box, marked, and the good ones are added.
@@ -85,7 +102,7 @@ export function BulkAdd(): React.JSX.Element {
     const p = t.owner.product
     const back = useRouter((state) => state.back)
     const type = useSession((state) => state.shop?.type)
-    const loadProducts = useOwner((state) => state.loadProducts)
+    const addMany = useOwner((state) => state.addMany)
     const find = useFindTemplate()
     const [text, setText] = useState("")
     const [saving, setSaving] = useState(false)
@@ -119,19 +136,15 @@ export function BulkAdd(): React.JSX.Element {
                     ...(step > 1 ? { step } : {}),
                 })),
             )
-            await loadProducts()
+            // Made on the server: a failed reload must not say otherwise.
+            addMany(created)
             haptic.success()
             const sent = new Set(ready.map((row) => row.line))
             const left = rows.filter((row) => !sent.has(row.line)).map((row) => row.line)
-            // One toast at a time: what was added, what was there already, what is left to fix.
-            const parts = created.length > 0 ? [fill(p.bulkAdded, { n: created.length })] : []
-            if (skipped.length > 0) {
-                parts.push(fill(p.bulkSkipped, { n: skipped.length }))
-            }
-            if (left.length > 0) {
-                parts.push(p.bulkLeft)
-            }
-            toast(parts.join(". "), created.length > 0 ? "success" : "info")
+            toast(
+                addedText(p, created.length, skipped.length, left.length),
+                created.length > 0 ? "success" : "info",
+            )
             if (left.length === 0) {
                 setText("")
                 back()

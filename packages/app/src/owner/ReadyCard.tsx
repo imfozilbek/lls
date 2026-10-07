@@ -420,10 +420,14 @@ export function StatusBanner(): React.JSX.Element | null {
     const [shop, setShop] = useCachedState<ShopOwnerDTO>("owner-shop")
     const [busy, setBusy] = useState(false)
     useEffect(() => {
-        api.owner
-            .shop()
-            .then(setShop)
-            .catch(() => undefined)
+        const load = (): void =>
+            void api.owner
+                .shop()
+                .then(setShop)
+                .catch(() => undefined)
+        load()
+        // Approved while the app sat in the background: «ko'rib chiqilmoqda» goes on return.
+        return onAppActive(load)
     }, [setShop])
     if (!shop || shop.status === BusinessStatus.ACTIVE) {
         return null

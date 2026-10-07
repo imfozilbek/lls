@@ -12,6 +12,7 @@ import type { WebSession } from "../lib/api.js"
 const LOGIN_SRC = "https://oauth.telegram.org/js/telegram-login.js?6"
 /** Our nonce lives 10 minutes on the Worker: ask for a new one a little before. */
 const NONCE_MAX_AGE_MS = 9 * 60 * 1000
+const NONCE_REFRESH_MS = 8 * 60 * 1000
 
 interface LoginResult {
     id_token?: string
@@ -80,7 +81,10 @@ export function WebSignIn({
     }
     useEffect(() => {
         void prepare()
-        // Once: the library and a nonce are ready before the button is pressed.
+        // The library and a nonce are ready before the button is pressed, and the nonce is
+        // renewed before it ages out: the tap that opens Telegram's window always has a fresh one.
+        const timer = window.setInterval(() => void prepare(), NONCE_REFRESH_MS)
+        return (): void => window.clearInterval(timer)
     }, [])
 
     const finish = async (result: LoginResult): Promise<void> => {

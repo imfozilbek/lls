@@ -41,6 +41,8 @@ interface OwnerState {
     replaceCourier(courier: CourierDTO): void
     loadProducts(): Promise<void>
     upsert(product: ProductDTO): void
+    /** «Ro'yxat bilan»: the products just made join the list and the storefront at once. */
+    addMany(products: readonly ProductDTO[]): void
     drop(id: string): void
 }
 
@@ -89,6 +91,10 @@ export const useOwner = create<OwnerState>((set, get) => ({
     },
     loadProducts: async (): Promise<void> => {
         set({ products: await loadOwnerProducts() })
+    },
+    addMany: (products): void => {
+        set({ products: [...(get().products ?? []), ...products] })
+        refreshStorefront()
     },
     upsert: (product): void => {
         const list = get().products ?? []

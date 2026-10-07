@@ -154,7 +154,7 @@ function DistrictSheet({
         }
         setBusy(true)
         try {
-            await adminApi.saveDistrict(input)
+            await adminApi.saveDistrict(district ? input : { ...input, isNew: true })
             haptic.success()
             toast(fill(p.districtSaved, { name: input.name }), "success")
             onSaved()

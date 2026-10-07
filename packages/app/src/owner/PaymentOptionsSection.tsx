@@ -1,5 +1,5 @@
 import { PaymentOptions } from "@zumda/core"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { errorText, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
@@ -42,6 +42,8 @@ export function PaymentOptionsSection({
     const t = useT()
     const s = t.owner.settings
     const [value, setValue] = useState(shop.paymentOptions)
+    // A pull to refresh (or a save elsewhere) brings the shop again: the switch follows it.
+    useEffect(() => setValue(shop.paymentOptions), [shop.paymentOptions])
     const [saving, setSaving] = useState<PaymentOptions | null>(null)
 
     const choose = async (next: PaymentOptions): Promise<void> => {

@@ -6,7 +6,7 @@ import { ApiError, adminApi } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatTime } from "../lib/format.js"
 import { useRefresh } from "../lib/refresh.js"
-import { haptic } from "../lib/telegram.js"
+import { confirm, haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
 import { AlertIcon, CheckIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
@@ -206,13 +206,17 @@ function ShowcaseBlock({
     const [on, setOn] = useState(shop.marketplace !== undefined)
     const [percent, setPercent] = useState(percentText(shop.marketplace?.commissionBps ?? 500))
     const value = parsePercent(percent)
-    const save = (next: number | null): Promise<void> =>
-        run("showcase", async () => {
+    const save = async (next: number | null): Promise<boolean> => {
+        let done = false
+        await run("showcase", async () => {
             await adminApi.marketplace(shop.id, next)
+            done = true
             haptic.success()
             toast(next === null ? t.platform.showcaseOff : t.platform.showcaseSaved, "success")
             onDone()
         })
+        return done
+    }
     const changed =
         value !== null &&
         percentText(Math.round(value * 100)) !== percentText(shop.marketplace?.commissionBps)
@@ -224,10 +228,25 @@ function ShowcaseBlock({
                     checked={on}
                     label={t.platform.showcase}
                     onChange={(next): void => {
-                        setOn(next)
-                        if (!next && shop.marketplace) {
-                            void save(null)
+                        if (next || !shop.marketplace) {
+                            setOn(next)
+                            return
                         }
+                        // Off takes the shop out of the showcase at once: asked first, and the
+                        // switch goes back on if the server did not take it.
+                        void confirm(fill(t.platform.showcaseOffConfirm, { shop: shop.name }), {
+                            yes: t.platform.showcaseOffYes,
+                            destructive: true,
+                        }).then(async (sure) => {
+                            if (!sure) {
+                                return
+                            }
+                            setOn(false)
+                            const done = await save(null)
+                            if (!done) {
+                                setOn(true)
+                            }
+                        })
                     }}
                 />
             </div>

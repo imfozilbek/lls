@@ -31,6 +31,8 @@ export interface ManagedBotFlow {
     /** Opens the same window by the link: for Telegram apps where the window did not open. */
     openLink(): Promise<void>
     checkAgain(): Promise<void>
+    /** The bot was taken or is gone (the application said so): choose or create another. */
+    forget(): void
 }
 
 function sleep(ms: number): Promise<void> {
@@ -62,7 +64,8 @@ export function useManagedBot(name: string, onBot: (bot: ManagedBot) => void): M
         void api.platform
             .managedBots()
             .then((bots) => {
-                const ready = bots[bots.length - 1]
+                // The newest bot (the list comes newest first): the one the owner just made.
+                const ready = bots[0]
                 known.current = new Set(bots.map((b) => b.botId))
                 if (ready) {
                     take(ready)
@@ -123,7 +126,14 @@ export function useManagedBot(name: string, onBot: (bot: ManagedBot) => void): M
         await check(CHECK_DELAYS_MS)
     }
 
-    return { phase, bot, create, openLink, checkAgain: (): Promise<void> => check([0]) }
+    const forget = (): void => {
+        if (bot) {
+            known.current.add(bot.botId)
+        }
+        setBot(null)
+        setPhase("idle")
+    }
+    return { phase, bot, create, openLink, checkAgain: (): Promise<void> => check([0]), forget }
 }
 
 function BotPreview({ name, bot }: { name: string; bot: ManagedBot | null }): React.JSX.Element {
