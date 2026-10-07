@@ -6,18 +6,24 @@ export interface DevShop {
     slug: string
     name: string
     /** The demo's own key: the water shop is a grocery store with bottles (`typeOf`). */
-    kind: "food" | "water" | "grocery" | "service"
+    kind: "food" | "water" | "grocery" | "service" | "store"
     brandColor: string
+    address: string
+    /** The number customers call about an order (E.164). */
+    contactPhone: string
     owner: { id: number; first_name: string; language_code: string }
     bot: { id: number; username: string; token: string; webhookSecret: string }
 }
 
 /** The stored business type of a demo shop: a water shop is a grocery store with bottles. */
-export function typeOf(shop: DevShop): "food" | "grocery" | "service" {
+export function typeOf(shop: DevShop): "food" | "grocery" | "service" | "store" {
     return shop.kind === "water" ? "grocery" : shop.kind
 }
 
-/** The pilots' kinds of business, plus a service, each with its own bot and owner. */
+/**
+ * One demo of every kind of business (and water, a grocery store with bottles), each with its own
+ * bot and owner, and each ready to work: «Ishga tayyor» has nothing left.
+ */
 export const DEV_SHOPS: readonly DevShop[] = [
     {
         id: "dev-food",
@@ -26,6 +32,8 @@ export const DEV_SHOPS: readonly DevShop[] = [
         name: "Osh Markaz",
         kind: "food",
         brandColor: "#d97706",
+        address: "Yakkabog', Mustaqillik ko'chasi 12",
+        contactPhone: "+998901234501",
         owner: { id: 1001, first_name: "Rustam", language_code: "uz" },
         bot: {
             id: 100200300,
@@ -41,6 +49,8 @@ export const DEV_SHOPS: readonly DevShop[] = [
         name: "Toza Suv",
         kind: "water",
         brandColor: "#0284c7",
+        address: "Yakkabog', Navoiy ko'chasi 5",
+        contactPhone: "+998901234502",
         owner: { id: 1002, first_name: "Dilshod", language_code: "uz" },
         bot: {
             id: 100200301,
@@ -56,6 +66,8 @@ export const DEV_SHOPS: readonly DevShop[] = [
         name: "Baraka Market",
         kind: "grocery",
         brandColor: "#059669",
+        address: "Yakkabog', dehqon bozori yonida",
+        contactPhone: "+998901234503",
         owner: { id: 1003, first_name: "Nodira", language_code: "uz" },
         bot: {
             id: 100200302,
@@ -71,12 +83,31 @@ export const DEV_SHOPS: readonly DevShop[] = [
         name: "Toza Gilam",
         kind: "service",
         brandColor: "#7c3aed",
+        address: "Yakkabog', Amir Temur ko'chasi 40",
+        contactPhone: "+998901234504",
         owner: { id: 1004, first_name: "Jasur", language_code: "uz" },
         bot: {
             id: 100200303,
             username: "toza_gilam_dev_bot",
             token: "100200303:DEV-local-only-token-not-a-real-bot-ww",
             webhookSecret: "dev-webhook-secret-service",
+        },
+    },
+    {
+        id: "dev-store",
+        location: { latitude: 38.9768, longitude: 66.6815 },
+        slug: "uy-bozori-dev",
+        name: "Uy Bozori",
+        kind: "store",
+        brandColor: "#0f766e",
+        address: "Yakkabog', markaziy bozor, 3-qator",
+        contactPhone: "+998901234505",
+        owner: { id: 1005, first_name: "Feruza", language_code: "uz" },
+        bot: {
+            id: 100200304,
+            username: "uy_bozori_dev_bot",
+            token: "100200304:DEV-local-only-token-not-a-real-bot-vv",
+            webhookSecret: "dev-webhook-secret-store",
         },
     },
 ]
@@ -97,7 +128,7 @@ export const DEV_BUSINESS_BOT = {
     webhookSecret: "dev-business-secret",
 }
 
-/** One courier who works for all three shops: a person may deliver for several. */
+/** One courier who works for every demo shop: a person may deliver for several. */
 export const DEV_COURIER = { id: 3003, first_name: "Jasur", language_code: "uz" }
 /** The demo district of the delivery network: 30 km around Yakkabog', the pilot district. */
 export const DEV_DISTRICT = {
