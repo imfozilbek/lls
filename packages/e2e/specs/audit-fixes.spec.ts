@@ -64,10 +64,8 @@ test("the order opened from a message shows «O'tkazdim» when the customer send
     await expect(focused).toContainText(`Buyurtma #${order.number}`)
 
     expect((await sendReceipt(PEOPLE.customer, FOOD, order.id)).status).toBe(200)
-    // The list's own check (every 20 s) brings it into the opened card too.
-    await expect(focused.getByRole("button", { name: "Chekni ko'rish" })).toBeVisible({
-        timeout: 35_000,
-    })
+    // The list's own check (every 20 s) brings it into the opened card too: marked to check.
+    await expect(focused.locator("[data-needs-check]")).toBeVisible({ timeout: 35_000 })
 })
 
 test("the receipt sheet: the big button waits under it, the sheet's own button sends", async ({

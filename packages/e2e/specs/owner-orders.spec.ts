@@ -71,10 +71,12 @@ test("empty orders, then a new order: card, every step from the app, customer to
         await expect(page.getByRole("dialog")).toBeHidden()
         await waitForMessage(PEOPLE.customer.id, told, since)
     }
-    await expect(one).toContainText("To'langan")
-    await expect(one.getByRole("button", { name: "Bekor qilish" })).toBeHidden()
+    // Delivered: it leaves «Faol» at once and waits in «Yakunlangan», paid, with nothing to press.
+    await expect(one).toBeHidden()
     await page.getByRole("tab", { name: "Yakunlangan" }).click()
-    await expect(card(page, order.number)).toBeVisible()
+    const done = card(page, order.number)
+    await expect(done).toContainText("To'langan")
+    await expect(done.getByRole("button", { name: "Bekor qilish" })).toBeHidden()
 })
 
 test("cancel with a reason: the customer sees the reason", async ({ page }) => {
