@@ -60,8 +60,9 @@ test("shops with a deal are listed; search works in Latin and Cyrillic", async (
     await expect(page.getByText("Do'konlar · 2")).toBeVisible()
 
     await page.getByRole("button", { name: "Sho'rvalar" }).click()
-    await expect(page.getByRole("button", { name: /Lag'mon/ })).toBeVisible()
-    await expect(page.getByRole("button", { name: /To'y oshi/ })).toBeHidden()
+    // The products (name, then price): the category chips carry dish names too («Lag'mon, manti...»).
+    await expect(page.getByRole("button", { name: /^Lag'mon \d/ })).toBeVisible()
+    await expect(page.getByRole("button", { name: /^To'y oshi \d/ })).toBeHidden()
 })
 
 test("a product opens its shop inside the Zumda bot; Back returns to the search", async ({
