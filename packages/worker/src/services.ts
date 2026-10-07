@@ -232,7 +232,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         networkOffers: new D1NetworkOfferRepository(env.DB),
         managedBots,
         useCases: {
-            registerShop: new RegisterShopUseCase(businesses, clock, cards, managedBots, districts),
+            registerShop: new RegisterShopUseCase(businesses, clock, managedBots, districts),
             managedBotChanged: new ManagedBotChangedUseCase(businesses, managedBots, clock),
             listMyManagedBots: new ListMyManagedBotsUseCase(managedBots),
             listPayoutCards: new ListPayoutCardsUseCase(cardBook),

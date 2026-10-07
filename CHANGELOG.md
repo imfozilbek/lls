@@ -22,6 +22,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   - a network courier keeps the order carried after a new invite of the same shop;
   - «Tuman qo'shish» with an existing name is refused (`DISTRICT_EXISTS`), never a silent move;
   - the showcase lists only shops with something on sale: never an empty shop.
+  - a shop and its first card are written in one transaction (the application, «To'lov»): the
+    payment card never names a card missing from the list, and a lost save leaves no card behind.
 - **Fixed (customers):**
   - a checkout tapped again after a lost answer returns the order already placed
     (`clientOrderId`), never a second order;
