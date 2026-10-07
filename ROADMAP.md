@@ -197,8 +197,10 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Owner's decisions 1-5 of goal 17
 - [x] Grams (100 g, 1 g) and new units, 114 categories on four shelves, the goods store kind
 - [x] Variants and add-ons
-- [ ] Catalog search in the product form
-- [ ] Add a list of products at once
+- [x] Catalog search in the product form: «Mijoz shunday ko'radi», «Saqlash va yana qo'shish»,
+      «Nusxa olish», a guarded draft
+- [x] Add a list of products at once («Ro'yxat bilan qo'shish», up to 50)
+- [ ] On production: a pilot adds 10 products from the catalog and gets an order
 
 ### M4q. A Zumda Shop QR on the poster ✅ (owner's decisions, October 2026; goal 16)
 - [x] «Zumda Shop uchun» QR (`startapp=m_<slug>`) opens the shop inside Zumda Shop; showcase

@@ -231,6 +231,15 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - One universal core for all business types. Vertical specifics = feature toggles per business:
   `reorder`, `bottleDeposit` (water), `weightItems` and `stopList` (grocery, food). Defaults come
   from the business type; the owner can switch them.
+- **The Zumda catalog (goal 17, owner's decisions, October 2026):** ~3 200 ready products and
+  services (names, aliases, category, unit, usual variants and add-ons; no prices, no photos),
+  built by `scripts/catalog-build.mjs` from `docs/catalog-research/` into the app's static
+  `public/catalog/v1.json` (loaded only when the owner searches; never in the customer's JS).
+  Licensed services are left out; a word nobody confirmed is removed, never guessed
+  (`verify.json`). The product form searches it first («o'zim yozaman» otherwise); «Saqlash va
+  yana qo'shish», «Nusxa olish»; a typed draft is guarded. «Ro'yxat bilan qo'shish»: one product
+  a line «Nomi narx [birlik]», up to 50 in one `db.batch` (`POST /api/owner/products/bulk`, 5 a
+  minute), a name the shop has is skipped.
 - Add a feature only when a real client asks for it.
 - Design stage 1 so stages 2–3 need no rewrite:
   - multi-tenant: `business_id` in every business-owned table
@@ -947,6 +956,10 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 
 - [ ] Shop setup (owner) + shop link
 - [ ] Product catalog CRUD with photos
+- [ ] Zumda catalog: «osh», «murch», «gilam» found, only the price left; «Saqlash va yana
+      qo'shish»; «Nusxa olish»; «Ro'yxat bilan qo'shish» (50 lines, a wrong line kept, no twins)
+- [ ] Variants and add-ons: «Latte 0,4 l + sirop» priced by the server, shown to the owner,
+      courier and bot; «… so'm dan» on the storefront
 - [ ] Customer order placement (contact + location + landmark)
 - [ ] Owner notification with buttons
 - [ ] Order status updates → customer notification

@@ -7,6 +7,20 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The Zumda catalog and «Ro'yxat bilan qo'shish» (goal 17, parts 3 and 4)
+- **Added:** the product form starts with a search of the Zumda catalog: ~3 200 dishes,
+  groceries, goods and services of Uzbekistan from the October 2026 research. A pick fills the
+  name, category, unit, usual variants and offered add-ons; the owner writes only the prices.
+  The catalog is a static file of the app, loaded on the first search (never in the customer's
+  JS). Licensed services are left out; unconfirmed words are removed.
+- **Added:** «Mijoz shunday ko'radi»: the customer's row, live while the owner types, with the
+  photo button; «Saqlash va yana qo'shish»; «Nusxa olish»; a typed draft asks before «back».
+- **Added:** «Ro'yxat bilan qo'shish»: one product a line («Lag'mon 38000», «Pomidor 12000 kg»),
+  a preview with the wrong lines marked, up to 50 at once in one D1 batch
+  (`POST /api/owner/products/bulk`, 5 a minute); a name the shop already has is skipped.
+- **Added:** the owner's CSV has a «Mahsulotlar» column: the goods with their picks and units
+  («Latte (0,4 l · Sirop) × 2, Qora murch × 300 g»).
+
 ### Variants and add-ons (goal 17, part 2)
 - **Added:** a product may have variants (one is picked, each with its own price: «0,3 / 0,4 /
   0,5 l», «Kichik / Katta», a car class) and add-ons (several, priced on top, or «bepul»). The

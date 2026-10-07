@@ -54,10 +54,25 @@ bosing. Parol kerak emas; xuddi shu «Mening bizneslarim» ochiladi. Kompyuterda
 
 1. O'z botingizni oching → **Menyuni ochish** (taomlar) yoki **Katalogni ochish** (suv, oziq-ovqat).
 2. Yuqorida **Mening do'konim** → **Menyu** / **Katalog** → pastda **Mahsulot qo'shish**.
-3. Rasm, nom, narx (faqat butun so'm), o'lchov va bo'limni tanlang → **Saqlash**.
-4. Mahsulot tugasa, uni o'chirmang: ro'yxatdagi tugmani o'chiring. Ikki variant chiqadi:
+3. Yuqoridagi qidiruvga 2-3 harf yozing («osh», «murch», «gilam»): Zumda katalogidan tayyor
+   mahsulotni tanlang. Nomi, bo'limi, o'lchovi va odatdagi variantlari o'zi to'ladi, siz faqat
+   **narx** yozasiz. Katalogda yo'q bo'lsa: **«…» deb o'zim yozaman**.
+4. Rasmni **Mijoz shunday ko'radi** blokidagi «Rasm» tugmasi bilan qo'ying (telefon kamera yoki
+   galereyani taklif qiladi).
+5. **Saqlash** yoki **Saqlash va yana qo'shish**: keyingi mahsulot darhol ochiladi. O'xshash
+   mahsulot uchun eski mahsulotni oching → **Nusxa olish**.
+6. Mahsulot tugasa, uni o'chirmang: ro'yxatdagi tugmani o'chiring. Ikki variant chiqadi:
    - **Faqat bugunga**: ertaga o'zi qaytadi (Toshkent vaqti bilan yarim tunda);
    - **Butunlay yashirish**: o'zingiz yoqmaguningizcha yashirin.
+
+**Ko'p mahsulot birdaniga:** **Ro'yxat bilan qo'shish** → har qatorga bitta mahsulot: nomi va
+narxi, kerak bo'lsa oxirida o'lchov («Pomidor 12000 kg», «Kompot 15000 litr»). Bir martada 50 tagacha.
+Xato qator qizil bo'lib qoladi, qolganlari qo'shiladi; do'konda bor mahsulot ikkinchi marta
+qo'shilmaydi. Rasmlarni keyin qo'shasiz.
+
+**Variantlar va qo'shimchalar:** bitta mahsulotning o'lchamlari (0,3 / 0,4 / 0,5 l, Kichik /
+Katta) har biri o'z narxi bilan: **Variantlar**. Ustiga qo'shiladiganlar (sirop, pishloq, qazi)
+yoki **bepul** narsalar: **Qo'shimchalar**. Narxlar har xil bo'lsa, mijoz «… so'm dan» ko'radi.
 
 **Maslahat:** rasm juda muhim. Mahsulotni kunduzi, deraza yonida suratga oling.
 
@@ -161,7 +176,9 @@ Bekor qilish: **❌ Bekor qilish** (ilovada sababini yozish mumkin).
 
 ### 6. Oziq-ovqat do'koni uchun
 
-- Tortib sotiladigan mahsulotda o'lchov **kg** ni tanlang, narxi: **1 kg narxi**.
+- Tortib sotiladigan mahsulotda o'lchov **kg** ni tanlang, narxi: **1 kg narxi**. Ziravor,
+  yong'oq, qand-shirinlik **100 g** narxida sotiladi (**100 g narxi**). Boshqa o'lchovlar (qadoq,
+  quti, bog', metr, m², soat...) **Boshqa** tugmasi ostida.
 - **Sotish qadami**: 100 g, 250 g, 500 g yoki 1 kg. Mijoz shu qadam bilan qo'shadi (1,5 kg va h.k.).
 - Bugun tugagan mahsulot: **Faqat bugunga** (2-bo'limga qarang).
 
