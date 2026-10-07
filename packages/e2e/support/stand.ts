@@ -144,7 +144,7 @@ export interface PlacedOrder {
 export async function placeOrder(
     customer: TgUser,
     shop: string,
-    items: { productId: string; quantity: number }[],
+    items: { productId: string; quantity: number; variantId?: string; addonIds?: string[] }[],
     extra: Record<string, unknown> = {},
 ): Promise<PlacedOrder> {
     await shopChat(shop).shareContact(customer, "+998901234567")
