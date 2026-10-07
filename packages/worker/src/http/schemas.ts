@@ -1,6 +1,7 @@
 import {
     BUSINESS_STATUSES,
     BUSINESS_TYPES,
+    DEMO_TEMPLATES,
     CATEGORIES,
     CRASH_KINDS,
     CRASH_LIMITS,
@@ -289,6 +290,9 @@ export const reviewShopBody = z.object({
 export const marketplaceBody = z.object({
     percent: z.number().min(0).max(99.99).multipleOf(0.01).nullable(),
 })
+
+/** «Namuna qilish»: which sample fills the demo (water for a grocery store with bottles). */
+export const demoBody = z.object({ template: z.enum(DEMO_TEMPLATES) })
 
 /** A district: a new one needs a center and a radius; an existing one may change any of them. */
 export const districtBody = z.object({

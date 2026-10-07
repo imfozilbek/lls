@@ -13,6 +13,7 @@ import {
     CASH_OPEN_WHERE,
     OPEN_PAYMENTS_FROM,
     OPEN_PAYMENTS_WHERE,
+    RECEIPT_REUSE_SQL,
     TRANSFER_REJECTIONS_SQL,
     COURIER_ORDERS_SQL,
     networkWaitingSql,
@@ -122,6 +123,11 @@ describe("query plans", () => {
         expectIndexed(await planOf(list(CASH_OPEN_FROM, CASH_OPEN_WHERE), ["shop-1"]), [
             "idx_orders_cash_open (business_id=?)",
         ])
+    })
+
+    it("a reused screenshot is found by its hash; the demo shops are a few rows", async () => {
+        const plan = await planOf(RECEIPT_REUSE_SQL, ["hash", "order-1", "shop-1", "customer-1"])
+        expectIndexed(plan, ["idx_orders_receipt_hash (receipt_hash=?)"])
     })
 
     it("a new screenshot reads only the customer's refused transfers", async () => {

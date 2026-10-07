@@ -70,6 +70,7 @@ interface BusinessRow {
     review_note: string | null
     owner_chat_open_at: number | null
     owner_chat_closed_at: number | null
+    demo_at: number | null
     created_at: number
     updated_at: number
 }
@@ -80,7 +81,7 @@ const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_us
     delivery_radius_m, working_hours, features, accepting_orders, bottle_deposit,
     marketplace_commission_bps, marketplace_joined_at, payout_card_number, payout_card_holder,
     district_id, network_delivery, payment_card_id, contact_phone, payment_options, rejected_at,
-    review_note, owner_chat_open_at, owner_chat_closed_at, created_at, updated_at`
+    review_note, owner_chat_open_at, owner_chat_closed_at, demo_at, created_at, updated_at`
 
 interface SecretRow {
     bot_id: number
@@ -156,6 +157,7 @@ function reconstitute(row: BusinessRow): Business {
         reviewNote: optional(row.review_note),
         ownerChatOpenAt: optionalDate(row.owner_chat_open_at),
         ownerChatClosedAt: optionalDate(row.owner_chat_closed_at),
+        demoAt: optionalDate(row.demo_at),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -181,6 +183,16 @@ function rejectionValues(b: Business): (string | number | null)[] {
     return [rejection?.at.getTime() ?? null, rejection?.reason ?? null]
 }
 
+/** The showcase deal and the payment card customers see. */
+function dealAndCardValues(b: Business): (string | number | null)[] {
+    return [
+        b.marketplace?.commissionBps ?? null,
+        b.marketplace?.joinedAt.getTime() ?? null,
+        b.payoutCard?.number ?? null,
+        b.payoutCard?.holder ?? null,
+    ]
+}
+
 /** Values for every mutable column, in the order used by INSERT and UPDATE. */
 function mutableValues(b: Business): (string | number | null)[] {
     const hours = b.workingHours.toJSON()
@@ -193,26 +205,24 @@ function mutableValues(b: Business): (string | number | null)[] {
         JSON.stringify(b.features),
         flag(b.acceptingOrders),
         b.bottleDeposit.amount,
-        b.marketplace?.commissionBps ?? null,
-        b.marketplace?.joinedAt.getTime() ?? null,
-        b.payoutCard?.number ?? null,
-        b.payoutCard?.holder ?? null,
+        ...dealAndCardValues(b),
         b.districtId ?? null,
         flag(b.networkDelivery),
         b.paymentCardId ?? null,
         b.contactPhone?.number ?? null,
         b.paymentOptions,
         ...rejectionValues(b),
+        b.demoAt?.getTime() ?? null,
         b.updatedAt.getTime(),
     ]
 }
 
 /**
- * The showcase's shops: a deal, live, and something on sale. A shop with no product yet stays
- * out, so the showcase never opens an empty shop; the check reads one catalog index entry.
+ * The showcase's shops: a deal, live, not a demo, and something on sale. A shop with no product
+ * yet stays out, so the showcase never opens an empty shop; the check reads one catalog entry.
  */
 export const SHOWCASE_SHOPS = `SELECT ${COLUMNS} FROM businesses
-     WHERE marketplace_commission_bps IS NOT NULL AND status = ?
+     WHERE marketplace_commission_bps IS NOT NULL AND status = ? AND demo_at IS NULL
        AND EXISTS (SELECT 1 FROM products p WHERE p.business_id = businesses.id)
      ORDER BY name`
 
@@ -311,11 +321,11 @@ export class D1BusinessRepository implements BusinessRepository {
                         working_hours, features, accepting_orders, bottle_deposit,
                         marketplace_commission_bps, marketplace_joined_at, payout_card_number,
                         payout_card_holder, district_id, network_delivery, payment_card_id,
-                        contact_phone, payment_options, rejected_at, review_note, updated_at,
-                        id, slug, type, owner_telegram_id, bot_id, bot_username, bot_token_enc,
-                        webhook_secret, created_at, bot_source)
+                        contact_phone, payment_options, rejected_at, review_note, demo_at,
+                        updated_at, id, slug, type, owner_telegram_id, bot_id, bot_username,
+                        bot_token_enc, webhook_secret, created_at, bot_source)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 )
                 .bind(
                     ...mutableValues(business),
@@ -410,7 +420,7 @@ export class D1BusinessRepository implements BusinessRepository {
                     marketplace_commission_bps = ?, marketplace_joined_at = ?,
                     payout_card_number = ?, payout_card_holder = ?, district_id = ?,
                     network_delivery = ?, payment_card_id = ?, contact_phone = ?,
-                    payment_options = ?, rejected_at = ?, review_note = ?,
+                    payment_options = ?, rejected_at = ?, review_note = ?, demo_at = ?,
                     updated_at = ?
                  WHERE id = ?${guard}`,
             )

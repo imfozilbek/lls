@@ -281,4 +281,17 @@ export class D1ProductRepository implements ProductRepository {
             this.db.prepare("DELETE FROM products WHERE id = ?").bind(id),
         ])
     }
+
+    async replaceAll(businessId: string, products: readonly Product[]): Promise<void> {
+        await this.db.batch([
+            this.db
+                .prepare(`DELETE FROM product_words WHERE product_id IN (${OF_SHOP})`)
+                .bind(businessId),
+            this.db.prepare("DELETE FROM products WHERE business_id = ?").bind(businessId),
+            ...products.flatMap((product) => this.writesOf(product)),
+        ])
+    }
 }
+
+/** Every product of one shop (the catalog index). */
+const OF_SHOP = "SELECT id FROM products WHERE business_id = ?"

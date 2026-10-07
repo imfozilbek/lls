@@ -305,6 +305,30 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    /** A demo shop («Namuna») never joins the Zumda showcase. */
+    static demoNotInShowcase(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "DEMO_NOT_IN_SHOWCASE",
+            "A demo shop is never in the showcase",
+            { businessId },
+        )
+    }
+
+    /** Only a demo shop is reset, and a demo is made only from its own kind's sample. */
+    static notADemo(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError("NOT_A_DEMO", "The shop is not a demo", {
+            businessId,
+        })
+    }
+
+    static demoTemplateMismatch(template: string, type: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "DEMO_TEMPLATE_MISMATCH",
+            `The sample "${template}" is not for a shop of type "${type}"`,
+            { template, type },
+        )
+    }
+
     /** «Hammasini oldim» only when every order of the trip is ready. */
     static tripNotReady(ready: number, total: number): BusinessRuleViolationError {
         return new BusinessRuleViolationError(

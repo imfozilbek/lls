@@ -121,8 +121,13 @@ export function OwnerApp(): React.JSX.Element {
     }
     return (
         <div>
-            <header className="px-4 pt-4">
+            <header className="flex items-center gap-2 px-4 pt-4">
                 <h1 className="truncate text-xl font-bold">{shop?.name}</h1>
+                {shop?.demo ? (
+                    <span className="shrink-0 rounded-full bg-warning/25 px-2 py-0.5 text-xs font-semibold">
+                        {t.owner.demoBadge}
+                    </span>
+                ) : null}
             </header>
             <StatusBanner />
             {/* The tabs never move: whatever a tab adds on top comes under them. */}

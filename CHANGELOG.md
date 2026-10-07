@@ -7,6 +7,17 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Demo shops in production («Namuna»)
+- «Platforma» → «Bizneslar» → «Namuna qilish»: a live shop becomes a demo from its kind's sample
+  (catalog, logo, hours the whole day, the test card «NAMUNA KARTA» `0000 0000 0000 0000`, the
+  owner as its courier). Migration `0020_demo_shops.sql` (`businesses.demo_at`).
+- A demo is reached only by its bot link: never in the showcase, never in a district or the
+  network. Its storefront, its card, the owner's order card and every bot message say its orders
+  are not real; its orders never count in a customer's history at other shops.
+- «Namunani tozalash» deletes the demo's orders and puts its sample back.
+- The samples live in the core (`demoTemplate`) and the logos in the Mini App
+  (`public/demo/<sample>.png`): the stand's demo shops are filled from the same ones.
+
 ### Demo shops: one of every kind, ready to work
 - The stand's demo data has a shop of every kind of business: Osh Markaz (restaurant), Baraka
   Market (grocery), Toza Suv (water: a grocery store with bottles), Toza Gilam (services) and the

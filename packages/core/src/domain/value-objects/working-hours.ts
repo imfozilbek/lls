@@ -32,6 +32,13 @@ export class WorkingHours {
         return new WorkingHours(null)
     }
 
+    /** Hours set, and the whole day every day (`00:00` to `00:00`): «Bugun kecha-kunduz ochiq». */
+    static wholeDay(): WorkingHours {
+        return WorkingHours.create(
+            Object.fromEntries(WEEKDAYS.map((day) => [day, { open: "00:00", close: "00:00" }])),
+        )
+    }
+
     static create(schedule: WeeklySchedule): WorkingHours {
         const clean: WeeklySchedule = {}
         for (const day of WEEKDAYS) {

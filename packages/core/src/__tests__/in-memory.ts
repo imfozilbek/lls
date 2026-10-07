@@ -193,6 +193,16 @@ export class InMemoryProducts implements ProductRepository {
     async delete(id: string): Promise<void> {
         this.items.delete(id)
     }
+    async replaceAll(businessId: string, products: readonly Product[]): Promise<void> {
+        for (const product of [...this.items.values()]) {
+            if (product.businessId === businessId) {
+                this.items.delete(product.id)
+            }
+        }
+        for (const product of products) {
+            this.items.set(product.id, product)
+        }
+    }
 }
 
 export class InMemoryCustomers implements CustomerRepository {
@@ -423,6 +433,13 @@ export class InMemoryOrders implements OrderRepository {
                     (a.networkRequestedAt?.getTime() ?? 0) - (b.networkRequestedAt?.getTime() ?? 0),
             )
             .slice(0, limit)
+    }
+    async deleteAllOfBusiness(businessId: string): Promise<void> {
+        for (const order of [...this.items.values()]) {
+            if (order.businessId === businessId) {
+                this.items.delete(order.id)
+            }
+        }
     }
     async networkShare(
         districtId: string,

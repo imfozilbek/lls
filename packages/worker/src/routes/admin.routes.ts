@@ -8,8 +8,10 @@ import { Hono } from "hono"
 
 import { platformAdminIds } from "../env.js"
 import { ApiError } from "../http/errors.js"
+import { storeImage, withStoredImage } from "../http/images.js"
 import {
     adminShopsQuery,
+    demoBody,
     districtBody,
     idParam,
     marketplaceBody,
@@ -20,9 +22,9 @@ import { reportOverdueNetworkOrders } from "../network-flow.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
 import { connectReviewedShop } from "../telegram/shop-connection.js"
 
-import type { AppEnv } from "../env.js"
+import type { AppEnv, Bindings } from "../env.js"
 import type { Services } from "../services.js"
-import type { ShopOwnerDTO } from "@zumda/core"
+import type { DemoTemplateKey, ShopOwnerDTO } from "@zumda/core"
 
 const BPS_PER_PERCENT = 100
 const METERS_PER_KM = 1000
@@ -39,6 +41,28 @@ async function requireShop(services: Services, id: string): Promise<ShopOwnerDTO
         throw new ApiError(404, "NOT_FOUND", "Shop not found")
     }
     return toShopOwnerDTO(business, services.clock.now())
+}
+
+/**
+ * The sample's logo, from the Mini App's own files (`/demo/<template>.png`), stored as the shop's.
+ * Nothing when it cannot be had: a demo works without a logo, it shows the shop's letter.
+ */
+async function sampleLogo(
+    env: Bindings,
+    template: DemoTemplateKey,
+    businessId: string,
+): Promise<string | undefined> {
+    try {
+        const response = await fetch(`${env.APP_ORIGIN}/demo/${template}.png`)
+        if (!response.ok) {
+            return undefined
+        }
+        const body = await response.arrayBuffer()
+        return await storeImage(env.BUCKET, `shops/${businessId}/logo`, "image/png", body)
+    } catch (error) {
+        console.warn(JSON.stringify({ event: "demo_logo_failed", template, error: String(error) }))
+        return undefined
+    }
 }
 
 export function isPlatformAdmin(services: Services, telegramId: number): boolean {
@@ -113,6 +137,42 @@ export const adminRoutes = new Hono<AppEnv>()
             return c.json({ shop: withoutCard(shop) })
         },
     )
+
+    /**
+     * «Namuna qilish»: a live shop becomes a demo, filled from the sample (catalog, test card,
+     * hours, the owner as courier; the sample's logo if the shop has none).
+     */
+    .put(
+        "/shops/:id/demo",
+        zValidator("param", idParam, onInvalid),
+        zValidator("json", demoBody, onInvalid),
+        async (c) => {
+            const services = c.get("services")
+            const { template } = c.req.valid("json")
+            const current = await requireShop(services, c.req.valid("param").id)
+            const logoKey = current.logoKey
+                ? undefined
+                : await sampleLogo(c.env, template, current.id)
+            const make = (): Promise<ShopOwnerDTO> =>
+                services.useCases.makeDemoShop.execute({
+                    actorTelegramId: c.get("auth").user.id,
+                    businessId: current.id,
+                    template,
+                    logoKey,
+                })
+            const shop = logoKey ? await withStoredImage(c.env.BUCKET, logoKey, make) : await make()
+            return c.json({ shop: withoutCard(shop) })
+        },
+    )
+
+    /** «Namunani tozalash»: the demo's orders are gone, its sample is back. */
+    .post("/shops/:id/demo/reset", zValidator("param", idParam, onInvalid), async (c) => {
+        const shop = await c.get("services").useCases.resetDemoShop.execute({
+            actorTelegramId: c.get("auth").user.id,
+            businessId: c.req.valid("param").id,
+        })
+        return c.json({ shop: withoutCard(shop) })
+    })
 
     /** «Tumanlar»: each district now and over the last week; late network orders are reported. */
     .get("/districts", async (c) => {

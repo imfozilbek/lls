@@ -3,6 +3,7 @@ import { webApp } from "./telegram.js"
 import type { Shop } from "../stores/session.js"
 import type {
     ProductOptionsProps,
+    DemoTemplateKey,
     BusinessStatus,
     DistrictStats,
     PlatformShopDTO,
@@ -517,6 +518,12 @@ export const adminApi = {
     /** The showcase deal in percent, or `null` to take the shop out. */
     marketplace: (id: string, percent: number | null): Promise<AdminShopResult> =>
         request("PUT", `/api/admin/shops/${id}/marketplace`, { percent }),
+    /** «Namuna qilish»: the shop becomes a demo filled from this sample. */
+    demo: (id: string, template: DemoTemplateKey): Promise<AdminShopResult> =>
+        request("PUT", `/api/admin/shops/${id}/demo`, { template }),
+    /** «Namunani tozalash»: the demo's orders go, its sample comes back. */
+    resetDemo: (id: string): Promise<AdminShopResult> =>
+        request("POST", `/api/admin/shops/${id}/demo/reset`),
     districts: async (): Promise<DistrictStats[]> =>
         (await request<Page<DistrictStats>>("GET", "/api/admin/districts")).data,
     saveDistrict: (body: DistrictInput): Promise<unknown> =>

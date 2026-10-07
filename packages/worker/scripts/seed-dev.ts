@@ -13,7 +13,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 
-import { searchText } from "@zumda/core"
+import { WorkingHours, demoTemplate, searchText } from "@zumda/core"
 
 import { encryptSecret } from "../src/crypto.js"
 
@@ -33,146 +33,6 @@ import type { DevShop } from "./dev-fixtures.js"
 const ROOT = join(import.meta.dirname, "..")
 const DEV_VARS = join(ROOT, ".dev.vars")
 const DAY_MS = 24 * 60 * 60 * 1000
-
-interface DemoOption {
-    id: string
-    name: string
-    price: number
-}
-
-interface DemoProduct {
-    name: string
-    price: number
-    unit: string
-    category: string
-    /** Grams for weight units (kg, 100 g). */
-    step?: number
-    returnable?: boolean
-    description?: string
-    /** Sizes (one is picked, the product costs as the cheapest) and add-ons (on top). */
-    options?: { group?: string; variants: DemoOption[]; addons: DemoOption[] }
-}
-
-const item = (
-    name: string,
-    price: number,
-    unit: string,
-    category: string,
-    extra: Partial<DemoProduct> = {},
-): DemoProduct => ({ name, price, unit, category, ...extra })
-
-/** Variants or add-ons of a demo product: ids are short and stable, like the app makes them. */
-const options = (
-    group: string,
-    variants: [string, number][],
-    addons: [string, number][] = [],
-): DemoProduct["options"] => ({
-    group,
-    variants: variants.map(([name, price], index) => ({ id: `v${index + 1}`, name, price })),
-    addons: addons.map(([name, price], index) => ({ id: `a${index + 1}`, name, price })),
-})
-
-/**
- * Each shop's catalog. The first items are the ones the e2e specs order (`dev-<shop>-p1`...):
- * new demo items go at the end, never in between.
- */
-const CATALOGS: Record<DevShop["kind"], readonly DemoProduct[]> = {
-    food: [
-        item("To'y oshi", 45_000, "portion", "meals", {
-            description: "Devzira guruch, mol go'shti, sabzi va no'xat: qozonda, o'tinda.",
-        }),
-        item("Lag'mon", 38_000, "portion", "soups"),
-        item("Shashlik (mol go'shti)", 22_000, "pcs", "grill"),
-        item("Achchiq-chuchuk", 12_000, "portion", "salads"),
-        item("Somsa tandir", 8_000, "pcs", "bakery"),
-        item("Kompot 1 l", 15_000, "l", "drinks"),
-        item("Choyxona oshi", 25_000, "portion", "osh", {
-            description: "Kunduzgi osh: porsiyasini tanlang, qazi va bedana tuxumi bilan.",
-            options: options(
-                "Porsiya",
-                [
-                    ["0,5 porsiya", 25_000],
-                    ["0,7 porsiya", 32_000],
-                    ["1 porsiya", 42_000],
-                ],
-                [
-                    ["Qazi", 15_000],
-                    ["Bedana tuxumi", 5_000],
-                ],
-            ),
-        }),
-        item("Xonim", 28_000, "portion", "meals", {
-            description: "Bug'da pishgan, kartoshka va go'sht bilan, qatiq bilan.",
-        }),
-        item("Ko'k choy (choynak)", 5_000, "pcs", "hot_drinks"),
-    ],
-    water: [
-        item("Toza suv 19 l", 15_000, "bottle_19l", "water", {
-            returnable: true,
-            description: "Bo'sh idishni qaytarsangiz, garov olinmaydi.",
-        }),
-        item("Mineral suv 1,5 l", 6_000, "pcs", "water"),
-        item("Kuler uchun pompa", 45_000, "pcs", "other"),
-        item("Toza suv 5 l", 8_000, "pcs", "water"),
-    ],
-    grocery: [
-        item("Pomidor", 12_000, "kg", "produce", { step: 500 }),
-        item("Kartoshka", 6_000, "kg", "produce", { step: 1000 }),
-        item("Mol go'shti", 95_000, "kg", "meat", { step: 250 }),
-        item("Sut 1 l", 11_000, "pcs", "dairy"),
-        item("Non", 4_000, "pcs", "bakery"),
-        item("Guruch (lazer)", 18_000, "kg", "groceries", { step: 1000 }),
-        item("Zira", 6_000, "g100", "spices", {
-            step: 100,
-            description: "Osh uchun: 100 grammdan tortib beramiz.",
-        }),
-        item("Tuxum (10 dona)", 16_000, "pack", "eggs"),
-        item("Olma", 14_000, "kg", "produce", { step: 500 }),
-    ],
-    service: [
-        item("Gilam yuvish (kv. metr)", 12_000, "m2", "carpet"),
-        item("Avtomobil yuvish", 60_000, "pcs", "car_care"),
-        item("Divan tozalash", 150_000, "pcs", "cleaning"),
-        item("Ko'rpa yuvish", 40_000, "pcs", "laundry", {
-            description: "Olib ketamiz va 2-3 kunda quritib qaytaramiz.",
-        }),
-        item("Salonni kimyoviy tozalash", 250_000, "pcs", "car_care", {
-            options: options("Mashina", [
-                ["Sedan", 250_000],
-                ["Krossover", 320_000],
-                ["Jip", 400_000],
-            ]),
-        }),
-        item("Parda yuvish", 20_000, "pcs", "cleaning"),
-    ],
-    store: [
-        item("Kir yuvish kukuni 3 kg", 65_000, "pack", "chemicals"),
-        item("Idish yuvish vositasi 1 l", 18_000, "pcs", "chemicals"),
-        item("LED lampochka", 12_000, "pcs", "electrical", {
-            description: "E27 patron, iliq yoki oq nur.",
-            options: options("Quvvati", [
-                ["9 W", 12_000],
-                ["12 W", 15_000],
-                ["15 W", 19_000],
-            ]),
-        }),
-        item("Chinni choynak", 55_000, "pcs", "kitchenware"),
-        item("Ish qo'lqopi", 8_000, "pair", "tools"),
-        item("Elektr kabeli 2x1,5", 7_000, "m", "electrical", {
-            description: "Mis sim: kerakli uzunlikda kesib beramiz.",
-        }),
-    ],
-}
-
-const FEATURES: Record<DevShop["kind"], string[]> = {
-    food: ["reorder", "stopList"],
-    water: ["reorder", "bottleDeposit"],
-    grocery: ["reorder", "weightItems", "stopList"],
-    service: ["reorder"],
-    store: ["reorder"],
-}
-
-const BOTTLE_DEPOSIT = 30_000
 
 /** Showcase deals (basis points): food and grocery are in the Zumda showcase, water is not. */
 const SHOWCASE_BPS: Record<DevShop["kind"], number | null> = {
@@ -205,17 +65,13 @@ const PAYMENT_OPTIONS: Record<DevShop["kind"], "card" | "cash" | "both"> = {
  * Open the whole day, every day (`00:00` to `00:00`): the step «Ish vaqti» is done and the stand
  * never finds a shop closed, whatever the hour the specs run.
  */
-const ALL_DAY = JSON.stringify(
-    Object.fromEntries(
-        ["mon", "tue", "wed", "thu", "fri", "sat", "sun"].map((day) => [
-            day,
-            { open: "00:00", close: "00:00" },
-        ]),
-    ),
-)
+const ALL_DAY = JSON.stringify(WorkingHours.wholeDay().toJSON())
 
-/** Each shop's logo: drawn once (`demo-logos/<id>.png`), put into the local R2 on every seed. */
-const LOGOS_DIR = join(import.meta.dirname, "demo-logos")
+/**
+ * Each shop's logo: the sample's (`app/public/demo/<kind>.png`, the same file a production demo
+ * gets), put into the local R2 on every seed.
+ */
+const LOGOS_DIR = join(import.meta.dirname, "..", "..", "app", "public", "demo")
 const logoKey = (shop: DevShop): string => `shops/${shop.id}/logo/demo.png`
 
 /** Minimum order per kind of shop; one bottle of water is a normal order. */
@@ -272,10 +128,11 @@ const quote = (value: string): string => `'${value.replaceAll("'", "''")}'`
 
 async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<string[]> {
     const tokenEnc = await encryptSecret(shop.bot.token, tokenKey)
-    const deposit = shop.kind === "water" ? BOTTLE_DEPOSIT : 0
+    const template = demoTemplate(shop.kind)
+    const deposit = template.bottleDeposit
     const card = PAYOUT_CARDS[shop.kind]
     const nullable = (value: string | undefined): string => (value ? quote(value) : "NULL")
-    const products = (CATALOGS[shop.kind] ?? []).map(
+    const products = template.products.map(
         (p, index) =>
             `(${quote(`${shop.id}-p${index + 1}`)}, ${quote(shop.id)}, ${quote(p.name)}, ` +
             `${nullable(p.description)}, ${p.price}, ${quote(p.unit)}, ${p.step ?? 1}, ` +
@@ -284,7 +141,7 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
             `${nullable(p.options && JSON.stringify(p.options))}, ${index}, ${now}, ${now})`,
     )
     // The showcase search reads these (the repository writes them on every save).
-    const words = (CATALOGS[shop.kind] ?? []).flatMap((p, index) =>
+    const words = template.products.flatMap((p, index) =>
         [...new Set(searchText(p.name, p.description).split(" "))]
             .filter((word) => word.length > 0)
             .map((word) => `(${quote(word)}, ${quote(`${shop.id}-p${index + 1}`)})`),
@@ -302,7 +159,7 @@ async function shopSql(shop: DevShop, tokenKey: string, now: number): Promise<st
             ${quote(tokenEnc)}, ${quote(shop.bot.webhookSecret)}, ${quote(shop.brandColor)},
             ${quote(shop.address)}, ${shop.location.latitude}, ${shop.location.longitude},
             ${quote(DEV_DISTRICT.id)}, 10000, 150000, ${MIN_ORDER[shop.kind] ?? "NULL"},
-            ${quote(JSON.stringify(FEATURES[shop.kind]))}, ${deposit},
+            ${quote(JSON.stringify(template.features))}, ${deposit},
             ${SHOWCASE_BPS[shop.kind] ?? "NULL"}, ${SHOWCASE_BPS[shop.kind] === null ? "NULL" : now},
             ${card ? quote(card[0]) : "NULL"}, ${card ? quote(card[1]) : "NULL"},
             ${card ? quote(`${shop.id}-card`) : "NULL"}, ${quote(PAYMENT_OPTIONS[shop.kind])},
@@ -395,7 +252,7 @@ async function main(): Promise<void> {
         JSON.stringify(
             DEV_SHOPS.map((shop) => ({
                 key: logoKey(shop),
-                file: join(LOGOS_DIR, `${shop.id}.png`),
+                file: join(LOGOS_DIR, `${shop.kind}.png`),
             })),
         ),
     )

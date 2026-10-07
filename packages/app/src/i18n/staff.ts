@@ -37,6 +37,9 @@ export const staffUz = {
             "Buyurtmalardan biri allaqachon boshqa yo'lda yoki tarmoqda. Ro'yxat yangilandi.",
         TRIP_STOPS: "Yo'l o'zgargan: bir manzil yetkazildi. Ro'yxat yangilandi.",
         TRIP_NOT_READY: "Hamma buyurtmalar hali tayyor emas. Ro'yxat yangilandi.",
+        DEMO_NOT_IN_SHOWCASE: "Namuna do'kon Zumda vitrinasiga qo'yilmaydi.",
+        NOT_A_DEMO: "Bu do'kon namuna emas.",
+        DEMO_TEMPLATE_MISMATCH: "Bu namuna do'kon turiga mos emas.",
         NOT_IN_SHOWCASE: "Do'kon hozir Zumda vitrinasida emas.",
         BUSINESS_BOT_ONLY: "Bu bo'lim Zumda | Business botida ochiladi.",
         PLATFORM_ONLY: "Bu bo'lim Zumda | Business botida ochiladi.",
@@ -66,6 +69,7 @@ export const staffUz = {
         noCourier: "Avval kuryerni tanlang",
     },
     owner: {
+        demoBadge: "Namuna",
         ready: {
             title: "Ishga tayyor",
             progress: "{done}/{all}",
@@ -589,6 +593,25 @@ export const staffUz = {
         showcaseOffConfirm:
             "{shop} Zumda vitrinasidan olinsinmi? Mijozlar uni qidiruvda ko'rmaydi.",
         showcaseOffYes: "Vitrinadan olish",
+        demoMake: "Namuna qilish",
+        demoPick: "Qaysi namuna?",
+        demoTemplates: {
+            food: "Restoran",
+            grocery: "Oziq-ovqat",
+            water: "Suv",
+            service: "Xizmat ko'rsatish",
+            store: "Do'kon (mollar)",
+        },
+        demoConfirm:
+            "{shop} namuna do'konga aylansinmi? Vitrina va tuman tarmog'idan chiqadi, test karta va namuna katalog qo'yiladi, siz kuryeri bo'lasiz. Buni ortga qaytarib bo'lmaydi.",
+        demoDone: "{shop} endi namuna do'kon",
+        demoBadge: "Namuna",
+        demoHint:
+            "Faqat bot havolasi orqali ochiladi. Buyurtmalari haqiqiy emas, karta test karta.",
+        demoReset: "Namunani tozalash",
+        demoResetConfirm:
+            "{shop}: namuna buyurtmalari o'chirilsinmi, katalog, karta va ish vaqti qaytadan qo'yilsinmi?",
+        demoResetDone: "Namuna tozalandi",
         noDistricts: "Tuman tarmog'i ishlamayapti: hali tuman yo'q",
         noDistrictsText:
             "Kuryerlar tarmoqqa rozi bo'lsa ham, tumansiz buyurtma olmaydi. Tuman qo'shing: markaz va radius; ichidagi do'konlar kuryerlarni bo'lishadi.",

@@ -36,4 +36,6 @@ export interface ProductRepository {
     /** Several new products at once, all or none (one transaction). */
     saveMany(products: readonly Product[]): Promise<void>
     delete(id: string): Promise<void>
+    /** Every product of the shop gives way to these, in one transaction (a demo starts again). */
+    replaceAll(businessId: string, products: readonly Product[]): Promise<void>
 }

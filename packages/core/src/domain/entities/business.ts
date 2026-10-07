@@ -92,6 +92,11 @@ export interface BusinessProps {
     ownerChatOpenAt?: Date
     /** Telegram last refused the shop's bot a message to its owner. */
     ownerChatClosedAt?: Date
+    /**
+     * A demo shop («Namuna»): reached only by its bot link, never in the showcase or the district
+     * network, with a test card; its orders are not real. Set once by a platform admin.
+     */
+    demoAt?: Date
     createdAt: Date
     updatedAt: Date
 }
@@ -253,7 +258,14 @@ export class Business {
         return this.props.districtId
     }
     get networkDelivery(): boolean {
-        return this.props.networkDelivery ?? true
+        return !this.isDemo() && (this.props.networkDelivery ?? true)
+    }
+    get demoAt(): Date | undefined {
+        return this.props.demoAt
+    }
+    /** A demo shop: its orders are not real and never reach real couriers or the showcase. */
+    isDemo(): boolean {
+        return this.props.demoAt !== undefined
     }
     get acceptingOrders(): boolean {
         return this.props.acceptingOrders
@@ -480,9 +492,9 @@ export class Business {
         this.touch()
     }
 
-    /** Recomputed when the shop moves or a district changes. */
+    /** Recomputed when the shop moves or a district changes. A demo shop belongs to none. */
     setDistrict(districtId: string | undefined): void {
-        this.props.districtId = districtId
+        this.props.districtId = this.isDemo() ? undefined : districtId
         this.touch()
     }
 
@@ -530,13 +542,16 @@ export class Business {
         return this.props.bottleDeposit.multiply(Math.max(0, returnableOrdered - bottlesReturned))
     }
 
-    /** Shown in the Zumda showcase: an active shop with a signed marketplace deal. */
+    /** Shown in the Zumda showcase: an active shop with a signed marketplace deal, never a demo. */
     isInShowcase(): boolean {
-        return this.isActive() && this.props.marketplace !== undefined
+        return this.isActive() && this.props.marketplace !== undefined && !this.isDemo()
     }
 
     /** Signs the marketplace deal: the shop appears in the Zumda showcase with this commission. */
     joinMarketplace(commissionBps: number, now: Date): void {
+        if (this.isDemo()) {
+            throw BusinessRuleViolationError.demoNotInShowcase(this.props.id)
+        }
         this.props.marketplace = {
             commissionBps: requireInteger("commissionBps", commissionBps, 0, MAX_COMMISSION_BPS),
             joinedAt: now,
@@ -546,6 +561,24 @@ export class Business {
 
     leaveMarketplace(): void {
         this.props.marketplace = undefined
+        this.touch()
+    }
+
+    /**
+     * Makes a live shop a demo («Namuna»): out of the showcase and the district network, open the
+     * whole day, paid by card (the test card), taking orders. Done again, it only sets these back.
+     */
+    makeDemo(now: Date): void {
+        if (!this.isActive()) {
+            throw BusinessRuleViolationError.shopNotActive(this.props.id)
+        }
+        this.props.demoAt ??= now
+        this.props.marketplace = undefined
+        this.props.districtId = undefined
+        this.props.networkDelivery = false
+        this.props.workingHours = WorkingHours.wholeDay()
+        this.props.paymentOptions = PaymentOptions.CARD
+        this.props.acceptingOrders = true
         this.touch()
     }
 
