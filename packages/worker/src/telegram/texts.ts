@@ -256,6 +256,7 @@ const BASE = {
                 "Kuryer",
                 "Kanal",
                 "Zumda komissiyasi",
+                "Mahsulotlar",
             ],
             payment: {
                 unpaid: "to'lanmagan",

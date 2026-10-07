@@ -1,7 +1,9 @@
 import { BusinessType, Language, OrderChannel, OrderStatus, PaymentStatus, Unit } from "@zumda/core"
 import { describe, expect, it } from "vitest"
 
+import { ordersCsv } from "../src/http/csv.js"
 import { formatOrderForOwner } from "../src/telegram/format.js"
+import { textsFor } from "../src/telegram/texts.js"
 
 import type { OrderDTO } from "@zumda/core"
 
@@ -91,5 +93,27 @@ describe("the owner's order card", () => {
         const card = formatOrderForOwner(order, { language: Language.UZ, type: BusinessType.FOOD })
         expect(card.length).toBeLessThan(TELEGRAM_MESSAGE_MAX)
         expect(card).toContain("… va yana 30 ta")
+    })
+})
+
+describe("the owner's CSV", () => {
+    it("lists the goods with their picks and units, as plain text", () => {
+        const csv = ordersCsv(
+            [
+                orderOf([
+                    {
+                        name: "Latte",
+                        unit: Unit.PIECE,
+                        quantity: 2,
+                        options: { variantId: "v2", addonIds: ["a1"], label: "0,4 l · Sirop" },
+                    },
+                    { name: "Qora murch", unit: Unit.G100, quantity: 300 },
+                ]),
+            ],
+            textsFor(Language.UZ, BusinessType.FOOD),
+        )
+        const [header, row] = csv.split("\r\n")
+        expect(header?.split(";").at(-1)).toBe("Mahsulotlar")
+        expect(row?.split(";").at(-1)).toBe("Latte (0,4 l · Sirop) × 2, Qora murch × 300 g")
     })
 })

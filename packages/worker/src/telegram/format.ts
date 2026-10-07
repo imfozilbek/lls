@@ -50,6 +50,12 @@ function itemName(item: OrderItemDTO): string {
     return item.options ? `${name} (${escapeHtml(item.options.label)})` : name
 }
 
+/** «Latte (0,4 l · Karamel sirop) × 2», plain text: a cell of the owner's CSV. */
+export function plainItem(item: OrderItemDTO, t: BotTexts): string {
+    const name = item.options ? `${item.name} (${item.options.label})` : item.name
+    return `${name} ${quantityLabel(item, t)}`
+}
+
 /** Lines a card lists before «… va yana N ta»: a message is at most 4096 characters. */
 const MAX_CARD_ITEMS = 20
 
