@@ -231,6 +231,40 @@ describe("inside a shop", () => {
         expect(russian.status).toBe(400)
     })
 
+    it("a list of products at once: one request, twins skipped, a wrong row stops all", async () => {
+        await addProduct("Non", 4_000)
+        const row = (name: string, price: number): Json => ({
+            name,
+            price,
+            unit: "portion",
+            category: "meals",
+        })
+        const created = await asOwner()("/api/owner/products/bulk", {
+            method: "POST",
+            json: { items: [row("Lag'mon", 38_000), row("Manti", 30_000), row("non", 4_000)] },
+        })
+        expect(created.status).toBe(201)
+        expect(await json(created)).toMatchObject({ skipped: ["non"] })
+        const all = await json<{ data: { name: string }[] }>(await asOwner()("/api/owner/products"))
+        expect(all.data.map((p) => p.name).sort()).toEqual(["Lag'mon", "Manti", "Non"])
+
+        const wrong = await asOwner()("/api/owner/products/bulk", {
+            method: "POST",
+            json: { items: [row("Somsa", 8_000), row("Choy", 0)] },
+        })
+        expect(wrong.status).toBe(400)
+        const tooMany = await asOwner()("/api/owner/products/bulk", {
+            method: "POST",
+            json: { items: Array.from({ length: 51 }, (_, i) => row(`Taom ${i}`, 1_000)) },
+        })
+        expect(tooMany.status).toBe(400)
+        const stranger = await asCustomer()("/api/owner/products/bulk", {
+            method: "POST",
+            json: { items: [row("Somsa", 8_000)] },
+        })
+        expect(stranger.status).toBe(403)
+    })
+
     it("variants and add-ons: the server prices the pick, refuses a missing or foreign one", async () => {
         const created = await asOwner()("/api/owner/products", {
             method: "POST",

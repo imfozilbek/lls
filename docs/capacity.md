@@ -123,6 +123,7 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 | Orders | 300 × 39 | 11 700 | 11 700 |
 | Customers (new ones, phone shares) | ~50 × 6 | 300 | 600 |
 | Products saved (row + search words + indexes) | 10 shops × 10 × ~15 | 1 500 | 3 000 |
+| «Ro'yxat bilan qo'shish»: a new shop's list, once (50 × ~15; reads: the shop's names, one covering index) | rare, at most 5 a minute | 0 | 750 |
 | Couriers' shifts, network offers | | 500 | 1 000 |
 | Bot message ids, alerts, sessions | 300 × 2 × 2 + ~200 | 1 400 | 1 700 |
 | **Total** | | **~15 000** | **~18 000** |

@@ -5,6 +5,7 @@ import { Hono } from "hono"
 import { requireOwner, shopOf } from "../auth.js"
 import { ApiError } from "../http/errors.js"
 import { deleteImage, readImageBody, readJpeg, storeImage } from "../http/images.js"
+import { rateLimit } from "../http/rate-limit.js"
 import {
     assignCourierBody,
     courierReviewBody,
@@ -13,6 +14,7 @@ import {
     ownerOrderBody,
     ownerOrdersQuery,
     productBody,
+    productsBody,
     productPatchBody,
     productsQuery,
     shopPatchBody,
@@ -351,6 +353,20 @@ export const ownerRoutes = new Hono<AppEnv>()
         })
         return c.json(product, 201)
     })
+
+    .post(
+        "/products/bulk",
+        rateLimit("BULK_LIMITER"),
+        zValidator("json", productsBody, onInvalid),
+        async (c) => {
+            const result = await c.get("services").useCases.createProducts.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: shopOf(c).id,
+                items: c.req.valid("json").items,
+            })
+            return c.json(result, 201)
+        },
+    )
 
     .patch(
         "/products/:id",

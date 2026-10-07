@@ -70,6 +70,9 @@ export const SHOWCASE_BY_WORD_FROM = `FROM (
 export const WORD_FILTER =
     "p.id IN (SELECT product_id FROM product_words WHERE word >= ? AND word < ?)"
 
+/** Every name of a shop's products, read from the catalog index alone (`EXPLAIN` in query-plans). */
+export const NAMES_OF = "SELECT name FROM products WHERE business_id = ?"
+
 /** The distinct words of a product's search text. */
 function wordsOf(text: string): string[] {
     return [...new Set(text.split(" ").filter((word) => word.length > 0))]
@@ -212,7 +215,23 @@ export class D1ProductRepository implements ProductRepository {
         return row?.total ?? 0
     }
 
+    async namesOf(businessId: string): Promise<string[]> {
+        // Only the catalog index is read (its `name` column): no product row is touched.
+        const { results } = await this.db.prepare(NAMES_OF).bind(businessId).all<{ name: string }>()
+        return results.map((row) => row.name)
+    }
+
     async save(product: Product): Promise<void> {
+        await this.db.batch(this.writesOf(product))
+    }
+
+    async saveMany(products: readonly Product[]): Promise<void> {
+        // All or none: one batch is one transaction.
+        await this.db.batch(products.flatMap((product) => this.writesOf(product)))
+    }
+
+    /** The product and its words change together. */
+    private writesOf(product: Product): D1PreparedStatement[] {
         const upsert = this.db
             .prepare(
                 `INSERT INTO products (${COLUMNS}, search_text)
@@ -245,8 +264,7 @@ export class D1ProductRepository implements ProductRepository {
                 product.options ? JSON.stringify(product.options.toJSON()) : null,
                 ` ${product.searchText}`,
             )
-        // The product and its words change together (one batch is one transaction).
-        await this.db.batch([
+        return [
             upsert,
             this.db.prepare("DELETE FROM product_words WHERE product_id = ?").bind(product.id),
             ...wordsOf(product.searchText).map((word) =>
@@ -254,7 +272,7 @@ export class D1ProductRepository implements ProductRepository {
                     .prepare("INSERT OR IGNORE INTO product_words (word, product_id) VALUES (?, ?)")
                     .bind(word, product.id),
             ),
-        ])
+        ]
     }
 
     async delete(id: string): Promise<void> {

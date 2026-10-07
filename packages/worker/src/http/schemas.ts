@@ -13,6 +13,7 @@ import {
     ORDER_STATUSES,
     OrderStatus,
     PAYMENT_METHODS,
+    MAX_PRODUCTS_AT_ONCE,
     OPTION_LIMITS,
     PAYMENT_OPTIONS,
     UNITS,
@@ -125,6 +126,14 @@ export const productBody = z.object({
     returnable: z.boolean().optional(),
     position: z.number().int().min(0).max(100_000).optional(),
     options: productOptions.optional(),
+})
+
+/** «Ro'yxat bilan qo'shish»: a list of plain products (no variants), at most 50. */
+export const productsBody = z.object({
+    items: z
+        .array(productBody.omit({ options: true, position: true }))
+        .min(1)
+        .max(MAX_PRODUCTS_AT_ONCE),
 })
 
 export const productPatchBody = productBody.partial().extend({

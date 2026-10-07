@@ -9,6 +9,7 @@ import {
     CancelOrderUseCase,
     CreateCourierInviteUseCase,
     CreateProductUseCase,
+    CreateProductsUseCase,
     DeactivateCourierUseCase,
     DeleteProductUseCase,
     GetOrderUseCase,
@@ -107,6 +108,7 @@ export interface UseCases {
     listMyShops: ListMyShopsUseCase
     updateShop: UpdateShopUseCase
     createProduct: CreateProductUseCase
+    createProducts: CreateProductsUseCase
     updateProduct: UpdateProductUseCase
     deleteProduct: DeleteProductUseCase
     listProducts: ListProductsUseCase
@@ -243,6 +245,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             listMyShops: new ListMyShopsUseCase(businesses, clock),
             updateShop: new UpdateShopUseCase(businesses, clock, districts),
             createProduct: new CreateProductUseCase(businesses, products),
+            createProducts: new CreateProductsUseCase(businesses, products),
             updateProduct: new UpdateProductUseCase(businesses, products, clock),
             deleteProduct: new DeleteProductUseCase(businesses, products),
             listProducts: new ListProductsUseCase(businesses, products, clock),

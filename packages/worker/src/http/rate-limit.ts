@@ -5,7 +5,7 @@ import { ApiError } from "./errors.js"
 import type { AppEnv } from "../env.js"
 import type { Context, MiddlewareHandler } from "hono"
 
-type Limiter = "SEARCH_LIMITER" | "SIGNUP_LIMITER" | "CLIENT_ERROR_LIMITER"
+type Limiter = "SEARCH_LIMITER" | "SIGNUP_LIMITER" | "CLIENT_ERROR_LIMITER" | "BULK_LIMITER"
 
 /** The verified Telegram id: for routes after `authenticate`. */
 export const byUser = (c: Context<AppEnv>): string => String(c.get("auth").user.id)

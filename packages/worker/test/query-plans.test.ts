@@ -18,7 +18,11 @@ import {
     pageSql,
     shopStatusWhere,
 } from "../src/repositories/order.repository.js"
-import { SHOWCASE_BY_WORD_FROM, WORD_FILTER } from "../src/repositories/product.repository.js"
+import {
+    NAMES_OF,
+    SHOWCASE_BY_WORD_FROM,
+    WORD_FILTER,
+} from "../src/repositories/product.repository.js"
 import {
     OPEN_TRIPS_OF_BUSINESS_SQL,
     openTripsOfCouriersSql,
@@ -44,6 +48,11 @@ const ACTIVE = ["pending", "accepted", "preparing", "ready", "picked_up"]
 const FINAL = ["delivered", "cancelled"]
 
 describe("query plans", () => {
+    it("a shop's product names for a list: the catalog index alone, no product row", async () => {
+        const plan = await planOf(NAMES_OF, ["biz-1"])
+        expect(plan.join("\n")).toContain("USING COVERING INDEX idx_products_catalog")
+    })
+
     it("a courier's orders: open ones and today's finished ones, two index ranges", async () => {
         const plan = await planOf(COURIER_ORDERS_SQL, [
             "courier-1",
