@@ -193,9 +193,12 @@ Pilot: **food, water and grocery at the same time.**
       tayyor»; «Platforma» marks such shops
 - [x] The QR poster downloads in the app («Yuklab olish») and in a browser
 
-### M4r. Any product in a minute: the Zumda catalog ⏳ (goal 17)
-- [ ] Owner's decisions 1-5 of goal 17
-- [ ] Catalog search, grams and new units, variants and add-ons, list add (DoD in goal 17)
+### M4r. Any product in a minute: the Zumda catalog 🔨 (goal 17)
+- [x] Owner's decisions 1-5 of goal 17
+- [x] Grams (100 g, 1 g) and new units, 114 categories on four shelves, the goods store kind
+- [ ] Variants and add-ons
+- [ ] Catalog search in the product form
+- [ ] Add a list of products at once
 
 ### M4q. A Zumda Shop QR on the poster ✅ (owner's decisions, October 2026; goal 16)
 - [x] «Zumda Shop uchun» QR (`startapp=m_<slug>`) opens the shop inside Zumda Shop; showcase

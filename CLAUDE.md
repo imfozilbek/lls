@@ -224,7 +224,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - Only shops with a marketplace deal (`business.marketplace`) appear in the showcase. A platform
   admin sets the deal in «Platforma» → «Bizneslar»: the switch and the percent.
 - **Kinds of business (owner's decision, October 2026):** «Oziq-ovqat do'koni» (`grocery`),
-  «Restoran» (`food`), «Xizmat ko'rsatish» (`service`). A water shop is a grocery store with the
+  «Restoran» (`food`), «Xizmat ko'rsatish» (`service`), «Do'kon (mollar)» (`store`: goods that are
+  not food, goal 17). A water shop is a grocery store with the
   bottle deposit on (migration `0007` moved old `water` rows). Services use the normal order flow
   with their own words until their process is agreed (goal 09).
 - One universal core for all business types. Vertical specifics = feature toggles per business:
@@ -234,7 +235,9 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - Design stage 1 so stages 2–3 need no rewrite:
   - multi-tenant: `business_id` in every business-owned table
   - one global customer per `telegram_id` + customer↔business link
-  - shared category taxonomy + units (шт, кг, л, 19 л)
+  - shared category taxonomy (114 ids on four shelves: food, grocery, goods, services; ids are
+    stored, so only added, never renamed) + units (pieces, portion, kg, 100 g, g, l, 19 l, 20 l,
+    packs and boxes, metre, m², m³, hour, day, month, session, trip, sotix; goal 17)
   - geo: business location + delivery zone, customer location
   - every order stores its **channel** (`shop_bot` | `marketplace`) and a **commission snapshot**
     (rate + amount, integer UZS, 0 for `shop_bot`), fixed when the order is placed
@@ -431,7 +434,7 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (grocery/food/service), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (optional, E.164: customers call it about an order), delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
+| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (optional, E.164: customers call it about an order), delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit), unit, step (grams for kg), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l bottle) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
@@ -442,8 +445,9 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
-**Money:** integer UZS. Never floats. Quantities are integers too: pieces, or **grams** for `kg`
-items; line total = `round(price × grams / 1000)`.
+**Money:** integer UZS. Never floats. Quantities are integers too: pieces (metres, hours...), or
+**grams** for weight units (`kg` priced per kg, `g100` per 100 g, `g` per gram); line total =
+`round(price × quantity / unitScale)` (1000, 100 or 1).
 
 **Order Status Flow (single source of truth: `@zumda/core` enum):**
 ```
@@ -967,7 +971,7 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       settings; the courier's and the customer's order maps; «Xarita» on the storefront
 - [ ] Trips: three orders one way → «Bir yo'nalish» → reorder → «Tayinlash» → «Hammasini
       oldim» → Yandex link in order → delivered stops grey for the owner
-- [ ] Grocery: weight items (kg steps); stop-list for today
+- [ ] Grocery: weight items (kg steps); spices by 100 g («× 300 g» in the message); stop-list for today
 - [ ] Each order stores channel + commission (0 for own bot)
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow

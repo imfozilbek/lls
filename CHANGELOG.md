@@ -7,6 +7,18 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Any product of any kind: units, grams, categories (goal 17, part 1)
+- **Added:** units for every kind of goods and services: 100 g and 1 g (spices, nuts, sweets;
+  saffron), 20 l bottles, qadoq, quti, bog', to'plam, juft, lotok, qop, rulon, list, metr, m²,
+  m³, soat, kun, oy, seans, reys, sotix. «Boshqa» in the product form shows them all; the price
+  label follows the unit («100 g narxi», «1 m² narxi»); weight items sell in gram steps.
+- **Added:** 114 shared categories on four shelves (Ovqat, Oziq-ovqat, Mollar, Xizmatlar), with
+  pictures for the new groups; «Boshqa bo'limlar» shows them shelf by shelf.
+- **Added:** the kind of business «Do'kon (mollar)» for goods that are not food.
+- **Changed:** bot messages name the unit: «× 300 g», «× 12 m²», «× 2 soat».
+- **Changed:** the owner's, courier's and «Platforma» words load with their screens; a customer's
+  first JS dropped from 99.9 to 93.8 KB, and the build now fails above 100 KB.
+
 ### A Zumda Shop QR on the poster (goal 16)
 - **Added:** «Sozlamalar» → «Chop etish uchun QR-kod» has two buttons: «Do'kon boti uchun» (as
   before) and «Zumda Shop uchun», for a shop in the showcase. Its QR,
