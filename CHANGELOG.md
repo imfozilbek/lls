@@ -7,6 +7,14 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### A new logo deleted itself (fixed, 7 October 2026)
+- **Fixed:** since 5 October every new shop logo was deleted right after it was saved: the route
+  read the "old" key from the same object the use case had just changed. The replaced picture is
+  now read before the change (`replaceImage`); tests check the file is there after upload.
+- **Changed:** a logo that cannot be shown becomes the shop's letter on its color (`ShopLogo`),
+  never a broken image; a logo or photo whose file is really gone (HEAD 404, not a weak network)
+  reaches the server log and the admins once a session.
+
 ### The Zumda catalog and «Ro'yxat bilan qo'shish» (goal 17, parts 3 and 4)
 - **Added:** the product form starts with a search of the Zumda catalog: ~3 100 dishes,
   groceries, goods and services of Uzbekistan from the October 2026 research. A pick fills the
