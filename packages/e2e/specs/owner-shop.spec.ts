@@ -199,6 +199,15 @@ test("settings: name, color, delivery and features reach the storefront", async 
     await expect(page.getByRole("button", { name: "Takrorlash" })).toHaveCount(0)
 })
 
+/** The shop's logo is a picture the browser could draw, not a broken image. */
+async function expectLogoShown(page: Page): Promise<void> {
+    const logo = page.locator('img[src*="/logo/"]').first()
+    await expect(logo).toBeVisible()
+    await expect
+        .poll(() => logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth))
+        .toBeGreaterThan(0)
+}
+
 test("settings: logo upload and the accepting switch", async ({ page }) => {
     await openOwner(page)
     await openSettings(page, "Do'kon")
@@ -214,7 +223,8 @@ test("settings: logo upload and the accepting switch", async ({ page }) => {
             mimeType: "image/png",
             buffer: pngImage(300, [2, 132, 199]),
         })
-    await expect(page.locator("img").first()).toHaveAttribute("src", /\/img\//)
+    // The picture really shows: the file is there, not only its address (6 October 2026).
+    await expectLogoShown(page)
     // The logo becomes the shop bot's picture, with the Zumda mark: Zumda sets it, as a JPEG.
     const photo = await waitForCall("setMyProfilePhoto", shopBySlug(FOOD).bot.token, since)
     expect(photo.body["avatar"]).toMatchObject({ contentType: "image/jpeg" })
@@ -238,6 +248,34 @@ test("settings: logo upload and the accepting switch", async ({ page }) => {
     expect(shop.acceptingOrders).toBe(false)
     expect(shop.logoKey).toBeTruthy()
     await page.getByRole("switch", { name: "Buyurtma qabul qilish" }).click()
+})
+
+test("a second logo replaces the first and both the owner and the customer see it", async ({
+    page,
+}) => {
+    await openOwner(page)
+    await openSettings(page, "Do'kon")
+    await page
+        .locator('input[type="file"]')
+        .first()
+        .setInputFiles({
+            name: "logo-2.png",
+            mimeType: "image/png",
+            buffer: pngImage(300, [21, 128, 61]),
+        })
+    await expect
+        .poll(async () => {
+            const shop = (await (await apiAs(PEOPLE.customer, "/shop", { shop: FOOD })).json()) as {
+                logoKey?: string
+            }
+            return shop.logoKey
+        })
+        .toMatch(/logo/)
+    await expectLogoShown(page)
+
+    const customer = await page.context().newPage()
+    await openApp(customer, { user: PEOPLE.customer, shop: FOOD })
+    await expectLogoShown(customer)
 })
 
 test("couriers: invite to the courier bot, approve in the app, days, remove", async ({ page }) => {
