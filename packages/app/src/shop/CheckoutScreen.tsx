@@ -6,7 +6,13 @@ import { ApiError, api, loadCatalog } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, kmText } from "../lib/format.js"
 import { useClosingGuard, useMainAction } from "../lib/main-button.js"
-import { getLocation, haptic, requestContact, requestWriteAccess } from "../lib/telegram.js"
+import {
+    canRequestContact,
+    getLocation,
+    haptic,
+    requestContact,
+    requestWriteAccess,
+} from "../lib/telegram.js"
 import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
@@ -18,7 +24,7 @@ import { BottomSpacer } from "../ui/shell.js"
 
 import type { Shop } from "../stores/session.js"
 import type { MapMarker } from "../ui/maps.js"
-import type { PaymentMethod } from "@zumda/core"
+import type { PaymentMethod, ProductDTO } from "@zumda/core"
 
 const CONTACT_POLL_MS = 1500
 const CONTACT_POLL_TRIES = 10
@@ -88,21 +94,30 @@ function PhoneRow(): React.JSX.Element {
 
     const share = async (): Promise<void> => {
         haptic.tap()
+        if (!canRequestContact()) {
+            toast(t.checkout.phoneUpdateTelegram, "error")
+            return
+        }
         const shared = await requestContact()
         if (!shared) {
             return
         }
         setWaiting(true)
+        let arrived = false
         for (let i = 0; i < CONTACT_POLL_TRIES && !cancelled.current; i++) {
             await new Promise((resolve) => setTimeout(resolve, CONTACT_POLL_MS))
             const fresh = await api.me().catch(() => null)
             if (fresh?.phone) {
                 setMe(fresh)
                 haptic.success()
+                arrived = true
                 break
             }
         }
         setWaiting(false)
+        if (!arrived && !cancelled.current) {
+            toast(t.checkout.phoneNotArrived, "error")
+        }
     }
 
     if (me?.phone) {
@@ -262,8 +277,16 @@ function usePlaceOrder(
     const clearCart = useCart((state) => state.clear)
     const reset = useRouter((state) => state.reset)
     const [placing, setPlacing] = useState(false)
+    // One id for this checkout: a tap again after a lost answer gets the order already placed.
+    const checkoutId = useRef(crypto.randomUUID())
+    // Two taps of Telegram's button before a render would both see `placing` false.
+    const inFlight = useRef(false)
 
     const place = async (): Promise<void> => {
+        if (inFlight.current) {
+            return
+        }
+        inFlight.current = true
         setPlacing(true)
         try {
             await requestWriteAccess()
@@ -283,6 +306,7 @@ function usePlaceOrder(
                 comment: delivery.comment.trim() || undefined,
                 bottlesReturned: delivery.bottlesReturned || undefined,
                 paymentMethod,
+                clientOrderId: checkoutId.current,
             })
             saveAddress({
                 address: delivery.address.trim(),
@@ -298,19 +322,38 @@ function usePlaceOrder(
             haptic.error()
             const code = error instanceof ApiError ? error.code : "generic"
             toast(errorText(t, code), "error")
-            if (code === "PRODUCT_NOT_AVAILABLE" || code === "OPTION_UNAVAILABLE") {
-                loadCatalog()
-                    .then((products) => {
-                        setCatalog(products)
-                        useCart.getState().prune(products)
-                    })
-                    .catch(() => undefined)
-            }
+            refreshAfterRefusal(code, setCatalog)
         } finally {
+            inFlight.current = false
             setPlacing(false)
         }
     }
     return { placing, place }
+}
+
+/** Codes that mean the cart or the shop changed under the customer: what they see is reloaded. */
+const CATALOG_CHANGED = new Set([
+    "PRODUCT_NOT_AVAILABLE",
+    "OPTION_UNAVAILABLE",
+    "ENTITY_NOT_FOUND",
+    "VALIDATION_ERROR",
+])
+
+function refreshAfterRefusal(code: string, setCatalog: (products: ProductDTO[]) => void): void {
+    if (CATALOG_CHANGED.has(code)) {
+        loadCatalog()
+            .then((products) => {
+                setCatalog(products)
+                useCart.getState().prune(products)
+            })
+            .catch(() => undefined)
+    }
+    if (code === "PAYMENT_METHOD_UNAVAILABLE") {
+        // The owner changed «To'lov»: the shop's ways of paying are read again.
+        api.shop()
+            .then((shop) => useSession.getState().setShop(shop))
+            .catch(() => undefined)
+    }
 }
 
 /** Water shops: how many empty bottles go back; kept bottles carry the shop's deposit. */

@@ -1,7 +1,7 @@
 import { useEffect } from "react"
 import { createPortal } from "react-dom"
 
-import { useBackButton } from "../lib/main-button.js"
+import { useBackButton, useSuspendMainAction } from "../lib/main-button.js"
 
 import type { ReactNode } from "react"
 
@@ -21,6 +21,10 @@ export function Sheet({
     children: ReactNode
 }): React.JSX.Element {
     useBackButton(onClose)
+    // The screen's big button belongs under the sheet: tapping it there (the receipt's
+    // «O'tkazdim», the cart's «Savat») would act behind the person's back. The sheet's own
+    // buttons do the work while it is open.
+    useSuspendMainAction()
     useEffect(() => {
         const onKey = (event: KeyboardEvent): void => {
             if (event.key === "Escape") {

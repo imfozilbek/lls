@@ -11,6 +11,7 @@ import { useMainAction } from "../lib/main-button.js"
 import { usePagedList } from "../lib/paged.js"
 import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
+import { useCachedState } from "../lib/use-cached.js"
 import { useSession } from "../stores/session.js"
 import { ChevronIcon, CloseIcon, SearchIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
 import { LanguageSwitch } from "../ui/language-switch.js"
@@ -242,7 +243,12 @@ function ProductResult({
                 </span>
                 <span className="mt-0.5 px-0.5 text-sm">
                     <span className="font-semibold">{formatMoney(product.price, language)}</span>
-                    <span className="text-tg-hint"> / {unit}</span>
+                    <span className="text-tg-hint">
+                        {/* Sizes with different prices: «… so'm dan», as in the shop's menu. */}
+                        {(product.options?.variants ?? []).some((v) => v.price !== product.price)
+                            ? ` ${t.shop.from}`
+                            : ` / ${unit}`}
+                    </span>
                 </span>
                 <span className="mt-1.5 flex items-center gap-1.5 px-0.5 text-sm text-tg-subtitle">
                     <ShopMark shop={product.shop} size="h-5 w-5 text-[0.65rem]" />
@@ -254,7 +260,8 @@ function ProductResult({
 }
 
 function useShops(): { shops: ShopPublicDTO[] | null; error: string | null; retry(): void } {
-    const [shops, setShops] = useState<ShopPublicDTO[] | null>(null)
+    // This session's list at once on every return, a quiet refresh behind it: no skeleton.
+    const [shops, setShops] = useCachedState<ShopPublicDTO[]>("showcase-shops")
     const [error, setError] = useState<string | null>(null)
     const load = useCallback(async (): Promise<void> => {
         setError(null)

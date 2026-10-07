@@ -5,6 +5,7 @@ import { createPortal } from "react-dom"
 import { useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
+import { useBackButton } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
 
 import { CloseIcon, ReceiptIcon } from "./icons.js"
@@ -59,11 +60,12 @@ export function useReceiptUrl(orderId: string, sentAt: string | undefined): Load
 }
 
 /**
- * The screenshot full screen: the owner reads the sum and the card digits. It opens over a sheet
- * that already holds Telegram's back button, so it closes by its own button or Escape.
+ * The screenshot full screen: the owner reads the sum and the card digits, the customer looks at
+ * what they sent. Back (and the swipe) closes the picture first, never the screen under it.
  */
 function ReceiptViewer({ url, onClose }: { url: string; onClose(): void }): React.JSX.Element {
     const t = useT()
+    useBackButton(onClose)
     useEffect(() => {
         const onKey = (event: KeyboardEvent): void => {
             if (event.key === "Escape") {

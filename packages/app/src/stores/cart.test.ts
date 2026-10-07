@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
     MAX_STEPS,
     deliveryFee,
+    fitQuantity,
     lineKey,
     lineTotal,
     pickPrice,
@@ -162,6 +163,15 @@ describe("prune", () => {
         expect(useCart.getState().prune([product("a", 1), product("b", 1)])).toBe(1)
         expect(useCart.getState().lines).toEqual({ a: 2 })
         expect(useCart.getState().prune([product("a", 1)])).toBe(0)
+    })
+
+    it("fits a line to a step the owner changed, never to zero", () => {
+        const rice = { ...product("rice", 20_000), unit: "kg", step: 500 } as ProductDTO
+        useCart.getState().setQuantity("rice", 750)
+        expect(useCart.getState().prune([rice])).toBe(0)
+        expect(useCart.getState().lines).toEqual({ rice: 1000 })
+        expect(fitQuantity(100, 500)).toBe(500)
+        expect(fitQuantity(5_000_000, 500)).toBe(500 * MAX_STEPS)
     })
 
     it("drops a pick whose variant the owner removed", () => {

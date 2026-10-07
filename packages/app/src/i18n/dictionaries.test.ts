@@ -8,7 +8,8 @@ import { dictionaryFor } from "./index.js"
 import { staffUz } from "./staff.js"
 import { uz as base } from "./uz.js"
 
-const uz = { ...base, ...staffUz }
+// The staff chunk adds its words, and its error words join the customer's.
+const uz = { ...base, ...staffUz, errors: { ...base.errors, ...staffUz.staffErrors } }
 
 /** "a.b.c" → value, for every leaf; arrays count as leaves with their length. */
 function leaves(value: unknown, prefix = ""): Map<string, unknown> {
