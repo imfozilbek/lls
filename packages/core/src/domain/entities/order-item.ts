@@ -4,6 +4,7 @@ import { requireInteger, requireText } from "../shared/guards.js"
 import type { Category } from "../enums/category.js"
 import type { Unit } from "../enums/unit.js"
 import type { Money } from "../value-objects/money.js"
+import type { ChosenOptions } from "../value-objects/product-options.js"
 
 /** Upper bound for any line: 99 × the largest weight step. The product checks its own step. */
 const MAX_BASE_QUANTITY = 1_000_000
@@ -15,8 +16,10 @@ export interface OrderItemProps {
     category: Category
     /** Price per unit: per piece, or per kilogram for `kg`. */
     unitPrice: Money
-    /** Base units: pieces, or grams for `kg`. */
+    /** Base units: pieces, or grams for weight units. */
     quantity: number
+    /** The variant and add-ons picked, when the product has them; `unitPrice` already holds them. */
+    options?: ChosenOptions
 }
 
 /**
@@ -30,6 +33,7 @@ export class OrderItem {
     readonly category: Category
     readonly unitPrice: Money
     readonly quantity: number
+    readonly options?: ChosenOptions
 
     private constructor(props: OrderItemProps) {
         this.productId = props.productId
@@ -38,6 +42,7 @@ export class OrderItem {
         this.category = props.category
         this.unitPrice = props.unitPrice
         this.quantity = props.quantity
+        this.options = props.options
     }
 
     static create(input: OrderItemProps): OrderItem {
@@ -45,6 +50,9 @@ export class OrderItem {
             ...input,
             name: requireText("name", input.name, 200),
             quantity: requireInteger("quantity", input.quantity, 1, MAX_BASE_QUANTITY),
+            options: input.options
+                ? { ...input.options, label: requireText("options", input.options.label, 200) }
+                : undefined,
         })
     }
 

@@ -7,6 +7,7 @@ import { toProductDTO } from "../../dtos/product.dto.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
 import type { ProductPatch } from "../../../domain/entities/product.js"
+import type { ProductOptionsProps } from "../../../domain/value-objects/product-options.js"
 import type { Page } from "../../dtos/pagination.js"
 import type { ProductDTO } from "../../dtos/product.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
@@ -24,6 +25,7 @@ export interface CreateProductInput {
     step?: number
     returnable?: boolean
     position?: number
+    options?: ProductOptionsProps
 }
 
 export class CreateProductUseCase {
@@ -45,6 +47,7 @@ export class CreateProductUseCase {
             step: input.step,
             returnable: input.returnable,
             position: input.position,
+            options: input.options,
         })
         await this.products.save(product)
         return toProductDTO(product)

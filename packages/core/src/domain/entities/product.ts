@@ -1,12 +1,19 @@
 import { CATEGORIES } from "../enums/category.js"
 import { UNITS, Unit, defaultStep, isWeightUnit } from "../enums/unit.js"
+import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { optionalText, requireInteger, requireOneOf, requireText } from "../shared/guards.js"
 import { searchText } from "../shared/search-text.js"
 import { addDays, startOfLocalDay } from "../shared/time.js"
 import { Money } from "../value-objects/money.js"
+import { ProductOptions } from "../value-objects/product-options.js"
 
 import type { Category } from "../enums/category.js"
+import type {
+    ChosenOptions,
+    OptionChoice,
+    ProductOptionsProps,
+} from "../value-objects/product-options.js"
 
 const NAME_MAX = 80
 const DESCRIPTION_MAX = 500
@@ -35,6 +42,8 @@ export interface ProductProps {
     /** A returnable container, e.g. a 19 l water bottle with a deposit. */
     returnable: boolean
     position: number
+    /** Variants (one is picked, each with its price) and add-ons; none for most products. */
+    options?: ProductOptions
     createdAt: Date
     updatedAt: Date
 }
@@ -50,6 +59,7 @@ export interface CreateProductProps {
     step?: number
     returnable?: boolean
     position?: number
+    options?: ProductOptionsProps | null
 }
 
 export interface ProductPatch {
@@ -61,6 +71,8 @@ export interface ProductPatch {
     step?: number
     returnable?: boolean
     position?: number
+    /** null drops every variant and add-on. */
+    options?: ProductOptionsProps | null
 }
 
 /** Weight items sell in gram steps (500 g, 100 g, 1 g by default); everything else by one. */
@@ -70,6 +82,24 @@ function validStep(unit: Unit, step: number | undefined): number {
     }
     const min = unit === Unit.GRAM ? 1 : MIN_WEIGHT_STEP
     return requireInteger("step", step ?? defaultStep(unit), min, MAX_WEIGHT_STEP)
+}
+
+/**
+ * Variants and add-ons, checked against the unit: a weight item sells by the gram, so it takes
+ * variants (kinds of rice) but no add-ons. Empty options are no options.
+ */
+function validOptions(
+    unit: Unit,
+    input: ProductOptionsProps | null | undefined,
+): ProductOptions | undefined {
+    if (!input) {
+        return undefined
+    }
+    const options = ProductOptions.create(input)
+    if (isWeightUnit(unit) && options.addons.length > 0) {
+        throw ValidationError.fromField("addons", "A weight item takes no add-ons", unit)
+    }
+    return options.isEmpty ? undefined : options
 }
 
 function validPrice(amount: number): Money {
@@ -82,18 +112,21 @@ export class Product {
     static create(input: CreateProductProps): Product {
         const now = new Date()
         const unit = requireOneOf("unit", input.unit, UNITS)
+        const options = validOptions(unit, input.options)
         return new Product({
             id: input.id,
             businessId: input.businessId,
             name: requireText("name", input.name, NAME_MAX),
             description: optionalText("description", input.description, DESCRIPTION_MAX),
-            price: validPrice(input.price),
+            // With variants the product costs as its cheapest variant («… so'm dan»).
+            price: validPrice(options?.lowestPrice ?? input.price),
             unit,
             step: validStep(unit, input.step),
             category: requireOneOf("category", input.category, CATEGORIES),
             isAvailable: true,
             returnable: input.returnable ?? false,
             position: requireInteger("position", input.position ?? 0, 0, MAX_POSITION),
+            options,
             createdAt: now,
             updatedAt: now,
         })
@@ -145,6 +178,9 @@ export class Product {
     }
     get position(): number {
         return this.props.position
+    }
+    get options(): ProductOptions | undefined {
+        return this.props.options
     }
     get createdAt(): Date {
         return this.props.createdAt
@@ -201,7 +237,42 @@ export class Product {
         if (patch.position !== undefined) {
             this.props.position = requireInteger("position", patch.position, 0, MAX_POSITION)
         }
+        this.applyOptions(patch)
         this.touch()
+    }
+
+    /** New variants and add-ons, or the old ones checked again against a new unit. */
+    private applyOptions(patch: ProductPatch): void {
+        if (patch.options !== undefined || patch.unit !== undefined) {
+            const next = patch.options !== undefined ? patch.options : this.props.options?.toJSON()
+            this.props.options = validOptions(this.props.unit, next)
+        }
+        const lowest = this.props.options?.lowestPrice
+        if (lowest !== undefined) {
+            this.props.price = validPrice(lowest)
+        }
+    }
+
+    /**
+     * The price of one unit for the customer's pick, with the words for the order line. Throws
+     * when a variant is needed and missing, or when an id is not this product's.
+     */
+    priceFor(choice: OptionChoice): { unitPrice: Money; chosen?: ChosenOptions } {
+        const options = this.props.options
+        if (!options) {
+            if (choice.variantId || (choice.addonIds?.length ?? 0) > 0) {
+                throw BusinessRuleViolationError.optionUnavailable(this.props.id)
+            }
+            return { unitPrice: this.props.price }
+        }
+        if (options.hasVariants && !choice.variantId) {
+            throw BusinessRuleViolationError.variantRequired(this.props.id)
+        }
+        const priced = options.price(this.props.price, choice)
+        if (!priced) {
+            throw BusinessRuleViolationError.optionUnavailable(this.props.id)
+        }
+        return priced
     }
 
     /** Hide or show for good. Clears today's stop-list mark. */

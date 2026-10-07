@@ -10,8 +10,10 @@ import {
 } from "../../application/use-cases/order/order.use-cases.js"
 import { ConfirmPaymentUseCase } from "../../application/use-cases/money/money.use-cases.js"
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
+import { Product } from "../../domain/entities/product.js"
 import { OrderChannel } from "../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
+import { Unit } from "../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../domain/errors/conflict.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
@@ -117,6 +119,54 @@ describe("order use cases", () => {
             expect(first.items[0]?.quantity).toBe(3)
             const second = await placeOrder.execute(input())
             expect(second.number).toBe(2)
+        })
+
+        it("prices a variant with add-ons on the server; the same pick merges", async () => {
+            await products.save(
+                Product.create({
+                    id: "latte",
+                    businessId: "biz-1",
+                    name: "Latte",
+                    price: 1,
+                    unit: Unit.PIECE,
+                    category: "coffee",
+                    options: {
+                        group: "Hajmi",
+                        variants: [
+                            { id: "s", name: "0,3 l", price: 15_000 },
+                            { id: "m", name: "0,4 l", price: 18_000 },
+                        ],
+                        addons: [{ id: "syrup", name: "Karamel sirop", price: 4_000 }],
+                    },
+                }),
+            )
+            const order = await placeOrder.execute(
+                input({
+                    items: [
+                        { productId: "latte", quantity: 1, variantId: "m", addonIds: ["syrup"] },
+                        { productId: "latte", quantity: 1, variantId: "m", addonIds: ["syrup"] },
+                        { productId: "latte", quantity: 1, variantId: "s" },
+                    ],
+                }),
+            )
+            expect(order.items).toHaveLength(2)
+            expect(order.items[0]).toMatchObject({
+                name: "Latte",
+                unitPrice: 22_000,
+                quantity: 2,
+                total: 44_000,
+                options: { variantId: "m", addonIds: ["syrup"], label: "0,4 l · Karamel sirop" },
+            })
+            expect(order.items[1]).toMatchObject({ unitPrice: 15_000, total: 15_000 })
+            expect(order.subtotal).toBe(59_000)
+            await expect(
+                placeOrder.execute(input({ items: [{ productId: "latte", quantity: 1 }] })),
+            ).rejects.toMatchObject({ rule: "VARIANT_REQUIRED" })
+            await expect(
+                placeOrder.execute(
+                    input({ items: [{ productId: "latte", quantity: 1, variantId: "xl" }] }),
+                ),
+            ).rejects.toMatchObject({ rule: "OPTION_UNAVAILABLE" })
         })
 
         it("free delivery above the threshold", async () => {

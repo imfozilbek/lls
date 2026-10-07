@@ -1,6 +1,7 @@
 import type { Product } from "../../domain/entities/product.js"
 import type { Category } from "../../domain/enums/category.js"
 import type { Unit } from "../../domain/enums/unit.js"
+import type { ProductOptionsProps } from "../../domain/value-objects/product-options.js"
 
 export interface ProductDTO {
     id: string
@@ -19,6 +20,8 @@ export interface ProductDTO {
     /** A returnable bottle with a deposit (water shops). */
     returnable: boolean
     position: number
+    /** Variants (one is picked, each with its price) and add-ons. */
+    options?: ProductOptionsProps
 }
 
 export function toProductDTO(product: Product): ProductDTO {
@@ -36,5 +39,6 @@ export function toProductDTO(product: Product): ProductDTO {
         unavailableUntil: product.unavailableUntil?.toISOString(),
         returnable: product.returnable,
         position: product.position,
+        ...(product.options ? { options: product.options.toJSON() } : {}),
     }
 }
