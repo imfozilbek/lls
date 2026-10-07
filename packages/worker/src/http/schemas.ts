@@ -13,6 +13,7 @@ import {
     ORDER_STATUSES,
     OrderStatus,
     PAYMENT_METHODS,
+    OPTION_LIMITS,
     PAYMENT_OPTIONS,
     UNITS,
     WEEKDAYS,
@@ -54,6 +55,10 @@ export const idParam = z.object({ id: z.string().min(1).max(64) })
 
 export const meBody = z.object({ language: z.enum(LANGUAGES) })
 
+/** A variant or add-on id: short, chosen by the owner's app. */
+const optionId = z.string().regex(/^[a-z0-9]{1,12}$/)
+const optionName = z.string().trim().min(1).max(OPTION_LIMITS.name)
+
 export const placeOrderBody = z.object({
     items: z
         .array(
@@ -61,6 +66,9 @@ export const placeOrderBody = z.object({
                 productId: z.string().min(1).max(64),
                 // Pieces, or grams for weight items; the product checks its own step.
                 quantity: z.number().int().min(1).max(1_000_000),
+                // Only ids: the server prices the variant and the add-ons from the product.
+                variantId: optionId.optional(),
+                addonIds: z.array(optionId).max(OPTION_LIMITS.addons).optional(),
             }),
         )
         .min(1)
@@ -84,6 +92,29 @@ export const ownerOrderBody = z.object({
     reason: z.string().trim().max(200).optional(),
 })
 
+/** Variants (one is picked, each with its price) and add-ons (several, priced on top). */
+const productOptions = z.object({
+    group: z.string().trim().max(OPTION_LIMITS.group).optional(),
+    variants: z
+        .array(
+            z.object({
+                id: optionId,
+                name: optionName,
+                price: z.number().int().min(1).max(100_000_000),
+            }),
+        )
+        .max(OPTION_LIMITS.variants),
+    addons: z
+        .array(
+            z.object({
+                id: optionId,
+                name: optionName,
+                price: z.number().int().min(0).max(100_000_000),
+            }),
+        )
+        .max(OPTION_LIMITS.addons),
+})
+
 export const productBody = z.object({
     name: text(80),
     description: z.string().trim().max(500).optional(),
@@ -93,10 +124,12 @@ export const productBody = z.object({
     step: z.number().int().min(1).max(10_000).optional(),
     returnable: z.boolean().optional(),
     position: z.number().int().min(0).max(100_000).optional(),
+    options: productOptions.optional(),
 })
 
 export const productPatchBody = productBody.partial().extend({
     description: z.string().trim().max(500).nullable().optional(),
+    options: productOptions.nullable().optional(),
     isAvailable: z.boolean().optional(),
     stopForToday: z.literal(true).optional(),
 })

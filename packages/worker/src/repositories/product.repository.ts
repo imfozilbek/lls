@@ -1,4 +1,12 @@
-import { BusinessStatus, CATEGORIES, Money, Product, UNITS, offsetOf } from "@zumda/core"
+import {
+    BusinessStatus,
+    CATEGORIES,
+    Money,
+    Product,
+    ProductOptions,
+    UNITS,
+    offsetOf,
+} from "@zumda/core"
 
 import { bool, flag, oneOf, optional, placeholders } from "./rows.js"
 
@@ -26,10 +34,11 @@ interface ProductRow {
     position: number
     created_at: number
     updated_at: number
+    options: string | null
 }
 
 const COLUMNS = `id, business_id, name, description, price, unit, step, category, image_key,
-    is_available, unavailable_until, returnable, position, created_at, updated_at`
+    is_available, unavailable_until, returnable, position, created_at, updated_at, options`
 
 /** The same columns read through the `p` alias of a join. */
 const JOINED_COLUMNS = COLUMNS.split(",")
@@ -82,6 +91,7 @@ function toProduct(row: ProductRow): Product {
             row.unavailable_until === null ? undefined : new Date(row.unavailable_until),
         returnable: bool(row.returnable),
         position: row.position,
+        options: row.options === null ? undefined : ProductOptions.create(JSON.parse(row.options)),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -206,7 +216,7 @@ export class D1ProductRepository implements ProductRepository {
         const upsert = this.db
             .prepare(
                 `INSERT INTO products (${COLUMNS}, search_text)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT (id) DO UPDATE SET name = excluded.name,
                     search_text = excluded.search_text,
                     description = excluded.description, price = excluded.price,
@@ -214,7 +224,7 @@ export class D1ProductRepository implements ProductRepository {
                     image_key = excluded.image_key, is_available = excluded.is_available,
                     unavailable_until = excluded.unavailable_until,
                     returnable = excluded.returnable, position = excluded.position,
-                    updated_at = excluded.updated_at`,
+                    options = excluded.options, updated_at = excluded.updated_at`,
             )
             .bind(
                 product.id,
@@ -232,6 +242,7 @@ export class D1ProductRepository implements ProductRepository {
                 product.position,
                 product.createdAt.getTime(),
                 product.updatedAt.getTime(),
+                product.options ? JSON.stringify(product.options.toJSON()) : null,
                 ` ${product.searchText}`,
             )
         // The product and its words change together (one batch is one transaction).

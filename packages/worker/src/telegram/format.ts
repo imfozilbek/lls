@@ -44,6 +44,12 @@ function quantityLabel(item: OrderItemDTO, t: BotTexts): string {
     return word ? `× ${item.quantity} ${word}` : `× ${item.quantity}`
 }
 
+/** «Latte (0,4 l · Karamel sirop)»: the name with the variant and add-ons picked. */
+function itemName(item: OrderItemDTO): string {
+    const name = escapeHtml(item.name)
+    return item.options ? `${name} (${escapeHtml(item.options.label)})` : name
+}
+
 /** Lines a card lists before «… va yana N ta»: a message is at most 4096 characters. */
 const MAX_CARD_ITEMS = 20
 
@@ -52,7 +58,7 @@ function itemLines(order: OrderDTO, t: BotTexts, language: Language): string[] {
         .slice(0, MAX_CARD_ITEMS)
         .map(
             (item) =>
-                `${escapeHtml(item.name)} ${quantityLabel(item, t)}: ${formatMoney(item.total, language)}`,
+                `${itemName(item)} ${quantityLabel(item, t)}: ${formatMoney(item.total, language)}`,
         )
     const hidden = order.items.length - shown.length
     return hidden > 0 ? [...shown, fill(t.moreItems, { n: hidden })] : shown

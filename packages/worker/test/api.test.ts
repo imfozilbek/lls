@@ -231,6 +231,92 @@ describe("inside a shop", () => {
         expect(russian.status).toBe(400)
     })
 
+    it("variants and add-ons: the server prices the pick, refuses a missing or foreign one", async () => {
+        const created = await asOwner()("/api/owner/products", {
+            method: "POST",
+            json: {
+                name: "Latte",
+                price: 1,
+                unit: "pcs",
+                category: "coffee",
+                options: {
+                    group: "Hajmi",
+                    variants: [
+                        { id: "s", name: "0,3 l", price: 15_000 },
+                        { id: "m", name: "0,4 l", price: 18_000 },
+                    ],
+                    addons: [{ id: "syrup", name: "Karamel sirop", price: 4_000 }],
+                },
+            },
+        })
+        expect(created.status).toBe(201)
+        const latte = await json<{ id: string; price: number; options: Json }>(created)
+        expect(latte.price).toBe(15_000)
+        expect(latte.options).toMatchObject({ group: "Hajmi" })
+
+        const single = await asOwner()("/api/owner/products", {
+            method: "POST",
+            json: {
+                name: "Choy",
+                price: 5_000,
+                unit: "pcs",
+                category: "tea",
+                options: { variants: [{ id: "a", name: "Bitta", price: 5_000 }], addons: [] },
+            },
+        })
+        expect(single.status).toBe(400)
+
+        await givePhone()
+        const placed = await asCustomer()("/api/orders", {
+            method: "POST",
+            json: {
+                items: [
+                    {
+                        productId: latte.id,
+                        quantity: 2,
+                        variantId: "m",
+                        addonIds: ["syrup"],
+                        unitPrice: 1,
+                    },
+                ],
+                address: "Navoiy 12",
+            },
+        })
+        expect(placed.status).toBe(201)
+        const order = await json<{ subtotal: number; items: Json[] }>(placed)
+        expect(order.subtotal).toBe(44_000)
+        expect(order.items[0]).toMatchObject({
+            unitPrice: 22_000,
+            options: { variantId: "m", addonIds: ["syrup"], label: "0,4 l · Karamel sirop" },
+        })
+        const card = client.telegram.sent.find((m) => m.html.includes("Latte"))
+        expect(card?.html).toContain("Latte (0,4 l · Karamel sirop) × 2")
+
+        const noVariant = await asCustomer()("/api/orders", {
+            method: "POST",
+            json: { items: [{ productId: latte.id, quantity: 1 }], address: "Navoiy 12" },
+        })
+        expect(noVariant.status).toBe(422)
+        expect(await json(noVariant)).toMatchObject({ error: { code: "VARIANT_REQUIRED" } })
+        const foreign = await asCustomer()("/api/orders", {
+            method: "POST",
+            json: {
+                items: [{ productId: latte.id, quantity: 1, variantId: "m", addonIds: ["gold"] }],
+                address: "Navoiy 12",
+            },
+        })
+        expect(foreign.status).toBe(422)
+        expect(await json(foreign)).toMatchObject({ error: { code: "OPTION_UNAVAILABLE" } })
+
+        const dropped = await asOwner()(`/api/owner/products/${latte.id}`, {
+            method: "PATCH",
+            json: { options: null, price: 16_000 },
+        })
+        const plain = await json(dropped)
+        expect(plain).toMatchObject({ price: 16_000 })
+        expect(plain).not.toHaveProperty("options")
+    })
+
     it("order flow: server prices, numbering, statuses, access control", async () => {
         const osh = await addProduct("Osh", 35_000)
         await givePhone()
