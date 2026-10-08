@@ -435,7 +435,13 @@ test("the courier bot's /start: shops and the button; a stranger is asked for an
     ])
 
     await courierChat().send(PEOPLE.stranger, "/start")
-    await waitForMessage(PEOPLE.stranger.id, "biznes egasidan taklif havolasini so'rang", since)
+    const howTo = await waitForMessage(
+        PEOPLE.stranger.id,
+        "biznes egasidan taklif havolasini so'rang",
+        since,
+    )
+    // Someone new gets the courier's instruction video; a courier the street picture above.
+    expect(howTo.video).toBe("http://localhost:5173/welcome/kuryer.mp4")
 
     await openApp(page, { user: PEOPLE.stranger, courierBot: true })
     await expect(page.getByText("Siz hali kuryer emassiz")).toBeVisible()

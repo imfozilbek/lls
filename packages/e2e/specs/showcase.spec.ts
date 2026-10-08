@@ -6,7 +6,13 @@ import { expect, test } from "@playwright/test"
 
 import { businessBot, platformBot } from "../stand/config.js"
 import { FOOD, PEOPLE, WATER, apiAs, resetStand, payAndAccept } from "../support/stand.js"
-import { businessChat, lastSeq, platformChat, waitForMessage } from "../support/telegram.js"
+import {
+    businessChat,
+    callsOf,
+    lastSeq,
+    platformChat,
+    waitForMessage,
+} from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
@@ -17,15 +23,19 @@ const search = (page: Page): ReturnType<Page["getByRole"]> =>
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
-test("the Zumda bot greets customers with the street picture and the showcase", async () => {
+test("the Zumda bot greets customers with the instruction video and the showcase", async () => {
     const since = await lastSeq()
     await platformChat().send(PEOPLE.customer, "/start")
     const welcome = await waitForMessage(PEOPLE.customer.id, "oshxonalar va xizmatlar", since)
     expect(welcome.token).toBe(platformBot().token)
-    expect(welcome.method).toBe("sendPhoto")
-    expect(welcome.photo).toBe("http://localhost:5173/welcome/zumda.jpg")
-    const picture = await fetch(welcome.photo ?? "")
-    expect(picture.headers.get("content-type")).toBe("image/jpeg")
+    expect(welcome.method).toBe("sendVideo")
+    expect(welcome.video).toBe("http://localhost:5173/welcome/zumda.mp4")
+    // The Mini App serves the video and its cover: Telegram downloads them from there.
+    const video = await fetch(welcome.video ?? "")
+    expect(video.headers.get("content-type")).toBe("video/mp4")
+    const [call] = await callsOf("sendVideo", since)
+    const cover = await fetch(String(call?.body["cover"]))
+    expect(cover.headers.get("content-type")).toBe("image/jpeg")
     expect(welcome.buttons.map((b) => b.web_app?.url)).toEqual([
         "http://localhost:5173/?mode=market",
     ])
@@ -36,6 +46,7 @@ test("Zumda Business greets owners with «Mening bizneslarim»", async () => {
     await businessChat().send(PEOPLE.newOwner, "/start")
     const welcome = await waitForMessage(PEOPLE.newOwner.id, "Zumda Business", since)
     expect(welcome.token).toBe(businessBot().token)
+    expect(welcome.video).toBe("http://localhost:5173/welcome/biznes.mp4")
     expect(welcome.buttons.map((b) => b.web_app?.url)).toEqual([
         "http://localhost:5173/?mode=business",
     ])

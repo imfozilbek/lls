@@ -7,7 +7,7 @@ import { escapeHtml } from "../telegram/gateway.js"
 import { Notifier } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 import { callbackErrorText, isStart, toTelegramUser } from "../telegram/updates.js"
-import { sendWelcome, welcomePictureUrl } from "../telegram/welcome.js"
+import { sendWelcome, welcomePictureUrl, welcomeVideo } from "../telegram/welcome.js"
 
 import type { Services } from "../services.js"
 import type { NetworkCallback } from "../telegram/format.js"
@@ -100,10 +100,17 @@ async function greet(services: Services, message: IncomingMessage, t: BotTexts):
     if (active.length === 0) {
         const pending = links.find((link) => link.isPending)
         const shop = pending ? await services.businesses.findById(pending.businessId) : null
-        const html = shop
-            ? fill(t.courierPending, { shop: `<b>${escapeHtml(shop.name)}</b>` })
-            : t.courierBotWelcome
-        await sendWelcome(services.telegram, { ...welcome, html })
+        if (shop) {
+            const html = fill(t.courierPending, { shop: `<b>${escapeHtml(shop.name)}</b>` })
+            await sendWelcome(services.telegram, { ...welcome, html })
+            return
+        }
+        // Someone new: the instruction of the courier's way in, from the invite on.
+        await sendWelcome(services.telegram, {
+            ...welcome,
+            video: welcomeVideo(origin, "courier"),
+            html: t.courierBotWelcome,
+        })
         return
     }
     const shops = await Promise.all(active.map((l) => services.businesses.findById(l.businessId)))

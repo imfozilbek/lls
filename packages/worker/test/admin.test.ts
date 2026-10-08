@@ -212,6 +212,23 @@ describe("bots only notify: any message gets the way into the app", () => {
         )
     })
 
+    it("Zumda | Business /start: the owner's instruction video above «Mening bizneslarim»", async () => {
+        await client.businessBot({
+            message: { from: OWNER, chat: { id: OWNER.id }, text: "/start" },
+        })
+        const welcome = client.telegram.videos.at(-1)
+        expect(welcome?.video).toMatchObject({
+            url: "https://zumda-app.pages.dev/welcome/biznes.mp4",
+            coverUrl: "https://zumda-app.pages.dev/welcome/biznes-cover.jpg",
+            durationS: 47,
+        })
+        expect(welcome?.html).toContain("Zumda Business")
+        expect(welcome?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
+            "https://business.zumda.test/?mode=business",
+        )
+        expect(client.telegram.pictures).toHaveLength(0)
+    })
+
     it("Zumda | Kuryer: a stranger gets the welcome, no button to a screen they cannot use", async () => {
         await client.courierBot({
             message: { from: CUSTOMER, chat: { id: CUSTOMER.id }, text: "salom" },

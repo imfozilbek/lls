@@ -17,7 +17,7 @@ import {
     readUpdate,
     toTelegramUser,
 } from "../telegram/updates.js"
-import { sendWelcome, welcomePictureUrl } from "../telegram/welcome.js"
+import { sendWelcome, welcomePictureUrl, welcomeVideo } from "../telegram/welcome.js"
 
 import { handleBusinessMessage, handleReviewCallback } from "./business-bot.js"
 import { handleCourierBotCallback, handleCourierBotMessage } from "./courier-bot.js"
@@ -305,6 +305,7 @@ async function handlePlatformMessage(services: Services, message: IncomingMessag
         token,
         chatId: message.chat.id,
         pictureUrl: welcomePictureUrl(origin, "platform"),
+        video: welcomeVideo(origin, "platform"),
         html: texts.platformWelcome,
         options: { keyboard },
     })

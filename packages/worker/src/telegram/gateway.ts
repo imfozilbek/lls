@@ -72,6 +72,15 @@ export interface OutgoingFile {
     bytes: Uint8Array
 }
 
+/** A video Telegram downloads by URL; its cover and size lay it out in the chat at once. */
+export interface VideoLink {
+    url: string
+    coverUrl: string
+    width: number
+    height: number
+    durationS: number
+}
+
 /** Everything the Worker needs from the Bot API. Faked in tests. */
 export interface TelegramGateway {
     getMe(token: string): Promise<BotInfo>
@@ -107,6 +116,14 @@ export interface TelegramGateway {
         token: string,
         chatId: number,
         photoUrl: string,
+        captionHtml: string,
+        options?: MessageOptions,
+    ): Promise<void>
+    /** A video by URL with an HTML caption: the bots' welcome, an instruction of its role. */
+    sendVideo(
+        token: string,
+        chatId: number,
+        video: VideoLink,
         captionHtml: string,
         options?: MessageOptions,
     ): Promise<void>
@@ -247,6 +264,27 @@ export class HttpTelegramGateway implements TelegramGateway {
         await this.call(token, "sendPhoto", {
             chat_id: chatId,
             photo: photoUrl,
+            caption: captionHtml,
+            parse_mode: "HTML",
+            reply_markup: replyMarkup(options),
+        })
+    }
+
+    async sendVideo(
+        token: string,
+        chatId: number,
+        video: VideoLink,
+        captionHtml: string,
+        options: MessageOptions = {},
+    ): Promise<void> {
+        await this.call(token, "sendVideo", {
+            chat_id: chatId,
+            video: video.url,
+            cover: video.coverUrl,
+            width: video.width,
+            height: video.height,
+            duration: video.durationS,
+            supports_streaming: true,
             caption: captionHtml,
             parse_mode: "HTML",
             reply_markup: replyMarkup(options),

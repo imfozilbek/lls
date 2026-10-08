@@ -55,6 +55,13 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   about (`telegram/app-links.ts`: an order `&order=<id>`, «Platforma» `&admin=…`). Any other text
   gets one line («ish esa ilovada») with the button to the app. Never add a bot command: add a
   screen.
+- **The greeting is the role's instruction video (owner's decision, October 2026).** `/start` in
+  Zumda | Business and Zumda | Shop, and in Zumda | Kuryer for someone new (no link to a shop),
+  sends a short video of the real screens (`public/welcome/{biznes,zumda,kuryer}.mp4`, 720p, with
+  a `-cover.jpg`) with the greeting as its caption and its button. When Telegram cannot take the
+  video the street picture goes, when not the picture the text. A working or pending courier gets
+  the picture; a shop's own bot never gets a video (the shop's brand). The videos are made on the
+  stand by `brand/welcome/video/build.sh`: run it again when those screens change.
 - **One bot per shop.** The chat, name and avatar are the shop's. The owner creates it with one
   button in Zumda | Business («Bot yaratish», Telegram **Managed Bots**, goal 14): the bot lives
   in the owner's own Telegram account, Zumda | Business manages it and gets its token by itself
@@ -942,7 +949,7 @@ picks its mode by address (`business.`, `delivery.`), locally by `?mode=`.
 **The bots' profiles are set by the deploy:** names «Zumda | Shop», «Zumda | Business»,
 «Zumda | Kuryer», descriptions, the command list (`/start` only), menu buttons,
 avatars (`brand/*-avatar.jpg`, set only when the file changed: its hash is in D1
-`platform_settings`), the `/start` pictures (`brand/welcome/`). Only the Description Picture and
+`platform_settings`), the `/start` videos and pictures (`brand/welcome/`). Only the Description Picture and
 the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method).
 
 - Addresses: `api.zumda.shop` and `zumda.shop` (Worker, Custom Domains); `app.`, `business.`,

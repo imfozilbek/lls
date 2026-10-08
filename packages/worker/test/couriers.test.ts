@@ -214,15 +214,19 @@ describe("shop couriers, verticals and channels", () => {
         await client.courierBot({
             message: { from: STRANGER, chat: { id: STRANGER.id }, text: "/start" },
         })
-        const welcome = client.telegram.pictures.at(-1)
+        // Someone new gets the instruction video; a working courier the street picture.
+        const welcome = client.telegram.videos.at(-1)
         expect(welcome?.html).toContain("taklif havolasini")
-        expect(welcome?.photoUrl).toMatch(/\/welcome\/kuryer\.jpg$/)
+        expect(welcome?.video.url).toMatch(/\/welcome\/kuryer\.mp4$/)
+        expect(client.telegram.pictures).toHaveLength(0)
         await hireCourier(client, { slug }, COURIER)
         await client.courierBot({
             message: { from: COURIER, chat: { id: COURIER.id }, text: "/start" },
         })
         const home = client.telegram.pictures.at(-1)
+        expect(home?.photoUrl).toMatch(/\/welcome\/kuryer\.jpg$/)
         expect(home?.html).toContain("Osh Markaz")
+        expect(client.telegram.videos).toHaveLength(1)
         expect(home?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toContain(
             "mode=courier",
         )

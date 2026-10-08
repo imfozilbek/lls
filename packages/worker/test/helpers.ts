@@ -12,6 +12,7 @@ import type {
     MessageOptions,
     OutgoingFile,
     TelegramGateway,
+    VideoLink,
 } from "../src/telegram/gateway.js"
 import type { LoginKeys } from "../src/telegram-login.js"
 import type { Clock } from "@zumda/core"
@@ -77,11 +78,14 @@ export class FakeTelegram implements TelegramGateway {
     readonly photos: { token: string; jpeg: Uint8Array }[] = []
     readonly descriptions: ({ token: string } & BotDescriptions)[] = []
     readonly pictures: (SentMessage & { photoUrl: string })[] = []
+    readonly videos: (SentMessage & { video: VideoLink })[] = []
     /** Managed Bots: prepared buttons, and the token Telegram gives for each managed bot. */
     readonly preparedButtons: { token: string; userId: number; button: ManagedBotButton }[] = []
     readonly managedTokens = new Map<number, string>()
     /** Simulates Telegram failing to fetch a picture by URL. */
     failPictures = false
+    /** Simulates Telegram failing to fetch a video by URL. */
+    failVideos = false
     /** Simulates Telegram refusing a picture: a new bot picture, or a photo message. */
     failPhotos = false
     readonly documents: {
@@ -159,6 +163,21 @@ export class FakeTelegram implements TelegramGateway {
             throw new TelegramApiError("sendPhoto", "Bad Request: wrong file identifier/HTTP URL")
         }
         this.pictures.push({ token, chatId, html, options, photoUrl })
+    }
+    async sendVideo(
+        token: string,
+        chatId: number,
+        video: VideoLink,
+        html: string,
+        options?: MessageOptions,
+    ): Promise<void> {
+        if (this.failReplies) {
+            throw new TelegramApiError("sendVideo", "Forbidden: bot was blocked by the user")
+        }
+        if (this.failVideos) {
+            throw new TelegramApiError("sendVideo", "Bad Request: failed to get HTTP URL content")
+        }
+        this.videos.push({ token, chatId, html, options, video })
     }
     async savePreparedKeyboardButton(
         token: string,
