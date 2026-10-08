@@ -39,8 +39,10 @@ export interface BotMessage {
     method: string
     chatId: number
     text: string
-    /** The picture URL of a sendPhoto (the welcome); the text is then its caption. */
+    /** The picture URL of a sendPhoto (a welcome); the text is then its caption. */
     photo?: string
+    /** The video URL of a sendVideo (a welcome with its instruction); the text is its caption. */
+    video?: string
     buttons: Button[]
 }
 
@@ -81,11 +83,12 @@ function toMessage(call: BotCall): BotMessage {
         chatId: Number(call.body["chat_id"]),
         text: String(call.body["text"] ?? call.body["caption"] ?? ""),
         photo: typeof call.body["photo"] === "string" ? call.body["photo"] : undefined,
+        video: typeof call.body["video"] === "string" ? call.body["video"] : undefined,
         buttons: markup?.inline_keyboard?.flat() ?? [],
     }
 }
 
-const MESSAGE_METHODS = ["sendMessage", "sendPhoto", "editMessageText"]
+const MESSAGE_METHODS = ["sendMessage", "sendPhoto", "sendVideo", "editMessageText"]
 
 /** Messages (sent, sent with a picture, and edited) to one chat, oldest first. */
 export async function messagesTo(chatId: number, since = 0): Promise<BotMessage[]> {

@@ -2,7 +2,7 @@
  * A fake Telegram Bot API for the local stand. The Worker sends every bot call here
  * (TELEGRAM_API_BASE); tests read what each bot "sent" and switch on failures.
  *
- *   POST /bot<token>/<method>   the Bot API methods Zumda uses (sendPhoto takes a picture URL);
+ *   POST /bot<token>/<method>   the Bot API methods Zumda uses (sendPhoto, sendVideo take a URL);
  *                               Managed Bots: a token stays until it is revoked or replaced
  *   GET  /.well-known/jwks.json Telegram Login's public keys (the stand's test key)
  *   POST /ors/v2/directions/driving-car/geojson
@@ -194,11 +194,11 @@ function rotateManagedToken(state: State, botId: number): string {
     return currentManagedToken(state, botId)
 }
 
-const WRITES = new Set(["sendMessage", "sendPhoto", "sendDocument", "sendChatAction"])
+const WRITES = new Set(["sendMessage", "sendPhoto", "sendVideo", "sendDocument", "sendChatAction"])
 
 /**
  * Telegram refuses a message to someone who blocked the bot or never pressed Start in it, and
- * fails (500) for a chat in an outage (messages and photos only).
+ * fails (500) for a chat in an outage (messages, photos and videos only).
  */
 function refused(state: State, bot: Bot, call: BotCall): [number, unknown] | null {
     const chatId = Number(call.body["chat_id"])
@@ -211,7 +211,7 @@ function refused(state: State, bot: Bot, call: BotCall): [number, unknown] | nul
     if (state.blocked.has(chatId)) {
         return fail(403, "Forbidden: bot was blocked by the user")
     }
-    const outage = call.method === "sendMessage" || call.method === "sendPhoto"
+    const outage = ["sendMessage", "sendPhoto", "sendVideo"].includes(call.method)
     return outage && state.broken.has(chatId) ? fail(500, "Internal Server Error") : null
 }
 
@@ -225,6 +225,7 @@ function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
             return [200, { ok: true, result: { ...bot, is_bot: true } }]
         case "sendMessage":
         case "sendPhoto":
+        case "sendVideo":
         case "sendDocument":
             return [200, { ok: true, result: { message_id: state.nextMessageId++ } }]
         case "sendChatAction":
