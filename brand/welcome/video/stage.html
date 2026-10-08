@@ -1,0 +1,2059 @@
+<!doctype html>
+<html lang="uz">
+    <head>
+        <meta charset="utf-8" />
+        <title>Zumda: ro'yxatdan o'tish</title>
+        <style>
+            @font-face {
+                font-family: Rubik;
+                src: url(assets/rubik.woff2) format("woff2");
+                font-weight: 300 900;
+            }
+            :root {
+                --green: #15803d;
+                --deep: #14532d;
+                --mint: #dcfce7;
+                --mint2: #bbf7d0;
+                --tg-blue: #3390ec;
+                --ui:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+                    sans-serif;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                margin: 0;
+                width: 1080px;
+                height: 1920px;
+                overflow: hidden;
+                background: #0d3a1f;
+            }
+            #stage {
+                position: relative;
+                width: 1080px;
+                height: 1920px;
+                overflow: hidden;
+                font-family: Rubik, var(--ui);
+                color: #fff;
+                background: radial-gradient(
+                    1300px 1000px at 50% 42%,
+                    #1a7a40 0%,
+                    #145a30 46%,
+                    #0d3a1f 100%
+                );
+            }
+            .blob {
+                position: absolute;
+                border-radius: 50%;
+                filter: blur(90px);
+                opacity: 0.32;
+            }
+            #blob1 {
+                width: 620px;
+                height: 620px;
+                background: #22c55e;
+            }
+            #blob2 {
+                width: 520px;
+                height: 520px;
+                background: #dcfce7;
+                opacity: 0.14;
+            }
+            .abs {
+                position: absolute;
+            }
+
+            /* Top bar */
+            #top {
+                left: 64px;
+                right: 64px;
+                top: 64px;
+                height: 64px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+            #top img {
+                height: 52px;
+            }
+            #rolechip {
+                font-size: 30px;
+                font-weight: 500;
+                color: var(--mint2);
+                padding: 12px 26px;
+                border-radius: 40px;
+                background: rgba(220, 252, 231, 0.12);
+            }
+
+            /* Caption */
+            #caps {
+                left: 64px;
+                right: 64px;
+                top: 170px;
+                height: 230px;
+            }
+            .cap {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+            }
+            .cap .who {
+                font-size: 30px;
+                font-weight: 500;
+                color: var(--mint2);
+                display: flex;
+                align-items: center;
+                gap: 14px;
+                height: 44px;
+            }
+            .cap .who i {
+                width: 14px;
+                height: 14px;
+                border-radius: 50%;
+                background: #4ade80;
+                display: inline-block;
+            }
+            .cap .line {
+                margin-top: 14px;
+                display: flex;
+                gap: 22px;
+                align-items: flex-start;
+            }
+            .cap .n {
+                flex: none;
+                width: 66px;
+                height: 66px;
+                border-radius: 50%;
+                background: var(--mint);
+                color: var(--deep);
+                font-size: 36px;
+                font-weight: 700;
+                display: grid;
+                place-items: center;
+                margin-top: 2px;
+            }
+            .cap .t {
+                font-size: 54px;
+                font-weight: 700;
+                line-height: 1.14;
+                letter-spacing: -0.01em;
+                text-wrap: balance;
+            }
+
+            /* Progress */
+            #dots {
+                left: 0;
+                right: 0;
+                top: 1868px;
+                display: flex;
+                justify-content: center;
+                gap: 12px;
+            }
+            #dots b {
+                height: 10px;
+                width: 10px;
+                border-radius: 6px;
+                background: rgba(220, 252, 231, 0.28);
+                display: block;
+            }
+            #dots b.on {
+                width: 46px;
+                background: var(--mint);
+            }
+
+            /* Phone */
+            #phone {
+                left: 231px;
+                top: 405px;
+                width: 412px;
+                height: 962px;
+                transform-origin: 0 0;
+            }
+            .bezel {
+                width: 412px;
+                height: 962px;
+                border-radius: 60px;
+                background: #0b0f0d;
+                padding: 11px;
+                box-shadow:
+                    0 40px 90px rgba(0, 0, 0, 0.45),
+                    inset 0 0 0 2px #2a302d;
+            }
+            .screen {
+                position: relative;
+                width: 390px;
+                height: 940px;
+                border-radius: 49px;
+                overflow: hidden;
+                background: #fff;
+                font-family: var(--ui);
+                color: #000;
+            }
+            .status {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                height: 44px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 6px 30px 0 34px;
+                font-size: 15px;
+                font-weight: 600;
+                z-index: 30;
+                background: #fff;
+            }
+            .status svg {
+                display: block;
+            }
+            .island {
+                position: absolute;
+                left: 50%;
+                top: 9px;
+                width: 108px;
+                height: 30px;
+                margin-left: -54px;
+                border-radius: 20px;
+                background: #000;
+                z-index: 31;
+            }
+            .content {
+                position: absolute;
+                left: 0;
+                top: 44px;
+                width: 390px;
+                height: 896px;
+                overflow: hidden;
+            }
+            .layer {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 390px;
+                height: 896px;
+            }
+
+            /* Telegram chat */
+            .chat {
+                background: #fff;
+            }
+            .tghead {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                height: 56px;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 0 12px;
+                background: #f7f7f7;
+                border-bottom: 1px solid #e3e3e3;
+                z-index: 2;
+            }
+            .tghead .back {
+                color: var(--tg-blue);
+                font-size: 30px;
+                line-height: 1;
+                width: 18px;
+                margin-top: -4px;
+            }
+            .tghead img {
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                object-fit: cover;
+            }
+            .tghead b {
+                display: block;
+                font-size: 16px;
+                font-weight: 600;
+            }
+            .tghead small {
+                display: block;
+                font-size: 13px;
+                color: #8a8a8e;
+                margin-top: 1px;
+            }
+            .msgs {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 56px;
+                bottom: 54px;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-end;
+                padding: 6px 8px 8px;
+                background: linear-gradient(165deg, #dbe7c4 0%, #c7dcae 45%, #b2cf97 100%);
+            }
+            .msgs::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                opacity: 0.22;
+                background-image:
+                    radial-gradient(circle at 20px 20px, #7fa86a 2px, transparent 2.5px),
+                    radial-gradient(circle at 60px 50px, #7fa86a 1.5px, transparent 2px);
+                background-size: 80px 80px;
+            }
+            .wrap {
+                position: relative;
+                overflow: hidden;
+                flex: none;
+            }
+            .inner {
+                padding-top: 6px;
+            }
+            .bub {
+                position: relative;
+                max-width: 300px;
+                background: #fff;
+                border-radius: 16px 16px 16px 5px;
+                padding: 7px 11px 6px;
+                font-size: 15.5px;
+                line-height: 1.32;
+                box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+                width: fit-content;
+            }
+            .bub.out {
+                margin-left: auto;
+                background: #effdde;
+                border-radius: 16px 16px 5px 16px;
+            }
+            .bub.photo {
+                padding: 0;
+                overflow: hidden;
+                width: 300px;
+            }
+            .bub.photo img {
+                display: block;
+                width: 300px;
+                height: 168px;
+                object-fit: cover;
+            }
+            .bub.photo .cap2 {
+                padding: 7px 11px 6px;
+            }
+            .bub .tm {
+                float: right;
+                font-size: 11.5px;
+                color: #8a8a8e;
+                margin: 6px 0 -4px 10px;
+            }
+            .bub.out .tm {
+                color: #4fae4e;
+            }
+            .bub a {
+                color: var(--tg-blue);
+                text-decoration: none;
+            }
+            .kb {
+                width: 300px;
+                margin-top: 4px;
+                display: grid;
+                gap: 4px;
+            }
+            .kb .row {
+                display: flex;
+                gap: 4px;
+            }
+            .kb .btn {
+                flex: 1;
+                height: 40px;
+                border-radius: 10px;
+                background: rgba(48, 77, 36, 0.36);
+                color: #fff;
+                font-size: 14.5px;
+                font-weight: 600;
+                display: grid;
+                place-items: center;
+                text-align: center;
+                padding: 0 6px;
+            }
+            .typing {
+                width: 64px;
+                height: 36px;
+                display: flex;
+                gap: 5px;
+                align-items: center;
+                justify-content: center;
+            }
+            .typing i {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #9aa69a;
+                display: block;
+            }
+            .contact {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                padding-right: 30px;
+            }
+            .contact .av {
+                width: 44px;
+                height: 44px;
+                border-radius: 50%;
+                background: #4fae4e;
+                color: #fff;
+                font-weight: 600;
+                font-size: 19px;
+                display: grid;
+                place-items: center;
+            }
+            .contact b {
+                display: block;
+                font-size: 15.5px;
+            }
+            .contact span {
+                font-size: 14px;
+                color: #4fae4e;
+            }
+            .inputbar {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 54px;
+                background: #f7f7f7;
+                border-top: 1px solid #e3e3e3;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 0 12px;
+            }
+            .inputbar .field {
+                flex: 1;
+                height: 36px;
+                border-radius: 18px;
+                background: #fff;
+                border: 1px solid #dedede;
+                color: #9a9a9e;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                padding: 0 14px;
+            }
+            .inputbar .ic {
+                width: 26px;
+                height: 26px;
+                border-radius: 50%;
+                border: 2px solid #8a8a8e;
+            }
+            .replykb {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 128px;
+                background: #d6d8de;
+                padding: 10px 8px;
+                display: none;
+            }
+            .replykb .field {
+                height: 36px;
+                border-radius: 18px;
+                background: #fff;
+                color: #9a9a9e;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                padding: 0 14px;
+                margin-bottom: 12px;
+            }
+            .replykb .key {
+                height: 52px;
+                border-radius: 10px;
+                background: #fff;
+                box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+                font-size: 17px;
+                font-weight: 500;
+                display: grid;
+                place-items: center;
+            }
+
+            /* Mini App */
+            .app {
+                background: #fff;
+            }
+            .apphead {
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 0;
+                height: 52px;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 16px;
+                background: #fff;
+                border-bottom: 1px solid #ececec;
+                z-index: 3;
+            }
+            .apphead .close {
+                color: var(--tg-blue);
+                font-size: 16px;
+            }
+            .apphead b {
+                font-size: 16px;
+                font-weight: 600;
+            }
+            .apphead .more {
+                width: 26px;
+                height: 26px;
+                border-radius: 50%;
+                border: 1.8px solid #8a8a8e;
+                display: grid;
+                place-items: center;
+                font-size: 14px;
+                color: #8a8a8e;
+                line-height: 0;
+            }
+            .view {
+                position: absolute;
+                left: 0;
+                top: 52px;
+                width: 390px;
+                height: 844px;
+                overflow: hidden;
+                background: #fff;
+            }
+            .view img {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 390px;
+                height: 844px;
+            }
+            .shade {
+                position: absolute;
+                inset: 0;
+                background: #000;
+                pointer-events: none;
+            }
+
+            /* Telegram's own windows */
+            .sheetbg {
+                position: absolute;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.42);
+            }
+            .sheet {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: #fff;
+                border-radius: 18px 18px 0 0;
+                padding: 10px 20px 26px;
+            }
+            .grab {
+                width: 38px;
+                height: 5px;
+                border-radius: 3px;
+                background: #d4d4d8;
+                margin: 0 auto 16px;
+            }
+            .sheet h3 {
+                margin: 0 0 4px;
+                font-size: 20px;
+                text-align: center;
+            }
+            .sheet .sub {
+                text-align: center;
+                color: #8a8a8e;
+                font-size: 14.5px;
+                margin-bottom: 18px;
+            }
+            .sheet .botav {
+                width: 86px;
+                height: 86px;
+                border-radius: 50%;
+                margin: 0 auto 18px;
+                background: #e8f5ec;
+                display: grid;
+                place-items: center;
+                color: var(--green);
+            }
+            .sheet .fld {
+                border-radius: 12px;
+                background: #f2f2f7;
+                padding: 10px 14px;
+                margin-bottom: 10px;
+            }
+            .sheet .fld small {
+                display: block;
+                font-size: 12.5px;
+                color: #8a8a8e;
+            }
+            .sheet .fld span {
+                font-size: 17px;
+            }
+            .sheet .ok {
+                color: #2fa84f;
+                font-size: 13.5px;
+                margin: -2px 0 14px 4px;
+            }
+            .sheet .note {
+                font-size: 13.5px;
+                color: #6d6d72;
+                margin: 4px 4px 18px;
+                line-height: 1.35;
+            }
+            .sheet .go {
+                height: 50px;
+                border-radius: 12px;
+                background: var(--tg-blue);
+                color: #fff;
+                font-size: 17px;
+                font-weight: 600;
+                display: grid;
+                place-items: center;
+            }
+            .dialog {
+                position: absolute;
+                left: 45px;
+                width: 300px;
+                top: 330px;
+                background: #fff;
+                border-radius: 16px;
+                padding: 20px 20px 8px;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            }
+            .dialog h4 {
+                margin: 0 0 8px;
+                font-size: 18px;
+            }
+            .dialog p {
+                margin: 0 0 14px;
+                font-size: 15px;
+                color: #3c3c43;
+                line-height: 1.35;
+            }
+            .dialog .acts {
+                display: flex;
+                justify-content: flex-end;
+                gap: 6px;
+            }
+            .dialog .acts span {
+                font-size: 15.5px;
+                font-weight: 600;
+                color: var(--tg-blue);
+                padding: 10px 12px;
+            }
+
+            /* Finger */
+            #finger {
+                position: absolute;
+                width: 50px;
+                height: 50px;
+                margin: -25px 0 0 -25px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.55);
+                border: 2.5px solid rgba(255, 255, 255, 0.95);
+                box-shadow:
+                    0 4px 16px rgba(0, 0, 0, 0.28),
+                    inset 0 0 0 9px rgba(21, 128, 61, 0.18);
+                z-index: 50;
+            }
+            #ripple {
+                position: absolute;
+                border-radius: 50%;
+                border: 3px solid rgba(21, 128, 61, 0.75);
+                z-index: 49;
+            }
+
+            /* Cards */
+            .full {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+            .tile {
+                width: 210px;
+                height: 210px;
+                border-radius: 56px;
+                background: var(--mint);
+                color: var(--green);
+                display: grid;
+                place-items: center;
+            }
+            .tile svg {
+                width: 118px;
+                height: 118px;
+            }
+            #card .num {
+                margin-top: 56px;
+                font-size: 36px;
+                font-weight: 500;
+                color: var(--mint2);
+            }
+            #card .name {
+                margin-top: 10px;
+                font-size: 110px;
+                font-weight: 800;
+                letter-spacing: -0.02em;
+                line-height: 1;
+            }
+            #card .sub {
+                margin-top: 26px;
+                font-size: 42px;
+                color: rgba(255, 255, 255, 0.82);
+            }
+            .solo #intro .logo {
+                width: 430px;
+            }
+            .solo #intro h1 {
+                font-size: 70px;
+                margin-top: 56px;
+                max-width: 940px;
+                text-wrap: balance;
+            }
+            .solo #outro h2 {
+                max-width: 900px;
+                text-wrap: balance;
+                line-height: 1.12;
+            }
+            .solo .rows {
+                margin-top: 64px;
+                gap: 14px;
+                width: 860px;
+            }
+            .row3.compact {
+                padding: 16px 26px;
+                border-radius: 26px;
+                gap: 24px;
+            }
+            .row3.compact .num {
+                flex: none;
+                width: 58px;
+                height: 58px;
+                border-radius: 50%;
+                background: var(--mint);
+                color: var(--deep);
+                font-size: 30px;
+                font-weight: 700;
+                display: grid;
+                place-items: center;
+            }
+            .row3.compact b {
+                font-size: 34px;
+                font-weight: 600;
+                line-height: 1.2;
+            }
+            #intro .logo {
+                width: 600px;
+            }
+            #intro h1 {
+                margin: 70px 0 0;
+                font-size: 80px;
+                font-weight: 800;
+                letter-spacing: -0.02em;
+                line-height: 1.05;
+            }
+            #intro .sub {
+                margin-top: 22px;
+                font-size: 40px;
+                color: var(--mint2);
+            }
+            .rows {
+                margin-top: 80px;
+                display: grid;
+                gap: 26px;
+                width: 760px;
+            }
+            .row3 {
+                display: flex;
+                align-items: center;
+                gap: 30px;
+                text-align: left;
+                padding: 24px 30px;
+                border-radius: 34px;
+                background: rgba(220, 252, 231, 0.1);
+            }
+            .row3 .ic {
+                width: 96px;
+                height: 96px;
+                border-radius: 28px;
+                background: var(--mint);
+                color: var(--green);
+                display: grid;
+                place-items: center;
+                flex: none;
+            }
+            .row3 .ic svg {
+                width: 56px;
+                height: 56px;
+            }
+            .row3 .ic img {
+                width: 96px;
+                height: 96px;
+                border-radius: 28px;
+            }
+            .row3 b {
+                display: block;
+                font-size: 44px;
+                font-weight: 700;
+            }
+            .row3 span {
+                display: block;
+                font-size: 30px;
+                color: var(--mint2);
+                margin-top: 4px;
+            }
+            #outro .logo {
+                width: 640px;
+            }
+            #app {
+                z-index: 5;
+            }
+            #sheets {
+                z-index: 6;
+            }
+            #outro h2 {
+                margin: 64px 0 0;
+                font-size: 62px;
+                font-weight: 800;
+                letter-spacing: -0.02em;
+            }
+            #outro .site {
+                margin-top: 70px;
+                font-size: 46px;
+                font-weight: 700;
+                color: var(--mint);
+                padding: 18px 46px;
+                border-radius: 60px;
+                border: 3px solid rgba(220, 252, 231, 0.5);
+            }
+        </style>
+    </head>
+    <body>
+        <div id="stage">
+            <div id="blob1" class="blob"></div>
+            <div id="blob2" class="blob"></div>
+
+            <div id="top" class="abs">
+                <img src="assets/logo-white.svg" alt="" />
+                <div id="rolechip"></div>
+            </div>
+            <div id="caps" class="abs">
+                <div class="cap" id="capA"></div>
+                <div class="cap" id="capB"></div>
+            </div>
+            <div id="dots" class="abs"></div>
+
+            <div id="phone" class="abs">
+                <div class="bezel">
+                    <div class="screen">
+                        <div class="status">
+                            <span>9:41</span>
+                            <svg width="70" height="13" viewBox="0 0 70 13">
+                                <g fill="#000">
+                                    <rect x="0" y="8" width="3.4" height="5" rx="1" />
+                                    <rect x="5" y="5.5" width="3.4" height="7.5" rx="1" />
+                                    <rect x="10" y="3" width="3.4" height="10" rx="1" />
+                                    <rect x="15" y="0" width="3.4" height="13" rx="1" />
+                                </g>
+                                <path
+                                    d="M29 4.2a10 10 0 0 1 13 0l-1.6 1.7a7.6 7.6 0 0 0-9.8 0zM31.6 7a6.2 6.2 0 0 1 7.8 0l-1.7 1.7a3.8 3.8 0 0 0-4.4 0zM35.5 12.6l-2-2a2.8 2.8 0 0 1 4 0z"
+                                    fill="#000"
+                                />
+                                <rect
+                                    x="45.5"
+                                    y="1"
+                                    width="21"
+                                    height="11"
+                                    rx="3.4"
+                                    fill="none"
+                                    stroke="#000"
+                                    stroke-opacity=".4"
+                                />
+                                <rect x="47.5" y="3" width="15" height="7" rx="1.8" fill="#000" />
+                                <rect
+                                    x="67.6"
+                                    y="4.2"
+                                    width="1.8"
+                                    height="4.6"
+                                    rx=".9"
+                                    fill="#000"
+                                    fill-opacity=".45"
+                                />
+                            </svg>
+                        </div>
+                        <div class="island"></div>
+                        <div class="content" id="content">
+                            <div id="chats"></div>
+                            <div class="layer app" id="app">
+                                <div class="apphead">
+                                    <span class="close">✕ Yopish</span><b id="apptitle"></b
+                                    ><span class="more">···</span>
+                                </div>
+                                <div class="view">
+                                    <img id="imgB" alt="" />
+                                    <div class="shade" id="shadeB"></div>
+                                    <img id="imgA" alt="" />
+                                    <div class="shade" id="shadeA"></div>
+                                    <img id="imgTop" alt="" />
+                                </div>
+                            </div>
+                            <div class="layer" id="sheets"></div>
+                            <div id="ripple"></div>
+                            <div id="finger"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="card" class="full">
+                <div class="tile" id="cardicon"></div>
+                <div class="num" id="cardnum"></div>
+                <div class="name" id="cardname"></div>
+                <div class="sub" id="cardsub"></div>
+            </div>
+
+            <div id="intro" class="full">
+                <img class="logo" src="assets/logo-white.svg" alt="" />
+                <h1>Zumdada ro'yxatdan o'tish</h1>
+                <div class="sub">Uch rol, hammasi Telegram'da</div>
+                <div class="rows" id="introrows"></div>
+            </div>
+
+            <div id="outro" class="full">
+                <img class="logo" src="assets/logo-white.svg" alt="" />
+                <h2>Do'koningiz endi Telegram'da</h2>
+                <div class="rows" id="outrorows"></div>
+                <div class="site">zumda.shop</div>
+            </div>
+        </div>
+
+        <script>
+            "use strict"
+            const ICONS = {
+                shop: '<path d="M4 10v10h16V10" /><path d="M3 10l1.5-5h15L21 10a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0z" /><path d="M10 20v-5h4v5" />',
+                scooter:
+                    '<circle cx="6" cy="17" r="2.5" /><circle cx="18" cy="17" r="2.5" /><path d="M8.5 17h6.5l2-7h-4M13 6h3l1 4M4 13h5l2 4" />',
+                bag: '<path d="M5.5 8h13l-1 11.2a2 2 0 0 1-2 1.8h-7a2 2 0 0 1-2-1.8z" /><path d="M9 10V7a3 3 0 0 1 6 0v3" />',
+                bot: '<rect x="4" y="8" width="16" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01"/>',
+            }
+            const svg = (name) =>
+                `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`
+
+            const ROLES = [
+                {
+                    key: "owner",
+                    name: "Biznes egasi",
+                    sub: "Ariza: 3 qisqa qadam",
+                    icon: "shop",
+                },
+                {
+                    key: "courier",
+                    name: "Kuryer",
+                    sub: "Taklif havolasi orqali",
+                    icon: "scooter",
+                },
+                {
+                    key: "customer",
+                    name: "Mijoz",
+                    sub: "Birinchi buyurtmada",
+                    icon: "bag",
+                },
+            ]
+
+            const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x))
+            const outQuart = (x) => 1 - Math.pow(1 - clamp(x), 4)
+            const outBack = (x) => {
+                x = clamp(x)
+                const c = 1.4
+                return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2)
+            }
+            const inOut = (x) => {
+                x = clamp(x)
+                return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2
+            }
+            const inQuad = (x) => clamp(x) ** 2
+            const $ = (id) => document.getElementById(id)
+            const TR = 0.4
+            const RENAME = [
+                ["new_777300400_bot", "dilnoza_somsa_bot"],
+                ["zumda_kuryer_dev_bot", "zumdashop_kuryer_bot"],
+            ]
+            const rename = (s) => RENAME.reduce((acc, [a, b]) => acc.replaceAll(a, b), s)
+            const linkify = (s) => s.replace(/(https:\/\/t\.me\/[\w?=]+)/g, "<a>$1</a>")
+            const htmlOf = (text) => linkify(rename(text)).replace(/\n/g, "<br>")
+            // One role alone (?role=owner|courier|customer): the instruction a Zumda bot sends at /start.
+            const ONLY = new URLSearchParams(location.search).get("role")
+            const SOLO = ONLY !== null
+            const SOLO_TEXT = {
+                owner: {
+                    index: 0,
+                    title: "Biznesingizni Zumda'ga ulang",
+                    sub: "3 qisqa qadam, 2 daqiqa",
+                    action: "Pastdagi tugmani bosing va boshlang",
+                    bot: [
+                        "assets/zumda-business-avatar.png",
+                        "@zumdashop_business_bot",
+                        "Zumda | Business",
+                    ],
+                    steps: [
+                        "Pastdagi «Mening bizneslarim»ni bosing",
+                        "«Boshlash»ni bosing",
+                        "Biznes nomini yozing, turini tanlang",
+                        "Botni bitta tugma bilan yarating",
+                        "Biznes joyini xaritada belgilang",
+                        "Arizani yuboring",
+                        "Tasdiqlangach bot ishga tushadi",
+                    ],
+                },
+                courier: {
+                    index: 1,
+                    title: "Zumda kuryeri bo'ling",
+                    sub: "Taklif havolasi orqali",
+                    action: "Taklif havolasini biznes egasidan so'rang",
+                    bot: [
+                        "assets/zumda-kuryer-avatar.png",
+                        "@zumdashop_kuryer_bot",
+                        "Zumda | Kuryer",
+                    ],
+                    steps: [
+                        "Biznes egasi sizga havola yuboradi",
+                        "Havolani oching, raqamingizni yuboring",
+                        "Biznes egasi sizni tasdiqlaydi",
+                        "Smenaga chiqing: buyurtmalar keladi",
+                    ],
+                },
+                customer: {
+                    index: 2,
+                    title: "Zumda Shop'da buyurtma bering",
+                    sub: "Telegram'dan chiqmasdan",
+                    action: "Pastdagi tugmani bosing va buyurtma bering",
+                    bot: ["assets/zumda-bot-avatar.png", "@zumdashop_bot", "Zumda | Shop"],
+                    steps: [
+                        "«Qidirish va buyurtma berish»ni bosing",
+                        "Do'konni tanlang",
+                        "Taomni savatga qo'shing",
+                        "Telefon raqamingizni yuboring",
+                        "Manzil va joylashuvni belgilang",
+                        "Tayyor: buyurtma do'konga ketdi",
+                    ],
+                },
+            }
+            const SOLO_ROLE = SOLO ? SOLO_TEXT[ONLY] : null
+            // The caption of a step: told about in the reel, asked to do in an instruction.
+            const pick = (all, role, n) => (SOLO ? SOLO_TEXT[role].steps[n - 1] : all)
+            if (SOLO) document.documentElement.classList.add("solo")
+
+            async function main() {
+                const data = await (await fetch("film.json")).json()
+                const taps = {}
+                for (const frames of Object.values(data.film))
+                    for (const f of frames) taps[f.file] = f.tap
+                const C = data.chats
+
+                /* ---------- Chats ---------- */
+                const CHATS = {
+                    biz: {
+                        name: "Zumda | Business",
+                        avatar: "assets/zumda-business-avatar.png",
+                    },
+                    kur: {
+                        name: "Zumda | Kuryer",
+                        avatar: "assets/zumda-kuryer-avatar.png",
+                    },
+                    oshOwner: { name: "Osh Markaz", avatar: "assets/food.png" },
+                    oshCust: { name: "Osh Markaz", avatar: "assets/food.png" },
+                    zshop: { name: "Zumda | Shop", avatar: "assets/zumda-bot-avatar.png" },
+                }
+                const bot = (m, rows) => ({
+                    text: m.text,
+                    photo: m.photo ? `assets/${m.photo.split("/").pop()}` : null,
+                    rows: rows ?? (m.buttons.length ? [m.buttons.map((b) => b.text)] : []),
+                })
+                const MSGS = {
+                    zshop: [
+                        { id: "z0", out: true, text: "/start" },
+                        { id: "z1", ...bot(C.showcaseStart[0]) },
+                    ],
+                    biz: [
+                        { id: "b0", out: true, text: "/start" },
+                        { id: "b1", ...bot(C.ownerAll[0]) },
+                        { id: "b2", ...bot(C.ownerAll[1]) },
+                        { id: "b3", ...bot(C.ownerAll[2]) },
+                        { id: "b4", ...bot(C.ownerAll[3]) },
+                    ],
+                    kur: [
+                        { id: "k0", out: true, text: "/start" },
+                        { id: "k1", ...bot(C.courierInvite[0]) },
+                        {
+                            id: "k2",
+                            out: true,
+                            contact: { name: "Bobur", phone: "+998 90 777 66 55" },
+                        },
+                        { id: "k3", ...bot(C.courierPhone[0]) },
+                        { id: "k4", ...bot(C.courierApproved[0]) },
+                    ],
+                    oshOwner: [
+                        {
+                            id: "o1",
+                            ...bot(C.courierOwnerAsk[0], [
+                                C.courierOwnerAsk[0].buttons.slice(0, 2).map((b) => b.text),
+                                [C.courierOwnerAsk[0].buttons[2].text],
+                            ]),
+                        },
+                    ],
+                    oshCust: [
+                        { id: "c0", out: true, text: "/start" },
+                        { id: "c1", ...bot(C.customerStart[0]) },
+                    ],
+                }
+                const msgById = {}
+                for (const [chat, list] of Object.entries(MSGS)) {
+                    const layer = document.createElement("div")
+                    layer.className = "layer chat"
+                    layer.id = `chat-${chat}`
+                    layer.innerHTML = `<div class="tghead"><span class="back">‹</span><img src="${CHATS[chat].avatar}"><div><b>${CHATS[chat].name}</b><small>bot</small></div></div>
+            <div class="msgs"></div>
+            <div class="inputbar"><span class="ic"></span><div class="field">Xabar</div><span class="ic"></span></div>
+            <div class="replykb"><div class="field">Xabar</div><div class="key" id="key-${chat}">📱 Raqamni yuborish</div></div>`
+                    const box = layer.querySelector(".msgs")
+                    for (const m of list) {
+                        const wrap = document.createElement("div")
+                        wrap.className = "wrap"
+                        let body
+                        if (m.contact) {
+                            body = `<div class="bub out"><div class="contact"><div class="av">B</div><div><b>${m.contact.name}</b><span>${m.contact.phone}</span></div></div><span class="tm">9:41 ✓✓</span></div>`
+                        } else if (m.out) {
+                            body = `<div class="bub out">${m.text}<span class="tm">9:41 ✓✓</span></div>`
+                        } else if (m.photo) {
+                            body = `<div class="bub photo"><img src="${m.photo}"><div class="cap2">${htmlOf(m.text)}<span class="tm">9:41</span></div></div>`
+                        } else {
+                            body = `<div class="bub">${htmlOf(m.text)}<span class="tm">9:41</span></div>`
+                        }
+                        m.rows = m.rows ?? []
+                        const kb = m.rows.length
+                            ? `<div class="kb">${m.rows.map((row, r) => `<div class="row">${row.map((t, i) => `<div class="btn" id="btn-${m.id}-${r}-${i}">${rename(t)}</div>`).join("")}</div>`).join("")}</div>`
+                            : ""
+                        wrap.innerHTML = `<div class="inner">${body}${kb}</div><div class="inner typingbox" style="position:absolute;left:0;top:0"><div class="bub typing"><i></i><i></i><i></i></div></div>`
+                        box.appendChild(wrap)
+                        msgById[m.id] = {
+                            ...m,
+                            chat,
+                            wrap,
+                            inner: wrap.firstElementChild,
+                            typingEl: wrap.lastElementChild,
+                            at: Infinity,
+                            typing: !m.out,
+                        }
+                    }
+                    $("chats").appendChild(layer)
+                }
+
+                /* ---------- Telegram windows ---------- */
+                const SHEETS = {
+                    createBot: `<div class="sheetbg"></div><div class="sheet"><div class="grab"></div><h3>Bot yaratish</h3><div class="sub">Zumda | Business sizga bot yaratishni taklif qiladi</div>
+            <div class="botav">${svg("bot").replace("<svg", '<svg width="44" height="44"')}</div>
+            <div class="fld"><small>Bot nomi</small><span>Dilnoza Somsa</span></div>
+            <div class="fld"><small>Foydalanuvchi nomi</small><span>@dilnoza_somsa_bot</span></div>
+            <div class="ok">✓ Bu nom bo'sh</div>
+            <div class="note">Bot sizning Telegram akkauntingizda bo'ladi. Zumda | Business uni siz uchun boshqaradi.</div>
+            <div class="go" id="go-createBot">Yaratish</div></div>`,
+                    phoneKur: `<div class="sheetbg"></div><div class="dialog"><h4>Telefon raqami</h4><p>«Zumda | Kuryer» botiga telefon raqamingiz yuboriladi.</p><div class="acts"><span>Bekor qilish</span><span id="go-phoneKur">Yuborish</span></div></div>`,
+                    phoneShop: `<div class="sheetbg"></div><div class="dialog"><h4>Telefon raqami</h4><p>«Zumda | Shop» botiga telefon raqamingiz yuboriladi.</p><div class="acts"><span>Bekor qilish</span><span id="go-phoneShop">Yuborish</span></div></div>`,
+                    phoneCust: `<div class="sheetbg"></div><div class="dialog"><h4>Telefon raqami</h4><p>«Osh Markaz» botiga telefon raqamingiz yuboriladi.</p><div class="acts"><span>Bekor qilish</span><span id="go-phoneCust">Yuborish</span></div></div>`,
+                }
+                for (const [id, html] of Object.entries(SHEETS)) {
+                    const el = document.createElement("div")
+                    el.className = "layer"
+                    el.id = `sheet-${id}`
+                    el.innerHTML = html
+                    $("sheets").appendChild(el)
+                }
+
+                /* ---------- Storyboard ---------- */
+                const CARD = SOLO ? 0 : 2.7
+                const INTRO = SOLO ? 4.4 + 0.2 * SOLO_ROLE.steps.length : 5.2
+                const OUTRO = SOLO ? 5.2 : 6.0
+                const steps = []
+                const roles = []
+                let T = INTRO
+                let role = null
+                let lastImg = null
+                let baseChat = null
+                let capN = 0
+                function startRole(r) {
+                    role = {
+                        index: r,
+                        cardStart: T,
+                        bodyStart: T + CARD,
+                        steps: [],
+                        caps: 0,
+                    }
+                    roles.push(role)
+                    T += CARD
+                    lastImg = null
+                    baseChat = null
+                    capN = 0
+                }
+                function endRole() {
+                    role.bodyEnd = T
+                    T += 0.35
+                }
+                function step(s) {
+                    s.role = role.index
+                    s.start = T
+                    s.end = T + s.dur
+                    T = s.end
+                    if (s.caption) {
+                        capN += 1
+                        s.capN = capN
+                        role.caps = capN
+                    }
+                    s.prev = steps.length && steps.at(-1).role === role.index ? steps.at(-1) : null
+                    if (s.kind === "chat") {
+                        baseChat = s.chat
+                    }
+                    s.baseChat = baseChat
+                    s.overChat = s.kind === "sheet" && s.prev?.kind === "chat"
+                    if (s.kind === "app") {
+                        s.prevImg = lastImg
+                        lastImg = s.img
+                    }
+                    if (s.kind === "sheet") {
+                        s.img = lastImg
+                        s.prevImg = lastImg
+                    }
+                    if (s.kind === "chat") {
+                        s.img = lastImg
+                    }
+                    for (const a of s.adds ?? []) {
+                        msgById[a.id].at = s.start + a.at
+                        msgById[a.id].typing = a.typing ?? msgById[a.id].typing
+                    }
+                    if (s.tap === "auto") {
+                        s.tap = taps[s.img]
+                    }
+                    steps.push(s)
+                    role.steps.push(s)
+                    return s
+                }
+                const app = (img, dur, enter, extra = {}) =>
+                    step({ kind: "app", img, dur, enter, tap: "auto", ...extra })
+
+                // 1. Biznes egasi
+                if (!SOLO || ONLY === "owner") {
+                    startRole(0)
+                    const OWNER = "Dilnoza, biznes egasi"
+                    step({
+                        kind: "chat",
+                        chat: "biz",
+                        dur: 4.4,
+                        enter: "none",
+                        who: OWNER,
+                        caption: pick("Zumda Business botini oching", "owner", 1),
+                        adds: [
+                            { id: "b0", at: 0.5 },
+                            { id: "b1", at: 1.5 },
+                        ],
+                        tap: { sel: "btn-b1-0-0" },
+                    })
+                    app("001-owner-intro.png", 2.8, "up", {
+                        caption: pick("«Boshlash»: 3 qisqa qadam", "owner", 2),
+                    })
+                    app("002-owner-step1.png", 1.5, "push", {
+                        caption: pick("Biznes nomi va turi", "owner", 3),
+                    })
+                    app("003-owner-name.png", 0.4, "cut")
+                    app("004-owner-name.png", 0.4, "cut")
+                    app("005-owner-name.png", 1.0, "cut")
+                    app("006-owner-kind.png", 1.4, "cut")
+                    app("007-owner-step2.png", 2.3, "push", {
+                        caption: pick("Bot bitta tugma bilan: token kerak emas", "owner", 4),
+                    })
+                    step({
+                        kind: "sheet",
+                        sheet: "createBot",
+                        dur: 2.8,
+                        enter: "sheet",
+                        tap: { sel: "go-createBot" },
+                        adds: [{ id: "b2", at: 2.9, typing: false }],
+                    })
+                    app("008-owner-bot-made.png", 2.4, "sheetdown")
+                    app("009-owner-step3.png", 1.9, "push", {
+                        caption: pick("Biznes qayerda: xaritada belgilang", "owner", 5),
+                    })
+                    app("010-owner-map.png", 1.4, "rise")
+                    app("011-owner-map-here.png", 1.5, "fade")
+                    app("012-owner-place.png", 1.5, "drop")
+                    app("013-owner-address.png", 0.4, "cut")
+                    app("014-owner-address.png", 0.4, "cut")
+                    app("015-owner-address.png", 1.1, "cut")
+                    app("016-owner-ready.png", 3.2, "push", {
+                        caption: pick("Ariza yuborildi: «Ishga tayyor» ro'yxati", "owner", 6),
+                        tap: null,
+                        adds: [{ id: "b3", at: 0.4, typing: false }],
+                    })
+                    step({
+                        kind: "chat",
+                        chat: "biz",
+                        dur: 4.6,
+                        enter: "down",
+                        caption: pick("Tasdiqlandi: bot ishga tushdi", "owner", 7),
+                        adds: [{ id: "b4", at: 1.1 }],
+                    })
+                    endRole()
+                }
+
+                // 2. Kuryer
+                if (!SOLO || ONLY === "courier") {
+                    startRole(1)
+                    const RUSTAM = "Rustam, Osh Markaz egasi"
+                    const BOBUR = "Bobur, kuryer"
+                    app("017-courier-owner-list.png", 2.2, "fadein", {
+                        who: RUSTAM,
+                        title: "Osh Markaz",
+                        caption: pick("Egasi taklif havolasini yaratadi", "courier", 1),
+                    })
+                    app("018-courier-owner-invite.png", 2.5, "fade", {
+                        tap: { x: 195, y: 551, w: 326, h: 44 },
+                    })
+                    step({
+                        kind: "chat",
+                        chat: "kur",
+                        dur: 3.6,
+                        enter: "fade",
+                        who: BOBUR,
+                        caption: pick("Kuryer havolani ochib, raqamini yuboradi", "courier", 2),
+                        adds: [
+                            { id: "k0", at: 0.5 },
+                            { id: "k1", at: 1.5 },
+                        ],
+                        keyboard: true,
+                        tap: { sel: "key-kur" },
+                    })
+                    step({
+                        kind: "sheet",
+                        sheet: "phoneKur",
+                        dur: 1.9,
+                        enter: "dialog",
+                        keyboard: true,
+                        tap: { sel: "go-phoneKur" },
+                    })
+                    step({
+                        kind: "chat",
+                        chat: "kur",
+                        dur: 2.4,
+                        enter: "undialog",
+                        adds: [
+                            { id: "k2", at: 0.25 },
+                            { id: "k3", at: 1.1 },
+                        ],
+                    })
+                    step({
+                        kind: "chat",
+                        chat: "oshOwner",
+                        dur: 3.2,
+                        enter: "fade",
+                        who: RUSTAM,
+                        caption: pick("Egasi bitta tugma bilan tasdiqlaydi", "courier", 3),
+                        adds: [{ id: "o1", at: 0.9 }],
+                        tap: { sel: "btn-o1-0-0" },
+                    })
+                    step({
+                        kind: "chat",
+                        chat: "kur",
+                        dur: 3.1,
+                        enter: "fade",
+                        who: BOBUR,
+                        caption: pick("Smenaga chiqadi: buyurtmalar keladi", "courier", 4),
+                        adds: [{ id: "k4", at: 0.8 }],
+                        tap: { sel: "btn-k4-0-0" },
+                    })
+                    app("019-courier-home.png", 2.3, "up", { title: "Zumda | Kuryer" })
+                    app("020-courier-on-shift.png", 2.6, "cut", { tap: null })
+                    endRole()
+                }
+
+                // 3. Mijoz: in the reel from the shop's own bot, alone from Zumda | Shop
+                if (SOLO && ONLY === "customer") {
+                    startRole(2)
+                    const BUYER = "Malika, mijoz"
+                    step({
+                        kind: "chat",
+                        chat: "zshop",
+                        dur: 4.0,
+                        enter: "none",
+                        who: BUYER,
+                        caption: pick("", "customer", 1),
+                        adds: [
+                            { id: "z0", at: 0.5 },
+                            { id: "z1", at: 1.5 },
+                        ],
+                        tap: { sel: "btn-z1-0-0" },
+                    })
+                    app("m001-market.png", 2.6, "up", {
+                        title: "Zumda | Shop",
+                        caption: pick("", "customer", 2),
+                    })
+                    app("m002-market-shop.png", 2.1, "push", { caption: pick("", "customer", 3) })
+                    app("m003-market-added.png", 1.3, "cut")
+                    app("m004-market-cart.png", 1.6, "push")
+                    app("m005-market-checkout.png", 2.1, "push", {
+                        caption: pick("", "customer", 4),
+                    })
+                    step({
+                        kind: "sheet",
+                        sheet: "phoneShop",
+                        dur: 1.9,
+                        enter: "dialog",
+                        tap: { sel: "go-phoneShop" },
+                    })
+                    app("m006-market-phone.png", 1.6, "undialog", {
+                        caption: pick("", "customer", 5),
+                    })
+                    app("m007-market-address.png", 0.35, "cut")
+                    app("m008-market-address.png", 0.35, "cut")
+                    app("m009-market-address.png", 0.8, "cut")
+                    app("m010-market-landmark.png", 0.35, "cut")
+                    app("m011-market-landmark.png", 0.35, "cut")
+                    app("m012-market-landmark.png", 0.9, "cut")
+                    app("m013-market-map.png", 1.4, "rise")
+                    app("m014-market-map-here.png", 1.4, "fade")
+                    app("m015-market-ready.png", 1.8, "drop")
+                    app("m016-market-sent.png", 3.6, "push", {
+                        caption: pick("", "customer", 6),
+                        tap: null,
+                    })
+                    endRole()
+                }
+                if (!SOLO) {
+                    startRole(2)
+                    const MALIKA = "Malika, mijoz"
+                    step({
+                        kind: "chat",
+                        chat: "oshCust",
+                        dur: 3.8,
+                        enter: "none",
+                        who: MALIKA,
+                        caption: "Do'kon botida «Menyuni ochish»",
+                        adds: [
+                            { id: "c0", at: 0.5 },
+                            { id: "c1", at: 1.5 },
+                        ],
+                        tap: { sel: "btn-c1-0-0" },
+                    })
+                    app("021-customer-shop.png", 2.3, "up", {
+                        title: "Osh Markaz",
+                        caption: "Taomni savatga qo'shadi",
+                    })
+                    app("022-customer-added.png", 1.4, "cut")
+                    app("023-customer-cart.png", 1.6, "push")
+                    app("024-customer-checkout.png", 2.0, "push", {
+                        caption: "Telefon raqami: bitta tugma bilan",
+                    })
+                    step({
+                        kind: "sheet",
+                        sheet: "phoneCust",
+                        dur: 1.9,
+                        enter: "dialog",
+                        tap: { sel: "go-phoneCust" },
+                    })
+                    app("025-customer-phone.png", 1.5, "undialog", {
+                        caption: "Manzil, mo'ljal va joylashuv",
+                    })
+                    app("026-customer-address.png", 0.35, "cut")
+                    app("027-customer-address.png", 0.35, "cut")
+                    app("028-customer-address.png", 0.8, "cut")
+                    app("029-customer-landmark.png", 0.35, "cut")
+                    app("030-customer-landmark.png", 0.35, "cut")
+                    app("031-customer-landmark.png", 0.9, "cut")
+                    app("032-customer-map.png", 1.4, "rise")
+                    app("033-customer-map-here.png", 1.4, "fade")
+                    app("034-customer-ready.png", 1.8, "drop")
+                    app("035-customer-sent.png", 3.4, "push", {
+                        caption: "Tayyor: buyurtma do'konga ketdi",
+                        tap: null,
+                    })
+                    endRole()
+                }
+
+                const OUTRO_START = T + 0.2
+                const DURATION = OUTRO_START + OUTRO
+                // Titles and people carry forward.
+                let title = null,
+                    who = null,
+                    cap = null,
+                    capStep = null
+                for (const s of steps) {
+                    if (s.prev === null) {
+                        title = null
+                        who = null
+                        cap = null
+                    }
+                    if (s.kind === "app" && s.title) {
+                        title = s.title
+                    }
+                    if (s.kind === "app" && !s.title && !title) {
+                        title = "Zumda | Business"
+                    }
+                    s.appTitle = s.kind === "app" ? (s.title ?? title) : title
+                    title = s.appTitle
+                    who = s.who ?? who
+                    s.whoNow = who
+                    if (s.caption) {
+                        capStep = s
+                    }
+                    s.capStep = capStep
+                }
+
+                /* ---------- Intro / outro rows ---------- */
+                if (SOLO) {
+                    document.querySelector("#intro h1").textContent = SOLO_ROLE.title
+                    document.querySelector("#intro .sub").textContent = SOLO_ROLE.sub
+                    document.querySelector("#outro h2").textContent = SOLO_ROLE.action
+                }
+                $("introrows").innerHTML = SOLO
+                    ? SOLO_ROLE.steps
+                          .map(
+                              (text, i) =>
+                                  `<div class="row3 compact" id="ir${i}"><div class="num">${i + 1}</div><b>${text}</b></div>`,
+                          )
+                          .join("")
+                    : ROLES.map(
+                          (r, i) =>
+                              `<div class="row3" id="ir${i}"><div class="ic">${svg(r.icon)}</div><div><b>${r.name}</b><span>${r.sub}</span></div></div>`,
+                      ).join("")
+                $("outrorows").innerHTML = (
+                    SOLO
+                        ? [SOLO_ROLE.bot]
+                        : [
+                              [
+                                  "assets/zumda-business-avatar.png",
+                                  "@zumdashop_business_bot",
+                                  "Biznes egasi uchun",
+                              ],
+                              [
+                                  "assets/zumda-kuryer-avatar.png",
+                                  "@zumdashop_kuryer_bot",
+                                  "Kuryer uchun",
+                              ],
+                              [
+                                  "assets/zumda-bot-avatar.png",
+                                  "@zumdashop_bot",
+                                  "Mijoz uchun: barcha do'konlar",
+                              ],
+                          ]
+                )
+                    .map(
+                        ([img, h, s], i) =>
+                            `<div class="row3" id="or${i}"><div class="ic"><img src="${img}"></div><div><b style="font-size:38px">${h}</b><span>${s}</span></div></div>`,
+                    )
+                    .join("")
+
+                /* ---------- Wait for everything ---------- */
+                const imgs = new Set(steps.map((s) => s.img).filter(Boolean))
+                const cache = {}
+                for (const f of imgs) cache[f] = `shots2/${f}`
+                await document.fonts.ready
+                await Promise.all([...document.images].map((im) => im.decode().catch(() => null)))
+                for (const m of Object.values(msgById)) {
+                    m.h = m.inner.offsetHeight
+                    m.th = m.typingEl.offsetHeight
+                }
+
+                /* ---------- Render ---------- */
+                const set = (el, css) => {
+                    for (const [k, v] of Object.entries(css)) el.style[k] = v
+                }
+                const imgA = $("imgA"),
+                    imgB = $("imgB"),
+                    imgTop = $("imgTop")
+                const pending = []
+                const setSrc = (el, f) => {
+                    const src = f ? cache[f] : ""
+                    if (el.dataset.f !== (f ?? "")) {
+                        el.dataset.f = f ?? ""
+                        el.src = src
+                        if (f) pending.push(el.decode().catch(() => null))
+                    }
+                    el.style.display = f ? "block" : "none"
+                }
+
+                function posOf(el) {
+                    let x = 0,
+                        y = 0
+                    const content = $("content")
+                    while (el && el !== content) {
+                        x += el.offsetLeft
+                        y += el.offsetTop
+                        el = el.offsetParent
+                    }
+                    return { x, y }
+                }
+                function tapPoint(s) {
+                    if (!s.tap) return null
+                    if (s.tap.sel) {
+                        const el = $(s.tap.sel)
+                        const p = posOf(el)
+                        return {
+                            x: p.x + el.offsetWidth / 2,
+                            y: p.y + el.offsetHeight / 2,
+                        }
+                    }
+                    return { x: s.tap.x, y: s.tap.y + 52 }
+                }
+
+                function renderChats(t, s, u) {
+                    const chats = Object.keys(MSGS)
+                    for (const c of chats) {
+                        $(`chat-${c}`).style.opacity = "0"
+                        $(`chat-${c}`).style.zIndex = "0"
+                    }
+                    const cur = s.baseChat
+                    const prev = s.prev?.baseChat
+                    if (cur) {
+                        let o = 1
+                        if (
+                            s.kind === "chat" &&
+                            s.enter === "fade" &&
+                            prev &&
+                            prev !== cur &&
+                            s.prev?.kind !== "app"
+                        ) {
+                            $(`chat-${prev}`).style.opacity = "1"
+                            $(`chat-${prev}`).style.zIndex = "1"
+                            o = outQuart(u / TR)
+                        }
+                        $(`chat-${cur}`).style.opacity = String(o)
+                        $(`chat-${cur}`).style.zIndex = "2"
+                    }
+                    for (const m of Object.values(msgById)) {
+                        const typeAt = m.typing ? m.at - 0.75 : m.at
+                        if (t < typeAt) {
+                            m.wrap.style.height = "0px"
+                            m.wrap.style.display = "none"
+                            continue
+                        }
+                        m.wrap.style.display = "block"
+                        if (t < m.at) {
+                            const p = outQuart((t - typeAt) / 0.25)
+                            m.wrap.style.height = `${m.th * p}px`
+                            set(m.typingEl, { opacity: String(p), display: "block" })
+                            m.inner.style.opacity = "0"
+                            m.typingEl.querySelectorAll("i").forEach((d, i) => {
+                                d.style.transform = `translateY(${-3 * Math.max(0, Math.sin(t * 7 - i * 0.9))}px)`
+                                d.style.opacity = String(
+                                    0.5 + 0.5 * Math.max(0, Math.sin(t * 7 - i * 0.9)),
+                                )
+                            })
+                            continue
+                        }
+                        const p = outQuart((t - m.at) / 0.34)
+                        const from = m.typing ? m.th : 0
+                        m.wrap.style.height = p >= 1 ? "auto" : `${from + (m.h - from) * p}px`
+                        m.typingEl.style.display = p > 0.45 ? "none" : "block"
+                        m.typingEl.style.opacity = String(1 - p * 2.2)
+                        set(m.inner, {
+                            opacity: String(clamp(p * 1.6)),
+                            transform: `translateY(${(1 - p) * 10}px) scale(${0.96 + 0.04 * p})`,
+                            transformOrigin: m.out ? "100% 100%" : "0 100%",
+                        })
+                    }
+                    for (const c of chats) {
+                        const layer = $(`chat-${c}`)
+                        const kb = (s.keyboard && c === cur && t >= (msgById.k1?.at ?? 0)) || false
+                        layer.querySelector(".replykb").style.display = kb ? "block" : "none"
+                        layer.querySelector(".msgs").style.bottom = kb ? "128px" : "54px"
+                    }
+                }
+
+                function renderApp(s, u) {
+                    const appEl = $("app")
+                    const p = outQuart(u / TR)
+                    let show =
+                        s.kind === "app" ||
+                        (s.kind === "sheet" && !s.overChat) ||
+                        (s.kind === "chat" && s.enter === "down" && u < TR) ||
+                        (s.kind === "chat" &&
+                            s.enter === "fade" &&
+                            s.prev?.kind === "app" &&
+                            u < TR)
+                    set(appEl, {
+                        display: show ? "block" : "none",
+                        transform: "none",
+                        opacity: "1",
+                    })
+                    $("apptitle").textContent = s.appTitle ?? ""
+                    set(imgA, { transform: "none", opacity: "1" })
+                    set(imgB, { transform: "none", opacity: "1" })
+                    $("shadeA").style.opacity = "0"
+                    $("shadeB").style.opacity = "0"
+                    setSrc(imgTop, null)
+                    setSrc(imgB, null)
+                    setSrc(imgA, s.img)
+                    if (!show) return
+                    if (s.kind === "chat" && s.enter === "fade") {
+                        // another person's phone: the app fades into their chat
+                        appEl.style.opacity = String(1 - p)
+                        return
+                    }
+                    if (s.kind === "chat") {
+                        // back to the chat: the app slides away
+                        setSrc(imgA, s.img)
+                        appEl.style.transform = `translateY(${inQuad(u / TR) * 896}px)`
+                        return
+                    }
+                    if (s.kind === "sheet") return
+                    switch (s.enter) {
+                        case "up":
+                            appEl.style.transform = `translateY(${(1 - p) * 896}px)`
+                            break
+                        case "fadein":
+                            appEl.style.opacity = String(p)
+                            break
+                        case "push":
+                            if (u < TR && s.prevImg) {
+                                setSrc(imgB, s.prevImg)
+                                imgB.style.transform = `translateX(${-110 * p}px)`
+                                $("shadeB").style.opacity = String(0.12 * p)
+                                imgA.style.transform = `translateX(${(1 - p) * 390}px)`
+                            }
+                            break
+                        case "fade":
+                            if (u < TR && s.prevImg) {
+                                setSrc(imgB, s.prevImg)
+                                imgA.style.opacity = String(p)
+                            }
+                            break
+                        case "rise":
+                            if (u < TR && s.prevImg) {
+                                setSrc(imgB, s.prevImg)
+                                $("shadeB").style.opacity = String(0.3 * p)
+                                imgA.style.transform = `translateY(${(1 - p) * 844}px)`
+                            }
+                            break
+                        case "drop":
+                            if (u < TR && s.prevImg) {
+                                setSrc(imgTop, s.prevImg)
+                                imgTop.style.transform = `translateY(${inQuad(u / TR) * 844}px)`
+                            }
+                            break
+                    }
+                }
+
+                function renderSheets(s, u) {
+                    for (const el of $("sheets").children) el.style.display = "none"
+                    const show = (id, k) => {
+                        const el = $(`sheet-${id}`)
+                        el.style.display = "block"
+                        const bg = el.querySelector(".sheetbg"),
+                            sh = el.querySelector(".sheet"),
+                            dl = el.querySelector(".dialog")
+                        bg.style.opacity = String(k)
+                        if (sh) sh.style.transform = `translateY(${(1 - k) * 560}px)`
+                        if (dl) {
+                            dl.style.opacity = String(clamp(k * 1.4))
+                            dl.style.transform = `scale(${0.88 + 0.12 * k})`
+                        }
+                    }
+                    if (s.kind === "sheet") show(s.sheet, outQuart(u / TR))
+                    else if (
+                        s.prev?.kind === "sheet" &&
+                        (s.enter === "sheetdown" || s.enter === "undialog") &&
+                        u < TR
+                    )
+                        show(s.prev.sheet, 1 - inOut(u / (TR * 0.8)))
+                }
+
+                function renderFinger(t, roleSteps) {
+                    const f = $("finger"),
+                        r = $("ripple")
+                    f.style.display = "none"
+                    r.style.display = "none"
+                    for (const s of roleSteps) {
+                        if (!s.tap) continue
+                        const at = s.end - 0.16
+                        if (t < at - 0.55 || t > at + 0.4) continue
+                        // Where the finger landed stays put while the next screen comes in.
+                        const p = t <= s.end || !s._pt ? tapPoint(s) : s._pt
+                        if (t <= s.end) s._pt = p
+                        if (!p) continue
+                        const appear = outQuart((t - (at - 0.55)) / 0.2)
+                        const press =
+                            t < at
+                                ? outQuart((t - (at - 0.14)) / 0.14)
+                                : 1 - outQuart((t - at) / 0.22)
+                        const leave = 1 - clamp((t - (at + 0.15)) / 0.25)
+                        set(f, {
+                            display: "block",
+                            left: `${p.x}px`,
+                            top: `${p.y}px`,
+                            opacity: String(appear * leave),
+                            transform: `scale(${(1.25 - 0.25 * appear) * (1 - 0.18 * clamp(press))})`,
+                        })
+                        if (t >= at) {
+                            const q = clamp((t - at) / 0.42)
+                            const rad = 14 + 46 * outQuart(q)
+                            set(r, {
+                                display: "block",
+                                left: `${p.x - rad}px`,
+                                top: `${p.y - rad}px`,
+                                width: `${rad * 2}px`,
+                                height: `${rad * 2}px`,
+                                opacity: String(0.9 * (1 - q)),
+                            })
+                        }
+                        break
+                    }
+                }
+
+                let shownCap = null
+                function capHtml(s, r) {
+                    return `<div class="who"><i></i>${s.whoNow ?? ""}</div><div class="line"><div class="n">${s.capN}</div><div class="t">${s.caption}</div></div>`
+                }
+                function renderCaption(t, s, r) {
+                    const A = $("capA"),
+                        B = $("capB")
+                    const cs = s.capStep
+                    if (!cs || cs.role !== r.index) {
+                        A.style.opacity = "0"
+                        B.style.opacity = "0"
+                        return
+                    }
+                    const prevCap = r.steps.filter((x) => x.caption && x.start < cs.start).at(-1)
+                    const since = t - cs.start
+                    if (A.dataset.k !== String(cs.start)) {
+                        A.dataset.k = String(cs.start)
+                        A.innerHTML = capHtml(cs, r)
+                    }
+                    // The person line follows the step, the caption its own step.
+                    A.querySelector(".who").innerHTML = `<i></i>${s.whoNow ?? ""}`
+                    if (prevCap && since < 0.64) {
+                        if (B.dataset.k !== String(prevCap.start)) {
+                            B.dataset.k = String(prevCap.start)
+                            B.innerHTML = capHtml(prevCap, r)
+                        }
+                        const out = clamp(since / 0.22)
+                        set(B, {
+                            opacity: String(1 - out),
+                            transform: `translateY(${-24 * out}px)`,
+                        })
+                        B.querySelector(".who").style.opacity = "0"
+                    } else {
+                        B.style.opacity = "0"
+                    }
+                    const inn = prevCap ? outQuart((since - 0.24) / 0.4) : 1
+                    set(A, {
+                        opacity: String(inn),
+                        transform: `translateY(${(1 - inn) * 30}px)`,
+                    })
+                    $("dots").innerHTML = Array.from(
+                        { length: r.caps },
+                        (_, i) => `<b class="${i + 1 === cs.capN ? "on" : ""}"></b>`,
+                    ).join("")
+                }
+
+                function render(t) {
+                    // Background drift
+                    set($("blob1"), {
+                        left: `${-160 + 120 * Math.sin(t * 0.21)}px`,
+                        top: `${220 + 90 * Math.cos(t * 0.17)}px`,
+                    })
+                    set($("blob2"), {
+                        left: `${640 + 100 * Math.cos(t * 0.19)}px`,
+                        top: `${1180 + 120 * Math.sin(t * 0.13)}px`,
+                    })
+
+                    // Intro
+                    const intro = $("intro")
+                    if (t < INTRO + 0.1) {
+                        intro.style.display = "flex"
+                        const out = clamp((t - (INTRO - 0.55)) / 0.55)
+                        set(intro, {
+                            opacity: String(1 - out),
+                            transform: `translateY(${-40 * inQuad(out)}px)`,
+                        })
+                        const logo = outBack((t - 0.2) / 0.7)
+                        set(intro.querySelector(".logo"), {
+                            opacity: String(clamp((t - 0.2) / 0.35)),
+                            transform: `scale(${0.82 + 0.18 * logo})`,
+                        })
+                        const h = outQuart((t - 0.7) / 0.6)
+                        set(intro.querySelector("h1"), {
+                            opacity: String(h),
+                            transform: `translateY(${(1 - h) * 30}px)`,
+                        })
+                        const sb = outQuart((t - 1.0) / 0.6)
+                        set(intro.querySelector(".sub"), {
+                            opacity: String(sb),
+                            transform: `translateY(${(1 - sb) * 24}px)`,
+                        })
+                        const introRows = $("introrows").children.length
+                        Array.from({ length: introRows }).forEach((_, i) => {
+                            const k = SOLO
+                                ? outQuart((t - 1.3 - i * 0.2) / 0.5)
+                                : outQuart((t - 1.5 - i * 0.28) / 0.6)
+                            set($(`ir${i}`), {
+                                opacity: String(k),
+                                transform: `translateX(${(1 - k) * 80}px)`,
+                            })
+                        })
+                    } else intro.style.display = "none"
+
+                    // Outro
+                    const outro = $("outro")
+                    if (t >= OUTRO_START - 0.05) {
+                        outro.style.display = "flex"
+                        const u = t - OUTRO_START
+                        const logo = outBack(u / 0.7)
+                        set(outro.querySelector(".logo"), {
+                            opacity: String(clamp(u / 0.35)),
+                            transform: `scale(${0.82 + 0.18 * logo})`,
+                        })
+                        const h = outQuart((u - 0.45) / 0.6)
+                        set(outro.querySelector("h2"), {
+                            opacity: String(h),
+                            transform: `translateY(${(1 - h) * 30}px)`,
+                        })
+                        Array.from({ length: $("outrorows").children.length }, (_, i) => i).forEach(
+                            (i) => {
+                                const k = outQuart((u - 0.9 - i * 0.25) / 0.6)
+                                set($(`or${i}`), {
+                                    opacity: String(k),
+                                    transform: `translateX(${(1 - k) * 80}px)`,
+                                })
+                            },
+                        )
+                        const sk = outBack((u - 1.9) / 0.6)
+                        set(outro.querySelector(".site"), {
+                            opacity: String(clamp((u - 1.9) / 0.3)),
+                            transform: `scale(${0.85 + 0.15 * sk})`,
+                        })
+                        const fade = clamp((t - (DURATION - 0.6)) / 0.6)
+                        outro.style.opacity = String(1 - fade * 0.0)
+                    } else outro.style.display = "none"
+
+                    // Role card and body
+                    const r = [...roles].reverse().find((x) => t >= x.cardStart - 0.01)
+                    const card = $("card"),
+                        phone = $("phone"),
+                        top = $("top"),
+                        caps = $("caps"),
+                        dots = $("dots")
+                    if (!r || t >= OUTRO_START) {
+                        card.style.display = "none"
+                        phone.style.display = "none"
+                        const k = r ? 1 - clamp((t - OUTRO_START + 0.2) / 0.3) : 0
+                        set(top, { opacity: String(r ? k : 0) })
+                        caps.style.opacity = String(r ? k : 0)
+                        dots.style.opacity = String(r ? k : 0)
+                        return
+                    }
+                    const role = ROLES[r.index]
+                    // Card
+                    const cu = t - r.cardStart
+                    if (!SOLO && cu < CARD + 0.1) {
+                        card.style.display = "flex"
+                        if (card.dataset.r !== String(r.index)) {
+                            card.dataset.r = String(r.index)
+                            $("cardicon").innerHTML = svg(role.icon)
+                            $("cardnum").textContent = `${r.index + 1} / 3`
+                            $("cardname").textContent = role.name
+                            $("cardsub").textContent = role.sub
+                        }
+                        const inK = outQuart(cu / 0.5)
+                        const outK = clamp((cu - (CARD - 0.45)) / 0.45)
+                        set(card, {
+                            opacity: String(inK * (1 - outK)),
+                            transform: `translateY(${(1 - inK) * 40 - 120 * inQuad(outK)}px)`,
+                        })
+                        const tile = outBack(cu / 0.6)
+                        set($("cardicon"), {
+                            transform: `scale(${0.7 + 0.3 * tile}) rotate(${(1 - tile) * -8}deg)`,
+                        })
+                    } else card.style.display = "none"
+
+                    // Header and caption
+                    $("rolechip").textContent = SOLO ? role.name : `${r.index + 1}/3 · ${role.name}`
+                    const headK =
+                        outQuart((t - (r.bodyStart - 0.5)) / 0.5) *
+                        (1 - clamp((t - r.bodyEnd) / 0.35))
+                    set(top, { opacity: String(headK) })
+                    caps.style.opacity = String(headK)
+                    dots.style.opacity = String(headK)
+
+                    // Phone
+                    const enterK = outQuart((t - (r.bodyStart - 0.6)) / 0.6)
+                    const exitK = inQuad((t - r.bodyEnd) / 0.45)
+                    const S = 1.5
+                    const float = Math.sin(t * 0.9) * 4
+                    if (enterK <= 0 || exitK >= 1) {
+                        phone.style.display = "none"
+                        return
+                    }
+                    set(phone, {
+                        display: "block",
+                        transform: `translateY(${(1 - enterK) * 1500 + exitK * 1500 + float}px) scale(${S})`,
+                    })
+
+                    const tt = clamp(t, r.bodyStart, r.bodyEnd - 0.001)
+                    const s = r.steps.find((x) => tt >= x.start && tt < x.end) ?? r.steps.at(-1)
+                    const u = tt - s.start
+                    renderChats(tt, s, u)
+                    renderApp(s, u)
+                    renderSheets(s, u)
+                    renderFinger(tt, r.steps)
+                    renderCaption(tt, s, r)
+                }
+
+                window.DURATION = DURATION
+                window.render = async (t) => {
+                    render(t)
+                    while (pending.length) await pending.shift()
+                    render(t)
+                }
+                window.TIMELINE = {
+                    duration: DURATION,
+                    roles: roles.map((r) => ({
+                        card: r.cardStart,
+                        body: r.bodyStart,
+                        end: r.bodyEnd,
+                    })),
+                    taps: steps.filter((s) => s.tap).map((s) => s.end - 0.16),
+                    messages: Object.values(msgById)
+                        .filter((m) => m.at < Infinity)
+                        .map((m) => ({ at: m.at, out: !!m.out })),
+                    outro: OUTRO_START,
+                    // When each role is done: the Zumda sound rings.
+                    done: roles.map((r) =>
+                        r.index === 0
+                            ? msgById.b4.at
+                            : r.steps.at(-1).start + (r.index === 1 ? 0.15 : 0.3),
+                    ),
+                    steps: steps.map((x) => ({
+                        k: x.kind,
+                        img: x.img,
+                        chat: x.chat,
+                        s: +x.start.toFixed(2),
+                        e: +x.end.toFixed(2),
+                    })),
+                }
+                render(0)
+                window.READY = true
+            }
+            main().catch((e) => {
+                document.title = "ERROR " + e.message
+                console.error(e)
+            })
+        </script>
+    </body>
+</html>

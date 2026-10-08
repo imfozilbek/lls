@@ -13,6 +13,9 @@ courier on the road. Zumda serves shops, eateries and services, not only shops.
 | `biznes-640.png` | 640×360 | @BotFather → `@zumdashop_business_bot` → Edit Bot → Edit Description Picture |
 | `welcome.html` | | The scene itself (SVG + text), the source of every file above |
 
+The greeting itself is a video now (`video/`: how it is made); these pictures go when Telegram
+cannot take the video, and to a courier who already works.
+
 The bots send the JPEG copies from `packages/app/public/welcome/` (served at
 `https://app.zumda.shop/welcome/zumda.jpg`, `kuryer.jpg` and `biznes.jpg`) with the greeting as the caption.
 The Description Picture has no Bot API method: the owner sets it once in @BotFather.

@@ -7,6 +7,14 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The bots greet with an instruction video
+- `/start` in Zumda | Business, Zumda | Shop and (for someone new) Zumda | Kuryer sends its role's
+  instruction video instead of the street picture: the real screens of the sign-up, step by step,
+  with captions in Uzbek and its own music (synthesized, with the Zumda sound). The greeting text
+  and its button stay under the video; the picture goes when Telegram cannot take the video.
+- Videos (720p, 2-3 MB) and covers in `packages/app/public/welcome/`; made on the stand by
+  `brand/welcome/video/build.sh` (`OUT=` to look first, `ALL=1` for the reel of all three roles).
+
 ### Demo shops in production («Namuna»)
 - «Platforma» → «Bizneslar» → «Namuna qilish»: a live shop becomes a demo from its kind's sample
   (catalog, logo, hours the whole day, the test card «NAMUNA KARTA» `0000 0000 0000 0000`, the
