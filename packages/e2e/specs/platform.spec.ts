@@ -92,6 +92,26 @@ test("«Tumanlar»: a new district by its center, then a longer wait", async ({ 
     await expect(sirdaryo).toContainText("Kutish 20 daqiqa")
 })
 
+test("«Qo'llanma»: the couriers' guide goes to each courier once, from Zumda | Kuryer", async ({
+    page,
+}) => {
+    const since = await lastSeq()
+    await openApp(page, { user: PEOPLE.admin, businessBot: true })
+    await page.getByRole("button", { name: /Platforma/ }).click()
+    await page.getByRole("tab", { name: "Qo'llanma" }).click()
+    const couriers = page.getByRole("listitem").filter({ hasText: "Kuryerlar" })
+    await expect(couriers).toContainText(/kishi kutmoqda/)
+    await couriers.getByRole("button", { name: "Yuborish" }).click()
+    await expect(page.getByText(/Yuborildi: \d+, yetmadi: 0/)).toBeVisible()
+    await expect(couriers).toContainText("Hammasi oldi")
+    await expect(couriers.getByRole("button", { name: "Yuborish" })).toHaveCount(0)
+
+    const guide = await waitForMessage(PEOPLE.courier.id, "kuryer uchun", since)
+    expect(guide.method).toBe("sendVideo")
+    expect(guide.video).toBe("http://localhost:5173/welcome/kuryer.mp4")
+    expect(guide.buttons[0]?.web_app?.url).toContain("mode=courier")
+})
+
 test("«Buyurtmani ochish»: the owner lands on the order, the customer on its tracking", async ({
     page,
 }) => {
