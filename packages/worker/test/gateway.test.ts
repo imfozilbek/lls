@@ -93,6 +93,37 @@ describe("HttpTelegramGateway", () => {
         })
     })
 
+    it("sends a video by URL with its cover, size, an HTML caption and buttons", async () => {
+        const { fetcher, calls } = fakeFetch({ message_id: 8 })
+        const keyboard = { inline_keyboard: [[{ text: "Open", web_app: { url: "https://a" } }]] }
+        await new HttpTelegramGateway(fetcher).sendVideo(
+            "t",
+            1,
+            {
+                url: "https://app.zumda.shop/welcome/biznes.mp4",
+                coverUrl: "https://app.zumda.shop/welcome/biznes-cover.jpg",
+                width: 720,
+                height: 1280,
+                durationS: 47,
+            },
+            "<b>Hi</b>",
+            { keyboard },
+        )
+        expect(calls[0]?.url).toBe("https://api.telegram.org/bott/sendVideo")
+        expect(calls[0]?.body).toEqual({
+            chat_id: 1,
+            video: "https://app.zumda.shop/welcome/biznes.mp4",
+            cover: "https://app.zumda.shop/welcome/biznes-cover.jpg",
+            width: 720,
+            height: 1280,
+            duration: 47,
+            supports_streaming: true,
+            caption: "<b>Hi</b>",
+            parse_mode: "HTML",
+            reply_markup: keyboard,
+        })
+    })
+
     it("edits, answers callbacks, sets webhook and menu button", async () => {
         const { fetcher, calls } = fakeFetch(true)
         const gateway = new HttpTelegramGateway(fetcher)

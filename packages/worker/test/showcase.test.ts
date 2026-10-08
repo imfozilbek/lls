@@ -223,10 +223,17 @@ describe("Zumda showcase", () => {
         expect(await json(own)).toMatchObject({ channel: "shop_bot", commission: 0 })
     })
 
-    it("the Zumda bot welcomes customers with the street picture and the showcase", async () => {
+    it("the Zumda bot welcomes customers with the instruction video and the showcase", async () => {
         await platformUpdate({ from: CUSTOMER, text: "/start" })
-        const welcome = client.telegram.pictures.at(-1)
-        expect(welcome?.photoUrl).toBe("https://zumda-app.pages.dev/welcome/zumda.jpg")
+        expect(client.telegram.pictures).toHaveLength(0)
+        const welcome = client.telegram.videos.at(-1)
+        expect(welcome?.video).toEqual({
+            url: "https://zumda-app.pages.dev/welcome/zumda.mp4",
+            coverUrl: "https://zumda-app.pages.dev/welcome/zumda-cover.jpg",
+            width: 720,
+            height: 1280,
+            durationS: 40,
+        })
         expect(welcome?.html).toContain("do'konlar, oshxonalar va xizmatlar")
         const buttons = welcome?.options?.keyboard?.inline_keyboard
         expect(buttons?.[0]?.[0]?.web_app?.url).toContain("mode=market")
@@ -234,7 +241,18 @@ describe("Zumda showcase", () => {
         expect(buttons).toHaveLength(1)
     })
 
-    it("when Telegram cannot take the picture, the same welcome goes as text", async () => {
+    it("when Telegram cannot take the video, the street picture goes with the same welcome", async () => {
+        client.telegram.failVideos = true
+        await platformUpdate({ from: CUSTOMER, text: "/start" })
+        expect(client.telegram.videos).toHaveLength(0)
+        const welcome = client.telegram.pictures.at(-1)
+        expect(welcome?.photoUrl).toBe("https://zumda-app.pages.dev/welcome/zumda.jpg")
+        expect(welcome?.html).toContain("do'konlar, oshxonalar va xizmatlar")
+        expect(welcome?.options?.keyboard?.inline_keyboard).toHaveLength(1)
+    })
+
+    it("when Telegram cannot take the video nor the picture, the same welcome goes as text", async () => {
+        client.telegram.failVideos = true
         client.telegram.failPictures = true
         await platformUpdate({ from: CUSTOMER, text: "/start" })
         expect(client.telegram.pictures).toHaveLength(0)

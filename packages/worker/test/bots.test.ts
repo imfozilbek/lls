@@ -69,9 +69,11 @@ describe("Zumda Business bot", () => {
             ),
         )
         expect(response.status).toBe(200)
-        const [welcome] = client.telegram.pictures
+        // The greeting is the owner's instruction video, the button under it.
+        const [welcome] = client.telegram.videos
         expect(welcome?.chatId).toBe(OWNER.id)
         expect(welcome?.token).toBe(env.BUSINESS_BOT_TOKEN)
+        expect(welcome?.video.url).toMatch(/\/welcome\/biznes\.mp4$/)
         expect(welcome?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
             "https://business.zumda.test/?mode=business",
         )

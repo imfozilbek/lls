@@ -11,7 +11,7 @@ import { escapeHtml } from "../telegram/gateway.js"
 import { connectReviewedShop, warnBotNotConnected } from "../telegram/shop-connection.js"
 import { textsFor } from "../telegram/texts.js"
 import { callbackErrorText, isStart } from "../telegram/updates.js"
-import { sendWelcome, welcomePictureUrl } from "../telegram/welcome.js"
+import { sendWelcome, welcomePictureUrl, welcomeVideo } from "../telegram/welcome.js"
 
 import type { Services } from "../services.js"
 import type { Callback, IncomingMessage } from "../telegram/updates.js"
@@ -95,6 +95,7 @@ export async function handleBusinessMessage(
         token,
         chatId: message.chat.id,
         pictureUrl: welcomePictureUrl(services.env.APP_ORIGIN, "business"),
+        video: welcomeVideo(services.env.APP_ORIGIN, "business"),
         html: texts.businessWelcome,
         options: { keyboard },
     })
