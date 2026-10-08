@@ -54,6 +54,8 @@ import {
     SetMarketplaceTermsUseCase,
     MakeDemoShopUseCase,
     ResetDemoShopUseCase,
+    GuideStatusUseCase,
+    SendGuidesUseCase,
     UpdateCustomerUseCase,
     UpdateProductUseCase,
     UpdateShopUseCase,
@@ -75,6 +77,7 @@ import { D1BusinessRepository } from "./repositories/business.repository.js"
 import { D1CourierRepository } from "./repositories/courier.repository.js"
 import { D1CustomerRepository } from "./repositories/customer.repository.js"
 import { D1DistrictRepository } from "./repositories/district.repository.js"
+import { D1GuideRecipients } from "./repositories/guide.repository.js"
 import { D1ManagedBotRepository } from "./repositories/managed-bot.repository.js"
 import { D1NetworkOfferRepository } from "./repositories/network-offer.repository.js"
 import { D1OrderRepository } from "./repositories/order.repository.js"
@@ -83,6 +86,7 @@ import { D1ProductRepository } from "./repositories/product.repository.js"
 import { R2ReceiptStore } from "./repositories/receipt.store.js"
 import { D1TripRepository } from "./repositories/trip.repository.js"
 import { OrsRoutePlanner } from "./routing.js"
+import { TelegramGuideSender } from "./telegram/guides.js"
 
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
@@ -150,6 +154,8 @@ export interface UseCases {
     setMarketplaceTerms: SetMarketplaceTermsUseCase
     makeDemoShop: MakeDemoShopUseCase
     resetDemoShop: ResetDemoShopUseCase
+    guideStatus: GuideStatusUseCase
+    sendGuides: SendGuidesUseCase
     setDistrict: SetDistrictUseCase
     setNetworkMembership: SetNetworkMembershipUseCase
     offerNetwork: OfferNetworkUseCase
@@ -201,15 +207,37 @@ function tripUseCases(deps: TripDeps): TripUseCases {
     }
 }
 
-type AdminUseCases = Pick<UseCases, "setMarketplaceTerms" | "makeDemoShop" | "resetDemoShop">
+type AdminUseCases = Pick<
+    UseCases,
+    "setMarketplaceTerms" | "makeDemoShop" | "resetDemoShop" | "guideStatus" | "sendGuides"
+>
 
-/** «Platforma» on one shop: its showcase deal, and making it a demo or starting the demo again. */
-function adminUseCases(deps: DemoShopDeps): AdminUseCases {
-    const { businesses, platformAdminIds, clock } = deps
+/**
+ * «Platforma»: one shop's showcase deal, making it a demo or starting the demo again; and
+ * «Qo'llanma», each role's guide sent once from its bot.
+ */
+function adminUseCases(
+    base: Omit<DemoShopDeps, "platformAdminIds"> & {
+        businesses: D1BusinessRepository
+        env: Bindings
+        telegram: TelegramGateway
+    },
+    platformAdminIds: readonly number[],
+): AdminUseCases {
+    const { businesses, clock, env, telegram } = base
+    const deps = { ...base, platformAdminIds }
+    const guides = {
+        recipients: new D1GuideRecipients(env.DB),
+        sender: new TelegramGuideSender({ env, telegram, businesses }),
+        clock,
+        platformAdminIds,
+    }
     return {
         setMarketplaceTerms: new SetMarketplaceTermsUseCase(businesses, platformAdminIds, clock),
         makeDemoShop: new MakeDemoShopUseCase(deps),
         resetDemoShop: new ResetDemoShopUseCase(deps),
+        guideStatus: new GuideStatusUseCase(guides),
+        sendGuides: new SendGuidesUseCase(guides),
     }
 }
 
@@ -298,7 +326,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             listShowcaseShops: new ListShowcaseShopsUseCase(businesses, clock),
             shopBotOf: new ShopBotOfUseCase(businesses),
             searchShowcase: new SearchShowcaseUseCase(businesses, products, clock),
-            ...adminUseCases({ ...cardBook, products, couriers, orders, platformAdminIds: admins }),
+            ...adminUseCases({ ...cardBook, products, couriers, orders, env, telegram }, admins),
             setDistrict: new SetDistrictUseCase(network, admins),
             setNetworkMembership: new SetNetworkMembershipUseCase(network),
             offerNetwork: new OfferNetworkUseCase(network),

@@ -93,6 +93,14 @@ const BASE = {
             "<b>Zumda Business: do'koningiz, oshxonangiz yoki xizmatingiz uchun o'z buyurtma boti.</b>\n\nBotni shu yerda bir tugma bilan yarating: token kerak emas. Menyu, buyurtmalar, pul va kuryerlar: hammasi «Mening bizneslarim»da.",
         openBusinesses: "🏪 Mening bizneslarim",
         openShowcase: "🔍 Qidirish va buyurtma berish",
+        // «Qo'llanma»: the guide video an admin sends everyone once, each from their role's bot.
+        guideOwner:
+            "📘 <b>Zumda qo'llanmasi: biznes egasi uchun</b>\n\nAriza, bot va ishga tushirish: qisqa videoda. Buyurtmalar, pul va kuryerlar: «Mening bizneslarim»da.",
+        guideCourier:
+            "📘 <b>Zumda qo'llanmasi: kuryer uchun</b>\n\nTaklif havolasidan smenagacha: qisqa videoda. Buyurtmalar shu yerga keladi, ish esa «Yetkazishlarim»da.",
+        guideCustomer:
+            "📘 <b>Zumda Shop: tumaningizdagi do'konlar bir joyda</b>\n\n{shop} buyurtmalari shu botda qoladi. Boshqa do'konlar, oshxonalar va xizmatlarni Zumda Shop'da toping: qanday buyurtma berish videoda.",
+        openZumdaShop: "🔍 Zumda Shop'ni ochish",
         showcaseOrder: "🛍 Zumda vitrinasidan · komissiya {rate}%: {sum}",
         cardAddedOwner:
             "💳 {shop}: yangi karta qo'shildi, {card}.\nBuni siz qilmagan bo'lsangiz, darhol Zumda'ga yozing.",

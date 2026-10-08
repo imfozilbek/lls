@@ -9,6 +9,7 @@ import {
     CRASH_SCREEN,
     CRASH_WHERE,
     FEATURES,
+    GUIDE_AUDIENCES,
     LANGUAGES,
     MONEY_PERIODS,
     ORDER_STATUSES,
@@ -293,6 +294,9 @@ export const marketplaceBody = z.object({
 
 /** «Namuna qilish»: which sample fills the demo (water for a grocery store with bottles). */
 export const demoBody = z.object({ template: z.enum(DEMO_TEMPLATES) })
+
+/** «Qo'llanma»: whose guide goes out (owners, couriers or customers). */
+export const guideParam = z.object({ audience: z.enum(GUIDE_AUDIENCES) })
 
 /** A district: a new one needs a center and a radius; an existing one may change any of them. */
 export const districtBody = z.object({

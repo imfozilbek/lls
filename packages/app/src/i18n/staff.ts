@@ -557,8 +557,13 @@ export const staffUz = {
     },
     platform: {
         title: "Platforma",
-        entryHint: "Arizalar, bizneslar va tumanlar",
-        tabs: { applications: "Arizalar", shops: "Bizneslar", districts: "Tumanlar" },
+        entryHint: "Arizalar, bizneslar, tumanlar va qo'llanma",
+        tabs: {
+            applications: "Arizalar",
+            shops: "Bizneslar",
+            districts: "Tumanlar",
+            guides: "Qo'llanma",
+        },
         live: "Ishlayapti",
         off: "O'chirilgan",
         noApplications: "Yangi arizalar yo'q",
@@ -633,6 +638,16 @@ export const staffUz = {
         week: "7 kunda yetkazildi: {delivered}, tarmoq orqali: {network}",
         waitLine: "Kutish {min} daqiqa",
         badCenter: "Koordinatalarni «kenglik, uzunlik» ko'rinishida yozing",
+        guidesHint:
+            "Har kim o'z rolining videosini bir marta oladi: biznes egalari Zumda | Business'dan, kuryerlar Zumda | Kuryer'dan, mijozlar o'z do'koni botidan, Zumda Shop taklifi bilan.",
+        guideAudiences: { owner: "Biznes egalari", courier: "Kuryerlar", customer: "Mijozlar" },
+        guideCounts: "{left} kishi kutmoqda · jami {total}",
+        guidesAllDone: "Hammasi oldi · jami {total}",
+        guidesNobody: "Hali hech kim yo'q",
+        guidesSend: "Yuborish",
+        guidesConfirm: "{who}: {n} kishiga qo'llanma yuborilsinmi? Har biri uni bir marta oladi.",
+        guidesProgress: "{done}/{total}",
+        guidesDone: "Yuborildi: {sent}, yetmadi: {unreachable}",
     },
 }
 

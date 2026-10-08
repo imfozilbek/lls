@@ -6,6 +6,9 @@ import type {
     DemoTemplateKey,
     BusinessStatus,
     DistrictStats,
+    GuideAudience,
+    GuideBatchDTO,
+    GuideCount,
     PlatformShopDTO,
     CourierDTO,
     CourierHomeDTO,
@@ -524,6 +527,12 @@ export const adminApi = {
     /** «Namunani tozalash»: the demo's orders go, its sample comes back. */
     resetDemo: (id: string): Promise<AdminShopResult> =>
         request("POST", `/api/admin/shops/${id}/demo/reset`),
+    /** «Qo'llanma»: each audience, everyone it reaches and who has not had the guide yet. */
+    guides: async (): Promise<GuideCount[]> =>
+        (await request<Page<GuideCount>>("GET", "/api/admin/guides")).data,
+    /** One batch of an audience's guide; call again while `left` is above 0. */
+    sendGuides: (audience: GuideAudience): Promise<GuideBatchDTO> =>
+        request("POST", `/api/admin/guides/${audience}/send`),
     districts: async (): Promise<DistrictStats[]> =>
         (await request<Page<DistrictStats>>("GET", "/api/admin/districts")).data,
     saveDistrict: (body: DistrictInput): Promise<unknown> =>

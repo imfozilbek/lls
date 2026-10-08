@@ -6,6 +6,7 @@ import { env } from "cloudflare:workers"
 import { describe, expect, it } from "vitest"
 
 import { SHOWCASE_SHOPS } from "../src/repositories/business.repository.js"
+import { countSql, nextSql } from "../src/repositories/guide.repository.js"
 import {
     ACTIVE_VERSION_SQL,
     BY_STATUS,
@@ -50,6 +51,24 @@ const ACTIVE = ["pending", "accepted", "preparing", "ready", "picked_up"]
 const FINAL = ["delivered", "cancelled"]
 
 describe("query plans", () => {
+    it("«Qo'llanma» goes through the people once: who had the guide and a customer's last shop by key", async () => {
+        for (const audience of ["owner", "courier", "customer"] as const) {
+            for (const [sql, binds] of [
+                [nextSql(audience), [audience, 20]],
+                [countSql(audience), [audience]],
+            ] as const) {
+                const plan = await planOf(sql, [...binds])
+                expect(plan.join("\n")).toContain(
+                    "SEARCH g USING COVERING INDEX sqlite_autoindex_guide_sends_1 (audience=? AND telegram_id=?)",
+                )
+                expect(plan.join("\n")).not.toMatch(/\b(orders|order_items)\b/)
+                if (audience === "customer") {
+                    expectIndexed(plan, ["sqlite_autoindex_customer_businesses_1"])
+                }
+            }
+        }
+    })
+
     it("the showcase's shops check one catalog entry each, never the products' rows", async () => {
         const plan = (await planOf(SHOWCASE_SHOPS, ["active"])).join("\n")
         expect(plan).toContain("USING COVERING INDEX idx_products_catalog")

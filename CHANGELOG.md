@@ -7,6 +7,15 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### «Qo'llanma»: the guide videos for everyone already in Zumda
+- «Platforma» → «Qo'llanma»: owners, couriers and customers, how many each reaches and how many
+  still wait; «Yuborish» sends the whole audience batch by batch with its progress.
+- Owners get the owner's video from Zumda | Business, couriers the courier's from Zumda | Kuryer,
+  a customer Zumda | Shop's video from the shop they came to last, with «Zumda Shop'ni ochish»
+  (right on that shop when it is in the showcase) and the shop's own menu button.
+- Each person once (migration `0021_guide_sends.sql`); demo and turned-off shops reach nobody;
+  someone the bot cannot reach is counted and never written to again.
+
 ### The bots greet with an instruction video
 - `/start` in Zumda | Business, Zumda | Shop and (for someone new) Zumda | Kuryer sends its role's
   instruction video instead of the street picture: the real screens of the sign-up, step by step,

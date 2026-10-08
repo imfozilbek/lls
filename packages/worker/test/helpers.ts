@@ -174,6 +174,7 @@ export class FakeTelegram implements TelegramGateway {
         if (this.failReplies) {
             throw new TelegramApiError("sendVideo", "Forbidden: bot was blocked by the user")
         }
+        this.refuseUnstarted("sendVideo", token, chatId)
         if (this.failVideos) {
             throw new TelegramApiError("sendVideo", "Bad Request: failed to get HTTP URL content")
         }

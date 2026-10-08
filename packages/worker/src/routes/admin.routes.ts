@@ -13,6 +13,7 @@ import {
     adminShopsQuery,
     demoBody,
     districtBody,
+    guideParam,
     idParam,
     marketplaceBody,
     onInvalid,
@@ -172,6 +173,23 @@ export const adminRoutes = new Hono<AppEnv>()
             businessId: c.req.valid("param").id,
         })
         return c.json({ shop: withoutCard(shop) })
+    })
+
+    /** «Qo'llanma»: each audience, everyone it reaches and who has not had the guide yet. */
+    .get("/guides", async (c) => {
+        const data = await c.get("services").useCases.guideStatus.execute({
+            actorTelegramId: c.get("auth").user.id,
+        })
+        return c.json({ data, meta: { page: 1, limit: data.length, total: data.length } })
+    })
+
+    /** One batch of an audience's guide; the app presses again while some are left. */
+    .post("/guides/:audience/send", zValidator("param", guideParam, onInvalid), async (c) => {
+        const result = await c.get("services").useCases.sendGuides.execute({
+            actorTelegramId: c.get("auth").user.id,
+            audience: c.req.valid("param").audience,
+        })
+        return c.json(result)
     })
 
     /** «Tumanlar»: each district now and over the last week; late network orders are reported. */
