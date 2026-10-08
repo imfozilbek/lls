@@ -8,6 +8,7 @@ import { env } from "cloudflare:workers"
 import { describe, expect, it } from "vitest"
 
 import {
+    ADMIN,
     CUSTOMER,
     OWNER,
     SHOP_BOT,
@@ -174,6 +175,13 @@ describe("rows read per request, on six months of history", () => {
                     "showcase: search «osh»",
                     () => client.as(CUSTOMER, {})("/api/showcase/products?q=osh"),
                     30,
+                ],
+                // Admins only, opened once in months: walks the people (a row or two each), never
+                // their orders: a district of 1 000 customers reads about 2 000.
+                [
+                    "admin: «Qo'llanma» counts",
+                    () => client.as(ADMIN, { businessBot: true })("/api/admin/guides"),
+                    50,
                 ],
             ]
             // Measured (docs/capacity.md); each limit leaves room, none follows the history.

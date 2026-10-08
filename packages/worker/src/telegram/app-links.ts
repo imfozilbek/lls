@@ -50,6 +50,20 @@ export function showcaseAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=market`
 }
 
+/**
+ * Zumda | Shop in Telegram; with a shop in the showcase, opened right on it (`m_<slug>`, the
+ * same link as the Zumda Shop QR).
+ */
+export function zumdaShopUrl(botUsername: string, showcaseSlug?: string): string {
+    const start = showcaseSlug ? `?startapp=m_${showcaseSlug}` : ""
+    return `https://t.me/${botUsername}${start}`
+}
+
+/** A button that opens a Telegram link: another bot, not this bot's Mini App. */
+export function linkButton(label: string, url: string): InlineButton {
+    return { text: label, url }
+}
+
 export function appButton(label: string, url: string): InlineButton {
     return { text: label, web_app: { url } }
 }

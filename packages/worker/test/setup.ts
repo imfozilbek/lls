@@ -17,6 +17,7 @@ const TABLES = [
     "courier_profiles",
     "customer_phone_shares",
     "alert_log",
+    "guide_sends",
     "customer_businesses",
     "customers",
     "product_words",
