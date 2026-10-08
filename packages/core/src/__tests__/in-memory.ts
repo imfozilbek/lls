@@ -11,6 +11,14 @@ import type { CourierRepository } from "../application/ports/courier-repository.
 import type { CustomerRepository } from "../application/ports/customer-repository.js"
 import type { DistrictRepository } from "../application/ports/district-repository.js"
 import type {
+    GuideAudience,
+    GuideCount,
+    GuideOutcome,
+    GuideRecipient,
+    GuideRecipients,
+    GuideSender,
+} from "../application/ports/guide-recipients.js"
+import type {
     ManagedBotRecord,
     ManagedBotRepository,
 } from "../application/ports/managed-bot-repository.js"
@@ -652,5 +660,67 @@ export class FakeRoutes implements RoutePlanner {
                   distanceMeters: 1000 * points.length,
                   durationSeconds: 60 * points.length,
               }
+    }
+}
+
+/** «Qo'llanma»: the people each audience reaches, and who has had the guide. */
+export class InMemoryGuideRecipients implements GuideRecipients {
+    readonly people: Record<GuideAudience, GuideRecipient[]> = {
+        owner: [],
+        courier: [],
+        customer: [],
+    }
+    readonly records: {
+        audience: GuideAudience
+        recipient: GuideRecipient
+        outcome: GuideOutcome
+        at: Date
+    }[] = []
+
+    private done(audience: GuideAudience, telegramId: number): boolean {
+        return this.records.some(
+            (r) => r.audience === audience && r.recipient.telegramId === telegramId,
+        )
+    }
+
+    async next(audience: GuideAudience, limit: number): Promise<GuideRecipient[]> {
+        return this.people[audience]
+            .filter((p) => !this.done(audience, p.telegramId))
+            .slice(0, limit)
+    }
+
+    async counts(): Promise<GuideCount[]> {
+        return (Object.keys(this.people) as GuideAudience[]).map((audience) => ({
+            audience,
+            total: this.people[audience].length,
+            left: this.people[audience].filter((p) => !this.done(audience, p.telegramId)).length,
+        }))
+    }
+
+    async record(
+        audience: GuideAudience,
+        recipient: GuideRecipient,
+        outcome: GuideOutcome,
+        at: Date,
+    ): Promise<void> {
+        this.records.push({ audience, recipient, outcome, at })
+    }
+}
+
+/** Sends nothing: records who got what; `blocked` cannot be written to, `failOn` breaks Telegram. */
+export class FakeGuideSender implements GuideSender {
+    readonly sent: { audience: GuideAudience; recipient: GuideRecipient }[] = []
+    readonly blocked = new Set<number>()
+    failOn: number | null = null
+
+    async send(audience: GuideAudience, recipient: GuideRecipient): Promise<GuideOutcome> {
+        if (recipient.telegramId === this.failOn) {
+            throw new Error("Telegram is down")
+        }
+        if (this.blocked.has(recipient.telegramId)) {
+            return "unreachable"
+        }
+        this.sent.push({ audience, recipient })
+        return "sent"
     }
 }
