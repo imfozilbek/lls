@@ -8,11 +8,12 @@ import { Settle } from "../ui/settle.js"
 import { BottomSpacer } from "../ui/shell.js"
 
 import { DistrictsTab } from "./DistrictsTab.js"
+import { GuidesTab } from "./GuidesTab.js"
 import { ApplicationsTab, ShopsTab } from "./ShopsTabs.js"
 
 import type { AdminTarget } from "../lib/telegram.js"
 
-type PlatformTab = "applications" | "shops" | "districts"
+type PlatformTab = "applications" | "shops" | "districts" | "guides"
 
 function firstTab(target: AdminTarget | null): PlatformTab {
     return target === "districts" ? "districts" : "applications"
@@ -20,7 +21,8 @@ function firstTab(target: AdminTarget | null): PlatformTab {
 
 /**
  * «Platforma»: what platform admins once did with bot commands. Applications, live and turned-off
- * shops (showcase deal, the bot, on and off), and the districts of the delivery network.
+ * shops (showcase deal, the bot, on and off), the districts of the delivery network, and
+ * «Qo'llanma», each role's guide sent to everyone once.
  * A bot message may open it on one of them (`target`). Its own chunk: owners never load it.
  */
 export function PlatformApp({
@@ -55,6 +57,7 @@ export function PlatformApp({
                     { value: "applications", label: t.tabs.applications },
                     { value: "shops", label: t.tabs.shops },
                     { value: "districts", label: t.tabs.districts },
+                    { value: "guides", label: t.tabs.guides },
                 ]}
             />
             <Settle key={tab} id={`platform:${tab}`} className="animate-screen-in">
@@ -72,6 +75,7 @@ export function PlatformApp({
                     <ShopsTab key={stamp} focusId={focusId} initialFilter={shopsFilter} />
                 ) : null}
                 {tab === "districts" ? <DistrictsTab /> : null}
+                {tab === "guides" ? <GuidesTab /> : null}
             </Settle>
             <PoweredBy />
             <BottomSpacer />
