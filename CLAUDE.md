@@ -60,8 +60,18 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   sends a short video of the real screens (`public/welcome/{biznes,zumda,kuryer}.mp4`, 720p, with
   a `-cover.jpg`) with the greeting as its caption and its button. When Telegram cannot take the
   video the street picture goes, when not the picture the text. A working or pending courier gets
-  the picture; a shop's own bot never gets a video (the shop's brand). The videos are made on the
-  stand by `brand/welcome/video/build.sh`: run it again when those screens change.
+  the picture; a shop's own bot never gets a video (the shop's brand), except the guide below. The
+  videos are made on the stand by `brand/welcome/video/build.sh`: run it again when those screens
+  change.
+- **«Qo'llanma»: everyone already in Zumda gets their role's video once (owner's decision,
+  October 2026).** A platform admin sends it from «Platforma» → «Qo'llanma» (`/api/admin/guides`),
+  one audience at a time, in batches of 10 (`GUIDE_BATCH`) the app presses until none is left:
+  owners from Zumda | Business, couriers (linked to a shop now) from Zumda | Kuryer, customers
+  from the shop they came to last, with Zumda | Shop's video and «Zumda Shop'ni ochish» (right on
+  that shop, `m_<slug>`, when it is in the showcase). The one Zumda video a shop's bot sends,
+  by the owner's choice. Demo and turned-off shops reach nobody. Each person once
+  (`guide_sends`): someone the bot cannot reach is counted («yetmadi») and left alone; a passing
+  Telegram failure stops the batch and the next press goes on.
 - **One bot per shop.** The chat, name and avatar are the shop's. The owner creates it with one
   button in Zumda | Business («Bot yaratish», Telegram **Managed Bots**, goal 14): the bot lives
   in the owner's own Telegram account, Zumda | Business manages it and gets its token by itself

@@ -112,6 +112,10 @@ page) needs its own preflight, which is why they are a large share.
 
 **After six months:** the same. Every polled or opened screen reads an index range of what is
 open or of this day or month, never the history; the test above runs on six months of it.
+
+«Qo'llanma» in «Platforma» is not in the table: an admin opens it once in months. It walks the
+people, not their orders (a row or two each: about 2 000 for a district of 1 000 customers), and
+a whole send writes one row a person into `guide_sends`.
 Reports over a period (the CSV export, «Pul» this month) read that period only.
 
 ## D1 rows written, line by line
