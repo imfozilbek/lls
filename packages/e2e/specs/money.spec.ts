@@ -274,7 +274,8 @@ test("the owner's number: «Do'konga qo'ng'iroq» on the order the shop did not 
     await expect(call).toHaveAttribute("href", "tel:+998901234567")
     await expect(page.getByText("do'kon bilan to'g'ridan-to'g'ri gaplashing")).toBeVisible()
 
-    expect((await owner("/owner/shop", { contactPhone: null })).status).toBe(200)
+    // Back to the stand's number: without one the shop takes no orders.
+    expect((await owner("/owner/shop", { contactPhone: "+998901234501" })).status).toBe(200)
 })
 
 test("from the bot: «Pul keldi» asks first, then one «Доставил» for the courier", async () => {

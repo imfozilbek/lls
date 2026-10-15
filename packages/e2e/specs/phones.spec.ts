@@ -6,6 +6,7 @@
  */
 import { expect, test } from "@playwright/test"
 
+import { runSql } from "../stand/seed.js"
 import {
     FOOD,
     PEOPLE,
@@ -104,4 +105,22 @@ test("a shop without its own number: the owner's own phone stands in", async ({ 
         "href",
         `tel:${OWNER_PHONE}`,
     )
+})
+
+test("a courier without a phone: the screen asks for it, the owner waits to approve", async ({
+    page,
+}) => {
+    runSql("UPDATE courier_profiles SET phone = NULL WHERE telegram_id = 3003")
+    const app = await openApp(page, {
+        user: PEOPLE.courier,
+        courierBot: true,
+        contact: "share",
+        phone: "+998901112233",
+    })
+    const card = page.getByRole("region", { name: "Raqamingizni yuboring" })
+    await expect(card).toContainText("raqamsiz buyurtma kelmaydi")
+    // Telegram sends the contact to the courier bot; the card goes once it lands.
+    await card.getByRole("button", { name: "Raqamni yuborish" }).click()
+    await expect(card).toBeHidden({ timeout: 20_000 })
+    expect(await app.calls()).toContainEqual(expect.objectContaining({ method: "requestContact" }))
 })
