@@ -342,7 +342,7 @@ describe("money: transfer before the shop starts, report, files", () => {
         const buttons = card?.options?.keyboard?.inline_keyboard.flat() ?? []
         expect(buttons.map((b) => b.callback_data ?? b.web_app?.url)).toEqual([
             `a:${order.id}:delivered`,
-            "https://delivery.zumda.test/?mode=courier",
+            `https://delivery.zumda.test/?mode=courier&order=${order.id}`,
         ])
         expect(card?.html).toContain("mijozdan pul olmang")
 

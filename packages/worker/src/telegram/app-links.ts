@@ -26,9 +26,13 @@ export function showcaseOrderUrl(appOrigin: string, slug: string, orderId: strin
     return `${showcaseAppUrl(appOrigin)}&shop=${encodeURIComponent(slug)}&order=${encodeURIComponent(orderId)}`
 }
 
-/** The courier's screen across all their shops, opened from Zumda | Kuryer. */
-export function courierAppUrl(appOrigin: string): string {
-    return `${appOrigin}/?mode=courier`
+/**
+ * The courier's screen across all their shops, opened from Zumda | Kuryer; with `orderId`, on
+ * that order's card.
+ */
+export function courierAppUrl(appOrigin: string, orderId?: string): string {
+    const order = orderId ? `&order=${encodeURIComponent(orderId)}` : ""
+    return `${appOrigin}/?mode=courier${order}`
 }
 
 /**

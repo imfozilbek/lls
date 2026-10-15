@@ -433,7 +433,7 @@ export class Notifier {
                     {
                         keyboard: withAppButton(
                             networkOfferKeyboard(orderId, textsFor(language)),
-                            this.courierAppButton(textsFor(language)),
+                            this.courierAppButton(textsFor(language), undefined, orderId),
                         ),
                     },
                 )
@@ -931,7 +931,7 @@ export class Notifier {
             }),
             keyboard: withAppButton(
                 courierKeyboard(order, reader),
-                this.courierAppButton(textsFor(reader.language)),
+                this.courierAppButton(textsFor(reader.language), undefined, order.id),
             ),
         })
         if (sent !== null) {
@@ -942,8 +942,9 @@ export class Notifier {
                 n: order.number,
                 shop: escapeHtml(business.name),
             })
+            const t = textsFor(reader.language)
             await this.services.telegram.sendMessage(token, chatId, ping, {
-                keyboard: { inline_keyboard: [[this.courierAppButton(textsFor(reader.language))]] },
+                keyboard: { inline_keyboard: [[this.courierAppButton(t, undefined, order.id)]] },
             })
         }
     }
@@ -1142,8 +1143,8 @@ export class Notifier {
         )
     }
 
-    private courierAppButton(t: BotTexts, label = t.openInApp): InlineButton {
-        return appButton(label, courierAppUrl(this.services.env.COURIER_APP_ORIGIN))
+    private courierAppButton(t: BotTexts, label = t.openInApp, orderId?: string): InlineButton {
+        return appButton(label, courierAppUrl(this.services.env.COURIER_APP_ORIGIN, orderId))
     }
 
     private businessesKeyboard(t: BotTexts): InlineKeyboard {
