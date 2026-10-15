@@ -44,6 +44,13 @@ export interface BotMessage {
     /** The video URL of a sendVideo (a welcome with its instruction); the text is its caption. */
     video?: string
     buttons: Button[]
+    /** The buttons of a reply keyboard under the input (the contact button and its neighbor). */
+    replyButtons: ReplyButton[]
+}
+
+export interface ReplyButton {
+    text: string
+    request_contact?: boolean
 }
 
 export async function botCalls(): Promise<BotCall[]> {
@@ -75,7 +82,7 @@ function toMessage(call: BotCall): BotMessage {
     // Multipart calls (a photo file) carry the keyboard as a JSON string.
     const raw = call.body["reply_markup"]
     const markup = (typeof raw === "string" ? JSON.parse(raw) : raw) as
-        { inline_keyboard?: Button[][] } | undefined
+        { inline_keyboard?: Button[][]; keyboard?: ReplyButton[][] } | undefined
     return {
         seq: call.seq,
         token: call.token,
@@ -85,6 +92,7 @@ function toMessage(call: BotCall): BotMessage {
         photo: typeof call.body["photo"] === "string" ? call.body["photo"] : undefined,
         video: typeof call.body["video"] === "string" ? call.body["video"] : undefined,
         buttons: markup?.inline_keyboard?.flat() ?? [],
+        replyButtons: markup?.keyboard?.flat() ?? [],
     }
 }
 
