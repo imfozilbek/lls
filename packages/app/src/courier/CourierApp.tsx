@@ -78,6 +78,9 @@ interface CourierStep {
 }
 
 /** The courier's next step on an order: «Buyurtmani oldim», then «Yetkazdim» (or the cash one). */
+/** Orders whose step is on its way to the server, whichever button sent it. */
+const moving = new Set<string>()
+
 function useCourierStep(
     order: OrderDTO,
     onChange: (order: OrderDTO) => void,
@@ -87,9 +90,11 @@ function useCourierStep(
     const [busy, setBusy] = useState(false)
     const step = courierStep(order.status)
     const go = async (): Promise<void> => {
-        if (!step || busy) {
+        // The card's button and Telegram's are two ways to the same step: one request at a time.
+        if (!step || moving.has(order.id)) {
             return
         }
+        moving.add(order.id)
         setBusy(true)
         try {
             onChange(await api.courier.setStatus(order.id, step))
@@ -104,6 +109,7 @@ function useCourierStep(
             // Someone else moved or reassigned it: show the truth.
             onStale()
         } finally {
+            moving.delete(order.id)
             setBusy(false)
         }
     }
