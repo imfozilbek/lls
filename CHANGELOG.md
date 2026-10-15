@@ -22,6 +22,11 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   the storefront says «Tez orada…»; demos are exempt); the owner approves only a courier who sent
   a phone (`COURIER_PHONE_REQUIRED`), and a courier without one gets no order of their shop or
   the network (`no_phone`) until they press «Raqamni yuborish» or answer the bot's ask.
+- «Raqam so'rash»: «Platforma» → «Bizneslar» shows who lacks a phone («Raqamsiz»: owners of a
+  shop without a number, couriers without a phone) and asks them all with one press, each at
+  most once a day (migration `0023_phone_asks.sql`). The owner gets «📱 Raqamimni yuborish» in
+  Zumda | Business (their Telegram number becomes the shop's) and «✏️ Boshqa raqam yozaman»; the
+  courier «📱 Raqamni yuborish» in Zumda | Kuryer.
 
 ### «Qo'llanma»: the guide videos for everyone already in Zumda
 - «Platforma» → «Qo'llanma»: owners, couriers and customers, how many each reaches and how many

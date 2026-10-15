@@ -115,7 +115,9 @@ open or of this day or month, never the history; the test above runs on six mont
 
 «Qo'llanma» in «Platforma» is not in the table: an admin opens it once in months. It walks the
 people, not their orders (a row or two each: about 2 000 for a district of 1 000 customers), and
-a whole send writes one row a person into `guide_sends`.
+a whole send writes one row a person into `guide_sends`. «Raqam so'rash» on «Bizneslar» is the
+same kind: it walks the live shops and their couriers (a row or two each, never an order) when
+an admin opens «Bizneslar», and an ask writes one row a person into `phone_asks`.
 Reports over a period (the CSV export, «Pul» this month) read that period only.
 
 ## D1 rows written, line by line

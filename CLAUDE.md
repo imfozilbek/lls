@@ -52,8 +52,9 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   bot has exactly one command, `/start` (the deploy sets Zumda's three, `connectShopBot` sets a
   shop bot's); invite links are `/start` payloads. A message may carry buttons that act at once
   (`p:` asks, `pc:`/`pn:` answer, `a:`, `x:`, `k:`, `n:`, `net:`, `r:`) and a button that opens the Mini App on what it is
-  about (`telegram/app-links.ts`: an order `&order=<id>`, «Platforma» `&admin=…`). Any other text
-  gets one line («ish esa ilovada») with the button to the app. Never add a bot command: add a
+  about (`telegram/app-links.ts`: an order `&order=<id>`, «Platforma» `&admin=…`). A shared contact
+  is taken (the phone: «Raqamni yuborish»). Any other text gets one line («ish esa ilovada») with
+  the button to the app. Never add a bot command: add a
   screen.
 - **The greeting is the role's instruction video (owner's decision, October 2026).** `/start` in
   Zumda | Business and Zumda | Shop, and in Zumda | Kuryer for someone new (no link to a shop),
@@ -72,6 +73,15 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   by the owner's choice. Demo and turned-off shops reach nobody. Each person once
   (`guide_sends`): someone the bot cannot reach is counted («yetmadi») and left alone; a passing
   Telegram failure stops the batch and the next press goes on.
+- **«Raqam so'rash»: a missing phone is asked for with one button (owner's decision, October
+  2026).** «Platforma» → «Bizneslar» shows «Raqamsiz» while someone lacks a phone: owners of a
+  live shop with no number to call (`shopCallPhone` finds none; demos are exempt) and couriers
+  waiting for or working at a live shop without a phone. «Raqam so'rash»
+  (`/api/admin/phone-asks`, batches of 10 the app presses until none is left) writes to owners
+  from Zumda | Business with «📱 Raqamimni yuborish» (their Telegram number becomes the number of
+  their shops without one) and «✏️ Boshqa raqam yozaman» (where to type another in the app), and
+  to couriers from Zumda | Kuryer with «📱 Raqamni yuborish». Each person at most once a day
+  (`phone_asks`); someone the bot cannot reach is counted («yetmadi») and asked again the next day.
 - **One bot per shop.** The chat, name and avatar are the shop's. The owner creates it with one
   button in Zumda | Business («Bot yaratish», Telegram **Managed Bots**, goal 14): the bot lives
   in the owner's own Telegram account, Zumda | Business manages it and gets its token by itself
@@ -161,7 +171,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - **No phone, no orders** (owner's decision, October 2026): a shop with no number to call (its
   «Mijozlar uchun telefon», or the phone the owner shared with Zumda) shows the same «Tez orada
   buyurtma qabul qila boshlaydi» and refuses orders (`NO_SHOP_PHONE`); a demo is exempt (its
-  orders are not real). «Ishga tayyor» asks for the number.
+  orders are not real). «Ishga tayyor» asks for the number; «Raqam so'rash» asks the owner in
+  Zumda | Business, where one button sends it.
 - **Onboarding (owner's decision, October 2026):** a short application in three steps (name and
   kind → bot → where the business is: location and address); the card, hours, products, logo
   and courier come after it in «Ishga tayyor». The shop's bot works from the application on: a
@@ -1021,6 +1032,8 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       courier and the shop (storefront, order); the courier calls the customer and the shop; a
       shop without its own number shows the owner's, without either it takes no orders; a courier
       without a phone is not approved, gets no order and sends it from «Raqamni yuborish»
+- [ ] «Raqam so'rash»: «Bizneslar» → «Raqamsiz» → «Raqam so'rash» → «Bugun so'raldi»; the owner
+      presses «📱 Raqamimni yuborish» in Zumda | Business and the shop takes orders again
 - [ ] District delivery: invite → accept in the courier bot → join the network → an order of a
       point without couriers taken by a network courier → paid before cooking, no cash
 - [ ] Water (a grocery store with the bottle deposit): empty bottles + deposit; reorder
