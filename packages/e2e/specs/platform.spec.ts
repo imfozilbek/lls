@@ -89,7 +89,9 @@ test("«Tumanlar»: a new district by its center, then a longer wait", async ({ 
     await expect(sirdaryo).toContainText("12 km")
 
     await sirdaryo.click()
-    await expect(sheet.getByLabel("Tuman nomi")).toHaveAttribute("readonly", "")
+    // The name is the district's key: shown as words, never a field.
+    await expect(sheet.getByText("Sirdaryo", { exact: true })).toBeVisible()
+    await expect(sheet.getByLabel("Tuman nomi")).toHaveCount(0)
     await sheet.getByLabel("Kuryer kutish, daqiqa").fill("20")
     await sheet.getByRole("button", { name: "Saqlash" }).click()
     await expect(sirdaryo).toContainText("Kutish 20 daqiqa")
