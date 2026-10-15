@@ -77,7 +77,8 @@ export const staffUz = {
             card: "To'lov usuli",
             cardHint: "Karta, naqd yoki ikkalasi: to'lov usulisiz buyurtma yo'q",
             phone: "Mijozlar uchun telefon",
-            phoneHint: "Mijozlar va kuryerlar shu raqamga qo'ng'iroq qiladi",
+            phoneHint:
+                "Mijozlar va kuryerlar qo'ng'iroq qiladi: raqamsiz buyurtma qabul qilinmaydi",
             location: "Joylashuv",
             locationHint: "Yetkazish hududi va tuman kuryerlari uchun",
             hours: "Ish vaqti",
@@ -360,6 +361,7 @@ export const staffUz = {
             pendingTitle: "Tasdiqlashni kutmoqda",
             approve: "Tasdiqlash",
             decline: "Rad etish",
+            waitPhone: "Kuryer raqamini yuborgach tasdiqlay olasiz: bot undan so'radi",
             approved: "Kuryer tasdiqlandi",
             workDays: "Ish kunlari",
             offToday: "Bugun ishlamaydi",
@@ -459,6 +461,9 @@ export const staffUz = {
         nothingToCollect: "Oldindan to'langan, pul olmang",
         callCustomer: "Mijozga qo'ng'iroq",
         callShop: "Do'konga qo'ng'iroq",
+        phoneTitle: "Raqamingizni yuboring",
+        phoneHint:
+            "Do'kon va mijozlar sizga qo'ng'iroq qila olishi kerak: raqamsiz buyurtma kelmaydi.",
         collectCash: "Mijozdan {sum} naqd oling",
         cashTaken: "Naqd olindi: {sum}",
         cashDelivered: "Pulni oldim, yetkazdim",
