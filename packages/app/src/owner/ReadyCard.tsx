@@ -29,6 +29,7 @@ import { readTick, saveTick } from "./ticks.js"
 import type { ReadySection } from "./store.js"
 import type { Tick } from "./ticks.js"
 import type { Dictionary } from "../i18n/index.js"
+import type { Shop } from "../stores/session.js"
 import type { ShopOwnerDTO } from "@zumda/core"
 import type { ReactNode } from "react"
 
@@ -132,6 +133,8 @@ function itemsOf(
         products: number
         hasLogo: boolean
         delivers: boolean
+        /** Someone accepted the invite and waits for the owner's tap. */
+        waiting: string | null
     },
 ): ReadyItem[] {
     return [
@@ -189,10 +192,33 @@ function itemsOf(
             id: "courier",
             icon: <ScooterIcon size={20} />,
             title: t.courier,
-            hint: t.courierHint,
+            hint: state.waiting ? fill(t.courierWaiting, { name: state.waiting }) : t.courierHint,
             done: state.delivers,
         },
     ]
+}
+
+/** What the shop has, step by step, from what the owner's screens already loaded. */
+function readyState(
+    shop: Shop,
+    known: {
+        ownerChat: OwnerChat | null
+        ticks: Record<Tick, boolean>
+        products: readonly unknown[]
+        couriers: readonly { isActive: boolean; status: string; name: string }[]
+    },
+): Parameters<typeof itemsOf>[1] {
+    return {
+        hasCard: paymentReady(shop),
+        botOpen: botIsOpen(known.ownerChat),
+        located: shop.location !== undefined,
+        hasHours: shop.workingHours !== null || known.ticks.hours,
+        products: known.products.length,
+        hasLogo: shop.logoKey !== undefined,
+        hasPhone: phoneReady(shop),
+        delivers: known.ticks.selfDelivery || known.couriers.some((courier) => courier.isActive),
+        waiting: known.couriers.find((courier) => courier.status === "pending")?.name ?? null,
+    }
 }
 
 function ReadyRow({
@@ -252,7 +278,10 @@ function ReadyRow({
     )
 }
 
-/** With orders waiting, «Ishga tayyor» is one line: the progress and the next step. */
+/**
+ * «Ishga tayyor» in one line: the progress and the next step. With orders waiting it opens the
+ * card; on the other tabs it leads straight to that step.
+ */
 function FoldedReady({
     progress,
     next,
@@ -328,9 +357,10 @@ function ReadyProgress({ done, all }: { done: number; all: number }): React.JSX.
 
 /**
  * «Ishga tayyor»: what a new business still needs before its first customer. Each row leads to
- * the place it is done; the card disappears once everything is ready.
+ * the place it is done; the card disappears once everything is ready. `compact` (every tab but
+ * «Buyurtmalar»): one line, «3/7 · Keyingi: Telefon», one tap to that step.
  */
-export function ReadyCard(): React.JSX.Element | null {
+export function ReadyCard({ compact = false }: { compact?: boolean }): React.JSX.Element | null {
     const t = useT().owner.ready
     const shop = useSession((state) => state.shop)
     const products = useOwner((state) => state.products)
@@ -351,16 +381,7 @@ export function ReadyCard(): React.JSX.Element | null {
     if (!shop || products === null || couriers === null) {
         return null
     }
-    const items = itemsOf(t, {
-        hasCard: paymentReady(shop),
-        botOpen: botIsOpen(ownerChat),
-        located: shop.location !== undefined,
-        hasHours: shop.workingHours !== null || ticks.hours,
-        products: products.length,
-        hasLogo: shop.logoKey !== undefined,
-        hasPhone: phoneReady(shop),
-        delivers: ticks.selfDelivery || couriers.some((courier) => courier.isActive),
-    })
+    const items = itemsOf(t, readyState(shop, { ownerChat, ticks, products, couriers }))
     // Progress counts what a shop needs; the nice-to-haves never hold it back.
     const required = items.filter((item) => !item.optional)
     const done = required.filter((item) => item.done).length
@@ -369,16 +390,16 @@ export function ReadyCard(): React.JSX.Element | null {
         return null
     }
     const next = required.find((item) => !item.done) ?? items.find((item) => !item.done)
-    if (folded && next) {
+    const open = (item: ReadyItem): void => openStep(item, shop.botUsername)
+    if ((folded || compact) && next) {
         return (
             <FoldedReady
                 progress={fill(t.progress, { done, all: required.length })}
                 next={next.title}
-                onOpen={(): void => setExpanded(true)}
+                onOpen={(): void => (compact ? open(next) : setExpanded(true))}
             />
         )
     }
-    const open = (item: ReadyItem): void => openStep(item, shop.botUsername)
     return (
         <section
             aria-label={t.title}
@@ -391,24 +412,34 @@ export function ReadyCard(): React.JSX.Element | null {
                         key={item.id}
                         item={item}
                         onOpen={(): void => open(item)}
-                        extra={
-                            item.done ? null : item.id === "courier" ? (
-                                <TickButton
-                                    label={t.selfDeliver}
-                                    onTick={(): void => tick("selfDelivery")}
-                                />
-                            ) : item.id === "hours" && shop.workingHours === null ? (
-                                <TickButton
-                                    label={t.alwaysOpen}
-                                    onTick={(): void => tick("hours")}
-                                />
-                            ) : null
-                        }
+                        extra={rowExtra(item, { t, alwaysOpen: shop.workingHours === null, tick })}
                     />
                 ))}
             </ul>
         </section>
     )
+}
+
+/** The owner's word that ticks a step: «O'zim yetkazaman», «Kecha-kunduz ochiqmiz». */
+function rowExtra(
+    item: ReadyItem,
+    input: { t: Dictionary["owner"]["ready"]; alwaysOpen: boolean; tick(which: Tick): void },
+): ReactNode {
+    if (item.done) {
+        return null
+    }
+    if (item.id === "courier") {
+        return (
+            <TickButton
+                label={input.t.selfDeliver}
+                onTick={(): void => input.tick("selfDelivery")}
+            />
+        )
+    }
+    if (item.id === "hours" && input.alwaysOpen) {
+        return <TickButton label={input.t.alwaysOpen} onTick={(): void => input.tick("hours")} />
+    }
+    return null
 }
 
 /**

@@ -140,8 +140,7 @@ for (const theme of ["light"] as const) {
         await page.getByRole("button", { name: "Botni Zumda orqali yaratish" }).click()
         await bottomButton(page).click()
         await expect(page.getByText("Bot yaratildi: @new_777300400_bot")).toBeVisible()
-        await snap(page, "30-bot-created", theme)
-        await bottomButton(page).click()
+        // The location step opens by itself a moment later: no screenshot of a page in motion.
         await expect(page.getByRole("heading", { name: "Biznes qayerda?" })).toBeVisible()
         await pickOnMap(page)
         await expect(page.getByRole("button", { name: /Joy belgilandi/ })).toBeVisible()

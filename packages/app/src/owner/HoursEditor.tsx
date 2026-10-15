@@ -8,7 +8,7 @@ import { sameAsMonday } from "./hours.js"
 import type { DayHours, Hours } from "./hours.js"
 
 const TIME_INPUT =
-    "field h-10 w-full min-w-0 rounded-[0.625rem] bg-tg-bg px-2 text-center tabular-nums"
+    "field h-11 w-full min-w-0 rounded-[0.625rem] bg-tg-bg px-2 text-center tabular-nums"
 
 function DayRow({
     label,
@@ -102,7 +102,7 @@ export function HoursEditor({
                             haptic.select()
                             onChange(sameAsMonday(hours))
                         }}
-                        className="tap mt-1 h-10 rounded-control text-sm font-semibold text-brand"
+                        className="tap mt-1 h-11 rounded-control text-sm font-semibold text-brand"
                     >
                         {s.sameAsMonday}
                     </button>

@@ -45,7 +45,7 @@ test("pull down on the order screen refreshes it in place, without a skeleton", 
     await expect(page.getByText("O'tkazma kutilmoqda").first()).toBeVisible()
     expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await pullDown(page)
-    await expect(page.getByText("Do'kon buyurtmani qabul qildi")).toBeVisible()
+    await expect(page.getByText("Buyurtmangiz tayyorlanmoqda")).toBeVisible()
     await expect(page.locator(".skeleton")).toHaveCount(0)
     await expect(page.getByTestId("pull-indicator")).toBeHidden()
     const haptics = (await app.calls()).filter((c) => c.method === "haptic.impact")
@@ -58,7 +58,7 @@ test("coming back to the app refreshes the order at once", async ({ page }) => {
     expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await app.fire("deactivated")
     await app.fire("activated")
-    await expect(page.getByText("Do'kon buyurtmani qabul qildi")).toBeVisible()
+    await expect(page.getByText("Buyurtmangiz tayyorlanmoqda")).toBeVisible()
 })
 
 test("swipe right goes back, swipe left forward again; a sideways list scrolls itself", async ({

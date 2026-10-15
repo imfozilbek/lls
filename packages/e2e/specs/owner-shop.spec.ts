@@ -188,10 +188,11 @@ test("settings: name, color, delivery and features reach the storefront", async 
     await settingsBack(page)
     await expect(page.getByRole("button", { name: /Yetkazib berish\s*12\s000/ })).toBeVisible()
 
+    // A switch is saved as it is flipped: no «Saqlash» to forget.
     await openGroup(page, "Do'kon imkoniyatlari")
     await page.getByRole("switch", { name: "Buyurtmani takrorlash" }).click()
-    await bottomButton(page).click()
     await expect(page.getByText("Saqlandi").first()).toBeVisible()
+    await expect(bottomButton(page)).toBeHidden()
 
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await expect(page.getByRole("heading", { name: "Osh Markaz Yakkabog" })).toBeVisible()

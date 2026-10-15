@@ -35,6 +35,7 @@ import { HoursEditor } from "./HoursEditor.js"
 import { PaymentCardsSection } from "./PaymentCardsSection.js"
 import { PaymentOptionsSection } from "./PaymentOptionsSection.js"
 import { PosterSection } from "./PosterSection.js"
+import { ShareOwnPhone } from "./ShareOwnPhone.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 import { useOwner } from "./store.js"
 import { readTick, saveTick } from "./ticks.js"
@@ -432,21 +433,53 @@ function DeliveryFields({
     )
 }
 
+/**
+ * A change that needs no «Saqlash»: a switch, a place confirmed on the map. Saved the moment it
+ * is made; a refusal puts the old value back.
+ */
+function useQuickSave(
+    onSaved: (shop: ShopOwnerDTO) => void,
+): (change: ShopPatch, revert: () => void) => void {
+    const t = useT()
+    return (change, revert): void => {
+        api.owner
+            .updateShop(change)
+            .then((saved) => {
+                onSaved(saved)
+                haptic.success()
+                toast(t.owner.settings.saved, "success")
+            })
+            .catch((caught: unknown) => {
+                revert()
+                failToast(t, caught)
+            })
+    }
+}
+
 function LocationFields({
     form,
     patch,
+    onSaved,
 }: {
     form: Form
     patch(change: Partial<Form>): void
+    onSaved(shop: ShopOwnerDTO): void
 }): React.JSX.Element {
     const t = useT()
     const s = t.owner.settings
+    const quickSave = useQuickSave(onSaved)
+    // «Shu yer» is the owner's word: the place is saved at once, the street fills an empty address.
+    const place = (location: { latitude: number; longitude: number }, street?: string): void => {
+        const before = { location: form.location, address: form.address }
+        const address = street && !form.address.trim() ? street : form.address
+        patch({ location, address })
+        quickSave({ location, address: address.trim() || null }, () => patch(before))
+    }
     const locate = async (): Promise<void> => {
         haptic.tap()
         const found = await getLocation()
         if (found) {
-            patch({ location: { latitude: found.latitude, longitude: found.longitude } })
-            haptic.success()
+            place({ latitude: found.latitude, longitude: found.longitude })
         } else {
             toast(t.checkout.locationFailed, "error")
         }
@@ -461,7 +494,7 @@ function LocationFields({
             />
             <PlacePick
                 value={form.location}
-                onChange={(location): void => patch({ location })}
+                onChange={place}
                 zone={
                     form.location && form.radiusKm
                         ? { center: form.location, radiusMeters: form.radiusKm * 1000 }
@@ -491,14 +524,23 @@ function LocationFields({
 function FeatureFields({
     form,
     patch,
+    onSaved,
 }: {
     form: Form
     patch(change: Partial<Form>): void
+    onSaved(shop: ShopOwnerDTO): void
 }): React.JSX.Element {
     const s = useT().owner.settings
+    const quickSave = useQuickSave(onSaved)
+    // A switch is saved as it is flipped; the deposit's sum waits for «Saqlash».
     const toggle = (feature: Feature, on: boolean): void => {
+        const before = form.features
         const rest = form.features.filter((f) => f !== feature)
-        patch({ features: on ? [...rest, feature] : rest })
+        const features = on ? [...rest, feature] : rest
+        patch({ features })
+        quickSave({ features: FEATURES.filter((f) => features.includes(f)) }, () =>
+            patch({ features: before }),
+        )
     }
     return (
         <Section>
@@ -582,6 +624,7 @@ function ShopFields({
                     onChange={(e): void => patch({ contactPhone: e.target.value })}
                 />
             </Field>
+            {form.contactPhone.trim() ? null : <ShareOwnPhone />}
         </Section>
     )
 }
@@ -676,6 +719,8 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
     const radius = shop.deliveryRadiusMeters
     const on = shop.features.map((f) => s.featureNames[f])
     const team = couriers?.filter((c) => c.status === "active").length
+    // Someone accepted the invite and waits: the owner's tap is the only thing missing.
+    const waiting = couriers?.filter((c) => c.status === "pending").length ?? 0
     return {
         shop: {
             text: [shop.name, shop.contactPhone && formatPhone(shop.contactPhone)]
@@ -696,14 +741,17 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
             : { text: s.summary.noLocation, warn: true },
         features: { text: on.length > 0 ? on.join(", ") : s.summary.noFeatures },
         card: paymentSummary(s, shop),
-        courier: {
-            text:
-                team === undefined
-                    ? s.summary.couriersHint
-                    : team > 0
-                      ? fill(s.summary.couriers, { n: String(team) })
-                      : s.summary.noCouriers,
-        },
+        courier:
+            waiting > 0
+                ? { text: fill(s.summary.couriersWaiting, { n: String(waiting) }), warn: true }
+                : {
+                      text:
+                          team === undefined
+                              ? s.summary.couriersHint
+                              : team > 0
+                                ? fill(s.summary.couriers, { n: String(team) })
+                                : s.summary.noCouriers,
+                  },
         link: { text: `t.me/${shop.botUsername}` },
     }
 }
@@ -861,9 +909,9 @@ function GroupBody({
                 </Section>
             )
         case "location":
-            return <LocationFields form={form} patch={patch} />
+            return <LocationFields form={form} patch={patch} onSaved={onSaved} />
         case "features":
-            return <FeatureFields form={form} patch={patch} />
+            return <FeatureFields form={form} patch={patch} onSaved={onSaved} />
         case "card":
             return (
                 <>
@@ -908,14 +956,27 @@ function LinkGroup({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
     )
 }
 
-/** «Ishga tayyor» (or the no-card banner) asked for one part: open it, once. */
+/** A field opened by «Ishga tayyor» once its part is on screen: «Telefon» is typed at once. */
+const READY_FIELD: Partial<Record<ReadySection, string>> = { phone: "contact-phone" }
+const FIELD_DELAY_MS = 80
+
+/** «Ishga tayyor» asked for one part: open it, once, and the field it is about. */
 function useFocusGroup(open: (group: SettingsGroup) => void): void {
     const section = useOwner((state) => state.focusSection)
     const goToSection = useOwner((state) => state.goToSection)
     useEffect(() => {
-        if (section) {
-            open(READY_GROUP[section])
-            goToSection(null)
+        if (!section) {
+            return
+        }
+        open(READY_GROUP[section])
+        goToSection(null)
+        const id = READY_FIELD[section]
+        if (id) {
+            window.setTimeout(() => {
+                const field = document.getElementById(id)
+                field?.scrollIntoView({ behavior: "smooth", block: "center" })
+                field?.focus({ preventScroll: true })
+            }, FIELD_DELAY_MS)
         }
     }, [section, goToSection, open])
 }

@@ -19,6 +19,14 @@ export function payoutCardIsValid(number: string, holder: string): boolean {
     }
 }
 
+/** What still keeps the card from being saved, for the button to say: null when nothing. */
+export function cardGap(number: string, holder: string): "number" | "holder" | null {
+    if (!payoutCardIsValid(number, "-")) {
+        return "number"
+    }
+    return payoutCardIsValid(number, holder) ? null : "holder"
+}
+
 /** A full number with a wrong digit: say so right away, not after "Save". */
 function cardHasTypo(number: string): boolean {
     return number.length === CARD_DIGITS && !payoutCardIsValid(number, "-")

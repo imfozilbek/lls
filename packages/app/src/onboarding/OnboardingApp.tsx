@@ -171,6 +171,12 @@ function Home({
 }
 
 /**
+ * Once a session: an owner of one business (not an admin) lands in it, not on a list of one. Back
+ * from it, the list stays.
+ */
+let landed = false
+
+/**
  * The Zumda Business bot's «Mening bizneslarim»: the owner's businesses with their review status, a new
  * one through the wizard, and any of them opened for management (`onOpen`).
  */
@@ -197,6 +203,13 @@ export function OnboardingApp({
             const [mine, me] = await Promise.all([api.platform.myShops(), api.platform.me()])
             setAdmin(me.admin)
             setShops(mine)
+            const only = mine.length === 1 ? mine[0] : undefined
+            if (!landed && only && !me.admin) {
+                landed = true
+                onOpen(only.slug)
+                return
+            }
+            landed = true
         } catch (caught) {
             const code = caught instanceof ApiError ? caught.code : "generic"
             // An expired browser session: back to «sign in with Telegram».

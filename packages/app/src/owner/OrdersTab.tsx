@@ -2,6 +2,7 @@ import {
     DEFAULT_NETWORK_WAIT_MINUTES,
     OrderChannel,
     OrderStatus,
+    PaymentMethod,
     PaymentStatus,
     formatPhone,
     isFinalStatus,
@@ -98,6 +99,7 @@ function CourierSheet({
     }, [loadCouriers])
 
     const replaceCourier = useOwner((state) => state.replaceCourier)
+    const goToSection = useOwner((state) => state.goToSection)
     // The sheet stays until the server answers: the card's buttons are not pressed meanwhile.
     const [pending, setPending] = useState(false)
     const assign = async (courierId: string | "network", backToday = false): Promise<void> => {
@@ -129,7 +131,19 @@ function CourierSheet({
         <Sheet title={t.owner.assign} onClose={pending ? (): void => undefined : onClose}>
             {pending ? <Spinner className="mx-auto my-2" /> : null}
             {couriers === null ? <Skeleton className="h-[52px]" /> : null}
-            {active?.length === 0 ? <p className="text-tg-hint">{t.owner.noCouriers}</p> : null}
+            {active?.length === 0 ? (
+                <>
+                    <p className="text-tg-hint">{t.owner.noCouriers}</p>
+                    {/* Never a dead end: the invite is one tap away. */}
+                    <SheetOption
+                        label={t.owner.inviteCourier}
+                        onClick={(): void => {
+                            onClose()
+                            goToSection("courier")
+                        }}
+                    />
+                </>
+            ) : null}
             {active?.map((courier) => {
                 // «Bugun ishlamaydi» is the owner's own switch: one tap turns it back and assigns.
                 const offToday = courier.unavailableReason === "off_today" && courier.onShift
@@ -174,6 +188,7 @@ function CancelSheet({
     onClose,
 }: CardProps & { onClose(): void }): React.JSX.Element {
     const t = useT()
+    const language = useLanguage()
     const [reason, setReason] = useState("")
     const [busy, setBusy] = useState(false)
     const cancel = async (): Promise<void> => {
@@ -194,8 +209,19 @@ function CancelSheet({
             setBusy(false)
         }
     }
+    // Money already on the card goes back to the customer: said before the tap, not after.
+    const refund =
+        order.payment.method === PaymentMethod.CARD_TRANSFER &&
+        order.payment.status === PaymentStatus.PAID
     return (
         <Sheet title={t.owner.cancelConfirm} onClose={onClose}>
+            {refund ? (
+                <p className="rounded-control bg-warning/15 px-4 py-3 text-sm font-medium">
+                    {fill(t.owner.cancelRefund, {
+                        sum: formatMoney(order.total, language),
+                    })}
+                </p>
+            ) : null}
             <Field label={t.owner.cancelReason} htmlFor="cancel-reason">
                 <TextInput
                     id="cancel-reason"
@@ -536,7 +562,7 @@ function FocusedOrder({
                         haptic.tap()
                         focusOrder(null)
                     }}
-                    className="tap flex h-9 items-center gap-1 rounded-full px-3 text-sm font-semibold text-tg-hint focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                    className="tap flex h-11 items-center gap-1 rounded-full px-3 text-sm font-semibold text-tg-hint focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
                 >
                     <CloseIcon size={16} />
                     {t.owner.hideFocused}

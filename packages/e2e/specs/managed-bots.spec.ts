@@ -46,9 +46,12 @@ async function describeBusiness(page: Page, name: string): Promise<void> {
     await expect(page.getByText("2/3-qadam")).toBeVisible()
 }
 
-/** Step 3: where the business is, then the application goes to the admin. */
+/**
+ * Step 3: where the business is, then the application goes to the admin. A bot made through
+ * Zumda opens this step by itself, a moment after «Bot yaratildi».
+ */
 async function finishApplication(page: Page): Promise<void> {
-    await bottomButton(page).click() // «Keyingi» after the bot
+    await expect(page.getByRole("heading", { name: "Biznes qayerda?" })).toBeVisible()
     await pickOnMap(page)
     await expect(page.getByRole("button", { name: /Joy belgilandi/ })).toBeVisible()
     await bottomButton(page).click() // «Ariza yuborish»
@@ -106,12 +109,9 @@ test("approval connects the created bot like any other", async () => {
     expect((await myShops(OWNER))[0]?.status).toBe("active")
 })
 
-test("«Mening bizneslarim» opens the shop's owner section right in the Zumda bot", async ({
-    page,
-}) => {
+test("«Mening bizneslarim» with one business opens it right in the Zumda bot", async ({ page }) => {
     const app = await openApp(page, { user: OWNER, businessBot: true })
-    await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
-    await page.getByRole("button", { name: /Kamola Somsa/ }).click()
+    // One business: no list of one to tap through.
     await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
     await page.getByRole("tab", { name: "Sozlamalar" }).click()
     await expect(page.getByRole("button", { name: /Do'kon\s*Kamola Somsa/ })).toBeVisible()

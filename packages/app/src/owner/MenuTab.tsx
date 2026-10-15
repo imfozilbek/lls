@@ -5,6 +5,7 @@ import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney } from "../lib/format.js"
+import { compressImage } from "../lib/image.js"
 import { useMainAction } from "../lib/main-button.js"
 import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
@@ -58,6 +59,55 @@ function OffSheet({
     )
 }
 
+/**
+ * A product without a photo: its tile picks one at once (camera or gallery) and uploads it,
+ * without opening the editor and saving.
+ */
+function QuickPhoto({ product }: { product: ProductDTO }): React.JSX.Element {
+    const t = useT()
+    const p = t.owner.product
+    const upsert = useOwner((state) => state.upsert)
+    const [busy, setBusy] = useState(false)
+    const upload = async (file: File | undefined): Promise<void> => {
+        if (!file) {
+            return
+        }
+        setBusy(true)
+        try {
+            upsert(await api.owner.uploadProductImage(product.id, await compressImage(file)))
+            haptic.success()
+            toast(t.owner.settings.saved, "success")
+        } catch (caught) {
+            haptic.error()
+            const code = caught instanceof ApiError ? caught.code : null
+            toast(code ? errorText(t, code) : p.photoFailed, "error")
+        } finally {
+            setBusy(false)
+        }
+    }
+    return (
+        <label
+            aria-label={`${p.addPhoto}: ${product.name}`}
+            className={cn(
+                "tap grid h-14 w-14 shrink-0 cursor-pointer place-items-center rounded-control border-[1.5px] border-dashed border-brand bg-brand/10 text-brand",
+                busy && "animate-pulse",
+            )}
+        >
+            <ImageIcon size={22} />
+            <input
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                disabled={busy}
+                onChange={(e): void => {
+                    void upload(e.target.files?.[0])
+                    e.target.value = ""
+                }}
+            />
+        </label>
+    )
+}
+
 /** The photo, the name and the price (or why it is off sale): a tap opens the editor. */
 function ProductSummary({
     product,
@@ -80,16 +130,18 @@ function ProductSummary({
             }}
             className="tap flex min-w-0 flex-1 items-center gap-3 text-left"
         >
-            <ProductImage
-                imageKey={product.imageKey}
-                category={product.category}
-                alt=""
-                iconSize={24}
-                className={cn(
-                    "h-14 w-14 shrink-0 rounded-control transition-opacity duration-200",
-                    !onSale && "opacity-40",
-                )}
-            />
+            {product.imageKey ? (
+                <ProductImage
+                    imageKey={product.imageKey}
+                    category={product.category}
+                    alt=""
+                    iconSize={24}
+                    className={cn(
+                        "h-14 w-14 shrink-0 rounded-control transition-opacity duration-200",
+                        !onSale && "opacity-40",
+                    )}
+                />
+            ) : null}
             <span className="min-w-0">
                 <span
                     className={cn(
@@ -147,6 +199,7 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
 
     return (
         <li className="flex animate-rise items-center gap-3 py-3">
+            {product.imageKey ? null : <QuickPhoto product={product} />}
             <ProductSummary product={product} onSale={onSale} today={today} />
             {canStop ? (
                 <button

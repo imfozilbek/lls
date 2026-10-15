@@ -38,6 +38,7 @@ import {
 import { BottomSpacer } from "../ui/shell.js"
 
 import { CatalogSearch } from "./CatalogSearch.js"
+import { DepositOffer } from "./DepositOffer.js"
 import {
     NO_OPTIONS,
     OptionsEditor,
@@ -484,6 +485,32 @@ function KindFields({
     )
 }
 
+/**
+ * A catalog product already knows its unit and category: one line, «porsiya · Osh», and
+ * «O'zgartirish» opens the chips.
+ */
+function KindSummary({ draft, onOpen }: { draft: Draft; onOpen(): void }): React.JSX.Element {
+    const t = useT()
+    const units = t.units as Record<string, string>
+    const categories = t.categories as Record<string, string>
+    const words = [units[draft.unit] ?? draft.unit, categories[draft.category] ?? draft.category]
+    return (
+        <div className="flex items-center gap-3 rounded-control bg-tg-secondary px-4 py-2">
+            <p className="min-w-0 flex-1 font-medium">{words.join(" · ")}</p>
+            <button
+                type="button"
+                onClick={(): void => {
+                    haptic.tap()
+                    onOpen()
+                }}
+                className="tap min-h-11 shrink-0 rounded-control px-2 text-sm font-semibold text-brand"
+            >
+                {t.owner.product.change}
+            </button>
+        </div>
+    )
+}
+
 /** The price, or a word that it lives in the variants (the cheapest one is shown). */
 function PriceField({
     draft,
@@ -496,7 +523,22 @@ function PriceField({
 }): React.JSX.Element {
     const t = useT()
     if (hasVariants(draft.options)) {
-        return <p className="px-1 text-sm text-tg-hint">{t.owner.product.priceInVariants}</p>
+        // Sizes from the catalog that this shop does not sell: one price instead, one tap.
+        return (
+            <div className="flex items-center justify-between gap-3 px-1">
+                <p className="text-sm text-tg-hint">{t.owner.product.priceInVariants}</p>
+                <button
+                    type="button"
+                    onClick={(): void => {
+                        haptic.tap()
+                        patch({ options: { ...draft.options, group: "", variants: [] } })
+                    }}
+                    className="tap min-h-11 shrink-0 rounded-control px-2 text-sm font-semibold text-brand"
+                >
+                    {t.owner.product.onePrice}
+                </button>
+            </div>
+        )
     }
     return (
         <Field
@@ -518,6 +560,9 @@ function PriceField({
         </Field>
     )
 }
+
+/** After a catalog pick the form renders first, then the price takes the keyboard. */
+const FOCUS_DELAY_MS = 80
 
 /** What makes a draft worth guarding: everything but the photo, which counts once picked. */
 function fingerprint(draft: Draft): string {
@@ -857,6 +902,10 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
                         restart(draft)
                         patch(fromTemplate(draft, template))
                         setSearching(false)
+                        // Only the price is left: the keyboard is up for it at once.
+                        window.setTimeout(() => {
+                            document.getElementById("product-price")?.focus()
+                        }, FOCUS_DELAY_MS)
                     }}
                     onTyped={setTyped}
                 />
@@ -914,6 +963,23 @@ function EditorFields({
 }): React.JSX.Element {
     const t = useT()
     const prices = new Set(optionsBody(draft.options)?.variants.map((v) => v.price))
+    // Picked from the Zumda catalog: only the price is left, so it comes first and the rest
+    // (unit, category) folds into one line.
+    const picked = !product && draft.suggestedAddons !== undefined
+    const [kindOpen, setKindOpen] = useState(false)
+    const options = (
+        <OptionsEditor
+            draft={draft.options}
+            addons={!isWeightUnit(draft.unit)}
+            suggestions={draft.suggestedAddons}
+            onChange={(next): void => patch({ options: next })}
+        />
+    )
+    const saveNext = onSaveNext ? (
+        <Button variant="secondary" loading={saving} onClick={onSaveNext}>
+            {t.owner.product.saveAndNext}
+        </Button>
+    ) : null
     return (
         <>
             <ProductPreview
@@ -928,22 +994,20 @@ function EditorFields({
             />
             <NameField draft={draft} product={product} error={gap === "name"} patch={patch} />
             <PriceField draft={draft} patch={patch} error={gap === "price"} />
-            <KindFields draft={draft} patch={patch} />
-            <OptionsEditor
-                draft={draft.options}
-                addons={!isWeightUnit(draft.unit)}
-                suggestions={draft.suggestedAddons}
-                onChange={(options): void => patch({ options })}
-            />
+            {picked ? options : null}
+            {picked ? saveNext : null}
+            {picked && !kindOpen ? (
+                <KindSummary draft={draft} onOpen={(): void => setKindOpen(true)} />
+            ) : (
+                <KindFields draft={draft} patch={patch} />
+            )}
+            {isBottleUnit(draft.unit) ? <DepositOffer /> : null}
+            {picked ? null : options}
             <Description
                 value={draft.description}
                 onChange={(description): void => patch({ description })}
             />
-            {onSaveNext ? (
-                <Button variant="secondary" loading={saving} onClick={onSaveNext}>
-                    {t.owner.product.saveAndNext}
-                </Button>
-            ) : null}
+            {picked ? null : saveNext}
             {onSearch ? (
                 <button
                     type="button"

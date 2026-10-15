@@ -5,7 +5,7 @@ import { cn } from "../lib/cn.js"
 import { formatMoney } from "../lib/format.js"
 import { compressImage } from "../lib/image.js"
 import { toast } from "../stores/toast.js"
-import { ImageIcon, PlusIcon } from "../ui/icons.js"
+import { ImageIcon } from "../ui/icons.js"
 import { ProductImage } from "../ui/product-image.js"
 
 import type { Category, ProductDTO, Unit } from "@zumda/core"
@@ -144,9 +144,6 @@ export function ProductPreview({
                         </span>
                     </p>
                 </div>
-                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand/10 text-brand">
-                    <PlusIcon size={22} strokeWidth={2.25} />
-                </span>
             </div>
             {hasPhoto ? (
                 <button

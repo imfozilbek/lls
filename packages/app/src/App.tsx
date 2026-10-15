@@ -414,12 +414,25 @@ function ShowcaseApp({
 function BusinessesApp({
     onSignOut,
     adminTarget = null,
+    shop = null,
+    order = null,
 }: {
     onSignOut?: () => void
     /** An admin's bot message: open «Platforma» on this. */
     adminTarget?: AdminTarget | null
+    /** A message about one business (and one of its orders): opened right on it. */
+    shop?: string | null
+    order?: string | null
 }): React.JSX.Element {
-    const [slug, setSlug] = useState<string | null>(null)
+    const [slug, setSlug] = useState<string | null>(() => {
+        if (shop && adminTarget === null) {
+            useRouter.getState().start({ name: "owner" })
+            return shop
+        }
+        return null
+    })
+    // The order of the message, only on the business it came with.
+    const [target, setTarget] = useState(order)
     const [platform, setPlatform] = useState(adminTarget !== null)
     useEffect(() => {
         if (slug === null) {
@@ -441,10 +454,12 @@ function BusinessesApp({
                 key={slug}
                 slug={slug}
                 via="business"
+                order={slug === shop ? (target ?? undefined) : undefined}
                 onExit={(): void => {
                     // Before the list renders: its first request must not carry this shop.
                     setShop(null, { via: "business" })
                     useRouter.getState().start({ name: "menu" })
+                    setTarget(null)
                     setSlug(null)
                 }}
             />
@@ -468,7 +483,15 @@ function BusinessesApp({
  * business.zumda.shop in a browser: sign in with Telegram once, then the same «Mening
  * bizneslarim» and owner section as inside the Zumda | Business bot.
  */
-function WebBusinessApp({ adminTarget }: { adminTarget: AdminTarget | null }): React.JSX.Element {
+function WebBusinessApp({
+    adminTarget,
+    shop,
+    order,
+}: {
+    adminTarget: AdminTarget | null
+    shop: string | null
+    order: string | null
+}): React.JSX.Element {
     const [session, setSession] = useState<WebSession | null>(() => loadSession())
     setWebSession(session?.token ?? null)
     useEffect(() => {
@@ -496,6 +519,8 @@ function WebBusinessApp({ adminTarget }: { adminTarget: AdminTarget | null }): R
             <WebBackBar />
             <BusinessesApp
                 adminTarget={adminTarget}
+                shop={shop}
+                order={order}
                 onSignOut={(): void => {
                     clearSession()
                     setWebSession(null)
@@ -510,12 +535,14 @@ export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
     let content: React.JSX.Element
     if (!webApp()) {
         content = launch.business ? (
-            <WebBusinessApp adminTarget={launch.admin} />
+            <WebBusinessApp adminTarget={launch.admin} shop={launch.shop} order={launch.order} />
         ) : (
             <NotInTelegram />
         )
     } else if (launch.business) {
-        content = <BusinessesApp adminTarget={launch.admin} />
+        content = (
+            <BusinessesApp adminTarget={launch.admin} shop={launch.shop} order={launch.order} />
+        )
     } else if (launch.courier) {
         // The Zumda courier bot: one screen across every shop the courier delivers for.
         content = (

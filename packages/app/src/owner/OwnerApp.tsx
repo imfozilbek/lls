@@ -3,11 +3,10 @@ import { useLayoutEffect, useState } from "react"
 import { errorText, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
-import { paymentReady } from "../lib/shop-ready.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { AlertIcon, BagIcon, CardIcon, CashIcon, GearIcon, ListIcon } from "../ui/icons.js"
+import { AlertIcon, BagIcon, CashIcon, GearIcon, ListIcon } from "../ui/icons.js"
 import { Button } from "../ui/primitives.js"
 import { Settle } from "../ui/settle.js"
 
@@ -73,24 +72,6 @@ function TabBar({
     )
 }
 
-/** No card, no orders: customers pay only by transfer. One tap leads to the card field. */
-function NoCardBanner({ onOpen }: { onOpen(): void }): React.JSX.Element {
-    const t = useT()
-    return (
-        <button
-            type="button"
-            onClick={(): void => {
-                haptic.tap()
-                onOpen()
-            }}
-            className="tap mx-4 mt-3 flex w-[calc(100%-2rem)] animate-rise items-center gap-3 rounded-control bg-warning/15 px-4 py-3 text-left"
-        >
-            <CardIcon size={22} className="shrink-0 text-warning" />
-            <span className="flex-1 text-sm font-medium">{t.owner.noCard}</span>
-        </button>
-    )
-}
-
 /**
  * Orders switched off in «Sozlamalar»: on every other tab, so the owner never waits for orders
  * that cannot come. «Yoqish» turns them on again in one tap.
@@ -131,16 +112,15 @@ function PausedBanner(): React.JSX.Element {
     )
 }
 
-/** What the shop lacks, under the tabs: the whole «Ishga tayyor» on «Buyurtmalar». */
+/**
+ * What the shop lacks, under the tabs: the whole «Ishga tayyor» on «Buyurtmalar», one line with
+ * the next step on every other tab (the card, the phone: whatever comes first).
+ */
 function TabBanners({ tab, shop }: { tab: OwnerTab; shop: Shop }): React.JSX.Element {
-    const goToSection = useOwner((state) => state.goToSection)
     return (
         <>
-            {tab === "orders" ? <ReadyCard /> : null}
+            <ReadyCard compact={tab !== "orders"} />
             {!shop.acceptingOrders && tab !== "settings" ? <PausedBanner /> : null}
-            {!paymentReady(shop) && tab !== "orders" ? (
-                <NoCardBanner onOpen={(): void => goToSection("card")} />
-            ) : null}
         </>
     )
 }

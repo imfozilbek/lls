@@ -36,9 +36,8 @@ test("signs in with Telegram, manages the business, signs out", async ({ page })
     await openInBrowser(page, next)
     await expect(page.getByText("Kirish faqat Telegram orqali")).toBeVisible()
 
+    // One business: straight into it.
     await signInButton(page).click()
-    await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
-    await page.getByRole("button", { name: /Osh Markaz/ }).click()
     await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
     await page.getByRole("tab", { name: "Menyu" }).click()
     await expect(page.getByText("To'y oshi")).toBeVisible()
@@ -49,7 +48,8 @@ test("signs in with Telegram, manages the business, signs out", async ({ page })
 
     // The sign-in survives a reload; «Chiqish» ends it.
     await page.reload()
-    await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
+    await page.getByRole("button", { name: "Orqaga" }).click()
     await page.getByRole("button", { name: "Chiqish" }).click()
     await expect(page.getByRole("heading", { name: "Zumda Business" })).toBeVisible()
 })

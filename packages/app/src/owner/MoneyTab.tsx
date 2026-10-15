@@ -460,9 +460,10 @@ function Body({ report, switching, error, load }: ReturnType<typeof useReport>):
                 switching && "opacity-60",
             )}
         >
-            <Totals report={report} />
+            {/* What waits for the owner comes first: the cash to take, the transfers to check. */}
             <CourierCash groups={report.courierCash} reload={load} />
             <OpenPayments report={report} reload={load} />
+            <Totals report={report} />
             <ExportButton period={report.period} />
         </div>
     )

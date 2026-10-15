@@ -26,13 +26,16 @@ test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
 test("only an admin sees «Platforma» in «Mening bizneslarim»", async ({ page }) => {
-    await openApp(page, { user: PEOPLE.foodOwner, businessBot: true })
+    const owner = await openApp(page, { user: PEOPLE.foodOwner, businessBot: true })
+    // One business: the owner lands right in it; back leads to the list.
+    await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
+    await owner.back()
     await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
     await expect(page.getByRole("button", { name: /Platforma/ })).toBeHidden()
-    const owner = await apiAs(PEOPLE.foodOwner, "/admin/shops?status=pending", {
+    const forbidden = await apiAs(PEOPLE.foodOwner, "/admin/shops?status=pending", {
         businessBot: true,
     })
-    expect(owner.status).toBe(403)
+    expect(forbidden.status).toBe(403)
 
     await openApp(page, { user: PEOPLE.admin, businessBot: true })
     await page.getByRole("button", { name: /Platforma/ }).click()
