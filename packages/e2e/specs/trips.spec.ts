@@ -115,14 +115,14 @@ test("the courier sees the way, takes all at once, delivers stop by stop", async
     await expect(takeAll).toBeDisabled()
     await expect(trip.getByText("Hammasi tayyor bo'lganda olasiz: 0/3 tayyor")).toBeVisible()
 
-    // Yandex Navigator through every stop, in order.
+    // Yandex Navigator from the shop (nothing picked up yet) through every stop, in order.
     const link = await trip
         .getByRole("link", { name: "Yandex Navigatorda ochish" })
         .getAttribute("href")
     const route = new URL(link ?? "").searchParams.get("rtext") ?? ""
     expect(route.split("~").map((p) => p.split(",")[0]?.slice(0, 7))).toEqual([
         "",
-        ...[north(0.5), north(1.5), north(1)].map((p) => p.latitude.toFixed(6).slice(0, 7)),
+        ...[SHOP, north(0.5), north(1.5), north(1)].map((p) => p.latitude.toFixed(6).slice(0, 7)),
     ])
 
     for (const id of ids) {

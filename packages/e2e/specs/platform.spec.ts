@@ -110,7 +110,8 @@ test("«Qo'llanma»: the couriers' guide goes to each courier once, from Zumda |
     const couriers = page.getByRole("listitem").filter({ hasText: "Kuryerlar" })
     await expect(couriers).toContainText(/kishi kutmoqda/)
     await couriers.getByRole("button", { name: "Yuborish" }).click()
-    await expect(page.getByText(/Yuborildi: \d+, yetmadi: 0/)).toBeVisible()
+    // The result stays on the row, not only in the passing toast.
+    await expect(couriers.getByText(/Yuborildi: \d+, yetmadi: 0/)).toBeVisible()
     await expect(couriers).toContainText("Hammasi oldi")
     await expect(couriers.getByRole("button", { name: "Yuborish" })).toHaveCount(0)
 
@@ -136,7 +137,7 @@ test("«Raqam so'rash»: the owner and the courier get one button; the owner's n
     const card = page.getByRole("region", { name: "Raqamsiz" })
     await expect(card).toContainText(/Do'kon egalari: \d+ · Kuryerlar: \d+/)
     await card.getByRole("button", { name: "Raqam so'rash" }).click()
-    await expect(page.getByText(/So'raldi: \d+, yetmadi: \d+/)).toBeVisible()
+    await expect(card.getByText(/So'raldi: \d+, yetmadi: \d+/)).toBeVisible()
     // Once a day: the button is gone until tomorrow.
     await expect(card).toContainText("Bugun so'raldi")
     await expect(card.getByRole("button", { name: "Raqam so'rash" })).toHaveCount(0)
