@@ -130,6 +130,7 @@ export class Notifier {
                 await this.services.orders.setMessageId(order.id, "owner", messageId)
             },
             (note) => this.noteToOwner(business, note, text),
+            order.id,
         )
     }
 
@@ -235,6 +236,7 @@ export class Notifier {
                 }
             },
             (note) => this.noteToOwner(business, note, caption),
+            order.id,
         )
     }
 
@@ -898,6 +900,7 @@ export class Notifier {
                 }
             },
             (note) => this.noteToOwner(business, note, text),
+            order.id,
         )
     }
 
@@ -1073,6 +1076,8 @@ export class Notifier {
         business: Business,
         viaShopBot: () => Promise<void>,
         viaBusinessBot: (note: OwnerNote) => Promise<unknown>,
+        /** The message is about this order: the app button opens it. */
+        orderId?: string,
     ): Promise<OwnerDelivery> {
         const now = this.services.clock.now()
         try {
@@ -1085,7 +1090,7 @@ export class Notifier {
                 await this.services.businesses.saveOwnerChat(business)
             }
             try {
-                await viaBusinessBot(await this.ownerNote(business))
+                await viaBusinessBot(await this.ownerNote(business, orderId))
                 return "business"
             } catch (fallback) {
                 if (isRecipientProblem(fallback)) {
@@ -1100,7 +1105,7 @@ export class Notifier {
         return "shop"
     }
 
-    private async ownerNote(business: Business): Promise<OwnerNote> {
+    private async ownerNote(business: Business, orderId?: string): Promise<OwnerNote> {
         const t = textsFor(await this.languageOf(business.ownerTelegramId.value), business.type)
         const bot = `@${business.bot.username}`
         return {
@@ -1114,9 +1119,13 @@ export class Notifier {
                         },
                     ],
                     [
+                        // Straight to this business (and the order): not the list of them.
                         appButton(
-                            t.openBusinesses,
-                            businessAppUrl(this.services.env.BUSINESS_APP_ORIGIN),
+                            orderId ? t.openOrder : t.openBusinesses,
+                            businessAppUrl(this.services.env.BUSINESS_APP_ORIGIN, {
+                                slug: business.slug.value,
+                                orderId,
+                            }),
                         ),
                     ],
                 ],

@@ -113,6 +113,7 @@ describe("the shop's bot cannot write to its owner", () => {
             json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12" },
         })
         expect(order.status).toBe(201)
+        const { id: orderId } = (await order.json()) as { id: string }
         const toOwner = client.telegram.sent.filter((m) => m.chatId === OWNER.id)
         expect(toOwner.length).toBeGreaterThan(0)
         for (const message of toOwner) {
@@ -122,6 +123,12 @@ describe("the shop's bot cannot write to its owner", () => {
             expect(keys.some((b) => b.callback_data !== undefined)).toBe(false)
         }
         expect(toOwner.some((m) => m.html.includes("Yangi buyurtma"))).toBe(true)
+        // The app button opens this business on this order, not the list of businesses.
+        const card = toOwner.find((m) => m.html.includes("Yangi buyurtma"))
+        const app = card?.options?.keyboard?.inline_keyboard.flat().find((b) => b.web_app)
+        expect(app?.web_app?.url).toBe(
+            `https://business.zumda.test/?mode=business&shop=${slug}&order=${orderId}`,
+        )
         // The customer still hears from the shop's own bot.
         expect(
             client.telegram.sent.some(

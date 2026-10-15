@@ -31,9 +31,20 @@ export function courierAppUrl(appOrigin: string): string {
     return `${appOrigin}/?mode=courier`
 }
 
-/** «Mening bizneslarim»: the owner's businesses, opened from Zumda | Business. */
-export function businessAppUrl(appOrigin: string): string {
-    return `${appOrigin}/?mode=business`
+/**
+ * «Mening bizneslarim»: the owner's businesses, opened from Zumda | Business; with `shop`, right
+ * on that business's owner section (and on the order, when the message is about one).
+ */
+export function businessAppUrl(
+    appOrigin: string,
+    shop?: { slug: string; orderId?: string },
+): string {
+    const base = `${appOrigin}/?mode=business`
+    if (!shop) {
+        return base
+    }
+    const order = shop.orderId ? `&order=${encodeURIComponent(shop.orderId)}` : ""
+    return `${base}&shop=${encodeURIComponent(shop.slug)}${order}`
 }
 
 /** What «Platforma» opens on: the applications, one shop, or the districts. */
