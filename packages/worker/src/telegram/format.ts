@@ -137,10 +137,11 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
     lines.push("", ...addressLines(order, t))
     if (order.waitingForNetwork) {
         lines.push(t.networkSearching)
-    } else if (order.courierName && order.viaNetwork) {
-        lines.push(fill(t.networkCourier, { name: escapeHtml(order.courierName) }))
     } else if (order.courierName) {
-        lines.push(`🚚 ${t.courier}: ${escapeHtml(order.courierName)}`)
+        // The courier's phone next to the name: the owner calls from the chat too.
+        const phone = order.courierPhone ? `, ${formatPhone(order.courierPhone)}` : ""
+        const name = `${escapeHtml(order.courierName)}${phone}`
+        lines.push(order.viaNetwork ? fill(t.networkCourier, { name }) : `🚚 ${t.courier}: ${name}`)
     }
     lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
     if (order.channel === OrderChannel.MARKETPLACE) {
@@ -165,15 +166,20 @@ export function formatNewOrderForOwner(order: OrderDTO, reader: Reader): string 
 }
 
 /**
- * The courier's card in the Zumda courier bot: which shop, where to go, whom to call, how many
- * bottles to take, and the money: a transfer was paid before the shop started (take nothing),
- * cash is taken at the door. A courier may work for several shops, so the shop comes first.
+ * The courier's card in the Zumda courier bot: which shop, where to go, whom to call (the
+ * customer and the shop), how many bottles to take, and the money: a transfer was paid before the
+ * shop started (take nothing), cash is taken at the door. A courier may work for several shops,
+ * so the shop comes first.
  */
-export function formatOrderForCourier(order: OrderDTO, reader: Reader, shopName: string): string {
+export function formatOrderForCourier(
+    order: OrderDTO,
+    reader: Reader,
+    shop: { name: string; phone?: string },
+): string {
     const { language } = reader
     const t = textsFor(language, reader.type)
     const lines = [
-        `<b>${t.courierCard} · ${escapeHtml(shopName)} · ${t.order} #${order.number}</b>`,
+        `<b>${t.courierCard} · ${escapeHtml(shop.name)} · ${t.order} #${order.number}</b>`,
         "",
         ...itemLines(order, t, language),
         "",
@@ -183,6 +189,9 @@ export function formatOrderForCourier(order: OrderDTO, reader: Reader, shopName:
         lines.push(fill(t.bottlesToCollect, { n: order.bottlesReturned }))
     }
     lines.push("", ...addressLines(order, t))
+    if (shop.phone) {
+        lines.push(fill(t.shopPhone, { phone: formatPhone(shop.phone) }))
+    }
     lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
     if (order.status === OrderStatus.ACCEPTED || order.status === OrderStatus.PREPARING) {
         lines.push(t.courierWait)
@@ -209,8 +218,13 @@ export function formatStatusForCustomer(order: OrderDTO, reader: Reader): string
         return null
     }
     const text = fill(template, { n: order.number, courier: escapeHtml(order.courierName ?? "") })
+    // On the way: the customer can call the courier straight from the chat.
+    const phone =
+        template === t.courierOnTheWay && order.courierPhone
+            ? `\n${fill(t.courierPhone, { phone: formatPhone(order.courierPhone) })}`
+            : ""
     const reason = order.cancelReason ? `\n${t.reason}: ${escapeHtml(order.cancelReason)}` : ""
-    return text + reason
+    return text + phone + reason
 }
 
 // Callback data (≤ 64 bytes): "a:<orderId>:<status>" advance, "x:<orderId>" cancel,

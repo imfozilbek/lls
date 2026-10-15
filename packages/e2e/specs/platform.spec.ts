@@ -5,6 +5,8 @@
  */
 import { expect, test } from "@playwright/test"
 
+import { businessBot, courierBot } from "../stand/config.js"
+import { runSql } from "../stand/seed.js"
 import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import {
     businessChat,
@@ -18,6 +20,7 @@ import { appQueryOf, openApp } from "../support/webapp.js"
 // Fake tokens: the stand's Telegram accepts `<id>:NEW-...`. secret-scan: fake
 const NEW_BOT = { id: 777100300, token: "777100300:NEW-e2e-platform-token-abcdefghij" } // secret-scan: fake
 const APPLICANT = { id: 4105, first_name: "Malika", language_code: "uz" }
+const OWNER_PHONE = "+998905550001"
 
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
@@ -110,6 +113,52 @@ test("«Qo'llanma»: the couriers' guide goes to each courier once, from Zumda |
     expect(guide.method).toBe("sendVideo")
     expect(guide.video).toBe("http://localhost:5173/welcome/kuryer.mp4")
     expect(guide.buttons[0]?.web_app?.url).toContain("mode=courier")
+})
+
+test("«Raqam so'rash»: the owner and the courier get one button; the owner's number serves the shop", async ({
+    page,
+}) => {
+    // The food shop has no number of its own, its owner none in Zumda, its courier none either.
+    runSql(
+        `UPDATE businesses SET contact_phone = NULL WHERE slug = '${FOOD}';
+         UPDATE customers SET phone = NULL WHERE telegram_id = ${PEOPLE.foodOwner.id};
+         UPDATE courier_profiles SET phone = NULL WHERE telegram_id = ${PEOPLE.courier.id}`,
+    )
+    const since = await lastSeq()
+    await openApp(page, { user: PEOPLE.admin, businessBot: true })
+    await page.getByRole("button", { name: /Platforma/ }).click()
+    await page.getByRole("tab", { name: "Bizneslar" }).click()
+    const card = page.getByRole("region", { name: "Raqamsiz" })
+    await expect(card).toContainText(/Do'kon egalari: \d+ · Kuryerlar: \d+/)
+    await card.getByRole("button", { name: "Raqam so'rash" }).click()
+    await expect(page.getByText(/So'raldi: \d+, yetmadi: \d+/)).toBeVisible()
+    // Once a day: the button is gone until tomorrow.
+    await expect(card).toContainText("Bugun so'raldi")
+    await expect(card.getByRole("button", { name: "Raqam so'rash" })).toHaveCount(0)
+
+    const toOwner = await waitForMessage(PEOPLE.foodOwner.id, "buyurtma qabul qilmayapti", since)
+    expect(toOwner.token).toBe(businessBot().token)
+    expect(toOwner.replyButtons).toEqual([
+        { text: "📱 Raqamimni yuborish", request_contact: true },
+        { text: "✏️ Boshqa raqam yozaman" },
+    ])
+    const toCourier = await waitForMessage(PEOPLE.courier.id, "Raqamsiz buyurtma kelmaydi", since)
+    expect(toCourier.token).toBe(courierBot().token)
+    expect(toCourier.replyButtons[0]).toMatchObject({ request_contact: true })
+
+    // One button: the owner's own number, and the shop takes orders with it.
+    await businessChat().shareContact(PEOPLE.foodOwner, OWNER_PHONE)
+    await waitForMessage(PEOPLE.foodOwner.id, "Raqamingiz saqlandi", since)
+    await openApp(page, { user: PEOPLE.customer, shop: FOOD })
+    await expect(page.getByRole("link", { name: "Qo'ng'iroq" })).toHaveAttribute(
+        "href",
+        `tel:${OWNER_PHONE}`,
+    )
+
+    runSql(
+        `UPDATE businesses SET contact_phone = '+998901234501' WHERE slug = '${FOOD}';
+         UPDATE courier_profiles SET phone = '+998901112233' WHERE telegram_id = ${PEOPLE.courier.id}`,
+    )
 })
 
 test("«Buyurtmani ochish»: the owner lands on the order, the customer on its tracking", async ({

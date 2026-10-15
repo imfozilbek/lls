@@ -192,6 +192,22 @@ export const adminRoutes = new Hono<AppEnv>()
         return c.json(result)
     })
 
+    /** «Raqam so'rash»: who a missing phone stops now, and who is still to ask today. */
+    .get("/phone-asks", async (c) => {
+        const data = await c.get("services").useCases.phoneAskStatus.execute({
+            actorTelegramId: c.get("auth").user.id,
+        })
+        return c.json({ data, meta: { page: 1, limit: data.length, total: data.length } })
+    })
+
+    /** One batch of asks, owners first; the app presses again while some are left today. */
+    .post("/phone-asks/send", async (c) => {
+        const result = await c.get("services").useCases.askPhones.execute({
+            actorTelegramId: c.get("auth").user.id,
+        })
+        return c.json(result)
+    })
+
     /** «Tumanlar»: each district now and over the last week; late network orders are reported. */
     .get("/districts", async (c) => {
         const services = c.get("services")

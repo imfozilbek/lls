@@ -220,7 +220,7 @@ export class D1CourierRepository implements CourierRepository {
         const { results } = await this.db
             .prepare(
                 `SELECT ${PROFILE_COLUMNS} FROM courier_profiles p
-                 WHERE p.in_network = 1 AND p.shift_until > ?
+                 WHERE p.in_network = 1 AND p.shift_until > ? AND p.phone IS NOT NULL
                    AND EXISTS (
                        SELECT 1 FROM couriers c JOIN businesses b ON b.id = c.business_id
                        WHERE c.telegram_id = p.telegram_id AND c.status = ? AND b.district_id = ?)

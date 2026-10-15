@@ -13,6 +13,7 @@ import { displayNameOf } from "../../dtos/telegram-user.js"
 import { toTripDTO } from "../../dtos/trip.dto.js"
 import { ListNetworkOrdersUseCase } from "../network/network.use-cases.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
+import { shopCallPhone } from "../shop/shop-phone.js"
 
 import type { Business } from "../../../domain/entities/business.js"
 import type {
@@ -27,6 +28,7 @@ import type { TelegramUser } from "../../dtos/telegram-user.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
 import type { CourierRepository } from "../../ports/courier-repository.js"
+import type { CustomerRepository } from "../../ports/customer-repository.js"
 import type { DistrictRepository } from "../../ports/district-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
 import type { TripRepository } from "../../ports/trip-repository.js"
@@ -52,6 +54,8 @@ export interface CourierDeps {
 export interface CourierHomeDeps extends CourierDeps {
     districts: DistrictRepository
     trips: TripRepository
+    /** The shop's owner, when the shop has no number of its own (`shopCallPhone`). */
+    customers: Pick<CustomerRepository, "findByTelegramId">
 }
 
 /** The approved courier link of this person in this shop, or a 403. */
@@ -201,7 +205,7 @@ export class ReviewCourierUseCase {
         const courier = await requireShopCourier(this.deps, input)
         const now = this.deps.clock.now()
         if (input.approve) {
-            courier.approve(now)
+            courier.approveByOwner(now)
         } else {
             courier.decline(now)
         }
@@ -337,9 +341,15 @@ export class GetCourierHomeUseCase {
                 const shopLocation = business?.location
                     ? toLocationDTO(business.location)
                     : undefined
+                // Asked only for a shop the courier has orders of: the owner's phone is a read.
+                const shopPhone =
+                    business && list.length > 0
+                        ? await shopCallPhone(business, this.deps.customers)
+                        : undefined
                 const shopOrders: CourierOrderDTO[] = list.map((o) => ({
                     ...toOrderDTO(o),
                     shopName,
+                    shopPhone: shopPhone?.number,
                     shopLocation,
                     shopAddress: business?.address,
                 }))

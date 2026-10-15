@@ -322,6 +322,7 @@ describe("district network", () => {
             const home = await new GetCourierHomeUseCase({
                 ...deps(),
                 trips: new InMemoryTrips(orders),
+                customers: new InMemoryCustomers(),
             }).execute({ telegramId: BOBUR_TG })
             expect(home.shops.map((s) => [s.shopName, s.status])).toEqual([
                 ["Osh Markaz", "active"],

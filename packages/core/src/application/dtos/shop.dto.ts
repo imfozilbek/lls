@@ -8,6 +8,7 @@ import type { BusinessType } from "../../domain/enums/business-type.js"
 import type { Feature } from "../../domain/enums/feature.js"
 import type { OwnerChat } from "../../domain/enums/owner-chat.js"
 import type { PaymentMethod, PaymentOptions } from "../../domain/enums/payment.js"
+import type { Phone } from "../../domain/value-objects/phone.js"
 import type { WeeklySchedule } from "../../domain/value-objects/working-hours.js"
 
 export interface LocationDTO {
@@ -25,8 +26,13 @@ export interface ShopPublicDTO {
     logoKey?: string
     address?: string
     location?: LocationDTO
-    /** E.164: the number customers call about an order, when the owner gave one. */
+    /** E.164: the shop's own number for customers, as the owner typed it (empty: none). */
     contactPhone?: string
+    /**
+     * The number to call the shop on: its own, or the owner's (`shopCallPhone`). Only on the
+     * opened storefront, never in the showcase list.
+     */
+    callPhone?: string
     delivery: {
         fee: number
         freeFrom?: number
@@ -97,7 +103,12 @@ function toPayoutCardDTO(business: Business): PayoutCardDTO | undefined {
 export function toShopPublicDTO(
     business: Business,
     now: Date,
-    options: { withCard?: boolean } = {},
+    options: {
+        withCard?: boolean
+        callPhone?: Phone
+        /** No number to call the shop on: no way to order yet (`NO_SHOP_PHONE`). */
+        noPhone?: boolean
+    } = {},
 ): ShopPublicDTO {
     const { fee, freeFrom, minOrder } = business.delivery
     return {
@@ -110,6 +121,7 @@ export function toShopPublicDTO(
         address: business.address,
         location: toLocationDTO(business.location),
         contactPhone: business.contactPhone?.number,
+        callPhone: options.callPhone?.number,
         delivery: {
             fee: fee.amount,
             freeFrom: freeFrom?.amount,
@@ -125,7 +137,7 @@ export function toShopPublicDTO(
         payoutCard: options.withCard ? toPayoutCardDTO(business) : undefined,
         hasPayoutCard: business.hasPayoutCard(),
         paymentOptions: business.paymentOptions,
-        paymentMethods: business.paymentMethods(),
+        paymentMethods: options.noPhone ? [] : business.paymentMethods(),
         opensSoon: business.isPending(),
         demo: business.isDemo(),
     }

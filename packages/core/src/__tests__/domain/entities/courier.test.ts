@@ -85,6 +85,7 @@ describe("Courier (a person's work for one shop)", () => {
         water.approve(NOW)
         water.setWorkDays(["mon", "tue"], NOW)
         person.startShift(NOW)
+        person.setPhone(Phone.create("+998901112233"), NOW)
         // Friday: works for the food shop, a day off at the water shop.
         expect(food.isAvailable(NOW)).toBe(true)
         expect(water.unavailableReason(NOW)).toBe("day_off")
@@ -99,6 +100,10 @@ describe("Courier (a person's work for one shop)", () => {
         expect(courier.unavailableReason(NOW)).toBe("not_on_shift")
         expect(courier.worksToday(NOW)).toBe(true)
         person.startShift(NOW)
+        // On shift, but nobody could call them: no order until they send the phone.
+        expect(courier.unavailableReason(NOW)).toBe("no_phone")
+        expect(courier.worksToday(NOW)).toBe(true)
+        person.setPhone(Phone.create("+998901112233"), NOW)
         expect(courier.isAvailable(NOW)).toBe(true)
         courier.setOffToday(true, NOW)
         expect(courier.isOffToday(LATE_TONIGHT)).toBe(true)
@@ -107,6 +112,16 @@ describe("Courier (a person's work for one shop)", () => {
         expect(courier.isOffToday(TOMORROW)).toBe(false)
         courier.setOffToday(false, NOW)
         expect(courier.isAvailable(NOW)).toBe(true)
+    })
+
+    it("the owner approves only someone who sent a phone", () => {
+        const person = profile()
+        const courier = join("biz-1", person)
+        expect(() => courier.approveByOwner(NOW)).toThrow(BusinessRuleViolationError)
+        expect(courier.isPending).toBe(true)
+        person.setPhone(Phone.create("+998901112233"), NOW)
+        courier.approveByOwner(NOW)
+        expect(courier.isActive).toBe(true)
     })
 
     it("work days: at least one, each once, kept Monday first", () => {

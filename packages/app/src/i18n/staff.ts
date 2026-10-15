@@ -77,7 +77,8 @@ export const staffUz = {
             card: "To'lov usuli",
             cardHint: "Karta, naqd yoki ikkalasi: to'lov usulisiz buyurtma yo'q",
             phone: "Mijozlar uchun telefon",
-            phoneHint: "To'lov bo'yicha savol bo'lsa, mijoz sizga qo'ng'iroq qiladi",
+            phoneHint:
+                "Mijozlar va kuryerlar qo'ng'iroq qiladi: raqamsiz buyurtma qabul qilinmaydi",
             location: "Joylashuv",
             locationHint: "Yetkazish hududi va tuman kuryerlari uchun",
             hours: "Ish vaqti",
@@ -124,6 +125,7 @@ export const staffUz = {
         cancelReason: "Sabab (ixtiyoriy)",
         cancelReasonPlaceholder: "Masalan: mahsulot tugadi",
         call: "Qo'ng'iroq",
+        callCourier: "Kuryerga qo'ng'iroq",
         map: "Xarita",
         courier: "Kuryer",
         courierReasons: {
@@ -131,6 +133,7 @@ export const staffUz = {
             day_off: "dam olish kuni",
             off_today: "bugun ishlamaydi",
             not_on_shift: "smenada emas",
+            no_phone: "raqami yo'q",
         },
         backTodayAssign:
             "Bugun ishlamaydi deb belgilangan: bossangiz, bugunga qaytariladi va tayinlanadi",
@@ -338,9 +341,9 @@ export const staffUz = {
             closes: "Yopiladi",
             days: ["Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"],
             address: "Manzil",
-            contactPhone: "Mijozlar uchun telefon (ixtiyoriy)",
+            contactPhone: "Mijozlar uchun telefon",
             contactPhoneHint:
-                "To'lov bo'yicha savol bo'lsa, mijoz buyurtma sahifasidan shu raqamga qo'ng'iroq qiladi.",
+                "Mijozlar va kuryerlar shu raqamga qo'ng'iroq qiladi. Bo'sh qolsa, Zumda'ga bergan raqamingiz ko'rinadi.",
             contactPhoneBad: "Raqam to'liq emas: masalan, +998 90 123 45 67",
             needShopName: "Do'kon nomini yozing",
             needOpenDay: "«Ish vaqti»da kamida bitta kunni yoqing",
@@ -358,6 +361,7 @@ export const staffUz = {
             pendingTitle: "Tasdiqlashni kutmoqda",
             approve: "Tasdiqlash",
             decline: "Rad etish",
+            waitPhone: "Kuryer raqamini yuborgach tasdiqlay olasiz: bot undan so'radi",
             approved: "Kuryer tasdiqlandi",
             workDays: "Ish kunlari",
             offToday: "Bugun ishlamaydi",
@@ -455,6 +459,11 @@ export const staffUz = {
         delivered: "Yetkazdim",
         waitReady: "Buyurtma tayyorlanmoqda, tayyor bo'lganda xabar keladi",
         nothingToCollect: "Oldindan to'langan, pul olmang",
+        callCustomer: "Mijozga qo'ng'iroq",
+        callShop: "Do'konga qo'ng'iroq",
+        phoneTitle: "Raqamingizni yuboring",
+        phoneHint:
+            "Do'kon va mijozlar sizga qo'ng'iroq qila olishi kerak: raqamsiz buyurtma kelmaydi.",
         collectCash: "Mijozdan {sum} naqd oling",
         cashTaken: "Naqd olindi: {sum}",
         cashDelivered: "Pulni oldim, yetkazdim",
@@ -648,6 +657,15 @@ export const staffUz = {
         guidesConfirm: "{who}: {n} kishiga qo'llanma yuborilsinmi? Har biri uni bir marta oladi.",
         guidesProgress: "{done}/{total}",
         guidesDone: "Yuborildi: {sent}, yetmadi: {unreachable}",
+        phoneAskTitle: "Raqamsiz",
+        phoneAskAudiences: { owner: "Do'kon egalari", courier: "Kuryerlar" },
+        phoneAskHint:
+            "Raqamsiz do'kon buyurtma qabul qilmaydi, raqamsiz kuryerga buyurtma berilmaydi. Har biriga o'z botida bitta tugma bilan raqam so'raymiz.",
+        phoneAskSend: "Raqam so'rash",
+        phoneAskConfirm:
+            "{n} kishiga raqam so'rash xabari yuborilsinmi? Har biriga kuniga bir marta.",
+        phoneAskDone: "So'raldi: {sent}, yetmadi: {unreachable}",
+        phoneAskToday: "Bugun so'raldi: ertaga yana so'rash mumkin",
     },
 }
 

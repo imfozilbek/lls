@@ -178,7 +178,7 @@ function PendingRow({
                 <Button
                     className="grow"
                     loading={busy === "approve"}
-                    disabled={busy !== null}
+                    disabled={busy !== null || !courier.phone}
                     onClick={(): void => void review(true)}
                 >
                     {s.approve}
@@ -193,6 +193,8 @@ function PendingRow({
                     {s.decline}
                 </Button>
             </span>
+            {/* No phone yet: the courier bot asks for it; approval waits (owner's decision). */}
+            {courier.phone ? null : <p className="text-sm text-tg-hint">{s.waitPhone}</p>}
         </li>
     )
 }

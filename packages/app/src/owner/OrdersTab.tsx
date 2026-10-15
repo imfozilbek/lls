@@ -21,7 +21,7 @@ import { useCachedState } from "../lib/use-cached.js"
 import { useRingOnNews } from "../lib/use-ring.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { CompactAddress } from "../ui/contact-links.js"
+import { CallLink, CompactAddress } from "../ui/contact-links.js"
 import {
     AlertIcon,
     CardIcon,
@@ -337,15 +337,25 @@ function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
         return null
     }
     return (
-        <p className="flex flex-wrap items-center gap-2 px-1 font-medium">
-            <ScooterIcon size={18} className="text-brand" />
-            {t.owner.courier}: {order.courierName}
-            {order.viaNetwork ? (
-                <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs font-semibold">
-                    {t.owner.viaNetwork}
-                </span>
+        <div className="flex flex-col gap-2">
+            <p className="flex flex-wrap items-center gap-2 px-1 font-medium">
+                <ScooterIcon size={18} className="text-brand" />
+                {t.owner.courier}: {order.courierName}
+                {order.viaNetwork ? (
+                    <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs font-semibold">
+                        {t.owner.viaNetwork}
+                    </span>
+                ) : null}
+            </p>
+            {/* The courier's number with the name: the owner calls them from the card. */}
+            {order.courierPhone ? (
+                <CallLink
+                    phone={order.courierPhone}
+                    label={t.owner.callCourier}
+                    className="bg-tg-bg"
+                />
             ) : null}
-        </p>
+        </div>
     )
 }
 

@@ -89,7 +89,9 @@ describe("a shop owner cannot borrow other shops' customers", () => {
     })
 
     it("a forged identity in another shop sees no phone and cannot order with it", async () => {
-        await env.DB.prepare("UPDATE businesses SET status = 'active' WHERE id = ?")
+        await env.DB.prepare(
+            "UPDATE businesses SET status = 'active', contact_phone = '+998901234502' WHERE id = ?",
+        )
             .bind(shopB.id)
             .run()
         // The real shop sees the phone the customer sent to its bot.

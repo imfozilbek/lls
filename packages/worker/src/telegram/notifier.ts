@@ -8,6 +8,8 @@ import {
     PaymentMethod,
     PaymentStatus,
     cardSystemOf,
+    formatPhone,
+    shopCallPhone,
     toNetworkOrderDTO,
 } from "@zumda/core"
 
@@ -137,13 +139,20 @@ export class Notifier {
      * customer from paying.
      */
     async askForTransfer(business: Business, order: OrderDTO): Promise<void> {
+        // The shop's number under the first message: the customer can call from the chat.
+        const phone = await shopCallPhone(business, this.services.customers)
+        const withPhone = (t: BotTexts, text: string): string =>
+            phone ? `${text}\n${fill(t.shopPhone, { phone: formatPhone(phone.number) })}` : text
         if (order.payment.method === PaymentMethod.CASH) {
             const token = await this.shopToken(business.id)
             await this.tellCustomer(token, business, order, (t, language) =>
-                fill(t.payByCash, {
-                    n: order.number,
-                    sum: `<b>${formatMoney(order.total, language)}</b>`,
-                }),
+                withPhone(
+                    t,
+                    fill(t.payByCash, {
+                        n: order.number,
+                        sum: `<b>${formatMoney(order.total, language)}</b>`,
+                    }),
+                ),
             )
             return
         }
@@ -155,13 +164,16 @@ export class Notifier {
         const token = await this.shopToken(business.id)
         const system = cardSystemOf(card.number)
         await this.tellCustomer(token, business, order, (t, language) =>
-            fill(t.payByTransfer, {
-                n: order.number,
-                sum: `<b>${formatMoney(order.total, language)}</b>`,
-                system: system ? `${t.cardSystems[system]} ` : "",
-                card: card.number.replace(/(\d{4})(?=\d)/g, "$1 "),
-                holder: escapeHtml(card.holder),
-            }),
+            withPhone(
+                t,
+                fill(t.payByTransfer, {
+                    n: order.number,
+                    sum: `<b>${formatMoney(order.total, language)}</b>`,
+                    system: system ? `${t.cardSystems[system]} ` : "",
+                    card: card.number.replace(/(\d{4})(?=\d)/g, "$1 "),
+                    holder: escapeHtml(card.holder),
+                }),
+            ),
         )
     }
 
@@ -908,8 +920,12 @@ export class Notifier {
         }
         const chatId = courier.telegramId.value
         const reader = await this.readerFor(chatId, business)
+        const shopPhone = await shopCallPhone(business, this.services.customers)
         const sent = await this.upsertCard(token, chatId, messageId, {
-            text: formatOrderForCourier(order, reader, business.name),
+            text: formatOrderForCourier(order, reader, {
+                name: business.name,
+                phone: shopPhone?.number,
+            }),
             keyboard: withAppButton(
                 courierKeyboard(order, reader),
                 this.courierAppButton(textsFor(reader.language)),

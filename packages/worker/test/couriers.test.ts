@@ -140,6 +140,23 @@ describe("shop couriers, verticals and channels", () => {
         })
         expect(broken.status).toBe(200)
 
+        // No phone yet: the owner's button says why, and the courier keeps waiting.
+        await botUpdate({
+            callback_query: {
+                id: "cb-early",
+                from: OWNER,
+                data: approveButton,
+                message: { message_id: 7, chat: { id: OWNER.id } },
+            },
+        })
+        expect(client.telegram.answerTexts.at(-1)).toBe(
+            "Kuryer hali raqamini yubormagan: raqam kelgach tasdiqlang",
+        )
+        const [stillWaiting] = await json<{ status: string }[]>(
+            await as(OWNER)("/api/owner/couriers"),
+        )
+        expect(stillWaiting?.status).toBe("pending")
+
         // A forwarded contact never counts; their own does.
         await client.courierBot({
             message: {

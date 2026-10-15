@@ -7,6 +7,27 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Phones: everyone on an order can call each other
+- The owner's order card: the customer's number with «Qo'ng'iroq» (it was a round icon without the
+  digits) and the courier's number; the owner's bot card names the courier with the number.
+- The customer: «Kuryerga qo'ng'iroq» from the moment a courier took the order, kept after
+  delivery; «Do'konga qo'ng'iroq» on every step and «Qo'ng'iroq» on the storefront; the first
+  message about the order carries the shop's number, «… olib kelmoqda» the courier's.
+- The courier: «Mijozga qo'ng'iroq» and «Do'konga qo'ng'iroq» with the numbers, in the app and in
+  the courier bot's card.
+- The shop's number is «Mijozlar uchun telefon», or the owner's own phone while it is empty;
+  «Ishga tayyor» asks for it. Migration `0022_order_courier_phone.sql` keeps the courier's phone
+  with the order, like the name.
+- The phone is required for everyone: a shop with no number takes no orders (`NO_SHOP_PHONE`,
+  the storefront says «Tez orada…»; demos are exempt); the owner approves only a courier who sent
+  a phone (`COURIER_PHONE_REQUIRED`), and a courier without one gets no order of their shop or
+  the network (`no_phone`) until they press «Raqamni yuborish» or answer the bot's ask.
+- «Raqam so'rash»: «Platforma» → «Bizneslar» shows who lacks a phone («Raqamsiz»: owners of a
+  shop without a number, couriers without a phone) and asks them all with one press, each at
+  most once a day (migration `0023_phone_asks.sql`). The owner gets «📱 Raqamimni yuborish» in
+  Zumda | Business (their Telegram number becomes the shop's) and «✏️ Boshqa raqam yozaman»; the
+  courier «📱 Raqamni yuborish» in Zumda | Kuryer.
+
 ### «Qo'llanma»: the guide videos for everyone already in Zumda
 - «Platforma» → «Qo'llanma»: owners, couriers and customers, how many each reaches and how many
   still wait; «Yuborish» sends the whole audience batch by batch with its progress.

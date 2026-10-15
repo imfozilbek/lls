@@ -27,6 +27,7 @@ import { Location } from "../../domain/value-objects/location.js"
 import { NOON_MONDAY_UZ, OWNER_TG, STRANGER_TG, TEST_CARD, makeBusiness } from "../fixtures.js"
 import {
     InMemoryBusinesses,
+    InMemoryCustomers,
     InMemoryDistricts,
     InMemoryManagedBots,
     InMemoryPayoutCards,
@@ -321,7 +322,7 @@ describe("shop use cases", () => {
         it("a shop waiting for approval opens soon; a turned-off one only to its owner", async () => {
             const waiting = makeBusiness({ active: false })
             await businesses.save(waiting)
-            const getShop = new GetShopBySlugUseCase(businesses, clock)
+            const getShop = new GetShopBySlugUseCase(businesses, clock, new InMemoryCustomers())
             const soon = await getShop.execute("osh-markaz", STRANGER_TG)
             expect(soon.opensSoon).toBe(true)
             waiting.disable()
@@ -337,7 +338,11 @@ describe("shop use cases", () => {
 
         it("shows an active shop as open", async () => {
             await businesses.save(makeBusiness())
-            const shop = await new GetShopBySlugUseCase(businesses, clock).execute("osh-markaz")
+            const shop = await new GetShopBySlugUseCase(
+                businesses,
+                clock,
+                new InMemoryCustomers(),
+            ).execute("osh-markaz")
             expect(shop.isOpen).toBe(true)
             expect(shop).not.toHaveProperty("ownerTelegramId")
         })

@@ -22,12 +22,19 @@ import {
 import { Sheet } from "../ui/sheet.js"
 
 import { DemoBlock } from "./DemoBlock.js"
+import { PhoneAskCard, usePhoneAsks } from "./PhoneAskCard.js"
 import { OwnerLine, ShopHead, botToast, useBusy } from "./shared.js"
 
 import type { PlatformShopDTO } from "@zumda/core"
 
-/** One list of «Platforma»: loads, reloads after an action, remembers its error. */
-function useShops(status: BusinessStatus): {
+/**
+ * One list of «Platforma»: loads, reloads after an action, remembers its error. `alsoRefresh`:
+ * what the same pull refreshes above the list.
+ */
+function useShops(
+    status: BusinessStatus,
+    alsoRefresh?: () => Promise<void>,
+): {
     shops: PlatformShopDTO[] | null
     error: string | null
     reload(): Promise<void>
@@ -45,7 +52,9 @@ function useShops(status: BusinessStatus): {
     useEffect(() => {
         void reload()
     }, [reload])
-    useRefresh(reload)
+    useRefresh(async (): Promise<void> => {
+        await Promise.all([reload(), alsoRefresh?.()])
+    })
     return { shops, error, reload }
 }
 
@@ -475,7 +484,8 @@ export function ShopsTab({
     const t = useT().platform
     const [filter, setFilter] = useState<ShopsFilter>(initialFilter)
     const status = filter === "active" ? BusinessStatus.ACTIVE : BusinessStatus.DISABLED
-    const { shops, error, reload } = useShops(status)
+    const asks = usePhoneAsks()
+    const { shops, error, reload } = useShops(status, asks.reload)
     let body: React.JSX.Element
     if (shops === null) {
         body = <ListState error={error} onRetry={(): void => void reload()} />
@@ -505,6 +515,9 @@ export function ShopsTab({
                     { value: "disabled", label: t.off },
                 ]}
             />
+            {filter === "active" && asks.counts ? (
+                <PhoneAskCard counts={asks.counts} onDone={asks.reload} />
+            ) : null}
             {body}
         </div>
     )

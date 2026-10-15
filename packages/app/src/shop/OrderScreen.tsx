@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentStatus, formatPhone, isFinalStatus } from "@zumda/core"
+import { OrderStatus, PaymentStatus, isFinalStatus } from "@zumda/core"
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -13,11 +13,11 @@ import { useRingOnNews } from "../lib/use-ring.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
+import { CallLink } from "../ui/contact-links.js"
 import {
     CashIcon,
     CloseIcon,
     HeartHomeIcon,
-    PhoneIcon,
     PinIcon,
     ScooterIcon,
     WifiOffIcon,
@@ -124,27 +124,50 @@ function RemindShop({
 }
 
 /**
- * The shop's own number, when the owner gave one: a transfer the shop did not see is settled
- * fastest by a call. A quiet second way under the card; after «Pul kelmadi» it says why to call.
+ * The number to call the shop on (its own, or the owner's): a transfer the shop did not see is
+ * settled fastest by a call. Under the card while the money is open; after «Pul kelmadi» it says
+ * why to call.
  */
 function CallShop({ problem }: { problem: boolean }): React.JSX.Element | null {
     const t = useT()
-    const phone = useSession((state) => state.shop?.contactPhone)
+    const phone = useSession((state) => state.shop?.callPhone)
     if (!phone) {
         return null
     }
     return (
         <div className="flex flex-col gap-1.5">
-            <a
-                href={`tel:${phone}`}
-                onClick={(): void => haptic.tap()}
-                className="tap flex min-h-12 flex-wrap items-center justify-center gap-x-2 rounded-control bg-tg-secondary px-4 py-2 font-semibold"
-            >
-                <PhoneIcon size={18} className="text-brand" />
-                {t.pay.callShop}
-                <span className="font-normal tabular-nums text-tg-hint">{formatPhone(phone)}</span>
-            </a>
+            <CallLink phone={phone} label={t.pay.callShop} />
             {problem ? <p className="px-1 text-sm text-tg-hint">{t.pay.callShopHint}</p> : null}
+        </div>
+    )
+}
+
+/** The transfer is open: the call to the shop is already under the card. */
+function moneyOpen(order: OrderDTO): boolean {
+    return (
+        order.status !== OrderStatus.CANCELLED &&
+        order.payment.method !== "cash" &&
+        (order.payment.status === PaymentStatus.UNPAID ||
+            order.payment.status === PaymentStatus.AWAITING)
+    )
+}
+
+/**
+ * Everyone on an order can call each other (owner's decision, October 2026): the courier from
+ * the moment they took it, after delivery too, and the shop on every step.
+ */
+function Calls({ order }: { order: OrderDTO }): React.JSX.Element | null {
+    const t = useT()
+    const shopPhone = useSession((state) => state.shop?.callPhone)
+    const courier = order.courierPhone
+    const shop = moneyOpen(order) ? undefined : shopPhone
+    if (!courier && !shop) {
+        return null
+    }
+    return (
+        <div className="flex flex-col gap-2">
+            {courier ? <CallLink phone={courier} label={t.order.callCourier} /> : null}
+            {shop ? <CallLink phone={shop} label={t.pay.callShop} /> : null}
         </div>
     )
 }
@@ -205,7 +228,7 @@ function Payment({
                     }}
                 />
             ) : null}
-            {unpaid || checking ? (
+            {moneyOpen(order) ? (
                 <CallShop problem={unpaid && order.payment.rejections > 0} />
             ) : null}
         </Section>
@@ -532,6 +555,7 @@ function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
                     {fill(t.order.courier, { name: order.courierName })}
                 </p>
             ) : null}
+            <Calls order={order} />
 
             <Section title={t.order.items}>
                 <OrderItems order={order} />

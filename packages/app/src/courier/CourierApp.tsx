@@ -8,11 +8,19 @@ import { formatMoney } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
-import { haptic } from "../lib/telegram.js"
+import { canRequestContact, haptic, requestContact } from "../lib/telegram.js"
 import { useRingOnNews } from "../lib/use-ring.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
-import { CashIcon, CheckIcon, ClockIcon, ScooterIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
+import {
+    CashIcon,
+    CheckIcon,
+    ClockIcon,
+    PhoneIcon,
+    ScooterIcon,
+    StoreIcon,
+    WifiOffIcon,
+} from "../ui/icons.js"
 import { OrderMap } from "../ui/maps.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusBadge } from "../ui/order-status.js"
@@ -274,6 +282,59 @@ function useHome(): {
     const updateHome = (change: (home: CourierHomeDTO) => CourierHomeDTO): void =>
         setHome((current) => (current ? change(current) : current))
     return { home, error, reload, replace, setHome: updateHome }
+}
+
+/** How long to wait for the contact to reach the courier bot after «Raqamni yuborish». */
+const CONTACT_POLL_MS = 1500
+const CONTACT_POLL_TRIES = 10
+
+/**
+ * No phone yet: no shop approves the courier and no order comes until they send it (owner's
+ * decision, October 2026). Telegram sends the contact to the courier bot; the screen waits for it.
+ */
+function PhoneCard({ onArrived }: { onArrived(home: CourierHomeDTO): void }): React.JSX.Element {
+    const t = useT()
+    const [waiting, setWaiting] = useState(false)
+    const share = async (): Promise<void> => {
+        haptic.tap()
+        if (!canRequestContact()) {
+            toast(t.checkout.phoneUpdateTelegram, "error")
+            return
+        }
+        if (!(await requestContact())) {
+            return
+        }
+        setWaiting(true)
+        for (let i = 0; i < CONTACT_POLL_TRIES; i++) {
+            await new Promise((resolve) => setTimeout(resolve, CONTACT_POLL_MS))
+            const fresh = await api.courier.home().catch(() => null)
+            if (fresh?.profile.phone) {
+                haptic.success()
+                setWaiting(false)
+                onArrived(fresh)
+                return
+            }
+        }
+        setWaiting(false)
+        toast(t.checkout.phoneNotArrived, "error")
+    }
+    return (
+        <section
+            className="flex animate-rise flex-col gap-3 rounded-tile bg-warning/15 p-4"
+            aria-label={t.courier.phoneTitle}
+        >
+            <span className="flex items-start gap-3">
+                <PhoneIcon size={22} className="mt-0.5 shrink-0 text-warning" />
+                <span>
+                    <span className="block font-semibold">{t.courier.phoneTitle}</span>
+                    <span className="text-sm text-tg-subtitle">{t.courier.phoneHint}</span>
+                </span>
+            </span>
+            <Button loading={waiting} onClick={(): void => void share()}>
+                {waiting ? t.checkout.phoneWaiting : t.checkout.sharePhone}
+            </Button>
+        </section>
+    )
 }
 
 /** "Я на смене": shops give orders only to couriers on shift; it ends at midnight. */
@@ -711,6 +772,9 @@ export function CourierApp(): React.JSX.Element {
                 <Skeleton className="h-72 rounded-tile" />
             ) : (
                 <>
+                    {home.profile.phone ? null : (
+                        <PhoneCard onArrived={(fresh): void => setHome(() => fresh)} />
+                    )}
                     <ShiftCard home={home} onChange={setHome} />
                     {/* Not in the network yet: the one choice to make sits right under the shift. */}
                     {home.profile.inNetwork ? null : <NetworkCard home={home} onChange={setHome} />}

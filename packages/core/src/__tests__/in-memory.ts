@@ -23,6 +23,12 @@ import type {
     ManagedBotRepository,
 } from "../application/ports/managed-bot-repository.js"
 import type { PayoutCardRepository } from "../application/ports/payout-card-repository.js"
+import type {
+    PhoneAskCount,
+    PhoneAskRecipient,
+    PhoneAskRecipients,
+    PhoneAskSender,
+} from "../application/ports/phone-asks.js"
 import type { MoneyTotals, OrderRepository } from "../application/ports/order-repository.js"
 import type { ReceiptStore, ReceiptUpload } from "../application/ports/receipt-store.js"
 import type { RoutePlanner, TripRepository } from "../application/ports/trip-repository.js"
@@ -721,6 +727,62 @@ export class FakeGuideSender implements GuideSender {
             return "unreachable"
         }
         this.sent.push({ audience, recipient })
+        return "sent"
+    }
+}
+
+/** «Raqam so'rash»: who has no phone now, and when each was last asked. */
+export class InMemoryPhoneAskRecipients implements PhoneAskRecipients {
+    readonly people: PhoneAskRecipient[] = []
+    readonly records: { recipient: PhoneAskRecipient; outcome: GuideOutcome; at: Date }[] = []
+
+    private askedSince(person: PhoneAskRecipient, since: Date): boolean {
+        return this.records.some(
+            (r) =>
+                r.recipient.audience === person.audience &&
+                r.recipient.telegramId === person.telegramId &&
+                r.at > since,
+        )
+    }
+
+    async next(since: Date, limit: number): Promise<PhoneAskRecipient[]> {
+        const rank = (person: PhoneAskRecipient): number => (person.audience === "owner" ? 0 : 1)
+        return [...this.people]
+            .sort((a, b) => rank(a) - rank(b))
+            .filter((person) => !this.askedSince(person, since))
+            .slice(0, limit)
+    }
+
+    async counts(since: Date): Promise<PhoneAskCount[]> {
+        return (["owner", "courier"] as const).map((audience) => {
+            const people = this.people.filter((p) => p.audience === audience)
+            return {
+                audience,
+                total: people.length,
+                left: people.filter((p) => !this.askedSince(p, since)).length,
+            }
+        })
+    }
+
+    async record(recipient: PhoneAskRecipient, outcome: GuideOutcome, at: Date): Promise<void> {
+        this.records.push({ recipient, outcome, at })
+    }
+}
+
+/** Asks nobody: records who was asked; `blocked` cannot be written to, `failOn` breaks Telegram. */
+export class FakePhoneAskSender implements PhoneAskSender {
+    readonly asked: PhoneAskRecipient[] = []
+    readonly blocked = new Set<number>()
+    failOn: number | null = null
+
+    async ask(recipient: PhoneAskRecipient): Promise<GuideOutcome> {
+        if (recipient.telegramId === this.failOn) {
+            throw new Error("Telegram is down")
+        }
+        if (this.blocked.has(recipient.telegramId)) {
+            return "unreachable"
+        }
+        this.asked.push(recipient)
         return "sent"
     }
 }

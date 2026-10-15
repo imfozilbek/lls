@@ -81,6 +81,9 @@ const BASE = {
             [OrderStatus.CANCELLED]: "❌ #{n} buyurtmangiz bekor qilindi.",
         } as StatusTexts,
         courierOnTheWay: "🚚 #{n} buyurtmangizni {courier} olib kelmoqda.",
+        /** Under a customer's message: everyone on an order can call each other. */
+        courierPhone: "📞 Kuryer: {phone}",
+        shopPhone: "📞 Do'kon: {phone}",
         shopWelcome:
             "Assalomu alaykum! {shop} katalogini oching va bir necha bosishda buyurtma bering.",
         shopOpensSoon:
@@ -101,6 +104,16 @@ const BASE = {
         guideCustomer:
             "📘 <b>Zumda Shop: tumaningizdagi do'konlar bir joyda</b>\n\n{shop} buyurtmalari shu botda qoladi. Boshqa do'konlar, oshxonalar va xizmatlarni Zumda Shop'da toping: qanday buyurtma berish videoda.",
         openZumdaShop: "🔍 Zumda Shop'ni ochish",
+        // «Raqam so'rash»: an admin asks owners whose shop has no number, with one button.
+        ownerPhoneAsk:
+            "📞 {shops} buyurtma qabul qilmayapti: mijozlar va kuryerlar qo'ng'iroq qiladigan raqam yo'q.\n\nPastdagi tugma bilan Telegram raqamingizni yuboring: u do'kon raqami bo'ladi.",
+        yourShop: "Do'koningiz",
+        ownerPhoneShare: "📱 Raqamimni yuborish",
+        ownerPhoneOther: "✏️ Boshqa raqam yozaman",
+        ownerPhoneOtherHow:
+            "Do'kon raqamini ilovada yozing: do'koningiz → «Sozlamalar» → «Do'kon» → «Mijozlar uchun telefon».",
+        ownerPhoneSaved:
+            "✅ Raqamingiz saqlandi. Endi mijozlar va kuryerlar do'koningizga shu raqamga qo'ng'iroq qiladi.",
         showcaseOrder: "🛍 Zumda vitrinasidan · komissiya {rate}%: {sum}",
         cardAddedOwner:
             "💳 {shop}: yangi karta qo'shildi, {card}.\nBuni siz qilmagan bo'lsangiz, darhol Zumda'ga yozing.",
@@ -165,6 +178,10 @@ const BASE = {
         courierPending:
             "⏳ {shop} egasi sizni tasdiqlashini kuting. Tasdiqlansa, shu yerga yozamiz.",
         courierAskPhone: "📱 Do'kon siz bilan bog'lana olishi uchun telefon raqamingizni yuboring.",
+        /** Without a phone no shop approves the courier and no order comes (owner's decision). */
+        courierPhoneFirst:
+            "📱 Raqamingizni yuboring: do'kon va mijozlar sizga qo'ng'iroq qila olishi kerak. Raqamsiz buyurtma kelmaydi.",
+        courierNoPhone: "Kuryer hali raqamini yubormagan: raqam kelgach tasdiqlang",
         sharePhone: "📱 Raqamni yuborish",
         courierJoinedOwner: "🚚 {name} kuryer bo'lish taklifini qabul qildi. Tasdiqlaysizmi?",
         approveCourier: "✅ Tasdiqlash",

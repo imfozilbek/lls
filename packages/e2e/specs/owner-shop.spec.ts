@@ -35,13 +35,13 @@ test("«Ishga tayyor»: a shop open around the clock ticks «Ish vaqti» with on
         await folded.click()
     }
     const ready = page.getByRole("region", { name: "Ishga tayyor" })
-    const doneBefore = Number(/(\d+)\/6/.exec((await ready.textContent()) ?? "")?.[1])
+    const doneBefore = Number(/(\d+)\/7/.exec((await ready.textContent()) ?? "")?.[1])
     await ready.getByRole("button", { name: "Kecha-kunduz ochiqmiz" }).click()
     // One step closer; the last required one makes the whole card go away.
-    if (doneBefore + 1 === 6) {
+    if (doneBefore + 1 === 7) {
         await expect(ready).toHaveCount(0)
     } else {
-        await expect(ready).toContainText(`${doneBefore + 1}/6`)
+        await expect(ready).toContainText(`${doneBefore + 1}/7`)
     }
 })
 
@@ -308,6 +308,11 @@ test("couriers: invite to the courier bot, approve in the app, days, remove", as
         has: page.getByRole("heading", { name: "Tasdiqlashni kutmoqda" }),
     })
     await expect(pending.getByText("Bobur")).toBeVisible()
+    // No phone yet: the approval waits for it (owner's decision, October 2026).
+    await expect(pending.getByRole("button", { name: "Tasdiqlash" })).toBeDisabled()
+    await expect(pending.getByText("Kuryer raqamini yuborgach tasdiqlay olasiz")).toBeVisible()
+    await courierChat().shareContact(PEOPLE.newCourier, "+998901114004")
+    await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")))
     const before = await lastSeq()
     await pending.getByRole("button", { name: "Tasdiqlash" }).click()
     await expect(page.getByText("Kuryer tasdiqlandi")).toBeVisible()

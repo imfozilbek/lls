@@ -34,6 +34,8 @@ export interface MessageOptions {
     keyboard?: InlineKeyboard
     /** A reply-keyboard button that sends the person's own contact (the courier's phone). */
     askContact?: string
+    /** A second reply button under it that answers with its own text («Boshqa raqam yozaman»). */
+    askContactOr?: string
     /** Hides a reply keyboard shown before (after the contact arrived). */
     removeKeyboard?: boolean
 }
@@ -44,7 +46,10 @@ function replyMarkup(options: MessageOptions): unknown {
     }
     if (options.askContact) {
         return {
-            keyboard: [[{ text: options.askContact, request_contact: true }]],
+            keyboard: [
+                [{ text: options.askContact, request_contact: true }],
+                ...(options.askContactOr ? [[{ text: options.askContactOr }]] : []),
+            ],
             resize_keyboard: true,
             one_time_keyboard: true,
         }

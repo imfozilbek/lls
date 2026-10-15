@@ -42,7 +42,7 @@ Rows read per request (authentication included):
 | Request | Rows read | When |
 |---------|----------:|------|
 | Customer: `/api/me` | 3 | opening the app |
-| Customer: the shop | 2 | opening the app |
+| Customer: the shop | 2 (3 when the shop has no number: the owner's phone is read) | opening the app |
 | Customer: the menu, page 1 | 61 | opening the app (40 products) |
 | Customer: an open order | 5 | every 30 s while the order screen is visible |
 | Customer: my orders, page 1 | 83 | opening the list |
@@ -52,7 +52,7 @@ Rows read per request (authentication included):
 | Owner: finished, page 20 | 867 | rare: OFFSET walks the pages before it |
 | Owner: «Pul» today | 45 | opening «Pul» |
 | Owner: «Pul» this month | 285 at day 5, ~1 700 at day 30 | opening «Pul» with the month |
-| Courier: home | 166 (30 finished today, 11 open) | every 45 s while visible |
+| Courier: home | 166 (30 finished today, 11 open; +1 per shop of the day without its own number) | every 45 s while visible |
 | Showcase: a search | 10 | after a pause in typing, from 3 letters |
 | One order, placing to delivered (7 calls) | 91 read, 39 written | 300 a day |
 
@@ -115,7 +115,9 @@ open or of this day or month, never the history; the test above runs on six mont
 
 «Qo'llanma» in «Platforma» is not in the table: an admin opens it once in months. It walks the
 people, not their orders (a row or two each: about 2 000 for a district of 1 000 customers), and
-a whole send writes one row a person into `guide_sends`.
+a whole send writes one row a person into `guide_sends`. «Raqam so'rash» on «Bizneslar» is the
+same kind: it walks the live shops and their couriers (a row or two each, never an order) when
+an admin opens «Bizneslar», and an ask writes one row a person into `phone_asks`.
 Reports over a period (the CSV export, «Pul» this month) read that period only.
 
 ## D1 rows written, line by line

@@ -64,6 +64,11 @@ export interface OrderProps {
     status: OrderStatus
     courierId?: string
     courierName?: string
+    /**
+     * The courier's phone when they took the order: the owner and the customer call it (owner's
+     * decision, October 2026: everyone on an order can call each other).
+     */
+    courierPhone?: Phone
     address: string
     landmark?: string
     location?: Location
@@ -211,6 +216,9 @@ export class Order {
     }
     get courierName(): string | undefined {
         return this.props.courierName
+    }
+    get courierPhone(): Phone | undefined {
+        return this.props.courierPhone
     }
     get status(): OrderStatus {
         return this.props.status
@@ -410,6 +418,7 @@ export class Order {
         }
         this.props.courierId = courier.id
         this.props.courierName = courier.name
+        this.props.courierPhone = courier.phone
         // The shop's own courier takes it: the network no longer needs to.
         this.props.networkRequestedAt = undefined
         this.props.networkAlertedAt = undefined
@@ -446,6 +455,7 @@ export class Order {
         }
         this.props.courierId = link.id
         this.props.courierName = link.name
+        this.props.courierPhone = link.phone
         this.props.deliveryFeeTo = NETWORK_DELIVERY_FEE_RECIPIENT
         this.touch()
     }
@@ -529,6 +539,9 @@ export function networkUnavailableReason(
     }
     if (!link.profile.isOnShift(now)) {
         return "not_on_shift"
+    }
+    if (link.profile.phone === undefined) {
+        return "no_phone"
     }
     return busy ? "busy" : null
 }

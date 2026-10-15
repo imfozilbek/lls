@@ -4,6 +4,7 @@ import { Hono } from "hono"
 import { timingSafeEqual } from "../crypto.js"
 import { networkAfterStep, notifyOwnerStep, notifyPaymentConfirmed } from "../network-flow.js"
 import { appKeyboard, shopAppUrl, showcaseAppUrl } from "../telegram/app-links.js"
+import { saveOwnPhone } from "../telegram/contacts.js"
 import { parseCourierReviewCallback, parseOrderCallback } from "../telegram/format.js"
 import { escapeHtml } from "../telegram/gateway.js"
 import { handleManagedBot } from "../telegram/managed-bots.js"
@@ -15,7 +16,6 @@ import {
     handleSafely,
     isStart,
     readUpdate,
-    toTelegramUser,
 } from "../telegram/updates.js"
 import { sendWelcome, welcomePictureUrl, welcomeVideo } from "../telegram/welcome.js"
 
@@ -28,29 +28,6 @@ import type { OrderCallback } from "../telegram/format.js"
 import type { BotTexts } from "../telegram/texts.js"
 import type { Callback, IncomingMessage } from "../telegram/updates.js"
 import type { Business, OrderDTO } from "@zumda/core"
-
-/**
- * Saves the customer's phone from a shared contact. Only the sender's own contact counts:
- * a forwarded contact must not change anyone's phone. Returns false when nothing was saved.
- */
-async function saveOwnPhone(
-    services: Services,
-    message: IncomingMessage,
-    businessId?: string,
-): Promise<boolean> {
-    const { from, contact } = message
-    if (!from || !contact || contact.user_id !== from.id) {
-        return false
-    }
-    // Delivered by Telegram to this bot's webhook: the phone is real and shared with this shop.
-    await services.useCases.saveContact.execute({
-        user: toTelegramUser(from),
-        phone: contact.phone_number,
-        businessId,
-        now: services.clock.now(),
-    })
-    return true
-}
 
 /** A shared contact: the customer's phone for this shop. */
 async function saveContact(

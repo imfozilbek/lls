@@ -39,6 +39,7 @@ import {
     makeBusiness,
     makeCustomer,
     makeProduct,
+    courierSharesPhone,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -73,6 +74,7 @@ describe("money: transfer before the shop starts, report", () => {
         orders: InMemoryOrders
         districts: InMemoryDistricts
         trips: InMemoryTrips
+        customers: InMemoryCustomers
         clock: typeof clock
     } => ({
         businesses,
@@ -80,6 +82,7 @@ describe("money: transfer before the shop starts, report", () => {
         orders,
         districts: new InMemoryDistricts(),
         trips: new InMemoryTrips(orders),
+        customers,
         clock,
     })
     const access = (): {
@@ -165,6 +168,7 @@ describe("money: transfer before the shop starts, report", () => {
                 user: { id: COURIER_TG, firstName: "Jasur" },
             })
         ).courier.id
+        await courierSharesPhone(couriers, COURIER_TG)
         await new ReviewCourierUseCase(deps).execute({
             actorTelegramId: OWNER_TG,
             businessId: "biz-1",
@@ -178,7 +182,9 @@ describe("money: transfer before the shop starts, report", () => {
         await businesses.save(makeBusiness({ card: false }))
         await expect(place()).rejects.toThrow(BusinessRuleViolationError)
         await expect(place()).rejects.toThrow(/no card/)
-        const shop = await new GetShopBySlugUseCase(businesses, clock).execute("osh-markaz")
+        const shop = await new GetShopBySlugUseCase(businesses, clock, customers).execute(
+            "osh-markaz",
+        )
         expect(shop.hasPayoutCard).toBe(false)
     })
 

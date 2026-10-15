@@ -154,7 +154,6 @@ function itemsOf(
             title: t.phone,
             hint: t.phoneHint,
             done: state.hasPhone,
-            optional: true,
         },
         {
             id: "location",

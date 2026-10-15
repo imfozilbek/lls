@@ -30,6 +30,7 @@ import {
     makeBusiness,
     makeCustomer,
     makeProduct,
+    courierSharesPhone,
 } from "../fixtures.js"
 import {
     FakeRoutes,
@@ -123,6 +124,7 @@ describe("trips: several orders one way, one courier, stops in order", () => {
                 user: { id: COURIER_TG, firstName: "Jasur" },
             })
         ).courier.id
+        await courierSharesPhone(couriers, COURIER_TG)
         await new ReviewCourierUseCase(deps()).execute({
             actorTelegramId: OWNER_TG,
             businessId: "biz-1",
@@ -245,6 +247,7 @@ describe("trips: several orders one way, one courier, stops in order", () => {
                 user: { id: 6006, firstName: "Otabek" },
             })
         ).courier.id
+        await courierSharesPhone(couriers, 6006, "+998901116006")
         await new ReviewCourierUseCase(deps()).execute({
             ...owner,
             courierId: other,

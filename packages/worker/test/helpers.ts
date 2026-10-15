@@ -414,13 +414,22 @@ export async function sharePhoneWithShops(telegramId: number): Promise<void> {
         .run()
 }
 
+/** A test shop's «Mijozlar uchun telefon». */
+export const SHOP_PHONE = "+998901234501"
+
 /** The shop's card for transfers: a valid Luhn number, not a real card. secret-scan: fake */
 export const TEST_CARD = { number: "4111 1111 1111 1111", holder: "Rustam Karimov" }
 
 /** Registers a shop (with its card) through the real onboarding API and approves it as admin. */
 export async function createActiveShop(
     client: TestClient,
-    shop: { botToken?: string; name?: string; owner?: object } = {},
+    shop: {
+        botToken?: string
+        name?: string
+        owner?: object
+        /** «Mijozlar uchun telefon»: without a number the shop takes no orders. */
+        phone?: string | null
+    } = {},
 ): Promise<{ id: string; slug: string }> {
     const owner = client.as(shop.owner ?? OWNER, { businessBot: true })
     const response = await owner("/api/platform/shops", {
@@ -439,8 +448,9 @@ export async function createActiveShop(
         throw new Error(`Shop registration failed: ${await response.text()}`)
     }
     const created = (await response.json()) as { id: string; slug: string }
-    await env.DB.prepare("UPDATE businesses SET status = 'active' WHERE id = ?")
-        .bind(created.id)
+    const phone = shop.phone === undefined ? SHOP_PHONE : shop.phone
+    await env.DB.prepare("UPDATE businesses SET status = 'active', contact_phone = ? WHERE id = ?")
+        .bind(phone, created.id)
         .run()
     return created
 }

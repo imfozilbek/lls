@@ -1,11 +1,13 @@
 /**
  * The Zumda Business bot (webhook `/tg/business`): it only notifies. `/start` and any other
  * message open «Mening bizneslarim»; platform admins approve applications with the card's buttons
- * and do everything else in «Platforma» (owner's decision: bots notify, the Mini App acts).
+ * and do everything else in «Platforma» (owner's decision: bots notify, the Mini App acts). The
+ * one answer it takes is the owner's phone, with the button of «Raqam so'rash».
  */
 import { ConflictError, DomainError, languageFromTelegram } from "@zumda/core"
 
 import { appKeyboard, businessAppUrl } from "../telegram/app-links.js"
+import { saveOwnPhone } from "../telegram/contacts.js"
 import { parseReviewCallback } from "../telegram/format.js"
 import { escapeHtml } from "../telegram/gateway.js"
 import { connectReviewedShop, warnBotNotConnected } from "../telegram/shop-connection.js"
@@ -72,6 +74,25 @@ function reviewRefusal(error: DomainError, texts: ReturnType<typeof textsFor>): 
     return callbackErrorText(error, texts)
 }
 
+/**
+ * The owner's own contact from «📱 Raqamimni yuborish»: their phone in Zumda, which a shop
+ * without «Mijozlar uchun telefon» shows and calls on (`shopCallPhone`), so it takes orders again.
+ */
+async function ownerPhone(
+    services: Services,
+    message: IncomingMessage,
+    texts: ReturnType<typeof textsFor>,
+): Promise<void> {
+    if (await saveOwnPhone(services, message)) {
+        await services.telegram.sendMessage(
+            services.env.BUSINESS_BOT_TOKEN,
+            message.chat.id,
+            texts.ownerPhoneSaved,
+            { removeKeyboard: true },
+        )
+    }
+}
+
 /** Zumda Business: `/start` gets the welcome; anything else, one line pointing to the app. */
 export async function handleBusinessMessage(
     services: Services,
@@ -82,11 +103,22 @@ export async function handleBusinessMessage(
         return
     }
     const texts = textsFor(languageFromTelegram(from.language_code))
+    if (message.contact) {
+        await ownerPhone(services, message, texts)
+        return
+    }
     const keyboard = appKeyboard(
         texts.openBusinesses,
         businessAppUrl(services.env.BUSINESS_APP_ORIGIN),
     )
     const token = services.env.BUSINESS_BOT_TOKEN
+    // «✏️ Boshqa raqam yozaman»: the shop's own number is typed in the app's settings.
+    if (message.text === texts.ownerPhoneOther) {
+        await services.telegram.sendMessage(token, message.chat.id, texts.ownerPhoneOtherHow, {
+            keyboard,
+        })
+        return
+    }
     if (!isStart(message.text)) {
         await services.telegram.sendMessage(token, message.chat.id, texts.onlyInApp, { keyboard })
         return

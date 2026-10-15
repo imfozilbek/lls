@@ -93,6 +93,24 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    /** Shops and customers call a courier: the owner approves only someone who gave a phone. */
+    static courierPhoneRequired(courierId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "COURIER_PHONE_REQUIRED",
+            "The courier has not shared a phone yet",
+            { courierId },
+        )
+    }
+
+    /** Customers and couriers call the shop: no number of its own or the owner's, no orders. */
+    static noShopPhone(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NO_SHOP_PHONE",
+            "The shop has no phone number for customers yet",
+            { businessId },
+        )
+    }
+
     static phoneRequired(): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "PHONE_REQUIRED",
