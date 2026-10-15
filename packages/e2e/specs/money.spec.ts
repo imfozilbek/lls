@@ -27,7 +27,7 @@ import {
     shopChat,
     waitForMessage,
 } from "../support/telegram.js"
-import { bottomButton, openApp, openSettings } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, openSettings, toCart } from "../support/webapp.js"
 
 import type { RecordedFile } from "../stand/fake-telegram.js"
 import type { Page } from "@playwright/test"
@@ -87,9 +87,8 @@ test("checkout tells the sum; the order screen gives the card; «O'tkazdim» wit
     await shopChat(FOOD).shareContact(PEOPLE.customer, "+998901234567")
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
-    await bottomButton(page).click()
-    await bottomButton(page).click()
-    await page.getByRole("textbox", { name: "Manzil" }).fill("Mustaqillik 5")
+    await toCart(page)
+    await fillAddress(page, "Mustaqillik 5")
 
     // No choice to make: only a transfer to the shop's card, and the card waits for the order.
     await expect(page.getByRole("radio")).toHaveCount(0)

@@ -9,7 +9,12 @@ type Overrides<D> = {
 
 /** Words that differ for shops that cook: a menu, "cooking", "enjoy your meal". */
 export const FOOD_UZ = (base: Dictionary): Overrides<Dictionary> => ({
-    shop: { ...base.shop, emptyTitle: "Menyu hali bo'sh" },
+    shop: {
+        ...base.shop,
+        emptyTitle: "Menyu hali bo'sh",
+        emptyText: "Do'kon tez orada menyuni to'ldiradi.",
+        search: "Menyudan qidirish",
+    },
     cart: { ...base.cart, emptyText: "Menyudan yoqqan narsangizni qo'shing.", toMenu: "Menyuga" },
     order: {
         ...base.order,

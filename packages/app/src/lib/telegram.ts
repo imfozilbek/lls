@@ -36,8 +36,13 @@ interface LocationData {
 interface LocationManagerApi {
     isInited: boolean
     isLocationAvailable: boolean
+    /** Bot API 8.0: asked once already, and what the person answered. */
+    isAccessRequested?: boolean
+    isAccessGranted?: boolean
     init(callback?: () => void): void
     getLocation(callback: (data: LocationData | null) => void): void
+    /** Telegram's own settings of this bot, where the person allows the location again. */
+    openSettings?(): void
 }
 
 export interface WebApp {
@@ -282,6 +287,22 @@ function browserLocation(): Promise<LocationData | null> {
             { enableHighAccuracy: true, timeout: 15_000 },
         )
     })
+}
+
+/** The person refused the location once: Telegram will not ask again by itself. */
+export function locationDenied(): boolean {
+    const manager = webApp()?.LocationManager
+    return Boolean(manager?.isAccessRequested && manager.isAccessGranted === false)
+}
+
+/** Telegram's settings for this bot, to allow the location again; only from a tap. */
+export function openLocationSettings(): boolean {
+    const manager = webApp()?.LocationManager
+    if (!manager?.openSettings) {
+        return false
+    }
+    manager.openSettings()
+    return true
 }
 
 export function getLocation(): Promise<LocationData | null> {

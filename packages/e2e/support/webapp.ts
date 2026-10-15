@@ -530,6 +530,29 @@ export async function settingsBack(page: Page): Promise<void> {
 }
 
 /**
+ * Menu → «Savat»: the cart and the order are one screen (owner's decision, October 2026), so the
+ * phone, the place and the payment are right under the lines.
+ */
+export async function toCart(page: Page): Promise<void> {
+    await bottomButton(page).click()
+    await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
+}
+
+/**
+ * The place at checkout. A returning customer's place (the last order's) is folded in one line:
+ * «O'zgartirish» opens the fields.
+ */
+export async function fillAddress(page: Page, address: string): Promise<void> {
+    const field = page.getByRole("textbox", { name: "Manzil" })
+    const change = page.getByRole("button", { name: "O'zgartirish", exact: true })
+    await expect(field.or(change)).toBeVisible()
+    if (await change.isVisible()) {
+        await change.click()
+    }
+    await field.fill(address)
+}
+
+/**
  * Our map's picker: «Xaritada belgilash» → «Joylashuvim» (the place Telegram gives) → «Shu yer».
  * `where` is that place (the stub's location of the person, Yakkabog' by default).
  */

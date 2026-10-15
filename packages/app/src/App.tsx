@@ -2,7 +2,7 @@ import { languageFromTelegram } from "@zumda/core"
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 
 import { clearSession, loadSession, saveSession } from "./business/web-session.js"
-import { dictionaryFor, errorText, fill, useLanguageStore, useT } from "./i18n/index.js"
+import { dictionaryFor, errorText, useLanguageStore, useT } from "./i18n/index.js"
 import {
     ApiError,
     api,
@@ -14,8 +14,8 @@ import {
 import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "./lib/brand.js"
 import { useBackButton } from "./lib/main-button.js"
 import { useRefresh } from "./lib/refresh.js"
+import { removedText } from "./lib/removed.js"
 import { webApp } from "./lib/telegram.js"
-import { CartScreen } from "./shop/CartScreen.js"
 import { MenuScreen } from "./shop/MenuScreen.js"
 import { useCart } from "./stores/cart.js"
 import { useCurrentRoute, useRouter } from "./stores/router.js"
@@ -83,10 +83,9 @@ const BulkAdd = lazy(() =>
 const CourierApp = lazy(() =>
     withStaff(() => import("./courier/CourierApp.js")).then((m) => ({ default: m.CourierApp })),
 )
+// The showcase is a customer's screen: no staff words in its chunk.
 const ShowcaseScreen = lazy(() =>
-    withStaff(() => import("./showcase/ShowcaseScreen.js")).then((m) => ({
-        default: m.ShowcaseScreen,
-    })),
+    import("./showcase/ShowcaseScreen.js").then((m) => ({ default: m.ShowcaseScreen })),
 )
 const WebSignIn = lazy(() =>
     import("./business/WebSignIn.js").then((m) => ({ default: m.WebSignIn })),
@@ -176,12 +175,14 @@ function useShopBootstrap(
                 applyBrand(shop.brandColor)
                 setLanguage(me.language)
                 const session = useSession.getState()
+                // The catalog the customer saw last: what left the cart is told by name.
+                const seen = session.catalog
                 session.setShop(shop)
                 session.setMe(me)
                 session.setCatalog(products)
                 const removed = useCart.getState().prune(products)
-                if (removed > 0) {
-                    toast(fill(dictionaryFor(me.language).cart.removed, { n: removed }))
+                if (removed.length > 0) {
+                    toast(removedText(dictionaryFor(me.language), removed, seen))
                 }
                 document.title = shop.name
                 setState({ kind: "ready" })
@@ -223,7 +224,6 @@ function Screen(): React.JSX.Element {
     const route = useCurrentRoute()
     switch (route.name) {
         case "cart":
-            return <CartScreen />
         case "checkout":
             return (
                 <Suspense fallback={<ScreenSkeleton />}>
@@ -369,6 +369,8 @@ function ShowcaseApp({
     order: string | null
 }): React.JSX.Element {
     const [slug, setSlug] = useState<string | null>(shop)
+    // An order opened from the showcase's own banner, or the one a message pointed to.
+    const [target, setTarget] = useState<string | null>(order)
     useEffect(() => {
         if (slug === null) {
             setShop(null)
@@ -382,10 +384,11 @@ function ShowcaseApp({
                 key={slug}
                 slug={slug}
                 via="marketplace"
-                order={slug === shop ? (order ?? undefined) : undefined}
+                order={target ?? undefined}
                 onExit={(): void => {
                     setShop(null)
                     useRouter.getState().start({ name: "menu" })
+                    setTarget(null)
                     setSlug(null)
                 }}
             />
@@ -394,8 +397,9 @@ function ShowcaseApp({
     return (
         <Suspense fallback={<MenuSkeleton />}>
             <ShowcaseScreen
-                onOpen={(next): void => {
+                onOpen={(next, orderId): void => {
                     useRouter.getState().start({ name: "menu" })
+                    setTarget(orderId ?? null)
                     setSlug(next)
                 }}
             />

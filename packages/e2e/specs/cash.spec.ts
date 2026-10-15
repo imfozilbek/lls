@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import { lastSeq, waitForMessage } from "../support/telegram.js"
-import { bottomButton, openApp, openSettings } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, openSettings, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -33,19 +33,17 @@ async function openOwner(page: Page): Promise<void> {
     await page.getByRole("button", { name: "Mening do'konim" }).click()
 }
 
-/** Menu → cart → checkout with the phone and the address filled in. */
+/** Menu → «Savat» (the order's fields on the same screen) with the phone and the address. */
 async function toCheckout(page: Page): Promise<void> {
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await page.getByRole("button", { name: `Qo'shish: ${DISH}` }).click()
-    await bottomButton(page).click()
-    await bottomButton(page).click()
-    await expect(page.getByRole("heading", { name: "Buyurtma" })).toBeVisible()
+    await toCart(page)
     const share = page.getByRole("button", { name: "Raqamni yuborish" })
     if (await share.isVisible()) {
         await share.click()
     }
     await expect(page.getByText("+998 90 123 45 67")).toBeVisible({ timeout: 20_000 })
-    await page.getByRole("textbox", { name: "Manzil" }).fill("Mustaqillik 5")
+    await fillAddress(page, "Mustaqillik 5")
 }
 
 test.describe.configure({ mode: "serial" })

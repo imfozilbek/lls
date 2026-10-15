@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
 import { drag, pullDown, swipeLeft, swipeRight } from "../support/touch.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -82,14 +82,12 @@ test("swipe right goes back, swipe left forward again; a sideways list scrolls i
     await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
 })
 
-test("checkout: fields are 16px with a dark caret; closing asks while the cart waits", async ({
+test("checkout: fields are 16px with a dark caret; the draft waits after leaving", async ({
     page,
 }) => {
-    const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD })
+    await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await page.getByRole("button", { name: `Qo'shish: ${DISH}` }).click()
-    await bottomButton(page).click()
-    await bottomButton(page).click()
-    await expect(page.getByRole("heading", { name: "Buyurtma" })).toBeVisible()
+    await toCart(page)
     const fields = await page.locator("input, textarea").evaluateAll((elements) =>
         elements
             .filter((el) => (el as HTMLElement).offsetParent !== null)
@@ -103,11 +101,12 @@ test("checkout: fields are 16px with a dark caret; closing asks while the cart w
         expect(field.size).toBe("16px")
         expect(field.caret).toBe("rgb(17, 24, 39)")
     }
-    expect((await app.calls()).map((c) => c.method)).toContain("enableClosingConfirmation")
+    // Every word typed is kept: back to the menu and in again, the place is still there.
+    await fillAddress(page, "Navoiy 12")
     await swipeRight(page)
-    await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
-    expect((await app.calls()).map((c) => c.method).at(-1)).not.toBe("enableClosingConfirmation")
-    expect((await app.calls()).map((c) => c.method)).toContain("disableClosingConfirmation")
+    await expect(page.getByRole("heading", { name: "Osh Markaz" })).toBeVisible()
+    await toCart(page)
+    await expect(page.getByText("Navoiy 12")).toBeVisible()
 })
 
 test("cancelling asks in Uzbek with a red button; a swipe right closes a sheet", async ({

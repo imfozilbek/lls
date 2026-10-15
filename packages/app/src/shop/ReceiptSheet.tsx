@@ -146,20 +146,24 @@ export function ReceiptSheet({
     }
 
     return (
-        <Sheet title={t.receipt.title} onClose={onClose}>
+        <Sheet
+            title={t.receipt.title}
+            onClose={onClose}
+            footer={
+                <Button
+                    size="lg"
+                    disabled={!picked}
+                    loading={sending}
+                    onClick={(): void => void send()}
+                >
+                    {t.receipt.send}
+                </Button>
+            }
+        >
             <p className="text-sm text-tg-subtitle">{t.receipt.hint}</p>
             {/* How to take one, until there is one. */}
             {picked ? null : <p className="text-sm text-tg-subtitle">{t.receipt.howTo}</p>}
             <ReceiptPicker picked={picked} onPicked={setPicked} />
-            <Button
-                size="lg"
-                className="mt-1"
-                disabled={!picked}
-                loading={sending}
-                onClick={(): void => void send()}
-            >
-                {t.receipt.send}
-            </Button>
         </Sheet>
     )
 }

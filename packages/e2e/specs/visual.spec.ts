@@ -46,10 +46,10 @@ for (const theme of ["light"] as const) {
         await expect(page.getByRole("heading", { name: "Osh Markaz" })).toBeVisible()
         await snap(page, "01-storefront", theme)
         await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
+        // The cart and the order are one screen: the lines, the phone, the place, the button.
         await bottomButton(page).click()
+        await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
         await snap(page, "02-cart", theme)
-        await bottomButton(page).click()
-        await snap(page, "03-checkout", theme)
         await openApp(page, { user: PEOPLE.customer, shop: FOOD, theme })
         await page.getByRole("button", { name: "Buyurtmalarim" }).click()
         await snap(page, "04-history", theme)
@@ -69,7 +69,7 @@ for (const theme of ["light"] as const) {
         await openApp(page, { user: PEOPLE.customer, shop: WATER, theme })
         await page.getByRole("button", { name: "Qo'shish: Toza suv 19 l" }).click()
         await bottomButton(page).click()
-        await bottomButton(page).click()
+        await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
         await snap(page, "06-water-checkout", theme)
     })
 

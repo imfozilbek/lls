@@ -1,5 +1,8 @@
 import {
+    PaymentMethod,
+    PaymentStatus,
     WEEKDAYS,
+    formatPhone,
     isFinalStatus,
     isWeightUnit,
     mapUrl,
@@ -15,6 +18,7 @@ import { api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, formatQuantity, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
+import { opensWhen } from "../lib/opening.js"
 import { takesOrdersNow } from "../lib/shop-ready.js"
 import { haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
@@ -23,6 +27,8 @@ import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import {
     BagIcon,
+    CardIcon,
+    ChevronIcon,
     CloseIcon,
     PhoneIcon,
     PinIcon,
@@ -69,6 +75,12 @@ function hoursToday(shop: Shop, t: Dictionary): string | null {
     return range.open === range.close
         ? t.shop.openAllDay
         : fill(t.shop.hoursToday, { from: range.open, to: range.close })
+}
+
+/** «Yopiq · ertaga soat 9:00 da ochiladi»: when to come back, not only that it is closed. */
+function closedStatus(t: Dictionary, shop: Shop): string {
+    const when = opensWhen(t, shop.workingHours)
+    return when ? fill(t.shop.closedUntil, { when }) : t.shop.closed
 }
 
 /** Short facts customers need before ordering: delivery price, free-from, minimum, hours. */
@@ -134,10 +146,19 @@ function HeaderAction({
     )
 }
 
-/** Whether the customer has an order on its way here: «Buyurtmalarim» then wears a dot. */
-function useHasActiveOrder(shopId: string | undefined): boolean {
+/** The customer's orders at a glance: one on its way (a dot), one still to pay by transfer. */
+interface OrdersGlance {
+    active: boolean
+    unpaid: { id: string; number: number; total: number } | null
+}
+
+/**
+ * Whether the customer has an order on its way here («Buyurtmalarim» wears a dot), and the
+ * transfer still to send: back from the bank app the way to «O'tkazdim» is right on top.
+ */
+function useOrdersGlance(shopId: string | undefined): OrdersGlance {
     // Known at once on a return to the menu: the dot never pops in late a second time.
-    const [active, setActive] = useCachedState<boolean>("has-active-order")
+    const [glance, setGlance] = useCachedState<OrdersGlance>("orders-glance")
     useEffect(() => {
         if (!shopId) {
             return undefined
@@ -145,16 +166,66 @@ function useHasActiveOrder(shopId: string | undefined): boolean {
         let alive = true
         api.myOrders()
             .then((page) => {
-                if (alive) {
-                    setActive(page.data.some((order) => !isFinalStatus(order.status)))
+                if (!alive) {
+                    return
+                }
+                const open = page.data.filter((order) => !isFinalStatus(order.status))
+                const unpaid = open.find(
+                    (order) =>
+                        order.payment.method === PaymentMethod.CARD_TRANSFER &&
+                        order.payment.status === PaymentStatus.UNPAID,
+                )
+                setGlance({
+                    active: open.length > 0,
+                    unpaid: unpaid
+                        ? { id: unpaid.id, number: unpaid.number, total: unpaid.total }
+                        : null,
+                })
+                // A new phone: the newest order's place fills the checkout (no new request).
+                // The address book loads with the checkout, not with the storefront.
+                const newest = page.data[0]
+                if (newest) {
+                    void import("../lib/address-book.js")
+                        .then((book) => book.rememberFromOrder(newest))
+                        .catch(() => undefined)
                 }
             })
             .catch(() => undefined)
         return (): void => {
             alive = false
         }
-    }, [shopId, setActive])
-    return active === true
+    }, [shopId, setGlance])
+    return glance ?? { active: false, unpaid: null }
+}
+
+/** «Buyurtma #12: 55 000 so'm o'tkazing»: one tap to the card and «O'tkazdim». */
+function UnpaidBanner({
+    order,
+}: {
+    order: NonNullable<OrdersGlance["unpaid"]>
+}): React.JSX.Element {
+    const t = useT()
+    const language = useLanguage()
+    const push = useRouter((state) => state.push)
+    return (
+        <button
+            type="button"
+            onClick={(): void => {
+                haptic.tap()
+                push({ name: "order", id: order.id })
+            }}
+            className="tap mt-3 flex w-full animate-rise items-center gap-3 rounded-control bg-warning/15 px-4 py-3 text-left"
+        >
+            <CardIcon size={22} className="shrink-0 text-warning" />
+            <span className="flex-1 text-sm font-semibold">
+                {fill(t.shop.unpaidOrder, {
+                    n: order.number,
+                    sum: formatMoney(order.total, language),
+                })}
+            </span>
+            <ChevronIcon size={18} className="shrink-0 text-tg-hint" />
+        </button>
+    )
 }
 
 export function CatalogSearch({
@@ -212,7 +283,7 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     const push = useRouter((state) => state.push)
-    const hasActiveOrder = useHasActiveOrder(shop.id)
+    const glance = useOrdersGlance(shop.id)
     const status = shop.opensSoon
         ? t.shop.opensSoon
         : shop.paymentMethods.length === 0
@@ -221,7 +292,7 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
             ? t.shop.paused
             : shop.isOpen
               ? t.shop.open
-              : t.shop.closed
+              : closedStatus(t, shop)
     return (
         <header className="px-4 pb-2 pt-4">
             <div className="flex items-start justify-between gap-3">
@@ -257,7 +328,7 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                 <HeaderAction
                     icon={<ReceiptIcon size={16} />}
                     label={t.shop.myOrders}
-                    badge={hasActiveOrder ? t.shop.activeOrder : undefined}
+                    badge={glance.active ? t.shop.activeOrder : undefined}
                     onClick={(): void => push({ name: "orders" })}
                 />
                 <ShopMapChip shop={shop} />
@@ -270,6 +341,9 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                     >
                         <PhoneIcon size={16} />
                         {t.shop.call}
+                        <span className="font-normal tabular-nums text-tg-hint">
+                            {formatPhone(shop.callPhone)}
+                        </span>
                     </a>
                 ) : null}
                 {shop.viewerRole === "owner" ? (
@@ -281,6 +355,9 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                     />
                 ) : null}
             </div>
+            {glance.unpaid && shop.viewerRole !== "owner" ? (
+                <UnpaidBanner order={glance.unpaid} />
+            ) : null}
         </header>
     )
 }

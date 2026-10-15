@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { createPortal } from "react-dom"
 
+import { cn } from "../lib/cn.js"
 import { useBackButton, useSuspendMainAction } from "../lib/main-button.js"
 
 import type { ReactNode } from "react"
@@ -15,10 +16,16 @@ export function Sheet({
     title,
     onClose,
     children,
+    footer,
 }: {
     title: string
     onClose(): void
     children: ReactNode
+    /**
+     * The sheet's own button, pinned under the content: a tall receipt or a form never pushes
+     * «Yuborish» or «Ha» out of sight behind a scroll.
+     */
+    footer?: ReactNode
 }): React.JSX.Element {
     useBackButton(onClose)
     // The screen's big button belongs under the sheet: tapping it there (the receipt's
@@ -50,9 +57,15 @@ export function Sheet({
             <div className="pb-safe relative animate-sheet-in rounded-t-[1.5rem] bg-tg-bg px-4 pt-3 shadow-2xl">
                 <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-tg-hint/30" aria-hidden />
                 <h2 className="mb-3 text-lg font-bold">{title}</h2>
-                <div className="flex max-h-[60vh] flex-col gap-2 overflow-y-auto pb-2">
+                <div
+                    className={cn(
+                        "flex flex-col gap-2 overflow-y-auto pb-2",
+                        footer ? "max-h-[52vh]" : "max-h-[60vh]",
+                    )}
+                >
                     {children}
                 </div>
+                {footer ? <div className="flex flex-col gap-2 pb-2 pt-2">{footer}</div> : null}
             </div>
         </div>,
         document.body,

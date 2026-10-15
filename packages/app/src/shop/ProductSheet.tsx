@@ -73,6 +73,9 @@ export function ProductSheet({
                                 onClick={(): void => {
                                     haptic.tap()
                                     add(product.id, product.step)
+                                    // Back to the menu at once: the card there shows «− 1 +»,
+                                    // and the next product is one tap away.
+                                    onClose()
                                 }}
                             >
                                 {t.shop.add}

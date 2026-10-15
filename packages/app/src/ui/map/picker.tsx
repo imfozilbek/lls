@@ -5,7 +5,7 @@ import { fill, useT } from "../../i18n/index.js"
 import { kmText } from "../../lib/format.js"
 import { useBackButton, useSuspendMainAction } from "../../lib/main-button.js"
 import { metersBetween } from "../../lib/map.js"
-import { getLocation, haptic } from "../../lib/telegram.js"
+import { confirm, getLocation, haptic, locationDenied } from "../../lib/telegram.js"
 import { toast } from "../../stores/toast.js"
 import { CloseIcon, PinIcon } from "../icons.js"
 import { Button } from "../primitives.js"
@@ -25,9 +25,17 @@ export interface MapPickerProps {
     /** Pins for orientation (the shop). */
     markers?: MapMarker[]
     title?: string
-    onPick(point: Point): void
+    /** The point under the pin, and the street the map knows there (it fills the address). */
+    onPick(point: Point, street?: string): void
     onClose(): void
+    /** Nothing picked yet: the map flies to where the person is, not to the shop. */
+    locateOnOpen?: boolean
+    /** A place a pick next to is most likely a slip (the shop itself): asked first. */
+    warnNear?: { point: Point; ask: string }
 }
+
+/** Closer than this to `warnNear`: "is this really your home?". */
+const NEAR_METERS = 30
 
 const PICK_ZOOM = 16
 /** How far around the pin (px) a street name is looked for. */
@@ -57,6 +65,7 @@ function streetAt(map: MapLibre): string | null {
 function usePickerMap(
     start: Point,
     onPick: (point: Point) => void,
+    locateOnOpen: boolean,
 ): {
     point: Point
     moving: boolean
@@ -82,19 +91,36 @@ function usePickerMap(
             setStreet(map.current ? streetAt(map.current) : null)
         }
     }, [])
-    const onMap = useCallback((instance: MapLibre | null): void => {
-        map.current = instance
-        if (instance) {
-            instance.once("idle", () => setStreet(streetAt(instance)))
-        }
-    }, [])
+    const located = useRef(false)
+    const onMap = useCallback(
+        (instance: MapLibre | null): void => {
+            map.current = instance
+            if (instance) {
+                instance.once("idle", () => setStreet(streetAt(instance)))
+                // Once: where the person is, quietly (no place from Telegram: the map stays).
+                if (locateOnOpen && !located.current) {
+                    located.current = true
+                    void getLocation().then((found) => {
+                        if (found && map.current) {
+                            map.current.jumpTo({
+                                center: [found.longitude, found.latitude],
+                                zoom: PICK_ZOOM,
+                            })
+                        }
+                    })
+                }
+            }
+        },
+        [locateOnOpen],
+    )
     const onFail = useCallback((): void => setFailed(true), [])
 
     const locate = async (): Promise<void> => {
         haptic.tap()
         const found = await getLocation()
         if (!found) {
-            toast(t.checkout.locationFailed, "error")
+            // Refused once, Telegram never asks again: the map itself is the way on.
+            toast(locationDenied() ? t.map.deniedMove : t.checkout.locationFailed, "error")
             return
         }
         const target = { latitude: found.latitude, longitude: found.longitude }
@@ -120,6 +146,8 @@ export function MapPicker({
     title,
     onPick,
     onClose,
+    locateOnOpen = false,
+    warnNear,
 }: MapPickerProps): React.JSX.Element {
     const t = useT()
     useBackButton(onClose)
@@ -127,7 +155,18 @@ export function MapPicker({
     const { point, moving, street, failed, onMove, onMap, onFail, locate } = usePickerMap(
         start,
         onPick,
+        locateOnOpen,
     )
+    const pick = async (): Promise<void> => {
+        if (warnNear && metersBetween(warnNear.point, point) < NEAR_METERS) {
+            const sure = await confirm(warnNear.ask)
+            if (!sure) {
+                return
+            }
+        }
+        haptic.success()
+        onPick(point, street ?? undefined)
+    }
 
     const outside = zone ? metersBetween(zone.center, point) > zone.radiusMeters : false
 
@@ -145,7 +184,7 @@ export function MapPicker({
                     type="button"
                     onClick={onClose}
                     aria-label={t.map.close}
-                    className="tap flex h-10 w-10 items-center justify-center rounded-full bg-tg-secondary"
+                    className="tap flex h-11 w-11 items-center justify-center rounded-full bg-tg-secondary"
                 >
                     <CloseIcon size={20} />
                 </button>
@@ -181,10 +220,7 @@ export function MapPicker({
                 warn={outside}
                 disabled={failed}
                 onLocate={(): void => void locate()}
-                onPick={(): void => {
-                    haptic.success()
-                    onPick(point)
-                }}
+                onPick={(): void => void pick()}
             />
         </div>,
         document.body,

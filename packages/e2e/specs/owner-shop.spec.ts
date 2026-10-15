@@ -51,13 +51,13 @@ test("catalog: add a product with a photo; customers see it at once", async ({ p
     await expect(page.getByText("To'y oshi")).toBeVisible()
     await bottomButton(page).click() // «Добавить товар»
     await expect(page.getByRole("heading", { name: "Yangi mahsulot" })).toBeVisible()
-    // No dead button: an empty form says what to write first.
-    await bottomButton(page).click()
-    await expect(page.getByText("Mahsulot nomini yozing")).toBeVisible()
+    // Nothing to save while the search is empty: no «Saqlash» that only says «write a name».
+    await expect(bottomButton(page)).toBeHidden()
 
-    // A name the catalog does not need: the owner keeps the typed words.
+    // A name the catalog does not need: the bottom button keeps the typed words.
     await page.getByLabel("Katalogdan qidirish").fill("Manti")
-    await page.getByRole("button", { name: "«Manti» deb o'zim yozaman" }).click()
+    await expect(bottomButton(page)).toHaveText("«Manti» deb o'zim yozaman")
+    await bottomButton(page).click()
     await expect(page.getByLabel("Nomi")).toHaveValue("Manti")
     await page.locator('input[type="file"]').setInputFiles({
         name: "manti.png",

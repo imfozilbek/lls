@@ -15,7 +15,7 @@ import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { AlertIcon, CheckIcon, ChevronIcon, CopyIcon, PinIcon, WifiOffIcon } from "../ui/icons.js"
-import { PlacePick } from "../ui/maps.js"
+import { PlacePick } from "../ui/place-pick.js"
 import {
     Button,
     EmptyState,

@@ -13,7 +13,7 @@ import {
     platformChat,
     waitForMessage,
 } from "../support/telegram.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -104,11 +104,10 @@ test("an order through the showcase: commission for Zumda, Zumda bot tells the c
     await openApp(page, { user: PEOPLE.customer, query: "?mode=market" })
     await page.getByRole("button", { name: /Osh Markaz/ }).click()
     await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
-    await bottomButton(page).click()
-    await bottomButton(page).click()
+    await toCart(page)
     await page.getByRole("button", { name: "Raqamni yuborish" }).click()
     await expect(page.getByText("+998 90 123 45 67")).toBeVisible({ timeout: 20_000 })
-    await page.getByRole("textbox", { name: "Manzil" }).fill("Navoiy 7")
+    await fillAddress(page, "Navoiy 7")
     const since = await lastSeq()
     await bottomButton(page).click()
     await expect(page.getByRole("heading", { name: "Buyurtma yuborildi!" })).toBeVisible()

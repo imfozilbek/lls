@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, GROCERY, PEOPLE, WATER, apiAs, resetStand } from "../support/stand.js"
 import { lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
-import { bottomButton, openApp, pickOnMap } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, pickOnMap, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -21,17 +21,16 @@ async function add(page: Page, name: string, times = 1): Promise<void> {
     }
 }
 
+/** Menu → «Savat»: the order's fields are on the same screen, under the lines. */
 async function checkout(page: Page, address = "Mustaqillik 5"): Promise<void> {
-    await bottomButton(page).click() // cart
-    await bottomButton(page).click() // checkout
-    await expect(page.getByRole("heading", { name: "Buyurtma" })).toBeVisible()
+    await toCart(page)
     // The phone is asked only once: Telegram already gave it to this shop.
     const share = page.getByRole("button", { name: "Raqamni yuborish" })
     if (await share.isVisible()) {
         await share.click()
     }
     await expect(page.getByText("+998 90 123 45 67")).toBeVisible({ timeout: 20_000 })
-    await page.getByRole("textbox", { name: "Manzil" }).fill(address)
+    await fillAddress(page, address)
 }
 
 test.describe.configure({ mode: "serial" })
@@ -100,9 +99,9 @@ test.describe("customer of a food shop: order and status", () => {
     }) => {
         const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD })
         await add(page, "To'y oshi")
-        await bottomButton(page).click()
-        await bottomButton(page).click()
-        await expect(page.getByRole("heading", { name: "Buyurtma" })).toBeVisible()
+        // Three taps for a returning customer: «+», «Savat», «Buyurtma berish».
+        await toCart(page)
+        await expect(bottomButton(page)).toContainText("Buyurtma berish")
         // Nothing to send yet: a tap says what is missing first.
         await bottomButton(page).click()
         await expect(page.getByText("Avval telefon raqamingizni yuboring")).toBeVisible()
@@ -265,7 +264,6 @@ test.describe("customer of a grocery", () => {
         await bottomButton(page).click()
         // 1.5 kg × 12 000 + 0.25 kg × 95 000 = 18 000 + 23 750
         await expect(page.getByText(money("41 750")).first()).toBeVisible()
-        await bottomButton(page).click()
         await page.getByRole("button", { name: "Raqamni yuborish" }).click()
         await expect(page.getByText("+998 90 123 45 67")).toBeVisible({ timeout: 20_000 })
         await page.getByRole("textbox", { name: "Manzil" }).fill("Navoiy 1")
@@ -277,7 +275,7 @@ test.describe("customer of a grocery", () => {
     })
 })
 
-test("a product up close: the whole description, and «Qo'shish» right there", async ({ page }) => {
+test("a product up close: «Qo'shish» puts it in and leads back to the menu", async ({ page }) => {
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await page
         .getByRole("button", { name: /^To'y oshi/ })
@@ -286,5 +284,7 @@ test("a product up close: the whole description, and «Qo'shish» right there", 
     const sheet = page.getByRole("dialog")
     await expect(sheet).toContainText("To'y oshi")
     await sheet.getByRole("button", { name: "Qo'shish", exact: true }).click()
-    await expect(sheet.getByRole("group", { name: "To'y oshi" })).toBeVisible()
+    await expect(sheet).toBeHidden()
+    await expect(page.getByRole("group", { name: "To'y oshi" }).first()).toContainText("1")
+    await expect(bottomButton(page)).toContainText("Savat · 1")
 })

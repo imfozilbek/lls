@@ -107,10 +107,10 @@ interface CartState {
         catalog: readonly ProductDTO[],
     ): number
     /**
-     * Drops lines whose product left the catalog, or whose pick no longer fits it. Returns how
-     * many were dropped.
+     * Drops lines whose product left the catalog, or whose pick no longer fits it. Returns the
+     * products of the dropped lines (once each), so the customer can be told which.
      */
-    prune(catalog: readonly ProductDTO[]): number
+    prune(catalog: readonly ProductDTO[]): string[]
 }
 
 function read(shop: string): CartLines {
@@ -224,19 +224,19 @@ export const useCart = create<CartState>((set, get) => {
             update(lines)
             return skipped
         },
-        prune: (catalog): number => {
+        prune: (catalog): string[] => {
             // Products no longer in the catalog (gone, or sold out today) and picks the shop
             // changed leave the cart; a quantity off the product's new step is fitted to it.
             const known = new Map(catalog.map((p) => [p.id, p]))
             const lines = { ...get().lines }
-            let gone = 0
+            const gone = new Set<string>()
             let fitted = false
             for (const [key, quantity] of Object.entries(lines)) {
                 const { productId, pick } = parseKey(key)
                 const product = known.get(productId)
                 if (!product || !pickPrice(product, pick)) {
                     delete lines[key]
-                    gone++
+                    gone.add(productId)
                     continue
                 }
                 const fit = fitQuantity(quantity, product.step)
@@ -245,10 +245,10 @@ export const useCart = create<CartState>((set, get) => {
                     fitted = true
                 }
             }
-            if (gone > 0 || fitted) {
+            if (gone.size > 0 || fitted) {
                 update(lines)
             }
-            return gone
+            return [...gone]
         },
     }
 })
@@ -326,4 +326,16 @@ export interface DeliveryRules {
 
 export function deliveryFee(subtotal: number, rules: DeliveryRules): number {
     return rules.freeFrom !== undefined && subtotal >= rules.freeFrom ? 0 : rules.fee
+}
+
+/**
+ * What left the cart, by name when the catalog the customer saw still knows it: «"Lag'mon"»,
+ * otherwise only how many. Empty when nothing left.
+ */
+export function removedNames(ids: readonly string[], seen: readonly ProductDTO[]): string[] {
+    const names = new Map(seen.map((p) => [p.id, p.name]))
+    return ids.flatMap((id) => {
+        const name = names.get(id)
+        return name ? [`«${name}»`] : []
+    })
 }

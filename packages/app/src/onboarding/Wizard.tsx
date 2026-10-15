@@ -9,7 +9,7 @@ import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-butto
 import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { BagIcon, CheckIcon, DishIcon, PinIcon, ShopFrontIcon, ToolIcon } from "../ui/icons.js"
-import { PlacePick } from "../ui/maps.js"
+import { PlacePick } from "../ui/place-pick.js"
 import { Button, Field, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 

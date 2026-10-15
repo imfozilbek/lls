@@ -645,6 +645,8 @@ export const staffUz = {
         editDistrict: "Tumanni o'zgartirish",
         districtName: "Tuman nomi",
         districtNamePlaceholder: "Masalan: Yakkabog'",
+        districtUnsaved: "Tuman saqlanmagan. Saqlamasdan yopasizmi?",
+        districtLimits: "Kerak: nomi (2 harfdan), markaz, radius 0,5-200 km va kutish daqiqasi.",
         center: "Markaz",
         centerPlaceholder: "38.9785, 66.6831",
         centerHint: "Markazda turib joylashuvni oling yoki koordinatalarni yozing",

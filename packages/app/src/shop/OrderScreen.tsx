@@ -253,7 +253,10 @@ function CashPayment({ order }: { order: OrderDTO }): React.JSX.Element | null {
                         <p className="font-semibold">
                             {fill(t.pay.cashOrder, { sum: formatMoney(order.total, language) })}
                         </p>
-                        <p className="mt-1 text-sm text-tg-subtitle">{t.pay.cashHint}</p>
+                        {/* The comment can no longer change: the change asked for, if any. */}
+                        <p className="mt-1 text-sm text-tg-subtitle">
+                            {order.comment ? `«${order.comment}»` : t.pay.cashExact}
+                        </p>
                     </div>
                 </div>
             ) : (

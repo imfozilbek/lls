@@ -100,6 +100,11 @@ export function scopedKey(key: string): string {
     return `${who}|${key}`
 }
 
+/** Through which bot the shop is open now (the showcase: `marketplace`). */
+export function currentShopVia(): ShopVia | null {
+    return currentVia
+}
+
 export function setShop(slug: string | null, options: { via?: ShopVia } = {}): void {
     currentShop = slug
     currentVia = options.via ?? null
