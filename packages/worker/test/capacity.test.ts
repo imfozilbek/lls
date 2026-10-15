@@ -242,8 +242,9 @@ describe("rows read per request, on six months of history", () => {
                 )
             }
             const rows = counter.take()
-            // Measured 91 read, 39 written (docs/capacity.md: about 300 such orders a day). A save
-            // writes only what changed: every column on each step cost twice the writes.
+            // Measured 81 read, 36 written (docs/capacity.md: about 300 such orders a day; accepting
+            // starts the order, one step less). A save writes only what changed: every column on
+            // each step cost twice the writes.
             expect(rows.read).toBeLessThanOrEqual(150)
             expect(rows.written).toBeLessThanOrEqual(60)
         },

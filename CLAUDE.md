@@ -100,6 +100,8 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   - **Reset:** «Namunani tozalash» deletes its orders and puts the sample back.
 - **«Mening bizneslarim».** Zumda | Business opens the Mini App with `?mode=business`: all of the
   owner's businesses, and the full owner section of any of them right there (`X-Bot: business`).
+  An owner of one business (not an admin) lands in it, once a session (owner's decision, October
+  2026); a message about one business opens it (`&shop=<slug>`, and its order: `&order=<id>`).
 - **One Worker serves all bots:** webhook `/tg/:botId` for shop bots, `/tg/platform` for
   Zumda | Shop, `/tg/business` for Zumda | Business, `/tg/courier` for Zumda | Kuryer.
 - **One Mini App for all shops.** The shop bot's menu button opens it with `?shop=<slug>`.
@@ -132,8 +134,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
   for a way the shop does not take). Every order stores its method (`card_transfer` | `cash`).
 - **Transfer: paid to the shop's card before the shop starts.** The order is placed unpaid → the
   customer transfers and presses «Я перевёл» → the owner sees the money and presses «Деньги
-  пришли, принять» (paid and accepted in one tap). A transfer order is never accepted unpaid
-  (`PAYMENT_REQUIRED`).
+  пришли, принять» (paid, accepted and started in one tap). A transfer order is never accepted
+  unpaid (`PAYMENT_REQUIRED`).
 - **Cash: paid to the courier at the door** (owner's decision, October 2026). The owner accepts it
   at once with «Qabul qilish». It goes only with the shop's own courier or the owner, never to
   the district network (`CASH_NOT_FOR_NETWORK`; auto-network skips it). The courier card says
@@ -509,9 +511,13 @@ pending → accepted → preparing → ready → picked_up → delivered
 cancelled  cancelled  cancelled  cancelled  cancelled
 ```
 - `pending → ready` = shop part. `picked_up → delivered` = delivery part.
+- **Accepting starts the order** (owner's decision, October 2026): «Qabul qilish» and «Pul keldi»
+  make `pending → accepted → preparing` in one action (`Order.acceptAndStart`: two steps of the
+  one table), and the customer hears once «qabul qilindi va yig'ilmoqda». The district network is
+  asked right after it, as before.
 - A transfer order: `pending → accepted` only when paid: the owner's «Деньги пришли, принять»
-  confirms the transfer and accepts in one step (`Order.advanceTo` refuses an unpaid accept). A
-  cash order is accepted at once and becomes paid on `delivered`.
+  confirms the transfer and accepts and starts it in one step (`Order.advanceTo` refuses an unpaid
+  accept). A cash order is accepted at once and becomes paid on `delivered`.
 - Owner moves every step and may cancel. The assigned courier moves only
   `ready → picked_up → delivered` and never cancels. The customer cancels only while `pending`.
 - The owner assigns a courier (`accepted`…`ready`); without couriers the owner delivers.
@@ -625,7 +631,10 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   the customer gets the shop's card and the sum. A cash order: «💵 Naqd: kuryer yetkazganda
   oladi» with «Qabul qilish»; the customer gets the sum to give the courier. «Я перевёл» with the screenshot → the owner gets
   the picture, the sum, the card tail, warnings and «Ha, … keldi» / «Yo'q, kelmadi». After that
-  the owner's button is the **next allowed status**.
+  the owner's button is the **next allowed status** («Tayyor»: accepting already started it).
+- Every bot message about an order opens the app on it: the shop's bot `?shop=&order=`, the
+  Zumda | Business fallback `?mode=business&shop=&order=`, Zumda | Kuryer `?mode=courier&order=`
+  (its card scrolls into view).
 - **The owner never pressed Start in the shop's bot** (a bot made with «Bot yaratish» was never
   opened; Telegram lets a bot write first only after Start): every message and file for the owner
   (orders, the transfer, couriers, the CSV, the QR poster) goes through Zumda | Business instead,
@@ -680,13 +689,15 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   checkout asks which one (the card first)
 
 **User Flow:**
-- Customer: Open shop link → Browse → Cart → Order → Transfer → «Я перевёл» → Track (cash:
-  Order → Track → pay the courier)
-- Showcase customer: Zumda bot → Search → Shop → Cart → Order → Track
-- Owner: New order message → the transfer arrives → «Деньги пришли, принять» → Next status →
-  assign courier; catalog, couriers and the card in "Мой магазин"
+- Customer: Open shop link → Browse → «Savat» (the cart and the order are one screen, owner's
+  decision, October 2026: «+», «Savat», «Buyurtma berish»; a returning customer's phone and place
+  are one line each) → Transfer → «Я перевёл» → Track (cash: Order → Track → pay the courier)
+- Showcase customer: Zumda bot → Search → Shop → «Savat» → Order → Track
+- Owner: New order message → the transfer arrives → «Деньги пришли, принять» (started at once) →
+  «Tayyor» → assign courier; catalog, couriers and the card in "Мой магазин"
 - Courier: Invite link → Zumda courier bot → phone → approved → "on shift" → assigned order card →
-  Picked up → Delivered (cash: takes the sum, «Pulni oldim, yetkazdim», hands it to the owner)
+  «Buyurtmani oldim» → «Yetkazdim» (cash: takes the sum, «Pulni oldim, yetkazdim», hands it to the
+  owner). With one step to make, it is on Telegram's own button too («#12 · Yetkazdim»)
 - Network courier: approved by a point → «Да, для района» in the Zumda courier bot → "on shift" →
   «Новый заказ рядом» → «Беру» → full card → Picked up → Delivered
 - Trip: owner «Shu yo'nalishda yana N ta» → «Bir yo'nalish» (order, courier) → «Tayinlash» →
@@ -853,7 +864,10 @@ console.log            // Use logger
   never a skeleton over shown data); timers through `usePolling` (stops while collapsed,
   refreshes on return); "back" through `useBackButton` (the swipe right uses it too); a question
   through `confirm(text, { yes, destructive })` (Uzbek buttons); something to lose holds
-  `useClosingGuard`. Fields stay 16px (iOS zooms below) with the dark caret (`index.css`).
+  `useClosingGuard`, or is kept as a draft (the checkout keeps its fields on every change).
+  A sheet's own button goes in its `footer` (never under its scroll); an error toast stays 6 s
+  and longer for a long sentence; a failed pull says why in one toast (`ui/gestures.tsx`). Fields
+  stay 16px (iOS zooms below) with the dark caret (`index.css`).
 
 ## Skills Usage (MANDATORY)
 
