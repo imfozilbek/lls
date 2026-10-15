@@ -81,6 +81,9 @@ const BASE = {
             [OrderStatus.CANCELLED]: "❌ #{n} buyurtmangiz bekor qilindi.",
         } as StatusTexts,
         courierOnTheWay: "🚚 #{n} buyurtmangizni {courier} olib kelmoqda.",
+        /** Under a customer's message: everyone on an order can call each other. */
+        courierPhone: "📞 Kuryer: {phone}",
+        shopPhone: "📞 Do'kon: {phone}",
         shopWelcome:
             "Assalomu alaykum! {shop} katalogini oching va bir necha bosishda buyurtma bering.",
         shopOpensSoon:

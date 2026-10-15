@@ -48,6 +48,7 @@ interface OrderRow {
     commission: number
     courier_id: string | null
     courier_name: string | null
+    courier_phone: string | null
     address: string
     landmark: string | null
     latitude: number | null
@@ -98,7 +99,7 @@ export type OrderCardHolder = "owner" | "courier"
 
 const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal, delivery_fee,
     deposit_total, bottles_returned, total, commission_bps, commission, courier_id, courier_name,
-    address, landmark, latitude, longitude, comment, customer_name, customer_phone,
+    courier_phone, address, landmark, latitude, longitude, comment, customer_name, customer_phone,
     cancel_reason, cancelled_by, payment_method, payment_status, paid_at, cash_courier_id,
     delivered_at, created_at, updated_at, network_requested_at, network_alerted_at,
     delivery_fee_to, payment_card_number, payment_card_holder, receipt_key, receipt_hash,
@@ -246,6 +247,7 @@ const MUTABLE_COLUMNS = [
     "status",
     "courier_id",
     "courier_name",
+    "courier_phone",
     "cancel_reason",
     "cancelled_by",
     "payment_method",
@@ -293,6 +295,7 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         status: oneOf(row.status, ORDER_STATUSES, "order status"),
         courierId: optional(row.courier_id),
         courierName: optional(row.courier_name),
+        courierPhone: row.courier_phone === null ? undefined : Phone.create(row.courier_phone),
         address: row.address,
         landmark: optional(row.landmark),
         location:
@@ -376,6 +379,7 @@ function orderValues(order: Order): (string | number | null)[] {
         order.commission.amount,
         order.courierId ?? null,
         order.courierName ?? null,
+        order.courierPhone?.number ?? null,
         order.address,
         order.landmark ?? null,
         order.location?.latitude ?? null,
@@ -428,6 +432,7 @@ function mutableValues(order: Order): (string | number | null)[] {
         order.status,
         order.courierId ?? null,
         order.courierName ?? null,
+        order.courierPhone?.number ?? null,
         order.cancelReason ?? null,
         order.cancelledBy ?? null,
         ...paymentValues(order),
@@ -549,14 +554,15 @@ export class D1OrderRepository implements OrderRepository {
     async claimForNetwork(order: Order): Promise<boolean> {
         const result = await this.db
             .prepare(
-                `UPDATE orders SET courier_id = ?, courier_name = ?, delivery_fee_to = ?,
-                    updated_at = MAX(?, updated_at + 1)
+                `UPDATE orders SET courier_id = ?, courier_name = ?, courier_phone = ?,
+                    delivery_fee_to = ?, updated_at = MAX(?, updated_at + 1)
                  WHERE id = ? AND courier_id IS NULL AND network_requested_at IS NOT NULL
                     AND status IN (${placeholders(TAKEABLE.length)})`,
             )
             .bind(
                 order.courierId ?? null,
                 order.courierName ?? null,
+                order.courierPhone?.number ?? null,
                 order.deliveryFeeTo,
                 order.updatedAt.getTime(),
                 order.id,

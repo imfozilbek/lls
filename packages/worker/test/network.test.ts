@@ -46,6 +46,7 @@ interface Order {
     waitingForNetwork: boolean
     viaNetwork: boolean
     courierName?: string
+    courierPhone?: string
     total: number
     error?: { code: string }
 }
@@ -242,6 +243,12 @@ describe("district network", () => {
                 (m) => m.chatId === OWNER.id && m.html.includes(winner.first_name),
             ),
         ).toBe(true)
+        // The winner's number came with the claim: the shop and the customer can call them.
+        const taken = await json<Order>(await foodOwner()(`/api/orders/${order.id}`))
+        expect(taken).toMatchObject({
+            courierName: winner.first_name,
+            courierPhone: "+998901112233",
+        })
 
         // Delivers it; the money is already the food shop's: paid before cooking. (A week:
         // near Tashkent midnight the test clock is an hour ahead of the delivery time.)
