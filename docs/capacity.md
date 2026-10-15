@@ -42,7 +42,7 @@ Rows read per request (authentication included):
 | Request | Rows read | When |
 |---------|----------:|------|
 | Customer: `/api/me` | 3 | opening the app |
-| Customer: the shop | 2 | opening the app |
+| Customer: the shop | 2 (3 when the shop has no number: the owner's phone is read) | opening the app |
 | Customer: the menu, page 1 | 61 | opening the app (40 products) |
 | Customer: an open order | 5 | every 30 s while the order screen is visible |
 | Customer: my orders, page 1 | 83 | opening the list |
@@ -52,7 +52,7 @@ Rows read per request (authentication included):
 | Owner: finished, page 20 | 867 | rare: OFFSET walks the pages before it |
 | Owner: «Pul» today | 45 | opening «Pul» |
 | Owner: «Pul» this month | 285 at day 5, ~1 700 at day 30 | opening «Pul» with the month |
-| Courier: home | 166 (30 finished today, 11 open) | every 45 s while visible |
+| Courier: home | 166 (30 finished today, 11 open; +1 per shop of the day without its own number) | every 45 s while visible |
 | Showcase: a search | 10 | after a pause in typing, from 3 letters |
 | One order, placing to delivered (7 calls) | 91 read, 39 written | 300 a day |
 

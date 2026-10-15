@@ -145,9 +145,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
   `pn:` in the bot). «Pul kelmadi» puts the order back to unpaid, counts it
   (`transfer_rejections`, shown to the owner on the customer's next transfers) and asks the
   customer to send again. No AI check of pictures: a fake or edited screenshot cannot be told
-  reliably. When the owner gave a **contact phone** (optional, «Sozlamalar»), the customer's
-  order screen shows «Do'konga qo'ng'iroq» while the money is open (owner's decision, October
-  2026): the way out after «Pul kelmadi».
+  reliably. The customer's order screen shows «Do'konga qo'ng'iroq» under the card while the
+  money is open (owner's decision, October 2026): the way out after «Pul kelmadi».
 - **Many cards, one shown.** A shop keeps as many cards as it needs (up to 20) and chooses the
   **payment card** customers are shown; it switches it at any moment (owner's decision). Every
   order keeps the card it was shown (`payment_card_*` snapshot). The payment card is never
@@ -470,7 +469,7 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (optional, E.164: customers call it about an order), delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
+| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
@@ -478,7 +477,7 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until: the person's link to one shop (`network`: took a network order of it) |
 | Trip | id, business_id, courier_id, route (JSON line), distance_m, duration_s: several orders of one shop one way; stops are `orders.trip_id` + `trip_stop` |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier, address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces (metres, hours...), or
@@ -620,16 +619,26 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   (`shops/<id>/poster-<hash>.png`, public) and downloads in the app («Yuklab olish»:
   `WebApp.downloadFile`, a link in a browser).
 - Courier assigned → order card from the Zumda courier bot, titled with the shop's name (address,
-  landmark, map, phone, «Оплачено заранее: денег не брать» or for cash «Mijozdan {sum} naqd
-  oling», empty bottles) with "Забрал", then one "Доставил" («Pulni oldim, yetkazdim» for cash).
+  landmark, map, the customer's and the shop's phones, «Оплачено заранее: денег не брать» or for
+  cash «Mijozdan {sum} naqd oling», empty bottles) with "Забрал", then one "Доставил" («Pulni
+  oldim, yetkazdim» for cash).
 - **The Zumda sound** (owner's choice, October 2026: «Zum-da», `lib/sound.ts`, synthesized): while
   the Mini App is open, news rings it: the shop (new order, «O'tkazdim») and the courier (new
   delivery, ready to pick up, network order nearby) twice, the customer once and softly (the
   order moved). `useRingOnNews` compares with the last look; «Zumda ovozi» turns it off for the
   shop and the courier. Bot messages keep Telegram's own sound (a bot cannot set one).
-- Status change → message to the customer (courier name, never the courier's phone). Showcase
+- Status change → message to the customer (on the way: the courier's name and phone). Showcase
   orders: the Zumda bot writes to the customer (with the shop name); the owner still gets messages
   from the shop bot.
+- **Phones: everyone on an order can call each other (owner's decision, October 2026).** Every
+  call is a `tel:` link with the digits on it (`CallLink`), and the bots write the numbers too:
+  - the owner: the customer's number («Qo'ng'iroq») and the courier's on the order card;
+  - the customer: the courier's from the moment a courier took the order, kept after delivery
+    (`orders.courier_phone`, a snapshot like the name), and the shop's on the storefront and the
+    order screen; the first message about the order and «… olib kelmoqda» carry them;
+  - the courier: the customer's and the shop's on the card, in the app and the bot;
+  - the shop's number (`shopCallPhone`): «Mijozlar uchun telefon», or, while it is empty, the
+    phone the owner shared with Zumda; «Ishga tayyor» asks for it (no longer optional).
 - Texts depend on the business type (grocery: «Katalog», «Yig'ilmoqda»; food: «Menyu»,
   «Tayyorlanmoqda»; service: «Xizmatlar», «Bajarilmoqda»).
 - Before the first order, the app calls `requestWriteAccess()` so the shop bot may message the customer.
@@ -1000,6 +1009,9 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       network option → «Mijozdan … naqd oling» → «Pulni oldim, yetkazdim» → «Pul» →
       «Kuryerlardagi naqd pul» → «Pulni oldim»; «Ikkalasi»: the customer picks; «Karta»: no cash
 - [ ] Courier invite → assign → picked up → delivered
+- [ ] Phones: the owner calls the customer and the courier from the card; the customer calls the
+      courier and the shop (storefront, order); the courier calls the customer and the shop; a
+      shop without its own number shows the owner's
 - [ ] District delivery: invite → accept in the courier bot → join the network → an order of a
       point without couriers taken by a network courier → paid before cooking, no cash
 - [ ] Water (a grocery store with the bottle deposit): empty bottles + deposit; reorder
