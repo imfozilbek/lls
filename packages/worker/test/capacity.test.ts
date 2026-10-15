@@ -232,11 +232,10 @@ describe("rows read per request, on six months of history", () => {
             await step(() =>
                 owner(`/api/owner/orders/${id}/courier`, { method: "PUT", json: { courierId } }),
             )
-            for (const status of ["preparing", "ready"]) {
-                await step(() =>
-                    owner(`/api/owner/orders/${id}`, { method: "PATCH", json: { status } }),
-                )
-            }
+            // «Pul keldi» accepted and started it: «Tayyor» is the shop's last step.
+            await step(() =>
+                owner(`/api/owner/orders/${id}`, { method: "PATCH", json: { status: "ready" } }),
+            )
             for (const status of ["picked_up", "delivered"]) {
                 await step(() =>
                     courier(`/api/courier/orders/${id}`, { method: "PATCH", json: { status } }),

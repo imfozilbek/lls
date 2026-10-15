@@ -126,7 +126,6 @@ test("the courier sees the way, takes all at once, delivers stop by stop", async
     ])
 
     for (const id of ids) {
-        await setStatus(id, "preparing")
         await setStatus(id, "ready")
     }
     await page.reload()

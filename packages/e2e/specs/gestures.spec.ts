@@ -137,7 +137,7 @@ test("cancelling asks in Uzbek with a red button; a swipe right closes a sheet",
 test("after a delivered order, the shop's icon may go to the home screen", async ({ page }) => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
     expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
-    for (const status of ["preparing", "ready", "picked_up", "delivered"]) {
+    for (const status of ["ready", "picked_up", "delivered"]) {
         expect((await owner(`/owner/orders/${order.id}`, { status })).status).toBe(200)
     }
     const app = await openOrder(page, order.number)

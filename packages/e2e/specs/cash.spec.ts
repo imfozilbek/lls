@@ -109,12 +109,11 @@ test("the owner accepts without money; a cash order never goes to the network", 
 
 test("the courier takes the sum at the door and owes it to the shop", async ({ page }) => {
     const list = (await (
-        await owner("/owner/orders?status=accepted", undefined, "GET")
+        await owner("/owner/orders?status=preparing", undefined, "GET")
     ).json()) as { data: Order[] }
     const order = list.data[0]
     expect(order?.payment.method).toBe("cash")
     const id = order?.id ?? ""
-    await owner(`/owner/orders/${id}`, { status: "preparing" })
     await owner(`/owner/orders/${id}`, { status: "ready" })
     const picked = await apiAs(PEOPLE.courier, `/courier/orders/${id}`, {
         courierBot: true,

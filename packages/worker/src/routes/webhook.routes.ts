@@ -140,7 +140,9 @@ async function handleOrderCallback(
         await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, texts))
         return
     }
-    const step = await networkAfterStep(services, order)
+    const accepted =
+        action.kind === "paid" || (action.kind === "advance" && action.to === OrderStatus.ACCEPTED)
+    const step = await networkAfterStep(services, order, accepted)
     // Notify first: if answering the button fails, the owner card and the customer still update.
     // A failed notification (a customer blocked the bot) still answers the button: the step is
     // done, and a spinning button would say otherwise.

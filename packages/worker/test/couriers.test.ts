@@ -549,15 +549,14 @@ describe("shop couriers, verticals and channels", () => {
             unit: "portion",
             category: "meals",
         })
+        // Accepting starts it: the one message says how this kind of shop makes it.
         const order = await placeOrder([{ productId: osh, quantity: 2 }])
         await setStatus(order.id, "accepted")
-        await setStatus(order.id, "preparing")
-        expect(client.telegram.sent.at(-1)?.html).toContain("👨‍🍳")
+        expect(client.telegram.sent.at(-1)?.html).toContain("qabul qilindi va tayyorlanmoqda")
 
         await env.DB.prepare("UPDATE businesses SET type = 'grocery'").run()
         const second = await placeOrder([{ productId: osh, quantity: 2 }])
         await setStatus(second.id, "accepted")
-        await setStatus(second.id, "preparing")
-        expect(client.telegram.sent.at(-1)?.html).toContain("yig'ilmoqda")
+        expect(client.telegram.sent.at(-1)?.html).toContain("qabul qilindi va yig'ilmoqda")
     })
 })

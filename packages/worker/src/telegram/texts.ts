@@ -73,14 +73,17 @@ const BASE = {
             [OrderStatus.DELIVERED]: "🏁 Yetkazildi",
         } as StatusTexts,
         customerStatus: {
-            [OrderStatus.ACCEPTED]: "✅ To'lov keldi, #{n} buyurtmangiz qabul qilindi.",
-            [OrderStatus.PREPARING]: "📦 #{n} buyurtmangiz yig'ilmoqda.",
+            [OrderStatus.ACCEPTED]: "✅ #{n} buyurtmangiz qabul qilindi.",
+            // Accepting starts the order: the customer hears it once.
+            [OrderStatus.PREPARING]: "✅ #{n} buyurtmangiz qabul qilindi va yig'ilmoqda.",
             [OrderStatus.READY]: "📦 #{n} buyurtmangiz tayyor.",
             [OrderStatus.PICKED_UP]: "🚚 #{n} buyurtmangiz yo'lda. Tez orada yetib boradi!",
             [OrderStatus.DELIVERED]: "🏁 #{n} buyurtmangiz yetkazildi. Rahmat!",
             [OrderStatus.CANCELLED]: "❌ #{n} buyurtmangiz bekor qilindi.",
         } as StatusTexts,
         courierOnTheWay: "🚚 #{n} buyurtmangizni {courier} olib kelmoqda.",
+        /** Under «qabul qilindi» of a transfer order: the money the customer sent is seen. */
+        transferArrived: "💳 To'lovingiz keldi.",
         /** Under a customer's message: everyone on an order can call each other. */
         courierPhone: "📞 Kuryer: {phone}",
         shopPhone: "📞 Do'kon: {phone}",
@@ -321,7 +324,7 @@ const FOOD: Record<Language, Partial<BotTexts>> = {
         actions: { ...BASE.uz.actions, [OrderStatus.PREPARING]: "👨‍🍳 Tayyorlashni boshlash" },
         customerStatus: {
             ...BASE.uz.customerStatus,
-            [OrderStatus.PREPARING]: "👨‍🍳 #{n} buyurtmangiz tayyorlanmoqda.",
+            [OrderStatus.PREPARING]: "✅ #{n} buyurtmangiz qabul qilindi va tayyorlanmoqda.",
             [OrderStatus.DELIVERED]: "🏁 #{n} buyurtmangiz yetkazildi. Yoqimli ishtaha!",
         },
         shopWelcome:
@@ -337,7 +340,7 @@ const SERVICE: Record<Language, Partial<BotTexts>> = {
         actions: { ...BASE.uz.actions, [OrderStatus.PREPARING]: "🧰 Bajarishni boshlash" },
         customerStatus: {
             ...BASE.uz.customerStatus,
-            [OrderStatus.PREPARING]: "🧰 #{n} buyurtmangiz bajarilmoqda.",
+            [OrderStatus.PREPARING]: "✅ #{n} buyurtmangiz qabul qilindi va bajarilmoqda.",
             [OrderStatus.DELIVERED]: "🏁 #{n} buyurtmangiz bajarildi. Rahmat!",
         },
         shopWelcome:

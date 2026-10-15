@@ -161,7 +161,7 @@ test("checkout tells the sum; the order screen gives the card; «O'tkazdim» wit
     await expect(confirm.getByRole("listitem")).toHaveCount(0)
     await confirm.getByRole("button", { name: /^Ha, 55\s000/ }).click()
     await expect(check).toBeHidden()
-    await waitForMessage(PEOPLE.customer.id, "To'lov keldi", accepted)
+    await waitForMessage(PEOPLE.customer.id, "To'lovingiz keldi", accepted)
     expect((await report()).awaiting).toEqual([])
 })
 
@@ -186,7 +186,8 @@ test("not paid, not started: «Принять» is refused; the order card asks 
     await expect(confirm.getByRole("button", { name: "Yo'q, pul kelmadi" })).toHaveCount(0)
     await confirm.getByRole("button", { name: /^Ha, 55\s000/ }).click()
     await expect(card).toContainText("To'langan")
-    await expect(card.getByRole("button", { name: "Tayyorlashni boshlash" })).toBeVisible()
+    // Accepted and started in the same tap: «Tayyor bo'ldi» is next.
+    await expect(card.getByRole("button", { name: "Tayyor bo'ldi" })).toBeVisible()
 })
 
 test("«Pul kelmadi»: the customer sends again; a screenshot seen before warns the owner", async ({
@@ -295,14 +296,12 @@ test("from the bot: «Pul keldi» asks first, then one «Доставил» for 
             const read = await apiAs(PEOPLE.customer, `/orders/${order.id}`, { shop: FOOD })
             return ((await read.json()) as { status: string }).status
         })
-        .toBe("accepted")
+        .toBe("preparing")
 
     expect(
         (await owner(`/owner/orders/${order.id}/courier`, { courierId: COURIER_ID }, "PUT")).status,
     ).toBe(200)
-    for (const status of ["preparing", "ready"]) {
-        expect((await owner(`/owner/orders/${order.id}`, { status })).status).toBe(200)
-    }
+    expect((await owner(`/owner/orders/${order.id}`, { status: "ready" })).status).toBe(200)
     const picked = await apiAs(PEOPLE.courier, `/courier/orders/${order.id}`, {
         courierBot: true,
         method: "PATCH",

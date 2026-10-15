@@ -180,7 +180,7 @@ export const ownerRoutes = new Hono<AppEnv>()
                           orderId,
                           to: status,
                       })
-            const step = await networkAfterStep(services, order)
+            const step = await networkAfterStep(services, order, status === OrderStatus.ACCEPTED)
             inBackground(
                 c.executionCtx,
                 services,

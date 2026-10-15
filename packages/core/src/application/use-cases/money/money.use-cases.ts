@@ -101,8 +101,8 @@ async function requireShopOrder(
 }
 
 /**
- * «Деньги пришли»: the owner saw the transfer on the card. A new order is accepted in the same
- * tap (the shop starts only after the money); on a cancelled order the money is owed back.
+ * «Pul keldi»: the owner saw the transfer on the card. A new order is accepted and started in
+ * the same tap (the shop starts only after the money); on a cancelled order it is owed back.
  */
 export class ConfirmPaymentUseCase {
     constructor(private readonly deps: MoneyDeps) {}
@@ -113,7 +113,7 @@ export class ConfirmPaymentUseCase {
         orderId: string
     }): Promise<OrderDTO> {
         const order = await requireShopOrder(this.deps, input)
-        order.confirmPaymentAndAccept()
+        order.confirmPaymentAndStart()
         await this.deps.orders.save(order)
         return toOrderDTO(order)
     }

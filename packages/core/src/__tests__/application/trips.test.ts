@@ -206,9 +206,6 @@ describe("trips: several orders one way, one courier, stops in order", () => {
         const made = await create([a.id, b.id])
         const pickUp = () =>
             new PickUpTripUseCase(deps()).execute({ telegramId: COURIER_TG, tripId: made.trip.id })
-        for (const id of [a.id, b.id]) {
-            await advance(id, OrderStatus.PREPARING)
-        }
         await advance(a.id, OrderStatus.READY)
         await expect(pickUp()).rejects.toMatchObject({ rule: "TRIP_NOT_READY" })
         await advance(b.id, OrderStatus.READY)

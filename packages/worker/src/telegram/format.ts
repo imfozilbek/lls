@@ -224,7 +224,17 @@ export function formatStatusForCustomer(order: OrderDTO, reader: Reader): string
             ? `\n${fill(t.courierPhone, { phone: formatPhone(order.courierPhone) })}`
             : ""
     const reason = order.cancelReason ? `\n${t.reason}: ${escapeHtml(order.cancelReason)}` : ""
-    return text + phone + reason
+    return text + transferLine(order, t) + phone + reason
+}
+
+/** «To'lovingiz keldi» once the shop took a transfer order: the customer's money is seen. */
+function transferLine(order: OrderDTO, t: BotTexts): string {
+    const started = order.status === OrderStatus.ACCEPTED || order.status === OrderStatus.PREPARING
+    return started &&
+        order.payment.method === PaymentMethod.CARD_TRANSFER &&
+        order.payment.status === PaymentStatus.PAID
+        ? `\n${t.transferArrived}`
+        : ""
 }
 
 // Callback data (≤ 64 bytes): "a:<orderId>:<status>" advance, "x:<orderId>" cancel,

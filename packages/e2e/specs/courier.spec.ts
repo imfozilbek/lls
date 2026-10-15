@@ -115,7 +115,7 @@ test("the card comes from the courier bot with the shop's name; no buttons until
     expect(card.text).toContain("yandex")
     expect(card.buttons.filter((b) => b.callback_data)).toHaveLength(0)
     expect(card.text).toContain("Buyurtma tayyor bo'lganda xabar beramiz")
-    expect((await owner(order.id, { status: "preparing" })).status).toBe(200)
+    // Accepting started it: «Tayyor» is the shop's last step.
     expect((await owner(order.id, { status: "ready" })).status).toBe(200)
     const ping = await waitForMessage(PEOPLE.courier.id, `#${order.number} buyurtma tayyor`, since)
     expect(ping.token).toBe(courierBot().token)
@@ -155,7 +155,6 @@ test("ready → «Забрал» in the courier bot → «Доставил» in 
 
 test("the customer sees «Везёт Jasur» while the order is on the way", async ({ page }) => {
     const order = await assigned()
-    await owner(order.id, { status: "preparing" })
     await owner(order.id, { status: "ready" })
     expect(
         (await courierApi(PEOPLE.courier, `/orders/${order.id}`, "PATCH", { status: "picked_up" }))
@@ -280,7 +279,6 @@ test("one person, two shops: both orders in one screen, owners see only theirs",
     ] as const) {
         expect((await accept(order.id, shop)).status).toBe(200)
         expect((await owner(order.id, { courierId: id }, "/courier", shop)).status).toBe(200)
-        await owner(order.id, { status: "preparing" }, "", shop)
         await owner(order.id, { status: "ready" }, "", shop)
     }
 
