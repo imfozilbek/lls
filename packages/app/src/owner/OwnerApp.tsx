@@ -1,20 +1,25 @@
-import { useLayoutEffect } from "react"
+import { useLayoutEffect, useState } from "react"
 
-import { useT } from "../i18n/index.js"
+import { errorText, useT } from "../i18n/index.js"
+import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
+import { paymentReady } from "../lib/shop-ready.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
-import { BagIcon, CardIcon, CashIcon, GearIcon, ListIcon } from "../ui/icons.js"
+import { toast } from "../stores/toast.js"
+import { AlertIcon, BagIcon, CardIcon, CashIcon, GearIcon, ListIcon } from "../ui/icons.js"
+import { Button } from "../ui/primitives.js"
 import { Settle } from "../ui/settle.js"
 
 import { MenuTab } from "./MenuTab.js"
 import { MoneyTab } from "./MoneyTab.js"
 import { OrdersTab } from "./OrdersTab.js"
 import { ReadyCard, StatusBanner } from "./ReadyCard.js"
-import { SettingsTab } from "./SettingsTab.js"
+import { SettingsTab, publish } from "./SettingsTab.js"
 import { useOwner } from "./store.js"
 
 import type { OwnerTab } from "./store.js"
+import type { Shop } from "../stores/session.js"
 import type { ReactNode } from "react"
 
 const TABS: readonly { id: OwnerTab; icon: (size: number) => ReactNode }[] = [
@@ -86,6 +91,60 @@ function NoCardBanner({ onOpen }: { onOpen(): void }): React.JSX.Element {
     )
 }
 
+/**
+ * Orders switched off in «Sozlamalar»: on every other tab, so the owner never waits for orders
+ * that cannot come. «Yoqish» turns them on again in one tap.
+ */
+function PausedBanner(): React.JSX.Element {
+    const t = useT()
+    const s = t.owner.settings
+    const [busy, setBusy] = useState(false)
+    const turnOn = async (): Promise<void> => {
+        setBusy(true)
+        try {
+            publish(await api.owner.updateShop({ acceptingOrders: true }))
+            haptic.success()
+            toast(s.acceptingBackOn, "success")
+        } catch (caught) {
+            haptic.error()
+            toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
+        } finally {
+            setBusy(false)
+        }
+    }
+    return (
+        <div
+            role="status"
+            className="mx-4 mt-3 flex animate-rise items-center gap-3 rounded-control bg-warning/15 px-4 py-3"
+        >
+            <AlertIcon size={22} className="shrink-0 text-warning" />
+            <span className="flex-1 text-sm font-medium">{s.acceptingOff}</span>
+            <Button
+                variant="surface"
+                className="shrink-0"
+                loading={busy}
+                onClick={(): void => void turnOn()}
+            >
+                {s.acceptingOn}
+            </Button>
+        </div>
+    )
+}
+
+/** What the shop lacks, under the tabs: the whole «Ishga tayyor» on «Buyurtmalar». */
+function TabBanners({ tab, shop }: { tab: OwnerTab; shop: Shop }): React.JSX.Element {
+    const goToSection = useOwner((state) => state.goToSection)
+    return (
+        <>
+            {tab === "orders" ? <ReadyCard /> : null}
+            {!shop.acceptingOrders && tab !== "settings" ? <PausedBanner /> : null}
+            {!paymentReady(shop) && tab !== "orders" ? (
+                <NoCardBanner onOpen={(): void => goToSection("card")} />
+            ) : null}
+        </>
+    )
+}
+
 /** "Мой магазин": the owner's side of the same Mini App. Loaded only when an owner opens it. */
 export function OwnerApp(): React.JSX.Element {
     const t = useT()
@@ -109,7 +168,6 @@ export function OwnerApp(): React.JSX.Element {
         }
         setTab(next)
     }
-    const goToSection = useOwner((state) => state.goToSection)
     // Before the first paint: the previous business's products and couriers never show here.
     useLayoutEffect(() => {
         if (shop) {
@@ -122,8 +180,8 @@ export function OwnerApp(): React.JSX.Element {
     return (
         <div>
             <header className="flex items-center gap-2 px-4 pt-4">
-                <h1 className="truncate text-xl font-bold">{shop?.name}</h1>
-                {shop?.demo ? (
+                <h1 className="truncate text-xl font-bold">{shop.name}</h1>
+                {shop.demo ? (
                     <span className="shrink-0 rounded-full bg-warning/25 px-2 py-0.5 text-xs font-semibold">
                         {t.owner.demoBadge}
                     </span>
@@ -132,11 +190,7 @@ export function OwnerApp(): React.JSX.Element {
             <StatusBanner />
             {/* The tabs never move: whatever a tab adds on top comes under them. */}
             <TabBar tab={tab} onChange={(next): void => void changeTab(next)} />
-            {/* «Buyurtmalar» shows the whole «Ishga tayyor»; other tabs only the card it lacks. */}
-            {tab === "orders" ? <ReadyCard /> : null}
-            {shop && shop.paymentMethods.length === 0 && tab !== "orders" ? (
-                <NoCardBanner onOpen={(): void => goToSection("card")} />
-            ) : null}
+            <TabBanners tab={tab} shop={shop} />
             <Settle key={tab} id={`owner:${tab}`} className="animate-screen-in">
                 {tab === "orders" ? <OrdersTab /> : null}
                 {tab === "menu" ? <MenuTab /> : null}

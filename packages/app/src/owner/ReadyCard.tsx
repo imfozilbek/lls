@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
+import { paymentReady, phoneReady } from "../lib/shop-ready.js"
 import { haptic, onAppActive, openTelegramLink, shopBotStartLink } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { useSession } from "../stores/session.js"
@@ -351,13 +352,13 @@ export function ReadyCard(): React.JSX.Element | null {
         return null
     }
     const items = itemsOf(t, {
-        hasCard: shop.paymentMethods.length > 0,
+        hasCard: paymentReady(shop),
         botOpen: botIsOpen(ownerChat),
         located: shop.location !== undefined,
         hasHours: shop.workingHours !== null || ticks.hours,
         products: products.length,
         hasLogo: shop.logoKey !== undefined,
-        hasPhone: shop.contactPhone !== undefined,
+        hasPhone: phoneReady(shop),
         delivers: ticks.selfDelivery || couriers.some((courier) => courier.isActive),
     })
     // Progress counts what a shop needs; the nice-to-haves never hold it back.

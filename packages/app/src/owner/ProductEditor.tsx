@@ -53,6 +53,7 @@ import { useOwner } from "./store.js"
 import type { OptionsDraft } from "./OptionsEditor.js"
 import type { Template } from "./catalog.js"
 import type { ProductInput } from "../lib/api.js"
+import type { MainAction } from "../lib/main-button.js"
 import type { BusinessType, Category, ProductDTO, ProductOptionsProps } from "@zumda/core"
 
 /** Selling steps offered for weight items, in grams: by the kilo, by 100 g, by the gram. */
@@ -561,11 +562,13 @@ function useSaveAction(input: {
     saving: boolean
     onMissing(): void
     save(): Promise<void>
+    /** The catalog search is open: the bottom button keeps the typed words as the name. */
+    search: { typed: string; own(name: string): void } | null
 }): void {
     const t = useT()
-    const { draft, saving, onMissing, save } = input
+    const { draft, saving, onMissing, save, search } = input
     const p = t.owner.product
-    useMainAction({
+    const saveAction: MainAction = {
         text: saving ? t.common.saving : t.common.save,
         onClick: (): void => {
             const gap = missing(draft)
@@ -578,7 +581,16 @@ function useSaveAction(input: {
             toast({ name: p.needName, variants: p.needVariants, price: p.needPrice }[gap], "error")
         },
         loading: saving,
-    })
+    }
+    // While the catalog search is open nothing is there to save yet: «Saqlash» only told the
+    // owner who had just typed a name to «write a name». The button keeps the typed words instead.
+    const ownAction: MainAction | null = search?.typed
+        ? {
+              text: fill(p.catalogOwn, { name: search.typed }),
+              onClick: () => search.own(search.typed),
+          }
+        : null
+    useMainAction(search ? ownAction : saveAction)
 }
 
 /** Leaving with changes asks first; closing the app warns too. */
@@ -770,6 +782,33 @@ function BulkLink(): React.JSX.Element {
     )
 }
 
+/** «Yangi mahsulot» with «Ro'yxat bilan» while searching, or the catalog's mark after a pick. */
+function EditorHeader({
+    editing,
+    searching,
+    draft,
+}: {
+    editing: boolean
+    searching: boolean
+    draft: Draft
+}): React.JSX.Element {
+    const t = useT()
+    return (
+        <div className="flex items-center justify-between gap-3">
+            <h1 className="text-2xl font-bold">
+                {editing ? t.owner.product.edit : t.owner.product.new}
+            </h1>
+            {!editing && !searching && draft.categoryPicked && draft.suggestedAddons ? (
+                <span className="flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-1 text-sm font-semibold text-brand">
+                    <CheckIcon size={14} />
+                    {t.owner.product.fromCatalog}
+                </span>
+            ) : null}
+            {!editing && searching ? <BulkLink /> : null}
+        </div>
+    )
+}
+
 function EditorForm({ product: initial }: { product: ProductDTO | undefined }): React.JSX.Element {
     const t = useT()
     const { draft, patch, restart, dirty, copy } = useEditorState(initial)
@@ -795,23 +834,23 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
         remember: setProduct,
     })
 
-    useSaveAction({ draft, saving, onMissing: () => setTried(true), save })
+    const [typed, setTyped] = useState("")
+    const own = (name: string): void => {
+        patch({ name, ...(draft.categoryPicked ? {} : nameGuess(name)) })
+        setSearching(false)
+    }
+    useSaveAction({
+        draft,
+        saving,
+        onMissing: () => setTried(true),
+        save,
+        search: searching ? { typed, own } : null,
+    })
     const gap = tried ? missing(draft) : null
 
     return (
         <main className="flex flex-col gap-6 px-4 pt-4">
-            <div className="flex items-center justify-between gap-3">
-                <h1 className="text-2xl font-bold">
-                    {product ? t.owner.product.edit : t.owner.product.new}
-                </h1>
-                {!product && !searching && draft.categoryPicked && draft.suggestedAddons ? (
-                    <span className="flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-1 text-sm font-semibold text-brand">
-                        <CheckIcon size={14} />
-                        {t.owner.product.fromCatalog}
-                    </span>
-                ) : null}
-                {!product && searching ? <BulkLink /> : null}
-            </div>
+            <EditorHeader editing={product !== undefined} searching={searching} draft={draft} />
             {searching ? (
                 <CatalogSearch
                     onPick={(template): void => {
@@ -819,10 +858,7 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
                         patch(fromTemplate(draft, template))
                         setSearching(false)
                     }}
-                    onOwn={(name): void => {
-                        patch({ name, ...(draft.categoryPicked ? {} : nameGuess(name)) })
-                        setSearching(false)
-                    }}
+                    onTyped={setTyped}
                 />
             ) : (
                 <EditorFields

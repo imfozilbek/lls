@@ -7,6 +7,8 @@ import type { StaffDictionary } from "./staff.js"
 export const uz = {
     common: {
         retry: "Qayta urinish",
+        crashTitle: "Ilova to'liq yuklanmadi",
+        crashText: "Internet sekin bo'lishi mumkin. Savatingiz va yozganlaringiz saqlangan.",
         save: "Saqlash",
         saving: "Saqlanmoqda…",
         delete: "O'chirish",

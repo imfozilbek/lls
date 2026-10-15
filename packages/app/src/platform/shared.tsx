@@ -1,11 +1,12 @@
-import { formatPhone } from "@zumda/core"
+import { formatPhone, mapUrl } from "@zumda/core"
 import { useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError } from "../lib/api.js"
 import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
-import { PhoneIcon } from "../ui/icons.js"
+import { PhoneIcon, PinIcon } from "../ui/icons.js"
+import { MapButton } from "../ui/maps.js"
 import { ShopLogo } from "../ui/shop-logo.js"
 
 import type { Dictionary } from "../i18n/index.js"
@@ -58,6 +59,44 @@ export function OwnerLine({ shop }: { shop: PlatformShopDTO }): React.JSX.Elemen
                     <PhoneIcon size={18} className="text-brand" />
                     {formatPhone(phone)}
                 </a>
+            ) : null}
+        </div>
+    )
+}
+
+/**
+ * Where the business is: its address, its place on our map and whether a district covers it. An
+ * admin sees it before approving; a wrong address is the usual reason to send it back.
+ */
+export function PlaceLine({ shop }: { shop: PlatformShopDTO }): React.JSX.Element {
+    const t = useT().platform
+    return (
+        <div className="flex items-center gap-3 rounded-control bg-tg-bg px-3 py-2.5">
+            <PinIcon size={18} className="shrink-0 text-brand" />
+            <div className="min-w-0 flex-1">
+                <p className={shop.address ? "font-medium" : "text-tg-hint"}>
+                    {shop.address ?? t.noAddress}
+                </p>
+                {shop.location && !shop.inDistrict ? (
+                    <p className="text-sm text-tg-subtitle">{t.outsideDistricts}</p>
+                ) : null}
+            </div>
+            {shop.location ? (
+                <MapButton
+                    markers={[
+                        {
+                            id: shop.id,
+                            point: shop.location,
+                            kind: "shop",
+                            title: shop.name,
+                        },
+                    ]}
+                    href={mapUrl(shop.location)}
+                    label={t.onMap}
+                    className="tap grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand/10 text-brand"
+                >
+                    <PinIcon size={20} />
+                </MapButton>
             ) : null}
         </div>
     )

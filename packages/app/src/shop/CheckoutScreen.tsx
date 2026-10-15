@@ -277,8 +277,9 @@ function usePlaceOrder(
     const clearCart = useCart((state) => state.clear)
     const reset = useRouter((state) => state.reset)
     const [placing, setPlacing] = useState(false)
-    // One id for this checkout: a tap again after a lost answer gets the order already placed.
-    const checkoutId = useRef(crypto.randomUUID())
+    // The cart's id: a tap again after a lost answer, even after leaving and coming back, gets
+    // the order already placed.
+    const checkoutId = useCart((state) => state.checkoutId)
     // Two taps of Telegram's button before a render would both see `placing` false.
     const inFlight = useRef(false)
 
@@ -306,7 +307,7 @@ function usePlaceOrder(
                 comment: delivery.comment.trim() || undefined,
                 bottlesReturned: delivery.bottlesReturned || undefined,
                 paymentMethod,
-                clientOrderId: checkoutId.current,
+                clientOrderId: checkoutId,
             })
             saveAddress({
                 address: delivery.address.trim(),

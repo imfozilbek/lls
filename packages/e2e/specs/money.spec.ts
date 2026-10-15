@@ -509,7 +509,7 @@ test("hours per day: Monday off, Tuesday 9–18, then Monday's hours for every d
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
     await openSettings(page, "Ish vaqti")
-    const always = page.getByRole("switch", { name: "24/7 ochiq" })
+    const always = page.getByRole("switch", { name: "Kecha-kunduz ochiq" })
     if ((await always.getAttribute("aria-checked")) === "true") {
         await always.click()
     }

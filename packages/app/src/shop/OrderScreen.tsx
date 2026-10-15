@@ -13,6 +13,7 @@ import { useRingOnNews } from "../lib/use-ring.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
+import { SheetLoading } from "../ui/boundary.js"
 import { CallLink } from "../ui/contact-links.js"
 import {
     CashIcon,
@@ -36,9 +37,9 @@ import type { Dictionary } from "../i18n/index.js"
 import type { OrderDTO } from "@zumda/core"
 
 /** Opened only by «O'tkazdim»: a cash order and a paid one never download it. */
-const ReceiptSheet = lazy(() =>
-    import("./ReceiptSheet.js").then((m) => ({ default: m.ReceiptSheet })),
-)
+const loadReceiptSheet = (): Promise<typeof import("./ReceiptSheet.js")> =>
+    import("./ReceiptSheet.js")
+const ReceiptSheet = lazy(() => loadReceiptSheet().then((m) => ({ default: m.ReceiptSheet })))
 
 /**
  * Status changes arrive by bot message too, so a calm 30 s refresh is enough; it also refreshes
@@ -580,6 +581,14 @@ export function OrderScreen({
     const { order, error, reload, setOrder } = useOrder(id)
     const [sheet, setSheet] = useState(false)
     useOrderMainAction(order, justPlaced, (): void => setSheet(true))
+    // A transfer still to send: «O'tkazdim»'s sheet loads now, so the tap opens it at once even
+    // on a slow network.
+    const transferOpen = order?.payment.status === PaymentStatus.UNPAID
+    useEffect(() => {
+        if (transferOpen) {
+            loadReceiptSheet().catch(() => undefined)
+        }
+    }, [transferOpen])
 
     if (!order) {
         if (!error) {
@@ -620,7 +629,7 @@ export function OrderScreen({
             <OrderDetails order={order} />
             {moneyFirst ? null : payment}
             {sheet ? (
-                <Suspense fallback={null}>
+                <Suspense fallback={<SheetLoading />}>
                     <ReceiptSheet
                         order={order}
                         onSent={setOrder}

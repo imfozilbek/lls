@@ -5,6 +5,7 @@ import { cn } from "../lib/cn.js"
 import { HOME_POINT, loadMapKit, useMapReady } from "../lib/map.js"
 import { haptic } from "../lib/telegram.js"
 
+import { Boundary } from "./boundary.js"
 import { CheckIcon, PinIcon } from "./icons.js"
 
 import type { Point } from "../lib/map.js"
@@ -33,11 +34,33 @@ function MapLoading(): React.JSX.Element {
     )
 }
 
+/** The map's piece did not load (a weak network): say so, and the way back. */
+function MapFailed({ onClose }: { onClose(): void }): React.JSX.Element {
+    const t = useT()
+    return (
+        <div
+            className="fixed inset-0 z-viewer flex flex-col items-center justify-center gap-4 bg-tg-bg px-6 text-center"
+            role="alert"
+        >
+            <p className="text-tg-subtitle">{t.map.failed}</p>
+            <button
+                type="button"
+                onClick={onClose}
+                className="tap h-12 rounded-control bg-tg-secondary px-6 font-semibold"
+            >
+                {t.map.close}
+            </button>
+        </div>
+    )
+}
+
 export function MapPicker(props: MapPickerProps): React.JSX.Element {
     return (
-        <Suspense fallback={<MapLoading />}>
-            <LazyPicker {...props} />
-        </Suspense>
+        <Boundary fallback={<MapFailed onClose={props.onClose} />}>
+            <Suspense fallback={<MapLoading />}>
+                <LazyPicker {...props} />
+            </Suspense>
+        </Boundary>
     )
 }
 
@@ -49,17 +72,20 @@ export function MapPreview(
     if (!ready) {
         return null
     }
+    // A small map that did not load is simply not there: the address and its buttons stay.
     return (
-        <Suspense
-            fallback={
-                <div
-                    className={cn("rounded-tile bg-tg-secondary", props.className ?? "h-40")}
-                    aria-hidden
-                />
-            }
-        >
-            <LazyPreview {...props} />
-        </Suspense>
+        <Boundary fallback={null}>
+            <Suspense
+                fallback={
+                    <div
+                        className={cn("rounded-tile bg-tg-secondary", props.className ?? "h-40")}
+                        aria-hidden
+                    />
+                }
+            >
+                <LazyPreview {...props} />
+            </Suspense>
+        </Boundary>
     )
 }
 
@@ -254,16 +280,18 @@ export function MapButton({
                 {children}
             </button>
             {open ? (
-                <Suspense fallback={<MapLoading />}>
-                    <LazyViewer
-                        fit={fit}
-                        markers={markers}
-                        zone={zone}
-                        label={label}
-                        onClose={(): void => setOpen(false)}
-                        footer={href ? <ExternalMapLink href={href} /> : undefined}
-                    />
-                </Suspense>
+                <Boundary fallback={<MapFailed onClose={(): void => setOpen(false)} />}>
+                    <Suspense fallback={<MapLoading />}>
+                        <LazyViewer
+                            fit={fit}
+                            markers={markers}
+                            zone={zone}
+                            label={label}
+                            onClose={(): void => setOpen(false)}
+                            footer={href ? <ExternalMapLink href={href} /> : undefined}
+                        />
+                    </Suspense>
+                </Boundary>
             ) : null}
         </>
     )

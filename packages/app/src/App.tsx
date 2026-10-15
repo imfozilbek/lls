@@ -21,6 +21,7 @@ import { useCart } from "./stores/cart.js"
 import { useCurrentRoute, useRouter } from "./stores/router.js"
 import { useSession } from "./stores/session.js"
 import { toast } from "./stores/toast.js"
+import { ScreenSkeleton } from "./ui/boundary.js"
 import { Gestures } from "./ui/gestures.js"
 import { BotIcon, StoreIcon, WifiOffIcon } from "./ui/icons.js"
 import { Button, EmptyState, Skeleton } from "./ui/primitives.js"
@@ -225,19 +226,19 @@ function Screen(): React.JSX.Element {
             return <CartScreen />
         case "checkout":
             return (
-                <Suspense fallback={null}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <CheckoutScreen />
                 </Suspense>
             )
         case "order":
             return (
-                <Suspense fallback={null}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <OrderScreen key={route.id} id={route.id} justPlaced={route.justPlaced} />
                 </Suspense>
             )
         case "orders":
             return (
-                <Suspense fallback={null}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <OrdersScreen />
                 </Suspense>
             )

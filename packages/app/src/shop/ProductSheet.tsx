@@ -5,7 +5,7 @@ import { formatMoney, formatQuantity } from "../lib/format.js"
 import { haptic } from "../lib/telegram.js"
 import { useCart } from "../stores/cart.js"
 import { PlusIcon } from "../ui/icons.js"
-import { Button, Stepper } from "../ui/primitives.js"
+import { Button, Spinner, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { Sheet } from "../ui/sheet.js"
 
@@ -50,7 +50,13 @@ export function ProductSheet({
                     <p className="whitespace-pre-line text-tg-subtitle">{product.description}</p>
                 ) : null}
                 {hasOptions(product) ? (
-                    <Suspense fallback={<div className="h-40" />}>
+                    <Suspense
+                        fallback={
+                            <div className="flex h-40 items-center justify-center text-tg-hint">
+                                <Spinner className="h-6 w-6" />
+                            </div>
+                        }
+                    >
                         <OptionsPicker product={product} onDone={onClose} />
                     </Suspense>
                 ) : (

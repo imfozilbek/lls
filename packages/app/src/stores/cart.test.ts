@@ -94,6 +94,22 @@ describe("cart store", () => {
         useCart.getState().load("worse")
         expect(useCart.getState().lines).toEqual({})
     })
+
+    it("orders the same cart with the same id, even after the app was closed", () => {
+        useCart.getState().add("p1")
+        const first = useCart.getState().checkoutId
+        // A lost answer, the app closed and opened again: the same cart, the same order.
+        useCart.getState().load("suv")
+        useCart.getState().load("osh")
+        expect(useCart.getState().checkoutId).toBe(first)
+        // Another cart is another order.
+        useCart.getState().add("p1")
+        expect(useCart.getState().checkoutId).not.toBe(first)
+        const second = useCart.getState().checkoutId
+        // Placed: the emptied cart starts the next order with a new id.
+        useCart.getState().clear()
+        expect(useCart.getState().checkoutId).not.toBe(second)
+    })
 })
 
 describe("refill (reorder)", () => {

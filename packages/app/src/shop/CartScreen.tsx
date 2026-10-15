@@ -1,6 +1,7 @@
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { formatMoney, formatQuantity } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
+import { takesOrdersNow } from "../lib/shop-ready.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
@@ -126,7 +127,7 @@ function Totals({ subtotal, fee }: { subtotal: number; fee: number }): React.JSX
 
 function ClosedNote({ shop }: { shop: Shop | null }): React.JSX.Element | null {
     const t = useT()
-    if (!shop || shop.isOpen) {
+    if (!shop || takesOrdersNow(shop)) {
         return null
     }
     // The same reason as the toast: one order of checks, in `closedReason`.
@@ -165,7 +166,9 @@ export function CartScreen(): React.JSX.Element {
     const rules: DeliveryRules = shop?.delivery ?? { fee: 0 }
     const fee = deliveryFee(cart.subtotal, rules)
     const belowMinimum = rules.minOrder !== undefined && cart.subtotal < rules.minOrder
-    const canOrder = cart.count > 0 && !belowMinimum && Boolean(shop?.isOpen)
+    // A shop without a way to pay (no card, no number to call) is "open" yet takes no order:
+    // the customer learns it here, not after filling the whole checkout.
+    const canOrder = cart.count > 0 && !belowMinimum && shop !== null && takesOrdersNow(shop)
 
     useMainAction(
         cart.count > 0

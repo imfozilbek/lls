@@ -10,6 +10,7 @@ import { formatMoney, hexToRgbChannels } from "../lib/format.js"
 import { compressImage } from "../lib/image.js"
 import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-button.js"
 import { useRefresh } from "../lib/refresh.js"
+import { paymentReady } from "../lib/shop-ready.js"
 import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
@@ -36,13 +37,14 @@ import { PaymentOptionsSection } from "./PaymentOptionsSection.js"
 import { PosterSection } from "./PosterSection.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 import { useOwner } from "./store.js"
-import { saveTick } from "./ticks.js"
+import { readTick, saveTick } from "./ticks.js"
 
 import type { Hours } from "./hours.js"
 import type { ReadySection } from "./store.js"
 import type { Dictionary } from "../i18n/index.js"
 import type { ShopPatch } from "../lib/api.js"
 import type { BotAvatarInput } from "../lib/bot-avatar.js"
+import type { MainAction } from "../lib/main-button.js"
 import type { ShopOwnerDTO } from "@zumda/core"
 
 interface Form {
@@ -127,9 +129,22 @@ export function sectionId(section: ReadySection | "delivery"): string {
     return `ready-${section}`
 }
 
-function publish(shop: ShopOwnerDTO): void {
+/**
+ * The saved shop goes to the session at once (the brand color, the checklist), keeping what only
+ * the storefront answer carries (`callPhone`); then the storefront answer itself, quietly: the
+ * owner's own number may stand in for the shop's, and only the server knows it.
+ */
+export function publish(shop: ShopOwnerDTO): void {
     applyBrand(shop.brandColor)
-    useSession.getState().setShop({ ...shop, viewerRole: "owner" })
+    const session = useSession.getState()
+    session.setShop({ ...shop, callPhone: session.shop?.callPhone, viewerRole: "owner" })
+    api.shop()
+        .then((fresh) => {
+            if (useSession.getState().shop?.id === fresh.id) {
+                useSession.getState().setShop(fresh)
+            }
+        })
+        .catch(() => undefined)
 }
 
 function useOwnerShop(): {
@@ -186,6 +201,16 @@ function AcceptingCard({
     // A pull to refresh (or a save elsewhere) brings the shop again: the switch follows it.
     useEffect(() => setValue(shop.acceptingOrders), [shop.acceptingOrders])
     const change = async (next: boolean): Promise<void> => {
+        // Off by a slip of the thumb loses every order until someone notices: asked first.
+        if (!next) {
+            const sure = await confirm(t.owner.settings.acceptingOffAsk, {
+                yes: t.owner.settings.acceptingOffYes,
+                destructive: true,
+            })
+            if (!sure) {
+                return
+            }
+        }
         setValue(next)
         try {
             onSaved(await api.owner.updateShop({ acceptingOrders: next }))
@@ -616,12 +641,16 @@ function hoursSummary(s: Settings, hours: Hours): string {
             ? s.summary.everyDay
             : open.map((day) => s.days[day.index]).join(", ")
     const same = open.every((day) => day.from === first.from && day.to === first.to)
-    return same ? `${days} · ${first.from}-${first.to}` : days
+    if (!same) {
+        return days
+    }
+    // «00:00-00:00» is the whole day: said in words, never as a time that reads like a mistake.
+    return `${days} · ${first.from === first.to ? s.summary.allDay : `${first.from}-${first.to}`}`
 }
 
 /** «Karta · •••• 9012», «Naqd pul»; a warning when no way of paying works. */
 function paymentSummary(s: Settings, shop: ShopOwnerDTO): { text: string; warn?: boolean } {
-    if (shop.paymentMethods.length === 0) {
+    if (!paymentReady(shop)) {
         return { text: s.summary.noCard, warn: true }
     }
     const card = shop.paymentOptions === "cash" ? undefined : shop.payoutCard
@@ -730,6 +759,8 @@ function GroupList({
 function useSettingsForm(
     shop: ShopOwnerDTO,
     onSaved: (shop: ShopOwnerDTO) => void,
+    /** The bottom button while nothing is changed (the 24/7 hours to confirm as they are). */
+    idle: MainAction | null = null,
 ): {
     form: Form
     patch(change: Partial<Form>): void
@@ -798,7 +829,7 @@ function useSettingsForm(
                   },
                   loading: saving,
               }
-            : null,
+            : idle,
     )
     return { form, patch, dirty, reset: (): void => setForm(formOf(shop)) }
 }
@@ -899,13 +930,32 @@ function SettingsBody({
     const t = useT()
     const s = t.owner.settings
     const [group, setGroup] = useState<SettingsGroup | null>(null)
-    const { form, patch, dirty, reset } = useSettingsForm(shop, (saved): void => {
-        // Hours saved as 24/7 look like hours never set: the owner's save is the tick.
-        if (group === "hours") {
-            saveTick("hours", saved.id)
-        }
-        onSaved(saved)
-    })
+    // A new shop is open around the clock already: the switch is on, nothing to change, so
+    // without this «Saqlash» the owner could never confirm the step from inside.
+    const [hoursTicked, setHoursTicked] = useState(() => readTick("hours", shop.id))
+    const confirmAllDay: MainAction | null =
+        group === "hours" && shop.workingHours === null && !hoursTicked
+            ? {
+                  text: t.common.save,
+                  onClick: (): void => {
+                      saveTick("hours", shop.id)
+                      setHoursTicked(true)
+                      haptic.success()
+                      toast(s.saved, "success")
+                  },
+              }
+            : null
+    const { form, patch, dirty, reset } = useSettingsForm(
+        shop,
+        (saved): void => {
+            // Hours saved as 24/7 look like hours never set: the owner's save is the tick.
+            if (group === "hours") {
+                saveTick("hours", saved.id)
+            }
+            onSaved(saved)
+        },
+        confirmAllDay,
+    )
     const open = useCallback((next: SettingsGroup): void => {
         setGroup(next)
         window.scrollTo({ top: 0 })

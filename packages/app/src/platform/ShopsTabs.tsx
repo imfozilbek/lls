@@ -23,7 +23,7 @@ import { Sheet } from "../ui/sheet.js"
 
 import { DemoBlock } from "./DemoBlock.js"
 import { PhoneAskCard, usePhoneAsks } from "./PhoneAskCard.js"
-import { OwnerLine, ShopHead, botToast, useBusy } from "./shared.js"
+import { OwnerLine, PlaceLine, ShopHead, botToast, useBusy } from "./shared.js"
 
 import type { PlatformShopDTO } from "@zumda/core"
 
@@ -91,6 +91,8 @@ function ConfirmSheet({
 }): React.JSX.Element {
     const p = useT().platform
     const [reason, setReason] = useState("")
+    // The owner fixes what the reason says: a refusal without one leaves them guessing.
+    const reasonMissing = askReason === true && reason.trim().length < MIN_REASON
     return (
         <Sheet title={title} onClose={onClose}>
             <p className="px-1 text-tg-subtitle">{hint}</p>
@@ -100,6 +102,7 @@ function ConfirmSheet({
                         id="reject-reason"
                         value={reason}
                         maxLength={300}
+                        autoFocus
                         placeholder={p.rejectReasonPlaceholder}
                         onChange={(e): void => setReason(e.target.value)}
                     />
@@ -109,13 +112,23 @@ function ConfirmSheet({
                 variant="danger"
                 size="lg"
                 loading={busy}
-                onClick={(): void => onConfirm(reason.trim() || undefined)}
+                onClick={(): void => {
+                    if (reasonMissing) {
+                        haptic.error()
+                        toast(p.reasonShort, "error")
+                        return
+                    }
+                    onConfirm(reason.trim() || undefined)
+                }}
             >
                 {action}
             </Button>
         </Sheet>
     )
 }
+
+/** A reason the owner can act on: a few letters at least. */
+const MIN_REASON = 3
 
 function ApplicationCard({
     shop,
@@ -149,6 +162,7 @@ function ApplicationCard({
         >
             <ShopHead shop={shop} />
             <OwnerLine shop={shop} />
+            <PlaceLine shop={shop} />
             <p className="flex flex-wrap items-center gap-2 px-1 text-sm text-tg-hint">
                 {fill(t.platform.applied, { date: formatTime(shop.createdAt, language) })}
                 {shop.managedBot ? (

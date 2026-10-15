@@ -15,6 +15,7 @@ import { api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, formatQuantity, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
+import { takesOrdersNow } from "../lib/shop-ready.js"
 import { haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { productOfKey, summarize, useCart } from "../stores/cart.js"
@@ -232,7 +233,7 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                             <span
                                 className={cn(
                                     "h-2 w-2 shrink-0 rounded-full",
-                                    shop.isOpen ? "bg-success" : "bg-tg-hint",
+                                    takesOrdersNow(shop) ? "bg-success" : "bg-tg-hint",
                                 )}
                             />
                             <span className="truncate">{status}</span>

@@ -9,6 +9,7 @@ import { useMainAction } from "../lib/main-button.js"
 import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
 import { canRequestContact, haptic, requestContact } from "../lib/telegram.js"
+import { yandexRouteUrl } from "../lib/trips.js"
 import { useRingOnNews } from "../lib/use-ring.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
@@ -17,6 +18,7 @@ import {
     CheckIcon,
     ClockIcon,
     PhoneIcon,
+    PinIcon,
     ScooterIcon,
     StoreIcon,
     WifiOffIcon,
@@ -159,6 +161,45 @@ function Collect({ order }: { order: OrderDTO }): React.JSX.Element {
     )
 }
 
+/** Not picked up yet: still at the shop's door. */
+const BEFORE_PICKUP: readonly OrderStatus[] = [
+    OrderStatus.ACCEPTED,
+    OrderStatus.PREPARING,
+    OrderStatus.READY,
+]
+
+/**
+ * Before «Oldim»: where to pick the order up and the way there. A network courier may never have
+ * been to this shop; after the pickup the way leads to the customer.
+ */
+function PickupBlock({ order }: { order: CourierOrderDTO }): React.JSX.Element | null {
+    const t = useT()
+    if (!BEFORE_PICKUP.includes(order.status) || (!order.shopAddress && !order.shopLocation)) {
+        return null
+    }
+    return (
+        <div className="flex items-center gap-3 rounded-control bg-tg-bg p-3">
+            <StoreIcon size={18} className="shrink-0 text-brand" />
+            <div className="min-w-0 flex-1">
+                <p className="text-sm text-tg-hint">{t.courier.pickupFrom}</p>
+                <p className="font-medium">{order.shopAddress ?? order.shopName}</p>
+            </div>
+            {order.shopLocation ? (
+                <a
+                    href={yandexRouteUrl([order.shopLocation])}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(): void => haptic.tap()}
+                    className="tap flex h-11 shrink-0 items-center gap-1.5 rounded-control bg-tg-secondary px-3 font-semibold text-brand"
+                >
+                    <PinIcon size={18} />
+                    {t.courier.toShop}
+                </a>
+            ) : null}
+        </div>
+    )
+}
+
 function DeliveryCard({
     order,
     onChange,
@@ -181,6 +222,7 @@ function DeliveryCard({
                 </span>
                 <StatusBadge status={order.status} />
             </div>
+            <PickupBlock order={order} />
             <p className="font-medium">{order.customerName}</p>
             <OrderMap shop={order.shopLocation} customer={order.location} />
             <AddressBlock order={order} />

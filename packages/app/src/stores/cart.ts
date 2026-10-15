@@ -84,6 +84,13 @@ export function pickPrice(
 interface CartState {
     shop: string | null
     lines: CartLines
+    /**
+     * The id this cart is ordered with (`clientOrderId`), kept with the cart: a tap again after
+     * a lost answer, even after the app was closed, gets the order already placed instead of a
+     * second one. Any change of the lines (and the order placed, which empties them) makes a
+     * new one.
+     */
+    checkoutId: string
     load(shop: string): void
     /** Adds one step: 1 piece, or e.g. 500 g for a weight item. */
     add(productId: string, step?: number): void
@@ -125,15 +132,31 @@ function read(shop: string): CartLines {
     }
 }
 
-function write(shop: string | null, lines: CartLines): void {
+function write(shop: string | null, lines: CartLines, checkoutId: string): void {
     if (!shop) {
         return
     }
     try {
         localStorage.setItem(STORAGE_PREFIX + shop, JSON.stringify(lines))
+        localStorage.setItem(CHECKOUT_PREFIX + shop, checkoutId)
     } catch {
         // Storage can be full or blocked; the cart still works for this session.
     }
+}
+
+const CHECKOUT_PREFIX = "zumda:checkout:"
+const UUID = /^[0-9a-f-]{36}$/i
+
+function readCheckoutId(shop: string): string {
+    try {
+        const stored = localStorage.getItem(CHECKOUT_PREFIX + shop)
+        if (stored && UUID.test(stored)) {
+            return stored
+        }
+    } catch {
+        // Blocked storage: a fresh id, kept for this session.
+    }
+    return crypto.randomUUID()
 }
 
 /** One cart per shop, so switching between shop bots never mixes or wipes carts. */
@@ -150,13 +173,15 @@ export function fitQuantity(quantity: number, step: number): number {
 
 export const useCart = create<CartState>((set, get) => {
     const update = (lines: CartLines): void => {
-        write(get().shop, lines)
-        set({ lines })
+        const checkoutId = crypto.randomUUID()
+        write(get().shop, lines, checkoutId)
+        set({ lines, checkoutId })
     }
     return {
         shop: null,
         lines: {},
-        load: (shop): void => set({ shop, lines: read(shop) }),
+        checkoutId: crypto.randomUUID(),
+        load: (shop): void => set({ shop, lines: read(shop), checkoutId: readCheckoutId(shop) }),
         add: (productId, step = 1): void => {
             const current = get().lines[productId] ?? 0
             update({ ...get().lines, [productId]: Math.min(current + step, step * MAX_STEPS) })

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { fill, useT } from "../i18n/index.js"
+import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
@@ -59,18 +59,20 @@ function TemplateLine({ template }: { template: Template }): React.JSX.Element {
 
 /**
  * The top of a new product: type a few letters, pick a ready product of the Zumda catalog; only
- * the price is left. «… deb o'zim yozaman» keeps the typed words as the name.
+ * the price is left. The bottom button «… deb o'zim yozaman» keeps the typed words as the name
+ * (`onTyped` tells the editor what is typed).
  */
 export function CatalogSearch({
     onPick,
-    onOwn,
+    onTyped,
 }: {
     onPick(template: Template): void
-    onOwn(name: string): void
+    onTyped(text: string): void
 }): React.JSX.Element {
     const t = useT()
     const p = t.owner.product
     const [query, setQuery] = useState("")
+    useEffect(() => onTyped(query.trim()), [query, onTyped])
     const { results, failed } = useResults(query)
     const typed = query.trim()
     return (
@@ -118,15 +120,6 @@ export function CatalogSearch({
                         </li>
                     ))}
                 </ul>
-            ) : null}
-            {typed ? (
-                <button
-                    type="button"
-                    onClick={(): void => onOwn(typed)}
-                    className="tap flex items-center gap-3 rounded-control bg-tg-secondary px-4 py-3 text-left font-semibold"
-                >
-                    {fill(p.catalogOwn, { name: typed })}
-                </button>
             ) : null}
         </section>
     )
