@@ -357,7 +357,7 @@ test("water shop settings: bottle deposit and returnable bottles", async ({ page
     expect(shop.bottleDeposit).toBe(35_000)
 
     await page.getByRole("tab", { name: "Katalog" }).click()
-    await page.getByRole("button", { name: /Toza suv 19 l/ }).click()
+    await page.getByRole("button", { name: /^Toza suv 19 l/ }).click()
     await expect(page.getByRole("switch", { name: "Qaytariladigan idish" })).toHaveAttribute(
         "aria-checked",
         "true",
