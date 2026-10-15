@@ -540,5 +540,8 @@ export function networkUnavailableReason(
     if (!link.profile.isOnShift(now)) {
         return "not_on_shift"
     }
+    if (link.profile.phone === undefined) {
+        return "no_phone"
+    }
     return busy ? "busy" : null
 }

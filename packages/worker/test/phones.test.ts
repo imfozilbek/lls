@@ -132,10 +132,13 @@ describe("phones: everyone on an order can call each other", () => {
     })
 
     it("the shop's number: its own for customers and couriers, else the owner's", async () => {
-        // Neither: nothing to show.
-        expect(
-            await json<{ callPhone?: string }>(await customer()("/api/shop")),
-        ).not.toHaveProperty("callPhone")
+        await owner()("/api/owner/shop", { method: "PATCH", json: { contactPhone: null } })
+        // Neither: no number to show, and no way to order yet («Tez orada…», `NO_SHOP_PHONE`).
+        const none = await json<{ callPhone?: string; paymentMethods: string[] }>(
+            await customer()("/api/shop"),
+        )
+        expect(none).not.toHaveProperty("callPhone")
+        expect(none.paymentMethods).toEqual([])
         // The owner shared their own number: it stands in for the shop's.
         await ownerSharesPhone()
         expect(await json(await customer()("/api/shop"))).toMatchObject({ callPhone: OWNER_PHONE })

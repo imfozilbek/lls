@@ -103,7 +103,12 @@ function toPayoutCardDTO(business: Business): PayoutCardDTO | undefined {
 export function toShopPublicDTO(
     business: Business,
     now: Date,
-    options: { withCard?: boolean; callPhone?: Phone } = {},
+    options: {
+        withCard?: boolean
+        callPhone?: Phone
+        /** No number to call the shop on: no way to order yet (`NO_SHOP_PHONE`). */
+        noPhone?: boolean
+    } = {},
 ): ShopPublicDTO {
     const { fee, freeFrom, minOrder } = business.delivery
     return {
@@ -132,7 +137,7 @@ export function toShopPublicDTO(
         payoutCard: options.withCard ? toPayoutCardDTO(business) : undefined,
         hasPayoutCard: business.hasPayoutCard(),
         paymentOptions: business.paymentOptions,
-        paymentMethods: business.paymentMethods(),
+        paymentMethods: options.noPhone ? [] : business.paymentMethods(),
         opensSoon: business.isPending(),
         demo: business.isDemo(),
     }

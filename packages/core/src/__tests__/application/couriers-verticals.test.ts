@@ -42,6 +42,7 @@ import {
     makeBusiness,
     makeCustomer,
     makeProduct,
+    courierSharesPhone,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -103,6 +104,7 @@ describe("shop couriers and vertical features", () => {
             code: invite.code,
             user: courierUser,
         })
+        await courierSharesPhone(couriers, courierUser.id)
         return joined.courier.id
     }
 
@@ -192,6 +194,11 @@ describe("shop couriers and vertical features", () => {
             await expect(review.execute({ ...ids, actorTelegramId: STRANGER_TG })).rejects.toThrow(
                 ForbiddenError,
             )
+            // No phone yet: shops and customers could not call them, so no approval.
+            await expect(
+                review.execute({ ...ids, actorTelegramId: OWNER_TG }),
+            ).rejects.toMatchObject({ rule: "COURIER_PHONE_REQUIRED" })
+            await courierSharesPhone(couriers, courierUser.id)
             const approved = await review.execute({ ...ids, actorTelegramId: OWNER_TG })
             expect(approved).toMatchObject({
                 telegramId: COURIER_TG,

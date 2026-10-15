@@ -39,6 +39,7 @@ import {
     makeBusiness,
     makeCustomer,
     makeProduct,
+    courierSharesPhone,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -167,6 +168,7 @@ describe("money: transfer before the shop starts, report", () => {
                 user: { id: COURIER_TG, firstName: "Jasur" },
             })
         ).courier.id
+        await courierSharesPhone(couriers, COURIER_TG)
         await new ReviewCourierUseCase(deps).execute({
             actorTelegramId: OWNER_TG,
             businessId: "biz-1",

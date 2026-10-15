@@ -13,11 +13,16 @@ import type { Weekday } from "../value-objects/working-hours.js"
 /** An invite link works for two days, then the owner makes a new one. */
 export const COURIER_INVITE_TTL_MS = 48 * 60 * 60 * 1000
 
-/** Why a courier cannot take an order right now: the owner sees it next to the name. */
-export type CourierUnavailableReason = "not_approved" | "day_off" | "off_today" | "not_on_shift"
+/**
+ * Why a courier cannot take an order right now: the owner sees it next to the name. A courier
+ * without a phone takes none (owner's decision, October 2026: everyone on an order can call).
+ */
+export type CourierUnavailableReason =
+    "not_approved" | "day_off" | "off_today" | "not_on_shift" | "no_phone"
 
 /** Why a courier cannot take a district network order now. */
-export type NetworkUnavailableReason = "not_approved" | "not_in_network" | "not_on_shift" | "busy"
+export type NetworkUnavailableReason =
+    "not_approved" | "not_in_network" | "not_on_shift" | "no_phone" | "busy"
 
 export interface CourierProps {
     id: string
@@ -152,6 +157,17 @@ export class Courier {
         this.review(CourierStatus.ACTIVE, now)
     }
 
+    /**
+     * The owner approves only someone who gave a phone: the shop and its customers call the
+     * courier (owner's decision, October 2026). The demo's owner-courier is approved directly.
+     */
+    approveByOwner(now: Date): void {
+        if (this.props.profile.phone === undefined) {
+            throw BusinessRuleViolationError.courierPhoneRequired(this.props.id)
+        }
+        this.approve(now)
+    }
+
     decline(now: Date): void {
         this.review(CourierStatus.REMOVED, now)
     }
@@ -202,13 +218,19 @@ export class Courier {
         if (this.isOffToday(now)) {
             return "off_today"
         }
-        return this.props.profile.isOnShift(now) ? null : "not_on_shift"
+        if (!this.props.profile.isOnShift(now)) {
+            return "not_on_shift"
+        }
+        return this.props.profile.phone === undefined ? "no_phone" : null
     }
 
-    /** Approved, a working day, not switched off for today (the shift is the courier's part). */
+    /**
+     * Approved, a working day, not switched off for today (the shift and the phone are the
+     * courier's part).
+     */
     worksToday(now: Date): boolean {
         const reason = this.unavailableReason(now)
-        return reason === null || reason === "not_on_shift"
+        return reason === null || reason === "not_on_shift" || reason === "no_phone"
     }
 
     /** Working for this shop today, and on shift: may be given a new order. */

@@ -205,7 +205,7 @@ export class ReviewCourierUseCase {
         const courier = await requireShopCourier(this.deps, input)
         const now = this.deps.clock.now()
         if (input.approve) {
-            courier.approve(now)
+            courier.approveByOwner(now)
         } else {
             courier.decline(now)
         }

@@ -24,9 +24,12 @@ export class GetShopBySlugUseCase {
         if (!business?.isVisibleTo(viewerTelegramId)) {
             throw EntityNotFoundError.businessBySlug(slug)
         }
+        const callPhone = await shopCallPhone(business, this.customers)
+        // No number to call, no orders: the storefront says it will start taking them soon.
         return toShopPublicDTO(business, this.clock.now(), {
             withCard: true,
-            callPhone: await shopCallPhone(business, this.customers),
+            callPhone,
+            noPhone: callPhone === undefined && !business.isDemo(),
         })
     }
 }

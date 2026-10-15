@@ -72,6 +72,8 @@ export const uz = {
         UNSUPPORTED_IMAGE: "Bu rasm formati qo'llab-quvvatlanmaydi.",
         VALIDATION_ERROR: "Maydonlarni tekshiring.",
         NO_PAYOUT_CARD: "Do'kon tez orada buyurtma qabul qila boshlaydi.",
+        NO_SHOP_PHONE: "Do'kon tez orada buyurtma qabul qila boshlaydi.",
+        COURIER_PHONE_REQUIRED: "Kuryer hali raqamini yubormagan: raqam kelgach tasdiqlang.",
         RECEIPT_REQUIRED: "O'tkazma chekining rasmini yuklang.",
         RECEIPT_EXPIRED: "Chek 30 kun saqlanadi, bu chek o'chirilgan.",
         REMIND_TOO_SOON: "Do'konga yaqinda eslatildi. Birozdan keyin qayta urinib ko'ring.",

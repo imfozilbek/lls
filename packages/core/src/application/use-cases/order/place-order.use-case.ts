@@ -12,6 +12,7 @@ import { toOrderDTO } from "../../dtos/order.dto.js"
 import { displayNameOf } from "../../dtos/telegram-user.js"
 import { phoneVisibleIn, resolveCustomer } from "../customer/customer.use-cases.js"
 import { requireBusiness } from "../shared.js"
+import { shopCallPhone } from "../shop/shop-phone.js"
 
 import type { Product } from "../../../domain/entities/product.js"
 import type { PaymentMethod } from "../../../domain/enums/payment.js"
@@ -132,6 +133,11 @@ export class PlaceOrderUseCase {
         }
         business.assertCanAcceptOrders(now)
         const paymentMethod = business.paymentMethodFor(input.paymentMethod)
+        // No number to call the shop on, no orders (owner's decision, October 2026); a demo's
+        // orders are not real.
+        if (!business.isDemo() && !(await shopCallPhone(business, customers))) {
+            throw BusinessRuleViolationError.noShopPhone(business.id)
+        }
 
         const lines = mergeLines(input.items)
         if (lines.length === 0) {

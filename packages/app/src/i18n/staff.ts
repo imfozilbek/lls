@@ -132,6 +132,7 @@ export const staffUz = {
             day_off: "dam olish kuni",
             off_today: "bugun ishlamaydi",
             not_on_shift: "smenada emas",
+            no_phone: "raqami yo'q",
         },
         backTodayAssign:
             "Bugun ishlamaydi deb belgilangan: bossangiz, bugunga qaytariladi va tayinlanadi",
