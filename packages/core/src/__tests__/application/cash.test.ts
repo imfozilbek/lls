@@ -156,7 +156,9 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
         await businesses.save(makeBusiness({ card: false }))
         const shop = await setOptions(PaymentOptions.CASH)
         expect(shop).toMatchObject({ paymentOptions: "cash", paymentMethods: ["cash"] })
-        const storefront = await new GetShopBySlugUseCase(businesses, clock).execute("osh-markaz")
+        const storefront = await new GetShopBySlugUseCase(businesses, clock, customers).execute(
+            "osh-markaz",
+        )
         expect(storefront.isOpen).toBe(true)
         const order = await place()
         expect(order.payment).toMatchObject({ method: "cash", status: "unpaid" })

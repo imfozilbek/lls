@@ -42,6 +42,8 @@ export interface OrderDTO {
     commission: number
     courierId?: string
     courierName?: string
+    /** The courier's phone, from the moment a courier took the order. */
+    courierPhone?: string
     /** Waiting for a district network courier to take it. */
     waitingForNetwork: boolean
     /** Since when the district network looks for a courier (shown as minutes waited). */
@@ -114,6 +116,7 @@ export function toOrderDTO(order: Order): OrderDTO {
         commission: order.commission.amount,
         courierId: order.courierId,
         courierName: order.courierName,
+        courierPhone: order.courierPhone?.number,
         waitingForNetwork: order.isWaitingForNetwork(),
         networkRequestedAt: order.isWaitingForNetwork()
             ? order.networkRequestedAt?.toISOString()

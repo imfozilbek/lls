@@ -123,6 +123,7 @@ describe("shop couriers and vertical features", () => {
     function homeDeps(): ReturnType<typeof courierDeps> & {
         districts: InMemoryDistricts
         trips: InMemoryTrips
+        customers: InMemoryCustomers
     } {
         const deps = courierDeps()
         return {
@@ -130,6 +131,7 @@ describe("shop couriers and vertical features", () => {
             clock: fixedClock(new Date()),
             districts: new InMemoryDistricts(),
             trips: new InMemoryTrips(deps.orders),
+            customers,
         }
     }
 
@@ -275,10 +277,18 @@ describe("shop couriers and vertical features", () => {
                 asCourier.execute({ ...me, orderId: "missing", to: OrderStatus.PICKED_UP }),
             ).rejects.toThrow(EntityNotFoundError)
 
+            // The courier can call the shop: its own number for customers.
+            await new UpdateShopUseCase(businesses, clock).execute({
+                actorTelegramId: OWNER_TG,
+                businessId: "biz-1",
+                patch: { contactPhone: "+998901234501" },
+            })
             const home = await new GetCourierHomeUseCase(homeDeps()).execute({
                 telegramId: COURIER_TG,
             })
-            expect(home.orders.map((o) => [o.id, o.shopName])).toEqual([[order.id, "Osh Markaz"]])
+            expect(home.orders.map((o) => [o.id, o.shopName, o.shopPhone])).toEqual([
+                [order.id, "Osh Markaz", "+998901234501"],
+            ])
             expect(home.shops).toMatchObject([{ businessId: "biz-1", worksToday: true }])
             expect(home.profile.name).toBe("Jasur")
         })

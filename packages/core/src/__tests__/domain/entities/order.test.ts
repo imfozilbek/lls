@@ -239,6 +239,22 @@ describe("Order and couriers", () => {
         expect(order.isAssignedTo("courier-2")).toBe(true)
     })
 
+    it("keeps the courier's phone from assignment on, after delivery too", () => {
+        const order = readyOrder()
+        order.assignCourier(makeCourier({ now: NOW, phone: "+998901112233" }), NOW)
+        expect(order.courierPhone?.number).toBe("+998901112233")
+        order.advanceTo(OrderStatus.PICKED_UP)
+        order.advanceTo(OrderStatus.DELIVERED)
+        expect(order.courierPhone?.number).toBe("+998901112233")
+    })
+
+    it("another courier brings their own phone; one who gave none brings none", () => {
+        const order = readyOrder()
+        order.assignCourier(makeCourier({ now: NOW, phone: "+998901112233" }), NOW)
+        order.assignCourier(courier("biz-1", "courier-2"), NOW)
+        expect(order.courierPhone).toBeUndefined()
+    })
+
     it("rejects couriers of another shop or who left", () => {
         const order = readyOrder()
         expect(() => order.assignCourier(courier("biz-2"), NOW)).toThrow(BusinessRuleViolationError)

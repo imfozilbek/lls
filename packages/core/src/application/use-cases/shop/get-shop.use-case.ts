@@ -1,15 +1,22 @@
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
 import { toShopOwnerDTO, toShopPublicDTO } from "../../dtos/shop.dto.js"
 
+import { shopCallPhone } from "./shop-phone.js"
+
 import type { ShopOwnerDTO, ShopPublicDTO } from "../../dtos/shop.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
+import type { CustomerRepository } from "../../ports/customer-repository.js"
 
-/** Storefront entry: a turned-off or rejected shop is visible only to its owner. */
+/**
+ * Storefront entry: a turned-off or rejected shop is visible only to its owner. It carries the
+ * number to call the shop on (its own, or the owner's).
+ */
 export class GetShopBySlugUseCase {
     constructor(
         private readonly businesses: BusinessRepository,
         private readonly clock: Clock,
+        private readonly customers: Pick<CustomerRepository, "findByTelegramId">,
     ) {}
 
     async execute(slug: string, viewerTelegramId?: number): Promise<ShopPublicDTO> {
@@ -17,7 +24,10 @@ export class GetShopBySlugUseCase {
         if (!business?.isVisibleTo(viewerTelegramId)) {
             throw EntityNotFoundError.businessBySlug(slug)
         }
-        return toShopPublicDTO(business, this.clock.now(), { withCard: true })
+        return toShopPublicDTO(business, this.clock.now(), {
+            withCard: true,
+            callPhone: await shopCallPhone(business, this.customers),
+        })
     }
 }
 

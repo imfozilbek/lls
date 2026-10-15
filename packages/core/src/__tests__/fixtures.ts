@@ -75,7 +75,14 @@ export const NOON_MONDAY_UZ = new Date("2026-09-28T07:00:00Z")
 
 /** An approved courier of the shop, on shift today: ready for an order. */
 export function makeCourier(
-    overrides: { id?: string; businessId?: string; telegramId?: number; now?: Date } = {},
+    overrides: {
+        id?: string
+        businessId?: string
+        telegramId?: number
+        now?: Date
+        /** The phone the courier shared with the courier bot. */
+        phone?: string
+    } = {},
 ): Courier {
     const now = overrides.now ?? new Date()
     const profile = CourierProfile.create({
@@ -83,6 +90,9 @@ export function makeCourier(
         name: "Jasur",
         now,
     })
+    if (overrides.phone) {
+        profile.setPhone(Phone.create(overrides.phone), now)
+    }
     profile.startShift(now)
     const courier = Courier.join({
         id: overrides.id ?? "courier-1",

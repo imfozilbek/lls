@@ -257,7 +257,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const orderAccess = { businesses, customers, couriers, orders }
     const courierAccess = { businesses, couriers, orders, clock }
     const trips = new D1TripRepository(env.DB)
-    const network = { ...courierAccess, districts, trips }
+    const network = { ...courierAccess, districts, trips, customers }
     const routes = new OrsRoutePlanner(env.ORS_API_KEY, env.ORS_API_BASE)
     const tripDeps: TripDeps = { ...courierAccess, trips, routes, newId: newTripId }
     const cardBook = { businesses, cards, clock }
@@ -285,7 +285,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             removePayoutCard: new RemovePayoutCardUseCase(cardBook),
             reviewShop: new ReviewShopUseCase(businesses, admins, clock),
             resubmitShop: new ResubmitShopUseCase(businesses, clock),
-            getShopBySlug: new GetShopBySlugUseCase(businesses, clock),
+            getShopBySlug: new GetShopBySlugUseCase(businesses, clock, customers),
             listMyShops: new ListMyShopsUseCase(businesses, clock),
             updateShop: new UpdateShopUseCase(businesses, clock, districts),
             createProduct: new CreateProductUseCase(businesses, products),

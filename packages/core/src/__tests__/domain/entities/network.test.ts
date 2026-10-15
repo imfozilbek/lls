@@ -18,6 +18,7 @@ import { BusinessRuleViolationError } from "../../../domain/errors/business-rule
 import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { Location } from "../../../domain/value-objects/location.js"
 import { Money } from "../../../domain/value-objects/money.js"
+import { Phone } from "../../../domain/value-objects/phone.js"
 import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
 import { makeBusiness, makeCourier } from "../../fixtures.js"
 
@@ -69,6 +70,7 @@ function networkLink(inNetwork = true, onShift = true): Courier {
         name: "Bobur",
         now: NOW,
     })
+    profile.setPhone(Phone.create("+998905557007"), NOW)
     if (inNetwork) {
         profile.setInNetwork(true, NOW)
     }
@@ -171,6 +173,7 @@ describe("Order and the district network", () => {
         order.claimByNetwork(networkLink(), NOW, false)
         expect(order.courierId).toBe("net-1")
         expect(order.courierName).toBe("Bobur")
+        expect(order.courierPhone?.number).toBe("+998905557007")
         expect(order.isViaNetwork()).toBe(true)
         expect(order.deliveryFeeTo).toBe(DeliveryFeeRecipient.BUSINESS)
         expect(() => order.claimByNetwork(networkLink(), NOW, false)).toThrow(

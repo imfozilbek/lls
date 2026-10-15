@@ -72,6 +72,8 @@ export interface CourierShopDTO {
 
 export interface CourierOrderDTO extends OrderDTO {
     shopName: string
+    /** The number to call the shop on: its own, or the owner's (`shopCallPhone`). */
+    shopPhone?: string
     /** Where to pick it up: the shop's place on the map and its address. */
     shopLocation?: LocationDTO
     shopAddress?: string
