@@ -146,7 +146,7 @@ test("ready → «Забрал» in the courier bot → «Доставил» in 
     await expect(page.getByText("Oldindan to'langan, pul olmang")).toBeVisible()
     const before = await lastSeq()
     // One «Доставил»: the money is already the shop's, nobody asks how it was paid.
-    await page.getByRole("button", { name: "Yetkazdim" }).click()
+    await page.getByRole("button", { name: "Yetkazdim", exact: true }).click()
     await expect(page.getByRole("dialog")).toBeHidden()
     await expect(page.getByText(/Bugun yetkazilgan · 1/)).toBeVisible()
     await expect(page.getByText(/Qo'lingizda/)).toBeHidden()

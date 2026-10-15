@@ -7,6 +7,7 @@ import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
 import { isStopDone, tripOrders, yandexRouteUrl } from "../lib/trips.js"
 import { toast } from "../stores/toast.js"
+import { CallLink } from "../ui/contact-links.js"
 import { CheckIcon, PinIcon, ScooterIcon, StoreIcon } from "../ui/icons.js"
 import { Button } from "../ui/primitives.js"
 import { TripMap, TripWay } from "../ui/trip-map.js"
@@ -72,12 +73,24 @@ function PickUpAll({
     )
 }
 
-/** All the stops still to go, in order, in Yandex Navigator (or Yandex Maps), by car. */
-function NavigatorLink({ stops }: { stops: readonly OrderDTO[] }): React.JSX.Element | null {
+/**
+ * All the stops still to go, in order, in Yandex Navigator (or Yandex Maps), by car. Before the
+ * pickup the way starts at the shop: the courier goes there first.
+ */
+function NavigatorLink({
+    stops,
+    shop,
+}: {
+    stops: readonly OrderDTO[]
+    shop: OrderDTO["location"] | undefined
+}): React.JSX.Element | null {
     const t = useT()
-    const points = stops
-        .filter((o) => !isStopDone(o))
-        .flatMap((o) => (o.location ? [o.location] : []))
+    const left = stops.filter((o) => !isStopDone(o))
+    const atShop = left.some((o) => !onTheWay(o))
+    const points = [
+        ...(atShop && shop ? [shop] : []),
+        ...left.flatMap((o) => (o.location ? [o.location] : [])),
+    ]
     if (points.length === 0) {
         return null
     }
@@ -127,15 +140,20 @@ export function TripCard({
                 <span className="truncate">{first?.shopName}</span>
             </div>
             <h3 className="text-lg font-bold">{fill(t.trip.orders, { n: stops.length })}</h3>
+            {/* One shop for the whole trip: its call once, here, not under every stop. */}
+            {first?.shopPhone ? (
+                <CallLink phone={first.shopPhone} label={t.courier.callShop} className="bg-tg-bg" />
+            ) : null}
             <TripMap trip={trip} shop={first?.shopLocation} stops={stops} />
             <TripWay trip={trip} />
             <PickUpAll trip={trip} stops={stops} onChange={onChange} onStale={onStale} />
-            <NavigatorLink stops={stops} />
+            <NavigatorLink stops={stops} shop={first?.shopLocation} />
             <ol className="flex flex-col gap-3">
                 {stops.map((order, index) => (
                     <li
                         key={order.id}
                         data-stop={index + 1}
+                        data-order={order.id}
                         className={cn(
                             "flex flex-col gap-2 rounded-control border-2 p-3",
                             order === next
@@ -167,7 +185,14 @@ export function TripCard({
                                 </span>
                             ) : null}
                         </div>
-                        {isStopDone(order) ? null : renderStop(order, onTheWay(order))}
+                        {/* One stop at a time: the next one whole, the rest a line each. */}
+                        {order === next ? (
+                            renderStop(order, onTheWay(order))
+                        ) : isStopDone(order) ? null : (
+                            <p className="truncate pl-10 text-sm text-tg-subtitle">
+                                {order.address}
+                            </p>
+                        )}
                     </li>
                 ))}
             </ol>

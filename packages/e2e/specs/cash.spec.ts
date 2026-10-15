@@ -125,7 +125,9 @@ test("the courier takes the sum at the door and owes it to the shop", async ({ p
     await openApp(page, { user: PEOPLE.courier, courierBot: true })
     await expect(page.getByText(/Mijozdan 55\s000\sso'm naqd oling/)).toBeVisible()
     const since = await lastSeq()
-    await page.getByRole("button", { name: "Pulni oldim, yetkazdim" }).click()
+    // One order, one step: it is on Telegram's own button, in reach of the thumb.
+    await expect(bottomButton(page)).toHaveText(/^#\d+ · Pulni oldim, yetkazdim$/)
+    await bottomButton(page).click()
     await expect(page.getByText(/Bugun yetkazilgan · 1/)).toBeVisible()
     await expect(page.getByText(/Do'konga topshirasiz: 55\s000\sso'm/)).toBeVisible()
     await waitForMessage(PEOPLE.customer.id, "yetkazildi", since)

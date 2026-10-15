@@ -9,7 +9,7 @@ import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
-import { BotIcon, ChevronIcon, ShieldIcon, WifiOffIcon } from "../ui/icons.js"
+import { BotIcon, ChevronIcon, PlusIcon, ShieldIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, PoweredBy, Section, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 import { ShopLogo } from "../ui/shop-logo.js"
@@ -138,7 +138,6 @@ function Home({
 }): React.JSX.Element {
     const web = useT().web
     const t = useT().onboarding
-    useMainAction({ text: t.addShop, onClick: onAdd })
     return (
         <main className="px-4 pt-4">
             {onPlatform ? <PlatformRow onOpen={onPlatform} /> : null}
@@ -154,6 +153,17 @@ function Home({
                         ))}
                     </ul>
                 )}
+                {/* A second business is rare: a quiet button under the list, not the main one. */}
+                <Button
+                    variant="secondary"
+                    icon={<PlusIcon size={18} />}
+                    onClick={(): void => {
+                        haptic.tap()
+                        onAdd()
+                    }}
+                >
+                    {t.addShop}
+                </Button>
             </Section>
             {onSignOut ? (
                 <button

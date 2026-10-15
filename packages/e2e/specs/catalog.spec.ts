@@ -123,10 +123,9 @@ test("a service from the catalog: carpet washing per m², by the kind of carpet"
         .getByRole("button", { name: /^Gilam yuvish/ })
         .first()
         .click()
-    await expect(page.getByRole("button", { name: "m²", exact: true })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-    )
+    // The catalog knows the unit and the category: one line, the chips behind «O'zgartirish».
+    await expect(page.getByText("m² · Gilam yuvish", { exact: true })).toBeVisible()
+    await expect(page.getByRole("button", { name: "m²", exact: true })).toHaveCount(0)
     await expect(page.getByLabel("Nima tanlanadi?")).toHaveValue("Gilam turi")
     const names = page.getByLabel("Variant nomi")
     const count = await names.count()

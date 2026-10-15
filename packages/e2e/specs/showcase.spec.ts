@@ -166,7 +166,9 @@ test("the admin adds and removes a shop in «Platforma»; others cannot", async 
     await page.getByRole("button", { name: /Platforma/ }).click()
     await page.getByRole("tab", { name: "Bizneslar" }).click()
     const card = page.getByRole("listitem").filter({ hasText: "Toza Suv" })
+    // On is saved at once, with the usual 5%; the percent is changed after.
     await card.getByRole("switch", { name: "Zumda vitrinasida" }).click()
+    await waitForMessage(PEOPLE.waterOwner.id, "tovarlarning 5%", since)
     await card.getByLabel("Vitrina komissiyasi, %").fill("3")
     await card.getByRole("button", { name: "Saqlash" }).click()
     await expect(page.getByText("Vitrina saqlandi")).toBeVisible()

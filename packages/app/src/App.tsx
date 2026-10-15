@@ -244,19 +244,19 @@ function Screen(): React.JSX.Element {
             )
         case "owner":
             return (
-                <Suspense fallback={<MenuSkeleton />}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <OwnerApp />
                 </Suspense>
             )
         case "product":
             return (
-                <Suspense fallback={<MenuSkeleton />}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <ProductEditor id={route.id} />
                 </Suspense>
             )
         case "bulk":
             return (
-                <Suspense fallback={<MenuSkeleton />}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <BulkAdd />
                 </Suspense>
             )
@@ -443,7 +443,7 @@ function BusinessesApp({
     }, [slug, platform])
     if (platform) {
         return (
-            <Suspense fallback={<MenuSkeleton />}>
+            <Suspense fallback={<ScreenSkeleton />}>
                 <PlatformApp target={adminTarget} onExit={(): void => setPlatform(false)} />
             </Suspense>
         )
@@ -466,7 +466,7 @@ function BusinessesApp({
         )
     }
     return (
-        <Suspense fallback={<MenuSkeleton />}>
+        <Suspense fallback={<ScreenSkeleton />}>
             <OnboardingApp
                 onSignOut={onSignOut}
                 onPlatform={(): void => setPlatform(true)}
@@ -504,7 +504,7 @@ function WebBusinessApp({
     }, [])
     if (!session) {
         return (
-            <Suspense fallback={<MenuSkeleton />}>
+            <Suspense fallback={<ScreenSkeleton />}>
                 <WebSignIn
                     onSignedIn={(next): void => {
                         saveSession(next)
@@ -546,8 +546,8 @@ export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
     } else if (launch.courier) {
         // The Zumda courier bot: one screen across every shop the courier delivers for.
         content = (
-            <Suspense fallback={<MenuSkeleton />}>
-                <CourierApp />
+            <Suspense fallback={<ScreenSkeleton />}>
+                <CourierApp order={launch.order} />
             </Suspense>
         )
     } else if (launch.market) {

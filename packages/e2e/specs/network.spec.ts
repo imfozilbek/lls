@@ -114,9 +114,9 @@ test("Otabek delivers in the app with one «Доставил»; the money is alr
     await owner(`/owner/orders/${taken?.id ?? ""}`, { status: "ready" })
     await openApp(page, { user: PEOPLE.networkCourier, courierBot: true })
     await expect(page.getByText("Osh Markaz").first()).toBeVisible()
-    await page.getByRole("button", { name: "Oldim" }).click()
+    await page.getByRole("button", { name: "Buyurtmani oldim", exact: true }).click()
     await expect(page.getByText("Oldindan to'langan, pul olmang").first()).toBeVisible()
-    await page.getByRole("button", { name: "Yetkazdim" }).click()
+    await page.getByRole("button", { name: "Yetkazdim", exact: true }).click()
     await expect(page.getByRole("dialog")).toBeHidden()
     const shop = page
         .getByRole("listitem")

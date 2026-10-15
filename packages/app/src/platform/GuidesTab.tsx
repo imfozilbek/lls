@@ -58,11 +58,14 @@ function GuideRow({
     progress,
     disabled,
     onSend,
+    result,
 }: {
     count: GuideCount
     progress: Progress | null
     disabled: boolean
     onSend(): void
+    /** What the last sending did: stays in the row, not only in a passing toast. */
+    result: string | null
 }): React.JSX.Element {
     const p = useT().platform
     const label = progress
@@ -76,6 +79,7 @@ function GuideRow({
             <div className="min-w-0 grow">
                 <p className="font-semibold">{p.guideAudiences[count.audience]}</p>
                 <p className="text-sm text-tg-hint">{guideLine(p, count)}</p>
+                {result ? <p className="text-sm font-medium text-success">{result}</p> : null}
             </div>
             {count.left > 0 ? (
                 <Button
@@ -123,6 +127,7 @@ export function GuidesTab(): React.JSX.Element {
     }, [load])
     useRefresh(progress ? null : load)
 
+    const [results, setResults] = useState<Partial<Record<GuideCount["audience"], string>>>({})
     const send = async (count: GuideCount): Promise<void> => {
         const sure = await confirm(
             fill(p.guidesConfirm, { who: p.guideAudiences[count.audience], n: count.left }),
@@ -137,7 +142,9 @@ export function GuidesTab(): React.JSX.Element {
                 setProgress({ audience: count.audience, done, total: count.left }),
             )
             haptic.success()
-            toast(fill(p.guidesDone, result), "success")
+            const line = fill(p.guidesDone, result)
+            setResults((all) => ({ ...all, [count.audience]: line }))
+            toast(line, "success")
         } catch (caught) {
             failToast(t, caught)
         } finally {
@@ -173,6 +180,7 @@ export function GuidesTab(): React.JSX.Element {
                         progress={progress?.audience === count.audience ? progress : null}
                         disabled={progress !== null}
                         onSend={(): void => void send(count)}
+                        result={results[count.audience] ?? null}
                     />
                 ))}
             </ul>

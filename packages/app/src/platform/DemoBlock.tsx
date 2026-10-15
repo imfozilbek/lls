@@ -105,6 +105,9 @@ export function DemoBlock({
                         </Button>
                     ))}
                 </div>
+                <Button variant="ghost" onClick={(): void => setPicking(false)}>
+                    {t.common.cancel}
+                </Button>
             </div>
         )
     }

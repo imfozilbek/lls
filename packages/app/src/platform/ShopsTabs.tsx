@@ -1,4 +1,4 @@
-import { BusinessStatus, OwnerChat } from "@zumda/core"
+import { BusinessStatus, OwnerChat, searchText, searchWords } from "@zumda/core"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -9,7 +9,7 @@ import { useRefresh } from "../lib/refresh.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
-import { AlertIcon, CheckIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
+import { AlertIcon, CheckIcon, ChevronIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
 import {
     Button,
     EmptyState,
@@ -217,6 +217,12 @@ function percentText(bps: number | undefined): string {
     return bps === undefined ? "" : String(bps / 100).replace(".", ",")
 }
 
+/** A list this long gets a search field. */
+const SEARCH_FROM = 5
+
+/** The showcase's usual share when a shop is first switched on (the field can change it). */
+const DEFAULT_PERCENT = 5
+
 /** The showcase deal: on or off, and the commission on goods sold through it. */
 function ShowcaseBlock({
     shop,
@@ -252,8 +258,18 @@ function ShowcaseBlock({
                     checked={on}
                     label={t.platform.showcase}
                     onChange={(next): void => {
-                        if (next || !shop.marketplace) {
-                            setOn(next)
+                        if (next) {
+                            // On is saved at once, with the percent in the field (5 by default).
+                            setOn(true)
+                            void save(value ?? DEFAULT_PERCENT).then((done) => {
+                                if (!done) {
+                                    setOn(false)
+                                }
+                            })
+                            return
+                        }
+                        if (!shop.marketplace) {
+                            setOn(false)
                             return
                         }
                         // Off takes the shop out of the showcase at once: asked first, and the
@@ -318,7 +334,6 @@ function LiveShopCard({
     const t = useT()
     const ref = useFocus(focused)
     const { busy, run } = useBusy()
-    const [confirming, setConfirming] = useState(false)
     const live = shop.status === BusinessStatus.ACTIVE
     const reconnect = (): Promise<void> =>
         run("reconnect", async () => {
@@ -329,9 +344,15 @@ function LiveShopCard({
             const result = await adminApi.review(shop.id, decision)
             const done = decision === "approve" ? t.platform.approved : t.platform.disabled
             botToast(t, result, fill(done, { shop: shop.name }))
-            setConfirming(false)
             onDone()
         })
+    // Turning a live shop off is asked like any other question: the reason it matters, and «Ha».
+    const disable = async (): Promise<void> => {
+        const question = `${fill(t.platform.disableConfirm, { shop: shop.name })}\n\n${t.platform.disableHint}`
+        if (await confirm(question, { yes: t.platform.disable, destructive: true })) {
+            await review("reject")
+        }
+    }
     return (
         <li
             ref={ref}
@@ -351,46 +372,40 @@ function LiveShopCard({
             ) : null}
             {/* A demo is never in the showcase: its block is «Namuna» instead. */}
             {live && !shop.demo ? <ShowcaseBlock shop={shop} onDone={onDone} /> : null}
-            {live ? <DemoBlock shop={shop} onDone={onDone} /> : null}
-            <div className="flex flex-wrap gap-2">
-                {live ? (
-                    <Button
-                        variant="surface"
-                        className="grow whitespace-nowrap"
-                        loading={busy === "reconnect"}
-                        onClick={(): void => void reconnect()}
-                    >
-                        {t.platform.reconnect}
-                    </Button>
-                ) : (
-                    <Button
-                        className="grow"
-                        loading={busy === "approve"}
-                        onClick={(): void => void review("approve")}
-                    >
-                        {t.platform.enable}
-                    </Button>
-                )}
-                {live ? (
-                    <Button
-                        variant="danger"
-                        className="grow whitespace-nowrap"
-                        onClick={(): void => setConfirming(true)}
-                    >
-                        {t.platform.disable}
-                    </Button>
-                ) : null}
-            </div>
-            {confirming ? (
-                <ConfirmSheet
-                    title={fill(t.platform.disableConfirm, { shop: shop.name })}
-                    hint={t.platform.disableHint}
-                    action={t.platform.disable}
-                    busy={busy === "reject"}
-                    onConfirm={(): void => void review("reject")}
-                    onClose={(): void => setConfirming(false)}
-                />
-            ) : null}
+            {live && shop.demo ? <DemoBlock shop={shop} onDone={onDone} /> : null}
+            {live ? (
+                // Rarely needed, never by accident: folded under one line.
+                <details className="group rounded-control bg-tg-bg">
+                    <summary className="tap flex min-h-11 cursor-pointer list-none items-center justify-between px-3 text-sm font-semibold text-tg-subtitle">
+                        {t.platform.moreActions}
+                        <ChevronIcon
+                            size={18}
+                            className="rotate-90 transition-transform duration-200 group-open:-rotate-90"
+                        />
+                    </summary>
+                    <div className="flex flex-col gap-2 px-3 pb-3">
+                        {shop.demo ? null : <DemoBlock shop={shop} onDone={onDone} />}
+                        <Button
+                            variant="surface"
+                            loading={busy === "reconnect"}
+                            onClick={(): void => void reconnect()}
+                        >
+                            {t.platform.reconnect}
+                        </Button>
+                        <Button
+                            variant="quietDanger"
+                            loading={busy === "reject"}
+                            onClick={(): void => void disable()}
+                        >
+                            {t.platform.disable}
+                        </Button>
+                    </div>
+                </details>
+            ) : (
+                <Button loading={busy === "approve"} onClick={(): void => void review("approve")}>
+                    {t.platform.enable}
+                </Button>
+            )}
         </li>
     )
 }
@@ -500,17 +515,28 @@ export function ShopsTab({
     const status = filter === "active" ? BusinessStatus.ACTIVE : BusinessStatus.DISABLED
     const asks = usePhoneAsks()
     const { shops, error, reload } = useShops(status, asks.reload)
+    const [query, setQuery] = useState("")
+    // Found by its name, its bot or its owner: one shop among many in a few letters.
+    const words = searchWords(query)
+    const found = shops?.filter((shop) =>
+        words.every((word) =>
+            searchText(`${shop.name} ${shop.botUsername} ${shop.owner.name ?? ""}`).includes(word),
+        ),
+    )
     let body: React.JSX.Element
-    if (shops === null) {
+    if (shops === null || found === undefined) {
         body = <ListState error={error} onRetry={(): void => void reload()} />
     } else if (shops.length === 0) {
         body = <EmptyState art={<StoreIcon size={44} />} title={t.noShops} />
+    } else if (found.length === 0) {
+        body = <EmptyState art={<StoreIcon size={44} />} title={t.noShopsFound} />
     } else {
         body = (
             <ul className="flex flex-col gap-3">
-                {shops.map((shop) => (
+                {found.map((shop) => (
                     <LiveShopCard
-                        key={`${shop.id}:${shop.marketplace?.commissionBps ?? "off"}:${shop.demo}`}
+                        // The showcase block keeps its own switch and percent across a save.
+                        key={`${shop.id}:${shop.demo}`}
                         shop={shop}
                         focused={shop.id === focusId}
                         onDone={(): void => void reload()}
@@ -531,6 +557,15 @@ export function ShopsTab({
             />
             {filter === "active" && asks.counts ? (
                 <PhoneAskCard counts={asks.counts} onDone={asks.reload} />
+            ) : null}
+            {(shops?.length ?? 0) > SEARCH_FROM ? (
+                <TextInput
+                    type="search"
+                    aria-label={t.searchShops}
+                    placeholder={t.searchShops}
+                    value={query}
+                    onChange={(e): void => setQuery(e.target.value)}
+                />
             ) : null}
             {body}
         </div>
