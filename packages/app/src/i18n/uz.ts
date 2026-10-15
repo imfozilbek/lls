@@ -90,6 +90,7 @@ export const uz = {
     },
     shop: {
         map: "Xarita",
+        call: "Qo'ng'iroq",
         open: "Ochiq",
         closed: "Hozir yopiq",
         paused: "Buyurtma vaqtincha qabul qilinmaydi",
@@ -416,6 +417,7 @@ export const uz = {
         items: "Tarkibi",
         address: "Manzil",
         courier: "{name} olib kelmoqda",
+        callCourier: "Kuryerga qo'ng'iroq",
         bottlesBack: "Qaytariladigan bo'sh idish: {n} ta",
         reorder: "Takrorlash",
         paidStage: "To'landi",

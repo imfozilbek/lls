@@ -23,6 +23,7 @@ import { useSession } from "../stores/session.js"
 import {
     BagIcon,
     CloseIcon,
+    PhoneIcon,
     PinIcon,
     PlusIcon,
     ReceiptIcon,
@@ -259,6 +260,17 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                     onClick={(): void => push({ name: "orders" })}
                 />
                 <ShopMapChip shop={shop} />
+                {/* The shop's number (or the owner's): one tap from the storefront. */}
+                {shop.callPhone && shop.viewerRole !== "owner" ? (
+                    <a
+                        href={`tel:${shop.callPhone}`}
+                        onClick={(): void => haptic.tap()}
+                        className="tap flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-tg-secondary px-4 font-medium"
+                    >
+                        <PhoneIcon size={16} />
+                        {t.shop.call}
+                    </a>
+                ) : null}
                 {shop.viewerRole === "owner" ? (
                     <HeaderAction
                         icon={<StoreIcon size={16} />}
