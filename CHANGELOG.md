@@ -18,6 +18,10 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - The shop's number is «Mijozlar uchun telefon», or the owner's own phone while it is empty;
   «Ishga tayyor» asks for it. Migration `0022_order_courier_phone.sql` keeps the courier's phone
   with the order, like the name.
+- The phone is required for everyone: a shop with no number takes no orders (`NO_SHOP_PHONE`,
+  the storefront says «Tez orada…»; demos are exempt); the owner approves only a courier who sent
+  a phone (`COURIER_PHONE_REQUIRED`), and a courier without one gets no order of their shop or
+  the network (`no_phone`) until they press «Raqamni yuborish» or answer the bot's ask.
 
 ### «Qo'llanma»: the guide videos for everyone already in Zumda
 - «Platforma» → «Qo'llanma»: owners, couriers and customers, how many each reaches and how many

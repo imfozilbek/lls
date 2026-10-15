@@ -158,6 +158,10 @@ cover each one's whole process; what exactly comes from the meeting with them.
   owner's checklist after the application): a card shop needs a card, a cash shop needs none, a
   «both» shop without a card takes cash only. A shop with no working way shows «Tez orada
   buyurtma qabul qila boshlaydi» and refuses orders (`NO_PAYOUT_CARD`).
+- **No phone, no orders** (owner's decision, October 2026): a shop with no number to call (its
+  «Mijozlar uchun telefon», or the phone the owner shared with Zumda) shows the same «Tez orada
+  buyurtma qabul qila boshlaydi» and refuses orders (`NO_SHOP_PHONE`); a demo is exempt (its
+  orders are not real). «Ishga tayyor» asks for the number.
 - **Onboarding (owner's decision, October 2026):** a short application in three steps (name and
   kind → bot → where the business is: location and address); the card, hours, products, logo
   and courier come after it in «Ishga tayyor». The shop's bot works from the application on: a
@@ -188,7 +192,10 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - **Done:** only a business invites a courier: an invite from "Мой магазин" → the person accepts
   it in the courier bot → the business approves (bot button or app) and switches the courier on or
   off by day (like the menu's stop-list). The courier marks "on shift" himself (until midnight).
-  An order goes only to a courier who is approved, works today and is on shift.
+  An order goes only to a courier who is approved, works today, is on shift and gave a phone
+  (owner's decision, October 2026: `no_phone`; a network courier without one gets no offer). The
+  owner approves only someone who sent a phone (`COURIER_PHONE_REQUIRED`); the courier bot asks
+  at every `/start` until then, the courier screen has «Raqamni yuborish».
 - **Done:** a business never sees its courier's other businesses. A transfer order is paid to the
   shop's card before cooking; a cash order's money goes from the shop's own courier to the owner,
   per order.
@@ -638,7 +645,8 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
     order screen; the first message about the order and «… olib kelmoqda» carry them;
   - the courier: the customer's and the shop's on the card, in the app and the bot;
   - the shop's number (`shopCallPhone`): «Mijozlar uchun telefon», or, while it is empty, the
-    phone the owner shared with Zumda; «Ishga tayyor» asks for it (no longer optional).
+    phone the owner shared with Zumda; without either the shop takes no orders (see "No phone,
+    no orders"); a courier without a phone is neither approved nor given orders.
 - Texts depend on the business type (grocery: «Katalog», «Yig'ilmoqda»; food: «Menyu»,
   «Tayyorlanmoqda»; service: «Xizmatlar», «Bajarilmoqda»).
 - Before the first order, the app calls `requestWriteAccess()` so the shop bot may message the customer.
@@ -1011,7 +1019,8 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Courier invite → assign → picked up → delivered
 - [ ] Phones: the owner calls the customer and the courier from the card; the customer calls the
       courier and the shop (storefront, order); the courier calls the customer and the shop; a
-      shop without its own number shows the owner's
+      shop without its own number shows the owner's, without either it takes no orders; a courier
+      without a phone is not approved, gets no order and sends it from «Raqamni yuborish»
 - [ ] District delivery: invite → accept in the courier bot → join the network → an order of a
       point without couriers taken by a network courier → paid before cooking, no cash
 - [ ] Water (a grocery store with the bottle deposit): empty bottles + deposit; reorder
