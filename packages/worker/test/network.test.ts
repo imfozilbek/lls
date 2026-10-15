@@ -193,6 +193,16 @@ describe("district network", () => {
         })
     })
 
+    it("a network courier who never sent a phone gets no offer", async () => {
+        await env.DB.prepare("UPDATE courier_profiles SET phone = NULL WHERE telegram_id = ?")
+            .bind(OTABEK.id)
+            .run()
+        const order = await placeAndAccept()
+        expect(order.waitingForNetwork).toBe(true)
+        expect(offersTo(BOBUR.id).map((o) => o.data)).toEqual([`n:${order.id}`])
+        expect(offersTo(OTABEK.id)).toEqual([])
+    })
+
     it("accepted without a free courier: offers without the customer, the first «Беру» wins", async () => {
         const order = await placeAndAccept()
         expect(order.waitingForNetwork).toBe(true)

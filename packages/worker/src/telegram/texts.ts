@@ -168,6 +168,10 @@ const BASE = {
         courierPending:
             "⏳ {shop} egasi sizni tasdiqlashini kuting. Tasdiqlansa, shu yerga yozamiz.",
         courierAskPhone: "📱 Do'kon siz bilan bog'lana olishi uchun telefon raqamingizni yuboring.",
+        /** Without a phone no shop approves the courier and no order comes (owner's decision). */
+        courierPhoneFirst:
+            "📱 Raqamingizni yuboring: do'kon va mijozlar sizga qo'ng'iroq qila olishi kerak. Raqamsiz buyurtma kelmaydi.",
+        courierNoPhone: "Kuryer hali raqamini yubormagan: raqam kelgach tasdiqlang",
         sharePhone: "📱 Raqamni yuborish",
         courierJoinedOwner: "🚚 {name} kuryer bo'lish taklifini qabul qildi. Tasdiqlaysizmi?",
         approveCourier: "✅ Tasdiqlash",

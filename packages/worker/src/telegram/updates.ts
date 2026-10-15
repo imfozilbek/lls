@@ -78,6 +78,9 @@ export function callbackErrorText(error: unknown, texts: BotTexts): string {
     if (error instanceof BusinessRuleViolationError && error.rule === "NETWORK_ORDER_TAKEN") {
         return texts.callbackTaken
     }
+    if (error instanceof BusinessRuleViolationError && error.rule === "COURIER_PHONE_REQUIRED") {
+        return texts.courierNoPhone
+    }
     if (error instanceof DomainError) {
         return texts.callbackOutdated
     }

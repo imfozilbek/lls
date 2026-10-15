@@ -174,3 +174,96 @@ describe("phones: everyone on an order can call each other", () => {
         })
     })
 })
+
+describe("no phone, no orders (owner's decision, October 2026)", () => {
+    let client: TestClient
+    let slug: string
+    const owner = (): ReturnType<TestClient["as"]> =>
+        client.as(OWNER, { botToken: SHOP_BOT_TOKEN, shop: slug })
+    const customer = (): ReturnType<TestClient["as"]> =>
+        client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug })
+
+    async function product(): Promise<string> {
+        const created = await json<{ id: string }>(
+            await owner()("/api/owner/products", {
+                method: "POST",
+                json: { name: "Osh", price: 35_000, unit: "portion", category: "meals" },
+            }),
+        )
+        return created.id
+    }
+
+    beforeEach(async () => {
+        client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
+        slug = (await createActiveShop(client)).slug
+    })
+
+    it("a working courier who never sent a phone gets no order and is asked again", async () => {
+        const courierId = await hireCourier(client, { slug }, COURIER)
+        // A courier approved before the rule, without a phone.
+        await env.DB.prepare("UPDATE courier_profiles SET phone = NULL WHERE telegram_id = ?")
+            .bind(COURIER.id)
+            .run()
+        const listed = await json<{ id: string; unavailableReason: string | null }[]>(
+            await owner()("/api/owner/couriers"),
+        )
+        expect(listed.find((c) => c.id === courierId)?.unavailableReason).toBe("no_phone")
+
+        const productId = await product()
+        await customer()("/api/me")
+        await sharePhoneWithShops(CUSTOMER.id)
+        const order = await json<Order>(
+            await customer()("/api/orders", {
+                method: "POST",
+                json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12" },
+            }),
+        )
+        await owner()(`/api/owner/orders/${order.id}/payment`, {
+            method: "PATCH",
+            json: { action: "paid" },
+        })
+        const refused = await owner()(`/api/owner/orders/${order.id}/courier`, {
+            method: "PUT",
+            json: { courierId },
+        })
+        expect(refused.status).toBe(422)
+        expect(await json(refused)).toMatchObject({
+            error: { code: "COURIER_NOT_AVAILABLE", details: { reason: "no_phone" } },
+        })
+
+        // `/start` in the courier bot asks for the phone with the button.
+        await client.courierBot({
+            message: { from: COURIER, chat: { id: COURIER.id }, text: "/start" },
+        })
+        const ask = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
+        expect(ask?.html).toContain("Raqamsiz buyurtma kelmaydi")
+        expect(ask?.options?.askContact).toBeTruthy()
+
+        // The phone arrives: the order can go to them.
+        await client.courierBot({
+            message: {
+                from: COURIER,
+                chat: { id: COURIER.id },
+                contact: { phone_number: COURIER_PHONE, user_id: COURIER.id },
+            },
+        })
+        const given = await owner()(`/api/owner/orders/${order.id}/courier`, {
+            method: "PUT",
+            json: { courierId },
+        })
+        expect(given.status).toBe(200)
+    })
+
+    it("a shop with no number of its own or the owner's takes no orders", async () => {
+        await owner()("/api/owner/shop", { method: "PATCH", json: { contactPhone: null } })
+        const productId = await product()
+        await customer()("/api/me")
+        await sharePhoneWithShops(CUSTOMER.id)
+        const refused = await customer()("/api/orders", {
+            method: "POST",
+            json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12" },
+        })
+        expect(refused.status).toBe(422)
+        expect(await json(refused)).toMatchObject({ error: { code: "NO_SHOP_PHONE" } })
+    })
+})

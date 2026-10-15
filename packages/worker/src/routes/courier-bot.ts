@@ -103,6 +103,7 @@ async function greet(services: Services, message: IncomingMessage, t: BotTexts):
         if (shop) {
             const html = fill(t.courierPending, { shop: `<b>${escapeHtml(shop.name)}</b>` })
             await sendWelcome(services.telegram, { ...welcome, html })
+            await askPhoneIfMissing(services, message, t)
             return
         }
         // Someone new: the instruction of the courier's way in, from the invite on.
@@ -122,6 +123,28 @@ async function greet(services: Services, message: IncomingMessage, t: BotTexts):
             keyboard: appKeyboard(t.myDeliveries, courierAppUrl(services.env.COURIER_APP_ORIGIN)),
         },
     })
+    await askPhoneIfMissing(services, message, t)
+}
+
+/**
+ * A courier who has not sent the phone yet: no shop approves them and no order comes until they
+ * do (owner's decision, October 2026), so every `/start` asks again with the button.
+ */
+async function askPhoneIfMissing(
+    services: Services,
+    message: IncomingMessage,
+    t: BotTexts,
+): Promise<void> {
+    const profile = message.from ? await services.couriers.findProfile(message.from.id) : null
+    if (!profile || profile.phone !== undefined) {
+        return
+    }
+    await services.telegram.sendMessage(
+        services.env.COURIER_BOT_TOKEN,
+        message.chat.id,
+        t.courierPhoneFirst,
+        { askContact: t.sharePhone },
+    )
 }
 
 /** Anything but `/start`: the bot only notifies, the courier screen is where the work is. */
