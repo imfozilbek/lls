@@ -10,7 +10,7 @@ import { OrderMapButton } from "./maps.js"
 import type { OrderDTO } from "@zumda/core"
 
 const LINK =
-    "tap flex h-12 flex-1 items-center justify-center gap-2 rounded-control bg-tg-bg font-semibold"
+    "tap flex h-12 items-center justify-center gap-2 rounded-control bg-tg-bg font-semibold"
 
 /**
  * A call with its number on it: whom, and the digits (owner's decision, October 2026: everyone
