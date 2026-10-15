@@ -21,6 +21,7 @@ import {
     pageSql,
     shopStatusWhere,
 } from "../src/repositories/order.repository.js"
+import { COUNT_SQL, NEXT_SQL } from "../src/repositories/phone-ask.repository.js"
 import {
     NAMES_OF,
     SHOWCASE_BY_WORD_FROM,
@@ -66,6 +67,24 @@ describe("query plans", () => {
                     expectIndexed(plan, ["sqlite_autoindex_customer_businesses_1"])
                 }
             }
+        }
+    })
+
+    it("«Raqam so'rash» walks the live shops, their couriers and people by key, never orders", async () => {
+        for (const [sql, binds] of [
+            [NEXT_SQL, [0, 10]],
+            [COUNT_SQL, [0]],
+        ] as const) {
+            const plan = await planOf(sql, [...binds])
+            const text = plan.join("\n")
+            expectIndexed(plan, ["idx_businesses_status_created", "idx_couriers_business_status"])
+            expect(text).toContain("SEARCH a USING INDEX sqlite_autoindex_phone_asks_1")
+            expect(text).toMatch(
+                /SEARCH c USING INDEX sqlite_autoindex_customers_\d \(telegram_id=\?\)/,
+            )
+            // `courier_profiles.telegram_id` is its primary key.
+            expect(text).toContain("SEARCH cp USING INTEGER PRIMARY KEY")
+            expect(text).not.toMatch(/\b(orders|order_items)\b/)
         }
     })
 

@@ -18,6 +18,7 @@ const TABLES = [
     "customer_phone_shares",
     "alert_log",
     "guide_sends",
+    "phone_asks",
     "customer_businesses",
     "customers",
     "product_words",

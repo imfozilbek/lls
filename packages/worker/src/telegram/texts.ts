@@ -104,6 +104,16 @@ const BASE = {
         guideCustomer:
             "📘 <b>Zumda Shop: tumaningizdagi do'konlar bir joyda</b>\n\n{shop} buyurtmalari shu botda qoladi. Boshqa do'konlar, oshxonalar va xizmatlarni Zumda Shop'da toping: qanday buyurtma berish videoda.",
         openZumdaShop: "🔍 Zumda Shop'ni ochish",
+        // «Raqam so'rash»: an admin asks owners whose shop has no number, with one button.
+        ownerPhoneAsk:
+            "📞 {shops} buyurtma qabul qilmayapti: mijozlar va kuryerlar qo'ng'iroq qiladigan raqam yo'q.\n\nPastdagi tugma bilan Telegram raqamingizni yuboring: u do'kon raqami bo'ladi.",
+        yourShop: "Do'koningiz",
+        ownerPhoneShare: "📱 Raqamimni yuborish",
+        ownerPhoneOther: "✏️ Boshqa raqam yozaman",
+        ownerPhoneOtherHow:
+            "Do'kon raqamini ilovada yozing: do'koningiz → «Sozlamalar» → «Do'kon» → «Mijozlar uchun telefon».",
+        ownerPhoneSaved:
+            "✅ Raqamingiz saqlandi. Endi mijozlar va kuryerlar do'koningizga shu raqamga qo'ng'iroq qiladi.",
         showcaseOrder: "🛍 Zumda vitrinasidan · komissiya {rate}%: {sum}",
         cardAddedOwner:
             "💳 {shop}: yangi karta qo'shildi, {card}.\nBuni siz qilmagan bo'lsangiz, darhol Zumda'ga yozing.",

@@ -183,6 +183,12 @@ describe("rows read per request, on six months of history", () => {
                     () => client.as(ADMIN, { businessBot: true })("/api/admin/guides"),
                     50,
                 ],
+                // The same: the live shops and their couriers, a row or two each.
+                [
+                    "admin: «Raqam so'rash» counts",
+                    () => client.as(ADMIN, { businessBot: true })("/api/admin/phone-asks"),
+                    50,
+                ],
             ]
             // Measured (docs/capacity.md); each limit leaves room, none follows the history.
             const measured: Record<string, number> = {}

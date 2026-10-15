@@ -56,6 +56,8 @@ import {
     ResetDemoShopUseCase,
     GuideStatusUseCase,
     SendGuidesUseCase,
+    PhoneAskStatusUseCase,
+    AskPhonesUseCase,
     UpdateCustomerUseCase,
     UpdateProductUseCase,
     UpdateShopUseCase,
@@ -82,11 +84,13 @@ import { D1ManagedBotRepository } from "./repositories/managed-bot.repository.js
 import { D1NetworkOfferRepository } from "./repositories/network-offer.repository.js"
 import { D1OrderRepository } from "./repositories/order.repository.js"
 import { D1PayoutCardRepository } from "./repositories/payout-card.repository.js"
+import { D1PhoneAskRecipients } from "./repositories/phone-ask.repository.js"
 import { D1ProductRepository } from "./repositories/product.repository.js"
 import { R2ReceiptStore } from "./repositories/receipt.store.js"
 import { D1TripRepository } from "./repositories/trip.repository.js"
 import { OrsRoutePlanner } from "./routing.js"
 import { TelegramGuideSender } from "./telegram/guides.js"
+import { TelegramPhoneAskSender } from "./telegram/phone-asks.js"
 
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
@@ -156,6 +160,8 @@ export interface UseCases {
     resetDemoShop: ResetDemoShopUseCase
     guideStatus: GuideStatusUseCase
     sendGuides: SendGuidesUseCase
+    phoneAskStatus: PhoneAskStatusUseCase
+    askPhones: AskPhonesUseCase
     setDistrict: SetDistrictUseCase
     setNetworkMembership: SetNetworkMembershipUseCase
     offerNetwork: OfferNetworkUseCase
@@ -209,7 +215,13 @@ function tripUseCases(deps: TripDeps): TripUseCases {
 
 type AdminUseCases = Pick<
     UseCases,
-    "setMarketplaceTerms" | "makeDemoShop" | "resetDemoShop" | "guideStatus" | "sendGuides"
+    | "setMarketplaceTerms"
+    | "makeDemoShop"
+    | "resetDemoShop"
+    | "guideStatus"
+    | "sendGuides"
+    | "phoneAskStatus"
+    | "askPhones"
 >
 
 /**
@@ -232,12 +244,20 @@ function adminUseCases(
         clock,
         platformAdminIds,
     }
+    const phoneAsks = {
+        recipients: new D1PhoneAskRecipients(env.DB),
+        sender: new TelegramPhoneAskSender({ env, telegram, businesses }),
+        clock,
+        platformAdminIds,
+    }
     return {
         setMarketplaceTerms: new SetMarketplaceTermsUseCase(businesses, platformAdminIds, clock),
         makeDemoShop: new MakeDemoShopUseCase(deps),
         resetDemoShop: new ResetDemoShopUseCase(deps),
         guideStatus: new GuideStatusUseCase(guides),
         sendGuides: new SendGuidesUseCase(guides),
+        phoneAskStatus: new PhoneAskStatusUseCase(phoneAsks),
+        askPhones: new AskPhonesUseCase(phoneAsks),
     }
 }
 
