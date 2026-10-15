@@ -247,7 +247,7 @@ test("the owner's number: «Do'konga qo'ng'iroq» on the order the shop did not 
 }) => {
     await openOwner(page)
     await openSettings(page, "Do'kon")
-    const phone = page.getByLabel("Mijozlar uchun telefon (ixtiyoriy)")
+    const phone = page.getByLabel("Mijozlar uchun telefon")
     await phone.fill("90 12")
     await expect(page.getByText("Raqam to'liq emas")).toBeVisible()
     // Never a dead button: the tap says what is wrong and saves nothing.

@@ -137,9 +137,9 @@ test("ready → «Забрал» in the courier bot → «Доставил» in 
     const since = await lastSeq()
     await courierChat().press(PEOPLE.courier, picked?.callback_data ?? "")
     const told = await waitForMessage(PEOPLE.customer.id, `#${order?.number ?? 0}`, since)
+    // On the way: the courier's name and number, so the customer can call (owner's decision).
     expect(told.text).toContain("Jasur")
-    expect(told.text).not.toContain("+998901112233")
-    expect(told.text).not.toContain("+998 90 111 22 33")
+    expect(told.text).toContain("📞 Kuryer: +998 90 111 22 33")
 
     await openApp(page, { user: PEOPLE.courier, courierBot: true })
     await expect(page.getByRole("heading", { name: "Yetkazishlarim" })).toBeVisible()
