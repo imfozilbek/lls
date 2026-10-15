@@ -9,6 +9,8 @@ import type {
     GuideAudience,
     GuideBatchDTO,
     GuideCount,
+    PhoneAskBatchDTO,
+    PhoneAskCount,
     PlatformShopDTO,
     CourierDTO,
     CourierHomeDTO,
@@ -533,6 +535,11 @@ export const adminApi = {
     /** One batch of an audience's guide; call again while `left` is above 0. */
     sendGuides: (audience: GuideAudience): Promise<GuideBatchDTO> =>
         request("POST", `/api/admin/guides/${audience}/send`),
+    /** «Raqam so'rash»: who a missing phone stops now, and who is still to ask today. */
+    phoneAsks: async (): Promise<PhoneAskCount[]> =>
+        (await request<Page<PhoneAskCount>>("GET", "/api/admin/phone-asks")).data,
+    /** One batch of asks; call again while `left` is above 0. */
+    askPhones: (): Promise<PhoneAskBatchDTO> => request("POST", "/api/admin/phone-asks/send"),
     districts: async (): Promise<DistrictStats[]> =>
         (await request<Page<DistrictStats>>("GET", "/api/admin/districts")).data,
     saveDistrict: (body: DistrictInput): Promise<unknown> =>

@@ -657,6 +657,15 @@ export const staffUz = {
         guidesConfirm: "{who}: {n} kishiga qo'llanma yuborilsinmi? Har biri uni bir marta oladi.",
         guidesProgress: "{done}/{total}",
         guidesDone: "Yuborildi: {sent}, yetmadi: {unreachable}",
+        phoneAskTitle: "Raqamsiz",
+        phoneAskAudiences: { owner: "Do'kon egalari", courier: "Kuryerlar" },
+        phoneAskHint:
+            "Raqamsiz do'kon buyurtma qabul qilmaydi, raqamsiz kuryerga buyurtma berilmaydi. Har biriga o'z botida bitta tugma bilan raqam so'raymiz.",
+        phoneAskSend: "Raqam so'rash",
+        phoneAskConfirm:
+            "{n} kishiga raqam so'rash xabari yuborilsinmi? Har biriga kuniga bir marta.",
+        phoneAskDone: "So'raldi: {sent}, yetmadi: {unreachable}",
+        phoneAskToday: "Bugun so'raldi: ertaga yana so'rash mumkin",
     },
 }
 
