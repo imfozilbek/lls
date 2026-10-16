@@ -158,9 +158,9 @@ export class CreateTripUseCase {
             order.joinTrip(trip.id, index + 1)
         }
         // Saved first, the way planned after: the road service may take seconds, and the orders
-        // loaded above must not wait for it (a change meanwhile would refuse them as stale).
-        await deps.trips.insert(trip)
-        await Promise.all(orders.map((order) => deps.orders.save(order)))
+        // loaded above must not wait for it (a change meanwhile would refuse them as stale). The
+        // trip and its stops go in one write: an order changed meanwhile refuses them all.
+        await deps.trips.insert(trip, orders)
         await planRoute(deps, trip, shop, orders)
         await deps.trips.save(trip)
         return result(trip, orders, courier)

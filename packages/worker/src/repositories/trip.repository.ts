@@ -1,8 +1,9 @@
-import { ACTIVE_ORDER_STATUSES, OrderStatus, Trip } from "@zumda/core"
+import { ACTIVE_ORDER_STATUSES, ConflictError, OrderStatus, Trip } from "@zumda/core"
 
+import { orderSaveStatement } from "./order.repository.js"
 import { placeholders } from "./rows.js"
 
-import type { GeoPoint, TripRepository, TripRoute } from "@zumda/core"
+import type { GeoPoint, Order, TripRepository, TripRoute } from "@zumda/core"
 
 interface TripRow {
     id: string
@@ -93,22 +94,62 @@ function routeValues(trip: Trip): (string | number | null)[] {
     ]
 }
 
+/**
+ * A new trip, written only while each stop still has the version it was loaded with (a pair of
+ * id and version for each): D1 runs a batch's statements one after another, so nothing changes
+ * an order between this check and the stops' own saves. Binds: the pairs, the trip's columns,
+ * the number of pairs.
+ */
+export function insertTripSql(stops: number): string {
+    if (stops === 0) {
+        // Stops never loaded here have no version to check (`VALUES` cannot be empty).
+        return `INSERT INTO trips (${COLUMNS}) SELECT ?, ?, ?, ?, ?, ?, ?, ? WHERE ? = 0`
+    }
+    const pairs = Array.from({ length: stops }, () => "(?, ?)").join(", ")
+    return `WITH stops (id, version) AS (VALUES ${pairs})
+        INSERT INTO trips (${COLUMNS})
+        SELECT ?, ?, ?, ?, ?, ?, ?, ?
+        WHERE (
+            SELECT COUNT(*) FROM stops
+            JOIN orders ON orders.id = stops.id AND orders.updated_at = stops.version
+        ) = ?`
+}
+
+/** A stop is saved only while its trip is in: a trip refused above leaves every order as it was. */
+export const WITH_TRIP_SQL = "EXISTS (SELECT 1 FROM trips WHERE id = ?)"
+
 /** Trips in D1; their stops are the orders' `trip_id` and `trip_stop` (cancelled ones left out). */
 export class D1TripRepository implements TripRepository {
     constructor(private readonly db: D1Database) {}
 
-    async insert(trip: Trip): Promise<void> {
-        await this.db
-            .prepare(`INSERT INTO trips (${COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
-            .bind(
-                trip.id,
-                trip.businessId,
-                trip.courierId,
-                ...routeValues(trip),
-                trip.createdAt.getTime(),
-                trip.updatedAt.getTime(),
-            )
-            .run()
+    async insert(trip: Trip, stops: readonly Order[]): Promise<void> {
+        const saves = stops.map((order) =>
+            orderSaveStatement(this.db, order, { sql: WITH_TRIP_SQL, binds: [trip.id] }),
+        )
+        const guarded = saves.flatMap((save, i) =>
+            save.expected === undefined ? [] : [stops[i]?.id ?? "", save.expected],
+        )
+        const [inserted] = await this.db.batch([
+            this.db
+                .prepare(insertTripSql(guarded.length / 2))
+                .bind(
+                    ...guarded,
+                    trip.id,
+                    trip.businessId,
+                    trip.courierId,
+                    ...routeValues(trip),
+                    trip.createdAt.getTime(),
+                    trip.updatedAt.getTime(),
+                    guarded.length / 2,
+                ),
+            ...saves.map((save) => save.statement),
+        ])
+        if (inserted?.meta.changes !== 1) {
+            throw ConflictError.stale("order", stops.map((order) => order.id).join(","))
+        }
+        for (const save of saves) {
+            save.saved()
+        }
     }
 
     async save(trip: Trip): Promise<void> {

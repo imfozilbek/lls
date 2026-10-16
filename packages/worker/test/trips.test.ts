@@ -1,6 +1,11 @@
 import { env } from "cloudflare:workers"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { Trip as TripEntity } from "@zumda/core"
+
+import { D1CourierRepository } from "../src/repositories/courier.repository.js"
+import { D1OrderRepository } from "../src/repositories/order.repository.js"
+import { D1TripRepository } from "../src/repositories/trip.repository.js"
 import { OrsRoutePlanner } from "../src/routing.js"
 
 import {
@@ -16,6 +21,7 @@ import {
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
+import type { Order as OrderEntity } from "@zumda/core"
 
 const COURIER = { id: 5005, first_name: "Jasur", language_code: "uz" }
 const SHOP = { latitude: 38.9785, longitude: 66.6831 }
@@ -171,6 +177,64 @@ describe("trips: several orders one way, one courier", () => {
         expect(await json(refused)).toMatchObject({ error: { code: "NOT_FOR_TRIP" } })
         expect((await as(STRANGER)("/api/owner/trips")).status).toBe(403)
         expect((await createTrip([])).status).toBe(400)
+    })
+
+    it("an order changed while the trip is written: no trip, no stop joined, then it goes", async () => {
+        const [a, b] = [await accepted(1), await accepted(2)]
+        const orders = new D1OrderRepository(env.DB)
+        const trips = new D1TripRepository(env.DB)
+        const link = await new D1CourierRepository(env.DB).findById(courierId)
+        if (!link) {
+            throw new Error("no courier")
+        }
+        const hired = link
+        /** The two orders loaded now, joined to a new trip in this order. */
+        async function joined(id: string): Promise<{ trip: TripEntity; stops: OrderEntity[] }> {
+            const stops = await Promise.all([orders.findById(a.id), orders.findById(b.id)])
+            const now = new Date()
+            const trip = TripEntity.create({
+                id,
+                businessId: stops[0]?.businessId ?? "",
+                courierId,
+                stops: [a.id, b.id],
+                now,
+            })
+            const loaded = stops.flatMap((order) => (order ? [order] : []))
+            for (const [index, order] of loaded.entries()) {
+                order.assignCourier(hired, now)
+                order.joinTrip(trip.id, index + 1)
+            }
+            return { trip, stops: loaded }
+        }
+
+        const stale = await joined("trip-stale")
+        // Another request saves the second order between its load and the trip.
+        await env.DB.prepare("UPDATE orders SET updated_at = updated_at + 1 WHERE id = ?")
+            .bind(b.id)
+            .run()
+        await expect(trips.insert(stale.trip, stale.stops)).rejects.toMatchObject({
+            reason: "STALE",
+        })
+        expect(await trips.findById("trip-stale")).toBeNull()
+        const rows = await env.DB.prepare(
+            "SELECT trip_id, trip_stop, courier_id FROM orders WHERE id IN (?, ?)",
+        )
+            .bind(a.id, b.id)
+            .all()
+        expect(rows.results).toEqual([
+            { trip_id: null, trip_stop: null, courier_id: null },
+            { trip_id: null, trip_stop: null, courier_id: null },
+        ])
+
+        const fresh = await joined("trip-fresh")
+        await trips.insert(fresh.trip, fresh.stops)
+        expect((await trips.findById("trip-fresh"))?.stops).toEqual([a.id, b.id])
+        const saved = await orders.findById(a.id)
+        expect([saved?.tripId, saved?.tripStop, saved?.courierId]).toEqual([
+            "trip-fresh",
+            1,
+            courierId,
+        ])
     })
 })
 

@@ -455,6 +455,57 @@ function paymentValues(order: Order): (string | number | null)[] {
     ]
 }
 
+/** An order's save as one statement, for a batch with other writes. */
+export interface OrderSave {
+    statement: D1PreparedStatement
+    /** The version the row must still have; none for an order this Worker never loaded. */
+    expected: number | undefined
+    /** After the statement changed the row: what the next save compares with. */
+    saved(): void
+}
+
+/**
+ * The save of `save()` as a statement: only the columns changed since the order was loaded, over
+ * the version it was loaded with, and only while `also` holds (its SQL and binds), when given.
+ */
+export function orderSaveStatement(
+    db: D1Database,
+    order: Order,
+    also?: { sql: string; binds: readonly (string | number)[] },
+): OrderSave {
+    const { expected, version } = versions.next(order, order.updatedAt)
+    const values = mutableValues(order)
+    if (values.length !== MUTABLE_COLUMNS.length) {
+        // A column added to one list and not the other would write values into wrong columns.
+        throw new Error("MUTABLE_COLUMNS and mutableValues differ")
+    }
+    const before = written.get(order)
+    const changed = MUTABLE_COLUMNS.flatMap((column, index) =>
+        before !== undefined && before[index] === values[index]
+            ? []
+            : [{ column, value: values[index] ?? null }],
+    )
+    const set = [...changed.map(({ column }) => `${column} = ?`), "updated_at = ?"].join(", ")
+    const guard = expected === undefined ? "" : " AND updated_at = ?"
+    const statement = db
+        .prepare(`UPDATE orders SET ${set} WHERE id = ?${guard}${also ? ` AND ${also.sql}` : ""}`)
+        .bind(
+            ...changed.map(({ value }) => value),
+            version,
+            order.id,
+            ...(expected === undefined ? [] : [expected]),
+            ...(also?.binds ?? []),
+        )
+    return {
+        statement,
+        expected,
+        saved: (): void => {
+            written.set(order, values)
+            versions.remember(order, version)
+        },
+    }
+}
+
 export class D1OrderRepository implements OrderRepository {
     constructor(private readonly db: D1Database) {}
 
@@ -521,34 +572,12 @@ export class D1OrderRepository implements OrderRepository {
      * only the columns that changed since it was loaded.
      */
     async save(order: Order): Promise<void> {
-        const { expected, version } = versions.next(order, order.updatedAt)
-        const values = mutableValues(order)
-        if (values.length !== MUTABLE_COLUMNS.length) {
-            // A column added to one list and not the other would write values into wrong columns.
-            throw new Error("MUTABLE_COLUMNS and mutableValues differ")
-        }
-        const before = written.get(order)
-        const changed = MUTABLE_COLUMNS.flatMap((column, index) =>
-            before !== undefined && before[index] === values[index]
-                ? []
-                : [{ column, value: values[index] ?? null }],
-        )
-        const set = [...changed.map(({ column }) => `${column} = ?`), "updated_at = ?"].join(", ")
-        const guard = expected === undefined ? "" : " AND updated_at = ?"
-        const result = await this.db
-            .prepare(`UPDATE orders SET ${set} WHERE id = ?${guard}`)
-            .bind(
-                ...changed.map(({ value }) => value),
-                version,
-                order.id,
-                ...(expected === undefined ? [] : [expected]),
-            )
-            .run()
+        const save = orderSaveStatement(this.db, order)
+        const result = await save.statement.run()
         if (result.meta.changes === 0) {
             throw ConflictError.stale("order", order.id)
         }
-        written.set(order, values)
-        versions.remember(order, version)
+        save.saved()
     }
 
     /** One statement with the condition: of two «Беру» at the same moment, one changes a row. */
