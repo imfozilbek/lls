@@ -7,6 +7,15 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Every district in its viloyat; the two districts of Yakkabog'
+- A district belongs to one of the 14 regions of Uzbekistan (12 viloyats, Qoraqalpog'iston
+  Respublikasi, Toshkent shahri): a new one needs it, picked with one tap in «Tumanlar», and the
+  tab lists the districts by viloyat; one made before asks for it when opened.
+- Migration `0024` makes «Yakkabog' stansiyasi» (the town around the station) and «Yakkabog'
+  posyolkasi» (Eski Yakkabog') in Qashqadaryo viloyati, 20 km each, and puts every shop in the
+  nearest district that holds it, as saving a district does; a district already under the name
+  stays.
+
 ### Bugs found across the project and fixed
 - A shop number saved before the stricter phone rules (a digit missing) broke the shop and every
   list it is in: a saved number now reads as it is; a typed one starting with 0 is refused.

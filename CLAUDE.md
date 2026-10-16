@@ -23,6 +23,9 @@ the customer has to come to the point; with Zumda they order from home and a cou
 Start with the three pilots; next to them grow the district's own delivery network, then one
 Zumda marketplace on top of both. **The pilot district is Yakkabog'** (Qashqadaryo, town center
 38.9785, 66.6831; owner, October 2026): the map opens there, the stand's demo shops live there.
+In production it is two districts of Qashqadaryo viloyati, 20 km each (owner's decision, October
+2026; migration `0024`): «Yakkabog' stansiyasi» (the town that grew around the station,
+38.9785, 66.6831) and «Yakkabog' posyolkasi» (Eski Yakkabog', 38.9314, 66.8389).
 
 | Package | Description |
 |---------|-------------|
@@ -217,6 +220,10 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - **Done:** a district is a circle (center + radius) the platform admin sets in «Platforma» →
   «Tumanlar» (center typed or the admin's location, radius, wait); the same tab shows its network
   stats.
+- **Every district is in one of the 14 viloyats** (owner's decision, October 2026): 12 viloyats,
+  Qoraqalpog'iston Respublikasi and Toshkent shahri (`Region` in core, stored ids, only added).
+  A new district needs its viloyat (chips in «Tumanlar»); «Tumanlar» lists the districts by
+  viloyat; a district made before has none until an admin picks it.
   A shop belongs to the district its location falls in.
 - **Done:** when the shop accepts an order and none of its own couriers can take it now, the
   order goes to the free network couriers of the district (in the network, on shift, carrying no
@@ -493,7 +500,7 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
-| District | id, name, center (lat, lng), radius, wait_minutes: a circle of the delivery network |
+| District | id, name, region (one of the 14 viloyats), center (lat, lng), radius, wait_minutes: a circle of the delivery network |
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until: the person's link to one shop (`network`: took a network order of it) |
 | Trip | id, business_id, courier_id, route (JSON line), distance_m, duration_s: several orders of one shop one way; stops are `orders.trip_id` + `trip_stop` |
