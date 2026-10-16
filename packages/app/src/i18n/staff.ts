@@ -717,8 +717,8 @@ export const staffUz = {
             toshkent_shahri: "Toshkent shahri",
         },
         center: "Markaz",
-        centerPlaceholder: "38.9785, 66.6831",
-        centerHint: "Markazda turib joylashuvni oling yoki koordinatalarni yozing",
+        centerHint: "Tuman markazini xaritada belgilang",
+        centerSet: "Markaz belgilandi",
         useMyLocation: "Joylashuvimni olish",
         radius: "Radius, km",
         wait: "Kuryer kutish, daqiqa",
@@ -729,7 +729,6 @@ export const staffUz = {
         waiting: "Kutmoqda",
         week: "7 kunda yetkazildi: {delivered}, tarmoq orqali: {network}",
         waitLine: "Kutish {min} daqiqa",
-        badCenter: "Koordinatalarni «kenglik, uzunlik» ko'rinishida yozing",
         guidesHint:
             "Har kim o'z rolining videosini bir marta oladi: biznes egalari Zumda | Business'dan, kuryerlar Zumda | Kuryer'dan, mijozlar o'z do'koni botidan, Zumda Shop taklifi bilan.",
         guideAudiences: { owner: "Biznes egalari", courier: "Kuryerlar", customer: "Mijozlar" },

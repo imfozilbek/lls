@@ -15,13 +15,14 @@ import {
     waitForCall,
     waitForMessage,
 } from "../support/telegram.js"
-import { appQueryOf, openApp } from "../support/webapp.js"
+import { appQueryOf, openApp, pickOnMap } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
 // Fake tokens: the stand's Telegram accepts `<id>:NEW-...`. secret-scan: fake
 const NEW_BOT = { id: 777100300, token: "777100300:NEW-e2e-platform-token-abcdefghij" } // secret-scan: fake
 const APPLICANT = { id: 4105, first_name: "Malika", language_code: "uz" }
+const GULISTAN = { latitude: 40.4897, longitude: 68.7842 }
 const OWNER_PHONE = "+998905550001"
 
 test.describe.configure({ mode: "serial" })
@@ -79,10 +80,12 @@ test("an application: the message opens it in «Platforma», «Tasdiqlash» star
 test("«Tumanlar»: a new district in its viloyat by its center, then a longer wait", async ({
     page,
 }) => {
+    // The admin stands in Guliston: the map's «Joylashuvim» puts the center there.
     await openApp(page, {
         user: PEOPLE.admin,
         businessBot: true,
         query: "?mode=business&admin=districts",
+        location: GULISTAN,
     })
     const viloyat = (name: string): ReturnType<Page["getByRole"]> =>
         page.getByRole("region", { name })
@@ -92,7 +95,6 @@ test("«Tumanlar»: a new district in its viloyat by its center, then a longer w
     await page.getByRole("button", { name: "Yangi tuman" }).click()
     const sheet = page.getByRole("dialog")
     await sheet.getByLabel("Tuman nomi").fill("Guliston")
-    await sheet.getByLabel("Markaz").fill("40.4897, 68.7842")
     await sheet.getByLabel("Radius, km").fill("12")
     // Every district is in a viloyat: without one it is not saved.
     const save = sheet.getByRole("button", { name: "Saqlash" })
@@ -101,6 +103,12 @@ test("«Tumanlar»: a new district in its viloyat by its center, then a longer w
     const sirdaryo = sheet.getByRole("radio", { name: "Sirdaryo", exact: true })
     await sirdaryo.click()
     await expect(sirdaryo).toHaveAttribute("aria-checked", "true")
+    // The center is picked on the map, never typed: no numbers anywhere in the sheet.
+    await expect(save).toBeDisabled()
+    await expect(sheet.getByLabel("Markaz")).toHaveCount(0)
+    await pickOnMap(page, GULISTAN)
+    await expect(sheet.getByRole("button", { name: /Joy belgilandi/ })).toBeVisible()
+    await expect(sheet).not.toContainText(/\d+\.\d{3,}/)
     await save.click()
     await expect(page.getByText("Guliston saqlandi")).toBeVisible()
     const guliston = viloyat("Sirdaryo viloyati")
@@ -115,6 +123,8 @@ test("«Tumanlar»: a new district in its viloyat by its center, then a longer w
     await expect(sheet.getByText("Guliston", { exact: true })).toBeVisible()
     await expect(sheet.getByLabel("Tuman nomi")).toHaveCount(0)
     await expect(sirdaryo).toHaveAttribute("aria-checked", "true")
+    await expect(sheet.getByRole("button", { name: /Joy belgilandi/ })).toBeVisible()
+    await expect(sheet).not.toContainText(/\d+\.\d{3,}/)
     await sheet.getByLabel("Kuryer kutish, daqiqa").fill("20")
     await sheet.getByRole("button", { name: "Saqlash" }).click()
     await expect(guliston).toContainText("Kutish 20 daqiqa")

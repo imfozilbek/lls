@@ -7,7 +7,7 @@ import { useClosingGuard } from "../lib/main-button.js"
 import { useRefresh } from "../lib/refresh.js"
 import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
-import { ChevronIcon, PinIcon, PlusIcon, WifiOffIcon } from "../ui/icons.js"
+import { CheckIcon, ChevronIcon, PinIcon, PlusIcon, WifiOffIcon } from "../ui/icons.js"
 import { PlacePick } from "../ui/place-pick.js"
 import { Button, EmptyState, Field, Skeleton, TextInput } from "../ui/primitives.js"
 import { Sheet } from "../ui/sheet.js"
@@ -17,36 +17,12 @@ import { byRegion, regionName } from "./regions.js"
 import { failToast } from "./shared.js"
 
 import type { DistrictInput } from "../lib/api.js"
+import type { Point } from "../lib/map.js"
 import type { DistrictStats, Region } from "@zumda/core"
 
 const DEFAULT_WAIT_MINUTES = 10
-const COORDINATE_DIGITS = 5
 const MIN_RADIUS_KM = 0.5
 const MAX_RADIUS_KM = 200
-
-/** "38.9785, 66.6831" (a comma or a space between), or null. */
-function parseCenter(text: string): { latitude: number; longitude: number } | null {
-    const parts = text.trim().split(/[\s,;]+/)
-    if (parts.length !== 2) {
-        return null
-    }
-    const [latitude, longitude] = parts.map(Number)
-    if (
-        latitude === undefined ||
-        longitude === undefined ||
-        !Number.isFinite(latitude) ||
-        !Number.isFinite(longitude) ||
-        Math.abs(latitude) > 90 ||
-        Math.abs(longitude) > 180
-    ) {
-        return null
-    }
-    return { latitude, longitude }
-}
-
-function centerText(center: { latitude: number; longitude: number }): string {
-    return `${center.latitude.toFixed(COORDINATE_DIGITS)}, ${center.longitude.toFixed(COORDINATE_DIGITS)}`
-}
 
 function decimal(text: string): number {
     return Number(text.trim().replace(",", "."))
@@ -56,7 +32,8 @@ interface DistrictForm {
     name: string
     /** None until picked: a district made before the viloyat was asked asks for it. */
     region: Region | null
-    center: string
+    /** Picked on the map (or where the admin stands): never typed, never shown as numbers. */
+    center: Point | null
     radius: string
     wait: string
 }
@@ -65,7 +42,7 @@ function formOf(district: DistrictStats | null): DistrictForm {
     return {
         name: district?.name ?? "",
         region: district?.region ?? null,
-        center: district ? centerText(district.center) : "",
+        center: district?.center ?? null,
         radius: district ? String(district.radiusKm) : "",
         wait: String(district?.waitMinutes ?? DEFAULT_WAIT_MINUTES),
     }
@@ -73,68 +50,72 @@ function formOf(district: DistrictStats | null): DistrictForm {
 
 /** What the form would save, or null while something is missing or out of range. */
 function districtInput(form: DistrictForm): DistrictInput | null {
-    const center = parseCenter(form.center)
     const radiusKm = decimal(form.radius)
     const waitMinutes = Number(form.wait)
     const name = form.name.trim()
     const radiusOk = radiusKm >= MIN_RADIUS_KM && radiusKm <= MAX_RADIUS_KM
-    const { region } = form
+    const { region, center } = form
     if (name.length < 2 || !region || !center || !radiusOk || !Number.isInteger(waitMinutes)) {
         return null
     }
     return waitMinutes >= 1 ? { name, region, center, radiusKm, waitMinutes } : null
 }
 
-/** The circle's center: typed, or where the admin stands now. */
+/**
+ * The circle's center: picked on the map with the circle drawn, or, before the map is there,
+ * where the admin stands now. Coordinates are never shown (owner's decision, October 2026).
+ */
 function CenterField({
     value,
     radiusKm,
     onChange,
 }: {
-    value: string
+    value: Point | null
     /** The radius typed so far: the map shows the circle. */
     radiusKm: number
-    onChange(center: string): void
+    onChange(center: Point): void
 }): React.JSX.Element {
     const t = useT()
     const p = t.platform
-    const center = parseCenter(value)
-    const bad = value !== "" && center === null
     const locate = async (): Promise<void> => {
         const found = await getLocation()
         if (found) {
             haptic.success()
-            onChange(centerText(found))
+            onChange({ latitude: found.latitude, longitude: found.longitude })
         } else {
             toast(t.checkout.locationFailed, "error")
         }
     }
     return (
-        <Field label={p.center} hint={bad ? p.badCenter : p.centerHint} htmlFor="district-center">
-            <TextInput
-                id="district-center"
-                inputMode="decimal"
-                value={value}
-                placeholder={p.centerPlaceholder}
-                aria-invalid={bad}
-                onChange={(e): void => onChange(e.target.value)}
-            />
+        <div className="flex flex-col gap-1.5">
+            <p className="px-1 text-sm font-medium text-tg-subtitle">{p.center}</p>
             <PlacePick
-                value={center}
-                onChange={(point): void => onChange(centerText(point))}
-                zone={center && radiusKm > 0 ? { center, radiusMeters: radiusKm * 1000 } : null}
+                value={value}
+                onChange={(point): void => onChange(point)}
+                zone={
+                    value && radiusKm > 0 ? { center: value, radiusMeters: radiusKm * 1000 } : null
+                }
                 title={p.center}
                 fallback={
-                    <Button
-                        variant="secondary"
-                        icon={<PinIcon size={18} className="text-brand" />}
-                        onClick={(): void => void locate()}
-                    >
-                        {p.useMyLocation}
-                    </Button>
+                    <>
+                        {value ? (
+                            <p className="flex items-center gap-2 px-1 font-medium">
+                                <CheckIcon size={18} className="text-success" />
+                                {p.centerSet}
+                            </p>
+                        ) : null}
+                        <Button
+                            variant="secondary"
+                            icon={<PinIcon size={18} className="text-brand" />}
+                            onClick={(): void => void locate()}
+                        >
+                            {p.useMyLocation}
+                        </Button>
+                    </>
                 }
             />
-        </Field>
+            <p className="px-1 text-sm text-tg-hint">{p.centerHint}</p>
+        </div>
     )
 }
 
