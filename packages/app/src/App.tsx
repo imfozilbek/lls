@@ -30,7 +30,7 @@ import { Settle } from "./ui/settle.js"
 import { BottomBar, ToastHost, WebBackBar } from "./ui/shell.js"
 
 import type { ShopVia, WebSession } from "./lib/api.js"
-import type { AdminTarget, LaunchParams } from "./lib/telegram.js"
+import type { LaunchParams } from "./lib/telegram.js"
 import type { Direction } from "./stores/router.js"
 
 /**
@@ -96,8 +96,10 @@ const OnboardingApp = lazy(() =>
         default: m.OnboardingApp,
     })),
 )
-const PlatformApp = lazy(() =>
-    withStaff(() => import("./platform/PlatformApp.js")).then((m) => ({ default: m.PlatformApp })),
+const PlatformRoot = lazy(() =>
+    withStaff(() => import("./platform/PlatformRoot.js")).then((m) => ({
+        default: m.PlatformRoot,
+    })),
 )
 
 const SCREEN_IN: Record<Direction, string> = {
@@ -437,19 +439,19 @@ function ShowcaseApp({
  */
 function BusinessesApp({
     onSignOut,
-    adminTarget = null,
+    platformMoved = false,
     shop = null,
     order = null,
 }: {
     onSignOut?: () => void
-    /** An admin's bot message: open «Platforma» on this. */
-    adminTarget?: AdminTarget | null
+    /** An old «Platforma» button of Zumda | Business: say where «Platforma» is now. */
+    platformMoved?: boolean
     /** A message about one business (and one of its orders): opened right on it. */
     shop?: string | null
     order?: string | null
 }): React.JSX.Element {
     const [slug, setSlug] = useState<string | null>(() => {
-        if (shop && adminTarget === null) {
+        if (shop) {
             useRouter.getState().start({ name: "owner" })
             // Opened by a message: Back from it shows the list, it never lands here again.
             markLanded()
@@ -459,30 +461,13 @@ function BusinessesApp({
     })
     // The order of the message, only on the business it came with.
     const [target, setTarget] = useState(order)
-    const [platform, setPlatform] = useState(adminTarget !== null)
-    // The message's target in «Platforma» only the first time: opened again from the list, it
-    // starts on its first tab.
-    const [platformTarget, setPlatformTarget] = useState(adminTarget)
     useEffect(() => {
         if (slug === null) {
             setShop(null, { via: "business" })
             applyBrand(ZUMDA_BRAND_COLOR)
             document.title = ZUMDA_NAME
         }
-    }, [slug, platform])
-    if (platform) {
-        return (
-            <Suspense fallback={<ScreenSkeleton />}>
-                <PlatformApp
-                    target={platformTarget}
-                    onExit={(): void => {
-                        setPlatformTarget(null)
-                        setPlatform(false)
-                    }}
-                />
-            </Suspense>
-        )
-    }
+    }, [slug])
     if (slug) {
         return (
             <ShopApp
@@ -504,7 +489,7 @@ function BusinessesApp({
         <Suspense fallback={<ScreenSkeleton />}>
             <OnboardingApp
                 onSignOut={onSignOut}
-                onPlatform={(): void => setPlatform(true)}
+                platformMoved={platformMoved}
                 onOpen={(next): void => {
                     useRouter.getState().start({ name: "owner" })
                     setSlug(next)
@@ -519,11 +504,11 @@ function BusinessesApp({
  * bizneslarim» and owner section as inside the Zumda | Business bot.
  */
 function WebBusinessApp({
-    adminTarget,
+    platformMoved,
     shop,
     order,
 }: {
-    adminTarget: AdminTarget | null
+    platformMoved: boolean
     shop: string | null
     order: string | null
 }): React.JSX.Element {
@@ -553,7 +538,7 @@ function WebBusinessApp({
         <>
             <WebBackBar />
             <BusinessesApp
-                adminTarget={adminTarget}
+                platformMoved={platformMoved}
                 shop={shop}
                 order={order}
                 onSignOut={(): void => {
@@ -568,15 +553,24 @@ function WebBusinessApp({
 
 export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
     let content: React.JSX.Element
-    if (!webApp()) {
+    // An old «Platforma» button of Zumda | Business still carries `&admin=`.
+    const platformMoved = launch.admin !== null
+    if (launch.platform) {
+        // Zumda | Platforma, or platform.zumda.shop in a browser: the admins' own app.
+        content = (
+            <Suspense fallback={<ScreenSkeleton />}>
+                <PlatformRoot target={launch.admin} />
+            </Suspense>
+        )
+    } else if (!webApp()) {
         content = launch.business ? (
-            <WebBusinessApp adminTarget={launch.admin} shop={launch.shop} order={launch.order} />
+            <WebBusinessApp platformMoved={platformMoved} shop={launch.shop} order={launch.order} />
         ) : (
             <NotInTelegram />
         )
     } else if (launch.business) {
         content = (
-            <BusinessesApp adminTarget={launch.admin} shop={launch.shop} order={launch.order} />
+            <BusinessesApp platformMoved={platformMoved} shop={launch.shop} order={launch.order} />
         )
     } else if (launch.courier) {
         // The Zumda courier bot: one screen across every shop the courier delivers for.

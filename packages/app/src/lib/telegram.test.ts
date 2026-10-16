@@ -21,6 +21,7 @@ describe("readLaunchParams", () => {
             business: false,
             courier: false,
             market: false,
+            platform: false,
             order: null,
             admin: null,
         })
@@ -54,6 +55,7 @@ describe("readLaunchParams", () => {
                 business: true,
                 courier: false,
                 market: false,
+                platform: false,
                 order: null,
                 admin: null,
             })
@@ -74,6 +76,28 @@ describe("readLaunchParams", () => {
             business: false,
             courier: false,
         })
+    })
+
+    it("«Platforma» opens from Zumda | Platforma (?mode=admin) and at platform.zumda.shop", () => {
+        const fromBot = readLaunchParams(
+            new URL("https://platform.zumda.shop/?mode=admin&admin=shop_b-1"),
+            null,
+        )
+        expect(fromBot).toMatchObject({ platform: true, business: false, admin: { shopId: "b-1" } })
+        expect(readLaunchParams(new URL("https://platform.zumda.shop/"), null)).toMatchObject({
+            platform: true,
+            business: false,
+            courier: false,
+        })
+        expect(readLaunchParams(new URL("http://localhost:5173/?mode=admin"), null).platform).toBe(
+            true,
+        )
+        // Zumda | Business never opens it any more, even from an old «Platforma» button.
+        const old = readLaunchParams(
+            new URL("https://business.zumda.shop/?mode=business&admin=applications"),
+            null,
+        )
+        expect(old).toMatchObject({ platform: false, business: true, admin: "applications" })
     })
 
     it("detects the Zumda showcase opened from the Zumda bot", () => {
@@ -104,6 +128,7 @@ describe("readLaunchParams", () => {
             business: false,
             courier: true,
             market: false,
+            platform: false,
             order: null,
             admin: null,
         })

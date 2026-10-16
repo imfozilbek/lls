@@ -9,6 +9,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, resetStand } from "../support/stand.js"
 import {
+    adminChat,
     businessChat,
     courierChat,
     lastSeq,
@@ -162,7 +163,7 @@ test("biznes egasi", async ({ page }) => {
 
     const card = await waitForMessage(PEOPLE.admin.id, "Dilnoza Somsa", since)
     const approved = await lastSeq()
-    await businessChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
+    await adminChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
     await waitForMessage(OWNER.id, "ishga tushdi", approved)
     chats["ownerApproved"] = await messagesTo(OWNER.id, approved)
     chats["ownerAll"] = await messagesTo(OWNER.id, since)

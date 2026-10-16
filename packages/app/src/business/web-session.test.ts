@@ -28,10 +28,23 @@ describe("the browser keeps its Zumda | Business sign-in", () => {
     it("saves, loads until it expires, and clears", () => {
         storage()
         saveSession(SESSION)
-        expect(loadSession(Date.parse("2026-10-03T00:00:00Z"))).toEqual(SESSION)
-        expect(loadSession(Date.parse("2026-11-03T00:00:00Z"))).toBeNull()
+        expect(loadSession("business", Date.parse("2026-10-03T00:00:00Z"))).toEqual(SESSION)
+        expect(loadSession("business", Date.parse("2026-11-03T00:00:00Z"))).toBeNull()
         clearSession()
-        expect(loadSession(Date.parse("2026-10-03T00:00:00Z"))).toBeNull()
+        expect(loadSession("business", Date.parse("2026-10-03T00:00:00Z"))).toBeNull()
+    })
+
+    it("«Platforma» keeps its own sign-in, apart from Zumda | Business", () => {
+        const items = storage()
+        const at = Date.parse("2026-10-03T00:00:00Z")
+        saveSession(SESSION, "admin")
+        expect(loadSession("admin", at)).toEqual(SESSION)
+        expect(loadSession("business", at)).toBeNull()
+        expect([...items.keys()]).toEqual(["zumda.platform.session"])
+        clearSession("business")
+        expect(loadSession("admin", at)).toEqual(SESSION)
+        clearSession("admin")
+        expect(loadSession("admin", at)).toBeNull()
     })
 
     it("without storage (private mode) there is simply no saved sign-in", () => {

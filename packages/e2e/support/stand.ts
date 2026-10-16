@@ -1,5 +1,12 @@
 /** Test data and direct API access for the stand. */
-import { WORKER_URL, businessBot, courierBot, platformBot, shopBySlug } from "../stand/config.js"
+import {
+    WORKER_URL,
+    adminBot,
+    businessBot,
+    courierBot,
+    platformBot,
+    shopBySlug,
+} from "../stand/config.js"
 import { seed } from "../stand/seed.js"
 
 import { pngImage } from "./images.js"
@@ -72,6 +79,8 @@ export interface ApiOptions {
     courierBot?: boolean
     /** Inside the app opened from Zumda Business («Mening bizneslarim», an owner's shop). */
     businessBot?: boolean
+    /** Inside «Platforma», opened from Zumda | Platforma (no shop). */
+    adminBot?: boolean
     method?: string
     json?: unknown
     /** A PNG body instead of JSON (the transfer screenshot). */
@@ -85,6 +94,9 @@ function signerToken(options: ApiOptions, shop: DevShop | null): string {
     }
     if (options.businessBot) {
         return businessBot().token
+    }
+    if (options.adminBot) {
+        return adminBot().token
     }
     return shop?.bot.token ?? platformBot().token
 }
@@ -109,6 +121,8 @@ export async function apiAs(
         headers["X-Bot"] = "courier"
     } else if (options.businessBot) {
         headers["X-Bot"] = "business"
+    } else if (options.adminBot) {
+        headers["X-Bot"] = "admin"
     }
     if (options.shop && !options.courierBot) {
         headers["X-Shop"] = options.shop

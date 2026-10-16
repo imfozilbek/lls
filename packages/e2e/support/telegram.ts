@@ -7,6 +7,7 @@ import { expect } from "@playwright/test"
 import {
     FAKE_TELEGRAM_URL,
     WORKER_URL,
+    adminBot,
     businessBot,
     courierBot,
     newBotUsername,
@@ -229,9 +230,14 @@ export function platformChat(): Chat {
     return chat("/tg/platform", platformBot().secret)
 }
 
-/** The Zumda Business bot: applications, approvals, admins' commands. */
+/** The Zumda Business bot: owners, applications, the old approval cards. */
 export function businessChat(): Chat {
     return chat("/tg/business", businessBot().secret)
+}
+
+/** Zumda | Platforma: the admins' bot, its approval cards and their buttons. */
+export function adminChat(): Chat {
+    return chat("/tg/admin", adminBot().secret)
 }
 
 /** The Zumda courier bot: invites, the phone, order cards and their buttons. */

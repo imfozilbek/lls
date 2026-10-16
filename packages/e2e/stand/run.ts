@@ -18,6 +18,7 @@ import {
     WORKER_LOG,
     WORKER_PORT,
     WORKER_URL,
+    adminBot,
 } from "./config.js"
 import { startFakeTelegram } from "./fake-telegram.js"
 import { buildCore, loadMap, seed } from "./seed.js"
@@ -107,8 +108,10 @@ async function main(): Promise<void> {
         WORKER_DIR,
         WORKER_LOG,
     )
-    // The Zumda Shop QR names the fake Telegram's Zumda bot.
+    // The Zumda Shop QR names the fake Telegram's Zumda bot; an old «Platforma» button of
+    // Zumda | Business names the stand's Zumda | Platforma.
     process.env.VITE_SHOP_BOT = "zumda_dev_bot"
+    process.env.VITE_ADMIN_BOT = adminBot().username
     start("bunx", ["vite", "--port", String(APP_PORT), "--strictPort"], APP_DIR)
     await waitFor(`${WORKER_URL}/health`)
     await waitFor(APP_URL)

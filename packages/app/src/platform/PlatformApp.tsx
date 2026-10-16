@@ -1,7 +1,6 @@
 import { useState } from "react"
 
 import { useT } from "../i18n/index.js"
-import { useBackButton } from "../lib/main-button.js"
 import { ShieldIcon } from "../ui/icons.js"
 import { PoweredBy, Segmented } from "../ui/primitives.js"
 import { Settle } from "../ui/settle.js"
@@ -22,18 +21,19 @@ function firstTab(target: AdminTarget | null): PlatformTab {
 /**
  * «Platforma»: what platform admins once did with bot commands. Applications, live and turned-off
  * shops (showcase deal, the bot, on and off), the districts of the delivery network, and
- * «Qo'llanma», each role's guide sent to everyone once.
+ * «Qo'llanma», each role's guide sent to everyone once. The first screen of Zumda | Platforma, so
+ * no «back» of its own; in a browser it signs out.
  * A bot message may open it on one of them (`target`). Its own chunk: owners never load it.
  */
 export function PlatformApp({
     target,
-    onExit,
+    onSignOut,
 }: {
     target: AdminTarget | null
-    onExit(): void
+    /** In a browser (platform.zumda.shop): sign out of this computer. */
+    onSignOut?: () => void
 }): React.JSX.Element {
-    const t = useT().platform
-    useBackButton(onExit)
+    const { platform: t, web } = useT()
     const [tab, setTab] = useState<PlatformTab>(firstTab(target))
     const focusId = target !== null && typeof target === "object" ? target.shopId : null
     // A shop from a message may already be live or off: «Arizalar» hands it to «Bizneslar».
@@ -77,6 +77,15 @@ export function PlatformApp({
                 {tab === "districts" ? <DistrictsTab /> : null}
                 {tab === "guides" ? <GuidesTab /> : null}
             </Settle>
+            {onSignOut ? (
+                <button
+                    type="button"
+                    onClick={onSignOut}
+                    className="tap mx-auto mt-2 block rounded-control px-3 py-2 text-sm font-semibold text-tg-hint focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                >
+                    {web.signOut}
+                </button>
+            ) : null}
             <PoweredBy />
             <BottomSpacer />
         </main>

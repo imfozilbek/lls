@@ -76,6 +76,7 @@ export type OwnerDelivery = "shop" | "business" | "none"
 let currentShop: string | null = null
 let currentVia: ShopVia | null = null
 let courierBot = false
+let adminBot = false
 /** Zumda | Business in a browser: the session from the Telegram Login Widget. */
 let webSession: string | null = null
 
@@ -97,7 +98,8 @@ export function onWebSessionExpired(handler: (() => void) | null): void {
  */
 /** A cache key of this shop and this bot: the same list of another shop is another key. */
 export function scopedKey(key: string): string {
-    const who = courierBot ? "courier" : `${currentShop ?? "-"}:${currentVia ?? "own"}`
+    const bot = courierBot ? "courier" : adminBot ? "admin" : null
+    const who = bot ?? `${currentShop ?? "-"}:${currentVia ?? "own"}`
     return `${who}|${key}`
 }
 
@@ -110,6 +112,7 @@ export function setShop(slug: string | null, options: { via?: ShopVia } = {}): v
     currentShop = slug
     currentVia = options.via ?? null
     courierBot = false
+    adminBot = false
 }
 
 /** Opened from the Zumda courier bot: no shop; the courier bot's token signed the request. */
@@ -117,6 +120,15 @@ export function setCourierBot(): void {
     currentShop = null
     currentVia = null
     courierBot = true
+    adminBot = false
+}
+
+/** «Platforma», opened from Zumda | Platforma: no shop; that bot's token signed the request. */
+export function setAdminBot(): void {
+    currentShop = null
+    currentVia = null
+    courierBot = false
+    adminBot = true
 }
 
 function authHeaders(): Headers {
@@ -126,6 +138,8 @@ function authHeaders(): Headers {
     }
     if (courierBot) {
         headers.set("X-Bot", "courier")
+    } else if (adminBot) {
+        headers.set("X-Bot", "admin")
     } else if (currentVia === "business") {
         headers.set("X-Bot", "business")
     }
@@ -268,11 +282,19 @@ export interface ProductInput {
     options?: ProductOptionsProps | null
 }
 
-/** A browser session of Zumda | Business. */
+/** A browser session of Zumda | Business or of «Platforma». */
 export interface WebSession {
     token: string
     expiresAt: string
     user: { id: number; firstName: string }
+}
+
+/** Whose Telegram Login a browser signs in with: Zumda | Business or Zumda | Platforma. */
+export type WebBot = "business" | "admin"
+
+const WEB_LOGIN: Record<WebBot, string> = {
+    business: "/api/business",
+    admin: "/api/admin-web",
 }
 
 /** Step «Bot»: `preparedId` for `WebApp.requestChat`, `link` for older Telegram apps. */
@@ -472,18 +494,20 @@ export const api = {
         },
     },
 
-    business: {
+    /**
+     * A Zumda bot's app in a browser: Zumda | Business (business.zumda.shop) or Zumda | Platforma
+     * (platform.zumda.shop), each with its own Telegram Login.
+     */
+    web: {
         /** What Telegram's login window needs: the bot's Client ID and our nonce. */
-        login: (): Promise<{ clientId: number; nonce: string }> =>
-            request("GET", "/api/business/login"),
-        /** Telegram Login's `id_token` in, a session out (business.zumda.shop). */
-        signIn: (idToken: string): Promise<WebSession> =>
-            request("POST", "/api/business/session", { idToken }),
+        login: (bot: WebBot): Promise<{ clientId: number; nonce: string }> =>
+            request("GET", `${WEB_LOGIN[bot]}/login`),
+        /** Telegram Login's `id_token` in, a session out. */
+        signIn: (bot: WebBot, idToken: string): Promise<WebSession> =>
+            request("POST", `${WEB_LOGIN[bot]}/session`, { idToken }),
     },
 
     platform: {
-        /** Who opened Zumda | Business: a platform admin also gets «Platforma». */
-        me: (): Promise<{ admin: boolean }> => request("GET", "/api/platform/me"),
         myShops: (): Promise<ShopOwnerDTO[]> => request("GET", "/api/platform/shops"),
         register: (body: RegisterShopBody): Promise<ShopOwnerDTO> =>
             request("POST", "/api/platform/shops", body),
@@ -518,6 +542,8 @@ export interface DistrictInput {
 
 /** «Platforma»: platform admins only (the Worker checks it on every call). */
 export const adminApi = {
+    /** The door: 403 `ADMIN_ONLY` for someone who is not a platform admin. */
+    me: (): Promise<{ admin: true }> => request("GET", "/api/admin/me"),
     shops: async (status: BusinessStatus): Promise<PlatformShopDTO[]> =>
         (await request<Page<PlatformShopDTO>>("GET", `/api/admin/shops?status=${status}`)).data,
     /** `reason`: why an application is rejected; the owner reads it. */

@@ -156,18 +156,17 @@ test("orders through the shop's own bot carry no commission", async () => {
 test("the admin adds and removes a shop in «Platforma»; others cannot", async ({ page }) => {
     const since = await lastSeq()
     const live = (await (
-        await apiAs(PEOPLE.admin, "/admin/shops?status=active", { businessBot: true })
+        await apiAs(PEOPLE.admin, "/admin/shops?status=active", { adminBot: true })
     ).json()) as { data: { id: string; slug: string }[] }
     const water = live.data.find((shop) => shop.slug === WATER)?.id ?? ""
     const forged = await apiAs(PEOPLE.waterOwner, `/admin/shops/${water}/marketplace`, {
-        businessBot: true,
+        adminBot: true,
         method: "PUT",
         json: { percent: 0 },
     })
     expect(forged.status).toBe(403)
 
-    await openApp(page, { user: PEOPLE.admin, businessBot: true })
-    await page.getByRole("button", { name: /Platforma/ }).click()
+    await openApp(page, { user: PEOPLE.admin, adminBot: true })
     await page.getByRole("tab", { name: "Bizneslar" }).click()
     const card = page.getByRole("listitem").filter({ hasText: "Toza Suv" })
     // On is saved at once, with the usual 5%; the percent is changed after.

@@ -1,11 +1,14 @@
 /**
- * A new owner connects a shop through the Zumda bot; the platform admin approves or rejects;
- * a failed bot connection is retried from «Platforma»; failures reach the admin as alerts.
+ * A new owner connects a shop through the Zumda bot; the platform admin approves or rejects
+ * from Zumda | Platforma, their own bot; a failed bot connection is retried from «Platforma»;
+ * failures reach the admin as alerts.
  */
 import { expect, test } from "@playwright/test"
 
+import { adminBot, businessBot } from "../stand/config.js"
 import { FOOD, PEOPLE, apiAs, placeOrder, resetStand, payAndAccept } from "../support/stand.js"
 import {
+    adminChat,
     callsOf,
     chatWithSecret,
     controlTelegram,
@@ -34,6 +37,7 @@ interface MyShop {
 
 const SECOND_OWNER = { id: 4005, first_name: "Dilnoza", language_code: "ru" }
 const THIRD_OWNER = { id: 4006, first_name: "Jamshid", language_code: "ru" }
+const FOURTH_OWNER = { id: 4007, first_name: "Kamola", language_code: "uz" }
 
 async function myShops(owner: TgUser = PEOPLE.newOwner): Promise<MyShop[]> {
     const response = await apiAs(owner, "/platform/shops", { businessBot: true })
@@ -108,6 +112,7 @@ test("the application reaches the admin; the pending shop opens only for its own
     const photo = await waitForCall("setMyProfilePhoto", NEW_BOT.token, since)
     expect(photo.body["avatar"]).toMatchObject({ contentType: "image/jpeg" })
     const card = await waitForMessage(PEOPLE.admin.id, "Yangi biznes", since)
+    expect(card.token).toBe(adminBot().token)
     expect(card.text).toContain("Yangi Non")
     expect(card.buttons.map((b) => b.text)).toEqual([
         "✅ Tasdiqlash",
@@ -152,11 +157,11 @@ test("a stranger cannot approve; the admin approves: webhook, menu button, owner
 }) => {
     const card = await waitForMessage(PEOPLE.admin.id, "Yangi biznes")
     const approve = card.buttons.find((b) => b.text === "✅ Tasdiqlash")?.callback_data ?? ""
-    await businessChat().press(PEOPLE.stranger, approve)
+    await adminChat().press(PEOPLE.stranger, approve)
     expect((await myShops())[0]?.status).toBe("pending")
 
     const since = await lastSeq()
-    await businessChat().press(PEOPLE.admin, approve)
+    await adminChat().press(PEOPLE.admin, approve)
     await waitForMessage(PEOPLE.newOwner.id, "ishga tushdi", since)
     const [hook] = await callsOf("setWebhook", since)
     expect(hook?.token).toBe(NEW_BOT.token)
@@ -188,21 +193,22 @@ test("a failed connection warns the admin; «Botni qayta ulash» in «Platforma�
     await openAndApply(SECOND_OWNER, SECOND_BOT.token, "Ikkinchi Do'kon")
     const card = await waitForMessage(PEOPLE.admin.id, "Ikkinchi", since)
     await controlTelegram({ failWebhooks: true })
-    await businessChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
+    await adminChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
     const warning = await waitForMessage(PEOPLE.admin.id, "bot ulanmadi", since)
+    expect(warning.token).toBe(adminBot().token)
     const query = appQueryOf(warning.buttons)
     const shopId = /admin=shop_([\w-]+)/.exec(query)?.[1] ?? ""
     expect(shopId).not.toBe("")
 
     await controlTelegram({ failWebhooks: false })
     const stranger = await apiAs(PEOPLE.stranger, `/admin/shops/${shopId}/reconnect`, {
-        businessBot: true,
+        adminBot: true,
         method: "POST",
     })
     expect(stranger.status).toBe(403)
 
     const before = await lastSeq()
-    await openApp(page, { user: PEOPLE.admin, businessBot: true, query })
+    await openApp(page, { user: PEOPLE.admin, adminBot: true, query })
     const shop = page.getByRole("listitem").filter({ hasText: "Ikkinchi Do'kon" })
     await shop.getByText("Boshqa amallar").click()
     await shop.getByRole("button", { name: "Botni qayta ulash" }).click()
@@ -217,7 +223,7 @@ test("a rejected application: customers never see it; its owner fixes it and app
     const third = "777100202:NEW-e2e-onboarding-token-uvwxyzabcd" // secret-scan: fake
     await openAndApply(THIRD_OWNER, third, "Uchinchi")
     const card = await waitForMessage(PEOPLE.admin.id, "Uchinchi", since)
-    await businessChat().press(PEOPLE.admin, card.buttons[1]?.callback_data ?? "")
+    await adminChat().press(PEOPLE.admin, card.buttons[1]?.callback_data ?? "")
     await waitForMessage(THIRD_OWNER.id, "arizasi rad etildi", since)
     const rejected = (await myShops(THIRD_OWNER)).find((s) => s.name === "Uchinchi")
     expect(rejected?.status).toBe("disabled")
@@ -243,11 +249,32 @@ test("a rejected application: customers never see it; its owner fixes it and app
     expect(card2.buttons[0]?.text).toBe("✅ Tasdiqlash")
 })
 
+test("an admin who never pressed Start in Zumda | Platforma gets the card from Zumda | Business", async () => {
+    await controlTelegram({ notStarted: [`${adminBot().username}:${PEOPLE.admin.id}`] })
+    const since = await lastSeq()
+    const fourth = "777100203:NEW-e2e-onboarding-token-efghijklmn" // secret-scan: fake
+    await openAndApply(FOURTH_OWNER, fourth, "To'rtinchi")
+    const card = await waitForMessage(PEOPLE.admin.id, "To'rtinchi", since)
+    expect(card.token).toBe(businessBot().token)
+    expect(card.text).toContain(`@${adminBot().username} sizga yoza olmadi`)
+    // «Tasdiqlash» still works from here; the app is reached through Zumda | Platforma.
+    expect(card.buttons.map((b) => b.callback_data ?? b.url)).toEqual([
+        expect.stringMatching(/^r:.+:approve$/),
+        expect.stringMatching(/^r:.+:reject$/),
+        `https://t.me/${adminBot().username}`,
+    ])
+    expect(card.buttons.some((b) => b.web_app !== undefined)).toBe(false)
+    await businessChat().press(PEOPLE.admin, card.buttons[1]?.callback_data ?? "")
+    await waitForMessage(FOURTH_OWNER.id, "arizasi rad etildi", since)
+    await controlTelegram({ notStarted: [] })
+})
+
 test("admins hear about failures: a notification that did not go out", async () => {
     await controlTelegram({ broken: [PEOPLE.foodOwner.id] })
     const since = await lastSeq()
     await placeOrder(PEOPLE.customer, FOOD, [{ productId: "dev-food-p1", quantity: 1 }])
     const alert = await waitForMessage(PEOPLE.admin.id, "xabar yuborilmadi", since)
+    expect(alert.token).toBe(adminBot().token)
     expect(alert.text).toContain("Internal Server Error")
     expect(alert.text).not.toContain("DEV-local-only-token")
     await controlTelegram({ broken: [] })

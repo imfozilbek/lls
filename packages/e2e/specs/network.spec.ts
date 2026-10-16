@@ -216,12 +216,12 @@ test("nobody took it in 10 minutes: the shop and the admin hear it once", async 
         `UPDATE orders SET network_requested_at = network_requested_at - 11 * 60000 WHERE id = '${order.id}'`,
     )
     // «Tumanlar» in «Platforma» also checks for late network orders (there is no cron).
-    expect((await apiAs(PEOPLE.admin, "/admin/districts", { businessBot: true })).status).toBe(200)
+    expect((await apiAs(PEOPLE.admin, "/admin/districts", { adminBot: true })).status).toBe(200)
     const late = await waitForMessage(PEOPLE.admin.id, `#${order.number} buyurtma 10 daqiqa`, since)
     await waitForMessage(PEOPLE.foodOwner.id, `#${order.number} buyurtma 10 daqiqadan beri`, since)
 
     const again = await lastSeq()
-    await openApp(page, { user: PEOPLE.admin, businessBot: true, query: appQueryOf(late.buttons) })
+    await openApp(page, { user: PEOPLE.admin, adminBot: true, query: appQueryOf(late.buttons) })
     const district = page.getByRole("listitem").filter({ hasText: "Yakkabog'" })
     await expect(district).toContainText("Kutmoqda")
     await expect(district).toContainText("Do'konlar")

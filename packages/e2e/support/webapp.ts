@@ -7,9 +7,23 @@ import { createHmac } from "node:crypto"
 
 import { expect } from "@playwright/test"
 
-import { APP_URL, businessBot, courierBot, platformBot, shopBySlug } from "../stand/config.js"
+import {
+    APP_URL,
+    adminBot,
+    businessBot,
+    courierBot,
+    platformBot,
+    shopBySlug,
+} from "../stand/config.js"
 
-import { businessChat, courierChat, managedBotUpdate, platformChat, shopChat } from "./telegram.js"
+import {
+    adminChat,
+    businessChat,
+    courierChat,
+    managedBotUpdate,
+    platformChat,
+    shopChat,
+} from "./telegram.js"
 
 import type { Chat, TgUser } from "./telegram.js"
 import type { Page } from "@playwright/test"
@@ -71,6 +85,8 @@ export interface OpenOptions {
     courierBot?: boolean
     /** Opened from the Zumda Business bot (`?mode=business`, «Mening bizneslarim»). */
     businessBot?: boolean
+    /** Opened from Zumda | Platforma (`?mode=admin`, «Platforma»). */
+    adminBot?: boolean
     /** Query string after `/`, e.g. `?mode=market`. Default: `?shop=<shop>`. */
     query?: string
     /** Sign with this token instead (forged identities, wrong bots). */
@@ -399,6 +415,9 @@ function openedFrom(options: OpenOptions): { token: string; chat: Chat; query: s
     if (options.businessBot) {
         return { token: businessBot().token, chat: businessChat(), query: "?mode=business" }
     }
+    if (options.adminBot) {
+        return { token: adminBot().token, chat: adminChat(), query: "?mode=admin" }
+    }
     if (options.shop) {
         const shop = shopBySlug(options.shop)
         return { token: shop.bot.token, chat: shopChat(shop.slug), query: `?shop=${shop.slug}` }
@@ -504,6 +523,15 @@ export async function openApp(page: Page, options: OpenOptions): Promise<OpenedA
                 }
             }),
     }
+}
+
+/** Whether Telegram's BackButton is shown now. */
+export function backButtonVisible(page: Page): Promise<boolean> {
+    return page.evaluate(
+        () =>
+            (window as unknown as { __tg: { backButton: { visible: boolean } } }).__tg.backButton
+                .visible,
+    )
 }
 
 /** The in-app bottom button (Telegram Web and old clients draw no native one). */
