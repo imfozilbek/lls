@@ -6,14 +6,16 @@ import type { Services } from "./services.js"
 import type { Business, NetworkClaim, NetworkRequest, OrderDTO } from "@zumda/core"
 
 /**
- * After the owner's step: an order the shop just accepted goes to the district network when no
- * courier of its own is free. Returns the order as it is now, and the request if one was made.
+ * After the owner's step: an order the shop just accepted (and so started, in the same tap)
+ * goes to the district network when no courier of its own is free. `accepted`: the step was
+ * «Qabul qilish» or «Pul keldi». Returns the order as it is now, and the request if one was made.
  */
 export async function networkAfterStep(
     services: Services,
     order: OrderDTO,
+    accepted: boolean,
 ): Promise<{ order: OrderDTO; request: NetworkRequest | null }> {
-    if (order.status !== OrderStatus.ACCEPTED) {
+    if (!accepted) {
         return { order, request: null }
     }
     const request = await services.useCases.autoRequestNetwork.execute({ orderId: order.id })
@@ -37,7 +39,7 @@ export async function notifyOwnerStep(
 }
 
 /**
- * After «Деньги пришли, принять»: a new order was accepted in the same tap and reaches everyone
+ * After «Pul keldi»: a new order was accepted and started in the same tap and reaches everyone
  * like any owner step. A transfer for a cancelled order only changes the cards (owed back).
  */
 export async function notifyPaymentConfirmed(
@@ -46,7 +48,7 @@ export async function notifyPaymentConfirmed(
     order: OrderDTO,
     request: NetworkRequest | null,
 ): Promise<void> {
-    if (order.status === OrderStatus.ACCEPTED) {
+    if (order.status !== OrderStatus.CANCELLED) {
         await notifyOwnerStep(services, business, order, request)
         return
     }

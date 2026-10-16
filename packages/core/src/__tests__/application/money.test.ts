@@ -132,7 +132,6 @@ describe("money: transfer before the shop starts, report", () => {
             ...ids(order),
             courierId,
         })
-        await advance.execute({ ...ids(order), to: OrderStatus.PREPARING })
         await advance.execute({ ...ids(order), to: OrderStatus.READY })
         const courier = ids(order, COURIER_TG)
         await advance.execute({ ...courier, to: OrderStatus.PICKED_UP })
@@ -213,8 +212,9 @@ describe("money: transfer before the shop starts, report", () => {
         expect(today.awaiting.map((o) => o.id)).toEqual([order.id])
 
         await expect(confirm(order, STRANGER_TG)).rejects.toThrow(ForbiddenError)
+        // Paid, accepted and started in the one tap.
         const accepted = await confirm(order)
-        expect(accepted.status).toBe(OrderStatus.ACCEPTED)
+        expect(accepted.status).toBe(OrderStatus.PREPARING)
         expect(accepted.payment).toMatchObject({ status: PaymentStatus.PAID })
         expect(accepted.payment.method).toBe(PaymentMethod.CARD_TRANSFER)
         today = await report()
@@ -286,7 +286,7 @@ describe("money: transfer before the shop starts, report", () => {
 
     it("the owner may confirm a transfer the customer did not announce", async () => {
         const accepted = await confirm(await place())
-        expect(accepted).toMatchObject({ status: OrderStatus.ACCEPTED })
+        expect(accepted).toMatchObject({ status: OrderStatus.PREPARING })
     })
 
     it("delivered: one «Доставил», the courier carries no money; the report adds up", async () => {

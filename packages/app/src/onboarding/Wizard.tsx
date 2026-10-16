@@ -9,7 +9,7 @@ import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-butto
 import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { BagIcon, CheckIcon, DishIcon, PinIcon, ShopFrontIcon, ToolIcon } from "../ui/icons.js"
-import { PlacePick } from "../ui/maps.js"
+import { PlacePick } from "../ui/place-pick.js"
 import { Button, Field, TextInput } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
@@ -130,7 +130,7 @@ function ShopStep({
                                     patch({ type })
                                 }}
                                 className={cn(
-                                    "tap flex h-14 items-center gap-3 rounded-control px-3 text-left font-semibold transition-colors duration-200",
+                                    "tap flex min-h-14 items-center gap-3 rounded-control px-3 py-2 text-left transition-colors duration-200",
                                     picked ? "bg-brand text-brand-ink" : "bg-tg-secondary",
                                 )}
                             >
@@ -142,7 +142,17 @@ function ShopStep({
                                 >
                                     {KIND_ICONS[type]}
                                 </span>
-                                <span className="flex-1">{t.types[type]}</span>
+                                <span className="flex-1">
+                                    <span className="block font-semibold">{t.types[type]}</span>
+                                    <span
+                                        className={cn(
+                                            "block text-sm",
+                                            picked ? "text-brand-ink" : "text-tg-subtitle",
+                                        )}
+                                    >
+                                        {t.typeExamples[type]}
+                                    </span>
+                                </span>
                                 {picked ? (
                                     <CheckIcon
                                         size={20}
@@ -310,6 +320,25 @@ function useWizardBack(input: {
     )
 }
 
+/** How long «Bot yaratildi» stays before the location step opens by itself. */
+const BOT_PAUSE_MS = 1_200
+
+/**
+ * The bot is made: the owner sees «Bot yaratildi» for a moment, then the last step opens by
+ * itself (unless they already went on, or back).
+ */
+function useBotThenOn(
+    name: string,
+    patch: (change: Partial<Draft>) => void,
+    setStep: React.Dispatch<React.SetStateAction<Step>>,
+): ManagedBotFlow {
+    return useManagedBot(name, (managedBot) => {
+        patch({ managedBot })
+        haptic.success()
+        window.setTimeout(() => setStep((current) => (current === 2 ? 3 : current)), BOT_PAUSE_MS)
+    })
+}
+
 /**
  * Three short steps: the business, its bot, where it is. The rest (the card, the fee, hours,
  * products) waits in «Ishga tayyor», right in the owner section the wizard opens.
@@ -327,7 +356,7 @@ export function Wizard({
     const [draft, setDraft] = useState<Draft>(EMPTY)
     const [sending, setSending] = useState(false)
     const patch = (change: Partial<Draft>): void => setDraft((d) => ({ ...d, ...change }))
-    const flow = useManagedBot(draft.name, (managedBot) => patch({ managedBot }))
+    const flow = useBotThenOn(draft.name, patch, setStep)
 
     const next = async (): Promise<void> => {
         if (step < 3) {

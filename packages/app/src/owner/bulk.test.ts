@@ -36,6 +36,19 @@ describe("«Ro'yxat bilan qo'shish»", () => {
         expect(rows[3]?.step).toBe(100)
     })
 
+    it("reads «35 ming» and «2,5 ming» as the market says them", () => {
+        const rows = parseList(
+            "Osh 35 ming\nNon 2,5 ming\nChoy 3ming so'm",
+            BusinessType.FOOD,
+            find,
+        )
+        expect(rows.map((r) => [r.name, r.price, r.error])).toEqual([
+            ["Osh", 35_000, undefined],
+            ["Non", 2_500, undefined],
+            ["Choy", 3_000, undefined],
+        ])
+    })
+
     it("marks a line without a price, a wrong price and a twin; only good rows go", () => {
         const rows = parseList("Choy\nNon 0\nSomsa 8000\nsomsa 9000", BusinessType.FOOD, find)
         expect(rows.map((r) => r.error)).toEqual(["noPrice", "badPrice", undefined, "twin"])

@@ -130,6 +130,7 @@ export class Notifier {
                 await this.services.orders.setMessageId(order.id, "owner", messageId)
             },
             (note) => this.noteToOwner(business, note, text),
+            order.id,
         )
     }
 
@@ -235,6 +236,7 @@ export class Notifier {
                 }
             },
             (note) => this.noteToOwner(business, note, caption),
+            order.id,
         )
     }
 
@@ -431,7 +433,7 @@ export class Notifier {
                     {
                         keyboard: withAppButton(
                             networkOfferKeyboard(orderId, textsFor(language)),
-                            this.courierAppButton(textsFor(language)),
+                            this.courierAppButton(textsFor(language), undefined, orderId),
                         ),
                     },
                 )
@@ -898,6 +900,7 @@ export class Notifier {
                 }
             },
             (note) => this.noteToOwner(business, note, text),
+            order.id,
         )
     }
 
@@ -928,7 +931,7 @@ export class Notifier {
             }),
             keyboard: withAppButton(
                 courierKeyboard(order, reader),
-                this.courierAppButton(textsFor(reader.language)),
+                this.courierAppButton(textsFor(reader.language), undefined, order.id),
             ),
         })
         if (sent !== null) {
@@ -939,8 +942,9 @@ export class Notifier {
                 n: order.number,
                 shop: escapeHtml(business.name),
             })
+            const t = textsFor(reader.language)
             await this.services.telegram.sendMessage(token, chatId, ping, {
-                keyboard: { inline_keyboard: [[this.courierAppButton(textsFor(reader.language))]] },
+                keyboard: { inline_keyboard: [[this.courierAppButton(t, undefined, order.id)]] },
             })
         }
     }
@@ -1073,6 +1077,8 @@ export class Notifier {
         business: Business,
         viaShopBot: () => Promise<void>,
         viaBusinessBot: (note: OwnerNote) => Promise<unknown>,
+        /** The message is about this order: the app button opens it. */
+        orderId?: string,
     ): Promise<OwnerDelivery> {
         const now = this.services.clock.now()
         try {
@@ -1085,7 +1091,7 @@ export class Notifier {
                 await this.services.businesses.saveOwnerChat(business)
             }
             try {
-                await viaBusinessBot(await this.ownerNote(business))
+                await viaBusinessBot(await this.ownerNote(business, orderId))
                 return "business"
             } catch (fallback) {
                 if (isRecipientProblem(fallback)) {
@@ -1100,7 +1106,7 @@ export class Notifier {
         return "shop"
     }
 
-    private async ownerNote(business: Business): Promise<OwnerNote> {
+    private async ownerNote(business: Business, orderId?: string): Promise<OwnerNote> {
         const t = textsFor(await this.languageOf(business.ownerTelegramId.value), business.type)
         const bot = `@${business.bot.username}`
         return {
@@ -1114,9 +1120,13 @@ export class Notifier {
                         },
                     ],
                     [
+                        // Straight to this business (and the order): not the list of them.
                         appButton(
-                            t.openBusinesses,
-                            businessAppUrl(this.services.env.BUSINESS_APP_ORIGIN),
+                            orderId ? t.openOrder : t.openBusinesses,
+                            businessAppUrl(this.services.env.BUSINESS_APP_ORIGIN, {
+                                slug: business.slug.value,
+                                orderId,
+                            }),
                         ),
                     ],
                 ],
@@ -1133,8 +1143,8 @@ export class Notifier {
         )
     }
 
-    private courierAppButton(t: BotTexts, label = t.openInApp): InlineButton {
-        return appButton(label, courierAppUrl(this.services.env.COURIER_APP_ORIGIN))
+    private courierAppButton(t: BotTexts, label = t.openInApp, orderId?: string): InlineButton {
+        return appButton(label, courierAppUrl(this.services.env.COURIER_APP_ORIGIN, orderId))
     }
 
     private businessesKeyboard(t: BotTexts): InlineKeyboard {

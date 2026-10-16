@@ -7,7 +7,7 @@ import { cn } from "../lib/cn.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
-import { PayoutCardFields, cardIsUnknown, payoutCardIsValid } from "../ui/card-fields.js"
+import { PayoutCardFields, cardGap, cardIsUnknown } from "../ui/card-fields.js"
 import { CardIcon, CheckIcon, PlusIcon, TrashIcon } from "../ui/icons.js"
 import { Button, Section, Skeleton } from "../ui/primitives.js"
 
@@ -39,8 +39,14 @@ function AddCard({
     const s = t.owner.settings
     const [draft, setDraft] = useState({ number: "", holder: "" })
     const [saving, setSaving] = useState(false)
-    const valid = payoutCardIsValid(draft.number, draft.holder)
+    const gap = cardGap(draft.number, draft.holder)
     const save = async (): Promise<void> => {
+        // Never a grey button without a word: the tap says what is missing.
+        if (gap) {
+            haptic.error()
+            toast(gap === "number" ? s.cardNeedNumber : s.cardNeedHolder, "error")
+            return
+        }
         // Any card is taken; one whose first digits Zumda does not know is asked about once.
         if (
             cardIsUnknown(draft.number) &&
@@ -84,12 +90,7 @@ function AddCard({
                 onChange={(change): void => setDraft((d) => ({ ...d, ...change }))}
             />
             <div className="flex gap-2">
-                <Button
-                    className="grow"
-                    loading={saving}
-                    disabled={!valid}
-                    onClick={(): void => void save()}
-                >
+                <Button className="grow" loading={saving} onClick={(): void => void save()}>
                     {s.saveCard}
                 </Button>
                 <Button variant="surface" onClick={(): void => onOpen(false)}>

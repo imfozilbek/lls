@@ -19,6 +19,13 @@ function failToast(t: ReturnType<typeof useT>, caught: unknown): void {
     toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
 }
 
+/** Telegram's «Share» window with the invite and a word about the shop. */
+function shareInvite(link: string, text: string): void {
+    openTelegramLink(
+        `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(text)}`,
+    )
+}
+
 /** A fresh one-time link: sent straight to a chat, or copied. */
 function InviteCard({
     invite,
@@ -31,10 +38,8 @@ function InviteCard({
     const s = t.owner.settings
     const [copied, setCopied] = useState(false)
     const share = (): void => {
-        const text = fill(s.inviteText, { shop: shopName })
-        const url = `https://t.me/share/url?url=${encodeURIComponent(invite.link)}&text=${encodeURIComponent(text)}`
         haptic.tap()
-        openTelegramLink(url)
+        shareInvite(invite.link, fill(s.inviteText, { shop: shopName }))
     }
     const copy = async (): Promise<void> => {
         try {
@@ -374,8 +379,11 @@ export function CouriersSection({ shopName }: { shopName: string }): React.JSX.E
     const create = async (): Promise<void> => {
         setBusy(true)
         try {
-            setInvite(await api.owner.inviteCourier())
+            const made = await api.owner.inviteCourier()
+            setInvite(made)
             haptic.success()
+            // The link is for someone: Telegram's «Share» opens at once, the card stays to copy.
+            shareInvite(made.link, fill(s.inviteText, { shop: shopName }))
         } catch (caught) {
             failToast(t, caught)
         } finally {

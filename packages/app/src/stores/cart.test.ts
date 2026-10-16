@@ -8,6 +8,7 @@ import {
     lineTotal,
     pickPrice,
     productOfKey,
+    removedNames,
     summarize,
     useCart,
 } from "./cart.js"
@@ -94,6 +95,22 @@ describe("cart store", () => {
         useCart.getState().load("worse")
         expect(useCart.getState().lines).toEqual({})
     })
+
+    it("orders the same cart with the same id, even after the app was closed", () => {
+        useCart.getState().add("p1")
+        const first = useCart.getState().checkoutId
+        // A lost answer, the app closed and opened again: the same cart, the same order.
+        useCart.getState().load("suv")
+        useCart.getState().load("osh")
+        expect(useCart.getState().checkoutId).toBe(first)
+        // Another cart is another order.
+        useCart.getState().add("p1")
+        expect(useCart.getState().checkoutId).not.toBe(first)
+        const second = useCart.getState().checkoutId
+        // Placed: the emptied cart starts the next order with a new id.
+        useCart.getState().clear()
+        expect(useCart.getState().checkoutId).not.toBe(second)
+    })
 })
 
 describe("refill (reorder)", () => {
@@ -157,18 +174,18 @@ describe("prune", () => {
         useCart.getState().load("osh")
     })
 
-    it("drops products that left the catalog and reports how many", () => {
+    it("drops products that left the catalog and says which", () => {
         useCart.getState().setQuantity("a", 2)
         useCart.getState().setQuantity("gone", 1)
-        expect(useCart.getState().prune([product("a", 1), product("b", 1)])).toBe(1)
+        expect(useCart.getState().prune([product("a", 1), product("b", 1)])).toEqual(["gone"])
         expect(useCart.getState().lines).toEqual({ a: 2 })
-        expect(useCart.getState().prune([product("a", 1)])).toBe(0)
+        expect(useCart.getState().prune([product("a", 1)])).toEqual([])
     })
 
     it("fits a line to a step the owner changed, never to zero", () => {
         const rice = { ...product("rice", 20_000), unit: "kg", step: 500 } as ProductDTO
         useCart.getState().setQuantity("rice", 750)
-        expect(useCart.getState().prune([rice])).toBe(0)
+        expect(useCart.getState().prune([rice])).toEqual([])
         expect(useCart.getState().lines).toEqual({ rice: 1000 })
         expect(fitQuantity(100, 500)).toBe(500)
         expect(fitQuantity(5_000_000, 500)).toBe(500 * MAX_STEPS)
@@ -177,8 +194,13 @@ describe("prune", () => {
     it("drops a pick whose variant the owner removed", () => {
         useCart.getState().setQuantity(lineKey("latte", { variantId: "m", addonIds: [] }), 1)
         useCart.getState().setQuantity(lineKey("latte", { variantId: "xl", addonIds: [] }), 1)
-        expect(useCart.getState().prune([latte()])).toBe(1)
+        expect(useCart.getState().prune([latte()])).toEqual(["latte"])
         expect(Object.keys(useCart.getState().lines)).toEqual(["latte~m~"])
+    })
+
+    it("names what left by the catalog the customer saw", () => {
+        expect(removedNames(["a", "gone"], [product("a", 1)])).toEqual(["«a»"])
+        expect(removedNames([], [product("a", 1)])).toEqual([])
     })
 })
 

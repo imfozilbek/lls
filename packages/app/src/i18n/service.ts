@@ -9,14 +9,21 @@ type Overrides<D> = {
 
 /** Words that differ for services: a list of services, "being done", "done". */
 export const SERVICE_UZ = (base: Dictionary): Overrides<Dictionary> => ({
-    shop: { ...base.shop, emptyTitle: "Xizmatlar hali yo'q" },
+    shop: {
+        ...base.shop,
+        emptyTitle: "Xizmatlar hali yo'q",
+        emptyText: "Do'kon tez orada xizmatlarni qo'shadi.",
+        search: "Xizmatlardan qidirish",
+    },
     cart: {
         ...base.cart,
         emptyText: "Kerakli xizmatni tanlang va qo'shing.",
         toMenu: "Xizmatlarga",
+        subtotal: "Xizmatlar",
     },
     order: {
         ...base.order,
+        itemsCount: "{n} xil xizmat",
         steps: { ...base.order.steps, preparing: "Bajarilmoqda" },
         hints: {
             ...base.order.hints,

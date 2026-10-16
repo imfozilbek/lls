@@ -27,7 +27,7 @@ import {
     shopChat,
     waitForMessage,
 } from "../support/telegram.js"
-import { bottomButton, openApp, openSettings } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, openSettings, toCart } from "../support/webapp.js"
 
 import type { RecordedFile } from "../stand/fake-telegram.js"
 import type { Page } from "@playwright/test"
@@ -87,9 +87,8 @@ test("checkout tells the sum; the order screen gives the card; «O'tkazdim» wit
     await shopChat(FOOD).shareContact(PEOPLE.customer, "+998901234567")
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
-    await bottomButton(page).click()
-    await bottomButton(page).click()
-    await page.getByRole("textbox", { name: "Manzil" }).fill("Mustaqillik 5")
+    await toCart(page)
+    await fillAddress(page, "Mustaqillik 5")
 
     // No choice to make: only a transfer to the shop's card, and the card waits for the order.
     await expect(page.getByRole("radio")).toHaveCount(0)
@@ -162,7 +161,7 @@ test("checkout tells the sum; the order screen gives the card; «O'tkazdim» wit
     await expect(confirm.getByRole("listitem")).toHaveCount(0)
     await confirm.getByRole("button", { name: /^Ha, 55\s000/ }).click()
     await expect(check).toBeHidden()
-    await waitForMessage(PEOPLE.customer.id, "To'lov keldi", accepted)
+    await waitForMessage(PEOPLE.customer.id, "To'lovingiz keldi", accepted)
     expect((await report()).awaiting).toEqual([])
 })
 
@@ -187,7 +186,8 @@ test("not paid, not started: «Принять» is refused; the order card asks 
     await expect(confirm.getByRole("button", { name: "Yo'q, pul kelmadi" })).toHaveCount(0)
     await confirm.getByRole("button", { name: /^Ha, 55\s000/ }).click()
     await expect(card).toContainText("To'langan")
-    await expect(card.getByRole("button", { name: "Tayyorlashni boshlash" })).toBeVisible()
+    // Accepted and started in the same tap: «Tayyor bo'ldi» is next.
+    await expect(card.getByRole("button", { name: "Tayyor bo'ldi" })).toBeVisible()
 })
 
 test("«Pul kelmadi»: the customer sends again; a screenshot seen before warns the owner", async ({
@@ -296,14 +296,12 @@ test("from the bot: «Pul keldi» asks first, then one «Доставил» for 
             const read = await apiAs(PEOPLE.customer, `/orders/${order.id}`, { shop: FOOD })
             return ((await read.json()) as { status: string }).status
         })
-        .toBe("accepted")
+        .toBe("preparing")
 
     expect(
         (await owner(`/owner/orders/${order.id}/courier`, { courierId: COURIER_ID }, "PUT")).status,
     ).toBe(200)
-    for (const status of ["preparing", "ready"]) {
-        expect((await owner(`/owner/orders/${order.id}`, { status })).status).toBe(200)
-    }
+    expect((await owner(`/owner/orders/${order.id}`, { status: "ready" })).status).toBe(200)
     const picked = await apiAs(PEOPLE.courier, `/courier/orders/${order.id}`, {
         courierBot: true,
         method: "PATCH",
@@ -509,7 +507,7 @@ test("hours per day: Monday off, Tuesday 9–18, then Monday's hours for every d
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
     await openSettings(page, "Ish vaqti")
-    const always = page.getByRole("switch", { name: "24/7 ochiq" })
+    const always = page.getByRole("switch", { name: "Kecha-kunduz ochiq" })
     if ((await always.getAttribute("aria-checked")) === "true") {
         await always.click()
     }

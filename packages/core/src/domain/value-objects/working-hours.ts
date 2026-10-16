@@ -25,6 +25,35 @@ function toMinutes(time: string): number {
     return Number(match[1]) * 60 + Number(match[2])
 }
 
+/** When a closed shop opens next: today later, tomorrow, or a weekday ahead. */
+export interface NextOpening {
+    /** 0 today, 1 tomorrow, up to 7 (the same weekday next week). */
+    inDays: number
+    weekday: Weekday
+    /** "HH:mm" */
+    time: string
+}
+
+/**
+ * The next opening after `date` within a week, for a shop closed at `date`: `null` for an empty
+ * week. Customers read it as «Ertaga 9:00 da ochiladi».
+ */
+export function nextOpening(
+    schedule: WeeklySchedule,
+    date: Date,
+    offsetMinutes: number = UZ_UTC_OFFSET_MINUTES,
+): NextOpening | null {
+    const { weekday, minutes } = toLocalTime(date, offsetMinutes)
+    for (let inDays = 0; inDays <= WEEKDAYS.length; inDays++) {
+        const day = WEEKDAYS[(weekday + inDays) % WEEKDAYS.length] as Weekday
+        const range = schedule[day]
+        if (range && (inDays > 0 || toMinutes(range.open) > minutes)) {
+            return { inDays, weekday: day, time: range.open }
+        }
+    }
+    return null
+}
+
 export class WorkingHours {
     private constructor(private readonly schedule: WeeklySchedule | null) {}
 

@@ -2,80 +2,53 @@ import { Feature, formatPhone } from "@zumda/core"
 import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
-import { ApiError, api, loadCatalog } from "../lib/api.js"
+import {
+    clearDraft,
+    loadAddress,
+    loadDraft,
+    saveAddress,
+    saveDraft,
+    saveShowcaseOrder,
+} from "../lib/address-book.js"
+import { ApiError, api, currentShopVia, loadCatalog, scopedKey } from "../lib/api.js"
+import { remember } from "../lib/cache.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, kmText } from "../lib/format.js"
-import { useClosingGuard, useMainAction } from "../lib/main-button.js"
-import {
-    canRequestContact,
-    getLocation,
-    haptic,
-    requestContact,
-    requestWriteAccess,
-} from "../lib/telegram.js"
+import { useMainAction } from "../lib/main-button.js"
+import { removedText } from "../lib/removed.js"
+import { takesOrdersNow } from "../lib/shop-ready.js"
+import { canRequestContact, haptic, requestContact, requestWriteAccess } from "../lib/telegram.js"
 import { deliveryFee, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { CardIcon, CashIcon, CheckIcon, PhoneIcon, PinIcon } from "../ui/icons.js"
-import { PlacePick } from "../ui/maps.js"
-import { Button, Field, Section, Stepper, TextArea, TextInput } from "../ui/primitives.js"
+import { BagIcon, CardIcon, CashIcon, CheckIcon, PhoneIcon } from "../ui/icons.js"
+import { Button, EmptyState, Field, Section, Stepper, TextArea } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import { CartLines, closedText } from "./cart-lines.js"
+import {
+    AddressSection,
+    AddressSummary,
+    CHECKOUT_ADDRESS,
+    addressComplete,
+    needsPin,
+    outsideZone,
+} from "./checkout-address.js"
+
+import type { Delivery } from "./checkout-address.js"
+import type { Dictionary } from "../i18n/index.js"
+import type { DeliveryRules } from "../stores/cart.js"
 import type { Shop } from "../stores/session.js"
-import type { MapMarker } from "../ui/maps.js"
-import type { PaymentMethod, ProductDTO } from "@zumda/core"
+import type { Language, PaymentMethod, ProductDTO } from "@zumda/core"
 
 const CONTACT_POLL_MS = 1500
 const CONTACT_POLL_TRIES = 10
-const LAST_ADDRESS_KEY = "zumda:address"
 const CHECKOUT_PHONE = "checkout-phone"
-const CHECKOUT_ADDRESS = "checkout-address"
 /** How long a missing field glows after a tap on the not-yet-ready button. */
 const FLASH_MS = 1400
 /** A customer may hand back a few more empty bottles than they order. */
 const MAX_EXTRA_BOTTLES = 5
-
-/** The last delivery, kept on this phone: the next order starts filled in. */
-interface SavedAddress {
-    address: string
-    landmark: string
-    /** The map pin too: a network courier sees how far the order goes only with it. */
-    location: Point | null
-    /** A regular water customer hands back the same number of bottles each time. */
-    bottlesReturned: number
-}
-
-function savedPoint(value: unknown): Point | null {
-    const point = value as Partial<Point> | null | undefined
-    return typeof point?.latitude === "number" && typeof point.longitude === "number"
-        ? { latitude: point.latitude, longitude: point.longitude }
-        : null
-}
-
-function loadAddress(): SavedAddress {
-    try {
-        const saved = JSON.parse(
-            localStorage.getItem(LAST_ADDRESS_KEY) ?? "null",
-        ) as Partial<SavedAddress> | null
-        return {
-            address: saved?.address ?? "",
-            landmark: saved?.landmark ?? "",
-            location: savedPoint(saved?.location),
-            bottlesReturned: typeof saved?.bottlesReturned === "number" ? saved.bottlesReturned : 0,
-        }
-    } catch {
-        return { address: "", landmark: "", location: null, bottlesReturned: 0 }
-    }
-}
-
-function saveAddress(value: SavedAddress): void {
-    try {
-        localStorage.setItem(LAST_ADDRESS_KEY, JSON.stringify(value))
-    } catch {
-        // Not critical: the customer just types the address again next time.
-    }
-}
 
 /** Phone comes from Telegram's "share contact": the bot receives it, we wait for it to land. */
 function PhoneRow(): React.JSX.Element {
@@ -144,125 +117,42 @@ function PhoneRow(): React.JSX.Element {
     )
 }
 
-type Point = { latitude: number; longitude: number }
+/** Codes that mean the cart or the shop changed under the customer: what they see is reloaded. */
+const CATALOG_CHANGED = new Set([
+    "PRODUCT_NOT_AVAILABLE",
+    "OPTION_UNAVAILABLE",
+    "ENTITY_NOT_FOUND",
+    "VALIDATION_ERROR",
+])
 
-interface Delivery {
-    address: string
-    landmark: string
-    comment: string
-    location: Point | null
-    /** Empty returnable bottles handed back (water shops). */
-    bottlesReturned: number
-}
-
-/** The shop's own pin on the checkout map, when it has a place. */
-function shopMarker(shop: Shop | null, title: string): MapMarker[] {
-    return shop?.location ? [{ id: "shop", point: shop.location, kind: "shop", title }] : []
-}
-
-/** A shop that delivers within a radius takes orders only with the pin (`LOCATION_REQUIRED`). */
-function needsPin(shop: Shop | null): boolean {
-    return shop?.delivery.radiusMeters !== undefined
-}
-
-function AddressSection({
-    value,
-    onChange,
-}: {
-    value: Delivery
-    onChange(change: Partial<Delivery>): void
-}): React.JSX.Element {
-    const t = useT()
-    const shop = useSession((state) => state.shop)
-    const radius = shop?.delivery.radiusMeters
-    const locate = async (): Promise<void> => {
-        haptic.tap()
-        const found = await getLocation()
-        if (found) {
-            onChange({ location: { latitude: found.latitude, longitude: found.longitude } })
-            haptic.success()
-        } else {
-            toast(t.checkout.locationFailed, "error")
-        }
+/**
+ * After a refusal: the catalog (the cart loses what is gone, by name: the total on the button
+ * changes, and the customer sees why) or the shop's ways of paying are read again.
+ */
+function refreshAfterRefusal(code: string, t: Dictionary): void {
+    if (CATALOG_CHANGED.has(code)) {
+        const seen = useSession.getState().catalog
+        loadCatalog()
+            .then((products: ProductDTO[]) => {
+                useSession.getState().setCatalog(products)
+                const removed = useCart.getState().prune(products)
+                if (removed.length > 0) {
+                    toast(removedText(t, removed, seen), "error")
+                }
+            })
+            .catch(() => undefined)
     }
-    return (
-        <Section title={t.checkout.address} id={CHECKOUT_ADDRESS}>
-            {/* The pin first: one tap, and the courier finds the door even without words. */}
-            <PlacePick
-                value={value.location}
-                onChange={(location): void => onChange({ location })}
-                start={shop?.location}
-                zone={
-                    shop?.location && radius !== undefined
-                        ? { center: shop.location, radiusMeters: radius }
-                        : null
-                }
-                markers={shopMarker(shop, t.map.shop)}
-                fallback={
-                    <LocationButton
-                        saved={value.location !== null}
-                        onLocate={(): void => void locate()}
-                    />
-                }
-            />
-            <p className="-mt-1 px-1 text-sm text-tg-hint">
-                {radius === undefined
-                    ? t.checkout.pinHelps
-                    : fill(t.checkout.pinRequired, { km: kmText(radius) })}
-            </p>
-            <Field
-                label={t.checkout.street}
-                htmlFor="street"
-                hint={value.location ? t.checkout.streetOrLandmark : undefined}
-            >
-                <TextInput
-                    id="street"
-                    aria-label={t.checkout.address}
-                    value={value.address}
-                    onChange={(e): void => onChange({ address: e.target.value })}
-                    placeholder={t.checkout.addressPlaceholder}
-                    maxLength={200}
-                    autoComplete="street-address"
-                />
-            </Field>
-            <Field label={`${t.checkout.landmark} (${t.checkout.optional})`} htmlFor="landmark">
-                <TextInput
-                    id="landmark"
-                    value={value.landmark}
-                    onChange={(e): void => onChange({ landmark: e.target.value })}
-                    placeholder={t.checkout.landmarkPlaceholder}
-                    maxLength={200}
-                />
-            </Field>
-        </Section>
-    )
+    if (code === "PAYMENT_METHOD_UNAVAILABLE") {
+        // The owner changed «To'lov»: the shop's ways of paying are read again.
+        api.shop()
+            .then((shop) => useSession.getState().setShop(shop))
+            .catch(() => undefined)
+    }
 }
 
-function LocationButton({
-    saved,
-    onLocate,
-}: {
-    saved: boolean
-    onLocate(): void
-}): React.JSX.Element {
-    const t = useT()
-    return (
-        <button
-            type="button"
-            onClick={onLocate}
-            className={cn(
-                "tap flex h-12 items-center justify-center gap-2 rounded-control font-medium text-tg-text transition-colors duration-200",
-                saved ? "bg-success/15" : "bg-tg-secondary",
-            )}
-        >
-            {saved ? (
-                <CheckIcon size={20} className="text-success" />
-            ) : (
-                <PinIcon size={20} className="text-brand" />
-            )}
-            {saved ? t.checkout.locationSaved : t.checkout.shareLocation}
-        </button>
-    )
+/** At checkout «not found» is a product that left the shop, not a list to refresh. */
+function refusalText(t: Dictionary, code: string): string {
+    return code === "ENTITY_NOT_FOUND" ? t.checkout.itemGone : errorText(t, code)
 }
 
 /** Sends the order: prices and totals are computed by the Worker, the app sends only ids. */
@@ -272,13 +162,14 @@ function usePlaceOrder(
 ): { placing: boolean; place(): Promise<void> } {
     const t = useT()
     const catalog = useSession((state) => state.catalog)
-    const setCatalog = useSession((state) => state.setCatalog)
+    const shopSlug = useSession((state) => state.shop?.slug)
     const lines = useCart((state) => state.lines)
     const clearCart = useCart((state) => state.clear)
     const reset = useRouter((state) => state.reset)
     const [placing, setPlacing] = useState(false)
-    // One id for this checkout: a tap again after a lost answer gets the order already placed.
-    const checkoutId = useRef(crypto.randomUUID())
+    // The cart's id: a tap again after a lost answer, even after leaving and coming back, gets
+    // the order already placed.
+    const checkoutId = useCart((state) => state.checkoutId)
     // Two taps of Telegram's button before a render would both see `placing` false.
     const inFlight = useRef(false)
 
@@ -306,7 +197,7 @@ function usePlaceOrder(
                 comment: delivery.comment.trim() || undefined,
                 bottlesReturned: delivery.bottlesReturned || undefined,
                 paymentMethod,
-                clientOrderId: checkoutId.current,
+                clientOrderId: checkoutId,
             })
             saveAddress({
                 address: delivery.address.trim(),
@@ -314,46 +205,37 @@ function usePlaceOrder(
                 location: delivery.location,
                 // An order without bottles keeps the count a water order left.
                 bottlesReturned: delivery.bottlesReturned || loadAddress().bottlesReturned,
+                paymentMethod,
             })
+            if (shopSlug) {
+                clearDraft(shopSlug)
+                // Zumda | Shop leads back to it: the customer may not remember the shop.
+                if (currentShopVia() === "marketplace") {
+                    saveShowcaseOrder({
+                        slug: shopSlug,
+                        shopName: useSession.getState().shop?.name ?? "",
+                        id: order.id,
+                        number: order.number,
+                        at: Date.now(),
+                    })
+                }
+            }
+            // The order screen paints at once from it: the card number is there without a wait.
+            remember(`state:${scopedKey(`order:${order.id}`)}`, order)
             clearCart()
             haptic.success()
             reset({ name: "order", id: order.id, justPlaced: true })
         } catch (error) {
             haptic.error()
             const code = error instanceof ApiError ? error.code : "generic"
-            toast(errorText(t, code), "error")
-            refreshAfterRefusal(code, setCatalog)
+            toast(refusalText(t, code), "error")
+            refreshAfterRefusal(code, t)
         } finally {
             inFlight.current = false
             setPlacing(false)
         }
     }
     return { placing, place }
-}
-
-/** Codes that mean the cart or the shop changed under the customer: what they see is reloaded. */
-const CATALOG_CHANGED = new Set([
-    "PRODUCT_NOT_AVAILABLE",
-    "OPTION_UNAVAILABLE",
-    "ENTITY_NOT_FOUND",
-    "VALIDATION_ERROR",
-])
-
-function refreshAfterRefusal(code: string, setCatalog: (products: ProductDTO[]) => void): void {
-    if (CATALOG_CHANGED.has(code)) {
-        loadCatalog()
-            .then((products) => {
-                setCatalog(products)
-                useCart.getState().prune(products)
-            })
-            .catch(() => undefined)
-    }
-    if (code === "PAYMENT_METHOD_UNAVAILABLE") {
-        // The owner changed «To'lov»: the shop's ways of paying are read again.
-        api.shop()
-            .then((shop) => useSession.getState().setShop(shop))
-            .catch(() => undefined)
-    }
 }
 
 /** Water shops: how many empty bottles go back; kept bottles carry the shop's deposit. */
@@ -532,38 +414,58 @@ function Totals({ rows }: { rows: [string, number | string, boolean?][] }): Reac
     )
 }
 
+interface Missing {
+    id: string | null
+    text: string
+}
+
+/** The shop side first: nothing the customer fills in can make a closed shop take the order. */
+function shopStep(
+    t: Dictionary,
+    input: { shop: Shop | null; subtotal: number; rules: DeliveryRules; language: Language },
+): Missing | null {
+    const closed = closedText(t, input.shop)
+    if (closed) {
+        return { id: null, text: closed }
+    }
+    const { minOrder } = input.rules
+    if (minOrder !== undefined && input.subtotal < minOrder) {
+        return {
+            id: null,
+            text: fill(t.cart.minOrderLeft, {
+                sum: formatMoney(minOrder - input.subtotal, input.language),
+            }),
+        }
+    }
+    return null
+}
+
 /** What still stops the order, first thing first: the place to show and the words to say. */
-function missingStep(
-    t: ReturnType<typeof useT>,
-    input: {
-        phone: string | undefined
-        hasCard: boolean
-        address: string
-        count: number
-        /** The shop delivers within a radius: it needs the pin to tell. */
-        needsPin: boolean
-        hasPin: boolean
-        landmark: string
-    },
-): { id: string | null; text: string } | null {
-    if (input.count === 0) {
-        return { id: null, text: t.cart.emptyText }
-    }
-    if (!input.hasCard) {
-        return { id: null, text: errorText(t, "NO_PAYOUT_CARD") }
-    }
+function customerStep(
+    t: Dictionary,
+    input: { phone: string | undefined; delivery: Delivery; shop: Shop | null },
+): Missing | null {
+    const { delivery, shop } = input
     if (!input.phone) {
         return { id: CHECKOUT_PHONE, text: t.checkout.needPhone }
     }
-    if (input.needsPin && !input.hasPin) {
+    const hasPin = delivery.location !== null
+    if (needsPin(shop) && !hasPin) {
         return { id: CHECKOUT_ADDRESS, text: t.checkout.needPin }
     }
+    const radius = shop?.delivery.radiusMeters
+    if (radius !== undefined && outsideZone(shop, delivery.location)) {
+        return {
+            id: CHECKOUT_ADDRESS,
+            text: fill(t.map.outsideZone, { km: kmText(radius) }),
+        }
+    }
     // With the pin, a landmark is enough: many district homes have no street and number.
-    const placeNamed = input.address.trim() || (input.hasPin && input.landmark.trim())
+    const placeNamed = delivery.address.trim() || (hasPin && delivery.landmark.trim())
     if (!placeNamed) {
         return {
             id: CHECKOUT_ADDRESS,
-            text: input.hasPin ? t.checkout.needStreetOrLandmark : t.checkout.needAddress,
+            text: hasPin ? t.checkout.needStreetOrLandmark : t.checkout.needAddress,
         }
     }
     return null
@@ -574,12 +476,15 @@ function missingStep(
  * to it and makes it glow for a moment. Returns the glow class for a section by its id.
  */
 function useOrderButton(input: {
-    missing: { id: string | null; text: string } | null
+    missing: Missing | null
     placing: boolean
     place(): Promise<void>
-    text: string
+    text: string | null
+    /** A section is about to be shown (the address folded in one line). */
+    onReveal(id: string): void
 }): (id: string) => string {
-    const { missing, placing, place, text } = input
+    const { missing, placing, place, text, onReveal } = input
+    const setMe = useSession((state) => state.setMe)
     const [flash, setFlash] = useState<string | null>(null)
     useEffect(() => {
         if (!flash) {
@@ -589,27 +494,52 @@ function useOrderButton(input: {
         return (): void => window.clearTimeout(timer)
     }, [flash])
 
-    useMainAction({
-        text,
-        onClick: (): void => {
-            if (placing) {
-                return
-            }
-            if (!missing) {
-                void place()
-                return
-            }
-            haptic.error()
-            toast(missing.text, "error")
-            if (missing.id) {
-                document
-                    .getElementById(missing.id)
-                    ?.scrollIntoView({ behavior: "smooth", block: "center" })
-                setFlash(missing.id)
-            }
-        },
-        loading: placing,
-    })
+    const tell = (step: Missing): void => {
+        haptic.error()
+        toast(step.text, "error")
+        if (step.id) {
+            const id = step.id
+            onReveal(id)
+            window.setTimeout(() => {
+                document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "center" })
+            }, 0)
+            setFlash(id)
+        }
+    }
+    // The contact goes to the bot, not the app: it may have arrived after the row gave up
+    // waiting. One quick look before saying it is missing.
+    const phoneThenTell = async (step: Missing): Promise<void> => {
+        const fresh = await api.me().catch(() => null)
+        if (fresh?.phone) {
+            setMe(fresh)
+            haptic.success()
+            return
+        }
+        tell(step)
+    }
+
+    useMainAction(
+        text === null
+            ? null
+            : {
+                  text,
+                  onClick: (): void => {
+                      if (placing) {
+                          return
+                      }
+                      if (!missing) {
+                          void place()
+                          return
+                      }
+                      if (missing.id === CHECKOUT_PHONE) {
+                          void phoneThenTell(missing)
+                          return
+                      }
+                      tell(missing)
+                  },
+                  loading: placing,
+              },
+    )
     return (id: string): string =>
         cn(
             "rounded-tile transition-shadow duration-300",
@@ -634,18 +564,145 @@ function bottlesOf(
     return { usesBottles, bottlesReturned, deposit }
 }
 
-/** The customer's pick while the shop still takes it; else the first way it takes (the card). */
+/**
+ * The customer's pick while the shop still takes it; else how they paid last time, if the shop
+ * takes that; else the first way it takes (the card).
+ */
 function usePaymentMethod(shop: Shop | null): {
     methods: readonly PaymentMethod[]
     method: PaymentMethod | undefined
     setChosen(method: PaymentMethod): void
 } {
     const methods = shop?.paymentMethods ?? []
-    const [chosen, setChosen] = useState<PaymentMethod | null>(null)
+    const [chosen, setChosen] = useState<PaymentMethod | null>(
+        () => loadAddress().paymentMethod ?? null,
+    )
     const method = chosen && methods.includes(chosen) ? chosen : methods[0]
     return { methods, method, setChosen }
 }
 
+/**
+ * What the customer fills in, kept on this phone on every change (per shop): «Back» to the menu
+ * for one more item, or the app closed by mistake, loses nothing. A first visit starts from the
+ * last delivery.
+ */
+function useDraft(shop: Shop | null): [Delivery, (change: Partial<Delivery>) => void] {
+    const slug = shop?.slug
+    const [delivery, setDelivery] = useState<Delivery>(() => {
+        const draft = slug ? loadDraft(slug) : null
+        if (draft) {
+            return draft
+        }
+        const { address, landmark, location, bottlesReturned } = loadAddress()
+        return { address, landmark, location, bottlesReturned, comment: "" }
+    })
+    useEffect(() => {
+        if (slug) {
+            saveDraft(slug, delivery)
+        }
+    }, [slug, delivery])
+    return [delivery, (change): void => setDelivery((d) => ({ ...d, ...change }))]
+}
+
+/** «Buyurtma berish · Naqd · 55 000 so'm»: the way of paying on the button when there is a choice. */
+function buttonText(
+    t: Dictionary,
+    input: { placing: boolean; total: string; method?: PaymentMethod; choice: boolean },
+): string {
+    if (input.placing) {
+        return t.checkout.placing
+    }
+    const way =
+        input.choice && input.method
+            ? input.method === "cash"
+                ? t.pay.cash
+                : t.pay.cardShort
+            : null
+    return [t.checkout.place, way, input.total].filter(Boolean).join(" · ")
+}
+
+function EmptyCart(): React.JSX.Element {
+    const t = useT()
+    const back = useRouter((state) => state.back)
+    return (
+        <EmptyState
+            art={<BagIcon size={44} />}
+            title={t.cart.empty}
+            text={t.cart.emptyText}
+            action={
+                <Button variant="secondary" onClick={back}>
+                    {t.cart.toMenu}
+                </Button>
+            }
+        />
+    )
+}
+
+/** The order's details under the cart: phone, the way of paying, the place, bottles, comment. */
+function OrderDetails({
+    delivery,
+    patch,
+    glow,
+    total,
+    payment,
+    editing,
+    onEdit,
+    bottles,
+}: {
+    delivery: Delivery
+    patch(change: Partial<Delivery>): void
+    glow(id: string): string
+    total: number
+    payment: ReturnType<typeof usePaymentMethod>
+    editing: boolean
+    onEdit(): void
+    bottles: { usesBottles: boolean; returnable: number; value: number }
+}): React.JSX.Element {
+    const t = useT()
+    return (
+        <>
+            <Section title={t.checkout.phone} id={CHECKOUT_PHONE} className={glow(CHECKOUT_PHONE)}>
+                <PhoneRow />
+                <p className="px-1 text-sm text-tg-hint">{t.checkout.phoneHint}</p>
+            </Section>
+            <PaymentSection
+                total={total}
+                methods={payment.methods}
+                method={payment.method}
+                onChoose={payment.setChosen}
+            />
+            <div className={glow(CHECKOUT_ADDRESS)}>
+                {editing ? (
+                    <AddressSection value={delivery} onChange={patch} />
+                ) : (
+                    <AddressSummary value={delivery} onEdit={onEdit} />
+                )}
+            </div>
+            {bottles.usesBottles ? (
+                <BottlesField
+                    returnable={bottles.returnable}
+                    value={bottles.value}
+                    onChange={(bottlesReturned): void => patch({ bottlesReturned })}
+                />
+            ) : null}
+            <Field label={`${t.checkout.comment} (${t.checkout.optional})`} htmlFor="comment">
+                <TextArea
+                    id="comment"
+                    value={delivery.comment}
+                    onChange={(e): void => patch({ comment: e.target.value })}
+                    placeholder={t.checkout.commentPlaceholder}
+                    maxLength={300}
+                />
+            </Field>
+        </>
+    )
+}
+
+/**
+ * The cart and the order in one screen (owner's decision, October 2026: an order in 3 taps):
+ * «+» on the menu, «Savat», «Buyurtma berish». A returning customer's phone and place are one
+ * line each, so the button is all that is left.
+ */
 export function CheckoutScreen(): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -653,88 +710,74 @@ export function CheckoutScreen(): React.JSX.Element {
     const catalog = useSession((state) => state.catalog)
     const me = useSession((state) => state.me)
     const lines = useCart((state) => state.lines)
-    const [delivery, setDelivery] = useState<Delivery>(() => ({
-        ...loadAddress(),
-        comment: "",
-    }))
+    const [delivery, patch] = useDraft(shop)
+    // A place already complete (the last delivery) folds into one line until «O'zgartirish».
+    const [editing, setEditing] = useState(() => !addressComplete(delivery, shop))
     const cart = summarize(lines, catalog)
-    const fee = deliveryFee(cart.subtotal, shop?.delivery ?? { fee: 0 })
-    const { usesBottles, bottlesReturned, deposit } = bottlesOf(
-        shop,
-        cart.returnable,
-        delivery.bottlesReturned,
+    const rules: DeliveryRules = shop?.delivery ?? { fee: 0 }
+    const fee = deliveryFee(cart.subtotal, rules)
+    const bottles = bottlesOf(shop, cart.returnable, delivery.bottlesReturned)
+    const payment = usePaymentMethod(shop)
+    const { placing, place } = usePlaceOrder(
+        { ...delivery, bottlesReturned: bottles.bottlesReturned },
+        payment.method,
     )
-    const { methods, method, setChosen } = usePaymentMethod(shop)
-    // A cart on its way to an order: closing the app by mistake asks first.
-    useClosingGuard(cart.count > 0)
-    const { placing, place } = usePlaceOrder({ ...delivery, bottlesReturned }, method)
-    const total = cart.subtotal + fee + deposit
-    const missing = missingStep(t, {
-        phone: me?.phone,
-        // Waiting for Zumda's approval: the storefront opens, orders do not yet.
-        hasCard: (shop?.paymentMethods.length ?? 0) > 0 && !shop?.opensSoon,
-        address: delivery.address,
-        count: cart.count,
-        needsPin: needsPin(shop),
-        hasPin: delivery.location !== null,
-        landmark: delivery.landmark,
-    })
+    const total = cart.subtotal + fee + bottles.deposit
+    const missing =
+        shopStep(t, { shop, subtotal: cart.subtotal, rules, language }) ??
+        customerStep(t, { phone: me?.phone, delivery, shop })
     const glow = useOrderButton({
         missing,
         placing,
         place,
-        text: placing
-            ? t.checkout.placing
-            : `${t.checkout.place} · ${formatMoney(total, language)}`,
+        text:
+            cart.count === 0
+                ? null
+                : buttonText(t, {
+                      placing,
+                      total: formatMoney(total, language),
+                      method: payment.method,
+                      choice: payment.methods.length > 1,
+                  }),
+        onReveal: (id): void => {
+            if (id === CHECKOUT_ADDRESS) {
+                setEditing(true)
+            }
+        },
     })
 
+    if (cart.count === 0 && cart.unavailable.length === 0) {
+        return <EmptyCart />
+    }
     return (
         <main className="flex flex-col gap-6 px-4 pt-4">
-            {/* How paying works is said once, next to the total, where the decision is made. */}
-            <h1 className="text-2xl font-bold">{t.checkout.title}</h1>
-
-            <Section title={t.checkout.phone} id={CHECKOUT_PHONE} className={glow(CHECKOUT_PHONE)}>
-                <PhoneRow />
-                <p className="px-1 text-sm text-tg-hint">{t.checkout.phoneHint}</p>
-            </Section>
-
-            <div className={glow(CHECKOUT_ADDRESS)}>
-                <AddressSection
-                    value={delivery}
-                    onChange={(change): void => setDelivery((d) => ({ ...d, ...change }))}
-                />
-            </div>
-
-            {usesBottles ? (
-                <BottlesField
-                    returnable={cart.returnable}
-                    value={bottlesReturned}
-                    onChange={(bottlesReturned): void =>
-                        setDelivery((d) => ({ ...d, bottlesReturned }))
-                    }
+            <CartLines cart={cart} rules={rules} shop={shop} />
+            {cart.count > 0 && (!shop || takesOrdersNow(shop)) ? (
+                <OrderDetails
+                    delivery={delivery}
+                    patch={patch}
+                    glow={glow}
+                    total={total}
+                    payment={payment}
+                    editing={editing}
+                    onEdit={(): void => setEditing(true)}
+                    bottles={{
+                        usesBottles: bottles.usesBottles,
+                        returnable: cart.returnable,
+                        value: bottles.bottlesReturned,
+                    }}
                 />
             ) : null}
-
-            <Field label={`${t.checkout.comment} (${t.checkout.optional})`} htmlFor="comment">
-                <TextArea
-                    id="comment"
-                    value={delivery.comment}
-                    onChange={(e): void => setDelivery((d) => ({ ...d, comment: e.target.value }))}
-                    placeholder={t.checkout.commentPlaceholder}
-                    maxLength={300}
-                />
-            </Field>
-
             <Totals
                 rows={[
                     [t.cart.subtotal, cart.subtotal],
                     [t.cart.delivery, fee === 0 ? t.common.free : fee],
-                    ...(deposit > 0 ? [[t.cart.deposit, deposit] as [string, number]] : []),
+                    ...(bottles.deposit > 0
+                        ? [[t.cart.deposit, bottles.deposit] as [string, number]]
+                        : []),
                     [t.cart.total, total, true],
                 ]}
             />
-
-            <PaymentSection total={total} methods={methods} method={method} onChoose={setChosen} />
             <BottomSpacer />
         </main>
     )

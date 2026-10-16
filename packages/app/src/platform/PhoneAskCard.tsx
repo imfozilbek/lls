@@ -69,6 +69,8 @@ export function PhoneAskCard({
     const t = useT()
     const p = t.platform
     const [progress, setProgress] = useState<Progress | null>(null)
+    // The last round's count stays on the card: «yetmadi» is something to act on later.
+    const [result, setResult] = useState<string | null>(null)
     const people = counts.filter((count) => count.total > 0)
     if (people.length === 0) {
         return null
@@ -84,7 +86,9 @@ export function PhoneAskCard({
         try {
             const result = await askAll((done) => setProgress({ done, total: left }))
             haptic.success()
-            toast(fill(p.phoneAskDone, result), "success")
+            const line = fill(p.phoneAskDone, result)
+            setResult(line)
+            toast(line, "success")
         } catch (caught) {
             failToast(t, caught)
         } finally {
@@ -114,6 +118,7 @@ export function PhoneAskCard({
                 </div>
             </div>
             <p className="text-sm text-tg-subtitle">{p.phoneAskHint}</p>
+            {result ? <p className="text-sm font-medium">{result}</p> : null}
             {left > 0 ? (
                 <Button
                     variant="primary"

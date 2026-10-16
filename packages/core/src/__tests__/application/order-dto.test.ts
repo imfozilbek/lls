@@ -35,8 +35,7 @@ function readyOrder(): Order {
         customerName: "Aziz",
         customerPhone: Phone.create("+998901234567"),
     })
-    order.confirmPaymentAndAccept()
-    order.advanceTo(OrderStatus.PREPARING)
+    order.confirmPaymentAndStart()
     order.advanceTo(OrderStatus.READY)
     return order
 }

@@ -69,6 +69,16 @@ describe("Phone", () => {
         expect(Phone.create("998901234567").number).toBe("+998901234567")
         expect(Phone.create("901234567").number).toBe("+998901234567")
         expect(formatPhone(Phone.create("998901234567").number)).toBe("+998 90 123 45 67")
+        // The old way to dial inside the country, still in many people's habits.
+        expect(Phone.create("8 90 123 45 67").number).toBe("+998901234567")
+        expect(Phone.create("8(90)123-45-67").number).toBe("+998901234567")
+    })
+
+    it("refuses a Uzbek number with a digit missing or extra", () => {
+        expect(() => Phone.create("+998 90 123 45 6")).toThrow(ValidationError)
+        expect(() => Phone.create("+998 90 123 45 678")).toThrow(ValidationError)
+        // A Russian number with its own 8 stays foreign, never turned into a Uzbek one.
+        expect(Phone.create("8 912 345 67 89").number).toBe("+89123456789")
     })
 
     it("accepts foreign numbers as E.164", () => {

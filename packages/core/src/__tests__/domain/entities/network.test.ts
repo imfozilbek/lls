@@ -59,7 +59,7 @@ function placed(): Order {
 
 function accepted(): Order {
     const order = placed()
-    order.confirmPaymentAndAccept()
+    order.confirmPaymentAndStart()
     return order
 }
 

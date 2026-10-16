@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 
+import { dictionaryFor, errorText, useLanguageStore } from "../i18n/index.js"
+import { ApiError } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import {
     PULL_TRIGGER_PX,
@@ -13,17 +15,24 @@ import { canGoBack, pressBack } from "../lib/main-button.js"
 import { canRefresh, runRefresh } from "../lib/refresh.js"
 import { webApp } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
+import { toast } from "../stores/toast.js"
 
 import { ChevronIcon } from "./icons.js"
 
 import type { GestureKind, GestureStart } from "../lib/gesture.js"
+
+/** A failed pull in the reader's words: the server's reason, or the network's. */
+function refreshFailedText(caught: unknown): string {
+    const t = dictionaryFor(useLanguageStore.getState().language)
+    return errorText(t, caught instanceof ApiError ? caught.code : "generic")
+}
 
 /** The spinner stays at least this long: a refresh that blinks reads as "nothing happened". */
 const MIN_REFRESH_MS = 450
 /** The indicator rests here while the screen refreshes. */
 const REFRESHING_AT_PX = 56
 
-type Haptic = "selection" | "medium" | "success"
+type Haptic = "selection" | "medium" | "success" | "error"
 
 function feel(kind: Haptic): void {
     const haptics = webApp()?.HapticFeedback
@@ -32,7 +41,7 @@ function feel(kind: Haptic): void {
     } else if (kind === "medium") {
         haptics?.impactOccurred("medium")
     } else {
-        haptics?.notificationOccurred("success")
+        haptics?.notificationOccurred(kind)
     }
 }
 
@@ -150,7 +159,12 @@ function useGestures(): { drag: Drag; refreshing: boolean } {
                 const wait = new Promise((resolve) => window.setTimeout(resolve, MIN_REFRESH_MS))
                 void Promise.all([runRefresh(), wait])
                     .then(() => feel("success"))
-                    .catch(() => undefined)
+                    // The same word on every screen: what is shown stays, the toast says why
+                    // it did not change.
+                    .catch((caught: unknown) => {
+                        feel("error")
+                        toast(refreshFailedText(caught), "error")
+                    })
                     .finally(() => {
                         busy.current = false
                         setRefreshing(false)

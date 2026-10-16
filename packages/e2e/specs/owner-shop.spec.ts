@@ -51,13 +51,13 @@ test("catalog: add a product with a photo; customers see it at once", async ({ p
     await expect(page.getByText("To'y oshi")).toBeVisible()
     await bottomButton(page).click() // «Добавить товар»
     await expect(page.getByRole("heading", { name: "Yangi mahsulot" })).toBeVisible()
-    // No dead button: an empty form says what to write first.
-    await bottomButton(page).click()
-    await expect(page.getByText("Mahsulot nomini yozing")).toBeVisible()
+    // Nothing to save while the search is empty: no «Saqlash» that only says «write a name».
+    await expect(bottomButton(page)).toBeHidden()
 
-    // A name the catalog does not need: the owner keeps the typed words.
+    // A name the catalog does not need: the bottom button keeps the typed words.
     await page.getByLabel("Katalogdan qidirish").fill("Manti")
-    await page.getByRole("button", { name: "«Manti» deb o'zim yozaman" }).click()
+    await expect(bottomButton(page)).toHaveText("«Manti» deb o'zim yozaman")
+    await bottomButton(page).click()
     await expect(page.getByLabel("Nomi")).toHaveValue("Manti")
     await page.locator('input[type="file"]').setInputFiles({
         name: "manti.png",
@@ -188,10 +188,11 @@ test("settings: name, color, delivery and features reach the storefront", async 
     await settingsBack(page)
     await expect(page.getByRole("button", { name: /Yetkazib berish\s*12\s000/ })).toBeVisible()
 
+    // A switch is saved as it is flipped: no «Saqlash» to forget.
     await openGroup(page, "Do'kon imkoniyatlari")
     await page.getByRole("switch", { name: "Buyurtmani takrorlash" }).click()
-    await bottomButton(page).click()
     await expect(page.getByText("Saqlandi").first()).toBeVisible()
+    await expect(bottomButton(page)).toBeHidden()
 
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await expect(page.getByRole("heading", { name: "Osh Markaz Yakkabog" })).toBeVisible()
@@ -356,7 +357,7 @@ test("water shop settings: bottle deposit and returnable bottles", async ({ page
     expect(shop.bottleDeposit).toBe(35_000)
 
     await page.getByRole("tab", { name: "Katalog" }).click()
-    await page.getByRole("button", { name: /Toza suv 19 l/ }).click()
+    await page.getByRole("button", { name: /^Toza suv 19 l/ }).click()
     await expect(page.getByRole("switch", { name: "Qaytariladigan idish" })).toHaveAttribute(
         "aria-checked",
         "true",

@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
 import { drag, pullDown, swipeLeft, swipeRight } from "../support/touch.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -45,7 +45,7 @@ test("pull down on the order screen refreshes it in place, without a skeleton", 
     await expect(page.getByText("O'tkazma kutilmoqda").first()).toBeVisible()
     expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await pullDown(page)
-    await expect(page.getByText("Do'kon buyurtmani qabul qildi")).toBeVisible()
+    await expect(page.getByText("Buyurtmangiz tayyorlanmoqda")).toBeVisible()
     await expect(page.locator(".skeleton")).toHaveCount(0)
     await expect(page.getByTestId("pull-indicator")).toBeHidden()
     const haptics = (await app.calls()).filter((c) => c.method === "haptic.impact")
@@ -58,7 +58,7 @@ test("coming back to the app refreshes the order at once", async ({ page }) => {
     expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await app.fire("deactivated")
     await app.fire("activated")
-    await expect(page.getByText("Do'kon buyurtmani qabul qildi")).toBeVisible()
+    await expect(page.getByText("Buyurtmangiz tayyorlanmoqda")).toBeVisible()
 })
 
 test("swipe right goes back, swipe left forward again; a sideways list scrolls itself", async ({
@@ -82,14 +82,12 @@ test("swipe right goes back, swipe left forward again; a sideways list scrolls i
     await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
 })
 
-test("checkout: fields are 16px with a dark caret; closing asks while the cart waits", async ({
+test("checkout: fields are 16px with a dark caret; the draft waits after leaving", async ({
     page,
 }) => {
-    const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD })
+    await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await page.getByRole("button", { name: `Qo'shish: ${DISH}` }).click()
-    await bottomButton(page).click()
-    await bottomButton(page).click()
-    await expect(page.getByRole("heading", { name: "Buyurtma" })).toBeVisible()
+    await toCart(page)
     const fields = await page.locator("input, textarea").evaluateAll((elements) =>
         elements
             .filter((el) => (el as HTMLElement).offsetParent !== null)
@@ -103,11 +101,12 @@ test("checkout: fields are 16px with a dark caret; closing asks while the cart w
         expect(field.size).toBe("16px")
         expect(field.caret).toBe("rgb(17, 24, 39)")
     }
-    expect((await app.calls()).map((c) => c.method)).toContain("enableClosingConfirmation")
+    // Every word typed is kept: back to the menu and in again, the place is still there.
+    await fillAddress(page, "Navoiy 12")
     await swipeRight(page)
-    await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
-    expect((await app.calls()).map((c) => c.method).at(-1)).not.toBe("enableClosingConfirmation")
-    expect((await app.calls()).map((c) => c.method)).toContain("disableClosingConfirmation")
+    await expect(page.getByRole("heading", { name: "Osh Markaz" })).toBeVisible()
+    await toCart(page)
+    await expect(page.getByText("Navoiy 12")).toBeVisible()
 })
 
 test("cancelling asks in Uzbek with a red button; a swipe right closes a sheet", async ({
@@ -138,7 +137,7 @@ test("cancelling asks in Uzbek with a red button; a swipe right closes a sheet",
 test("after a delivered order, the shop's icon may go to the home screen", async ({ page }) => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
     expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
-    for (const status of ["preparing", "ready", "picked_up", "delivered"]) {
+    for (const status of ["ready", "picked_up", "delivered"]) {
         expect((await owner(`/owner/orders/${order.id}`, { status })).status).toBe(200)
     }
     const app = await openOrder(page, order.number)

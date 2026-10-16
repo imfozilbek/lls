@@ -324,7 +324,9 @@ describe("order use cases", () => {
                 orders,
                 clock: fixedClock(NOON_MONDAY_UZ),
             }).execute({ businessId: "biz-1", actorTelegramId: OWNER_TG, orderId })
-            expect(accepted.nextStatus).toBe(OrderStatus.PREPARING)
+            // Accepted and started in the one tap: «Tayyor» is next.
+            expect(accepted.status).toBe(OrderStatus.PREPARING)
+            expect(accepted.nextStatus).toBe(OrderStatus.READY)
             await expect(
                 advance.execute({
                     businessId: "biz-1",

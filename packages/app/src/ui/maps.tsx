@@ -2,10 +2,11 @@ import { Suspense, lazy, useMemo, useState } from "react"
 
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
-import { HOME_POINT, loadMapKit, useMapReady } from "../lib/map.js"
+import { loadMapKit, useMapReady } from "../lib/map.js"
 import { haptic } from "../lib/telegram.js"
 
-import { CheckIcon, PinIcon } from "./icons.js"
+import { Boundary } from "./boundary.js"
+import { PinIcon } from "./icons.js"
 
 import type { Point } from "../lib/map.js"
 import type { MapMarker, MapPickerProps, MapShowProps, Zone } from "./map/kit.js"
@@ -33,11 +34,33 @@ function MapLoading(): React.JSX.Element {
     )
 }
 
+/** The map's piece did not load (a weak network): say so, and the way back. */
+function MapFailed({ onClose }: { onClose(): void }): React.JSX.Element {
+    const t = useT()
+    return (
+        <div
+            className="fixed inset-0 z-viewer flex flex-col items-center justify-center gap-4 bg-tg-bg px-6 text-center"
+            role="alert"
+        >
+            <p className="text-tg-subtitle">{t.map.failed}</p>
+            <button
+                type="button"
+                onClick={onClose}
+                className="tap h-12 rounded-control bg-tg-secondary px-6 font-semibold"
+            >
+                {t.map.close}
+            </button>
+        </div>
+    )
+}
+
 export function MapPicker(props: MapPickerProps): React.JSX.Element {
     return (
-        <Suspense fallback={<MapLoading />}>
-            <LazyPicker {...props} />
-        </Suspense>
+        <Boundary fallback={<MapFailed onClose={props.onClose} />}>
+            <Suspense fallback={<MapLoading />}>
+                <LazyPicker {...props} />
+            </Suspense>
+        </Boundary>
     )
 }
 
@@ -49,105 +72,20 @@ export function MapPreview(
     if (!ready) {
         return null
     }
+    // A small map that did not load is simply not there: the address and its buttons stay.
     return (
-        <Suspense
-            fallback={
-                <div
-                    className={cn("rounded-tile bg-tg-secondary", props.className ?? "h-40")}
-                    aria-hidden
-                />
-            }
-        >
-            <LazyPreview {...props} />
-        </Suspense>
-    )
-}
-
-export interface PlacePickProps {
-    value: Point | null
-    onChange(point: Point): void
-    /** Where the map opens with no point yet: the shop, the district; else Yakkabog'. */
-    start?: Point | null
-    zone?: Zone | null
-    markers?: MapMarker[]
-    title?: string
-    /** Before the map exists: the old way (the place from Telegram). */
-    fallback: ReactNode
-    /** How the picked place shows in the small map above the button. */
-    pin?: "shop" | "customer"
-}
-
-/** «Xaritada belgilash»: the place picked on our map; the button turns green once it is set. */
-export function PlacePick({
-    value,
-    onChange,
-    start,
-    zone,
-    markers,
-    title,
-    fallback,
-    pin = "customer",
-}: PlacePickProps): React.JSX.Element {
-    const t = useT()
-    const ready = useMapReady()
-    const [open, setOpen] = useState(false)
-    const shown = useMemo(
-        (): MapMarker[] =>
-            value
-                ? [
-                      ...(markers ?? []),
-                      { id: "picked", point: value, kind: pin, title: t.map.picked },
-                  ]
-                : [],
-        [value, markers, pin, t],
-    )
-    if (!ready) {
-        return <>{fallback}</>
-    }
-    return (
-        <>
-            {value ? (
-                <MapPreview
-                    className="h-32"
-                    fit={[value]}
-                    zone={zone}
-                    markers={shown}
-                    label={t.map.picked}
-                />
-            ) : null}
-            <button
-                type="button"
-                onClick={(): void => {
-                    haptic.tap()
-                    setOpen(true)
-                }}
-                onPointerEnter={(): void => void loadMapKit()}
-                className={cn(
-                    "tap flex h-12 items-center justify-center gap-2 rounded-control font-medium text-tg-text transition-colors duration-200",
-                    value ? "bg-success/15" : "bg-tg-secondary",
-                )}
+        <Boundary fallback={null}>
+            <Suspense
+                fallback={
+                    <div
+                        className={cn("rounded-tile bg-tg-secondary", props.className ?? "h-40")}
+                        aria-hidden
+                    />
+                }
             >
-                {value ? (
-                    <CheckIcon size={20} className="text-success" />
-                ) : (
-                    <PinIcon size={20} className="text-brand" />
-                )}
-                {value ? `${t.map.picked} · ${t.map.change}` : t.map.pick}
-            </button>
-            {open ? (
-                <MapPicker
-                    start={value ?? start ?? HOME_POINT}
-                    zone={zone}
-                    markers={markers}
-                    title={title}
-                    onPick={(point): void => {
-                        onChange(point)
-                        setOpen(false)
-                    }}
-                    onClose={(): void => setOpen(false)}
-                />
-            ) : null}
-        </>
+                <LazyPreview {...props} />
+            </Suspense>
+        </Boundary>
     )
 }
 
@@ -254,16 +192,18 @@ export function MapButton({
                 {children}
             </button>
             {open ? (
-                <Suspense fallback={<MapLoading />}>
-                    <LazyViewer
-                        fit={fit}
-                        markers={markers}
-                        zone={zone}
-                        label={label}
-                        onClose={(): void => setOpen(false)}
-                        footer={href ? <ExternalMapLink href={href} /> : undefined}
-                    />
-                </Suspense>
+                <Boundary fallback={<MapFailed onClose={(): void => setOpen(false)} />}>
+                    <Suspense fallback={<MapLoading />}>
+                        <LazyViewer
+                            fit={fit}
+                            markers={markers}
+                            zone={zone}
+                            label={label}
+                            onClose={(): void => setOpen(false)}
+                            footer={href ? <ExternalMapLink href={href} /> : undefined}
+                        />
+                    </Suspense>
+                </Boundary>
             ) : null}
         </>
     )

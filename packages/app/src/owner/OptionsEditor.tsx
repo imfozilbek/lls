@@ -148,7 +148,7 @@ function Rows({
                         type="button"
                         aria-label={fill(t.owner.product.removeOption, { name: row.name || "…" })}
                         onClick={(): void => onChange(rows.filter((_, i) => i !== index))}
-                        className="tap grid h-11 w-9 shrink-0 place-items-center rounded-control text-tg-hint"
+                        className="tap grid h-11 w-11 shrink-0 place-items-center rounded-control text-tg-hint"
                     >
                         <CloseIcon size={18} />
                     </button>
@@ -217,7 +217,7 @@ function UsualAddons({
                             haptic.tap()
                             onAdd(name)
                         }}
-                        className="tap flex h-10 items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-tg-separator px-3 text-sm"
+                        className="tap flex h-11 items-center gap-1.5 rounded-full border-[1.5px] border-dashed border-tg-separator px-3 text-sm"
                     >
                         <PlusIcon size={16} />
                         {name}

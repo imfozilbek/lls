@@ -272,10 +272,9 @@ describe("shop couriers and vertical features", () => {
 
             const asCourier = new CourierAdvanceOrderUseCase(orderDeps())
             const me = { telegramId: COURIER_TG, orderId: order.id }
-            await expect(asCourier.execute({ ...me, to: OrderStatus.PREPARING })).rejects.toThrow(
+            await expect(asCourier.execute({ ...me, to: OrderStatus.READY })).rejects.toThrow(
                 ForbiddenError,
             )
-            await advance.execute({ ...owner, to: OrderStatus.PREPARING })
             await advance.execute({ ...owner, to: OrderStatus.READY })
             await asCourier.execute({ ...me, to: OrderStatus.PICKED_UP })
             const done = await asCourier.execute({ ...me, to: OrderStatus.DELIVERED })

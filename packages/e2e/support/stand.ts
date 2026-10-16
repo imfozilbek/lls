@@ -194,8 +194,8 @@ export async function sendReceipt(
 }
 
 /**
- * «Деньги пришли, принять»: the owner of `shop` saw the transfer on the card. The order is paid
- * and accepted in one step (the shop starts only after the money).
+ * «Pul keldi»: the owner of `shop` saw the transfer on the card. The order is paid, accepted and
+ * started in one step (the shop starts only after the money).
  */
 export async function payAndAccept(
     owner: TgUser,

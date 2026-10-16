@@ -208,9 +208,9 @@ describe("money: transfer before the shop starts, report, files", () => {
         // Not by hand: the shop starts only after the money.
         expect((await setStatus(order.id, "accepted")).status).toBe(422)
         const accepted = await json<Order>(await payment(order.id, "paid"))
-        expect(accepted).toMatchObject({ status: "accepted", payment: { status: "paid" } })
+        expect(accepted).toMatchObject({ status: "preparing", payment: { status: "paid" } })
         expect(client.telegram.sent.at(-1)).toMatchObject({ chatId: CUSTOMER.id })
-        expect(client.telegram.sent.at(-1)?.html).toContain("To'lov keldi")
+        expect(client.telegram.sent.at(-1)?.html).toContain("To'lovingiz keldi")
         expect((await money()).awaiting).toEqual([])
         // Pressed again: nothing left to confirm.
         expect((await payment(order.id, "paid")).status).toBe(422)
@@ -342,7 +342,7 @@ describe("money: transfer before the shop starts, report, files", () => {
         const buttons = card?.options?.keyboard?.inline_keyboard.flat() ?? []
         expect(buttons.map((b) => b.callback_data ?? b.web_app?.url)).toEqual([
             `a:${order.id}:delivered`,
-            "https://delivery.zumda.test/?mode=courier",
+            `https://delivery.zumda.test/?mode=courier&order=${order.id}`,
         ])
         expect(card?.html).toContain("mijozdan pul olmang")
 

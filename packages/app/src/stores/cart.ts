@@ -84,6 +84,13 @@ export function pickPrice(
 interface CartState {
     shop: string | null
     lines: CartLines
+    /**
+     * The id this cart is ordered with (`clientOrderId`), kept with the cart: a tap again after
+     * a lost answer, even after the app was closed, gets the order already placed instead of a
+     * second one. Any change of the lines (and the order placed, which empties them) makes a
+     * new one.
+     */
+    checkoutId: string
     load(shop: string): void
     /** Adds one step: 1 piece, or e.g. 500 g for a weight item. */
     add(productId: string, step?: number): void
@@ -100,10 +107,10 @@ interface CartState {
         catalog: readonly ProductDTO[],
     ): number
     /**
-     * Drops lines whose product left the catalog, or whose pick no longer fits it. Returns how
-     * many were dropped.
+     * Drops lines whose product left the catalog, or whose pick no longer fits it. Returns the
+     * products of the dropped lines (once each), so the customer can be told which.
      */
-    prune(catalog: readonly ProductDTO[]): number
+    prune(catalog: readonly ProductDTO[]): string[]
 }
 
 function read(shop: string): CartLines {
@@ -125,15 +132,31 @@ function read(shop: string): CartLines {
     }
 }
 
-function write(shop: string | null, lines: CartLines): void {
+function write(shop: string | null, lines: CartLines, checkoutId: string): void {
     if (!shop) {
         return
     }
     try {
         localStorage.setItem(STORAGE_PREFIX + shop, JSON.stringify(lines))
+        localStorage.setItem(CHECKOUT_PREFIX + shop, checkoutId)
     } catch {
         // Storage can be full or blocked; the cart still works for this session.
     }
+}
+
+const CHECKOUT_PREFIX = "zumda:checkout:"
+const UUID = /^[0-9a-f-]{36}$/i
+
+function readCheckoutId(shop: string): string {
+    try {
+        const stored = localStorage.getItem(CHECKOUT_PREFIX + shop)
+        if (stored && UUID.test(stored)) {
+            return stored
+        }
+    } catch {
+        // Blocked storage: a fresh id, kept for this session.
+    }
+    return crypto.randomUUID()
 }
 
 /** One cart per shop, so switching between shop bots never mixes or wipes carts. */
@@ -150,13 +173,15 @@ export function fitQuantity(quantity: number, step: number): number {
 
 export const useCart = create<CartState>((set, get) => {
     const update = (lines: CartLines): void => {
-        write(get().shop, lines)
-        set({ lines })
+        const checkoutId = crypto.randomUUID()
+        write(get().shop, lines, checkoutId)
+        set({ lines, checkoutId })
     }
     return {
         shop: null,
         lines: {},
-        load: (shop): void => set({ shop, lines: read(shop) }),
+        checkoutId: crypto.randomUUID(),
+        load: (shop): void => set({ shop, lines: read(shop), checkoutId: readCheckoutId(shop) }),
         add: (productId, step = 1): void => {
             const current = get().lines[productId] ?? 0
             update({ ...get().lines, [productId]: Math.min(current + step, step * MAX_STEPS) })
@@ -199,19 +224,19 @@ export const useCart = create<CartState>((set, get) => {
             update(lines)
             return skipped
         },
-        prune: (catalog): number => {
+        prune: (catalog): string[] => {
             // Products no longer in the catalog (gone, or sold out today) and picks the shop
             // changed leave the cart; a quantity off the product's new step is fitted to it.
             const known = new Map(catalog.map((p) => [p.id, p]))
             const lines = { ...get().lines }
-            let gone = 0
+            const gone = new Set<string>()
             let fitted = false
             for (const [key, quantity] of Object.entries(lines)) {
                 const { productId, pick } = parseKey(key)
                 const product = known.get(productId)
                 if (!product || !pickPrice(product, pick)) {
                     delete lines[key]
-                    gone++
+                    gone.add(productId)
                     continue
                 }
                 const fit = fitQuantity(quantity, product.step)
@@ -220,10 +245,10 @@ export const useCart = create<CartState>((set, get) => {
                     fitted = true
                 }
             }
-            if (gone > 0 || fitted) {
+            if (gone.size > 0 || fitted) {
                 update(lines)
             }
-            return gone
+            return [...gone]
         },
     }
 })
@@ -301,4 +326,16 @@ export interface DeliveryRules {
 
 export function deliveryFee(subtotal: number, rules: DeliveryRules): number {
     return rules.freeFrom !== undefined && subtotal >= rules.freeFrom ? 0 : rules.fee
+}
+
+/**
+ * What left the cart, by name when the catalog the customer saw still knows it: «"Lag'mon"»,
+ * otherwise only how many. Empty when nothing left.
+ */
+export function removedNames(ids: readonly string[], seen: readonly ProductDTO[]): string[] {
+    const names = new Map(seen.map((p) => [p.id, p.name]))
+    return ids.flatMap((id) => {
+        const name = names.get(id)
+        return name ? [`«${name}»`] : []
+    })
 }

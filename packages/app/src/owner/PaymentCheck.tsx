@@ -36,6 +36,42 @@ export function paymentWarnings(order: OrderDTO, t: Dictionary): string[] {
     return lines
 }
 
+/** «Ha, … keldi» and, while a screenshot waits, «Yo'q, kelmadi»: pinned under the receipt. */
+function AnswerButtons({
+    yes,
+    no,
+    busy,
+    onAnswer,
+}: {
+    yes: string
+    no: string | null
+    busy: "yes" | "no" | null
+    onAnswer(kind: "yes" | "no"): void
+}): React.JSX.Element {
+    return (
+        <>
+            <Button
+                size="lg"
+                loading={busy === "yes"}
+                disabled={busy !== null}
+                onClick={(): void => onAnswer("yes")}
+            >
+                {yes}
+            </Button>
+            {no ? (
+                <Button
+                    variant="danger"
+                    loading={busy === "no"}
+                    disabled={busy !== null}
+                    onClick={(): void => onAnswer("no")}
+                >
+                    {no}
+                </Button>
+            ) : null}
+        </>
+    )
+}
+
 /**
  * «Pul keldi» never accepts in one tap: the owner sees the sum, the card it should be on, the
  * screenshot and any warning, opens the bank app, and only then answers yes or no.
@@ -88,7 +124,18 @@ export function PaymentCheckSheet({
     }
 
     return (
-        <Sheet title={fill(c.title, { sum })} onClose={onClose}>
+        <Sheet
+            title={fill(c.title, { sum })}
+            onClose={onClose}
+            footer={
+                <AnswerButtons
+                    yes={fill(c.yes, { sum })}
+                    no={order.payment.status === PaymentStatus.AWAITING ? c.no : null}
+                    busy={busy}
+                    onAnswer={(kind): void => void answer(kind)}
+                />
+            }
+        >
             <div className="flex flex-col gap-3">
                 <div className="min-w-0">
                     {card ? (
@@ -112,25 +159,6 @@ export function PaymentCheckSheet({
                         </li>
                     ))}
                 </ul>
-            ) : null}
-            <Button
-                size="lg"
-                className="mt-1"
-                loading={busy === "yes"}
-                disabled={busy !== null}
-                onClick={(): void => void answer("yes")}
-            >
-                {fill(c.yes, { sum })}
-            </Button>
-            {order.payment.status === PaymentStatus.AWAITING ? (
-                <Button
-                    variant="danger"
-                    loading={busy === "no"}
-                    disabled={busy !== null}
-                    onClick={(): void => void answer("no")}
-                >
-                    {c.no}
-                </Button>
             ) : null}
         </Sheet>
     )

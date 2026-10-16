@@ -2,7 +2,7 @@ import { languageFromTelegram } from "@zumda/core"
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react"
 
 import { clearSession, loadSession, saveSession } from "./business/web-session.js"
-import { dictionaryFor, errorText, fill, useLanguageStore, useT } from "./i18n/index.js"
+import { dictionaryFor, errorText, useLanguageStore, useT } from "./i18n/index.js"
 import {
     ApiError,
     api,
@@ -14,13 +14,14 @@ import {
 import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "./lib/brand.js"
 import { useBackButton } from "./lib/main-button.js"
 import { useRefresh } from "./lib/refresh.js"
+import { removedText } from "./lib/removed.js"
 import { webApp } from "./lib/telegram.js"
-import { CartScreen } from "./shop/CartScreen.js"
 import { MenuScreen } from "./shop/MenuScreen.js"
 import { useCart } from "./stores/cart.js"
 import { useCurrentRoute, useRouter } from "./stores/router.js"
 import { useSession } from "./stores/session.js"
 import { toast } from "./stores/toast.js"
+import { ScreenSkeleton } from "./ui/boundary.js"
 import { Gestures } from "./ui/gestures.js"
 import { BotIcon, StoreIcon, WifiOffIcon } from "./ui/icons.js"
 import { Button, EmptyState, Skeleton } from "./ui/primitives.js"
@@ -82,10 +83,9 @@ const BulkAdd = lazy(() =>
 const CourierApp = lazy(() =>
     withStaff(() => import("./courier/CourierApp.js")).then((m) => ({ default: m.CourierApp })),
 )
+// The showcase is a customer's screen: no staff words in its chunk.
 const ShowcaseScreen = lazy(() =>
-    withStaff(() => import("./showcase/ShowcaseScreen.js")).then((m) => ({
-        default: m.ShowcaseScreen,
-    })),
+    import("./showcase/ShowcaseScreen.js").then((m) => ({ default: m.ShowcaseScreen })),
 )
 const WebSignIn = lazy(() =>
     import("./business/WebSignIn.js").then((m) => ({ default: m.WebSignIn })),
@@ -175,12 +175,14 @@ function useShopBootstrap(
                 applyBrand(shop.brandColor)
                 setLanguage(me.language)
                 const session = useSession.getState()
+                // The catalog the customer saw last: what left the cart is told by name.
+                const seen = session.catalog
                 session.setShop(shop)
                 session.setMe(me)
                 session.setCatalog(products)
                 const removed = useCart.getState().prune(products)
-                if (removed > 0) {
-                    toast(fill(dictionaryFor(me.language).cart.removed, { n: removed }))
+                if (removed.length > 0) {
+                    toast(removedText(dictionaryFor(me.language), removed, seen))
                 }
                 document.title = shop.name
                 setState({ kind: "ready" })
@@ -222,40 +224,39 @@ function Screen(): React.JSX.Element {
     const route = useCurrentRoute()
     switch (route.name) {
         case "cart":
-            return <CartScreen />
         case "checkout":
             return (
-                <Suspense fallback={null}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <CheckoutScreen />
                 </Suspense>
             )
         case "order":
             return (
-                <Suspense fallback={null}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <OrderScreen key={route.id} id={route.id} justPlaced={route.justPlaced} />
                 </Suspense>
             )
         case "orders":
             return (
-                <Suspense fallback={null}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <OrdersScreen />
                 </Suspense>
             )
         case "owner":
             return (
-                <Suspense fallback={<MenuSkeleton />}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <OwnerApp />
                 </Suspense>
             )
         case "product":
             return (
-                <Suspense fallback={<MenuSkeleton />}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <ProductEditor id={route.id} />
                 </Suspense>
             )
         case "bulk":
             return (
-                <Suspense fallback={<MenuSkeleton />}>
+                <Suspense fallback={<ScreenSkeleton />}>
                     <BulkAdd />
                 </Suspense>
             )
@@ -368,6 +369,8 @@ function ShowcaseApp({
     order: string | null
 }): React.JSX.Element {
     const [slug, setSlug] = useState<string | null>(shop)
+    // An order opened from the showcase's own banner, or the one a message pointed to.
+    const [target, setTarget] = useState<string | null>(order)
     useEffect(() => {
         if (slug === null) {
             setShop(null)
@@ -381,10 +384,11 @@ function ShowcaseApp({
                 key={slug}
                 slug={slug}
                 via="marketplace"
-                order={slug === shop ? (order ?? undefined) : undefined}
+                order={target ?? undefined}
                 onExit={(): void => {
                     setShop(null)
                     useRouter.getState().start({ name: "menu" })
+                    setTarget(null)
                     setSlug(null)
                 }}
             />
@@ -393,8 +397,9 @@ function ShowcaseApp({
     return (
         <Suspense fallback={<MenuSkeleton />}>
             <ShowcaseScreen
-                onOpen={(next): void => {
+                onOpen={(next, orderId): void => {
                     useRouter.getState().start({ name: "menu" })
+                    setTarget(orderId ?? null)
                     setSlug(next)
                 }}
             />
@@ -409,12 +414,25 @@ function ShowcaseApp({
 function BusinessesApp({
     onSignOut,
     adminTarget = null,
+    shop = null,
+    order = null,
 }: {
     onSignOut?: () => void
     /** An admin's bot message: open «Platforma» on this. */
     adminTarget?: AdminTarget | null
+    /** A message about one business (and one of its orders): opened right on it. */
+    shop?: string | null
+    order?: string | null
 }): React.JSX.Element {
-    const [slug, setSlug] = useState<string | null>(null)
+    const [slug, setSlug] = useState<string | null>(() => {
+        if (shop && adminTarget === null) {
+            useRouter.getState().start({ name: "owner" })
+            return shop
+        }
+        return null
+    })
+    // The order of the message, only on the business it came with.
+    const [target, setTarget] = useState(order)
     const [platform, setPlatform] = useState(adminTarget !== null)
     useEffect(() => {
         if (slug === null) {
@@ -425,7 +443,7 @@ function BusinessesApp({
     }, [slug, platform])
     if (platform) {
         return (
-            <Suspense fallback={<MenuSkeleton />}>
+            <Suspense fallback={<ScreenSkeleton />}>
                 <PlatformApp target={adminTarget} onExit={(): void => setPlatform(false)} />
             </Suspense>
         )
@@ -436,17 +454,19 @@ function BusinessesApp({
                 key={slug}
                 slug={slug}
                 via="business"
+                order={slug === shop ? (target ?? undefined) : undefined}
                 onExit={(): void => {
                     // Before the list renders: its first request must not carry this shop.
                     setShop(null, { via: "business" })
                     useRouter.getState().start({ name: "menu" })
+                    setTarget(null)
                     setSlug(null)
                 }}
             />
         )
     }
     return (
-        <Suspense fallback={<MenuSkeleton />}>
+        <Suspense fallback={<ScreenSkeleton />}>
             <OnboardingApp
                 onSignOut={onSignOut}
                 onPlatform={(): void => setPlatform(true)}
@@ -463,7 +483,15 @@ function BusinessesApp({
  * business.zumda.shop in a browser: sign in with Telegram once, then the same «Mening
  * bizneslarim» and owner section as inside the Zumda | Business bot.
  */
-function WebBusinessApp({ adminTarget }: { adminTarget: AdminTarget | null }): React.JSX.Element {
+function WebBusinessApp({
+    adminTarget,
+    shop,
+    order,
+}: {
+    adminTarget: AdminTarget | null
+    shop: string | null
+    order: string | null
+}): React.JSX.Element {
     const [session, setSession] = useState<WebSession | null>(() => loadSession())
     setWebSession(session?.token ?? null)
     useEffect(() => {
@@ -476,7 +504,7 @@ function WebBusinessApp({ adminTarget }: { adminTarget: AdminTarget | null }): R
     }, [])
     if (!session) {
         return (
-            <Suspense fallback={<MenuSkeleton />}>
+            <Suspense fallback={<ScreenSkeleton />}>
                 <WebSignIn
                     onSignedIn={(next): void => {
                         saveSession(next)
@@ -491,6 +519,8 @@ function WebBusinessApp({ adminTarget }: { adminTarget: AdminTarget | null }): R
             <WebBackBar />
             <BusinessesApp
                 adminTarget={adminTarget}
+                shop={shop}
+                order={order}
                 onSignOut={(): void => {
                     clearSession()
                     setWebSession(null)
@@ -505,17 +535,19 @@ export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
     let content: React.JSX.Element
     if (!webApp()) {
         content = launch.business ? (
-            <WebBusinessApp adminTarget={launch.admin} />
+            <WebBusinessApp adminTarget={launch.admin} shop={launch.shop} order={launch.order} />
         ) : (
             <NotInTelegram />
         )
     } else if (launch.business) {
-        content = <BusinessesApp adminTarget={launch.admin} />
+        content = (
+            <BusinessesApp adminTarget={launch.admin} shop={launch.shop} order={launch.order} />
+        )
     } else if (launch.courier) {
         // The Zumda courier bot: one screen across every shop the courier delivers for.
         content = (
-            <Suspense fallback={<MenuSkeleton />}>
-                <CourierApp />
+            <Suspense fallback={<ScreenSkeleton />}>
+                <CourierApp order={launch.order} />
             </Suspense>
         )
     } else if (launch.market) {

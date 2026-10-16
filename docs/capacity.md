@@ -22,7 +22,7 @@ that Zumda fits its share on a busy day, line by line, and how each number was f
 |------|-------------------:|--------------:|------------:|----------:|------|
 | Worker requests | 100 000 / day | 35 000 | ~32 700 | ~40 000 | typical yes; heavy: see "Levers" |
 | D1 rows read | 5 000 000 / day | 1 500 000 | ~0.6 M | ~1.1 M | yes, also after 6 months |
-| D1 rows written | 100 000 / day | 20 000 | ~15 000 | ~18 000 | yes |
+| D1 rows written | 100 000 / day | 20 000 | ~14 000 | ~17 000 | yes |
 | R2 storage | 10 GB | 4 GB | ~2 GB | ~2.3 GB | yes, and it stops growing |
 | Cron triggers | 5 / account | 0-1 | 0 | 0 | yes |
 
@@ -54,7 +54,7 @@ Rows read per request (authentication included):
 | Owner: «Pul» this month | 285 at day 5, ~1 700 at day 30 | opening «Pul» with the month |
 | Courier: home | 166 (30 finished today, 11 open; +1 per shop of the day without its own number) | every 45 s while visible |
 | Showcase: a search | 10 | after a pause in typing, from 3 letters |
-| One order, placing to delivered (7 calls) | 91 read, 39 written | 300 a day |
+| One order, placing to delivered (6 calls: accepting starts it) | 81 read, 36 written | 300 a day |
 
 What the measurement found and fixed on the way (before, on the same data):
 
@@ -126,13 +126,13 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 
 | What | Calculation | Typical | Heavy |
 |------|-------------|--------:|------:|
-| Orders | 300 × 39 | 11 700 | 11 700 |
+| Orders | 300 × 36 | 10 800 | 10 800 |
 | Customers (new ones, phone shares) | ~50 × 6 | 300 | 600 |
 | Products saved (row + search words + indexes) | 10 shops × 10 × ~15 | 1 500 | 3 000 |
 | «Ro'yxat bilan qo'shish»: a new shop's list, once (50 × ~15; reads: the shop's names, one covering index) | rare, at most 5 a minute | 0 | 750 |
 | Couriers' shifts, network offers | | 500 | 1 000 |
 | Bot message ids, alerts, sessions | 300 × 2 × 2 + ~200 | 1 400 | 1 700 |
-| **Total** | | **~15 000** | **~18 000** |
+| **Total** | | **~14 000** | **~17 000** |
 
 ## R2 storage
 

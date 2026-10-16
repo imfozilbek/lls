@@ -373,11 +373,21 @@ export class Order {
         this.touch()
     }
 
-    /** «Деньги пришли, принять»: the transfer arrived and the shop starts, in one tap. */
-    confirmPaymentAndAccept(): void {
+    /**
+     * «Qabul qilish»: the shop takes the order and starts it in the same tap (owner's decision,
+     * October 2026): accepted, then preparing, two steps of the one table. The customer hears
+     * once that the order is being made.
+     */
+    acceptAndStart(by: OrderMover = OWNER): void {
+        this.advanceTo(OrderStatus.ACCEPTED, by)
+        this.advanceTo(OrderStatus.PREPARING, by)
+    }
+
+    /** «Pul keldi»: the transfer arrived and the shop starts it, in one tap. */
+    confirmPaymentAndStart(): void {
         this.confirmPayment()
         if (this.props.status === OrderStatus.PENDING) {
-            this.advanceTo(OrderStatus.ACCEPTED)
+            this.acceptAndStart()
         }
     }
 

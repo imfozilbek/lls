@@ -54,6 +54,7 @@ const UNIT_WORDS: ReadonlyArray<[string, Unit]> = [
 ]
 
 const MAX_NAME = 80
+const THOUSAND = 1_000
 const MAX_PRICE = 100_000_000
 
 export type RowError = "noPrice" | "badPrice" | "twin" | "longName"
@@ -80,6 +81,17 @@ function split(line: string): { name: string; price?: number; unit?: Unit; badPr
             // Drop the unit word as typed (any case, «m²» too) from the end of the line.
             rest = ` ${line.trim().slice(0, -lastWordLength(line, word)).trim()} `
             break
+        }
+    }
+    // «35 ming», «2,5 ming»: how prices are said at the market, read as 35 000 and 2 500.
+    const thousands = /\s(\d+(?:[.,]\d{1,3})?)\s*(?:ming|минг)\s*(so'?m|sum|сўм)?\s*$/i.exec(rest)
+    if (thousands?.[1]) {
+        const amount = Math.round(Number(thousands[1].replace(",", ".")) * THOUSAND)
+        return {
+            name: rest.slice(0, thousands.index).trim(),
+            price: amount,
+            unit,
+            badPrice: !Number.isSafeInteger(amount) || amount < 1 || amount > MAX_PRICE,
         }
     }
     // «38000», «38 000», «38.000»: groups of three only, so «Taom 1 1000» costs 1 000.

@@ -67,7 +67,7 @@ test("the customer hears it once, softly, when the shop accepts", async ({ page 
     expect(await app.zums()).toBe(0)
     expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await pullDown(page)
-    await expect(page.getByText("Do'kon buyurtmani qabul qildi")).toBeVisible()
+    await expect(page.getByText("Buyurtmangiz tayyorlanmoqda")).toBeVisible()
     await expect.poll(() => app.zums()).toBe(1)
 })
 

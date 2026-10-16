@@ -38,6 +38,7 @@ import {
 import { BottomSpacer } from "../ui/shell.js"
 
 import { CatalogSearch } from "./CatalogSearch.js"
+import { DepositOffer } from "./DepositOffer.js"
 import {
     NO_OPTIONS,
     OptionsEditor,
@@ -53,6 +54,7 @@ import { useOwner } from "./store.js"
 import type { OptionsDraft } from "./OptionsEditor.js"
 import type { Template } from "./catalog.js"
 import type { ProductInput } from "../lib/api.js"
+import type { MainAction } from "../lib/main-button.js"
 import type { BusinessType, Category, ProductDTO, ProductOptionsProps } from "@zumda/core"
 
 /** Selling steps offered for weight items, in grams: by the kilo, by 100 g, by the gram. */
@@ -483,6 +485,32 @@ function KindFields({
     )
 }
 
+/**
+ * A catalog product already knows its unit and category: one line, «porsiya · Osh», and
+ * «O'zgartirish» opens the chips.
+ */
+function KindSummary({ draft, onOpen }: { draft: Draft; onOpen(): void }): React.JSX.Element {
+    const t = useT()
+    const units = t.units as Record<string, string>
+    const categories = t.categories as Record<string, string>
+    const words = [units[draft.unit] ?? draft.unit, categories[draft.category] ?? draft.category]
+    return (
+        <div className="flex items-center gap-3 rounded-control bg-tg-secondary px-4 py-2">
+            <p className="min-w-0 flex-1 font-medium">{words.join(" · ")}</p>
+            <button
+                type="button"
+                onClick={(): void => {
+                    haptic.tap()
+                    onOpen()
+                }}
+                className="tap min-h-11 shrink-0 rounded-control px-2 text-sm font-semibold text-brand"
+            >
+                {t.owner.product.change}
+            </button>
+        </div>
+    )
+}
+
 /** The price, or a word that it lives in the variants (the cheapest one is shown). */
 function PriceField({
     draft,
@@ -495,7 +523,22 @@ function PriceField({
 }): React.JSX.Element {
     const t = useT()
     if (hasVariants(draft.options)) {
-        return <p className="px-1 text-sm text-tg-hint">{t.owner.product.priceInVariants}</p>
+        // Sizes from the catalog that this shop does not sell: one price instead, one tap.
+        return (
+            <div className="flex items-center justify-between gap-3 px-1">
+                <p className="text-sm text-tg-hint">{t.owner.product.priceInVariants}</p>
+                <button
+                    type="button"
+                    onClick={(): void => {
+                        haptic.tap()
+                        patch({ options: { ...draft.options, group: "", variants: [] } })
+                    }}
+                    className="tap min-h-11 shrink-0 rounded-control px-2 text-sm font-semibold text-brand"
+                >
+                    {t.owner.product.onePrice}
+                </button>
+            </div>
+        )
     }
     return (
         <Field
@@ -517,6 +560,9 @@ function PriceField({
         </Field>
     )
 }
+
+/** After a catalog pick the form renders first, then the price takes the keyboard. */
+const FOCUS_DELAY_MS = 80
 
 /** What makes a draft worth guarding: everything but the photo, which counts once picked. */
 function fingerprint(draft: Draft): string {
@@ -561,11 +607,13 @@ function useSaveAction(input: {
     saving: boolean
     onMissing(): void
     save(): Promise<void>
+    /** The catalog search is open: the bottom button keeps the typed words as the name. */
+    search: { typed: string; own(name: string): void } | null
 }): void {
     const t = useT()
-    const { draft, saving, onMissing, save } = input
+    const { draft, saving, onMissing, save, search } = input
     const p = t.owner.product
-    useMainAction({
+    const saveAction: MainAction = {
         text: saving ? t.common.saving : t.common.save,
         onClick: (): void => {
             const gap = missing(draft)
@@ -578,7 +626,16 @@ function useSaveAction(input: {
             toast({ name: p.needName, variants: p.needVariants, price: p.needPrice }[gap], "error")
         },
         loading: saving,
-    })
+    }
+    // While the catalog search is open nothing is there to save yet: «Saqlash» only told the
+    // owner who had just typed a name to «write a name». The button keeps the typed words instead.
+    const ownAction: MainAction | null = search?.typed
+        ? {
+              text: fill(p.catalogOwn, { name: search.typed }),
+              onClick: () => search.own(search.typed),
+          }
+        : null
+    useMainAction(search ? ownAction : saveAction)
 }
 
 /** Leaving with changes asks first; closing the app warns too. */
@@ -770,6 +827,33 @@ function BulkLink(): React.JSX.Element {
     )
 }
 
+/** «Yangi mahsulot» with «Ro'yxat bilan» while searching, or the catalog's mark after a pick. */
+function EditorHeader({
+    editing,
+    searching,
+    draft,
+}: {
+    editing: boolean
+    searching: boolean
+    draft: Draft
+}): React.JSX.Element {
+    const t = useT()
+    return (
+        <div className="flex items-center justify-between gap-3">
+            <h1 className="text-2xl font-bold">
+                {editing ? t.owner.product.edit : t.owner.product.new}
+            </h1>
+            {!editing && !searching && draft.categoryPicked && draft.suggestedAddons ? (
+                <span className="flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-1 text-sm font-semibold text-brand">
+                    <CheckIcon size={14} />
+                    {t.owner.product.fromCatalog}
+                </span>
+            ) : null}
+            {!editing && searching ? <BulkLink /> : null}
+        </div>
+    )
+}
+
 function EditorForm({ product: initial }: { product: ProductDTO | undefined }): React.JSX.Element {
     const t = useT()
     const { draft, patch, restart, dirty, copy } = useEditorState(initial)
@@ -795,34 +879,35 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
         remember: setProduct,
     })
 
-    useSaveAction({ draft, saving, onMissing: () => setTried(true), save })
+    const [typed, setTyped] = useState("")
+    const own = (name: string): void => {
+        patch({ name, ...(draft.categoryPicked ? {} : nameGuess(name)) })
+        setSearching(false)
+    }
+    useSaveAction({
+        draft,
+        saving,
+        onMissing: () => setTried(true),
+        save,
+        search: searching ? { typed, own } : null,
+    })
     const gap = tried ? missing(draft) : null
 
     return (
         <main className="flex flex-col gap-6 px-4 pt-4">
-            <div className="flex items-center justify-between gap-3">
-                <h1 className="text-2xl font-bold">
-                    {product ? t.owner.product.edit : t.owner.product.new}
-                </h1>
-                {!product && !searching && draft.categoryPicked && draft.suggestedAddons ? (
-                    <span className="flex items-center gap-1 rounded-full bg-brand/10 px-2.5 py-1 text-sm font-semibold text-brand">
-                        <CheckIcon size={14} />
-                        {t.owner.product.fromCatalog}
-                    </span>
-                ) : null}
-                {!product && searching ? <BulkLink /> : null}
-            </div>
+            <EditorHeader editing={product !== undefined} searching={searching} draft={draft} />
             {searching ? (
                 <CatalogSearch
                     onPick={(template): void => {
                         restart(draft)
                         patch(fromTemplate(draft, template))
                         setSearching(false)
+                        // Only the price is left: the keyboard is up for it at once.
+                        window.setTimeout(() => {
+                            document.getElementById("product-price")?.focus()
+                        }, FOCUS_DELAY_MS)
                     }}
-                    onOwn={(name): void => {
-                        patch({ name, ...(draft.categoryPicked ? {} : nameGuess(name)) })
-                        setSearching(false)
-                    }}
+                    onTyped={setTyped}
                 />
             ) : (
                 <EditorFields
@@ -878,6 +963,23 @@ function EditorFields({
 }): React.JSX.Element {
     const t = useT()
     const prices = new Set(optionsBody(draft.options)?.variants.map((v) => v.price))
+    // Picked from the Zumda catalog: only the price is left, so it comes first and the rest
+    // (unit, category) folds into one line.
+    const picked = !product && draft.suggestedAddons !== undefined
+    const [kindOpen, setKindOpen] = useState(false)
+    const options = (
+        <OptionsEditor
+            draft={draft.options}
+            addons={!isWeightUnit(draft.unit)}
+            suggestions={draft.suggestedAddons}
+            onChange={(next): void => patch({ options: next })}
+        />
+    )
+    const saveNext = onSaveNext ? (
+        <Button variant="secondary" loading={saving} onClick={onSaveNext}>
+            {t.owner.product.saveAndNext}
+        </Button>
+    ) : null
     return (
         <>
             <ProductPreview
@@ -892,22 +994,20 @@ function EditorFields({
             />
             <NameField draft={draft} product={product} error={gap === "name"} patch={patch} />
             <PriceField draft={draft} patch={patch} error={gap === "price"} />
-            <KindFields draft={draft} patch={patch} />
-            <OptionsEditor
-                draft={draft.options}
-                addons={!isWeightUnit(draft.unit)}
-                suggestions={draft.suggestedAddons}
-                onChange={(options): void => patch({ options })}
-            />
+            {picked ? options : null}
+            {picked ? saveNext : null}
+            {picked && !kindOpen ? (
+                <KindSummary draft={draft} onOpen={(): void => setKindOpen(true)} />
+            ) : (
+                <KindFields draft={draft} patch={patch} />
+            )}
+            {isBottleUnit(draft.unit) ? <DepositOffer /> : null}
+            {picked ? null : options}
             <Description
                 value={draft.description}
                 onChange={(description): void => patch({ description })}
             />
-            {onSaveNext ? (
-                <Button variant="secondary" loading={saving} onClick={onSaveNext}>
-                    {t.owner.product.saveAndNext}
-                </Button>
-            ) : null}
+            {picked ? null : saveNext}
             {onSearch ? (
                 <button
                     type="button"

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { ValidationError } from "../../../domain/errors/validation.error.js"
-import { WorkingHours } from "../../../domain/value-objects/working-hours.js"
+import { WorkingHours, nextOpening } from "../../../domain/value-objects/working-hours.js"
 
 /** Build a UTC instant from Tashkent local time (UTC+5). 2026-09-28 is a Monday. */
 function tashkent(isoLocal: string): Date {
@@ -55,5 +55,34 @@ describe("WorkingHours", () => {
         const schedule = { mon: { open: "09:00", close: "18:00" } }
         expect(WorkingHours.fromJSON(schedule).toJSON()).toEqual(schedule)
         expect(WorkingHours.fromJSON(null).toJSON()).toBeNull()
+    })
+})
+
+describe("nextOpening", () => {
+    const week = { mon: { open: "09:00", close: "18:00" }, wed: { open: "10:00", close: "20:00" } }
+
+    it("later today before the opening", () => {
+        expect(nextOpening(week, tashkent("2026-09-28T07:30:00"))).toEqual({
+            inDays: 0,
+            weekday: "mon",
+            time: "09:00",
+        })
+    })
+
+    it("skips a day off after closing", () => {
+        expect(nextOpening(week, tashkent("2026-09-28T19:00:00"))).toEqual({
+            inDays: 2,
+            weekday: "wed",
+            time: "10:00",
+        })
+    })
+
+    it("the same weekday next week when it is the only day", () => {
+        const monday = { mon: { open: "09:00", close: "18:00" } }
+        expect(nextOpening(monday, tashkent("2026-09-28T19:00:00"))?.inDays).toBe(7)
+    })
+
+    it("none for an empty week", () => {
+        expect(nextOpening({}, tashkent("2026-09-28T12:00:00"))).toBeNull()
     })
 })

@@ -104,7 +104,6 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
     async function deliverByCourier(order: OrderDTO): Promise<OrderDTO> {
         await advance(order, OrderStatus.ACCEPTED)
         await assign(order)
-        await advance(order, OrderStatus.PREPARING)
         await advance(order, OrderStatus.READY)
         await advance(order, OrderStatus.PICKED_UP, COURIER_TG)
         return advance(order, OrderStatus.DELIVERED, COURIER_TG)
@@ -197,8 +196,9 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
         await expect(new ConfirmPaymentUseCase(deps()).execute(ids(order))).rejects.toMatchObject({
             rule: "NOT_A_TRANSFER",
         })
+        // «Qabul qilish» starts it at once; the money comes at the door.
         const accepted = await advance(order, OrderStatus.ACCEPTED)
-        expect(accepted).toMatchObject({ status: "accepted", payment: { status: "unpaid" } })
+        expect(accepted).toMatchObject({ status: "preparing", payment: { status: "unpaid" } })
     })
 
     it("the courier collects it; the owner sees it per courier and takes it per order", async () => {
@@ -240,7 +240,6 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
         const order = await place()
         for (const to of [
             OrderStatus.ACCEPTED,
-            OrderStatus.PREPARING,
             OrderStatus.READY,
             OrderStatus.PICKED_UP,
             OrderStatus.DELIVERED,

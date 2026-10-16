@@ -3,6 +3,7 @@ import { formatPhone, mapUrl } from "@zumda/core"
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
+import { yandexRouteUrl } from "../lib/trips.js"
 
 import { PhoneIcon, PinIcon } from "./icons.js"
 import { OrderMapButton } from "./maps.js"
@@ -49,7 +50,8 @@ export function ContactLinks({
     order: OrderDTO & { shopPhone?: string }
 }): React.JSX.Element | null {
     const t = useT()
-    const map = order.location ? mapUrl(order.location) : null
+    // The way to the door from where the courier is now, like a trip's: not just a point.
+    const map = order.location ? yandexRouteUrl([order.location]) : null
     if (!order.customerPhone && !order.shopPhone && !map) {
         return null
     }
@@ -68,7 +70,7 @@ export function ContactLinks({
             {map ? (
                 <a href={map} target="_blank" rel="noopener noreferrer" className={LINK}>
                     <PinIcon size={18} className="text-brand" />
-                    {t.owner.map}
+                    {t.courier.route}
                 </a>
             ) : null}
         </div>

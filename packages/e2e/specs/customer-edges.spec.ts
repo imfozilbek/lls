@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, GROCERY, PEOPLE, apiAs, resetStand, payAndAccept } from "../support/stand.js"
 import { lastSeq, waitForMessage } from "../support/telegram.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -17,11 +17,10 @@ async function ownerPatch(path: string, json: object, shop = FOOD): Promise<void
     expect(response.status, await response.clone().text()).toBe(200)
 }
 
+/** «+» and «Savat»: the order's fields are on the cart's screen. */
 async function toCheckout(page: Page): Promise<void> {
     await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
-    await bottomButton(page).click()
-    await bottomButton(page).click()
-    await expect(page.getByRole("heading", { name: "Buyurtma" })).toBeVisible()
+    await toCart(page)
 }
 
 test.describe.configure({ mode: "serial" })
@@ -71,7 +70,7 @@ test("a shop that delivers within a radius shows it and asks for the pin", async
     await expect(page.getByText("+998 90 999 99 99")).toBeVisible()
     await bottomButton(page).click()
     await expect(
-        page.getByText("Joylashuvni yuboring: do'kon shu bo'yicha masofani tekshiradi"),
+        page.getByText("Joylashuvingizni yuboring yoki xaritada uyingizni belgilang"),
     ).toBeVisible()
     await ownerPatch("/owner/shop", {
         delivery: { fee, freeFrom, minOrder, radiusMeters: null },
@@ -98,16 +97,20 @@ test("outside working hours the shop is closed and says so", async ({ page }) =>
             new Date(),
         ),
     )
-    const opens = `${String((nowHour + 2) % 24).padStart(2, "0")}:00`
+    const opensHour = (nowHour + 2) % 24
+    const opens = `${String(opensHour).padStart(2, "0")}:00`
     const closes = `${String((nowHour + 3) % 24).padStart(2, "0")}:00`
     const hours = Object.fromEntries(ALL_DAYS.map((d) => [d, { open: opens, close: closes }]))
     await ownerPatch("/owner/shop", { workingHours: hours })
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
-    await expect(page.getByText("Hozir yopiq")).toBeVisible()
+    // When to come back, not only that it is closed.
+    const when = `${nowHour + 2 < 24 ? "bugun" : "ertaga"} soat ${opensHour}:00 da`
+    await expect(page.getByText(`Yopiq · ${when} ochiladi`)).toBeVisible()
     await expect(page.getByText(`Bugun ${opens}–${closes}`)).toBeVisible()
     await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
     await bottomButton(page).click()
-    await expect(page.getByText("Do'kon hozir yopiq. Ish vaqtida buyurtma bering.")).toBeVisible()
+    const note = `Do'kon hozir yopiq, ${when} ochiladi. Savat saqlanib turadi.`
+    await expect(page.getByText(note)).toBeVisible()
     await bottomButton(page).click()
     await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
     await ownerPatch("/owner/shop", { workingHours: null })
@@ -134,14 +137,14 @@ test("an item that runs out during checkout is refused and dropped from the cart
 }) => {
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
-    await bottomButton(page).click()
-    await bottomButton(page).click()
+    await toCart(page)
     await page.getByRole("button", { name: "Raqamni yuborish" }).click()
     await expect(page.getByText("+998 90 123 45 67")).toBeVisible({ timeout: 20_000 })
-    await page.getByRole("textbox", { name: "Manzil" }).fill("Navoiy 3")
+    await fillAddress(page, "Navoiy 3")
     await ownerPatch("/owner/products/dev-food-p1", { isAvailable: false })
     await bottomButton(page).click()
-    await expect(page.getByText("Savatdagi mahsulotlardan biri tugab qoldi.")).toBeVisible()
+    // Refused, then named: the cart the customer saw knew «To'y oshi».
+    await expect(page.getByText("«To'y oshi» endi yo'q: savatdan olib tashladik.")).toBeVisible()
     await ownerPatch("/owner/products/dev-food-p1", { isAvailable: true })
 })
 
@@ -149,12 +152,10 @@ test("Uzbek customer: texts and bot messages in Uzbek", async ({ page }) => {
     await openApp(page, { user: PEOPLE.customerUz, shop: GROCERY })
     await expect(page.getByRole("button", { name: "Buyurtmalarim" })).toBeVisible()
     await page.getByRole("button", { name: "Qo'shish: Mol go'shti" }).click()
-    await bottomButton(page).click()
-    await expect(page.getByRole("heading", { name: "Savat" })).toBeVisible()
-    await bottomButton(page).click()
+    await toCart(page)
     await page.getByRole("button", { name: "Raqamni yuborish" }).click()
     await expect(page.getByText("+998 90 123 45 67")).toBeVisible({ timeout: 20_000 })
-    await page.getByRole("textbox", { name: "Manzil" }).fill("Navoiy 9")
+    await fillAddress(page, "Navoiy 9")
     await bottomButton(page).click()
     await expect(page.getByRole("heading", { name: "Buyurtma yuborildi!" })).toBeVisible()
     const since = await lastSeq()

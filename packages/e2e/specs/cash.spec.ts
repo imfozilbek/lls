@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import { lastSeq, waitForMessage } from "../support/telegram.js"
-import { bottomButton, openApp, openSettings } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, openSettings, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -33,19 +33,17 @@ async function openOwner(page: Page): Promise<void> {
     await page.getByRole("button", { name: "Mening do'konim" }).click()
 }
 
-/** Menu → cart → checkout with the phone and the address filled in. */
+/** Menu → «Savat» (the order's fields on the same screen) with the phone and the address. */
 async function toCheckout(page: Page): Promise<void> {
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await page.getByRole("button", { name: `Qo'shish: ${DISH}` }).click()
-    await bottomButton(page).click()
-    await bottomButton(page).click()
-    await expect(page.getByRole("heading", { name: "Buyurtma" })).toBeVisible()
+    await toCart(page)
     const share = page.getByRole("button", { name: "Raqamni yuborish" })
     if (await share.isVisible()) {
         await share.click()
     }
     await expect(page.getByText("+998 90 123 45 67")).toBeVisible({ timeout: 20_000 })
-    await page.getByRole("textbox", { name: "Manzil" }).fill("Mustaqillik 5")
+    await fillAddress(page, "Mustaqillik 5")
 }
 
 test.describe.configure({ mode: "serial" })
@@ -111,12 +109,11 @@ test("the owner accepts without money; a cash order never goes to the network", 
 
 test("the courier takes the sum at the door and owes it to the shop", async ({ page }) => {
     const list = (await (
-        await owner("/owner/orders?status=accepted", undefined, "GET")
+        await owner("/owner/orders?status=preparing", undefined, "GET")
     ).json()) as { data: Order[] }
     const order = list.data[0]
     expect(order?.payment.method).toBe("cash")
     const id = order?.id ?? ""
-    await owner(`/owner/orders/${id}`, { status: "preparing" })
     await owner(`/owner/orders/${id}`, { status: "ready" })
     const picked = await apiAs(PEOPLE.courier, `/courier/orders/${id}`, {
         courierBot: true,
@@ -128,7 +125,9 @@ test("the courier takes the sum at the door and owes it to the shop", async ({ p
     await openApp(page, { user: PEOPLE.courier, courierBot: true })
     await expect(page.getByText(/Mijozdan 55\s000\sso'm naqd oling/)).toBeVisible()
     const since = await lastSeq()
-    await page.getByRole("button", { name: "Pulni oldim, yetkazdim" }).click()
+    // One order, one step: it is on Telegram's own button, in reach of the thumb.
+    await expect(bottomButton(page)).toHaveText(/^#\d+ · Pulni oldim, yetkazdim$/)
+    await bottomButton(page).click()
     await expect(page.getByText(/Bugun yetkazilgan · 1/)).toBeVisible()
     await expect(page.getByText(/Do'konga topshirasiz: 55\s000\sso'm/)).toBeVisible()
     await waitForMessage(PEOPLE.customer.id, "yetkazildi", since)

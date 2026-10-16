@@ -269,19 +269,26 @@ export class RequestNetworkCourierUseCase {
     }
 }
 
+/** An order the shop has just accepted: accepting starts it (`Order.acceptAndStart`). */
+const JUST_STARTED: ReadonlySet<OrderStatus> = new Set([
+    OrderStatus.ACCEPTED,
+    OrderStatus.PREPARING,
+])
+
 export class AutoRequestNetworkUseCase {
     constructor(private readonly deps: NetworkDeps) {}
 
     /**
-     * Right after the shop accepts an order: when none of its own couriers can take it now and
-     * the shop keeps network delivery on, the district network gets it. Never a cash order: only
-     * the shop's own courier or the owner carries its money. Null: nothing to do.
+     * Right after the shop accepts an order (and starts it, in the same tap): when none of its
+     * own couriers can take it now and the shop keeps network delivery on, the district network
+     * gets it. Never a cash order: only the shop's own courier or the owner carries its money.
+     * Null: nothing to do.
      */
     async execute(input: { orderId: string }): Promise<NetworkRequest | null> {
         const order = await this.deps.orders.findById(input.orderId)
         if (
             !order ||
-            order.status !== OrderStatus.ACCEPTED ||
+            !JUST_STARTED.has(order.status) ||
             order.courierId !== undefined ||
             order.isCash()
         ) {

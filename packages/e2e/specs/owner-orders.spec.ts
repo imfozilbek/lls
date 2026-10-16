@@ -54,8 +54,8 @@ test("empty orders, then a new order: card, every step from the app, customer to
 
     await expect(one).toContainText("O'tkazma kutilmoqda")
     const steps: [string, string][] = [
-        ["Pul keldi, qabul qilish", "To'lov keldi"],
-        ["Tayyorlashni boshlash", "tayyorlanmoqda"],
+        // Accepting starts it: one message, one tap less.
+        ["Pul keldi, qabul qilish", "qabul qilindi va tayyorlanmoqda"],
         ["Tayyor bo'ldi", "tayyor"],
         ["Jo'natish", "yo'lda"],
         ["Yetkazildi", "yetkazildi"],
@@ -132,11 +132,11 @@ test("bot chat buttons: «Деньги пришли, принять»; old butto
                 .at(-1)
                 ?.buttons.map((b) => b.text),
         )
-        .toContain("👨‍🍳 Tayyorlashni boshlash")
+        .toContain("📦 Tayyor")
     // The old button again: the money is confirmed already, nothing changes.
     await shopChat(FOOD).press(PEOPLE.foodOwner, yes?.callback_data ?? "")
     const after = await apiAs(PEOPLE.customer, `/orders/${order.id}`, { shop: FOOD })
-    expect(((await after.json()) as { status: string }).status).toBe("accepted")
+    expect(((await after.json()) as { status: string }).status).toBe("preparing")
 
     // Cancel from the chat.
     const cancel = newCard.buttons.find((b) => b.callback_data?.startsWith("x:"))

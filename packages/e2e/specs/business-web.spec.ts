@@ -36,20 +36,22 @@ test("signs in with Telegram, manages the business, signs out", async ({ page })
     await openInBrowser(page, next)
     await expect(page.getByText("Kirish faqat Telegram orqali")).toBeVisible()
 
+    // One business: straight into it.
     await signInButton(page).click()
-    await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
-    await page.getByRole("button", { name: /Osh Markaz/ }).click()
     await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
     await page.getByRole("tab", { name: "Menyu" }).click()
     await expect(page.getByText("To'y oshi")).toBeVisible()
     // No Telegram BackButton in a browser: the app's own «Orqaga».
     await page.getByRole("button", { name: "Orqaga" }).click()
     await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
-    await expect(bottomButton(page)).toHaveText("Yangi biznes")
+    // A new business is a quiet button under the list, not the main one.
+    await expect(page.getByRole("button", { name: "Yangi biznes" })).toBeVisible()
+    await expect(bottomButton(page)).toBeHidden()
 
     // The sign-in survives a reload; «Chiqish» ends it.
     await page.reload()
-    await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
+    await page.getByRole("button", { name: "Orqaga" }).click()
     await page.getByRole("button", { name: "Chiqish" }).click()
     await expect(page.getByRole("heading", { name: "Zumda Business" })).toBeVisible()
 })
@@ -75,5 +77,6 @@ test("a login Telegram did not sign, for another bot, or cancelled is refused", 
 
     next.answer = { user: PEOPLE.foodOwner }
     await signInButton(page).click()
-    await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
+    // One business: straight into it.
+    await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
 })

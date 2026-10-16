@@ -204,6 +204,7 @@ test("a failed connection warns the admin; «Botni qayta ulash» in «Platforma�
     const before = await lastSeq()
     await openApp(page, { user: PEOPLE.admin, businessBot: true, query })
     const shop = page.getByRole("listitem").filter({ hasText: "Ikkinchi Do'kon" })
+    await shop.getByText("Boshqa amallar").click()
     await shop.getByRole("button", { name: "Botni qayta ulash" }).click()
     await expect(page.getByText("Bot ulandi")).toBeVisible()
     await waitForCall("setWebhook", SECOND_BOT.token, before)

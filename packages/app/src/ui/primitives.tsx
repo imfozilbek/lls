@@ -264,7 +264,7 @@ export function Segmented<T extends string>({
     onChange(value: T): void
 }): React.JSX.Element {
     return (
-        <div className="flex min-h-12 rounded-control bg-tg-secondary p-1" role="tablist">
+        <div className="flex min-h-[52px] rounded-control bg-tg-secondary p-1" role="tablist">
             {options.map((option) => (
                 <button
                     key={option.value}
@@ -276,7 +276,7 @@ export function Segmented<T extends string>({
                         onChange(option.value)
                     }}
                     className={cn(
-                        "tap min-h-10 flex-1 rounded-[0.625rem] px-2 text-sm font-semibold transition-colors duration-200",
+                        "tap min-h-11 flex-1 rounded-[0.625rem] px-2 text-sm font-semibold transition-colors duration-200",
                         option.value === value
                             ? "bg-tg-bg text-tg-text shadow-sm"
                             : "text-tg-subtitle",

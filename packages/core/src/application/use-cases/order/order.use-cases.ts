@@ -113,7 +113,12 @@ export class AdvanceOrderUseCase {
         if (mover.role === "customer") {
             throw ForbiddenError.notOwner(order.businessId)
         }
-        order.advanceTo(input.to, mover)
+        // Accepting starts the order at once: one tap less on every order.
+        if (input.to === OrderStatus.ACCEPTED) {
+            order.acceptAndStart(mover)
+        } else {
+            order.advanceTo(input.to, mover)
+        }
         await this.deps.orders.save(order)
         return toOrderDTO(order)
     }

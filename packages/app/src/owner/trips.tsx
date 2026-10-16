@@ -77,7 +77,7 @@ function Layer({
                     type="button"
                     onClick={onClose}
                     aria-label={t.map.close}
-                    className="tap flex h-10 w-10 items-center justify-center rounded-full bg-tg-secondary"
+                    className="tap flex h-11 w-11 items-center justify-center rounded-full bg-tg-secondary"
                 >
                     <CloseIcon size={20} />
                 </button>
@@ -168,7 +168,7 @@ function ArrowButton({
                 haptic.select()
                 onClick()
             }}
-            className="tap grid h-10 w-10 place-items-center rounded-full bg-tg-bg disabled:opacity-30"
+            className="tap grid h-11 w-11 place-items-center rounded-full bg-tg-bg disabled:opacity-30"
         >
             <ChevronIcon size={18} className={up ? "-rotate-90" : "rotate-90"} />
         </button>

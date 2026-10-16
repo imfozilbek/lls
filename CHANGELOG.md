@@ -7,6 +7,36 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Fewer taps and no dead ends, for every role
+- The customer: the cart and the order are one screen (owner's decision, October 2026), so an
+  order takes three taps: «+», «Savat», «Buyurtma berish». The place comes from Telegram first;
+  the map opens where the person is, asks once next to the shop and fills the street; a new
+  phone takes the last order's place; the fields and the way of paying are kept; a place outside
+  the zone is caught before sending; the way of paying is on the button. A product sheet closes
+  after «Qo'shish»; a product that left the cart is named; an unpaid transfer waits on top of the
+  storefront and of Zumda Shop; a closed shop says when it opens («ertaga soat 9:00 da»);
+  «Takrorlash» asks before mixing carts; the order screen opens at once after placing.
+- Accepting starts the order (owner's decision, October 2026): «Qabul qilish» and «Pul keldi» go
+  straight to preparing, and the customer hears once that the order is accepted and being made.
+- The owner: «Ishga tayyor» shows its next step under every tab; «Raqamimni yuborish» gives the
+  shop the owner's Telegram number; a product picked from the Zumda catalog focuses its price and
+  folds its unit and category; switches and the map save at once; a waiting courier is named;
+  the money to take comes above the totals; an owner of one business lands in it, and a message
+  through Zumda | Business opens its business and order; the wizard opens its last step once the
+  bot is made; an invite opens «Share»; «35 ming» is a price; a catalog row takes a photo from
+  its tile; cancelling a paid order says the money goes back; the deposit is offered for 19 and
+  20 l bottles; buttons are 44 px; a paused shop and a missing card never pass unseen.
+- The courier: the one step to make is on Telegram's button too; cards go on the way, ready, the
+  rest; a trip opens one stop at a time, calls its shop once and starts its way at the shop; the
+  way to the door opens in Yandex; the empty screen says why; a bot card opens its order.
+- «Platforma»: an application shows where the business is and asks for a reason to reject; the
+  showcase switch saves at once; rare actions fold under «Boshqa amallar»; a search over shops;
+  the guide and phone-ask results stay on their cards; a district's form says what it needs.
+- Everywhere: a crash or a piece that did not load shows a way back instead of a white screen; a
+  sheet's button stays in sight; an error stays long enough to read; a failed pull says why; an
+  old «8 90 …» number is read right. The initial JS stays at 98 KB: `@zumda/core` is marked free
+  of side effects and the map's place picker loads with the screens that use it.
+
 ### Phones: everyone on an order can call each other
 - The owner's order card: the customer's number with «Qo'ng'iroq» (it was a round icon without the
   digits) and the courier's number; the owner's bot card names the courier with the number.

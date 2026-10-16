@@ -31,6 +31,8 @@ async function showcaseNames(): Promise<string[]> {
 test("«Namuna qilish»: the shop leaves the showcase and says it is a demo", async ({ page }) => {
     expect(await showcaseNames()).toContain("Osh Markaz")
     const card = await shopCard(page)
+    // A rare action: folded under «Boshqa amallar».
+    await card.getByText("Boshqa amallar").click()
     await card.getByRole("button", { name: "Namuna qilish" }).click()
     await expect(page.getByText("Osh Markaz endi namuna do'kon")).toBeVisible()
     await expect(card.getByRole("button", { name: "Namunani tozalash" })).toBeVisible()

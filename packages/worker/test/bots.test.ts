@@ -469,13 +469,15 @@ describe("shop bot", () => {
         const edited = client.telegram.edited.at(-1)
         expect(edited?.messageId).toBeGreaterThan(0)
         expect(edited?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
-            `a:${order.id}:preparing`,
+            `a:${order.id}:ready`,
         )
         expect(edited?.html).toContain("O'tkazma bilan to'langan")
         const toCustomer = client.telegram.sent.at(-1)
         expect(toCustomer?.chatId).toBe(CUSTOMER.id)
         expect(toCustomer?.html).toContain(`#${order.number}`)
-        expect(toCustomer?.html).toContain("To'lov keldi")
+        // One message: accepted and being made, the money seen.
+        expect(toCustomer?.html).toContain("qabul qilindi va tayyorlanmoqda")
+        expect(toCustomer?.html).toContain("To'lovingiz keldi")
         // The customer's message opens this order in the shop's app.
         expect(toCustomer?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
             `https://zumda-app.pages.dev/?shop=${slug}&order=${order.id}`,
@@ -488,7 +490,7 @@ describe("shop bot", () => {
         // A stale button does not move the order again
         await shopUpdate({ callback_query: { id: "cb-2", from: OWNER, data: `pc:${order.id}` } })
         const row = await env.DB.prepare("SELECT status, payment_status FROM orders").first()
-        expect(row).toEqual({ status: "accepted", payment_status: "paid" })
+        expect(row).toEqual({ status: "preparing", payment_status: "paid" })
     })
 
     it("«Yo'q, kelmadi» under the screenshot: unpaid again, the customer sends it again", async () => {
@@ -530,9 +532,9 @@ describe("shop bot", () => {
         })
         expect(response.status).toBe(200)
         const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
-        expect(row?.status).toBe("accepted")
+        expect(row?.status).toBe("preparing")
         expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual(
-            expect.objectContaining({ callback_data: `a:${order.id}:preparing` }),
+            expect.objectContaining({ callback_data: `a:${order.id}:ready` }),
         )
     })
 

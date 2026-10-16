@@ -83,7 +83,7 @@ describe("district network", () => {
             location: Location.create(40.5, 68.79),
             customerName: "Aziz",
         })
-        order.confirmPaymentAndAccept()
+        order.confirmPaymentAndStart()
         await orders.save(order)
         return order
     }
@@ -300,10 +300,8 @@ describe("district network", () => {
                 couriers,
                 orders,
             })
-            for (const to of [OrderStatus.PREPARING, OrderStatus.READY]) {
-                const stored = await orders.findById(order.id)
-                stored?.advanceTo(to)
-            }
+            const stored = await orders.findById(order.id)
+            stored?.advanceTo(OrderStatus.READY)
             await advance.execute({
                 telegramId: BOBUR_TG,
                 orderId: order.id,
@@ -498,7 +496,7 @@ describe("district network", () => {
             address: "Navoiy 12",
             customerName: "Aziz",
         })
-        order.confirmPaymentAndAccept()
+        order.confirmPaymentAndStart()
         order.requestNetwork(now)
         await orders.save(order)
         const [listed] = await new ListNetworkOrdersUseCase(deps()).execute({

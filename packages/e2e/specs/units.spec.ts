@@ -34,7 +34,11 @@ test("the owner prices pepper per 100 g; the step follows the unit", async ({ pa
         .click()
     await expect(page.getByLabel("Nomi")).toHaveValue("Qora murch")
     await expect(page.getByLabel("100 g narxi")).toBeVisible()
+    // Only the price was left: it has the keyboard already.
+    await expect(page.getByLabel("100 g narxi")).toBeFocused()
     await page.getByLabel("100 g narxi").fill("6000")
+    // The unit and the category fold into one line; «O'zgartirish» opens the chips.
+    await page.getByRole("button", { name: "O'zgartirish", exact: true }).click()
     // Steps of a 100 g item: 50 g, 100 g (chosen), 250 g, 500 g.
     await expect(page.getByRole("button", { name: "50 g", exact: true })).toBeVisible()
     await expect(page.getByRole("button", { name: "100 g", exact: true }).last()).toHaveAttribute(

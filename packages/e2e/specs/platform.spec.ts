@@ -26,13 +26,16 @@ test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
 test("only an admin sees «Platforma» in «Mening bizneslarim»", async ({ page }) => {
-    await openApp(page, { user: PEOPLE.foodOwner, businessBot: true })
+    const owner = await openApp(page, { user: PEOPLE.foodOwner, businessBot: true })
+    // One business: the owner lands right in it; back leads to the list.
+    await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
+    await owner.back()
     await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
     await expect(page.getByRole("button", { name: /Platforma/ })).toBeHidden()
-    const owner = await apiAs(PEOPLE.foodOwner, "/admin/shops?status=pending", {
+    const forbidden = await apiAs(PEOPLE.foodOwner, "/admin/shops?status=pending", {
         businessBot: true,
     })
-    expect(owner.status).toBe(403)
+    expect(forbidden.status).toBe(403)
 
     await openApp(page, { user: PEOPLE.admin, businessBot: true })
     await page.getByRole("button", { name: /Platforma/ }).click()
@@ -89,7 +92,9 @@ test("«Tumanlar»: a new district by its center, then a longer wait", async ({ 
     await expect(sirdaryo).toContainText("12 km")
 
     await sirdaryo.click()
-    await expect(sheet.getByLabel("Tuman nomi")).toHaveAttribute("readonly", "")
+    // The name is the district's key: shown as words, never a field.
+    await expect(sheet.getByText("Sirdaryo", { exact: true })).toBeVisible()
+    await expect(sheet.getByLabel("Tuman nomi")).toHaveCount(0)
     await sheet.getByLabel("Kuryer kutish, daqiqa").fill("20")
     await sheet.getByRole("button", { name: "Saqlash" }).click()
     await expect(sirdaryo).toContainText("Kutish 20 daqiqa")
@@ -105,7 +110,8 @@ test("«Qo'llanma»: the couriers' guide goes to each courier once, from Zumda |
     const couriers = page.getByRole("listitem").filter({ hasText: "Kuryerlar" })
     await expect(couriers).toContainText(/kishi kutmoqda/)
     await couriers.getByRole("button", { name: "Yuborish" }).click()
-    await expect(page.getByText(/Yuborildi: \d+, yetmadi: 0/)).toBeVisible()
+    // The result stays on the row, not only in the passing toast.
+    await expect(couriers.getByText(/Yuborildi: \d+, yetmadi: 0/)).toBeVisible()
     await expect(couriers).toContainText("Hammasi oldi")
     await expect(couriers.getByRole("button", { name: "Yuborish" })).toHaveCount(0)
 
@@ -131,7 +137,7 @@ test("«Raqam so'rash»: the owner and the courier get one button; the owner's n
     const card = page.getByRole("region", { name: "Raqamsiz" })
     await expect(card).toContainText(/Do'kon egalari: \d+ · Kuryerlar: \d+/)
     await card.getByRole("button", { name: "Raqam so'rash" }).click()
-    await expect(page.getByText(/So'raldi: \d+, yetmadi: \d+/)).toBeVisible()
+    await expect(card.getByText(/So'raldi: \d+, yetmadi: \d+/)).toBeVisible()
     // Once a day: the button is gone until tomorrow.
     await expect(card).toContainText("Bugun so'raldi")
     await expect(card.getByRole("button", { name: "Raqam so'rash" })).toHaveCount(0)

@@ -1,7 +1,7 @@
 import { Feature, isFinalStatus } from "@zumda/core"
 
 import { fill, useT } from "../i18n/index.js"
-import { haptic } from "../lib/telegram.js"
+import { confirm, haptic } from "../lib/telegram.js"
 import { useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
@@ -23,10 +23,28 @@ export function useReorder(order: OrderDTO): (() => void) | null {
     }
     return (): void => {
         haptic.tap()
-        const skipped = useCart.getState().refill(order.items, catalog)
-        if (skipped > 0) {
-            toast(fill(t.order.reorderSkipped, { n: skipped }))
-        }
-        reset({ name: "cart" })
+        void (async (): Promise<void> => {
+            const cart = useCart.getState()
+            // What the customer already put in stays unless they say otherwise: closing the
+            // question keeps both.
+            if (Object.keys(cart.lines).length > 0) {
+                const only = await confirm(t.order.reorderKeep, {
+                    yes: t.order.reorderOnly,
+                    no: t.order.reorderBoth,
+                })
+                if (only) {
+                    cart.clear()
+                }
+            }
+            const skipped = useCart.getState().refill(order.items, catalog)
+            if (skipped === order.items.length) {
+                toast(t.order.reorderNone, "error")
+                return
+            }
+            if (skipped > 0) {
+                toast(fill(t.order.reorderSkipped, { n: skipped }))
+            }
+            reset({ name: "cart" })
+        })()
     }
 }

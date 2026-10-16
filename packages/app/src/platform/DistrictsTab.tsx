@@ -3,11 +3,12 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, adminApi } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
+import { useClosingGuard } from "../lib/main-button.js"
 import { useRefresh } from "../lib/refresh.js"
-import { getLocation, haptic } from "../lib/telegram.js"
+import { confirm, getLocation, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { ChevronIcon, PinIcon, PlusIcon, WifiOffIcon } from "../ui/icons.js"
-import { PlacePick } from "../ui/maps.js"
+import { PlacePick } from "../ui/place-pick.js"
 import { Button, EmptyState, Field, Skeleton, TextInput } from "../ui/primitives.js"
 import { Sheet } from "../ui/sheet.js"
 
@@ -131,6 +132,39 @@ function CenterField({
     )
 }
 
+/** How far the district reaches and how long a network order may wait. */
+function RadiusWaitFields({
+    form,
+    patch,
+}: {
+    form: DistrictForm
+    patch(next: Partial<DistrictForm>): void
+}): React.JSX.Element {
+    const p = useT().platform
+    return (
+        <div className="grid grid-cols-2 gap-3">
+            <Field label={p.radius} htmlFor="district-radius">
+                <TextInput
+                    id="district-radius"
+                    inputMode="decimal"
+                    value={form.radius}
+                    maxLength={5}
+                    onChange={(e): void => patch({ radius: e.target.value })}
+                />
+            </Field>
+            <Field label={p.wait} htmlFor="district-wait">
+                <TextInput
+                    id="district-wait"
+                    inputMode="numeric"
+                    value={form.wait}
+                    maxLength={3}
+                    onChange={(e): void => patch({ wait: e.target.value.replace(/\D/g, "") })}
+                />
+            </Field>
+        </div>
+    )
+}
+
 /** A new district, or a change to one: the name is its key, so it stays as it was. */
 function DistrictSheet({
     district,
@@ -147,6 +181,16 @@ function DistrictSheet({
     const [busy, setBusy] = useState(false)
     const patch = (next: Partial<DistrictForm>): void => setForm((f) => ({ ...f, ...next }))
     const input = districtInput(form)
+    // A tap beside the sheet or «Back» never throws away what was typed without asking.
+    const dirty = JSON.stringify(form) !== JSON.stringify(formOf(district))
+    useClosingGuard(dirty)
+    const close = async (): Promise<void> => {
+        const options = { yes: t.common.leave, no: t.common.stay, destructive: true }
+        if (dirty && !(await confirm(p.districtUnsaved, options))) {
+            return
+        }
+        onClose()
+    }
 
     const save = async (): Promise<void> => {
         if (!input) {
@@ -166,50 +210,43 @@ function DistrictSheet({
     }
 
     return (
-        <Sheet title={district ? p.editDistrict : p.addDistrict} onClose={onClose}>
-            <Field label={p.districtName} htmlFor="district-name">
-                <TextInput
-                    id="district-name"
-                    value={form.name}
-                    maxLength={60}
-                    readOnly={district !== null}
-                    placeholder={p.districtNamePlaceholder}
-                    onChange={(e): void => patch({ name: e.target.value })}
-                />
-            </Field>
+        <Sheet
+            title={district ? p.editDistrict : p.addDistrict}
+            onClose={(): void => void close()}
+            footer={
+                <Button
+                    size="lg"
+                    loading={busy}
+                    disabled={input === null}
+                    onClick={(): void => void save()}
+                >
+                    {t.common.save}
+                </Button>
+            }
+        >
+            {district ? (
+                // The name is the district's key: shown, never edited.
+                <p className="px-1 text-lg font-semibold">{district.name}</p>
+            ) : (
+                <Field label={p.districtName} htmlFor="district-name">
+                    <TextInput
+                        id="district-name"
+                        value={form.name}
+                        maxLength={60}
+                        placeholder={p.districtNamePlaceholder}
+                        onChange={(e): void => patch({ name: e.target.value })}
+                    />
+                </Field>
+            )}
             <CenterField
                 value={form.center}
                 radiusKm={decimal(form.radius) || 0}
                 onChange={(center): void => patch({ center })}
             />
-            <div className="grid grid-cols-2 gap-3">
-                <Field label={p.radius} htmlFor="district-radius">
-                    <TextInput
-                        id="district-radius"
-                        inputMode="decimal"
-                        value={form.radius}
-                        maxLength={5}
-                        onChange={(e): void => patch({ radius: e.target.value })}
-                    />
-                </Field>
-                <Field label={p.wait} htmlFor="district-wait">
-                    <TextInput
-                        id="district-wait"
-                        inputMode="numeric"
-                        value={form.wait}
-                        maxLength={3}
-                        onChange={(e): void => patch({ wait: e.target.value.replace(/\D/g, "") })}
-                    />
-                </Field>
-            </div>
-            <Button
-                size="lg"
-                loading={busy}
-                disabled={input === null}
-                onClick={(): void => void save()}
-            >
-                {t.common.save}
-            </Button>
+            <RadiusWaitFields form={form} patch={patch} />
+            {input === null ? (
+                <p className="px-1 text-sm text-tg-hint">{p.districtLimits}</p>
+            ) : null}
         </Sheet>
     )
 }

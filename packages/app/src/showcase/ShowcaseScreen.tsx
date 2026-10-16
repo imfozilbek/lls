@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { create } from "zustand"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
+import { loadShowcaseOrder } from "../lib/address-book.js"
 import { ApiError, api, imageUrl } from "../lib/api.js"
 import { ZUMDA_NAME, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
@@ -13,7 +14,14 @@ import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { useSession } from "../stores/session.js"
-import { ChevronIcon, CloseIcon, SearchIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
+import {
+    ChevronIcon,
+    CloseIcon,
+    ReceiptIcon,
+    SearchIcon,
+    StoreIcon,
+    WifiOffIcon,
+} from "../ui/icons.js"
 import { LanguageSwitch } from "../ui/language-switch.js"
 import { LoadMore } from "../ui/load-more.js"
 import { Button, EmptyState, Skeleton } from "../ui/primitives.js"
@@ -26,7 +34,8 @@ import type { Category, ShopPublicDTO, ShowcaseProductDTO } from "@zumda/core"
 /** Wait for a pause in typing before asking the server (and D1) again. */
 const TYPING_PAUSE_MS = 500
 /** Counted in the search spelling: «ош» is "osh", three letters, so the commonest dish is found. */
-const MIN_QUERY_LENGTH = 3
+/** «un» (flour), «go'sht»: two letters already find a product. */
+const MIN_QUERY_LENGTH = 2
 
 interface ShowcaseState {
     text: string
@@ -170,7 +179,7 @@ function ShopRow({
 }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
-    const types = t.onboarding.types as Record<string, string>
+    const types = t.showcase.types as Record<string, string>
     const fee =
         shop.delivery.fee === 0
             ? t.shop.deliveryFree
@@ -375,7 +384,42 @@ function ShopList({
  * The Zumda showcase in the Zumda bot: one search across the shops of the district, and the list
  * of shops. A tap opens that shop's own storefront; the order goes to that one shop.
  */
-export function ShowcaseScreen({ onOpen }: { onOpen(slug: string): void }): React.JSX.Element {
+/** The order placed through the showcase today: one tap back to it, its shop and its card. */
+function LastOrderBanner({
+    onOpen,
+}: {
+    onOpen(slug: string, orderId: string): void
+}): React.JSX.Element | null {
+    const t = useT()
+    const [last] = useState(() => loadShowcaseOrder())
+    if (!last) {
+        return null
+    }
+    return (
+        <button
+            type="button"
+            onClick={(): void => {
+                haptic.tap()
+                onOpen(last.slug, last.id)
+            }}
+            className="tap flex w-full animate-rise items-center gap-3 rounded-control bg-brand/10 px-4 py-3 text-left"
+        >
+            <ReceiptIcon size={22} className="shrink-0 text-brand" />
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                {fill(t.showcase.lastOrder, { n: last.number, shop: last.shopName })}
+            </span>
+            <span className="shrink-0 text-sm font-semibold text-brand">
+                {t.showcase.lastOrderOpen}
+            </span>
+        </button>
+    )
+}
+
+export function ShowcaseScreen({
+    onOpen,
+}: {
+    onOpen(slug: string, orderId?: string): void
+}): React.JSX.Element {
     const t = useT()
     const text = useShowcase((state) => state.text)
     const category = useShowcase((state) => state.category)
@@ -431,6 +475,7 @@ export function ShowcaseScreen({ onOpen }: { onOpen(slug: string): void }): Reac
                 </div>
                 <LanguageSwitch />
             </header>
+            <LastOrderBanner onOpen={onOpen} />
             <SearchField />
             <CategoryChips categories={categories} />
             {body}

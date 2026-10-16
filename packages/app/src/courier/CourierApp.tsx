@@ -9,6 +9,7 @@ import { useMainAction } from "../lib/main-button.js"
 import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
 import { canRequestContact, haptic, requestContact } from "../lib/telegram.js"
+import { yandexRouteUrl } from "../lib/trips.js"
 import { useRingOnNews } from "../lib/use-ring.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
@@ -17,6 +18,7 @@ import {
     CheckIcon,
     ClockIcon,
     PhoneIcon,
+    PinIcon,
     ScooterIcon,
     StoreIcon,
     WifiOffIcon,
@@ -38,6 +40,7 @@ import { SoundSwitch } from "../ui/sound-switch.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import { TripCard } from "./TripCard.js"
+import { emptyReason, stageRank } from "./order-stage.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type {
@@ -67,6 +70,57 @@ function isActive(order: CourierOrderDTO): boolean {
     return order.status !== OrderStatus.DELIVERED && order.status !== OrderStatus.CANCELLED
 }
 
+interface CourierStep {
+    step: "picked_up" | "delivered" | null
+    label: string
+    busy: boolean
+    go(): Promise<void>
+}
+
+/** The courier's next step on an order: «Buyurtmani oldim», then «Yetkazdim» (or the cash one). */
+/** Orders whose step is on its way to the server, whichever button sent it. */
+const moving = new Set<string>()
+
+function useCourierStep(
+    order: OrderDTO,
+    onChange: (order: OrderDTO) => void,
+    onStale: () => void,
+): CourierStep {
+    const t = useT()
+    const [busy, setBusy] = useState(false)
+    const step = courierStep(order.status)
+    const go = async (): Promise<void> => {
+        // The card's button and Telegram's are two ways to the same step: one request at a time.
+        if (!step || moving.has(order.id)) {
+            return
+        }
+        moving.add(order.id)
+        setBusy(true)
+        try {
+            onChange(await api.courier.setStatus(order.id, step))
+            haptic.success()
+            if (step === "delivered") {
+                toast(fill(t.courier.deliveredToast, { n: order.number }), "success")
+            }
+        } catch (caught) {
+            haptic.error()
+            const code = caught instanceof ApiError ? caught.code : "generic"
+            toast(errorText(t, code), "error")
+            // Someone else moved or reassigned it: show the truth.
+            onStale()
+        } finally {
+            moving.delete(order.id)
+            setBusy(false)
+        }
+    }
+    // Cash: the tap that says «delivered» also says the money is in the courier's hands.
+    const delivered =
+        order.payment.method === "cash" && order.payment.status !== PaymentStatus.PAID
+            ? t.courier.cashDelivered
+            : t.courier.delivered
+    return { step, label: step === "delivered" ? delivered : t.courier.pickedUp, busy, go }
+}
+
 function StepButton({
     order,
     onChange,
@@ -77,8 +131,7 @@ function StepButton({
     onStale(): void
 }): React.JSX.Element {
     const t = useT()
-    const [busy, setBusy] = useState(false)
-    const step = courierStep(order.status)
+    const { step, label, busy, go } = useCourierStep(order, onChange, onStale)
     if (!step) {
         return (
             <p className="flex items-center gap-2 rounded-control bg-tg-bg p-3 text-sm text-tg-hint">
@@ -87,26 +140,6 @@ function StepButton({
             </p>
         )
     }
-    const go = async (): Promise<void> => {
-        setBusy(true)
-        try {
-            onChange(await api.courier.setStatus(order.id, step))
-            haptic.success()
-        } catch (caught) {
-            haptic.error()
-            const code = caught instanceof ApiError ? caught.code : "generic"
-            toast(errorText(t, code), "error")
-            // Someone else moved or reassigned it: show the truth.
-            onStale()
-        } finally {
-            setBusy(false)
-        }
-    }
-    // Cash: the tap that says «delivered» also says the money is in the courier's hands.
-    const delivered =
-        order.payment.method === "cash" && order.payment.status !== PaymentStatus.PAID
-            ? t.courier.cashDelivered
-            : t.courier.delivered
     return (
         <Button
             size="lg"
@@ -114,9 +147,31 @@ function StepButton({
             icon={step === "delivered" ? <CheckIcon size={20} /> : <ScooterIcon size={20} />}
             onClick={(): void => void go()}
         >
-            {step === "delivered" ? delivered : t.courier.pickedUp}
+            {label}
         </Button>
     )
+}
+
+/**
+ * One order with a step to make right now: «#12 · Buyurtmani oldim» on Telegram's own button,
+ * in reach of the thumb without scrolling to the card.
+ */
+function OneStepButton({
+    order,
+    onChange,
+    onStale,
+}: {
+    order: OrderDTO
+    onChange(order: OrderDTO): void
+    onStale(): void
+}): null {
+    const { label, busy, go } = useCourierStep(order, onChange, onStale)
+    useMainAction({
+        text: `#${order.number} · ${label}`,
+        onClick: (): void => void go(),
+        loading: busy,
+    })
+    return null
 }
 
 /**
@@ -159,6 +214,45 @@ function Collect({ order }: { order: OrderDTO }): React.JSX.Element {
     )
 }
 
+/** Not picked up yet: still at the shop's door. */
+const BEFORE_PICKUP: readonly OrderStatus[] = [
+    OrderStatus.ACCEPTED,
+    OrderStatus.PREPARING,
+    OrderStatus.READY,
+]
+
+/**
+ * Before «Oldim»: where to pick the order up and the way there. A network courier may never have
+ * been to this shop; after the pickup the way leads to the customer.
+ */
+function PickupBlock({ order }: { order: CourierOrderDTO }): React.JSX.Element | null {
+    const t = useT()
+    if (!BEFORE_PICKUP.includes(order.status) || (!order.shopAddress && !order.shopLocation)) {
+        return null
+    }
+    return (
+        <div className="flex items-center gap-3 rounded-control bg-tg-bg p-3">
+            <StoreIcon size={18} className="shrink-0 text-brand" />
+            <div className="min-w-0 flex-1">
+                <p className="text-sm text-tg-hint">{t.courier.pickupFrom}</p>
+                <p className="font-medium">{order.shopAddress ?? order.shopName}</p>
+            </div>
+            {order.shopLocation ? (
+                <a
+                    href={yandexRouteUrl([order.shopLocation])}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(): void => haptic.tap()}
+                    className="tap flex h-11 shrink-0 items-center gap-1.5 rounded-control bg-tg-secondary px-3 font-semibold text-brand"
+                >
+                    <PinIcon size={18} />
+                    {t.courier.toShop}
+                </a>
+            ) : null}
+        </div>
+    )
+}
+
 function DeliveryCard({
     order,
     onChange,
@@ -170,7 +264,10 @@ function DeliveryCard({
 }): React.JSX.Element {
     const t = useT()
     return (
-        <li className="flex animate-rise flex-col gap-3 rounded-tile bg-tg-secondary p-4">
+        <li
+            data-order={order.id}
+            className="flex animate-rise flex-col gap-3 rounded-tile bg-tg-secondary p-4 transition-shadow duration-500"
+        >
             <div className="flex items-center justify-between gap-3">
                 <span className="min-w-0">
                     <span className="flex items-center gap-1.5 text-sm font-semibold text-tg-subtitle">
@@ -181,6 +278,9 @@ function DeliveryCard({
                 </span>
                 <StatusBadge status={order.status} />
             </div>
+            {/* The step first: the courier opens the card to make it. */}
+            <StepButton order={order} onChange={onChange} onStale={onStale} />
+            <PickupBlock order={order} />
             <p className="font-medium">{order.customerName}</p>
             <OrderMap shop={order.shopLocation} customer={order.location} />
             <AddressBlock order={order} />
@@ -197,7 +297,6 @@ function DeliveryCard({
                 </summary>
                 <OrderItems order={order} />
             </details>
-            <StepButton order={order} onChange={onChange} onStale={onStale} />
         </li>
     )
 }
@@ -215,9 +314,12 @@ function DoneRow({ order }: { order: CourierOrderDTO }): React.JSX.Element {
                 </span>
                 <span className="block truncate text-sm text-tg-hint">{order.shopName}</span>
             </span>
-            <span className="shrink-0 tabular-nums text-tg-hint">
-                {formatMoney(order.total, language)}
-            </span>
+            {/* Only cash is the courier's business: a paid order's sum says nothing to do. */}
+            {order.payment.method === "cash" ? (
+                <span className="shrink-0 tabular-nums text-tg-hint">
+                    {formatMoney(order.total, language)}
+                </span>
+            ) : null}
         </li>
     )
 }
@@ -353,11 +455,15 @@ function ShiftCard({
             return
         }
         setBusy(true)
+        // The switch moves at once; a refusal moves it back.
+        const before = home.profile
+        onChange((h) => ({ ...h, profile: { ...h.profile, onShift } }))
+        haptic.select()
         try {
             const profile = await api.courier.shift(onShift)
             onChange((h) => ({ ...h, profile }))
-            haptic.success()
         } catch (caught) {
+            onChange((h) => ({ ...h, profile: before }))
             haptic.error()
             toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
         } finally {
@@ -401,11 +507,14 @@ function NetworkCard({
             return
         }
         setBusy(true)
+        const before = home.profile
+        onChange((h) => ({ ...h, profile: { ...h.profile, inNetwork } }))
+        haptic.select()
         try {
             const profile = await api.courier.network(inNetwork)
             onChange((h) => ({ ...h, profile, network: inNetwork ? h.network : [] }))
-            haptic.success()
         } catch (caught) {
+            onChange((h) => ({ ...h, profile: before }))
             haptic.error()
             toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
         } finally {
@@ -608,8 +717,14 @@ function VehicleField({
     const saved = home.profile.vehicle ?? ""
     const [value, setValue] = useState(saved)
     const lastSaved = useRef(saved)
-    const save = async (text: string): Promise<void> => {
+    const saidFor = useRef(saved)
+    /** Saved quietly while typing; the word «saqlandi» only when the owner leaves the field. */
+    const save = async (text: string, say: boolean): Promise<void> => {
         if (text.trim() === lastSaved.current) {
+            if (say && saidFor.current !== lastSaved.current) {
+                saidFor.current = lastSaved.current
+                toast(t.courier.vehicleSaved, "success")
+            }
             return
         }
         lastSaved.current = text.trim()
@@ -617,8 +732,11 @@ function VehicleField({
             const profile = await api.courier.profile(text.trim() || null)
             lastSaved.current = profile.vehicle ?? ""
             onChange((h) => ({ ...h, profile }))
-            haptic.success()
-            toast(t.courier.vehicleSaved, "success")
+            if (say) {
+                saidFor.current = lastSaved.current
+                haptic.success()
+                toast(t.courier.vehicleSaved, "success")
+            }
         } catch (caught) {
             lastSaved.current = saved
             haptic.error()
@@ -627,7 +745,7 @@ function VehicleField({
     }
     // Saved after a short pause too: closing the app right after typing loses nothing.
     useEffect(() => {
-        const timer = window.setTimeout(() => void save(value), VEHICLE_SAVE_MS)
+        const timer = window.setTimeout(() => void save(value, false), VEHICLE_SAVE_MS)
         return (): void => window.clearTimeout(timer)
     }, [value])
     return (
@@ -638,10 +756,33 @@ function VehicleField({
                 maxLength={40}
                 placeholder={t.courier.vehiclePlaceholder}
                 onChange={(e): void => setValue(e.target.value)}
-                onBlur={(): void => void save(value)}
+                onBlur={(): void => void save(value, true)}
             />
         </Field>
     )
+}
+
+const SHOW_MS = 2_000
+
+/**
+ * Opened from a bot message about one order: its card scrolls into view and glows for a moment
+ * (a trip's stop, or a card of its own).
+ */
+function useShowOrder(orderId: string | null, ready: boolean): void {
+    const shown = useRef(false)
+    useEffect(() => {
+        if (!orderId || !ready || shown.current) {
+            return
+        }
+        shown.current = true
+        const card = document.querySelector(`[data-order="${CSS.escape(orderId)}"]`)
+        if (!(card instanceof HTMLElement)) {
+            return
+        }
+        card.scrollIntoView({ behavior: "smooth", block: "center" })
+        card.classList.add("ring-2", "ring-brand")
+        window.setTimeout(() => card.classList.remove("ring-2", "ring-brand"), SHOW_MS)
+    }, [orderId, ready])
 }
 
 function Deliveries({
@@ -659,18 +800,24 @@ function Deliveries({
     // A trip's orders are one card; the others stay one card each.
     const trips = home.trips.filter((trip) => active.some((o) => o.tripId === trip.id))
     const inTrips = new Set(trips.flatMap((trip) => trip.stops))
-    const single = active.filter((o) => !inTrips.has(o.id))
+    const single = active
+        .filter((o) => !inTrips.has(o.id))
+        .sort((a, b) => stageRank(a) - stageRank(b))
+    // Exactly one step to make now: it goes on Telegram's own button too.
+    const steps = single.filter((o) => courierStep(o.status) !== null)
+    const only = trips.length === 0 && steps.length === 1 ? steps[0] : undefined
     const replaceMany = (orders: OrderDTO[]): void => replace(orders)
     const stale = (): void => void reload()
     // Orders nearby are already on screen above: «nothing to deliver» would contradict them.
     const offersNearby = home.profile.inNetwork && home.network.length > 0
     return (
         <>
+            {only ? <OneStepButton order={only} onChange={replace} onStale={stale} /> : null}
             {active.length === 0 && offersNearby ? null : active.length === 0 ? (
                 <EmptyState
                     art={<ScooterIcon size={44} />}
                     title={t.courier.empty}
-                    text={t.courier.emptyText}
+                    text={emptyReason(t, home)}
                 />
             ) : (
                 <ul className="flex flex-col gap-3" aria-label={t.courier.active}>
@@ -684,7 +831,8 @@ function Deliveries({
                             renderStop={(order, showStep): React.JSX.Element => (
                                 <>
                                     <AddressBlock order={order} />
-                                    <ContactLinks order={order} />
+                                    {/* The shop's call is once, on top of the trip. */}
+                                    <ContactLinks order={{ ...order, shopPhone: undefined }} />
                                     <Collect order={order} />
                                     {showStep ? (
                                         <StepButton
@@ -727,7 +875,7 @@ function Deliveries({
  * The courier's screen in the Zumda courier bot: the shift, what to deliver now across all their
  * shops, what is done today, and each shop's cash on their hands.
  */
-export function CourierApp(): React.JSX.Element {
+export function CourierApp({ order = null }: { order?: string | null }): React.JSX.Element {
     const t = useT()
     useEffect(() => {
         setCourierBot()
@@ -735,7 +883,7 @@ export function CourierApp(): React.JSX.Element {
         document.title = `${ZUMDA_NAME} Kuryer`
     }, [])
     const { home, error, reload, replace, setHome } = useHome()
-    useMainAction(null)
+    useShowOrder(order, home !== null)
 
     if (error === "FORBIDDEN" && home === null) {
         return (
@@ -776,13 +924,12 @@ export function CourierApp(): React.JSX.Element {
                         <PhoneCard onArrived={(fresh): void => setHome(() => fresh)} />
                     )}
                     <ShiftCard home={home} onChange={setHome} />
-                    {/* Not in the network yet: the one choice to make sits right under the shift. */}
-                    {home.profile.inNetwork ? null : <NetworkCard home={home} onChange={setHome} />}
                     {/* Nothing to deliver yet: orders nearby come before the empty state. */}
                     {home.orders.some(isActive) ? null : <Nearby home={home} reload={reload} />}
                     <Deliveries home={home} replace={replace} reload={reload} />
                     {home.orders.some(isActive) ? <Nearby home={home} reload={reload} /> : null}
-                    {home.profile.inNetwork ? <NetworkCard home={home} onChange={setHome} /> : null}
+                    {/* The district's offer waits under the deliveries: the work comes first. */}
+                    <NetworkCard home={home} onChange={setHome} />
                     <section className="flex flex-col gap-2">
                         <h2 className="px-1 text-sm font-semibold text-tg-subtitle">
                             {t.courier.shops}

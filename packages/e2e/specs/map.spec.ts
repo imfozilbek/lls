@@ -4,7 +4,7 @@
 import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
-import { bottomButton, openApp } from "../support/webapp.js"
+import { openApp, toCart } from "../support/webapp.js"
 
 import type { Locator, Page } from "@playwright/test"
 
@@ -53,9 +53,7 @@ test.describe("the map", () => {
     }) => {
         await openApp(page, { user: PEOPLE.customer, shop: FOOD })
         await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
-        await bottomButton(page).click()
-        await bottomButton(page).click()
-        await expect(page.getByRole("heading", { name: "Buyurtma" })).toBeVisible()
+        await toCart(page)
 
         await page.getByRole("button", { name: "Xaritada belgilash" }).click()
         const picker = page.getByRole("dialog", { name: "Joyni belgilang" })

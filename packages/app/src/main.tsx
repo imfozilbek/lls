@@ -14,6 +14,7 @@ import {
     webApp,
 } from "./lib/telegram.js"
 import { useRouter } from "./stores/router.js"
+import { Boundary, CrashScreen } from "./ui/boundary.js"
 import "./index.css"
 
 const app = webApp()
@@ -52,7 +53,9 @@ const root = document.getElementById("root")
 if (root) {
     createRoot(root).render(
         <StrictMode>
-            <App launch={launch} />
+            <Boundary fallback={<CrashScreen />}>
+                <App launch={launch} />
+            </Boundary>
         </StrictMode>,
     )
 }
