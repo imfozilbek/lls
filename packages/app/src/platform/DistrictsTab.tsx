@@ -12,10 +12,12 @@ import { PlacePick } from "../ui/place-pick.js"
 import { Button, EmptyState, Field, Skeleton, TextInput } from "../ui/primitives.js"
 import { Sheet } from "../ui/sheet.js"
 
+import { RegionField } from "./RegionField.js"
+import { byRegion, regionName } from "./regions.js"
 import { failToast } from "./shared.js"
 
 import type { DistrictInput } from "../lib/api.js"
-import type { DistrictStats } from "@zumda/core"
+import type { DistrictStats, Region } from "@zumda/core"
 
 const DEFAULT_WAIT_MINUTES = 10
 const COORDINATE_DIGITS = 5
@@ -52,6 +54,8 @@ function decimal(text: string): number {
 
 interface DistrictForm {
     name: string
+    /** None until picked: a district made before the viloyat was asked asks for it. */
+    region: Region | null
     center: string
     radius: string
     wait: string
@@ -60,6 +64,7 @@ interface DistrictForm {
 function formOf(district: DistrictStats | null): DistrictForm {
     return {
         name: district?.name ?? "",
+        region: district?.region ?? null,
         center: district ? centerText(district.center) : "",
         radius: district ? String(district.radiusKm) : "",
         wait: String(district?.waitMinutes ?? DEFAULT_WAIT_MINUTES),
@@ -73,10 +78,11 @@ function districtInput(form: DistrictForm): DistrictInput | null {
     const waitMinutes = Number(form.wait)
     const name = form.name.trim()
     const radiusOk = radiusKm >= MIN_RADIUS_KM && radiusKm <= MAX_RADIUS_KM
-    if (name.length < 2 || !center || !radiusOk || !Number.isInteger(waitMinutes)) {
+    const { region } = form
+    if (name.length < 2 || !region || !center || !radiusOk || !Number.isInteger(waitMinutes)) {
         return null
     }
-    return waitMinutes >= 1 ? { name, center, radiusKm, waitMinutes } : null
+    return waitMinutes >= 1 ? { name, region, center, radiusKm, waitMinutes } : null
 }
 
 /** The circle's center: typed, or where the admin stands now. */
@@ -238,6 +244,7 @@ function DistrictSheet({
                     />
                 </Field>
             )}
+            <RegionField value={form.region} onChange={(region): void => patch({ region })} />
             <CenterField
                 value={form.center}
                 radiusKm={decimal(form.radius) || 0}
@@ -245,7 +252,9 @@ function DistrictSheet({
             />
             <RadiusWaitFields form={form} patch={patch} />
             {input === null ? (
-                <p className="px-1 text-sm text-tg-hint">{p.districtLimits}</p>
+                <p className="px-1 text-sm text-tg-hint">
+                    {form.region ? p.districtLimits : p.pickRegion}
+                </p>
             ) : null}
         </Sheet>
     )
@@ -312,6 +321,43 @@ function DistrictCard({
     )
 }
 
+/** The districts by viloyat: a heading with the full name and how many, then their cards. */
+function DistrictList({
+    districts,
+    onEdit,
+}: {
+    districts: DistrictStats[]
+    onEdit(district: DistrictStats): void
+}): React.JSX.Element {
+    const p = useT().platform
+    return (
+        <div className="flex flex-col gap-5">
+            {byRegion(districts).map((group) => {
+                const title = group.region ? regionName(p.regions, group.region) : p.noRegion
+                return (
+                    <section key={group.region ?? "none"} aria-label={title}>
+                        <h2 className="flex items-baseline justify-between gap-3 px-1 pb-2">
+                            <span className="text-base font-bold">{title}</span>
+                            <span className="shrink-0 text-sm text-tg-hint tabular-nums">
+                                {fill(p.regionCount, { n: group.districts.length })}
+                            </span>
+                        </h2>
+                        <ul className="flex flex-col gap-3">
+                            {group.districts.map((district) => (
+                                <DistrictCard
+                                    key={district.id}
+                                    district={district}
+                                    onEdit={(): void => onEdit(district)}
+                                />
+                            ))}
+                        </ul>
+                    </section>
+                )
+            })}
+        </div>
+    )
+}
+
 /** «Tumanlar»: each circle of the delivery network, how it does now and this week. */
 export function DistrictsTab(): React.JSX.Element {
     const t = useT()
@@ -367,17 +413,7 @@ export function DistrictsTab(): React.JSX.Element {
             />
         )
     } else {
-        body = (
-            <ul className="flex flex-col gap-3">
-                {districtList.map((district) => (
-                    <DistrictCard
-                        key={district.id}
-                        district={district}
-                        onEdit={(): void => setEditing(district)}
-                    />
-                ))}
-            </ul>
-        )
+        body = <DistrictList districts={districtList} onEdit={setEditing} />
     }
     return (
         <div className="flex flex-col gap-4">

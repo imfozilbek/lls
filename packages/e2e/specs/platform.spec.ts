@@ -17,6 +17,8 @@ import {
 } from "../support/telegram.js"
 import { appQueryOf, openApp } from "../support/webapp.js"
 
+import type { Page } from "@playwright/test"
+
 // Fake tokens: the stand's Telegram accepts `<id>:NEW-...`. secret-scan: fake
 const NEW_BOT = { id: 777100300, token: "777100300:NEW-e2e-platform-token-abcdefghij" } // secret-scan: fake
 const APPLICANT = { id: 4105, first_name: "Malika", language_code: "uz" }
@@ -74,30 +76,48 @@ test("an application: the message opens it in «Platforma», «Tasdiqlash» star
     expect(appQueryOf(told.buttons)).toBe("?mode=business")
 })
 
-test("«Tumanlar»: a new district by its center, then a longer wait", async ({ page }) => {
+test("«Tumanlar»: a new district in its viloyat by its center, then a longer wait", async ({
+    page,
+}) => {
     await openApp(page, {
         user: PEOPLE.admin,
         businessBot: true,
         query: "?mode=business&admin=districts",
     })
-    await expect(page.getByRole("listitem").filter({ hasText: "Yakkabog'" })).toBeVisible()
+    const viloyat = (name: string): ReturnType<Page["getByRole"]> =>
+        page.getByRole("region", { name })
+    await expect(
+        viloyat("Qashqadaryo viloyati").getByRole("listitem").filter({ hasText: "Yakkabog'" }),
+    ).toBeVisible()
     await page.getByRole("button", { name: "Yangi tuman" }).click()
     const sheet = page.getByRole("dialog")
-    await sheet.getByLabel("Tuman nomi").fill("Sirdaryo")
-    await sheet.getByLabel("Markaz").fill("40.8400, 68.6600")
+    await sheet.getByLabel("Tuman nomi").fill("Guliston")
+    await sheet.getByLabel("Markaz").fill("40.4897, 68.7842")
     await sheet.getByLabel("Radius, km").fill("12")
-    await sheet.getByRole("button", { name: "Saqlash" }).click()
-    await expect(page.getByText("Sirdaryo saqlandi")).toBeVisible()
-    const sirdaryo = page.getByRole("listitem").filter({ hasText: "Sirdaryo" }).getByRole("button")
-    await expect(sirdaryo).toContainText("12 km")
-
+    // Every district is in a viloyat: without one it is not saved.
+    const save = sheet.getByRole("button", { name: "Saqlash" })
+    await expect(save).toBeDisabled()
+    await expect(sheet.getByText("Viloyatni tanlang")).toBeVisible()
+    const sirdaryo = sheet.getByRole("radio", { name: "Sirdaryo", exact: true })
     await sirdaryo.click()
-    // The name is the district's key: shown as words, never a field.
-    await expect(sheet.getByText("Sirdaryo", { exact: true })).toBeVisible()
+    await expect(sirdaryo).toHaveAttribute("aria-checked", "true")
+    await save.click()
+    await expect(page.getByText("Guliston saqlandi")).toBeVisible()
+    const guliston = viloyat("Sirdaryo viloyati")
+        .getByRole("listitem")
+        .filter({ hasText: "Guliston" })
+        .getByRole("button")
+    await expect(guliston).toContainText("12 km")
+    await expect(viloyat("Sirdaryo viloyati")).toContainText("1 ta tuman")
+
+    await guliston.click()
+    // The name is the district's key: shown as words, never a field; its viloyat is picked.
+    await expect(sheet.getByText("Guliston", { exact: true })).toBeVisible()
     await expect(sheet.getByLabel("Tuman nomi")).toHaveCount(0)
+    await expect(sirdaryo).toHaveAttribute("aria-checked", "true")
     await sheet.getByLabel("Kuryer kutish, daqiqa").fill("20")
     await sheet.getByRole("button", { name: "Saqlash" }).click()
-    await expect(sirdaryo).toContainText("Kutish 20 daqiqa")
+    await expect(guliston).toContainText("Kutish 20 daqiqa")
 })
 
 test("«Qo'llanma»: the couriers' guide goes to each courier once, from Zumda | Kuryer", async ({
