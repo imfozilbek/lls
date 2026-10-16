@@ -14,8 +14,8 @@ import {
 } from "@zumda/core"
 
 import { alertAdmins, describeError, isRecipientProblem, toEach } from "../alerts.js"
-import { platformAdminIds } from "../env.js"
 
+import { toAdmins } from "./admins.js"
 import {
     appButton,
     appKeyboard,
@@ -567,20 +567,15 @@ export class Notifier {
                         fill(t.networkOverdueOwner, { n: order.number, min: minutes }),
                     ),
                 (): Promise<void> =>
-                    toEach(platformAdminIds(this.services.env), async (adminId) => {
-                        const admin = textsFor(await this.languageOf(adminId))
-                        await this.services.telegram.sendMessage(
-                            this.services.env.BUSINESS_BOT_TOKEN,
-                            adminId,
-                            fill(admin.networkOverdueAdmin, {
-                                shop: escapeHtml(business.name),
-                                n: order.number,
-                                min: minutes,
-                                district: escapeHtml(district.name),
-                            }),
-                            { keyboard: this.platformKeyboard(admin, "districts") },
-                        )
-                    }),
+                    toAdmins(this.services, (admin) => ({
+                        text: fill(admin.networkOverdueAdmin, {
+                            shop: escapeHtml(business.name),
+                            n: order.number,
+                            min: minutes,
+                            district: escapeHtml(district.name),
+                        }),
+                        keyboard: this.platformKeyboard(admin, "districts"),
+                    })),
             ])
         })
     }
@@ -764,36 +759,26 @@ export class Notifier {
 
     /** The application with «Tasdiqlash» / «Rad etish» to every platform admin. */
     private async applicationToAdmins(shop: ShopOwnerDTO): Promise<void> {
-        const token = this.services.env.BUSINESS_BOT_TOKEN
         const name = escapeHtml(shop.name)
         const owner = await this.services.customers.findByTelegramId(shop.ownerTelegramId)
         const ownerName = escapeHtml(owner?.name ?? String(shop.ownerTelegramId))
-        await toEach(platformAdminIds(this.services.env), async (adminId) => {
-            const t = textsFor(await this.languageOf(adminId))
-            const summary = [
+        const url = platformAppUrl(this.services.env.ADMIN_APP_ORIGIN, { shopId: shop.id })
+        await toAdmins(this.services, (t) => ({
+            text: [
                 `${t.newShop}: <b>${name}</b> (${t.shopTypes[shop.type]})`,
                 `@${escapeHtml(shop.botUsername)} · ${shop.slug}`,
                 `${t.ownerLabel}: <a href="tg://user?id=${shop.ownerTelegramId}">${ownerName}</a>`,
-            ].join("\n")
-            await this.services.telegram.sendMessage(token, adminId, summary, {
-                keyboard: {
-                    inline_keyboard: [
-                        [
-                            { text: t.approve, callback_data: `r:${shop.id}:approve` },
-                            { text: t.reject, callback_data: `r:${shop.id}:reject` },
-                        ],
-                        [
-                            appButton(
-                                t.openApplication,
-                                platformAppUrl(this.services.env.BUSINESS_APP_ORIGIN, {
-                                    shopId: shop.id,
-                                }),
-                            ),
-                        ],
+            ].join("\n"),
+            keyboard: {
+                inline_keyboard: [
+                    [
+                        { text: t.approve, callback_data: `r:${shop.id}:approve` },
+                        { text: t.reject, callback_data: `r:${shop.id}:reject` },
                     ],
-                },
-            })
-        })
+                    [appButton(t.openApplication, url)],
+                ],
+            },
+        }))
     }
 
     /** Zumda's picture on the shop bot: the shop's logo (or name) with the Zumda mark. */
@@ -881,20 +866,14 @@ export class Notifier {
 
     /** Someone else owns a shop's managed bot now: the admins decide, nothing moves silently. */
     async managedBotOwnerChanged(shop: ShopOwnerDTO, newOwnerTelegramId: number): Promise<void> {
-        const token = this.services.env.BUSINESS_BOT_TOKEN
-        await toEach(platformAdminIds(this.services.env), async (adminId) => {
-            const t = textsFor(await this.languageOf(adminId))
-            await this.services.telegram.sendMessage(
-                token,
-                adminId,
-                fill(t.managedBotOwnerChanged, {
-                    shop: `<b>${escapeHtml(shop.name)}</b>`,
-                    bot: `@${escapeHtml(shop.botUsername)}`,
-                    owner: `<a href="tg://user?id=${newOwnerTelegramId}">${newOwnerTelegramId}</a>`,
-                }),
-                { keyboard: this.platformKeyboard(t, { shopId: shop.id }) },
-            )
-        })
+        await toAdmins(this.services, (t) => ({
+            text: fill(t.managedBotOwnerChanged, {
+                shop: `<b>${escapeHtml(shop.name)}</b>`,
+                bot: `@${escapeHtml(shop.botUsername)}`,
+                owner: `<a href="tg://user?id=${newOwnerTelegramId}">${newOwnerTelegramId}</a>`,
+            }),
+            keyboard: this.platformKeyboard(t, { shopId: shop.id }),
+        }))
     }
 
     /** Approve: connect the shop bot (webhook + menu button) and send the owner their link. */
@@ -1229,7 +1208,7 @@ export class Notifier {
     private platformKeyboard(t: BotTexts, target: PlatformTarget): InlineKeyboard {
         return appKeyboard(
             t.openPlatform,
-            platformAppUrl(this.services.env.BUSINESS_APP_ORIGIN, target),
+            platformAppUrl(this.services.env.ADMIN_APP_ORIGIN, target),
         )
     }
 

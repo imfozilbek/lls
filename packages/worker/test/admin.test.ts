@@ -15,7 +15,7 @@ import {
     testClient,
 } from "./helpers.js"
 
-import type { TestClient } from "./helpers.js"
+import type { SentMessage, TestClient } from "./helpers.js"
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -31,10 +31,10 @@ async function json<T>(response: Response): Promise<T> {
     return (await response.json()) as T
 }
 
-describe("«Platforma»: the admins' section of Zumda | Business (/api/admin)", () => {
+describe("«Platforma»: the admins' own bot, Zumda | Platforma (/api/admin)", () => {
     let client: TestClient
 
-    const admin = (): ReturnType<TestClient["as"]> => client.as(ADMIN, { businessBot: true })
+    const admin = (): ReturnType<TestClient["as"]> => client.as(ADMIN, { adminBot: true })
 
     async function apply(): Promise<{ id: string; slug: string }> {
         const response = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
@@ -61,11 +61,18 @@ describe("«Platforma»: the admins' section of Zumda | Business (/api/admin)", 
         client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
     })
 
-    it("the app learns who is an admin", async () => {
-        const me = async (user: object): Promise<unknown> =>
-            json(await client.as(user, { businessBot: true })("/api/platform/me"))
-        expect(await me(ADMIN)).toEqual({ admin: true })
-        expect(await me(OWNER)).toEqual({ admin: false })
+    it("Zumda | Business has no «Platforma» any more; Zumda | Platforma opens no shop", async () => {
+        const me = await client.as(ADMIN, { businessBot: true })("/api/platform/me")
+        expect(me.status).toBe(404)
+        const { slug } = await createActiveShop(client)
+        const inShop = await client.as(ADMIN, { adminBot: true, shop: slug })(
+            "/api/admin/districts",
+        )
+        expect(inShop.status).toBe(400)
+        expect(await json(inShop)).toMatchObject({ error: { code: "ADMIN_NO_SHOP" } })
+        // Nor «Mening bizneslarim»: that is Zumda | Business only.
+        const businesses = await admin()("/api/platform/shops")
+        expect(businesses.status).toBe(403)
     })
 
     it("an application waits in «Arizalar» with its owner, never with the card", async () => {
@@ -136,7 +143,7 @@ describe("«Platforma»: the admins' section of Zumda | Business (/api/admin)", 
         expect(client.telegram.webhooks).toHaveLength(1)
     })
 
-    it("only an admin, only from Zumda | Business: every other door is closed", async () => {
+    it("only an admin, only from Zumda | Platforma: every other door is closed", async () => {
         const { id, slug } = await createActiveShop(client)
         const paths: [string, RequestInit & { json?: unknown }][] = [
             ["/api/admin/shops?status=active", {}],
@@ -146,24 +153,30 @@ describe("«Platforma»: the admins' section of Zumda | Business (/api/admin)", 
             ["/api/admin/districts", {}],
         ]
         const doors = [
-            client.as(OWNER, { businessBot: true }),
-            client.as(STRANGER, { businessBot: true }),
-            // The admin, but opened from another bot or inside a shop.
+            client.as(OWNER, { adminBot: true }),
+            client.as(STRANGER, { adminBot: true }),
+            // The admin, but opened from another bot (Zumda | Business too, where it once was)
+            // or inside a shop.
             client.as(ADMIN, {}),
             client.as(ADMIN, { courierBot: true }),
+            client.as(ADMIN, { businessBot: true }),
             client.as(ADMIN, { businessBot: true, shop: slug }),
+            client.as(ADMIN, { adminBot: true, shop: slug }),
         ]
         for (const door of doors) {
             for (const [path, init] of paths) {
                 const status = (await door(path, init)).status
-                expect([401, 403], `${path} → ${status}`).toContain(status)
+                expect([400, 401, 403], `${path} → ${status}`).toContain(status)
             }
         }
-        // A shop bot's token can sign any user id: it never opens «Platforma».
-        const forged = client.as(ADMIN, { botToken: SHOP_BOT_TOKEN, businessBot: true })
-        expect((await forged("/api/admin/districts")).status).toBe(401)
+        // A shop bot's token can sign any user id: it never opens «Platforma»; nor does another
+        // Zumda bot's signature claiming to come from Zumda | Platforma.
+        for (const botToken of [SHOP_BOT_TOKEN, env.BUSINESS_BOT_TOKEN]) {
+            const forged = client.as(ADMIN, { botToken, adminBot: true })
+            expect((await forged("/api/admin/districts")).status).toBe(401)
+        }
         const old = client.as(ADMIN, {
-            businessBot: true,
+            adminBot: true,
             authDate: new Date(Date.now() - 2 * DAY_MS),
         })
         expect((await old("/api/admin/districts")).status).toBe(401)
@@ -173,23 +186,28 @@ describe("«Platforma»: the admins' section of Zumda | Business (/api/admin)", 
         expect(row?.status).toBe("active")
     })
 
-    it("in a browser (business.zumda.shop) the admin's session opens it, nobody else's", async () => {
-        const session = async (user: { id: number; first_name: string }): Promise<string> =>
-            (
-                await issueSession(
-                    { id: user.id, firstName: user.first_name },
-                    env.BUSINESS_SESSION_SECRET,
-                    new Date(),
-                )
-            ).token
-        const get = async (token: string): Promise<number> =>
+    it("in a browser (platform.zumda.shop) only an admin's «Platforma» session opens it", async () => {
+        const session = async (
+            user: { id: number; first_name: string },
+            secret: string,
+        ): Promise<string> =>
+            (await issueSession({ id: user.id, firstName: user.first_name }, secret, new Date()))
+                .token
+        const get = async (token: string, bot?: string): Promise<number> =>
             (
                 await client.request("/api/admin/districts", {
-                    headers: { Authorization: `Bearer ${token}` },
+                    headers: { Authorization: `Bearer ${token}`, ...(bot ? { "X-Bot": bot } : {}) },
                 })
             ).status
-        expect(await get(await session(ADMIN))).toBe(200)
-        expect(await get(await session(OWNER))).toBe(403)
+        const platform = await session(ADMIN, env.ADMIN_SESSION_SECRET)
+        expect(await get(platform, "admin")).toBe(200)
+        expect(await get(await session(OWNER, env.ADMIN_SESSION_SECRET), "admin")).toBe(403)
+        // Zumda | Business's session never opens «Platforma», and «Platforma»'s never opens
+        // Zumda | Business.
+        const business = await session(ADMIN, env.BUSINESS_SESSION_SECRET)
+        expect(await get(business, "admin")).toBe(401)
+        expect(await get(business)).toBe(403)
+        expect(await get(platform)).toBe(401)
     })
 })
 
@@ -238,7 +256,7 @@ describe("bots only notify: any message gets the way into the app", () => {
         expect(reply?.options?.keyboard).toBeUndefined()
     })
 
-    it("an application card has the approve buttons and the application in the app", async () => {
+    it("an application card comes from Zumda | Platforma: the approve buttons and the app", async () => {
         const response = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
             method: "POST",
             json: {
@@ -251,14 +269,127 @@ describe("bots only notify: any message gets the way into the app", () => {
         })
         const { id } = await json<{ id: string }>(response)
         const card = client.telegram.sent.find((m) => m.chatId === ADMIN.id)
+        expect(card?.token).toBe(env.ADMIN_BOT_TOKEN)
         const rows = card?.options?.keyboard?.inline_keyboard ?? []
         expect(rows[0]?.map((b) => b.callback_data)).toEqual([`r:${id}:approve`, `r:${id}:reject`])
         expect(rows[1]?.[0]?.web_app?.url).toBe(
-            `https://business.zumda.test/?mode=business&admin=shop_${id}`,
+            `https://platform.zumda.test/?mode=admin&admin=shop_${id}`,
         )
         const toOwner = client.telegram.sent.find((m) => m.chatId === OWNER.id)
         expect(toOwner?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toContain(
             "mode=business",
         )
+    })
+})
+
+describe("Zumda | Platforma: the admins' bot only notifies", () => {
+    let client: TestClient
+
+    beforeEach(() => {
+        client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
+    })
+
+    async function apply(): Promise<string> {
+        const response = await client.as(OWNER, { businessBot: true })("/api/platform/shops", {
+            method: "POST",
+            json: {
+                botToken: SHOP_BOT_TOKEN,
+                name: "Osh Markaz",
+                type: "food",
+                deliveryFee: 0,
+                payoutCard: TEST_CARD,
+            },
+        })
+        expect(response.status).toBe(201)
+        return (await json<{ id: string }>(response)).id
+    }
+
+    async function statusOf(id: string): Promise<string | undefined> {
+        const row = await env.DB.prepare("SELECT status FROM businesses WHERE id = ?")
+            .bind(id)
+            .first<{ status: string }>()
+        return row?.status
+    }
+
+    const appUrl = (message: SentMessage | undefined): string | undefined =>
+        message?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url
+
+    it("answers only Telegram with its own secret", async () => {
+        const forged = await client.request("/tg/admin", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Telegram-Bot-Api-Secret-Token": env.BUSINESS_WEBHOOK_SECRET,
+            },
+            body: JSON.stringify({
+                message: { from: ADMIN, chat: { id: ADMIN.id }, text: "/start" },
+            }),
+        })
+        expect(forged.status).toBe(401)
+        expect(client.telegram.sent).toHaveLength(0)
+    })
+
+    it("an admin's /start opens «Platforma»; anything else is one line with the same button", async () => {
+        await client.adminBot({ message: { from: ADMIN, chat: { id: ADMIN.id }, text: "/start" } })
+        const welcome = client.telegram.sent.at(-1)
+        expect(welcome?.token).toBe(env.ADMIN_BOT_TOKEN)
+        expect(welcome?.html).toContain("Zumda | Platforma")
+        expect(appUrl(welcome)).toBe("https://platform.zumda.test/?mode=admin")
+        await client.adminBot({ message: { from: ADMIN, chat: { id: ADMIN.id }, text: "salom" } })
+        const reply = client.telegram.sent.at(-1)
+        expect(reply?.html).toContain("ilovada")
+        expect(appUrl(reply)).toBe("https://platform.zumda.test/?mode=admin")
+    })
+
+    it("someone who is not an admin is shown Zumda's other bots, never «Platforma»", async () => {
+        await client.adminBot({
+            message: { from: STRANGER, chat: { id: STRANGER.id }, text: "/start" },
+        })
+        const reply = client.telegram.sent.at(-1)
+        expect(reply?.chatId).toBe(STRANGER.id)
+        expect(reply?.html).toContain("faqat Zumda jamoasi")
+        const buttons = reply?.options?.keyboard?.inline_keyboard.flat() ?? []
+        expect(buttons.map((b) => b.url)).toEqual([
+            "https://t.me/zumdashop_bot",
+            "https://t.me/zumda_biznes_bot",
+        ])
+        expect(buttons.some((b) => b.web_app !== undefined)).toBe(false)
+    })
+
+    it("«Tasdiqlash» on its card approves the application and marks the card", async () => {
+        const id = await apply()
+        await client.adminBot({
+            callback_query: {
+                id: "cb-1",
+                from: ADMIN,
+                data: `r:${id}:approve`,
+                message: { message_id: 7, chat: { id: ADMIN.id } },
+            },
+        })
+        expect(await statusOf(id)).toBe("active")
+        expect(client.telegram.edited.at(-1)).toMatchObject({
+            token: env.ADMIN_BOT_TOKEN,
+            chatId: ADMIN.id,
+            messageId: 7,
+        })
+    })
+
+    it("an admin who never pressed Start there gets it from Zumda | Business, with the way there", async () => {
+        client.telegram.notStarted.add(`${env.ADMIN_BOT_TOKEN}:${ADMIN.id}`)
+        const id = await apply()
+        const card = client.telegram.sent.find((m) => m.chatId === ADMIN.id)
+        expect(card?.token).toBe(env.BUSINESS_BOT_TOKEN)
+        expect(card?.html).toContain("@zumdashop_platforma_bot sizga yoza olmadi")
+        expect(card?.html).toContain("Osh Markaz")
+        const rows = card?.options?.keyboard?.inline_keyboard ?? []
+        expect(rows[0]?.map((b) => b.callback_data)).toEqual([`r:${id}:approve`, `r:${id}:reject`])
+        // An app button there would open «Platforma» signed by the wrong bot: the link instead.
+        expect(rows.flat().some((b) => b.web_app !== undefined)).toBe(false)
+        expect(rows.at(-1)?.[0]?.url).toBe("https://t.me/zumdashop_platforma_bot")
+        // Its buttons still work from Zumda | Business.
+        await client.businessBot({
+            callback_query: { id: "cb-2", from: ADMIN, data: `r:${id}:approve` },
+        })
+        expect(await statusOf(id)).toBe("active")
     })
 })

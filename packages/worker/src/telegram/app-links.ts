@@ -54,10 +54,22 @@ export function businessAppUrl(
 /** What «Platforma» opens on: the applications, one shop, or the districts. */
 export type PlatformTarget = "applications" | "districts" | { shopId: string }
 
-/** «Platforma», the admins' section of Zumda | Business. */
-export function platformAppUrl(appOrigin: string, target: PlatformTarget): string {
+/**
+ * «Platforma», the platform admins' app, opened from Zumda | Platforma (`adminOrigin`:
+ * platform.zumda.shop); with `target`, right on it.
+ */
+export function platformAppUrl(adminOrigin: string, target?: PlatformTarget): string {
+    const base = `${adminOrigin}/?mode=admin`
+    if (!target) {
+        return base
+    }
     const value = typeof target === "string" ? target : `shop_${target.shopId}`
-    return `${businessAppUrl(appOrigin)}&admin=${encodeURIComponent(value)}`
+    return `${base}&admin=${encodeURIComponent(value)}`
+}
+
+/** Zumda | Business in Telegram: a link from another bot. */
+export function zumdaBusinessUrl(botUsername: string): string {
+    return `https://t.me/${botUsername}`
 }
 
 /** The Zumda showcase: search across shops, opened from Zumda | Shop. */

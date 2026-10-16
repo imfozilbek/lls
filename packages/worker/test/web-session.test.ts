@@ -5,6 +5,7 @@ import { clientIdOf, issueLoginNonce } from "../src/telegram-login.js"
 import { SESSION_DAYS, issueSession } from "../src/web-session.js"
 
 import {
+    ADMIN,
     OWNER,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
@@ -208,5 +209,83 @@ describe("Zumda | Business in a browser: Telegram Login (business.zumda.shop)", 
             "https://business.zumda.test",
         )
         expect(preflight.headers.get("Access-Control-Allow-Headers")).toContain("Authorization")
+    })
+})
+
+describe("«Platforma» in a browser: Telegram Login of Zumda | Platforma (platform.zumda.shop)", () => {
+    let telegram: Signer
+    let client: TestClient
+
+    /** The `id_token` Telegram makes for Zumda | Platforma's Client ID, or for another bot's. */
+    async function idToken(
+        user: { id: number; first_name: string },
+        bot: { token: string; secret: string },
+    ): Promise<string> {
+        const now = Math.floor(Date.now() / 1000)
+        return telegram.sign({
+            iss: ISSUER,
+            aud: String(clientIdOf(bot.token)),
+            sub: "pairwise-subject",
+            iat: now,
+            exp: now + 3600,
+            id: user.id,
+            name: user.first_name,
+            nonce: await issueLoginNonce(bot.secret, new Date()),
+        })
+    }
+
+    async function signIn(path: string, token: string): Promise<Response> {
+        return client.request(path, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idToken: token }),
+        })
+    }
+
+    const platformBot = (): { token: string; secret: string } => ({
+        token: env.ADMIN_BOT_TOKEN,
+        secret: env.ADMIN_SESSION_SECRET,
+    })
+    const businessBot = (): { token: string; secret: string } => ({
+        token: env.BUSINESS_BOT_TOKEN,
+        secret: env.BUSINESS_SESSION_SECRET,
+    })
+
+    beforeAll(async () => {
+        telegram = await makeSigner("oidc-1")
+    })
+
+    beforeEach(() => {
+        client = testClient({ loginKeys: () => Promise.resolve([telegram.publicJwk]) })
+    })
+
+    it("its own Client ID and nonce; its session opens «Platforma» for an admin only", async () => {
+        const login = (await (await client.request("/api/admin-web/login")).json()) as {
+            clientId: number
+        }
+        expect(login.clientId).toBe(clientIdOf(env.ADMIN_BOT_TOKEN))
+
+        const response = await signIn("/api/admin-web/session", await idToken(ADMIN, platformBot()))
+        expect(response.status).toBe(200)
+        const { token } = (await response.json()) as { token: string }
+        const districts = await client.request("/api/admin/districts", {
+            headers: { Authorization: `Bearer ${token}`, "X-Bot": "admin" },
+        })
+        expect(districts.status).toBe(200)
+        // The same session is not one of Zumda | Business.
+        const businesses = await client.request("/api/platform/shops", {
+            headers: { Authorization: `Bearer ${token}` },
+        })
+        expect(businesses.status).toBe(401)
+    })
+
+    it("a sign-in to Zumda | Business is never one to «Platforma», and back", async () => {
+        const crossed = [
+            ["/api/admin-web/session", await idToken(ADMIN, businessBot())],
+            ["/api/business/session", await idToken(ADMIN, platformBot())],
+        ] as const
+        for (const [path, token] of crossed) {
+            expect((await signIn(path, token)).status, path).toBe(401)
+        }
     })
 })

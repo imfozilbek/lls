@@ -120,12 +120,20 @@ export const DEV_COURIER_BOT = {
     webhookSecret: "dev-courier-secret",
 }
 
-/** The Zumda Business bot of the local stand (owners, admins, Managed Bots). secret-scan: fake */
+/** The Zumda Business bot of the local stand (owners, Managed Bots). secret-scan: fake */
 export const DEV_BUSINESS_BOT = {
     id: 100200997,
     username: "zumda_biznes_dev_bot",
     token: "100200997:DEV-business-token-not-a-real-bot",
     webhookSecret: "dev-business-secret",
+}
+
+/** The Zumda | Platforma bot of the local stand: the platform admins' bot. secret-scan: fake */
+export const DEV_ADMIN_BOT = {
+    id: 100200996,
+    username: "zumda_platforma_dev_bot",
+    token: "100200996:DEV-platforma-token-not-a-real-bot",
+    webhookSecret: "dev-platforma-secret",
 }
 
 /** One courier who works for every demo shop: a person may deliver for several. */

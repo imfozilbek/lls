@@ -1,6 +1,7 @@
 import { Hono } from "hono"
 import { cors } from "hono/cors"
 
+import { appOrigins } from "../env.js"
 import { IMMUTABLE_CACHE } from "../http/images.js"
 
 import type { AppEnv, Bindings } from "../env.js"
@@ -37,10 +38,6 @@ const PROTOBUF_TYPE = "application/x-protobuf"
 interface ByteRange {
     offset: number
     length: number
-}
-
-function appOrigins(env: Bindings): string[] {
-    return [env.APP_ORIGIN, env.BUSINESS_APP_ORIGIN, env.COURIER_APP_ORIGIN]
 }
 
 /** `bytes=a-b` only: one range, as the map reader asks. */

@@ -294,6 +294,8 @@ export interface TestClient {
             courierBot?: boolean
             /** Opened from the Zumda Business bot («Mening bizneslarim»). */
             businessBot?: boolean
+            /** Opened from the Zumda | Platforma bot («Platforma»). */
+            adminBot?: boolean
             authDate?: Date
         },
     ): (path: string, init?: RequestInit & { json?: unknown }) => Promise<Response>
@@ -301,6 +303,8 @@ export interface TestClient {
     courierBot(update: object): Promise<Response>
     /** An update from Telegram to the Zumda Business bot's webhook. */
     businessBot(update: object): Promise<Response>
+    /** An update from Telegram to the Zumda | Platforma bot's webhook. */
+    adminBot(update: object): Promise<Response>
 }
 
 export const COURIER_BOT: BotInfo = { id: 100100, username: "zumda_kuryer_bot", firstName: "Zumda" }
@@ -310,18 +314,27 @@ export const BUSINESS_BOT: BotInfo = {
     firstName: "Zumda",
 }
 export const PLATFORM_BOT: BotInfo = { id: 100000, username: "zumdashop_bot", firstName: "Zumda" }
+export const ADMIN_BOT: BotInfo = {
+    id: 100300,
+    username: "zumdashop_platforma_bot",
+    firstName: "Zumda | Platforma",
+}
 
 /** The token that signs: a forged one if given, else the bot the app was opened from. */
 function signerToken(from: {
     botToken?: string
     courierBot?: boolean
     businessBot?: boolean
+    adminBot?: boolean
 }): string {
     if (from.botToken) {
         return from.botToken
     }
     if (from.courierBot) {
         return env.COURIER_BOT_TOKEN
+    }
+    if (from.adminBot) {
+        return env.ADMIN_BOT_TOKEN
     }
     return from.businessBot ? env.BUSINESS_BOT_TOKEN : env.PLATFORM_BOT_TOKEN
 }
@@ -339,6 +352,7 @@ export function testClient(
         [env.COURIER_BOT_TOKEN]: COURIER_BOT,
         [env.PLATFORM_BOT_TOKEN]: PLATFORM_BOT,
         [env.BUSINESS_BOT_TOKEN]: BUSINESS_BOT,
+        [env.ADMIN_BOT_TOKEN]: ADMIN_BOT,
         ...options.bots,
     })
     const app = createApp({
@@ -371,15 +385,18 @@ export function testClient(
         request,
         courierBot: (update) => webhook("/tg/courier", env.COURIER_WEBHOOK_SECRET, update),
         businessBot: (update) => webhook("/tg/business", env.BUSINESS_WEBHOOK_SECRET, update),
-        as(user, { botToken, shop, via, courierBot, businessBot, authDate }) {
+        adminBot: (update) => webhook("/tg/admin", env.ADMIN_WEBHOOK_SECRET, update),
+        as(user, { botToken, shop, via, courierBot, businessBot, adminBot, authDate }) {
             return async (path, init = {}) => {
                 const headers = new Headers(init.headers)
-                const signer = signerToken({ botToken, courierBot, businessBot })
+                const signer = signerToken({ botToken, courierBot, businessBot, adminBot })
                 headers.set("X-Telegram-Init-Data", await signInitData(user, signer, authDate))
                 if (courierBot) {
                     headers.set("X-Bot", "courier")
                 } else if (businessBot) {
                     headers.set("X-Bot", "business")
+                } else if (adminBot) {
+                    headers.set("X-Bot", "admin")
                 }
                 if (shop) {
                     headers.set("X-Shop", shop)

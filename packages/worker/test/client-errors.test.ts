@@ -55,7 +55,7 @@ describe("Mini App crashes: POST /api/client-errors", () => {
             { event: "client_error", ...CRASH },
         ])
         expect(alerts()).toHaveLength(1)
-        expect(alerts()[0]?.token).toBe(env.BUSINESS_BOT_TOKEN)
+        expect(alerts()[0]?.token).toBe(env.ADMIN_BOT_TOKEN)
         expect(alerts()[0]?.html).toContain("ilovasida xato")
         expect(alerts()[0]?.html).toContain("shop:checkout index-BzyS0hWw.js:12:3456")
         expect(alerts()[0]?.html).toContain("TypeError: Cannot read properties")

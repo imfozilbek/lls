@@ -26,6 +26,7 @@ export const staffUz = {
         PAYMENT_NOT_REFUNDABLE: "Bu pul allaqachon qaytarilgan.",
         PAYMENT_NOT_REJECTABLE: "Bu o'tkazma allaqachon ko'rib chiqilgan. Ro'yxat yangilandi.",
         ADMIN_ONLY: "Bu bo'lim faqat Zumda administratorlari uchun.",
+        ADMIN_NO_SHOP: "«Platforma» Zumda | Platforma botida, do'kondan tashqarida ochiladi.",
         SHOP_ALREADY_ACTIVE: "Biznes allaqachon ishlayapti. Ro'yxat yangilandi.",
         SHOP_ALREADY_REVIEWED: "Bu ariza allaqachon ko'rib chiqilgan. Ro'yxat yangilandi.",
         DISTRICT_EXISTS: "Bu nomli tuman bor. Uni ro'yxatdan ochib o'zgartiring.",

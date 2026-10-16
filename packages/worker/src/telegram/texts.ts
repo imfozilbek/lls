@@ -98,6 +98,15 @@ const BASE = {
         businessWelcome:
             "<b>Zumda Business: do'koningiz, oshxonangiz yoki xizmatingiz uchun o'z buyurtma boti.</b>\n\nBotni shu yerda bir tugma bilan yarating: token kerak emas. Menyu, buyurtmalar, pul va kuryerlar: hammasi «Mening bizneslarim»da.",
         openBusinesses: "🏪 Mening bizneslarim",
+        // Zumda | Platforma: the platform admins' own bot.
+        adminWelcome:
+            "<b>Zumda | Platforma: Zumda jamoasi uchun.</b>\n\nArizalar, bizneslar, tumanlar va qo'llanma: hammasi «Platforma»da. Arizalar va ogohlantirishlar shu botga keladi.",
+        adminBotOnlyTeam:
+            "Bu bot faqat Zumda jamoasi uchun. Buyurtma berish uchun Zumda Shop'ni, biznesingiz uchun Zumda Business'ni oching.",
+        openZumdaBusiness: "🏪 Zumda Business'ni ochish",
+        adminBotClosed:
+            "⚠️ {bot} sizga yoza olmadi: siz unda hali Start bosmagansiz. Botni oching va Start bosing: Zumda jamoasiga xabarlar o'sha yerga keladi.",
+        openAdminBot: "🛠 {bot} ni ochish",
         openShowcase: "🔍 Qidirish va buyurtma berish",
         // «Qo'llanma»: the guide video an admin sends everyone once, each from their role's bot.
         guideOwner:

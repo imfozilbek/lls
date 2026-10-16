@@ -50,7 +50,7 @@ describe("«Qo'llanma»: everyone gets their role's guide once, from their role'
     let client: TestClient
     let food: { id: string; slug: string }
     let grocery: { id: string; slug: string }
-    const admin = (): ReturnType<TestClient["as"]> => client.as(ADMIN, { businessBot: true })
+    const admin = (): ReturnType<TestClient["as"]> => client.as(ADMIN, { adminBot: true })
     const counts = async (): Promise<Count[]> =>
         (await json<{ data: Count[] }>(await admin()("/api/admin/guides"))).data
     const send = async (audience: string): Promise<Response> =>

@@ -1,8 +1,6 @@
-import { Language } from "@zumda/core"
-
-import { platformAdminIds } from "./env.js"
+import { toAdmins } from "./telegram/admins.js"
 import { TelegramApiError, escapeHtml } from "./telegram/gateway.js"
-import { fill, textsFor } from "./telegram/texts.js"
+import { fill } from "./telegram/texts.js"
 
 import type { Services } from "./services.js"
 
@@ -67,8 +65,9 @@ export function describeError(error: unknown): string {
 }
 
 /**
- * Tells the platform admins through the Zumda Business bot. Never throws: an alert must not break the
- * request, and a broken database or Telegram only leaves the error in the Worker log.
+ * Tells the platform admins through Zumda | Platforma (`toAdmins`). Never throws: an alert must
+ * not break the request, and a broken database or Telegram only leaves the error in the Worker
+ * log.
  */
 export async function alertAdmins(
     services: Services,
@@ -82,16 +81,10 @@ export async function alertAdmins(
         }
         const place = where ? `${escapeHtml(where)}\n` : ""
         const detail = place + escapeHtml(describeError(error))
-        await toEach(platformAdminIds(services.env), async (adminId) => {
-            const customer = await services.customers.findByTelegramId(adminId)
-            const texts = textsFor(customer?.language ?? Language.UZ)
+        await toAdmins(services, (texts) => {
             const title = texts[TITLES[kind]]
             const quiet = fill(texts.alertQuiet, { minutes: ALERT_QUIET_MS / 60_000 })
-            await services.telegram.sendMessage(
-                services.env.BUSINESS_BOT_TOKEN,
-                adminId,
-                `<b>${title}</b>\n<code>${detail}</code>\n\n${quiet}`,
-            )
+            return { text: `<b>${title}</b>\n<code>${detail}</code>\n\n${quiet}` }
         })
     } catch (alertError) {
         console.error("Admin alert failed", describeError(alertError))
