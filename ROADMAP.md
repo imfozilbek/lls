@@ -23,11 +23,10 @@ marketplace on top of both.
 | CI | ✅ Done | format, lint, build, unit tests, coverage, 119 e2e scenarios on eight machines on every pull request; a push to `main` deploys |
 | Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
 | Deploy | ✅ Live | `api.`, `app.`, `business.`, `delivery.zumda.shop`, `media.` and `map.zumda.shop` (R2); migrations up to `0018`; the map of Uzbekistan in R2; fits the free plan (`docs/capacity.md`) |
-| Pilot (food, water, grocery) | 🔨 Started | 5 businesses in production (all bots made with «Bot yaratish»), 3 active couriers, 4 orders delivered and paid (one through the showcase); no district yet |
+| Pilot (food, water, grocery) | 🔨 Started | 5 businesses in production (all bots made with «Bot yaratish»), 3 active couriers, 4 orders delivered and paid (one through the showcase); the districts «Yakkabog' stansiyasi» and «Yakkabog' posyolkasi» (Qashqadaryo viloyati) come with migration `0024` |
 
 **Blocking:** the meeting with the pilots and the owner's decisions below (goal 02). Owner tasks
-without code: the «Yakkabog'» district in «Platforma → Tumanlar», the Login Widget and
-Description Pictures in @BotFather (goal 15), a local `wrangler d1 export`, the right Zone >
+without code: the Login Widget and Description Pictures in @BotFather (goal 15), a local `wrangler d1 export`, the right Zone >
 Cache Rules: Edit for the deploy's Cloudflare token (the map kept at the edge, `TODO.md` #25).
 
 **Owner decisions still open** (never invent them in code or docs):

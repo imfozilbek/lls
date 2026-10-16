@@ -30,6 +30,8 @@ import {
 } from "../src/repositories/product.repository.js"
 import {
     OPEN_TRIPS_OF_BUSINESS_SQL,
+    WITH_TRIP_SQL,
+    insertTripSql,
     openTripsOfCouriersSql,
 } from "../src/repositories/trip.repository.js"
 
@@ -48,6 +50,10 @@ function expectIndexed(plan: string[], indexes: readonly string[]): void {
     }
     expect(text).not.toMatch(/SCAN (orders|trips)\b/)
 }
+
+/** The primary keys' own indexes (`id TEXT PRIMARY KEY`). */
+const ORDERS_KEY = "sqlite_autoindex_orders_1"
+const TRIPS_KEY = "sqlite_autoindex_trips_1"
 
 const ACTIVE = ["pending", "accepted", "preparing", "ready", "picked_up"]
 const FINAL = ["delivered", "cancelled"]
@@ -131,6 +137,20 @@ describe("query plans", () => {
         expectIndexed(await planOf(openTripsOfCouriersSql(2), ["c-1", "c-2", ...ACTIVE]), [
             "idx_orders_courier",
         ])
+    })
+
+    it("a trip is written only over its stops' versions, each looked up by its key", async () => {
+        const trip = ["t-1", "shop-1", "c-1", null, null, null, 1, 1]
+        const insert = await planOf(insertTripSql(2), ["o-1", 1, "o-2", 2, ...trip, 2])
+        expectIndexed(insert, [ORDERS_KEY])
+        expectIndexed(await planOf(insertTripSql(0), [...trip, 0]), [])
+        const stop = await planOf(
+            `UPDATE orders SET trip_id = ?, updated_at = ? WHERE id = ? AND updated_at = ?
+                AND ${WITH_TRIP_SQL}`,
+            ["t-1", 2, "o-1", 1, "t-1"],
+        )
+        expectIndexed(stop, [ORDERS_KEY])
+        expect(stop.join("\n")).toContain(`SEARCH trips USING COVERING INDEX ${TRIPS_KEY}`)
     })
 
     it("network orders waiting: only the open ones, by the partial index", async () => {

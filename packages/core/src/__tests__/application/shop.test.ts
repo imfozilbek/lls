@@ -18,6 +18,7 @@ import { UpdateShopUseCase } from "../../application/use-cases/shop/update-shop.
 import { BotSource } from "../../domain/enums/bot-source.js"
 import { BusinessStatus } from "../../domain/enums/business-status.js"
 import { BusinessType } from "../../domain/enums/business-type.js"
+import { Region } from "../../domain/enums/region.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../domain/errors/conflict.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
@@ -110,6 +111,7 @@ describe("shop use cases", () => {
             const tashkent = District.create({
                 id: "d-1",
                 name: "Toshkent",
+                region: Region.TOSHKENT_SHAHRI,
                 center: Location.create(41.31, 69.24),
                 radiusMeters: 20_000,
                 now: new Date(),

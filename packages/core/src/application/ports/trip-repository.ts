@@ -1,8 +1,13 @@
+import type { Order } from "../../domain/entities/order.js"
 import type { Trip, TripRoute } from "../../domain/entities/trip.js"
 import type { GeoPoint } from "../../domain/services/trip-planning.js"
 
 export interface TripRepository {
-    insert(trip: Trip): Promise<void>
+    /**
+     * The trip and its stops (the orders, joined) in one write: an order changed meanwhile
+     * refuses it all (`STALE`), so a trip is never left half made.
+     */
+    insert(trip: Trip, stops: readonly Order[]): Promise<void>
     /** The route and the time it changed (the stops live in the orders: `trip_stop`). */
     save(trip: Trip): Promise<void>
     /** With its stops in order (cancelled orders left out). */

@@ -1,5 +1,6 @@
 import { requireInteger, requireText } from "../shared/guards.js"
 
+import type { Region } from "../enums/region.js"
 import type { Location } from "../value-objects/location.js"
 
 const NAME_MAX = 60
@@ -13,6 +14,8 @@ const MS_PER_MINUTE = 60_000
 export interface DistrictProps {
     id: string
     name: string
+    /** The viloyat; districts made before it was asked have none until an admin picks it. */
+    region?: Region
     center: Location
     radiusMeters: number
     waitMinutes: number
@@ -31,6 +34,7 @@ export class District {
     static create(input: {
         id: string
         name: string
+        region: Region
         center: Location
         radiusMeters: number
         now: Date
@@ -38,6 +42,7 @@ export class District {
         return new District({
             id: input.id,
             name: requireText("name", input.name, NAME_MAX),
+            region: input.region,
             center: input.center,
             radiusMeters: requireInteger(
                 "radiusMeters",
@@ -60,6 +65,9 @@ export class District {
     }
     get name(): string {
         return this.props.name
+    }
+    get region(): Region | undefined {
+        return this.props.region
     }
     get center(): Location {
         return this.props.center
@@ -86,6 +94,11 @@ export class District {
             MIN_RADIUS_METERS,
             MAX_RADIUS_METERS,
         )
+        this.props.updatedAt = now
+    }
+
+    setRegion(region: Region, now: Date): void {
+        this.props.region = region
         this.props.updatedAt = now
     }
 

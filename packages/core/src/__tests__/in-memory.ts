@@ -638,8 +638,9 @@ export class InMemoryTrips implements TripRepository {
         return [...this.orders.items.values()].some((o) => o.tripId === trip.id && !o.isFinal())
     }
 
-    async insert(trip: Trip): Promise<void> {
+    async insert(trip: Trip, stops: readonly Order[]): Promise<void> {
         this.items.set(trip.id, trip)
+        await Promise.all(stops.map((order) => this.orders.save(order)))
     }
     async save(trip: Trip): Promise<void> {
         this.items.set(trip.id, trip)

@@ -7,6 +7,17 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Every district in its viloyat; the two districts of Yakkabog'
+- A district belongs to one of the 14 regions of Uzbekistan (12 viloyats, Qoraqalpog'iston
+  Respublikasi, Toshkent shahri): a new one needs it, picked with one tap in «Tumanlar», and the
+  tab lists the districts by viloyat; one made before asks for it when opened.
+- Migration `0024` makes «Yakkabog' stansiyasi» (the town around the station) and «Yakkabog'
+  posyolkasi» (Eski Yakkabog') in Qashqadaryo viloyati, 20 km each, and puts every shop in the
+  nearest district that holds it, as saving a district does; a district already under the name
+  stays.
+- No coordinates anywhere in the product: a district's center is picked on the map (or where the
+  admin stands), the typed «kenglik, uzunlik» field is gone.
+
 ### Bugs found across the project and fixed
 - A shop number saved before the stricter phone rules (a digit missing) broke the shop and every
   list it is in: a saved number now reads as it is; a typed one starting with 0 is refused.
@@ -16,7 +27,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   network orders, a reassigned courier, an approval and the transfer screenshot (with its picture
   through Zumda | Business) reach everyone on their own.
 - Network offers leave out the couriers the shop removed or has not approved; a removed courier
-  cannot take a trip; reordering a trip saves its stops first.
+  cannot take a trip; reordering a trip saves its stops first; a trip and its stops are written
+  in one batch, so an order changed at the same moment leaves no half-made trip.
 - The longest pick of variants and add-ons fits an order; a long Telegram name joins as a
   courier without using the invite up; another account's checkout id makes its own order.
 - A search word of two letters matches whole («un»), never reading every word that starts with it.

@@ -72,7 +72,7 @@ describe("a short application: name, kind, bot and where the business is", () =>
         client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
         await business(ADMIN)("/api/admin/districts", {
             method: "PUT",
-            json: { name: "Guliston", center: GULISTAN, radiusKm: 30 },
+            json: { name: "Guliston", region: "sirdaryo", center: GULISTAN, radiusKm: 30 },
         })
     })
 

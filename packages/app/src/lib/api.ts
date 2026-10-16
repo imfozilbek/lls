@@ -24,6 +24,7 @@ import type {
     PaymentOptions,
     PayoutCardsDTO,
     ProductDTO,
+    Region,
     ShopOwnerDTO,
     MoneyPeriod,
     MoneyReportDTO,
@@ -506,6 +507,8 @@ export interface AdminShopResult {
 
 export interface DistrictInput {
     name: string
+    /** The viloyat: a new district needs it. */
+    region?: Region
     center?: { latitude: number; longitude: number }
     radiusKm?: number
     waitMinutes?: number
