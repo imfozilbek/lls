@@ -12,6 +12,7 @@ import {
     setWebSession,
 } from "./lib/api.js"
 import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "./lib/brand.js"
+import { markLanded } from "./lib/landing.js"
 import { useBackButton } from "./lib/main-button.js"
 import { useRefresh } from "./lib/refresh.js"
 import { removedText } from "./lib/removed.js"
@@ -303,7 +304,7 @@ function useOpenOrder(ready: boolean, orderId: string | undefined): void {
         if (useSession.getState().shop?.viewerRole === "owner") {
             void import("./owner/store.js")
                 .then(({ useOwner }) => {
-                    useOwner.getState().focusOrder(orderId)
+                    useOwner.getState().focusOrder(orderId, useSession.getState().shop?.id)
                 })
                 .catch(() => undefined)
                 .finally(() => router.start({ name: "owner" }))
@@ -450,6 +451,8 @@ function BusinessesApp({
     const [slug, setSlug] = useState<string | null>(() => {
         if (shop && adminTarget === null) {
             useRouter.getState().start({ name: "owner" })
+            // Opened by a message: Back from it shows the list, it never lands here again.
+            markLanded()
             return shop
         }
         return null
@@ -457,6 +460,9 @@ function BusinessesApp({
     // The order of the message, only on the business it came with.
     const [target, setTarget] = useState(order)
     const [platform, setPlatform] = useState(adminTarget !== null)
+    // The message's target in «Platforma» only the first time: opened again from the list, it
+    // starts on its first tab.
+    const [platformTarget, setPlatformTarget] = useState(adminTarget)
     useEffect(() => {
         if (slug === null) {
             setShop(null, { via: "business" })
@@ -467,7 +473,13 @@ function BusinessesApp({
     if (platform) {
         return (
             <Suspense fallback={<ScreenSkeleton />}>
-                <PlatformApp target={adminTarget} onExit={(): void => setPlatform(false)} />
+                <PlatformApp
+                    target={platformTarget}
+                    onExit={(): void => {
+                        setPlatformTarget(null)
+                        setPlatform(false)
+                    }}
+                />
             </Suspense>
         )
     }

@@ -14,7 +14,11 @@ export function usePolling(reload: () => unknown, ms: number, enabled = true): v
             return undefined
         }
         const run = (): void => {
-            void latest.current()
+            // A tick that fails (no network for a moment) just waits for the next one: never an
+            // unhandled rejection, which the crash reporter would send to the admins.
+            Promise.resolve()
+                .then(() => latest.current())
+                .catch(() => undefined)
         }
         const timer = window.setInterval(() => {
             if (isAppActive()) {

@@ -9,7 +9,8 @@ describe("the owner section across several businesses", () => {
         const owner = useOwner.getState()
         owner.bindShop("shop-a")
         useOwner.setState({ products: [{ id: "p-a" } as ProductDTO], couriers: [], tab: "money" })
-        useOwner.getState().focusOrder("order-b")
+        // A bot message about shop B arrives while shop A is still bound.
+        useOwner.getState().focusOrder("order-b", "shop-b")
 
         useOwner.getState().bindShop("shop-a")
         expect(useOwner.getState().products).toHaveLength(1)
@@ -21,5 +22,12 @@ describe("the owner section across several businesses", () => {
         expect(state.tab).toBe("orders")
         // The order a bot message asked for belongs to the business opening now.
         expect(state.focusOrderId).toBe("order-b")
+    })
+
+    it("an order of one business is never looked for in another opened after it", () => {
+        useOwner.getState().bindShop("shop-a")
+        useOwner.getState().focusOrder("order-a")
+        useOwner.getState().bindShop("shop-c")
+        expect(useOwner.getState().focusOrderId).toBeNull()
     })
 })

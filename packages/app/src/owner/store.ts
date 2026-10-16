@@ -16,6 +16,8 @@ interface OwnerState {
     tab: OwnerTab
     /** The order a bot message opened: shown first in «Buyurtmalar» until put away. */
     focusOrderId: string | null
+    /** The business that order belongs to: another business opened later never looks for it. */
+    focusShopId: string | null
     /** «Ishga tayyor» asked for this part of «Sozlamalar»: scroll to it once. */
     focusSection: ReadySection | null
     /** All products, hidden ones too. `null` until the first load. */
@@ -34,7 +36,8 @@ interface OwnerState {
     /** Another business opened: nothing of the previous one may show or be edited. */
     bindShop(id: string): void
     setTab(tab: OwnerTab): void
-    focusOrder(id: string | null): void
+    /** `shopId`: the business of the order (a bot message's); the bound one when left out. */
+    focusOrder(id: string | null, shopId?: string): void
     goToSection(section: ReadySection | null): void
     loadCouriers(): Promise<void>
     /** One courier changed (days, "not today"): swap it in place. */
@@ -57,6 +60,7 @@ export const useOwner = create<OwnerState>((set, get) => ({
     shopId: null,
     tab: "orders",
     focusOrderId: null,
+    focusShopId: null,
     focusSection: null,
     products: null,
     couriers: null,
@@ -68,10 +72,12 @@ export const useOwner = create<OwnerState>((set, get) => ({
     setSettingsDirty: (dirty): void => set({ settingsDirty: dirty }),
     bindShop: (id): void => {
         if (get().shopId !== id) {
-            // The order a bot message asked for stays: it belongs to the shop opening now.
+            // The order a bot message asked for stays only for its own business: opening another
+            // one never looks for it there (a 404 and an error toast).
             set({
                 shopId: id,
                 tab: "orders",
+                focusOrderId: get().focusShopId === id ? get().focusOrderId : null,
                 focusSection: null,
                 products: null,
                 couriers: null,
@@ -80,7 +86,12 @@ export const useOwner = create<OwnerState>((set, get) => ({
         }
     },
     setTab: (tab): void => set({ tab }),
-    focusOrder: (id): void => set({ focusOrderId: id, tab: "orders" }),
+    focusOrder: (id, shopId): void =>
+        set({
+            focusOrderId: id,
+            focusShopId: id ? (shopId ?? get().shopId) : null,
+            tab: "orders",
+        }),
     goToSection: (section): void =>
         set(section ? { focusSection: section, tab: "settings" } : { focusSection: null }),
     loadCouriers: async (): Promise<void> => {

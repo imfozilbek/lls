@@ -49,6 +49,7 @@ import {
     optionsValid,
 } from "./OptionsEditor.js"
 import { ProductPreview } from "./ProductPreview.js"
+import { onSaleNow } from "./stopped.js"
 import { useOwner } from "./store.js"
 
 import type { OptionsDraft } from "./OptionsEditor.js"
@@ -127,7 +128,8 @@ function draftOf(product: ProductDTO | undefined, type: BusinessType | undefined
         category: product.category,
         step: isWeightUnit(product.unit) ? product.step : defaultStep(product.unit),
         returnable: product.returnable,
-        isAvailable: product.isAvailable,
+        // Stopped for today shows as off sale: switching it on here puts it back today.
+        isAvailable: onSaleNow(product),
         photo: null,
         options: optionsDraftOf(product.options),
     }
@@ -200,7 +202,7 @@ async function saveFields(product: ProductDTO | undefined, draft: Draft): Promis
         options,
         description: input.description ?? null,
         // Sent only when changed: showing a product again also clears today's stop-list mark.
-        ...(draft.isAvailable !== product.isAvailable ? { isAvailable: draft.isAvailable } : {}),
+        ...(draft.isAvailable !== onSaleNow(product) ? { isAvailable: draft.isAvailable } : {}),
     })
 }
 

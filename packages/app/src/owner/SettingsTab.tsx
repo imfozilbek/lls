@@ -38,7 +38,7 @@ import { PosterSection } from "./PosterSection.js"
 import { ShareOwnPhone } from "./ShareOwnPhone.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 import { useOwner } from "./store.js"
-import { readTick, saveTick } from "./ticks.js"
+import { saveTick, useTick } from "./ticks.js"
 
 import type { Hours } from "./hours.js"
 import type { ReadySection } from "./store.js"
@@ -439,20 +439,25 @@ function DeliveryFields({
  */
 function useQuickSave(
     onSaved: (shop: ShopOwnerDTO) => void,
-): (change: ShopPatch, revert: () => void) => void {
+): (change: ShopPatch | (() => ShopPatch), revert: () => void) => void {
     const t = useT()
+    // One after another, each built when its turn comes: two quick flips never overwrite each
+    // other, and an answer that comes late never puts an older shop back.
+    const queue = useRef<Promise<void>>(Promise.resolve())
     return (change, revert): void => {
-        api.owner
-            .updateShop(change)
-            .then((saved) => {
-                onSaved(saved)
-                haptic.success()
-                toast(t.owner.settings.saved, "success")
-            })
-            .catch((caught: unknown) => {
-                revert()
-                failToast(t, caught)
-            })
+        queue.current = queue.current.then(() =>
+            api.owner
+                .updateShop(typeof change === "function" ? change() : change)
+                .then((saved) => {
+                    onSaved(saved)
+                    haptic.success()
+                    toast(t.owner.settings.saved, "success")
+                })
+                .catch((caught: unknown) => {
+                    revert()
+                    failToast(t, caught)
+                }),
+        )
     }
 }
 
@@ -532,14 +537,25 @@ function FeatureFields({
 }): React.JSX.Element {
     const s = useT().owner.settings
     const quickSave = useQuickSave(onSaved)
+    // The switches as they are now: a save waiting its turn sends them, not those of its tap.
+    const now = useRef(form.features)
+    now.current = form.features
+    const flip = (features: readonly Feature[], feature: Feature, on: boolean): Feature[] => {
+        const rest = features.filter((f) => f !== feature)
+        return on ? [...rest, feature] : rest
+    }
     // A switch is saved as it is flipped; the deposit's sum waits for «Saqlash».
     const toggle = (feature: Feature, on: boolean): void => {
-        const before = form.features
-        const rest = form.features.filter((f) => f !== feature)
-        const features = on ? [...rest, feature] : rest
+        const features = flip(form.features, feature, on)
+        now.current = features
         patch({ features })
-        quickSave({ features: FEATURES.filter((f) => features.includes(f)) }, () =>
-            patch({ features: before }),
+        quickSave(
+            () => ({ features: FEATURES.filter((f) => now.current.includes(f)) }),
+            // Only this switch goes back: another one flipped meanwhile stays as it is.
+            () => {
+                now.current = flip(now.current, feature, !on)
+                patch({ features: now.current })
+            },
         )
     }
     return (
@@ -993,14 +1009,13 @@ function SettingsBody({
     const [group, setGroup] = useState<SettingsGroup | null>(null)
     // A new shop is open around the clock already: the switch is on, nothing to change, so
     // without this «Saqlash» the owner could never confirm the step from inside.
-    const [hoursTicked, setHoursTicked] = useState(() => readTick("hours", shop.id))
+    const hoursTicked = useTick("hours", shop.id)
     const confirmAllDay: MainAction | null =
         group === "hours" && shop.workingHours === null && !hoursTicked
             ? {
                   text: t.common.save,
                   onClick: (): void => {
                       saveTick("hours", shop.id)
-                      setHoursTicked(true)
                       haptic.success()
                       toast(s.saved, "success")
                   },
