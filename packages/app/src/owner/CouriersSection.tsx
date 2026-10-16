@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
-import { confirm, haptic, onAppActive, openTelegramLink } from "../lib/telegram.js"
+import { callLink, confirm, haptic, onAppActive, openTelegramLink } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { AlertIcon, CheckIcon, CopyIcon, PlusIcon, ScooterIcon, TrashIcon } from "../ui/icons.js"
 import { Button, Section, Skeleton, Switch } from "../ui/primitives.js"
@@ -134,7 +134,7 @@ function CourierContacts({ courier }: { courier: CourierDTO }): React.JSX.Elemen
             <span className="flex flex-wrap gap-x-2 text-sm text-tg-hint">
                 {courier.phone ? (
                     <a
-                        href={`tel:${courier.phone}`}
+                        {...callLink(courier.phone)}
                         className="-my-2 inline-flex items-center py-2 font-medium text-brand active:opacity-70"
                     >
                         {formatPhone(courier.phone)}
