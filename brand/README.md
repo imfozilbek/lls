@@ -27,6 +27,7 @@ colors, Zumda stays green.
 | `zumda-bot-avatar.png` (640) | `@zumdashop_bot` avatar: BotFather → `/setuserpic` |
 | `zumda-business-avatar.png` (640) | `@zumdashop_business_bot` avatar (mark + briefcase) |
 | `zumda-kuryer-avatar.png` (640) | `@zumdashop_kuryer_bot` avatar (mark + scooter) |
+| `zumda-platforma-avatar.png` (640) | The Zumda \| Platforma bot's avatar, the admins' bot (mark + shield, like «Platforma» in the app) |
 | `zumda-group-avatar.png` / `-gear.png` | Telegram groups: team, engineers |
 
 PNGs are rendered from the SVGs; change the SVG first.
