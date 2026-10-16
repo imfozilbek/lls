@@ -15,6 +15,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   posyolkasi» (Eski Yakkabog') in Qashqadaryo viloyati, 20 km each, and puts every shop in the
   nearest district that holds it, as saving a district does; a district already under the name
   stays.
+- No coordinates anywhere in the product: a district's center is picked on the map (or where the
+  admin stands), the typed «kenglik, uzunlik» field is gone.
 
 ### Bugs found across the project and fixed
 - A shop number saved before the stricter phone rules (a digit missing) broke the shop and every

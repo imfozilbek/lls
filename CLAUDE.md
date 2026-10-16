@@ -218,8 +218,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - **Done (goal 06):** every courier a business approves is **offered** once to deliver for other
   points of the district too (`in_network`, only the courier's own consent).
 - **Done:** a district is a circle (center + radius) the platform admin sets in «Platforma» →
-  «Tumanlar» (center typed or the admin's location, radius, wait); the same tab shows its network
-  stats.
+  «Tumanlar» (center on the map or the admin's location, radius, wait); the same tab shows its
+  network stats.
 - **Every district is in one of the 14 viloyats** (owner's decision, October 2026): 12 viloyats,
   Qoraqalpog'iston Respublikasi and Toshkent shahri (`Region` in core, stored ids, only added).
   A new district needs its viloyat (chips in «Tumanlar»); «Tumanlar» lists the districts by
@@ -269,6 +269,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
   R2 serves it itself at `map.zumda.shop` (owner's decision, October 2026: no Worker request per
   piece; bucket CORS for the app's addresses, a Cache Rule keeps it at the edge); the Worker's
   `/map/*` serves the same keys on the stand. The app never calls an outside map server. No search: the person moves the map under the pin; «Joylashuvim» comes from Telegram.
+  **Coordinates are never shown in the product** (owner's decision, October 2026): a place is
+  picked and shown on the map, bots link «Xarita»; no screen, message or file prints numbers.
   Picking: checkout, the application, «Sozlamalar → Manzil», «Tumanlar». Showing: the courier's
   card, the owner's order (map button), the customer's order, the storefront («Xarita»), trips.
   MapLibre is the lazy `ui/map` chunk; with no map yet every place works as before.
