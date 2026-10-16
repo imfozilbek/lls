@@ -254,11 +254,12 @@ Pilot: **food, water and grocery at the same time.**
       through the showcase (production data, 4 October 2026)
 - [x] Goal 01 closed: approval by button, refund and CSV in chat, the error alert reached the
       admin, a local `wrangler d1 export` (checked by the owner in production, 16 October 2026)
-- [x] «Platforma» in its own bot, Zumda | Platforma, and its own Mini App (owner's decision,
+- [x] Goal 18: «Platforma» in its own bot, Zumda | Platforma, and its own Mini App (owner's decision,
       16 October 2026): every message to the admins comes from it, Zumda | Business as the
       fallback until Start; platform.zumda.shop in a browser with its own Telegram Login
-- [ ] Zumda | Platforma live: the owner creates the bot and `ADMIN_BOT_TOKEN`, presses Start,
-      sets its Login Widget (`docs/launch-checklist.md`, step 4)
+- [ ] Zumda | Platforma live (goal 19, `docs/goals/19-platforma-live.md`): the owner creates the
+      bot and `ADMIN_BOT_TOKEN`, presses Start, sets its Login Widget; until the secret exists
+      the deploy of `main` is skipped as a whole
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
 
