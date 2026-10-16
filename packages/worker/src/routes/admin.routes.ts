@@ -84,6 +84,12 @@ export const adminRoutes = new Hono<AppEnv>()
         await next()
     })
 
+    /**
+     * «Platforma»'s door: the app asks once on opening, so someone who is not an admin sees one
+     * clear screen instead of an error in every tab. No D1 read: the guard above decided.
+     */
+    .get("/me", (c) => c.json({ admin: true }))
+
     /** «Arizalar» (pending), «Bizneslar» (active), turned-off shops (disabled). */
     .get("/shops", zValidator("query", adminShopsQuery, onInvalid), async (c) => {
         const { status } = c.req.valid("query")

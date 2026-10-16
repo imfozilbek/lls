@@ -61,6 +61,15 @@ describe("«Platforma»: the admins' own bot, Zumda | Platforma (/api/admin)", (
         client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
     })
 
+    it("the app asks once whether the person may open «Platforma»", async () => {
+        const me = await admin()("/api/admin/me")
+        expect(me.status).toBe(200)
+        expect(await json(me)).toEqual({ admin: true })
+        const stranger = await client.as(STRANGER, { adminBot: true })("/api/admin/me")
+        expect(stranger.status).toBe(403)
+        expect(await json(stranger)).toMatchObject({ error: { code: "ADMIN_ONLY" } })
+    })
+
     it("Zumda | Business has no «Platforma» any more; Zumda | Platforma opens no shop", async () => {
         const me = await client.as(ADMIN, { businessBot: true })("/api/platform/me")
         expect(me.status).toBe(404)
@@ -146,6 +155,7 @@ describe("«Platforma»: the admins' own bot, Zumda | Platforma (/api/admin)", (
     it("only an admin, only from Zumda | Platforma: every other door is closed", async () => {
         const { id, slug } = await createActiveShop(client)
         const paths: [string, RequestInit & { json?: unknown }][] = [
+            ["/api/admin/me", {}],
             ["/api/admin/shops?status=active", {}],
             [`/api/admin/shops/${id}`, { method: "PATCH", json: { decision: "reject" } }],
             [`/api/admin/shops/${id}/reconnect`, { method: "POST" }],
