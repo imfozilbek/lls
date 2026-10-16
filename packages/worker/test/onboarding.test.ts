@@ -86,6 +86,18 @@ describe("a short application: name, kind, bot and where the business is", () =>
         })
     })
 
+    it("an owner Zumda | Business cannot reach: the admins still get the application", async () => {
+        client.telegram.notStarted.add(`${env.BUSINESS_BOT_TOKEN}:${OWNER.id}`)
+        const shop = await apply()
+        const card = client.telegram.sent.find(
+            (m) =>
+                m.chatId === ADMIN.id &&
+                m.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data ===
+                    `r:${shop.id}:approve`,
+        )
+        expect(card).toBeDefined()
+    })
+
     it("the bot answers from the application on: «Tez orada ochiladi», no orders yet", async () => {
         const shop = await apply()
         expect(client.telegram.webhooks.map((w) => w.token)).toEqual([SHOP_BOT_TOKEN])

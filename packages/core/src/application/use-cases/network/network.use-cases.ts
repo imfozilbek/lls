@@ -505,12 +505,13 @@ export class NetworkStatsUseCase {
 export class FreeNetworkCouriersUseCase {
     constructor(private readonly deps: NetworkDeps) {}
 
-    /** Who gets «Новый заказ рядом» for an order of this district. */
-    async execute(input: { districtId: string }): Promise<number[]> {
+    /** Who gets «Новый заказ рядом» for an order of this shop of this district. */
+    async execute(input: { districtId: string; businessId?: string }): Promise<number[]> {
         const profiles = await this.deps.couriers.listFreeNetworkCouriers(
             input.districtId,
             this.deps.clock.now(),
             NETWORK_FANOUT_LIMIT,
+            input.businessId,
         )
         return profiles.map((profile) => profile.telegramId.value)
     }

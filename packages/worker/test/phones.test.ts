@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers"
 import { beforeEach, describe, expect, it } from "vitest"
 
 import {
+    ADMIN,
     CUSTOMER,
     OWNER,
     SHOP_BOT,
@@ -172,6 +173,24 @@ describe("phones: everyone on an order can call each other", () => {
             shopPhone: SHOP_PHONE,
             customerPhone: "+998901234567",
         })
+    })
+})
+
+describe("a number saved under the older, looser rules", () => {
+    it("still reads: the shop, the showcase list and «Platforma» keep working", async () => {
+        const client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
+        const { slug } = await createActiveShop(client)
+        // Typed with a digit missing before October 2026: Phone.create refuses it today.
+        await env.DB.prepare("UPDATE businesses SET contact_phone = '+99890123456'").run()
+        const shop = await client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug })(
+            "/api/shop",
+        )
+        expect(shop.status).toBe(200)
+        expect(await json(shop)).toMatchObject({ callPhone: "+99890123456" })
+        const shops = await client.as(ADMIN, { businessBot: true })(
+            "/api/admin/shops?status=active",
+        )
+        expect(shops.status).toBe(200)
     })
 })
 

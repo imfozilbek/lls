@@ -13,7 +13,7 @@ import {
     toNetworkOrderDTO,
 } from "@zumda/core"
 
-import { alertAdmins, describeError, isRecipientProblem } from "../alerts.js"
+import { alertAdmins, describeError, isRecipientProblem, toEach } from "../alerts.js"
 import { platformAdminIds } from "../env.js"
 
 import {
@@ -235,7 +235,23 @@ export class Notifier {
                     await this.services.telegram.sendMessage(token, ownerId, caption, options)
                 }
             },
-            (note) => this.noteToOwner(business, note, caption),
+            async (note) => {
+                // The picture is the point of this message: it goes through Zumda | Business too.
+                try {
+                    await this.services.telegram.sendPhotoFile(
+                        this.services.env.BUSINESS_BOT_TOKEN,
+                        ownerId,
+                        file,
+                        `${note.text}\n\n${caption}`,
+                        { keyboard: note.keyboard },
+                    )
+                } catch (error) {
+                    if (!(error instanceof TelegramApiError) || isRecipientProblem(error)) {
+                        throw error
+                    }
+                    await this.noteToOwner(business, note, caption)
+                }
+            },
             order.id,
         )
     }
@@ -262,6 +278,7 @@ export class Notifier {
             token,
             lines.join("\n"),
             confirmPaidKeyboard(order, t, sum),
+            order.id,
         )
     }
 
@@ -312,29 +329,50 @@ export class Notifier {
         previousCourierId: string | undefined,
     ): Promise<void> {
         const token = await this.shopToken(business.id)
-        const courierBot = this.services.env.COURIER_BOT_TOKEN
         const { courier: oldMessage } = await this.services.orders.getMessageIds(order.id)
-        if (previousCourierId && previousCourierId !== order.courierId) {
-            const previous = await this.services.couriers.findById(previousCourierId)
-            if (previous) {
-                const chatId = previous.telegramId.value
-                const reader = await this.readerFor(chatId, business)
-                const text = fill(textsFor(reader.language).courierRemoved, {
-                    n: order.number,
-                    shop: escapeHtml(business.name),
-                })
-                // The old card turns into the note; if it was not stored yet, a new message.
-                if (oldMessage === null) {
-                    await this.services.telegram.sendMessage(courierBot, chatId, text)
-                } else {
-                    await this.services.telegram.editMessage(courierBot, chatId, oldMessage, text)
+        // Each step on its own: a deleted old card or a blocked bot never keeps the new courier
+        // from getting the order.
+        await everyOne([
+            (): Promise<void> =>
+                previousCourierId && previousCourierId !== order.courierId
+                    ? this.tellPreviousCourier(business, order, previousCourierId, oldMessage)
+                    : Promise.resolve(),
+            (): Promise<void> => this.refreshCourierCard(business, order, null),
+            (): Promise<void> => this.orderChangedForOwner(token, business, order),
+            // The shop's own courier took it: the network's offers are no longer open.
+            (): Promise<void> => this.closeNetworkOffers(business, order),
+        ])
+    }
+
+    /** The old card turns into the note; if it was not stored or is gone, a new message. */
+    private async tellPreviousCourier(
+        business: Business,
+        order: OrderDTO,
+        previousCourierId: string,
+        oldMessage: number | null,
+    ): Promise<void> {
+        const previous = await this.services.couriers.findById(previousCourierId)
+        if (!previous) {
+            return
+        }
+        const courierBot = this.services.env.COURIER_BOT_TOKEN
+        const chatId = previous.telegramId.value
+        const reader = await this.readerFor(chatId, business)
+        const text = fill(textsFor(reader.language).courierRemoved, {
+            n: order.number,
+            shop: escapeHtml(business.name),
+        })
+        if (oldMessage !== null) {
+            try {
+                await this.services.telegram.editMessage(courierBot, chatId, oldMessage, text)
+                return
+            } catch (error) {
+                if (!cardIsGone(error)) {
+                    throw error
                 }
             }
         }
-        await this.refreshCourierCard(business, order, null)
-        await this.orderChangedForOwner(token, business, order)
-        // The shop's own courier took it: the network's offers are no longer open.
-        await this.closeNetworkOffers(business, order)
+        await this.services.telegram.sendMessage(courierBot, chatId, text)
     }
 
     /**
@@ -387,16 +425,23 @@ export class Notifier {
         const token = await this.shopToken(business.id)
         const ownerId = business.ownerTelegramId.value
         const t = textsFor(await this.languageOf(ownerId), business.type)
-        await this.toOwner(
-            token,
-            business,
-            order,
-            fill(t.networkRequestedOwner, { n: order.number }),
-        )
-        const people = await this.services.useCases.freeNetworkCouriers.execute({
-            districtId: district.id,
-        })
-        await this.offerToNetwork(business, order.id, people)
+        // The couriers hear it even if the owner's line fails.
+        await everyOne([
+            (): Promise<void> =>
+                this.toOwner(
+                    token,
+                    business,
+                    order,
+                    fill(t.networkRequestedOwner, { n: order.number }),
+                ),
+            async (): Promise<void> => {
+                const people = await this.services.useCases.freeNetworkCouriers.execute({
+                    districtId: district.id,
+                    businessId: business.id,
+                })
+                await this.offerToNetwork(business, order.id, people)
+            },
+        ])
     }
 
     /** Offers waiting orders to someone who just went on shift or joined the network. */
@@ -424,21 +469,25 @@ export class Notifier {
         const offer = toNetworkOrderDTO(order, business)
         const sent: { telegramId: number; messageId: number }[] = []
         try {
-            for (const telegramId of people.filter((id) => !told.has(id))) {
-                const language = await this.languageOf(telegramId)
-                const { messageId } = await this.services.telegram.sendMessage(
-                    this.services.env.COURIER_BOT_TOKEN,
-                    telegramId,
-                    formatNetworkOffer(offer, language),
-                    {
-                        keyboard: withAppButton(
-                            networkOfferKeyboard(orderId, textsFor(language)),
-                            this.courierAppButton(textsFor(language), undefined, orderId),
-                        ),
-                    },
-                )
-                sent.push({ telegramId, messageId })
-            }
+            // A courier who blocked the bot is skipped: the ones after them still get the offer.
+            await toEach(
+                people.filter((id) => !told.has(id)),
+                async (telegramId) => {
+                    const language = await this.languageOf(telegramId)
+                    const { messageId } = await this.services.telegram.sendMessage(
+                        this.services.env.COURIER_BOT_TOKEN,
+                        telegramId,
+                        formatNetworkOffer(offer, language),
+                        {
+                            keyboard: withAppButton(
+                                networkOfferKeyboard(orderId, textsFor(language)),
+                                this.courierAppButton(textsFor(language), undefined, orderId),
+                            ),
+                        },
+                    )
+                    sent.push({ telegramId, messageId })
+                },
+            )
         } finally {
             // Whatever went out is kept, even if a later message failed: nobody gets it twice.
             await this.services.networkOffers.saveMany(orderId, sent, this.services.clock.now())
@@ -503,32 +552,37 @@ export class Notifier {
 
     /** Nobody took these network orders in time: each shop and the admins hear it once. */
     async networkOverdue(late: readonly OverdueNetworkOrder[]): Promise<void> {
-        for (const { order, business, district } of late) {
+        // Each late order is marked as told already: none may be skipped by another's failure.
+        await toEach(late, async ({ order, business, district }) => {
             const token = await this.shopToken(business.id)
             const ownerId = business.ownerTelegramId.value
             const minutes = district.waitMinutes
             const t = textsFor(await this.languageOf(ownerId), business.type)
-            await this.toOwner(
-                token,
-                business,
-                order,
-                fill(t.networkOverdueOwner, { n: order.number, min: minutes }),
-            )
-            for (const adminId of platformAdminIds(this.services.env)) {
-                const admin = textsFor(await this.languageOf(adminId))
-                await this.services.telegram.sendMessage(
-                    this.services.env.BUSINESS_BOT_TOKEN,
-                    adminId,
-                    fill(admin.networkOverdueAdmin, {
-                        shop: escapeHtml(business.name),
-                        n: order.number,
-                        min: minutes,
-                        district: escapeHtml(district.name),
+            await everyOne([
+                (): Promise<void> =>
+                    this.toOwner(
+                        token,
+                        business,
+                        order,
+                        fill(t.networkOverdueOwner, { n: order.number, min: minutes }),
+                    ),
+                (): Promise<void> =>
+                    toEach(platformAdminIds(this.services.env), async (adminId) => {
+                        const admin = textsFor(await this.languageOf(adminId))
+                        await this.services.telegram.sendMessage(
+                            this.services.env.BUSINESS_BOT_TOKEN,
+                            adminId,
+                            fill(admin.networkOverdueAdmin, {
+                                shop: escapeHtml(business.name),
+                                n: order.number,
+                                min: minutes,
+                                district: escapeHtml(district.name),
+                            }),
+                            { keyboard: this.platformKeyboard(admin, "districts") },
+                        )
                     }),
-                    { keyboard: this.platformKeyboard(admin, "districts") },
-                )
-            }
-        }
+            ])
+        })
     }
 
     /** A transfer for a cancelled order arrived (owed back), or the money went back. */
@@ -693,15 +747,28 @@ export class Notifier {
         const ownerLanguage = await this.languageOf(shop.ownerTelegramId)
         const name = escapeHtml(shop.name)
         const ownerTexts = textsFor(ownerLanguage)
-        await this.services.telegram.sendMessage(
-            token,
-            shop.ownerTelegramId,
-            fill(ownerTexts.applicationReceived, { shop: `<b>${name}</b>` }),
-            { keyboard: this.businessesKeyboard(ownerTexts) },
-        )
+        // The admins' card first and on its own: an owner the bot cannot reach must never
+        // leave an application unseen.
+        await everyOne([
+            (): Promise<void> => this.applicationToAdmins(shop),
+            async (): Promise<void> => {
+                await this.services.telegram.sendMessage(
+                    token,
+                    shop.ownerTelegramId,
+                    fill(ownerTexts.applicationReceived, { shop: `<b>${name}</b>` }),
+                    { keyboard: this.businessesKeyboard(ownerTexts) },
+                )
+            },
+        ])
+    }
+
+    /** The application with «Tasdiqlash» / «Rad etish» to every platform admin. */
+    private async applicationToAdmins(shop: ShopOwnerDTO): Promise<void> {
+        const token = this.services.env.BUSINESS_BOT_TOKEN
+        const name = escapeHtml(shop.name)
         const owner = await this.services.customers.findByTelegramId(shop.ownerTelegramId)
         const ownerName = escapeHtml(owner?.name ?? String(shop.ownerTelegramId))
-        for (const adminId of platformAdminIds(this.services.env)) {
+        await toEach(platformAdminIds(this.services.env), async (adminId) => {
             const t = textsFor(await this.languageOf(adminId))
             const summary = [
                 `${t.newShop}: <b>${name}</b> (${t.shopTypes[shop.type]})`,
@@ -726,7 +793,7 @@ export class Notifier {
                     ],
                 },
             })
-        }
+        })
     }
 
     /** Zumda's picture on the shop bot: the shop's logo (or name) with the Zumda mark. */
@@ -815,7 +882,7 @@ export class Notifier {
     /** Someone else owns a shop's managed bot now: the admins decide, nothing moves silently. */
     async managedBotOwnerChanged(shop: ShopOwnerDTO, newOwnerTelegramId: number): Promise<void> {
         const token = this.services.env.BUSINESS_BOT_TOKEN
-        for (const adminId of platformAdminIds(this.services.env)) {
+        await toEach(platformAdminIds(this.services.env), async (adminId) => {
             const t = textsFor(await this.languageOf(adminId))
             await this.services.telegram.sendMessage(
                 token,
@@ -827,7 +894,7 @@ export class Notifier {
                 }),
                 { keyboard: this.platformKeyboard(t, { shopId: shop.id }) },
             )
-        }
+        })
     }
 
     /** Approve: connect the shop bot (webhook + menu button) and send the owner their link. */
@@ -861,22 +928,27 @@ export class Notifier {
             return
         }
         await this.connectShopBot(shop, workerOrigin)
+        // The shop already works from here on: what fails after it only reaches the admins
+        // (an owner the bot cannot reach is not an incident), never «the bot did not connect».
+        const afterConnect = (error: unknown): Promise<void> =>
+            isRecipientProblem(error)
+                ? Promise.resolve()
+                : alertAdmins(this.services, "notification_failed", error)
         const link = `https://t.me/${shop.botUsername}`
-        await this.services.telegram.sendMessage(
-            businessToken,
-            shop.ownerTelegramId,
-            [
-                `${fill(texts.shopApproved, { shop: name })}\n${link}`,
-                shop.paymentMethods.length > 0 ? null : `\n${texts.shopApprovedNeedsCard}`,
-            ]
-                .filter((line) => line !== null)
-                .join(""),
-            { keyboard: this.businessesKeyboard(texts) },
-        )
-        // The shop already works: a description Telegram refused only reaches the admins.
-        await this.shopBotDescriptions(shop).catch((error: unknown) =>
-            alertAdmins(this.services, "notification_failed", error),
-        )
+        await this.services.telegram
+            .sendMessage(
+                businessToken,
+                shop.ownerTelegramId,
+                [
+                    `${fill(texts.shopApproved, { shop: name })}\n${link}`,
+                    shop.paymentMethods.length > 0 ? null : `\n${texts.shopApprovedNeedsCard}`,
+                ]
+                    .filter((line) => line !== null)
+                    .join(""),
+                { keyboard: this.businessesKeyboard(texts) },
+            )
+            .catch(afterConnect)
+        await this.shopBotDescriptions(shop).catch(afterConnect)
     }
 
     private async orderChangedForOwner(
@@ -1042,7 +1114,7 @@ export class Notifier {
         const ownerId = business.ownerTelegramId.value
         const t = textsFor(await this.languageOf(ownerId), business.type)
         const url = shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value, order.id)
-        await this.textToOwner(business, token, text, appKeyboard(t.openOrder, url))
+        await this.textToOwner(business, token, text, appKeyboard(t.openOrder, url), order.id)
     }
 
     /** A text for the owner from the shop's bot, or through Zumda | Business with the note. */
@@ -1051,6 +1123,8 @@ export class Notifier {
         token: string,
         text: string,
         keyboard: InlineKeyboard,
+        /** About this order: the Zumda | Business button opens it. */
+        orderId?: string,
     ): Promise<OwnerDelivery> {
         return this.reachOwner(
             business,
@@ -1063,6 +1137,7 @@ export class Notifier {
                 )
             },
             (note) => this.noteToOwner(business, note, text),
+            orderId,
         )
     }
 

@@ -405,4 +405,60 @@ describe("district network", () => {
             .first<{ in_network: number }>()
         expect(profile?.in_network).toBe(1)
     })
+
+    it("a customer the shop's bot cannot reach never keeps the order from the network", async () => {
+        // Opened the Mini App without pressing Start: the bot may not write to them.
+        client.telegram.notStarted.add(`${SHOP_BOT_TOKEN}:${CUSTOMER.id}`)
+        const order = await placeAndAccept()
+        expect(order.waitingForNetwork).toBe(true)
+        expect(offersTo(BOBUR.id).map((o) => o.data)).toEqual([`n:${order.id}`])
+        expect(offersTo(OTABEK.id).map((o) => o.data)).toEqual([`n:${order.id}`])
+    })
+
+    it("a courier who blocked the courier bot is skipped; the next one gets the offer", async () => {
+        // Bobur joined first, so he is asked first.
+        client.telegram.notStarted.add(`${env.COURIER_BOT_TOKEN}:${BOBUR.id}`)
+        const order = await placeAndAccept()
+        expect(offersTo(OTABEK.id).map((o) => o.data)).toEqual([`n:${order.id}`])
+    })
+
+    it("a courier this shop removed gets no offer of its orders", async () => {
+        const removed = await hireCourier(client, { slug: food }, BOBUR)
+        await env.DB.prepare("UPDATE couriers SET status = 'removed' WHERE id = ?")
+            .bind(removed)
+            .run()
+        const order = await placeAndAccept()
+        expect(order.waitingForNetwork).toBe(true)
+        expect(offersTo(BOBUR.id)).toEqual([])
+        expect(offersTo(OTABEK.id).map((o) => o.data)).toEqual([`n:${order.id}`])
+    })
+
+    it("a new courier gets the card even when the old courier deleted theirs", async () => {
+        const order = await placeAndAccept()
+        const akmal = { id: 7101, first_name: "Akmal" }
+        const bekzod = { id: 7102, first_name: "Bekzod" }
+        const first = await hireCourier(client, { slug: food }, akmal)
+        const second = await hireCourier(client, { slug: food }, bekzod)
+        const assign = (courierId: string): Promise<Response> =>
+            foodOwner()(`/api/owner/orders/${order.id}/courier`, {
+                method: "PUT",
+                json: { courierId },
+            })
+        expect((await assign(first)).status).toBe(200)
+        const row = await env.DB.prepare("SELECT courier_message_id FROM orders WHERE id = ?")
+            .bind(order.id)
+            .first<{ courier_message_id: number }>()
+        client.telegram.deletedMessages.add(row?.courier_message_id ?? -1)
+        expect((await assign(second)).status).toBe(200)
+        const cards = client.telegram.sent.filter(
+            (m) => m.chatId === bekzod.id && m.html.includes(`#${order.number}`),
+        )
+        expect(cards.length).toBeGreaterThan(0)
+        // The first courier still hears the order is no longer theirs, in a new message.
+        expect(
+            client.telegram.sent.some(
+                (m) => m.chatId === akmal.id && m.html.includes(`#${order.number}`),
+            ),
+        ).toBe(true)
+    })
 })

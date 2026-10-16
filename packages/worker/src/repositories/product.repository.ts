@@ -51,9 +51,17 @@ const MAX_SEARCH_WORDS = 6
 /** Words hold only [a-z0-9] (core searchText): every word starting with `prefix` sorts below this. */
 const AFTER_WORDS = "~"
 
-/** A word starts with `prefix`: binds for `word >= ? AND word < ?`. */
-function wordRange(prefix: string): [string, string] {
-    return [prefix, `${prefix}${AFTER_WORDS}`]
+/**
+ * Fewer letters match a whole word only: «un» (flour) finds «Un», never every word starting with
+ * «u…» (a short prefix would read far more rows than the free plan's budget has for a search).
+ */
+const PREFIX_FROM = 3
+/** Right after `word` itself: no other word of [a-z0-9] sorts between the two. */
+const RIGHT_AFTER = "0"
+
+/** Binds for `word >= ? AND word < ?`: words starting with it, or a short word itself. */
+function wordRange(word: string): [string, string] {
+    return [word, `${word}${word.length < PREFIX_FROM ? RIGHT_AFTER : AFTER_WORDS}`]
 }
 
 /**

@@ -8,7 +8,7 @@ import { saveOwnPhone } from "../telegram/contacts.js"
 import { parseCourierReviewCallback, parseOrderCallback } from "../telegram/format.js"
 import { escapeHtml } from "../telegram/gateway.js"
 import { handleManagedBot } from "../telegram/managed-bots.js"
-import { Notifier } from "../telegram/notifier.js"
+import { Notifier, everyOne } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 import {
     SECRET_HEADER,
@@ -218,29 +218,38 @@ async function handleCourierReviewCallback(
     review: { courierId: string; approve: boolean },
 ): Promise<void> {
     const texts = textsFor(languageFromTelegram(callback.from.language_code), business.type)
+    let change: Awaited<ReturnType<typeof services.useCases.reviewCourier.execute>>
     try {
-        const change = await services.useCases.reviewCourier.execute({
+        change = await services.useCases.reviewCourier.execute({
             actorTelegramId: callback.from.id,
             businessId: business.id,
             courierId: review.courierId,
             approve: review.approve,
         })
-        const name = escapeHtml(change.courier.name)
-        if (callback.message) {
-            await services.telegram.editMessage(
-                token,
-                callback.message.chat.id,
-                callback.message.message_id,
-                fill(review.approve ? texts.courierApprovedOwner : texts.courierDeclinedOwner, {
-                    name,
-                }),
-            )
-        }
-        await new Notifier(services).courierReviewed(business, change.courier, change.telegramId)
-        await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
     } catch (error) {
         await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, texts))
+        return
     }
+    // Saved: the button answers, and the courier hears it even if the old card cannot change.
+    await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
+    const name = escapeHtml(change.courier.name)
+    const message = callback.message
+    await everyOne([
+        async (): Promise<void> => {
+            if (message) {
+                await services.telegram.editMessage(
+                    token,
+                    message.chat.id,
+                    message.message_id,
+                    fill(review.approve ? texts.courierApprovedOwner : texts.courierDeclinedOwner, {
+                        name,
+                    }),
+                )
+            }
+        },
+        (): Promise<void> =>
+            new Notifier(services).courierReviewed(business, change.courier, change.telegramId),
+    ])
 }
 
 /** Cancel buttons live only in the owner's chat, but check ownership anyway. */

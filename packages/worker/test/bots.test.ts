@@ -91,7 +91,8 @@ describe("Zumda Business bot", () => {
             },
         })
         const shop = (await registered.json()) as { id: string }
-        const [toOwner, toAdmin] = client.telegram.sent
+        // The admins' card goes first: an owner the bot cannot reach never hides it.
+        const [toAdmin, toOwner] = client.telegram.sent
         expect(toOwner?.chatId).toBe(OWNER.id)
         expect(toOwner?.html).toContain("Osh &lt;Markaz&gt;")
         expect(toAdmin?.chatId).toBe(ADMIN.id)

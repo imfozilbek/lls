@@ -280,6 +280,26 @@ describe("Zumda showcase", () => {
         await inShop(OWNER)(`/api/owner/products/${id}`, { method: "DELETE" })
         expect(await names("tandir")).toEqual([])
     })
+    it("two letters find a whole word only; from three, every word starting with them", async () => {
+        await market(5)
+        const names = async (q: string): Promise<string[]> =>
+            (
+                await json<{ data: { name: string }[] }>(
+                    await viaPlatform(CUSTOMER)(`/api/showcase/products?q=${q}`),
+                )
+            ).data
+                .map((p) => p.name)
+                .sort()
+        await addProduct("Un")
+        await addProduct("Uzum")
+        await addProduct("Unli kulcha")
+        // «un» (flour) is a word of its own: it never reads every «u…» of the district.
+        expect(await names("un")).toEqual(["Un"])
+        expect(await names("uz")).toEqual([])
+        expect(await names("uzu")).toEqual(["Uzum"])
+        expect(await names("unl")).toEqual(["Unli kulcha"])
+    })
+
     it("a Zumda Shop QR: the poster only in the showcase, the shop's bot when it left", async () => {
         const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13])
         const poster = (kind: string): Promise<Response> =>

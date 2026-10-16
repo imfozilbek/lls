@@ -31,6 +31,29 @@ export function isRecipientProblem(error: unknown): boolean {
     )
 }
 
+/**
+ * One message for each person: someone the bot cannot reach is skipped, and the people after
+ * them still get theirs. Any other failure is reported once everyone was tried.
+ */
+export async function toEach<T>(
+    people: readonly T[],
+    send: (person: T) => Promise<void>,
+): Promise<void> {
+    const failures: unknown[] = []
+    for (const person of people) {
+        try {
+            await send(person)
+        } catch (error) {
+            if (!isRecipientProblem(error)) {
+                failures.push(error)
+            }
+        }
+    }
+    if (failures.length > 0) {
+        throw failures[0]
+    }
+}
+
 /** `PUT /api/owner/shop/bot-photo`: where it failed, without the query or a shop bot's id. */
 export function requestPlace(method: string, url: string): string {
     const path = new URL(url).pathname.replace(/^\/tg\/\d+/, "/tg/<id>")
@@ -59,7 +82,7 @@ export async function alertAdmins(
         }
         const place = where ? `${escapeHtml(where)}\n` : ""
         const detail = place + escapeHtml(describeError(error))
-        for (const adminId of platformAdminIds(services.env)) {
+        await toEach(platformAdminIds(services.env), async (adminId) => {
             const customer = await services.customers.findByTelegramId(adminId)
             const texts = textsFor(customer?.language ?? Language.UZ)
             const title = texts[TITLES[kind]]
@@ -69,7 +92,7 @@ export async function alertAdmins(
                 adminId,
                 `<b>${title}</b>\n<code>${detail}</code>\n\n${quiet}`,
             )
-        }
+        })
     } catch (alertError) {
         console.error("Admin alert failed", describeError(alertError))
     }

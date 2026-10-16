@@ -21,7 +21,7 @@ function toCustomer(row: CustomerRow): Customer {
         id: row.id,
         telegramId: TelegramId.create(row.telegram_id),
         name: row.name,
-        phone: row.phone === null ? undefined : Phone.create(row.phone),
+        phone: row.phone === null ? undefined : Phone.fromStored(row.phone),
         // Old rows may say "ru": they read as the product language.
         language: toLanguage(row.language),
         createdAt: new Date(row.created_at),

@@ -53,6 +53,29 @@ const PROFILE_COLUMNS = `p.telegram_id, p.name, p.phone, p.vehicle, p.shift_unti
 /** Orders a courier still carries: a network courier takes one at a time. */
 const CARRYING = ACTIVE_ORDER_STATUSES.map((status) => `'${status}'`).join(", ")
 
+/**
+ * Free network couriers of a district (binds: now, active, district[, shop, removed, pending],
+ * limit). For a shop's order: not the people that shop removed or has not approved yet.
+ */
+export function freeNetworkCouriersSql(forShop: boolean): string {
+    const leftOut = forShop
+        ? `AND NOT EXISTS (
+               SELECT 1 FROM couriers x
+               WHERE x.telegram_id = p.telegram_id AND x.business_id = ? AND x.status IN (?, ?))`
+        : ""
+    return `SELECT ${PROFILE_COLUMNS} FROM courier_profiles p
+        WHERE p.in_network = 1 AND p.shift_until > ? AND p.phone IS NOT NULL
+          AND EXISTS (
+              SELECT 1 FROM couriers c JOIN businesses b ON b.id = c.business_id
+              WHERE c.telegram_id = p.telegram_id AND c.status = ? AND b.district_id = ?)
+          AND NOT EXISTS (
+              SELECT 1 FROM couriers c JOIN orders o ON o.courier_id = c.id
+              WHERE c.telegram_id = p.telegram_id AND o.network_requested_at IS NOT NULL
+                AND o.status IN (${CARRYING}))
+          ${leftOut}
+        ORDER BY p.created_at LIMIT ?`
+}
+
 /** A shop link with the person's profile: the name and phone live in the profile. */
 const SELECT_COURIER = `SELECT c.id, c.business_id, c.status, c.work_days, c.off_until,
     c.created_at, c.updated_at, ${PROFILE_COLUMNS}
@@ -62,7 +85,7 @@ function toProfile(row: ProfileRow): CourierProfile {
     return CourierProfile.reconstitute({
         telegramId: TelegramId.create(row.telegram_id),
         name: row.name,
-        phone: row.phone === null ? undefined : Phone.create(row.phone),
+        phone: row.phone === null ? undefined : Phone.fromStored(row.phone),
         vehicle: optional(row.vehicle),
         shiftUntil: row.shift_until === null ? undefined : new Date(row.shift_until),
         inNetwork: row.in_network === 1,
@@ -216,21 +239,12 @@ export class D1CourierRepository implements CourierRepository {
         districtId: string,
         now: Date,
         limit: number,
+        shopId?: string,
     ): Promise<CourierProfile[]> {
+        const shopBinds = shopId ? [shopId, CourierStatus.REMOVED, CourierStatus.PENDING] : []
         const { results } = await this.db
-            .prepare(
-                `SELECT ${PROFILE_COLUMNS} FROM courier_profiles p
-                 WHERE p.in_network = 1 AND p.shift_until > ? AND p.phone IS NOT NULL
-                   AND EXISTS (
-                       SELECT 1 FROM couriers c JOIN businesses b ON b.id = c.business_id
-                       WHERE c.telegram_id = p.telegram_id AND c.status = ? AND b.district_id = ?)
-                   AND NOT EXISTS (
-                       SELECT 1 FROM couriers c JOIN orders o ON o.courier_id = c.id
-                       WHERE c.telegram_id = p.telegram_id AND o.network_requested_at IS NOT NULL
-                         AND o.status IN (${CARRYING}))
-                 ORDER BY p.created_at LIMIT ?`,
-            )
-            .bind(now.getTime(), CourierStatus.ACTIVE, districtId, limit)
+            .prepare(freeNetworkCouriersSql(shopId !== undefined))
+            .bind(now.getTime(), CourierStatus.ACTIVE, districtId, ...shopBinds, limit)
             .all<ProfileRow>()
         return results.map(toProfile)
     }

@@ -1,6 +1,6 @@
 import { OrderStatus } from "@zumda/core"
 
-import { Notifier } from "./telegram/notifier.js"
+import { Notifier, everyOne } from "./telegram/notifier.js"
 
 import type { Services } from "./services.js"
 import type { Business, NetworkClaim, NetworkRequest, OrderDTO } from "@zumda/core"
@@ -30,12 +30,18 @@ export async function notifyOwnerStep(
     request: NetworkRequest | null,
 ): Promise<void> {
     const notifier = new Notifier(services)
-    await notifier.orderChanged(business, order)
-    if (request) {
-        await notifier.networkRequested(request)
-        // Only a network event: an owner's ordinary step has nothing to do with late offers.
-        await reportOverdueNetworkOrders(services)
-    }
+    // Each on its own: a customer the shop's bot cannot reach must not keep the order from the
+    // district's couriers.
+    await everyOne([
+        (): Promise<void> => notifier.orderChanged(business, order),
+        async (): Promise<void> => {
+            if (request) {
+                await notifier.networkRequested(request)
+                // Only a network event: an owner's ordinary step has nothing to do with late offers.
+                await reportOverdueNetworkOrders(services)
+            }
+        },
+    ])
 }
 
 /**

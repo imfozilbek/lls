@@ -535,8 +535,16 @@ export class InMemoryCouriers implements CourierRepository {
         districtId: string,
         now: Date,
         limit: number,
+        shopId?: string,
     ): Promise<CourierProfile[]> {
         const links = [...this.items.values()]
+        const leftOut = (telegramId: number): boolean =>
+            links.some(
+                (c) =>
+                    c.businessId === shopId &&
+                    c.telegramId.value === telegramId &&
+                    (c.status === CourierStatus.REMOVED || c.status === CourierStatus.PENDING),
+            )
         const inDistrict = (c: Courier): boolean =>
             c.isActive && this.businesses?.items.get(c.businessId)?.districtId === districtId
         const busy = (telegramId: number): boolean =>
@@ -551,7 +559,7 @@ export class InMemoryCouriers implements CourierRepository {
             .filter((p) =>
                 links.some((c) => c.telegramId.value === p.telegramId.value && inDistrict(c)),
             )
-            .filter((p) => !busy(p.telegramId.value))
+            .filter((p) => !busy(p.telegramId.value) && !leftOut(p.telegramId.value))
             .slice(0, limit)
     }
     async saveInvite(invite: CourierInvite): Promise<void> {

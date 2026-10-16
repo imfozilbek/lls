@@ -6,6 +6,7 @@ import { env } from "cloudflare:workers"
 import { describe, expect, it } from "vitest"
 
 import { SHOWCASE_SHOPS } from "../src/repositories/business.repository.js"
+import { freeNetworkCouriersSql } from "../src/repositories/courier.repository.js"
 import { countSql, nextSql } from "../src/repositories/guide.repository.js"
 import {
     ACTIVE_VERSION_SQL,
@@ -85,6 +86,17 @@ describe("query plans", () => {
             // `courier_profiles.telegram_id` is its primary key.
             expect(text).toContain("SEARCH cp USING INTEGER PRIMARY KEY")
             expect(text).not.toMatch(/\b(orders|order_items)\b/)
+        }
+    })
+
+    it("free network couriers: each person's own links by index, never a scan of orders", async () => {
+        const binds = [Date.now(), "active", "district-1"]
+        for (const [sql, all] of [
+            [freeNetworkCouriersSql(false), [...binds, 20]],
+            [freeNetworkCouriersSql(true), [...binds, "biz-1", "removed", "pending", 20]],
+        ] as const) {
+            const plan = await planOf(sql, [...all])
+            expectIndexed(plan, ["idx_couriers_telegram"])
         }
     })
 
