@@ -18,15 +18,17 @@ marketplace on top of both.
 | Part | Status | Notes |
 |------|--------|-------|
 | `@zumda/core` | ✅ Done | Domain + use cases, couriers, channel + commission, weight, bottles, stop-list, showcase search, district network, card transfer and cash (the shop's choice), many cards, trips, owner chat state; 242 tests |
-| `@zumda/worker` | ✅ Done | Hono API, D1, R2, initData auth, roles, three Zumda bots + shop bots (`/start` only), «Platforma» admin API, alerts, money routes, cards, CSV and poster, own map (`/map/*`), trips (OpenRouteService), owner messages through Zumda \| Business until Start; Uzbek texts; 180 tests |
-| `@zumda/app` | ✅ Done | Storefront, checkout, tracking, owner section, courier screen, showcase, onboarding, «Mening bizneslarim», «Platforma», business.zumda.shop in a browser, «Pul», cash, map, trips, sound, poster download; Uzbek, light only; 84 tests; ~95 KB gzip initial JS |
+| `@zumda/worker` | ✅ Done | Hono API, D1, R2, initData auth, roles, four Zumda bots + shop bots (`/start` only), «Platforma» admin API in its own bot, alerts, money routes, cards, CSV and poster, own map (`/map/*`), trips (OpenRouteService), owner messages through Zumda \| Business until Start; Uzbek texts; 180 tests |
+| `@zumda/app` | ✅ Done | Storefront, checkout, tracking, owner section, courier screen, showcase, onboarding, «Mening bizneslarim», «Platforma» (its own Mini App), business. and platform.zumda.shop in a browser, «Pul», cash, map, trips, sound, poster download; Uzbek, light only; 84 tests; ~95 KB gzip initial JS |
 | CI | ✅ Done | format, lint, build, unit tests, coverage, 119 e2e scenarios on eight machines on every pull request; a push to `main` deploys |
 | Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
-| Deploy | ✅ Live | `api.`, `app.`, `business.`, `delivery.zumda.shop`, `media.` and `map.zumda.shop` (R2); migrations up to `0024`; the map of Uzbekistan in R2; fits the free plan (`docs/capacity.md`) |
+| Deploy | ✅ Live | `api.`, `app.`, `business.`, `delivery.zumda.shop`, `media.` and `map.zumda.shop` (R2), `platform.zumda.shop` with the next deploy; migrations up to `0024`; the map of Uzbekistan in R2; fits the free plan (`docs/capacity.md`) |
 | Pilot (food, water, grocery) | 🔨 Started | 5 businesses in production (all bots made with «Bot yaratish»), 3 active couriers, 4 orders delivered and paid (one through the showcase); the districts «Yakkabog' stansiyasi» and «Yakkabog' posyolkasi» (Qashqadaryo viloyati) come with migration `0024` |
 
 **Blocking:** the meeting with the pilots and the owner's decisions below (goal 02). Owner tasks
-without code: the Login Widget and Description Pictures in @BotFather (goal 15), the right Zone >
+without code: the bot Zumda | Platforma in @BotFather and its `ADMIN_BOT_TOKEN` secret (before
+the next deploy; then Start in it and its Login Widget), the Login Widget and Description
+Pictures in @BotFather (goal 15), the right Zone >
 Cache Rules: Edit for the deploy's Cloudflare token (the map kept at the edge, `TODO.md` #25).
 
 **Owner decisions still open** (never invent them in code or docs):
@@ -238,7 +240,8 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Goal 14: «Mening bizneslarim» and a shop bot created from the Zumda bot without a token
       (Telegram Managed Bots); the token path stays
 - [x] Three Zumda bots by role: «Zumda | Shop» (customers), «Zumda | Business» (owners, admins,
-      Managed Bots), «Zumda | Kuryer» (couriers)
+      Managed Bots), «Zumda | Kuryer» (couriers); the admins got their own fourth later
+      («Zumda | Platforma»)
 - [x] Goal 15: kinds of business (grocery store, restaurant, service), own addresses (app.,
       business., delivery.zumda.shop; zumda.shop leads to the bot), Zumda | Business in a
       browser, the bots' profiles set by CI
@@ -251,6 +254,11 @@ Pilot: **food, water and grocery at the same time.**
       through the showcase (production data, 4 October 2026)
 - [x] Goal 01 closed: approval by button, refund and CSV in chat, the error alert reached the
       admin, a local `wrangler d1 export` (checked by the owner in production, 16 October 2026)
+- [x] «Platforma» in its own bot, Zumda | Platforma, and its own Mini App (owner's decision,
+      16 October 2026): every message to the admins comes from it, Zumda | Business as the
+      fallback until Start; platform.zumda.shop in a browser with its own Telegram Login
+- [ ] Zumda | Platforma live: the owner creates the bot and `ADMIN_BOT_TOKEN`, presses Start,
+      sets its Login Widget (`docs/launch-checklist.md`, step 4)
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
 

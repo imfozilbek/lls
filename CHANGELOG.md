@@ -7,6 +7,18 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### «Platforma» in its own bot, Zumda | Platforma
+- The platform admins have their own bot and Mini App (owner's decision, 16 October 2026):
+  «Platforma» is the bot's first screen (platform.zumda.shop), and Zumda | Business is for owners
+  only. Someone who is not an admin sees one clear screen, «faqat Zumda jamoasi uchun».
+- Every message to the admins comes from the new bot: applications with «Tasdiqlash / Rad
+  etish», alerts, late network orders, a new owner of a managed bot, a bot that did not connect.
+  An admin who has not pressed Start there yet gets the same message from Zumda | Business, with
+  the way to the new bot; the approval buttons work in both.
+- «Platforma» in a browser signs in with the new bot's own Telegram Login; its session never
+  opens Zumda | Business, and Business's never opens «Platforma».
+- An old «Platforma» button in Zumda | Business says where «Platforma» is now.
+
 ### Goal 01: the production launch is done
 - The owner checked the last steps in production: an application approved by its button, a
   refund of a cancelled paid order and the CSV in the chat, the error alert reaching the admin,
