@@ -7,6 +7,11 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Goal 01: the production launch is done
+- The owner checked the last steps in production: an application approved by its button, a
+  refund of a cancelled paid order and the CSV in the chat, the error alert reaching the admin,
+  and the first local `wrangler d1 export` kept outside the repository.
+
 ### Every district in its viloyat; the two districts of Yakkabog'
 - A district belongs to one of the 14 regions of Uzbekistan (12 viloyats, Qoraqalpog'iston
   Respublikasi, Toshkent shahri): a new one needs it, picked with one tap in «Tumanlar», and the

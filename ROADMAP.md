@@ -22,11 +22,11 @@ marketplace on top of both.
 | `@zumda/app` | ✅ Done | Storefront, checkout, tracking, owner section, courier screen, showcase, onboarding, «Mening bizneslarim», «Platforma», business.zumda.shop in a browser, «Pul», cash, map, trips, sound, poster download; Uzbek, light only; 84 tests; ~95 KB gzip initial JS |
 | CI | ✅ Done | format, lint, build, unit tests, coverage, 119 e2e scenarios on eight machines on every pull request; a push to `main` deploys |
 | Stand | ✅ Done | `bun run stand` / `bun run e2e`: the whole system locally with a fake Telegram (`docs/e2e.md`) |
-| Deploy | ✅ Live | `api.`, `app.`, `business.`, `delivery.zumda.shop`, `media.` and `map.zumda.shop` (R2); migrations up to `0018`; the map of Uzbekistan in R2; fits the free plan (`docs/capacity.md`) |
+| Deploy | ✅ Live | `api.`, `app.`, `business.`, `delivery.zumda.shop`, `media.` and `map.zumda.shop` (R2); migrations up to `0024`; the map of Uzbekistan in R2; fits the free plan (`docs/capacity.md`) |
 | Pilot (food, water, grocery) | 🔨 Started | 5 businesses in production (all bots made with «Bot yaratish»), 3 active couriers, 4 orders delivered and paid (one through the showcase); the districts «Yakkabog' stansiyasi» and «Yakkabog' posyolkasi» (Qashqadaryo viloyati) come with migration `0024` |
 
 **Blocking:** the meeting with the pilots and the owner's decisions below (goal 02). Owner tasks
-without code: the Login Widget and Description Pictures in @BotFather (goal 15), a local `wrangler d1 export`, the right Zone >
+without code: the Login Widget and Description Pictures in @BotFather (goal 15), the right Zone >
 Cache Rules: Edit for the deploy's Cloudflare token (the map kept at the edge, `TODO.md` #25).
 
 **Owner decisions still open** (never invent them in code or docs):
@@ -249,6 +249,8 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Zumda | Business in a browser signs in with the new Telegram Login (OpenID Connect)
 - [x] Production check: connect a shop → order → transfer → statuses → courier → delivered, also
       through the showcase (production data, 4 October 2026)
+- [x] Goal 01 closed: approval by button, refund and CSV in chat, the error alert reached the
+      admin, a local `wrangler d1 export` (checked by the owner in production, 16 October 2026)
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
 
