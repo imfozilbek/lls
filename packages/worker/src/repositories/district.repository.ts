@@ -1,10 +1,11 @@
-import { District, Location } from "@zumda/core"
+import { District, Location, REGIONS } from "@zumda/core"
 
-import type { DistrictRepository } from "@zumda/core"
+import type { DistrictRepository, Region } from "@zumda/core"
 
 interface DistrictRow {
     id: string
     name: string
+    region: string | null
     latitude: number
     longitude: number
     radius_m: number
@@ -13,17 +14,24 @@ interface DistrictRow {
     updated_at: number
 }
 
-const COLUMNS = "id, name, latitude, longitude, radius_m, wait_minutes, created_at, updated_at"
+const COLUMNS =
+    "id, name, region, latitude, longitude, radius_m, wait_minutes, created_at, updated_at"
 
 /** The admin types the name: «Guliston» and «guliston» are the same district. */
 function nameKey(name: string): string {
     return name.trim().toLowerCase()
 }
 
+/** A viloyat this Worker does not know reads as none: one row never breaks «Tumanlar». */
+function regionOf(value: string | null): Region | undefined {
+    return REGIONS.find((region) => region === value)
+}
+
 function toDistrict(row: DistrictRow): District {
     return District.reconstitute({
         id: row.id,
         name: row.name,
+        region: regionOf(row.region),
         center: Location.create(row.latitude, row.longitude),
         radiusMeters: row.radius_m,
         waitMinutes: row.wait_minutes,
@@ -62,16 +70,18 @@ export class D1DistrictRepository implements DistrictRepository {
     async save(district: District): Promise<void> {
         await this.db
             .prepare(
-                `INSERT INTO districts (id, name, name_key, latitude, longitude, radius_m,
-                    wait_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                 ON CONFLICT (id) DO UPDATE SET latitude = excluded.latitude,
-                    longitude = excluded.longitude, radius_m = excluded.radius_m,
-                    wait_minutes = excluded.wait_minutes, updated_at = excluded.updated_at`,
+                `INSERT INTO districts (id, name, name_key, region, latitude, longitude, radius_m,
+                    wait_minutes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 ON CONFLICT (id) DO UPDATE SET region = excluded.region,
+                    latitude = excluded.latitude, longitude = excluded.longitude,
+                    radius_m = excluded.radius_m, wait_minutes = excluded.wait_minutes,
+                    updated_at = excluded.updated_at`,
             )
             .bind(
                 district.id,
                 district.name,
                 nameKey(district.name),
+                district.region ?? null,
                 district.center.latitude,
                 district.center.longitude,
                 district.radiusMeters,

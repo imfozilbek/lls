@@ -228,6 +228,7 @@ export const adminRoutes = new Hono<AppEnv>()
         return c.json({
             id: district.id,
             name: district.name,
+            region: district.region,
             radiusKm: district.radiusMeters / METERS_PER_KM,
             waitMinutes: district.waitMinutes,
             shops,

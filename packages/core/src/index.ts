@@ -12,6 +12,7 @@ export * from "./domain/enums/language.js"
 export * from "./domain/enums/order-channel.js"
 export * from "./domain/enums/order-status.js"
 export * from "./domain/enums/payment.js"
+export * from "./domain/enums/region.js"
 export * from "./domain/enums/unit.js"
 
 // Domain - Shared

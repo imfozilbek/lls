@@ -190,9 +190,10 @@ async function seedSql(tokenKey: string): Promise<string> {
     const courierProfile = `INSERT INTO courier_profiles (telegram_id, name, phone, shift_until,
         created_at, updated_at) VALUES (${DEV_COURIER.id}, ${quote(DEV_COURIER.first_name)},
         '+998901112233', ${now + DAY_MS}, ${now}, ${now});`
-    const district = `INSERT INTO districts (id, name, name_key, latitude, longitude, radius_m,
-        created_at, updated_at) VALUES (${quote(DEV_DISTRICT.id)}, ${quote(DEV_DISTRICT.name)},
-        ${quote(DEV_DISTRICT.name.toLowerCase())}, ${DEV_DISTRICT.latitude}, ${DEV_DISTRICT.longitude},
+    const district = `INSERT INTO districts (id, name, name_key, region, latitude, longitude,
+        radius_m, created_at, updated_at) VALUES (${quote(DEV_DISTRICT.id)},
+        ${quote(DEV_DISTRICT.name)}, ${quote(DEV_DISTRICT.name.toLowerCase())},
+        ${quote(DEV_DISTRICT.region)}, ${DEV_DISTRICT.latitude}, ${DEV_DISTRICT.longitude},
         ${DEV_DISTRICT.radiusMeters}, ${now}, ${now});`
     const network = DEV_NETWORK_COURIERS.flatMap((c) => [
         `INSERT INTO courier_profiles (telegram_id, name, phone, shift_until, in_network,

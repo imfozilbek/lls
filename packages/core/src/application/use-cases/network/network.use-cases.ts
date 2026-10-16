@@ -17,6 +17,7 @@ import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 import type { Business } from "../../../domain/entities/business.js"
 import type { CourierProfile } from "../../../domain/entities/courier-profile.js"
 import type { Order } from "../../../domain/entities/order.js"
+import type { Region } from "../../../domain/enums/region.js"
 import type { CourierProfileDTO, NetworkOrderDTO } from "../../dtos/courier.dto.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
@@ -120,6 +121,43 @@ function requireAdmin(admins: readonly number[], telegramId: number): void {
     }
 }
 
+/** What the admin sends from «Tumanlar»: a circle, a viloyat and a wait, each when given. */
+interface DistrictChange {
+    name: string
+    region?: Region
+    center?: { latitude: number; longitude: number }
+    radiusKm?: number
+    waitMinutes?: number
+}
+
+/** The district created or moved by a circle; none when neither exists nor a circle came. */
+function placeDistrict(
+    district: District | null,
+    input: DistrictChange,
+    now: Date,
+): District | null {
+    const center = input.center && Location.create(input.center.latitude, input.center.longitude)
+    if (!center || input.radiusKm === undefined) {
+        return district
+    }
+    const radiusMeters = Math.round(input.radiusKm * METERS_PER_KM)
+    if (district) {
+        district.moveTo(center, radiusMeters, now)
+        return district
+    }
+    if (input.region === undefined) {
+        throw ValidationError.fromField("region", "A new district needs its viloyat")
+    }
+    return District.create({
+        id: crypto.randomUUID(),
+        name: input.name,
+        region: input.region,
+        center,
+        radiusMeters,
+        now,
+    })
+}
+
 export class SetDistrictUseCase {
     constructor(
         private readonly deps: NetworkDeps,
@@ -127,43 +165,30 @@ export class SetDistrictUseCase {
     ) {}
 
     /**
-     * The admin creates or moves a district (`center` + `radiusKm`), or sets how long an order
-     * may wait (`waitMinutes`). Every shop's district is recomputed. Returns the shops inside.
+     * The admin creates or moves a district (`center` + `radiusKm`, a new one with its `region`),
+     * picks its viloyat (`region`), or sets how long an order may wait (`waitMinutes`). Every
+     * shop's district is recomputed. Returns the shops inside.
      */
-    async execute(input: {
-        actorTelegramId: number
-        name: string
-        center?: { latitude: number; longitude: number }
-        radiusKm?: number
-        waitMinutes?: number
-        /** «Tuman qo'shish»: a name that exists is refused, never a silent move of that district. */
-        isNew?: boolean
-    }): Promise<{ district: District; shops: number }> {
+    async execute(
+        input: DistrictChange & {
+            actorTelegramId: number
+            /** «Tuman qo'shish»: a name that exists is refused, never a silent move of it. */
+            isNew?: boolean
+        },
+    ): Promise<{ district: District; shops: number }> {
         requireAdmin(this.platformAdminIds, input.actorTelegramId)
         const { districts } = this.deps
         const now = this.deps.clock.now()
-        let district = await districts.findByName(input.name.trim())
-        if (district && input.isNew) {
-            throw ConflictError.districtExists(district.name)
+        const existing = await districts.findByName(input.name.trim())
+        if (existing && input.isNew) {
+            throw ConflictError.districtExists(existing.name)
         }
-        const center =
-            input.center && Location.create(input.center.latitude, input.center.longitude)
-        const radius = input.radiusKm === undefined ? undefined : input.radiusKm * METERS_PER_KM
-        if (center && radius !== undefined) {
-            if (district) {
-                district.moveTo(center, Math.round(radius), now)
-            } else {
-                district = District.create({
-                    id: crypto.randomUUID(),
-                    name: input.name,
-                    center,
-                    radiusMeters: Math.round(radius),
-                    now,
-                })
-            }
-        }
+        const district = placeDistrict(existing, input, now)
         if (!district) {
             throw ValidationError.fromField("center", "A new district needs a center and a radius")
+        }
+        if (existing && input.region !== undefined) {
+            district.setRegion(input.region, now)
         }
         if (input.waitMinutes !== undefined) {
             district.setWaitMinutes(input.waitMinutes, now)
@@ -439,6 +464,8 @@ export class OverdueNetworkOrdersUseCase {
 export interface DistrictStats {
     id: string
     name: string
+    /** The viloyat; none for a district made before it was asked. */
+    region?: Region
     center: { latitude: number; longitude: number }
     /** Shops whose location is inside the circle. */
     shops: number
@@ -486,6 +513,7 @@ export class NetworkStatsUseCase {
                 return {
                     id: district.id,
                     name: district.name,
+                    region: district.region,
                     center: {
                         latitude: district.center.latitude,
                         longitude: district.center.longitude,

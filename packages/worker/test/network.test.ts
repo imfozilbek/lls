@@ -127,6 +127,7 @@ describe("district network", () => {
         await waterOwner()("/api/owner/shop", { method: "PATCH", json: { location: YANGIYER } })
         const district = await setDistrict({
             name: "Guliston",
+            region: "sirdaryo",
             center: { latitude: 40.4897, longitude: 68.7842 },
             radiusKm: 30,
         })
@@ -166,7 +167,7 @@ describe("district network", () => {
             await platform()("/api/admin/districts"),
         )
         expect(districts.data).toMatchObject([
-            { name: "Guliston", shops: 2, radiusKm: 30, waitMinutes: 10 },
+            { name: "Guliston", region: "sirdaryo", shops: 2, radiusKm: 30, waitMinutes: 10 },
         ])
         const shop = await json<{ inDistrict: boolean; networkDelivery: boolean }>(
             await foodOwner()("/api/owner/shop"),

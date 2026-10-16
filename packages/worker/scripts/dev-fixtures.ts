@@ -134,6 +134,8 @@ export const DEV_COURIER = { id: 3003, first_name: "Jasur", language_code: "uz" 
 export const DEV_DISTRICT = {
     id: "dev-district-yakkabog",
     name: "Yakkabog'",
+    /** `Region.QASHQADARYO`. */
+    region: "qashqadaryo",
     latitude: 38.9785,
     longitude: 66.6831,
     radiusMeters: 30_000,

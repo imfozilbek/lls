@@ -13,6 +13,7 @@ import { CourierStatus } from "../../../domain/enums/courier-status.js"
 import { DeliveryFeeRecipient } from "../../../domain/enums/delivery-fee.js"
 import { OrderChannel } from "../../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../../domain/enums/order-status.js"
+import { Region } from "../../../domain/enums/region.js"
 import { Unit } from "../../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
@@ -30,7 +31,14 @@ const YANGIYER = Location.create(40.275, 68.8225)
 const TASHKENT = Location.create(41.2995, 69.2401)
 
 function district(name = "Guliston", center = GULISTAN, radiusMeters = 30_000): District {
-    return District.create({ id: `d-${name}`, name, center, radiusMeters, now: NOW })
+    return District.create({
+        id: `d-${name}`,
+        name,
+        region: Region.SIRDARYO,
+        center,
+        radiusMeters,
+        now: NOW,
+    })
 }
 
 function placed(): Order {
@@ -113,6 +121,11 @@ describe("District", () => {
             updatedAt: guliston.updatedAt,
         })
         expect(copy.radiusMeters).toBe(20_000)
+        // A district made before the viloyat was asked has none until an admin picks it.
+        expect(copy.region).toBeUndefined()
+        copy.setRegion(Region.QASHQADARYO, NOW)
+        expect(copy.region).toBe(Region.QASHQADARYO)
+        expect(guliston.region).toBe(Region.SIRDARYO)
     })
 })
 

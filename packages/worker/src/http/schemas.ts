@@ -18,6 +18,7 @@ import {
     MAX_PRODUCTS_AT_ONCE,
     OPTION_LIMITS,
     PAYMENT_OPTIONS,
+    REGIONS,
     UNITS,
     WEEKDAYS,
 } from "@zumda/core"
@@ -304,6 +305,8 @@ export const districtBody = z.object({
         .string()
         .trim()
         .regex(/^[\p{L}\p{N}' -]{2,60}$/u),
+    /** The viloyat: required for a new district, changes it when given on an edit. */
+    region: z.enum(REGIONS).optional(),
     center: locationSchema.optional(),
     radiusKm: z.number().min(0.5).max(200).optional(),
     waitMinutes: z.number().int().min(1).max(240).optional(),

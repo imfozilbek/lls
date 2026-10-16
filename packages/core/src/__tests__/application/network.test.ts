@@ -20,6 +20,7 @@ import { Order } from "../../domain/entities/order.js"
 import { OrderItem } from "../../domain/entities/order-item.js"
 import { OrderChannel } from "../../domain/enums/order-channel.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
+import { Region } from "../../domain/enums/region.js"
 import { Unit } from "../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
@@ -134,6 +135,7 @@ describe("district network", () => {
         const set = await new SetDistrictUseCase(deps(), [ADMIN_TG]).execute({
             actorTelegramId: ADMIN_TG,
             name: "Guliston",
+            region: Region.SIRDARYO,
             center: GULISTAN,
             radiusKm: 30,
         })
@@ -176,6 +178,26 @@ describe("district network", () => {
             await expect(
                 set.execute({ ...admin, name: "Nowhere", waitMinutes: 5 }),
             ).rejects.toThrow(ValidationError)
+        })
+
+        it("every new district is in a viloyat; the admin may move it to another", async () => {
+            const set = new SetDistrictUseCase(deps(), [ADMIN_TG])
+            const admin = { actorTelegramId: ADMIN_TG }
+            await expect(
+                set.execute({ ...admin, name: "Yangiyer", center: YANGIYER, radiusKm: 10 }),
+            ).rejects.toMatchObject({ errors: [{ field: "region" }] })
+            expect(await districts.findByName("yangiyer")).toBeNull()
+            expect((await districts.findByName("guliston"))?.region).toBe(Region.SIRDARYO)
+            // Only the wait: the viloyat stays; a picked one replaces it.
+            await set.execute({ ...admin, name: "Guliston", waitMinutes: 12 })
+            expect((await districts.findByName("guliston"))?.region).toBe(Region.SIRDARYO)
+            const moved = await set.execute({
+                ...admin,
+                name: "Guliston",
+                region: Region.TOSHKENT_VILOYATI,
+            })
+            expect(moved.district.region).toBe(Region.TOSHKENT_VILOYATI)
+            expect(moved.shops).toBe(2)
 
             // The far shop moves into the district from its settings.
             const update = new UpdateShopUseCase(businesses, clock, districts)
