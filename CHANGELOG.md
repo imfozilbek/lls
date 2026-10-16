@@ -16,7 +16,8 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
   network orders, a reassigned courier, an approval and the transfer screenshot (with its picture
   through Zumda | Business) reach everyone on their own.
 - Network offers leave out the couriers the shop removed or has not approved; a removed courier
-  cannot take a trip; reordering a trip saves its stops first.
+  cannot take a trip; reordering a trip saves its stops first; a trip and its stops are written
+  in one batch, so an order changed at the same moment leaves no half-made trip.
 - The longest pick of variants and add-ons fits an order; a long Telegram name joins as a
   courier without using the invite up; another account's checkout id makes its own order.
 - A search word of two letters matches whole («un»), never reading every word that starts with it.
