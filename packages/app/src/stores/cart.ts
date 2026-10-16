@@ -1,6 +1,8 @@
 import { packagesOf, unitScale } from "@zumda/core"
 import { create } from "zustand"
 
+import { uuid } from "../lib/uuid.js"
+
 import type { ProductDTO } from "@zumda/core"
 
 /** A line holds at most 99 steps: 99 pieces, or 49.5 kg with a 500 g step. */
@@ -62,7 +64,9 @@ export function pickPrice(
     pick: Pick | undefined,
 ): { unitPrice: number; label?: string } | null {
     const options = product.options
-    if (!pick) {
+    // Nothing picked (no variant, no add-on) is the plain product, as the server prices it:
+    // the line stays when the owner removes the add-ons it never had.
+    if (!pick || (!pick.variantId && pick.addonIds.length === 0)) {
         return options?.variants.length ? null : { unitPrice: product.price }
     }
     const variant = options?.variants.find((v) => v.id === pick.variantId)
@@ -156,7 +160,7 @@ function readCheckoutId(shop: string): string {
     } catch {
         // Blocked storage: a fresh id, kept for this session.
     }
-    return crypto.randomUUID()
+    return uuid()
 }
 
 /** One cart per shop, so switching between shop bots never mixes or wipes carts. */
@@ -173,14 +177,14 @@ export function fitQuantity(quantity: number, step: number): number {
 
 export const useCart = create<CartState>((set, get) => {
     const update = (lines: CartLines): void => {
-        const checkoutId = crypto.randomUUID()
+        const checkoutId = uuid()
         write(get().shop, lines, checkoutId)
         set({ lines, checkoutId })
     }
     return {
         shop: null,
         lines: {},
-        checkoutId: crypto.randomUUID(),
+        checkoutId: uuid(),
         load: (shop): void => set({ shop, lines: read(shop), checkoutId: readCheckoutId(shop) }),
         add: (productId, step = 1): void => {
             const current = get().lines[productId] ?? 0
@@ -216,7 +220,9 @@ export const useCart = create<CartState>((set, get) => {
                     ? { variantId: item.options.variantId, addonIds: item.options.addonIds }
                     : undefined
                 if (product && pickPrice(product, pick)) {
-                    lines[lineKey(item.productId, pick)] = fitQuantity(item.quantity, product.step)
+                    // Both kept: a line in the cart and in the old order adds up.
+                    const key = lineKey(item.productId, pick)
+                    lines[key] = fitQuantity((lines[key] ?? 0) + item.quantity, product.step)
                 } else {
                     skipped++
                 }

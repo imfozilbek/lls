@@ -132,6 +132,12 @@ describe("refill (reorder)", () => {
         expect(skipped).toBe(2)
         expect(useCart.getState().lines).toEqual({ a: 2 })
     })
+
+    it("«Hammasi qolsin»: a line in the cart and in the old order adds up", () => {
+        useCart.getState().setQuantity("a", 1)
+        useCart.getState().refill([{ productId: "a", quantity: 2 }], [product("a", 1_000)])
+        expect(useCart.getState().lines).toEqual({ a: 3 })
+    })
 })
 
 describe("summarize", () => {
@@ -196,6 +202,16 @@ describe("prune", () => {
         useCart.getState().setQuantity(lineKey("latte", { variantId: "xl", addonIds: [] }), 1)
         expect(useCart.getState().prune([latte()])).toEqual(["latte"])
         expect(Object.keys(useCart.getState().lines)).toEqual(["latte~m~"])
+    })
+
+    it("keeps a line with nothing picked after the owner removed every add-on", () => {
+        // Put in the cart with no add-on ticked: the key still carries the empty pick.
+        useCart.getState().setQuantity(lineKey("burger", { addonIds: [] }), 1)
+        expect(useCart.getState().prune([product("burger", 30_000)])).toEqual([])
+        expect(Object.keys(useCart.getState().lines)).toEqual(["burger~~"])
+        expect(pickPrice(product("burger", 30_000), { addonIds: [] })).toEqual({
+            unitPrice: 30_000,
+        })
     })
 
     it("names what left by the catalog the customer saw", () => {

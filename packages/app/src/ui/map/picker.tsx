@@ -92,16 +92,23 @@ function usePickerMap(
         }
     }, [])
     const located = useRef(false)
+    /** The person moved the map themselves: Telegram's late answer never moves it under them. */
+    const touched = useRef(false)
     const onMap = useCallback(
         (instance: MapLibre | null): void => {
             map.current = instance
             if (instance) {
                 instance.once("idle", () => setStreet(streetAt(instance)))
+                for (const gesture of ["dragstart", "touchstart", "wheel"] as const) {
+                    instance.once(gesture, () => {
+                        touched.current = true
+                    })
+                }
                 // Once: where the person is, quietly (no place from Telegram: the map stays).
                 if (locateOnOpen && !located.current) {
                     located.current = true
                     void getLocation().then((found) => {
-                        if (found && map.current) {
+                        if (found && map.current && !touched.current) {
                             map.current.jumpTo({
                                 center: [found.longitude, found.latitude],
                                 zoom: PICK_ZOOM,

@@ -75,7 +75,7 @@ export function OrdersScreen(): React.JSX.Element {
     const t = useT()
     const back = useRouter((state) => state.back)
     const list = usePagedList("orders", (page) => api.myOrders(page))
-    useRefresh(list.reload)
+    useRefresh(list.refresh)
     const orders = list.items
 
     let body: React.JSX.Element

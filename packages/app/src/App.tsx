@@ -15,7 +15,7 @@ import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "./lib/brand.js"
 import { useBackButton } from "./lib/main-button.js"
 import { useRefresh } from "./lib/refresh.js"
 import { removedText } from "./lib/removed.js"
-import { webApp } from "./lib/telegram.js"
+import { onAppActive, webApp } from "./lib/telegram.js"
 import { MenuScreen } from "./shop/MenuScreen.js"
 import { useCart } from "./stores/cart.js"
 import { useCurrentRoute, useRouter } from "./stores/router.js"
@@ -145,6 +145,9 @@ function NotInTelegram(): React.JSX.Element {
     )
 }
 
+/** Two events say «back on screen» for one return: the shop is read once for them. */
+const SHOP_RECHECK_MS = 5_000
+
 /** Loads the shop, the user and the catalog in parallel, then paints the shop's brand. */
 function useShopBootstrap(
     slug: string,
@@ -182,7 +185,7 @@ function useShopBootstrap(
                 session.setCatalog(products)
                 const removed = useCart.getState().prune(products)
                 if (removed.length > 0) {
-                    toast(removedText(dictionaryFor(me.language), removed, seen))
+                    toast(removedText(dictionaryFor(me.language), removed, seen, products))
                 }
                 document.title = shop.name
                 setState({ kind: "ready" })
@@ -216,6 +219,26 @@ function useShopBootstrap(
             latest.current++
         }
     }, [slug, via, load])
+
+    // Back from the background: opening time may have come while it was collapsed («Yopiq»
+    // would stay). Only the shop is read again, once for Telegram's and the page's event both.
+    useEffect(() => {
+        let last = 0
+        return onAppActive(() => {
+            const now = Date.now()
+            if (now - last < SHOP_RECHECK_MS) {
+                return
+            }
+            last = now
+            api.shop()
+                .then((shop) => {
+                    if (useSession.getState().shop?.slug === shop.slug) {
+                        useSession.getState().setShop(shop)
+                    }
+                })
+                .catch(() => undefined)
+        })
+    }, [slug])
 
     return { state, retry: (): void => void load(), refresh: (): Promise<void> => load(true) }
 }
