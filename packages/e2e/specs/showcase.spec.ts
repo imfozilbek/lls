@@ -20,6 +20,10 @@ import type { Page } from "@playwright/test"
 const search = (page: Page): ReturnType<Page["getByRole"]> =>
     page.getByRole("textbox", { name: "Mahsulot qidirish" })
 
+const MINUTE = 60_000
+/** 31 searches, the app opened and one more search: well under this on a slow machine. */
+const ROOM_FOR_TEST = 25_000
+
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
@@ -188,6 +192,12 @@ test("the admin adds and removes a shop in «Platforma»; others cannot", async 
 test("search is rate-limited per person", async ({ page }) => {
     // A fresh person per run: the limiter keeps its minute across repeated runs of this test.
     const person = { ...PEOPLE.newOwner, id: 500_000 + Math.floor(Math.random() * 400_000) }
+    // The limiter's minute is aligned to the clock: start where the whole test fits in one, or a
+    // new minute lets the app's search through.
+    const intoMinute = Date.now() % MINUTE
+    if (intoMinute > MINUTE - ROOM_FOR_TEST) {
+        await page.waitForTimeout(MINUTE - intoMinute + 200)
+    }
     const statuses: number[] = []
     for (let i = 0; i < 31; i++) {
         statuses.push((await apiAs(person, "/showcase/products?q=osh")).status)
