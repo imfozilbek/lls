@@ -141,11 +141,7 @@ export class JoinAsCourierUseCase {
         }
         const business = await requireBusiness(this.deps.businesses, invite.businessId)
         const now = clock.now()
-        invite.use(now)
-        // The link is single-use for real: of two people at the same moment, one gets in.
-        if (!(await couriers.claimInvite(invite))) {
-            throw BusinessRuleViolationError.inviteUsed()
-        }
+        // The person first: a profile that cannot be made must leave the link unused.
         const profile =
             (await couriers.findProfile(input.user.id)) ??
             CourierProfile.create({
@@ -153,6 +149,11 @@ export class JoinAsCourierUseCase {
                 name: displayNameOf(input.user),
                 now,
             })
+        invite.use(now)
+        // The link is single-use for real: of two people at the same moment, one gets in.
+        if (!(await couriers.claimInvite(invite))) {
+            throw BusinessRuleViolationError.inviteUsed()
+        }
         const existing = await couriers.findByTelegramId(business.id, input.user.id)
         const courier =
             existing ??

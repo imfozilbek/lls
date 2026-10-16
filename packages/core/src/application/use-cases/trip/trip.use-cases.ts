@@ -187,9 +187,11 @@ export class ReorderTripUseCase {
         for (const [index, order] of ordered.entries()) {
             order.setTripStop(index + 1)
         }
+        // The stops first, the way after (as on creating): the road service may take seconds,
+        // and a stop delivered meanwhile would refuse the save and leave two stops one number.
+        await Promise.all(ordered.map((order) => deps.orders.save(order)))
         await planRoute(deps, trip, shop, ordered)
         await deps.trips.save(trip)
-        await Promise.all(ordered.map((order) => deps.orders.save(order)))
         const courier = await requireCourierLink(deps, input.businessId, trip.courierId)
         return result(trip, ordered, courier)
     }
@@ -206,7 +208,12 @@ export class PickUpTripUseCase {
             throw EntityNotFoundError.trip(input.tripId)
         }
         const courier = await deps.couriers.findById(trip.courierId)
-        if (!courier || courier.telegramId.value !== input.telegramId) {
+        // As for a single order: a courier the shop removed takes nothing any more.
+        if (
+            !courier ||
+            courier.telegramId.value !== input.telegramId ||
+            !courier.deliversFor(trip.businessId)
+        ) {
             throw ForbiddenError.notCourier(trip.businessId)
         }
         const orders = await loadOrders(deps.orders, trip.stops)

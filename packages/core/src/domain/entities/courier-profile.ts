@@ -4,7 +4,8 @@ import { addDays, startOfLocalDay } from "../shared/time.js"
 import type { Phone } from "../value-objects/phone.js"
 import type { TelegramId } from "../value-objects/telegram-id.js"
 
-const NAME_MAX = 80
+/** As long as a Telegram name can come (`displayNameOf`): a longer one would refuse the invite. */
+const NAME_MAX = 100
 const VEHICLE_MAX = 40
 
 export interface CourierProfileProps {
