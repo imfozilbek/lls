@@ -220,7 +220,7 @@ Pilot: **food, water and grocery at the same time.**
       word table (migrations `0016` to `0018`)
 - [x] Worker: one query to sign in, cached bot tokens, batched network offers, services only for
       `/api` and `/tg`, 20% of logs; the owner polls a version (20 s), the customer 30 s, the
-      courier 45 s; search from 3 letters after 500 ms
+      courier 45 s; search after 500 ms: two letters find a whole word, three or more a prefix
 - [x] R2: transfer screenshots in their own private bucket, deleted after 30 days; photos and the
       map from `media.` and `map.zumda.shop` (no Worker request); the map upload keeps two maps
 - [x] `docs/capacity.md`: the day of 1 000 people, 300 orders, 10 shops, 15 couriers, line by

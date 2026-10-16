@@ -7,6 +7,30 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Bugs found across the project and fixed
+- A shop number saved before the stricter phone rules (a digit missing) broke the shop and every
+  list it is in: a saved number now reads as it is; a typed one starting with 0 is refused.
+- One person the bot cannot reach no longer stops the others: the district network gets an order
+  whose customer never pressed Start, the couriers after one who blocked the courier bot get the
+  offer, the admins get an application whose owner Zumda | Business cannot reach; alerts, late
+  network orders, a reassigned courier, an approval and the transfer screenshot (with its picture
+  through Zumda | Business) reach everyone on their own.
+- Network offers leave out the couriers the shop removed or has not approved; a removed courier
+  cannot take a trip; reordering a trip saves its stops first.
+- The longest pick of variants and add-ons fits an order; a long Telegram name joins as a
+  courier without using the invite up; another account's checkout id makes its own order.
+- A search word of two letters matches whole («un»), never reading every word that starts with it.
+- The customer: no white screen on phones without `crypto.randomUUID`; «Naqd/Karta» and the place
+  are kept, an old draft never wins over a newer delivery, an item added while the order went
+  stays; the shop is read again on return and after refusals that mean it changed; a line with
+  nothing picked stays, a lost size says «o'zgardi»; «Takrorlash» adds up and never empties the
+  cart for nothing; a failed pull says why; a service is «Bajarildi»; the map stays under a finger.
+- The owner, the courier and «Platforma»: «Ishga tayyor» ticks hours at once and asks before
+  leaving unsaved settings; a business opened by a message counts as the landing and its order
+  is never looked for in another business; a failed poll is no crash report; trip arrows never
+  scramble stops; «m²», «so’m», «сўм» in «Ro'yxat bilan»; feature switches save in turn; a
+  product stopped for today can be put back; the courier keeps the shop's call and opens any stop.
+
 ### A call starts on an iPhone too
 - A tap on a phone number in the Mini App did nothing in Telegram on an iPhone: its web view
   follows a `tel:` link itself and cannot dial. There every call link opens in a new window now,
