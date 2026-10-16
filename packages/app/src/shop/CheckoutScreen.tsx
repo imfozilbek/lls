@@ -40,7 +40,7 @@ import type { Delivery } from "./checkout-address.js"
 import type { Dictionary } from "../i18n/index.js"
 import type { DeliveryRules } from "../stores/cart.js"
 import type { Shop } from "../stores/session.js"
-import type { Language, PaymentMethod, ProductDTO } from "@zumda/core"
+import type { Language, OrderDTO, PaymentMethod, ProductDTO } from "@zumda/core"
 
 const CONTACT_POLL_MS = 1500
 const CONTACT_POLL_TRIES = 10
@@ -121,8 +121,20 @@ function PhoneRow(): React.JSX.Element {
 const CATALOG_CHANGED = new Set([
     "PRODUCT_NOT_AVAILABLE",
     "OPTION_UNAVAILABLE",
+    "VARIANT_REQUIRED",
     "ENTITY_NOT_FOUND",
     "VALIDATION_ERROR",
+])
+
+/** Codes that mean the shop's own rules changed: the shop is read again (hints, ways, hours). */
+const SHOP_CHANGED = new Set([
+    "PAYMENT_METHOD_UNAVAILABLE",
+    "MIN_ORDER_NOT_REACHED",
+    "SHOP_CLOSED",
+    "NOT_ACCEPTING_ORDERS",
+    "NO_PAYOUT_CARD",
+    "NO_SHOP_PHONE",
+    "SHOP_NOT_ACTIVE",
 ])
 
 /**
@@ -137,13 +149,13 @@ function refreshAfterRefusal(code: string, t: Dictionary): void {
                 useSession.getState().setCatalog(products)
                 const removed = useCart.getState().prune(products)
                 if (removed.length > 0) {
-                    toast(removedText(t, removed, seen), "error")
+                    toast(removedText(t, removed, seen, products), "error")
                 }
             })
             .catch(() => undefined)
     }
-    if (code === "PAYMENT_METHOD_UNAVAILABLE") {
-        // The owner changed «To'lov»: the shop's ways of paying are read again.
+    if (SHOP_CHANGED.has(code)) {
+        // The owner changed «To'lov», the hours or the minimum: the shop is read again.
         api.shop()
             .then((shop) => useSession.getState().setShop(shop))
             .catch(() => undefined)
@@ -153,6 +165,44 @@ function refreshAfterRefusal(code: string, t: Dictionary): void {
 /** At checkout «not found» is a product that left the shop, not a list to refresh. */
 function refusalText(t: Dictionary, code: string): string {
     return code === "ENTITY_NOT_FOUND" ? t.checkout.itemGone : errorText(t, code)
+}
+
+/**
+ * What an order placed leaves on this phone: the next order's address and way of paying, no
+ * draft, the way back from Zumda | Shop, and the order itself for its screen.
+ */
+function keepAfterPlacing(
+    order: OrderDTO,
+    input: {
+        delivery: Delivery
+        paymentMethod: PaymentMethod | undefined
+        shopSlug: string | undefined
+    },
+): void {
+    const { delivery, paymentMethod, shopSlug } = input
+    saveAddress({
+        address: delivery.address.trim(),
+        landmark: delivery.landmark.trim(),
+        location: delivery.location,
+        // An order without bottles keeps the count a water order left.
+        bottlesReturned: delivery.bottlesReturned || loadAddress().bottlesReturned,
+        paymentMethod,
+    })
+    if (shopSlug) {
+        clearDraft(shopSlug)
+        // Zumda | Shop leads back to it: the customer may not remember the shop.
+        if (currentShopVia() === "marketplace") {
+            saveShowcaseOrder({
+                slug: shopSlug,
+                shopName: useSession.getState().shop?.name ?? "",
+                id: order.id,
+                number: order.number,
+                at: Date.now(),
+            })
+        }
+    }
+    // The order screen paints at once from it: the card number is there without a wait.
+    remember(`state:${scopedKey(`order:${order.id}`)}`, order)
 }
 
 /** Sends the order: prices and totals are computed by the Worker, the app sends only ids. */
@@ -179,6 +229,7 @@ function usePlaceOrder(
         }
         inFlight.current = true
         setPlacing(true)
+        const sent = checkoutId
         try {
             await requestWriteAccess()
             const order = await api.placeOrder({
@@ -197,32 +248,13 @@ function usePlaceOrder(
                 comment: delivery.comment.trim() || undefined,
                 bottlesReturned: delivery.bottlesReturned || undefined,
                 paymentMethod,
-                clientOrderId: checkoutId,
+                clientOrderId: sent,
             })
-            saveAddress({
-                address: delivery.address.trim(),
-                landmark: delivery.landmark.trim(),
-                location: delivery.location,
-                // An order without bottles keeps the count a water order left.
-                bottlesReturned: delivery.bottlesReturned || loadAddress().bottlesReturned,
-                paymentMethod,
-            })
-            if (shopSlug) {
-                clearDraft(shopSlug)
-                // Zumda | Shop leads back to it: the customer may not remember the shop.
-                if (currentShopVia() === "marketplace") {
-                    saveShowcaseOrder({
-                        slug: shopSlug,
-                        shopName: useSession.getState().shop?.name ?? "",
-                        id: order.id,
-                        number: order.number,
-                        at: Date.now(),
-                    })
-                }
+            keepAfterPlacing(order, { delivery, paymentMethod, shopSlug })
+            // Something added while the order went (Back, one more item) stays for the next one.
+            if (useCart.getState().checkoutId === sent) {
+                clearCart()
             }
-            // The order screen paints at once from it: the card number is there without a wait.
-            remember(`state:${scopedKey(`order:${order.id}`)}`, order)
-            clearCart()
             haptic.success()
             reset({ name: "order", id: order.id, justPlaced: true })
         } catch (error) {
@@ -565,26 +597,29 @@ function bottlesOf(
 }
 
 /**
- * The customer's pick while the shop still takes it; else how they paid last time, if the shop
- * takes that; else the first way it takes (the card).
+ * The customer's pick while the shop still takes it (kept in the draft: «Back» keeps it); else
+ * how they paid last time, if the shop takes that; else the first way it takes (the card).
  */
-function usePaymentMethod(shop: Shop | null): {
+function usePaymentMethod(
+    shop: Shop | null,
+    delivery: Delivery,
+    patch: (change: Partial<Delivery>) => void,
+): {
     methods: readonly PaymentMethod[]
     method: PaymentMethod | undefined
     setChosen(method: PaymentMethod): void
 } {
     const methods = shop?.paymentMethods ?? []
-    const [chosen, setChosen] = useState<PaymentMethod | null>(
-        () => loadAddress().paymentMethod ?? null,
-    )
+    const chosen = delivery.paymentMethod ?? loadAddress().paymentMethod
     const method = chosen && methods.includes(chosen) ? chosen : methods[0]
-    return { methods, method, setChosen }
+    return { methods, method, setChosen: (paymentMethod) => patch({ paymentMethod }) }
 }
 
 /**
  * What the customer fills in, kept on this phone on every change (per shop): «Back» to the menu
  * for one more item, or the app closed by mistake, loses nothing. A first visit starts from the
- * last delivery.
+ * last delivery, and only what the customer changes is kept: a draft never outlives a newer
+ * delivery made at another shop.
  */
 function useDraft(shop: Shop | null): [Delivery, (change: Partial<Delivery>) => void] {
     const slug = shop?.slug
@@ -596,12 +631,19 @@ function useDraft(shop: Shop | null): [Delivery, (change: Partial<Delivery>) => 
         const { address, landmark, location, bottlesReturned } = loadAddress()
         return { address, landmark, location, bottlesReturned, comment: "" }
     })
+    const edited = useRef(false)
     useEffect(() => {
-        if (slug) {
+        if (slug && edited.current) {
             saveDraft(slug, delivery)
         }
     }, [slug, delivery])
-    return [delivery, (change): void => setDelivery((d) => ({ ...d, ...change }))]
+    return [
+        delivery,
+        (change): void => {
+            edited.current = true
+            setDelivery((d) => ({ ...d, ...change }))
+        },
+    ]
 }
 
 /** «Buyurtma berish · Naqd · 55 000 so'm»: the way of paying on the button when there is a choice. */
@@ -717,7 +759,7 @@ export function CheckoutScreen(): React.JSX.Element {
     const rules: DeliveryRules = shop?.delivery ?? { fee: 0 }
     const fee = deliveryFee(cart.subtotal, rules)
     const bottles = bottlesOf(shop, cart.returnable, delivery.bottlesReturned)
-    const payment = usePaymentMethod(shop)
+    const payment = usePaymentMethod(shop, delivery, patch)
     const { placing, place } = usePlaceOrder(
         { ...delivery, bottlesReturned: bottles.bottlesReturned },
         payment.method,

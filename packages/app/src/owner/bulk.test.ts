@@ -49,6 +49,21 @@ describe("«Ro'yxat bilan qo'shish»", () => {
         ])
     })
 
+    it("reads what phones type: «m²», «m³», «so’m», «soʻm», «сўм»", () => {
+        const rows = parseList(
+            "Gilam yuvish 12000 m²\nQum 90000 m³\nOsh 35000 so’m\nNon 4000 soʻm\nChoy 3000 сўм",
+            BusinessType.SERVICE,
+            find,
+        )
+        expect(rows.map((r) => [r.name, r.price, r.unit, r.error])).toEqual([
+            ["Gilam yuvish", 12_000, Unit.SQUARE_METRE, undefined],
+            ["Qum", 90_000, Unit.CUBIC_METRE, undefined],
+            ["Osh", 35_000, expect.anything(), undefined],
+            ["Non", 4_000, expect.anything(), undefined],
+            ["Choy", 3_000, expect.anything(), undefined],
+        ])
+    })
+
     it("marks a line without a price, a wrong price and a twin; only good rows go", () => {
         const rows = parseList("Choy\nNon 0\nSomsa 8000\nsomsa 9000", BusinessType.FOOD, find)
         expect(rows.map((r) => r.error)).toEqual(["noPrice", "badPrice", undefined, "twin"])

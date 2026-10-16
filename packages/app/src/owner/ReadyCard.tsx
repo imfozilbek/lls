@@ -5,7 +5,13 @@ import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { paymentReady, phoneReady } from "../lib/shop-ready.js"
-import { haptic, onAppActive, openTelegramLink, shopBotStartLink } from "../lib/telegram.js"
+import {
+    confirm,
+    haptic,
+    onAppActive,
+    openTelegramLink,
+    shopBotStartLink,
+} from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
@@ -24,7 +30,7 @@ import {
 import { Button } from "../ui/primitives.js"
 
 import { useOwner } from "./store.js"
-import { readTick, saveTick } from "./ticks.js"
+import { saveTick, useTick } from "./ticks.js"
 
 import type { ReadySection } from "./store.js"
 import type { Tick } from "./ticks.js"
@@ -93,15 +99,15 @@ function useTicks(shopId: string | undefined): {
     ticks: Record<Tick, boolean>
     tick(which: Tick): void
 } {
-    const [ticks, setTicks] = useState<Record<Tick, boolean>>(() => ({
-        selfDelivery: shopId ? readTick("selfDelivery", shopId) : false,
-        hours: shopId ? readTick("hours", shopId) : false,
-    }))
+    // The same tick as Sozlamalar's: «Saqlash» there ticks the step here at once.
+    const ticks: Record<Tick, boolean> = {
+        selfDelivery: useTick("selfDelivery", shopId),
+        hours: useTick("hours", shopId),
+    }
     const tick = (which: Tick): void => {
         if (shopId) {
             saveTick(which, shopId)
         }
-        setTicks((current) => ({ ...current, [which]: true }))
     }
     return { ticks, tick }
 }
@@ -318,11 +324,27 @@ function FoldedReady({
 
 /** Where a step leads: the catalog, the shop's bot (to press Start), or its settings section. */
 function useOpenStep(): (item: ReadyItem, botUsername: string) => void {
+    const t = useT()
     const goToSection = useOwner((state) => state.goToSection)
     const setTab = useOwner((state) => state.setTab)
+    // The line sits on «Sozlamalar» too: leaving it with unsaved edits asks first, like the tabs.
+    const toMenu = async (): Promise<void> => {
+        const { tab, settingsDirty } = useOwner.getState()
+        if (tab === "settings" && settingsDirty) {
+            const leave = await confirm(t.owner.settings.unsavedLeave, {
+                yes: t.common.leave,
+                no: t.common.stay,
+                destructive: true,
+            })
+            if (!leave) {
+                return
+            }
+        }
+        setTab("menu")
+    }
     return (item, botUsername): void => {
         if (item.id === "products") {
-            setTab("menu")
+            void toMenu()
         } else if (item.id === "bot") {
             // Back from the bot, `useOwnerChat` asks again and the step ticks itself.
             openTelegramLink(shopBotStartLink(botUsername))

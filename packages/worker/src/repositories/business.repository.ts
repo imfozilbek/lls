@@ -149,7 +149,7 @@ function reconstitute(row: BusinessRow): Business {
                 ? undefined
                 : PayoutCard.create(row.payout_card_number, row.payout_card_holder),
         paymentCardId: optional(row.payment_card_id),
-        contactPhone: row.contact_phone === null ? undefined : Phone.create(row.contact_phone),
+        contactPhone: row.contact_phone === null ? undefined : Phone.fromStored(row.contact_phone),
         paymentOptions: oneOf(row.payment_options, PAYMENT_OPTIONS, "payment options"),
         districtId: optional(row.district_id),
         networkDelivery: bool(row.network_delivery),

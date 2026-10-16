@@ -295,7 +295,7 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         status: oneOf(row.status, ORDER_STATUSES, "order status"),
         courierId: optional(row.courier_id),
         courierName: optional(row.courier_name),
-        courierPhone: row.courier_phone === null ? undefined : Phone.create(row.courier_phone),
+        courierPhone: row.courier_phone === null ? undefined : Phone.fromStored(row.courier_phone),
         address: row.address,
         landmark: optional(row.landmark),
         location:
@@ -304,7 +304,8 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
                 : Location.create(row.latitude, row.longitude),
         comment: optional(row.comment),
         customerName: row.customer_name,
-        customerPhone: row.customer_phone === null ? undefined : Phone.create(row.customer_phone),
+        customerPhone:
+            row.customer_phone === null ? undefined : Phone.fromStored(row.customer_phone),
         cancelReason: optional(row.cancel_reason),
         cancelledBy:
             row.cancelled_by === null

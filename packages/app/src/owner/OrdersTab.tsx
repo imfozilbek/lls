@@ -598,7 +598,7 @@ function useShopOrders(filter: Filter): PagedList<OrderDTO> {
         }
     }, [reload])
     usePolling(check, POLL_MS, filter === "active")
-    useRefresh(list.reload)
+    useRefresh(list.refresh)
     // A new order, or a customer's «O'tkazdim»: the Zumda sound, like a taxi's new ride.
     const snapshot = useMemo(
         () =>

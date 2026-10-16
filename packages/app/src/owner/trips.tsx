@@ -97,6 +97,7 @@ function StopRow({
     movable,
     onMove,
     lead,
+    first = 0,
 }: {
     order: OrderDTO
     index: number
@@ -104,6 +105,8 @@ function StopRow({
     movable: boolean
     onMove(index: number, by: -1 | 1): void
     lead?: ReactNode
+    /** The first stop that may move: the delivered ones above it stay where they are. */
+    first?: number
 }): React.JSX.Element {
     const t = useT()
     const done = isStopDone(order)
@@ -133,7 +136,7 @@ function StopRow({
                 <span className="flex shrink-0 gap-1">
                     <ArrowButton
                         label={t.trip.up}
-                        disabled={index === 0}
+                        disabled={index <= first}
                         onClick={(): void => onMove(index, -1)}
                         up
                     />
@@ -177,6 +180,9 @@ function ArrowButton({
 
 /** Moves one item of a list up or down by one place. */
 function moved<T>(list: readonly T[], index: number, by: -1 | 1): T[] {
+    if (index < 0 || index + by < 0 || index + by >= list.length) {
+        return [...list]
+    }
     const next = [...list]
     const [item] = next.splice(index, 1)
     if (item !== undefined) {
@@ -424,7 +430,9 @@ function TripViewer({
     const [current, setCurrent] = useState(trip)
     const stops = tripOrders(current, orders)
     const done = stops.filter(isStopDone)
-    const [left, setLeft] = useState(() => stops.filter((o) => !isStopDone(o)).map((o) => o.id))
+    const [sequence, setLeft] = useState(() => stops.filter((o) => !isStopDone(o)).map((o) => o.id))
+    // A stop delivered while this is open leaves the ones to move (never shown twice).
+    const left = sequence.filter((id) => stops.some((o) => o.id === id && !isStopDone(o)))
     const shown = [...done, ...left.flatMap((id) => stops.filter((o) => o.id === id))]
     const changed =
         left.join() !==
@@ -474,6 +482,7 @@ function TripViewer({
                         index={index}
                         count={shown.length}
                         movable={!isStopDone(stop) && left.length > 1}
+                        first={done.length}
                         onMove={(i, by): void => setLeft(moved(left, i - done.length, by))}
                     />
                 ))}

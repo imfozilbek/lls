@@ -341,14 +341,23 @@ function useOrder(id: string): {
     const [order, setOrder] = useCachedState<OrderDTO>(`order:${id}`)
     const [error, setError] = useState<string | null>(null)
 
-    const reload = useCallback(async (): Promise<void> => {
-        try {
-            setOrder(await api.order(id))
-            setError(null)
-        } catch (caught) {
-            setError(caught instanceof ApiError ? caught.code : "generic")
-        }
-    }, [id, setOrder])
+    const fetchOrder = useCallback(
+        async (passOn: boolean): Promise<void> => {
+            try {
+                setOrder(await api.order(id))
+                setError(null)
+            } catch (caught) {
+                setError(caught instanceof ApiError ? caught.code : "generic")
+                if (passOn) {
+                    throw caught
+                }
+            }
+        },
+        [id, setOrder],
+    )
+    const reload = useCallback((): Promise<void> => fetchOrder(false), [fetchOrder])
+    // A pull says why it did not change (one toast); the shown order stays.
+    const refresh = useCallback((): Promise<void> => fetchOrder(true), [fetchOrder])
 
     const active = order !== null && !isFinalStatus(order.status)
     useEffect(() => {
@@ -356,7 +365,7 @@ function useOrder(id: string): {
     }, [reload])
     // Back from the bank app: the news at once, not after the next 20 s tick.
     usePolling(reload, POLL_MS, active)
-    useRefresh(reload)
+    useRefresh(refresh)
     // The order moved (accepted, on the way, delivered, paid): the soft Zumda sound.
     const snapshot = useMemo(
         () => (order ? new Map([[order.id, `${order.status}:${order.payment.status}`]]) : null),

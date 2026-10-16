@@ -8,7 +8,7 @@ import { haptic } from "../lib/telegram.js"
 import { isStopDone, tripOrders, yandexRouteUrl } from "../lib/trips.js"
 import { toast } from "../stores/toast.js"
 import { CallLink } from "../ui/contact-links.js"
-import { CheckIcon, PinIcon, ScooterIcon, StoreIcon } from "../ui/icons.js"
+import { CheckIcon, ChevronIcon, PinIcon, ScooterIcon, StoreIcon } from "../ui/icons.js"
 import { Button } from "../ui/primitives.js"
 import { TripMap, TripWay } from "../ui/trip-map.js"
 
@@ -130,6 +130,8 @@ export function TripCard({
     const stops = tripOrders(trip, orders) as CourierOrderDTO[]
     const first = stops[0]
     const next = stops.find((o) => !isStopDone(o))
+    // Another stop opened by a tap: the next customer does not answer, the one after does.
+    const [opened, setOpened] = useState<string | null>(null)
     return (
         <li
             className="flex animate-rise flex-col gap-3 rounded-tile bg-tg-secondary p-4"
@@ -185,13 +187,22 @@ export function TripCard({
                                 </span>
                             ) : null}
                         </div>
-                        {/* One stop at a time: the next one whole, the rest a line each. */}
-                        {order === next ? (
+                        {/* One stop at a time: the next one whole, the rest a line each that opens. */}
+                        {order === next || order.id === opened ? (
                             renderStop(order, onTheWay(order))
                         ) : isStopDone(order) ? null : (
-                            <p className="truncate pl-10 text-sm text-tg-subtitle">
-                                {order.address}
-                            </p>
+                            <button
+                                type="button"
+                                aria-expanded={false}
+                                onClick={(): void => {
+                                    haptic.select()
+                                    setOpened(order.id)
+                                }}
+                                className="tap -mx-1 flex min-h-11 items-center gap-2 rounded-control px-1 pl-11 text-left text-sm text-tg-subtitle focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                            >
+                                <span className="min-w-0 flex-1 truncate">{order.address}</span>
+                                <ChevronIcon size={16} className="shrink-0 rotate-90" />
+                            </button>
                         )}
                     </li>
                 ))}

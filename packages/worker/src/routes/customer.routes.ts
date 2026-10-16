@@ -60,7 +60,7 @@ export const customerRoutes = new Hono<AppEnv>()
         const business = shopOf(c)
         const body = c.req.valid("json")
         // The same checkout sent again (its answer was lost): the order and its messages exist.
-        const repeated = body.clientOrderId
+        const existed = body.clientOrderId
             ? (await services.orders.findById(body.clientOrderId)) !== null
             : false
         const order = await services.useCases.placeOrder.execute({
@@ -70,7 +70,9 @@ export const customerRoutes = new Hono<AppEnv>()
             // Fixed by the bot that signed the request: own bot = never commissioned.
             channel: c.get("auth").channel,
         })
-        if (repeated) {
+        // Only this customer's own order at this shop comes back by that id; someone else's id
+        // makes a new order, which needs its messages like any other.
+        if (existed && order.id === body.clientOrderId) {
             return c.json(order, 200)
         }
         const notifier = new Notifier(services)

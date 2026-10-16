@@ -19,6 +19,7 @@ import { ProductImage } from "../ui/product-image.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import { stoppedToday } from "./stopped.js"
 import { useOwner } from "./store.js"
 
 import type { ProductDTO } from "@zumda/core"
@@ -27,13 +28,6 @@ import type { ProductDTO } from "@zumda/core"
 const PLACEHOLDER_STOP_MS = 60 * 60 * 1000
 
 type ProductPatch = Parameters<typeof api.owner.updateProduct>[1]
-
-/** On today's stop-list: the mark is still in the future. */
-function stoppedToday(product: ProductDTO): boolean {
-    return (
-        product.unavailableUntil !== undefined && Date.parse(product.unavailableUntil) > Date.now()
-    )
-}
 
 /** The "take off sale" choice: only for today, or for good. */
 function OffSheet({

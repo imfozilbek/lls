@@ -33,8 +33,10 @@ import type { Category, ShopPublicDTO, ShowcaseProductDTO } from "@zumda/core"
 
 /** Wait for a pause in typing before asking the server (and D1) again. */
 const TYPING_PAUSE_MS = 500
-/** Counted in the search spelling: «ош» is "osh", three letters, so the commonest dish is found. */
-/** «un» (flour), «go'sht»: two letters already find a product. */
+/**
+ * Counted in the search spelling («ош» is "osh"). Two letters find a whole word («un», flour);
+ * from three every word starting with them (the Worker reads only what matches).
+ */
 const MIN_QUERY_LENGTH = 2
 
 interface ShowcaseState {
@@ -272,19 +274,23 @@ function useShops(): { shops: ShopPublicDTO[] | null; error: string | null; retr
     // This session's list at once on every return, a quiet refresh behind it: no skeleton.
     const [shops, setShops] = useCachedState<ShopPublicDTO[]>("showcase-shops")
     const [error, setError] = useState<string | null>(null)
-    const load = useCallback(async (): Promise<void> => {
+    const fetchShops = useCallback(async (passOn: boolean): Promise<void> => {
         setError(null)
         try {
             setShops((await api.showcase.shops()).data)
         } catch (caught) {
             setError(caught instanceof ApiError ? caught.code : "generic")
+            if (passOn) {
+                throw caught
+            }
         }
     }, [])
     useEffect(() => {
-        void load()
-    }, [load])
-    useRefresh(load)
-    return { shops, error, retry: (): void => void load() }
+        void fetchShops(false)
+    }, [fetchShops])
+    // A pull that fails says why in one toast: the shops shown stay.
+    useRefresh(() => fetchShops(true))
+    return { shops, error, retry: (): void => void fetchShops(false) }
 }
 
 function Results({
@@ -300,7 +306,7 @@ function Results({
     const list = usePagedList(`${query}|${category ?? ""}`, (page) =>
         api.showcase.search({ q: query || undefined, category: category ?? undefined }, page),
     )
-    useRefresh(list.reload)
+    useRefresh(list.refresh)
     if (list.error && list.items === null) {
         return (
             <EmptyState
@@ -438,7 +444,7 @@ export function ShowcaseScreen({
     let body: React.JSX.Element
     if (searching) {
         body = <Results query={longEnough ? query : ""} category={category} onOpen={onOpen} />
-    } else if (error) {
+    } else if (error && shops === null) {
         body = (
             <EmptyState
                 art={<WifiOffIcon size={44} />}

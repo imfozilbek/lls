@@ -49,6 +49,14 @@ describe("the checkout's memory on this phone", () => {
         expect(loadDraft("osh")).toBeNull()
     })
 
+    it("keeps «Naqd» picked in the draft, and nothing else for a way of paying", () => {
+        const base = { address: "", landmark: "", comment: "", location: null, bottlesReturned: 0 }
+        saveDraft("osh", { ...base, paymentMethod: PaymentMethod.CASH })
+        expect(loadDraft("osh")?.paymentMethod).toBe(PaymentMethod.CASH)
+        localStorage.setItem("zumda:checkout-draft:osh", JSON.stringify({ paymentMethod: "gold" }))
+        expect(loadDraft("osh")).not.toHaveProperty("paymentMethod")
+    })
+
     it("remembers the way of paying with the address", () => {
         saveAddress({
             address: "Navoiy 12",

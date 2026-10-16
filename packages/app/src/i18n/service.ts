@@ -24,7 +24,7 @@ export const SERVICE_UZ = (base: Dictionary): Overrides<Dictionary> => ({
     order: {
         ...base.order,
         itemsCount: "{n} xil xizmat",
-        steps: { ...base.order.steps, preparing: "Bajarilmoqda" },
+        steps: { ...base.order.steps, preparing: "Bajarilmoqda", delivered: "Bajarildi" },
         hints: {
             ...base.order.hints,
             preparing: "Buyurtmangiz bajarilmoqda",

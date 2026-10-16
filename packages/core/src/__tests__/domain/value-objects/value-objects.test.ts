@@ -81,6 +81,23 @@ describe("Phone", () => {
         expect(Phone.create("8 912 345 67 89").number).toBe("+89123456789")
     })
 
+    it("refuses a leading 0 and keeps a «+» number in its own country", () => {
+        expect(() => Phone.create("0 90 123 45 67")).toThrow(ValidationError)
+        expect(() => Phone.create("+0901234567")).toThrow(ValidationError)
+        // Nine digits after «+» are some other country's number, never a Uzbek local one.
+        expect(Phone.create("+681123456").number).toBe("+681123456")
+        expect(Phone.create("90 123 45 67").number).toBe("+998901234567")
+    })
+
+    it("reads a saved number back as it is, even one saved under looser rules", () => {
+        // Typed with a digit missing before October 2026: the shop must still load.
+        expect(Phone.fromStored("+99890123456").number).toBe("+99890123456")
+        expect(Phone.fromStored("+998901234567").number).toBe("+998901234567")
+        expect(Phone.fromStored("+8901234567").number).toBe("+8901234567")
+        expect(() => Phone.fromStored("998901234567")).toThrow(ValidationError)
+        expect(() => Phone.fromStored("+12")).toThrow(ValidationError)
+    })
+
     it("accepts foreign numbers as E.164", () => {
         const phone = Phone.create("+7 701 123 4567")
         expect(phone.number).toBe("+77011234567")

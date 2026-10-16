@@ -180,6 +180,14 @@ describe("shop couriers and vertical features", () => {
                 BusinessRuleViolationError,
             )
             expect(await couriers.findByTelegramId("biz-1", courierUser.id)).toBeNull()
+            // A Telegram name as long as Telegram allows (64 + 64) still gets in.
+            const longName = await create.execute({
+                actorTelegramId: OWNER_TG,
+                businessId: "biz-1",
+            })
+            const long = { id: 9090, firstName: "J".repeat(64), lastName: "S".repeat(64) }
+            const named = await join.execute({ code: longName.code, user: long })
+            expect(named.courier.name).toHaveLength(100)
             const joined = await join.execute({ code: invite.code, user: courierUser })
             // The shop comes from the invite; the courier bot asks for the phone once.
             expect(joined.business.id).toBe("biz-1")

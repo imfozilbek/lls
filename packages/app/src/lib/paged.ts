@@ -13,6 +13,8 @@ export interface PagedList<T> {
     error: string | null
     /** Reloads the first page (pull fresh data, e.g. on a timer). */
     reload(): Promise<void>
+    /** The same for a pull: a failure is passed on, so the pull says why (one toast). */
+    refresh(): Promise<void>
     /** Throws on failure; the list stays as it was. */
     loadMore(): Promise<void>
     update(change: (items: T[]) => T[]): void
@@ -87,26 +89,34 @@ export function usePagedList<T>(
     const current = useRef(key)
     current.current = key
 
-    const reload = useCallback(async (): Promise<void> => {
-        const requested = key
-        try {
-            const result = await loader.current(1)
-            if (current.current !== requested) {
-                return
+    const fetchFirst = useCallback(
+        async (passOn: boolean): Promise<void> => {
+            const requested = key
+            try {
+                const result = await loader.current(1)
+                if (current.current !== requested) {
+                    return
+                }
+                // A timer refresh keeps the pages the person already opened with «Yana».
+                const kept = keepOpenedPages(itemsRef.current, result).length
+                const fresh = totalAfterRefresh(totalRef.current, kept, result)
+                totalRef.current = fresh
+                setTotal(fresh)
+                setItems((list) => keepOpenedPages(list, result))
+                setError(null)
+            } catch (caught) {
+                if (current.current === requested) {
+                    setError(codeOf(caught))
+                }
+                if (passOn) {
+                    throw caught
+                }
             }
-            // A timer refresh keeps the pages the person already opened with «Yana».
-            const kept = keepOpenedPages(itemsRef.current, result).length
-            const fresh = totalAfterRefresh(totalRef.current, kept, result)
-            totalRef.current = fresh
-            setTotal(fresh)
-            setItems((list) => keepOpenedPages(list, result))
-            setError(null)
-        } catch (caught) {
-            if (current.current === requested) {
-                setError(codeOf(caught))
-            }
-        }
-    }, [key, setItems])
+        },
+        [key, setItems],
+    )
+    const reload = useCallback((): Promise<void> => fetchFirst(false), [fetchFirst])
+    const refresh = useCallback((): Promise<void> => fetchFirst(true), [fetchFirst])
 
     useEffect(() => {
         // Another list: this session's copy of it at once (or the skeleton the first time).
@@ -140,6 +150,7 @@ export function usePagedList<T>(
         loadingMore,
         error,
         reload,
+        refresh,
         loadMore,
         update: (change): void => setItems((list) => (list ? change(list) : list)),
     }

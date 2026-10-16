@@ -308,6 +308,7 @@ export const uz = {
         freeDeliveryLeft: "Bepul yetkazishgacha yana {sum}",
         removed: "Savatdagi {n} ta mahsulot endi yo'q yoki o'zgardi, ularni olib tashladik.",
         removedNamed: "{names} endi yo'q: savatdan olib tashladik.",
+        changedNamed: "{names} o'zgardi: savatdan olib tashladik, qaytadan tanlang.",
         closedUntil: "Do'kon hozir yopiq, {when} ochiladi. Savat saqlanib turadi.",
         unavailable: "Tugagan",
         clear: "Savatni tozalash",

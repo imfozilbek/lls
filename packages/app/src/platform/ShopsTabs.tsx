@@ -549,7 +549,11 @@ export function ShopsTab({
         <div className="flex flex-col gap-4">
             <Segmented<ShopsFilter>
                 value={filter}
-                onChange={setFilter}
+                onChange={(next): void => {
+                    // A search of one list never hides the other one (its field may not be there).
+                    setQuery("")
+                    setFilter(next)
+                }}
                 options={[
                     { value: "active", label: t.live },
                     { value: "disabled", label: t.off },
@@ -558,7 +562,7 @@ export function ShopsTab({
             {filter === "active" && asks.counts ? (
                 <PhoneAskCard counts={asks.counts} onDone={asks.reload} />
             ) : null}
-            {(shops?.length ?? 0) > SEARCH_FROM ? (
+            {(shops?.length ?? 0) > SEARCH_FROM || query !== "" ? (
                 <TextInput
                     type="search"
                     aria-label={t.searchShops}

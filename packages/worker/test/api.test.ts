@@ -448,6 +448,17 @@ describe("inside a shop", () => {
             n: number
         }>()
         expect(count?.n).toBe(1)
+
+        // Someone else sending the same id (one phone, two accounts) gets a new order of their
+        // own, and the shop hears about it like any other.
+        const stranger = client.as(STRANGER, { botToken: SHOP_BOT_TOKEN, shop: slug })
+        await stranger("/api/me")
+        await sharePhoneWithShops(STRANGER.id)
+        const before = client.telegram.sent.length
+        const theirs = await stranger("/api/orders", { method: "POST", json: body })
+        expect(theirs.status).toBe(201)
+        expect((await json<{ id: string }>(theirs)).id).not.toBe(placed.id)
+        expect(client.telegram.sent.length).toBeGreaterThan(before)
     })
 
     it("an order of one shop cannot be read or changed through another shop", async () => {

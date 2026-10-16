@@ -53,7 +53,7 @@ Rows read per request (authentication included):
 | Owner: «Pul» today | 45 | opening «Pul» |
 | Owner: «Pul» this month | 285 at day 5, ~1 700 at day 30 | opening «Pul» with the month |
 | Courier: home | 166 (30 finished today, 11 open; +1 per shop of the day without its own number) | every 45 s while visible |
-| Showcase: a search | 10 | after a pause in typing, from 3 letters |
+| Showcase: a search | 10 | after a pause in typing; two letters match a whole word only, a prefix from three |
 | One order, placing to delivered (6 calls: accepting starts it) | 81 read, 36 written | 300 a day |
 
 What the measurement found and fixed on the way (before, on the same data):

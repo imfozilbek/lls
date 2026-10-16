@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest"
 
+import { OrderItem } from "../../../domain/entities/order-item.js"
 import { Product } from "../../../domain/entities/product.js"
 import { Unit } from "../../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { Money } from "../../../domain/value-objects/money.js"
-import { ProductOptions } from "../../../domain/value-objects/product-options.js"
+import { OPTION_LIMITS, ProductOptions } from "../../../domain/value-objects/product-options.js"
 
 const LATTE = {
     group: "Hajmi",
@@ -149,5 +150,38 @@ describe("a product with variants and add-ons", () => {
         expect(product.options).toBeUndefined()
         expect(product.price.amount).toBe(17_000)
         expect(() => latte().update({ unit: Unit.KG })).toThrow(ValidationError)
+    })
+})
+
+describe("the longest pick the owner may set up", () => {
+    it("fits on an order line: the largest variant and every add-on", () => {
+        const long = (n: number): string => `${n}`.padEnd(OPTION_LIMITS.name, "x")
+        const options = ProductOptions.create({
+            group: "Turi",
+            variants: [
+                { id: "v", name: long(0), price: 10_000 },
+                { id: "w", name: "Kichik", price: 8_000 },
+            ],
+            addons: Array.from({ length: OPTION_LIMITS.addons }, (_, i) => ({
+                id: `a${i}`,
+                name: long(i + 1),
+                price: 1_000,
+            })),
+        })
+        const picked = options.price(Money.of(10_000), {
+            variantId: "v",
+            addonIds: Array.from({ length: OPTION_LIMITS.addons }, (_, i) => `a${i}`),
+        })
+        expect(picked?.chosen).toBeDefined()
+        const line = OrderItem.create({
+            productId: "p",
+            name: "Burger",
+            unit: Unit.PIECE,
+            category: "burgers",
+            unitPrice: picked?.unitPrice ?? Money.of(0),
+            quantity: 1,
+            options: picked?.chosen,
+        })
+        expect(line.options?.label.length).toBeGreaterThan(200)
     })
 })

@@ -17,8 +17,14 @@ export interface CourierRepository {
     /**
      * People who may take a network order of this district now: in the network, on shift,
      * approved by a shop of the district, and not carrying another network order. Oldest first.
+     * For an order of `shopId`: never the people that shop removed or has not approved yet.
      */
-    listFreeNetworkCouriers(districtId: string, now: Date, limit: number): Promise<CourierProfile[]>
+    listFreeNetworkCouriers(
+        districtId: string,
+        now: Date,
+        limit: number,
+        shopId?: string,
+    ): Promise<CourierProfile[]>
     saveInvite(invite: CourierInvite): Promise<void>
     /**
      * Marks a used invite only if nobody used it in between: one conditional write, so two

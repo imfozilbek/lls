@@ -657,6 +657,11 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 - Status change → message to the customer (on the way: the courier's name and phone). Showcase
   orders: the Zumda bot writes to the customer (with the shop name); the owner still gets messages
   from the shop bot.
+- **One person the bot cannot reach never stops the others' messages.** A message to many (the
+  network's couriers, the admins, late orders) goes to each on its own (`toEach`), and the steps
+  of one event run on their own (`everyOne`): a customer who never pressed Start still lets the
+  network get the order, an owner Zumda | Business cannot reach still lets the admins get the
+  application.
 - **Phones: everyone on an order can call each other (owner's decision, October 2026).** Every
   call is a `tel:` link with the digits on it (`CallLink`; `callLink` opens it in a new window in
   Telegram iOS, whose Mini App view cannot dial), and the bots write the numbers too:
@@ -687,7 +692,8 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   with a copy button; the customer transfers after placing and presses «Я перевёл» with the
   screenshot; the owner confirms by hand («Деньги пришли, принять», asked once more), then the
   shop starts. Cash: checkout and the order screen say the sum to give the courier. «Ikkalasi»:
-  checkout asks which one (the card first)
+  checkout asks which one (the card first, then the way the customer paid last; the pick is kept
+  in the draft)
 
 **User Flow:**
 - Customer: Open shop link → Browse → «Savat» (the cart and the order are one screen, owner's

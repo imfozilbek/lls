@@ -22,6 +22,7 @@ import {
     ReorderTripUseCase,
 } from "../../application/use-cases/trip/trip.use-cases.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
+import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
 import { Location } from "../../domain/value-objects/location.js"
 import {
     CUSTOMER_TG,
@@ -223,6 +224,22 @@ describe("trips: several orders one way, one courier, stops in order", () => {
         await advance(b.id, OrderStatus.DELIVERED, COURIER_TG)
         // All delivered: the trip is over.
         expect(await new ListShopTripsUseCase(deps()).execute(owner)).toHaveLength(0)
+    })
+
+    it("a courier the shop removed cannot take the trip any more", async () => {
+        const [a, b] = [await accepted(1), await accepted(2)]
+        const made = await create([a.id, b.id])
+        await advance(a.id, OrderStatus.READY)
+        await advance(b.id, OrderStatus.READY)
+        const link = await couriers.findById(courierId)
+        link?.deactivate(new Date())
+        if (link) {
+            await couriers.save(link)
+        }
+        await expect(
+            new PickUpTripUseCase(deps()).execute({ telegramId: COURIER_TG, tripId: made.trip.id }),
+        ).rejects.toThrow(ForbiddenError)
+        expect((await orders.findById(a.id))?.status).toBe(OrderStatus.READY)
     })
 
     it("a cancelled order leaves the way; another courier takes an order out of the trip", async () => {

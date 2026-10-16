@@ -1,5 +1,6 @@
 import { unitScale } from "../enums/unit.js"
 import { requireInteger, requireText } from "../shared/guards.js"
+import { OPTION_LIMITS } from "../value-objects/product-options.js"
 
 import type { Category } from "../enums/category.js"
 import type { Unit } from "../enums/unit.js"
@@ -8,6 +9,15 @@ import type { ChosenOptions } from "../value-objects/product-options.js"
 
 /** Upper bound for any line: 99 × the largest weight step. The product checks its own step. */
 const MAX_BASE_QUANTITY = 1_000_000
+const NAME_MAX = 200
+/**
+ * The longest «variant · add-on, add-on…» a product allows: every pick the owner may set up
+ * must fit, or that pick could never be ordered.
+ */
+const OPTIONS_LABEL_MAX =
+    OPTION_LIMITS.name * (1 + OPTION_LIMITS.addons) +
+    " · ".length +
+    ", ".length * OPTION_LIMITS.addons
 
 export interface OrderItemProps {
     productId: string
@@ -48,10 +58,13 @@ export class OrderItem {
     static create(input: OrderItemProps): OrderItem {
         return new OrderItem({
             ...input,
-            name: requireText("name", input.name, 200),
+            name: requireText("name", input.name, NAME_MAX),
             quantity: requireInteger("quantity", input.quantity, 1, MAX_BASE_QUANTITY),
             options: input.options
-                ? { ...input.options, label: requireText("options", input.options.label, 200) }
+                ? {
+                      ...input.options,
+                      label: requireText("options", input.options.label, OPTIONS_LABEL_MAX),
+                  }
                 : undefined,
         })
     }

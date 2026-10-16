@@ -370,8 +370,11 @@ function useHome(): {
                       ...current,
                       orders: current.orders.map((o) => {
                           const next = byId.get(o.id)
+                          // The order comes back without its shop: the shop's name, place and
+                          // number stay (the call button never blinks away after a step).
+                          const { shopName, shopPhone, shopLocation, shopAddress } = o
                           return next
-                              ? { ...next, shopName: o.shopName, shopLocation: o.shopLocation }
+                              ? { ...next, shopName, shopPhone, shopLocation, shopAddress }
                               : o
                       }),
                   }

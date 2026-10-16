@@ -70,8 +70,17 @@ export interface BulkRow {
     error?: RowError
 }
 
+/** Phones type «so’m» (iOS), «soʻm» (Uzbek ʻ), «m²»: read as «so'm» and «m2». */
+const APOSTROPHES = /[’‘ʻʼ`´]/g
+const SUPERSCRIPTS: Readonly<Record<string, string>> = { "²": "2", "³": "3" }
+
+function normalLine(line: string): string {
+    return line.replace(APOSTROPHES, "'").replace(/[²³]/g, (sign) => SUPERSCRIPTS[sign] ?? sign)
+}
+
 /** «Pomidor 12000 kg» → the words, the price, the unit word (all optional but the words). */
-function split(line: string): { name: string; price?: number; unit?: Unit; badPrice: boolean } {
+function split(typed: string): { name: string; price?: number; unit?: Unit; badPrice: boolean } {
+    const line = normalLine(typed)
     let rest = ` ${line.trim()} `
     let unit: Unit | undefined
     const text = searchText(line)
@@ -84,7 +93,9 @@ function split(line: string): { name: string; price?: number; unit?: Unit; badPr
         }
     }
     // «35 ming», «2,5 ming»: how prices are said at the market, read as 35 000 and 2 500.
-    const thousands = /\s(\d+(?:[.,]\d{1,3})?)\s*(?:ming|минг)\s*(so'?m|sum|сўм)?\s*$/i.exec(rest)
+    const thousands = /\s(\d+(?:[.,]\d{1,3})?)\s*(?:ming|минг)\s*(so'?m|sum|сўм|сум)?\s*$/i.exec(
+        rest,
+    )
     if (thousands?.[1]) {
         const amount = Math.round(Number(thousands[1].replace(",", ".")) * THOUSAND)
         return {
@@ -95,7 +106,7 @@ function split(line: string): { name: string; price?: number; unit?: Unit; badPr
         }
     }
     // «38000», «38 000», «38.000»: groups of three only, so «Taom 1 1000» costs 1 000.
-    const price = /\s(\d{1,3}(?:[\s.,]\d{3})+|\d+)\s*(so'?m|sum)?\s*$/i.exec(rest)
+    const price = /\s(\d{1,3}(?:[\s.,]\d{3})+|\d+)\s*(so'?m|sum|сўм|сум)?\s*$/i.exec(rest)
     if (!price?.[1]) {
         return { name: rest.trim(), unit, badPrice: false }
     }

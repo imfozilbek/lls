@@ -4,6 +4,7 @@ import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { ZUMDA_BRAND_COLOR, applyBrand } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
+import { hasLanded, markLanded } from "../lib/landing.js"
 import { useMainAction } from "../lib/main-button.js"
 import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
@@ -181,12 +182,6 @@ function Home({
 }
 
 /**
- * Once a session: an owner of one business (not an admin) lands in it, not on a list of one. Back
- * from it, the list stays.
- */
-let landed = false
-
-/**
  * The Zumda Business bot's «Mening bizneslarim»: the owner's businesses with their review status, a new
  * one through the wizard, and any of them opened for management (`onOpen`).
  */
@@ -214,12 +209,13 @@ export function OnboardingApp({
             setAdmin(me.admin)
             setShops(mine)
             const only = mine.length === 1 ? mine[0] : undefined
-            if (!landed && only && !me.admin) {
-                landed = true
+            // Once a session (lib/landing.ts): Back from it, the list stays.
+            if (!hasLanded() && only && !me.admin) {
+                markLanded()
                 onOpen(only.slug)
                 return
             }
-            landed = true
+            markLanded()
         } catch (caught) {
             const code = caught instanceof ApiError ? caught.code : "generic"
             // An expired browser session: back to «sign in with Telegram».

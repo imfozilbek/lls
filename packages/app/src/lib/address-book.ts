@@ -1,4 +1,6 @@
-import type { OrderDTO, PaymentMethod } from "@zumda/core"
+import { PaymentMethod } from "@zumda/core"
+
+import type { OrderDTO } from "@zumda/core"
 
 export type Point = { latitude: number; longitude: number }
 
@@ -21,6 +23,14 @@ export interface Draft {
     comment: string
     location: Point | null
     bottlesReturned: number
+    /** «Naqd» or «Karta» picked at a shop that takes both: «Back» keeps the pick too. */
+    paymentMethod?: PaymentMethod
+}
+
+const PAYMENT_METHODS: readonly PaymentMethod[] = [PaymentMethod.CARD_TRANSFER, PaymentMethod.CASH]
+
+function method(value: unknown): PaymentMethod | undefined {
+    return PAYMENT_METHODS.find((m) => m === value)
 }
 
 const LAST_ADDRESS_KEY = "zumda:address"
@@ -113,6 +123,9 @@ export function loadDraft(shop: string): Draft | null {
         comment: text(draft["comment"]),
         location: point(draft["location"]),
         bottlesReturned: count(draft["bottlesReturned"]),
+        ...(method(draft["paymentMethod"])
+            ? { paymentMethod: method(draft["paymentMethod"]) }
+            : {}),
     }
 }
 
