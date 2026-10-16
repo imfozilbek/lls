@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
     LIGHT_SURFACE,
+    callLink,
     canRequestChat,
     paintLightFrame,
     readLaunchParams,
@@ -183,5 +184,31 @@ describe("requestChat (Managed Bots: the «create a bot» window)", () => {
         expect(canRequestChat()).toBe(false)
         vi.stubGlobal("window", {})
         expect(canRequestChat()).toBe(false)
+    })
+})
+
+describe("callLink (a call from the Mini App)", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals()
+    })
+
+    function inTelegram(platform: string): void {
+        vi.stubGlobal("window", { Telegram: { WebApp: { initData: "signed", platform } } })
+    }
+
+    it("Telegram iOS: a new window, so Telegram hands the number to the phone", () => {
+        inTelegram("ios")
+        expect(callLink("+998901234567")).toEqual({ href: "tel:+998901234567", target: "_blank" })
+    })
+
+    it("Telegram Android, the desktop and the browser: a plain tel: link", () => {
+        for (const platform of ["android", "tdesktop", "macos", "weba", "unknown"]) {
+            inTelegram(platform)
+            expect(callLink("+998901234567")).toEqual({ href: "tel:+998901234567" })
+        }
+        vi.stubGlobal("window", { Telegram: { WebApp: { initData: "", platform: "ios" } } })
+        expect(callLink("+998901234567")).toEqual({ href: "tel:+998901234567" })
+        vi.stubGlobal("window", {})
+        expect(callLink("+998901234567")).toEqual({ href: "tel:+998901234567" })
     })
 })

@@ -79,6 +79,8 @@ export interface OpenOptions {
     noInitData?: boolean
     /** Telegram's native MainButton instead of the in-app bottom bar. */
     native?: boolean
+    /** Telegram on an iPhone (the native MainButton too). Default: `android` with `native`. */
+    platform?: "ios"
     theme?: "light" | "dark"
     /** What the person answers when the app asks for the phone. */
     contact?: "share" | "decline"
@@ -371,7 +373,7 @@ function stubConfig(options: OpenOptions, initData: string): StubConfig {
                   ...(options.startParam ? { start_param: options.startParam } : {}),
               }
             : {},
-        platform: options.native ? "android" : "unknown",
+        platform: options.platform ?? (options.native ? "android" : "unknown"),
         colorScheme: options.theme ?? "light",
         theme: options.theme === "dark" ? DARK_THEME : null,
         location: options.location === undefined ? YAKKABOG : options.location,

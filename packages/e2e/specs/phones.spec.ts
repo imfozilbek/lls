@@ -60,7 +60,10 @@ test("the customer: the courier and the shop on the order, the shop on the store
 }) => {
     await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     // The storefront: the shop is one tap away.
-    await expect(page.getByRole("link", { name: "Qo'ng'iroq" })).toHaveAttribute("href", SHOP_TEL)
+    const shopCall = page.getByRole("link", { name: "Qo'ng'iroq" })
+    await expect(shopCall).toHaveAttribute("href", SHOP_TEL)
+    // Telegram Android and the browser dial a plain tel: link (an iPhone: the next test).
+    expect(await shopCall.getAttribute("target")).toBeNull()
 
     await openApp(page, {
         user: PEOPLE.customer,
@@ -88,6 +91,21 @@ test("the courier: the customer's number and the shop's on the card", async ({ p
         "href",
         SHOP_TEL,
     )
+})
+
+test("Telegram on an iPhone: a call opens a new window, so Telegram hands it to the phone", async ({
+    page,
+}) => {
+    // The Mini App's own web view cannot dial a tel: link: the tap would do nothing.
+    await openApp(page, { user: PEOPLE.customer, shop: FOOD, platform: "ios" })
+    const shopCall = page.getByRole("link", { name: "Qo'ng'iroq" })
+    await expect(shopCall).toHaveAttribute("href", SHOP_TEL)
+    await expect(shopCall).toHaveAttribute("target", "_blank")
+
+    await openApp(page, { user: PEOPLE.courier, courierBot: true, platform: "ios" })
+    const customerCall = page.getByRole("link", { name: /Mijozga qo'ng'iroq/ })
+    await expect(customerCall).toHaveAttribute("href", CUSTOMER_TEL)
+    await expect(customerCall).toHaveAttribute("target", "_blank")
 })
 
 test("a shop without its own number: the owner's own phone stands in", async ({ page }) => {

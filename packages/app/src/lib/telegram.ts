@@ -472,6 +472,23 @@ export function shopBotStartLink(botUsername: string): string {
     return `https://t.me/${botUsername}?start=owner`
 }
 
+/** A phone call's link: what an `<a>` with the number needs. */
+export interface CallLinkProps {
+    href: string
+    target?: "_blank"
+}
+
+/**
+ * A call from the Mini App. Telegram iOS lets its web view follow `tel:` itself, and the web view
+ * cannot dial: the tap does nothing. A link to a new window goes to Telegram's own `openUrl`
+ * instead, which hands `tel:` to iOS (the «Call» sheet). Telegram Android dials a plain `tel:`
+ * link (and its old clients dialed a wrong number from a new window), the browser too.
+ */
+export function callLink(phone: string): CallLinkProps {
+    const href = `tel:${phone}`
+    return webApp()?.platform === "ios" ? { href, target: "_blank" } : { href }
+}
+
 export function openTelegramLink(url: string): void {
     const app = webApp()
     if (app?.openTelegramLink) {

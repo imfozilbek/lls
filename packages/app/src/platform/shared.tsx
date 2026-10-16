@@ -3,7 +3,7 @@ import { useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError } from "../lib/api.js"
-import { haptic } from "../lib/telegram.js"
+import { callLink, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { PhoneIcon, PinIcon } from "../ui/icons.js"
 import { MapButton } from "../ui/maps.js"
@@ -53,7 +53,7 @@ export function OwnerLine({ shop }: { shop: PlatformShopDTO }): React.JSX.Elemen
             </div>
             {phone ? (
                 <a
-                    href={`tel:${phone}`}
+                    {...callLink(phone)}
                     className="tap flex h-11 shrink-0 items-center gap-2 rounded-control bg-brand/10 px-3 text-sm font-semibold text-tg-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
                 >
                     <PhoneIcon size={18} className="text-brand" />

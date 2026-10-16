@@ -658,7 +658,8 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   orders: the Zumda bot writes to the customer (with the shop name); the owner still gets messages
   from the shop bot.
 - **Phones: everyone on an order can call each other (owner's decision, October 2026).** Every
-  call is a `tel:` link with the digits on it (`CallLink`), and the bots write the numbers too:
+  call is a `tel:` link with the digits on it (`CallLink`; `callLink` opens it in a new window in
+  Telegram iOS, whose Mini App view cannot dial), and the bots write the numbers too:
   - the owner: the customer's number («Qo'ng'iroq») and the courier's on the order card;
   - the customer: the courier's from the moment a courier took the order, kept after delivery
     (`orders.courier_phone`, a snapshot like the name), and the shop's on the storefront and the

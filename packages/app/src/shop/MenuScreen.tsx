@@ -20,7 +20,7 @@ import { formatMoney, formatQuantity, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { opensWhen } from "../lib/opening.js"
 import { takesOrdersNow } from "../lib/shop-ready.js"
-import { haptic } from "../lib/telegram.js"
+import { callLink, haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { productOfKey, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
@@ -335,7 +335,7 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                 {/* The shop's number (or the owner's): one tap from the storefront. */}
                 {shop.callPhone && shop.viewerRole !== "owner" ? (
                     <a
-                        href={`tel:${shop.callPhone}`}
+                        {...callLink(shop.callPhone)}
                         onClick={(): void => haptic.tap()}
                         className="tap flex h-11 shrink-0 items-center gap-1.5 rounded-full bg-tg-secondary px-4 font-medium"
                     >

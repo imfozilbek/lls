@@ -2,7 +2,7 @@ import { formatPhone, mapUrl } from "@zumda/core"
 
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
-import { haptic } from "../lib/telegram.js"
+import { callLink, haptic } from "../lib/telegram.js"
 import { yandexRouteUrl } from "../lib/trips.js"
 
 import { PhoneIcon, PinIcon } from "./icons.js"
@@ -29,7 +29,7 @@ export function CallLink({
 }): React.JSX.Element {
     return (
         <a
-            href={`tel:${phone}`}
+            {...callLink(phone)}
             onClick={(): void => haptic.tap()}
             className={cn(
                 "tap flex min-h-12 flex-wrap items-center justify-center gap-x-2 rounded-control px-4 py-2 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand",

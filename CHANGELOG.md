@@ -7,6 +7,11 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### A call starts on an iPhone too
+- A tap on a phone number in the Mini App did nothing in Telegram on an iPhone: its web view
+  follows a `tel:` link itself and cannot dial. There every call link opens in a new window now,
+  which Telegram hands to iOS («Call +998…»). Android and the browser dial as before.
+
 ### Fewer taps and no dead ends, for every role
 - The customer: the cart and the order are one screen (owner's decision, October 2026), so an
   order takes three taps: «+», «Savat», «Buyurtma berish». The place comes from Telegram first;
