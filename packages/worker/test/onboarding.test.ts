@@ -37,6 +37,8 @@ describe("a short application: name, kind, bot and where the business is", () =>
 
     const business = (user: object = OWNER): ReturnType<TestClient["as"]> =>
         client.as(user, { businessBot: true })
+    /** «Platforma», in the admins' own bot. */
+    const platform = (): ReturnType<TestClient["as"]> => client.as(ADMIN, { adminBot: true })
 
     async function apply(): Promise<Shop> {
         const response = await business()("/api/platform/shops", {
@@ -70,7 +72,7 @@ describe("a short application: name, kind, bot and where the business is", () =>
 
     beforeEach(async () => {
         client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
-        await business(ADMIN)("/api/admin/districts", {
+        await platform()("/api/admin/districts", {
             method: "PUT",
             json: { name: "Guliston", region: "sirdaryo", center: GULISTAN, radiusKm: 30 },
         })
@@ -145,7 +147,7 @@ describe("a short application: name, kind, bot and where the business is", () =>
 
     it("approved without a card: the owner is told to add one", async () => {
         const shop = await apply()
-        await business(ADMIN)(`/api/admin/shops/${shop.id}`, {
+        await platform()(`/api/admin/shops/${shop.id}`, {
             method: "PATCH",
             json: { decision: "approve" },
         })
@@ -156,7 +158,7 @@ describe("a short application: name, kind, bot and where the business is", () =>
 
     it("rejected with a reason: the owner reads it, fixes the shop and applies again", async () => {
         const shop = await apply()
-        const rejected = await business(ADMIN)(`/api/admin/shops/${shop.id}`, {
+        const rejected = await platform()(`/api/admin/shops/${shop.id}`, {
             method: "PATCH",
             json: { decision: "reject", reason: "Manzilni aniqroq yozing" },
         })
@@ -199,11 +201,11 @@ describe("a short application: name, kind, bot and where the business is", () =>
 
     it("a live shop the admin turns off is not a rejected application", async () => {
         const shop = await apply()
-        await business(ADMIN)(`/api/admin/shops/${shop.id}`, {
+        await platform()(`/api/admin/shops/${shop.id}`, {
             method: "PATCH",
             json: { decision: "approve" },
         })
-        const off = await business(ADMIN)(`/api/admin/shops/${shop.id}`, {
+        const off = await platform()(`/api/admin/shops/${shop.id}`, {
             method: "PATCH",
             json: { decision: "reject", reason: "ignored" },
         })

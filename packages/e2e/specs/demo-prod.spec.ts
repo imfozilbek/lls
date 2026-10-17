@@ -15,8 +15,7 @@ test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
 async function shopCard(page: Page): Promise<ReturnType<Page["getByRole"]>> {
-    await openApp(page, { user: PEOPLE.admin, businessBot: true })
-    await page.getByRole("button", { name: /Platforma/ }).click()
+    await openApp(page, { user: PEOPLE.admin, adminBot: true })
     await page.getByRole("tab", { name: "Bizneslar" }).click()
     return page.getByRole("listitem").filter({ hasText: "Osh Markaz" })
 }

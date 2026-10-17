@@ -40,19 +40,29 @@ money, showcase) and **district delivery** (Zumda courier bot, couriers for many
 
 Zumda is the platform brand. Customers see the **shop's brand**; the app shows a small "powered by Zumda".
 
-- **Three Zumda bots, one per role (owner's decision, October 2026), named «Zumda | Shop»,
-  «Zumda | Business», «Zumda | Kuryer» (the deploy sets the names):**
+- **Four Zumda bots, one per role (owner's decisions, October 2026), named «Zumda | Shop»,
+  «Zumda | Business», «Zumda | Kuryer», «Zumda | Platforma» (the deploy sets the names):**
   - **Zumda | Shop (`@zumdashop_bot`, `PLATFORM_BOT_TOKEN`):** customers only: the showcase,
     search, and messages about showcase orders.
-  - **Zumda | Business (`@zumdashop_business_bot`, `BUSINESS_BOT_TOKEN`):** owners and platform admins: «Mening bizneslarim»
-    (`?mode=business`), applications, all messages to owners and admins about their businesses
-    (application, approval, showcase deal, alerts), the admins' approval buttons and
-    **«Platforma»** (`?mode=business`, admins only: applications, shops, showcase deal, «Botni
-    qayta ulash», districts and their network stats; API `/api/admin/*`). It creates and manages
-    the shops' bots (Bot Management Mode on).
+  - **Zumda | Business (`@zumdashop_business_bot`, `BUSINESS_BOT_TOKEN`):** owners only:
+    «Mening bizneslarim» (`?mode=business`), applications, all messages to owners about their
+    businesses (application, approval, showcase deal). It creates and manages the shops' bots
+    (Bot Management Mode on).
   - **Zumda | Kuryer (`@zumdashop_kuryer_bot`):** one bot for every courier of every shop.
+  - **Zumda | Platforma (`ADMIN_BOT_TOKEN`, the username is the owner's choice; the deploy reads
+    it with `getMe`):** platform admins only. Its Mini App is **«Platforma»** (`?mode=admin`,
+    platform.zumda.shop: applications, shops, showcase deal, «Botni qayta ulash», districts and
+    their network stats, «Qo'llanma», «Raqam so'rash»; API `/api/admin/*`, `X-Bot: admin`), the
+    first screen of the bot. Every message to the admins comes from it (applications with their
+    approval buttons, alerts, late network orders, a new owner of a managed bot, a bot that did
+    not connect; `telegram/admins.ts`). An admin it cannot write to yet (no Start there) gets the
+    same message from Zumda | Business with the note to press Start and a link to it, the
+    approval buttons kept, the app buttons replaced by that link. Someone who is not an admin
+    gets one line and links to Zumda | Shop and Zumda | Business; «Platforma» shows them one
+    screen («faqat Zumda jamoasi uchun», `GET /api/admin/me`). Zumda | Business has no
+    «Platforma»: an old `&admin=` button there says where it is now.
 - **Bots only notify; the work is done in the Mini App (owner's decision, October 2026).** Every
-  bot has exactly one command, `/start` (the deploy sets Zumda's three, `connectShopBot` sets a
+  bot has exactly one command, `/start` (the deploy sets Zumda's four, `connectShopBot` sets a
   shop bot's); invite links are `/start` payloads. A message may carry buttons that act at once
   (`p:` asks, `pc:`/`pn:` answer, `a:`, `x:`, `k:`, `n:`, `net:`, `r:`) and a button that opens the Mini App on what it is
   about (`telegram/app-links.ts`: an order `&order=<id>`, «Platforma» `&admin=…`). A shared contact
@@ -64,7 +74,8 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   sends a short video of the real screens (`public/welcome/{biznes,zumda,kuryer}.mp4`, 720p, with
   a `-cover.jpg`) with the greeting as its caption and its button. When Telegram cannot take the
   video the street picture goes, when not the picture the text. A working or pending courier gets
-  the picture; a shop's own bot never gets a video (the shop's brand), except the guide below. The
+  the picture; a shop's own bot never gets a video (the shop's brand), except the guide below;
+  Zumda | Platforma greets an admin with text and the «Platforma» button (no video yet). The
   videos are made on the stand by `brand/welcome/video/build.sh`: run it again when those screens
   change.
 - **«Qo'llanma»: everyone already in Zumda gets their role's video once (owner's decision,
@@ -103,10 +114,12 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   - **Reset:** «Namunani tozalash» deletes its orders and puts the sample back.
 - **«Mening bizneslarim».** Zumda | Business opens the Mini App with `?mode=business`: all of the
   owner's businesses, and the full owner section of any of them right there (`X-Bot: business`).
-  An owner of one business (not an admin) lands in it, once a session (owner's decision, October
-  2026); a message about one business opens it (`&shop=<slug>`, and its order: `&order=<id>`).
+  An owner of one business lands in it, once a session (owner's decision, October 2026); a
+  message about one business opens it (`&shop=<slug>`, and its order: `&order=<id>`).
 - **One Worker serves all bots:** webhook `/tg/:botId` for shop bots, `/tg/platform` for
-  Zumda | Shop, `/tg/business` for Zumda | Business, `/tg/courier` for Zumda | Kuryer.
+  Zumda | Shop, `/tg/business` for Zumda | Business, `/tg/courier` for Zumda | Kuryer,
+  `/tg/admin` for Zumda | Platforma (`/tg/business` and `/tg/platform` still answer the approval
+  buttons of older cards).
 - **One Mini App for all shops.** The shop bot's menu button opens it with `?shop=<slug>`.
 - **Per-shop branding:** name, logo, brand color. Everything else is shared.
 - **Zumda's look (owner's decision, October 2026):** the mark is a green pin with a house
@@ -474,7 +487,7 @@ migrations/           # D1 SQL migrations
 ```
 No cron: add `scheduled()` only when a real client needs a timed job.
 Alerts: 5xx errors, failed notifications and Mini App crashes reach `PLATFORM_ADMIN_IDS` through
-Zumda | Business (`src/alerts.ts`, one per kind per 10 min). "Bot blocked by the user" is not an
+Zumda | Platforma (`src/alerts.ts`, `telegram/admins.ts`, one per kind per 10 min). "Bot blocked by the user" is not an
 alert. Mini App crashes (owner's decision, October 2026: logs and errors first): the app listens to
 `error` and `unhandledrejection` (`lib/crashes.ts`) and sends only safe facts (`crashFacts`: the
 class, the message without digits or other alphabets, `file.js:line:column` of our bundle, the
@@ -603,7 +616,9 @@ No `X-Shop` → verify with the platform bot token (showcase search).
 and in the marketplace. `X-Bot: business` → verify with `BUSINESS_BOT_TOKEN`: without `X-Shop`
 the role is `business` («Mening bizneslarim», applications: `/api/platform/*` accept only this,
 anyone else 403 `BUSINESS_BOT_ONLY`); with `X-Shop` only the shop's owner gets in (role `owner`),
-anyone else 403.
+anyone else 403. `X-Bot: admin` → verify with `ADMIN_BOT_TOKEN`, no shop (`X-Shop` with it: 400
+`ADMIN_NO_SHOP`), role `admin`: `/api/admin/*` accept only this and only a platform admin
+(anyone else 403 `ADMIN_ONLY`); Zumda | Business never opens «Platforma».
 The token that verified the signature decides the order channel
 (`shop_bot` or `marketplace`); the client can never choose it.
 
@@ -618,12 +633,14 @@ bot alerts the admins and never moves the shop. Telegram may not announce a toke
 **Roles** (per shop, one app, one auth): `customer` (default), `owner`
 (`business.owner_telegram_id`). Through the showcase (`X-Via: marketplace`) the role is always
 `customer`. `X-Bot: courier` → initData is verified with `COURIER_BOT_TOKEN`, no shop, role
-`courier`; which shops and orders they may touch, the use cases check by the links.
+`courier`; which shops and orders they may touch, the use cases check by the links. `X-Bot: admin`
+→ role `admin` (Zumda | Platforma), no shop; who of them is a platform admin, the admin routes
+check (`PLATFORM_ADMIN_IDS`).
 
 **Entry:** the shop bot's menu button opens `?shop=<slug>`. The Zumda courier bot opens
 `?mode=courier` (all the courier's shops in one screen). «Mening bizneslarim»: Zumda | Business
-opens `?mode=business` (old buttons: `?mode=onboarding`). Showcase: Zumda | Shop opens
-`?mode=market`. **A Zumda Shop QR** (goal 16, owner's decisions, October 2026): the poster may
+opens `?mode=business` (old buttons: `?mode=onboarding`). «Platforma»: Zumda | Platforma opens
+`?mode=admin` (platform.zumda.shop). Showcase: Zumda | Shop opens `?mode=market`. **A Zumda Shop QR** (goal 16, owner's decisions, October 2026): the poster may
 carry `t.me/zumdashop_bot?startapp=m_<slug>` («Sozlamalar» → «Zumda Shop uchun», only for a shop
 in the showcase); `m_<slug>` opens the showcase right on that shop (`readLaunchParams`), Back
 leads to the other shops, an order is a showcase one (`marketplace`, the deal's commission). A
@@ -740,8 +757,8 @@ document.innerHTML = x                 // XSS
   decision, October 2026): public photos and the map are read from R2's own addresses
   (`media.zumda.shop`, `map.zumda.shop`, the public bucket `zumda-media`), which never holds a
   receipt; the deploy adds those addresses only while `zumda-media` has no `receipts/`
-- CORS: allow only the Mini App's three addresses (`APP_ORIGIN`, `BUSINESS_APP_ORIGIN`,
-  `COURIER_APP_ORIGIN`)
+- CORS: allow only the Mini App's four addresses (`APP_ORIGIN`, `BUSINESS_APP_ORIGIN`,
+  `COURIER_APP_ORIGIN`, `ADMIN_APP_ORIGIN`; `appOrigins` in `env.ts`)
 - Zumda | Business in a browser (business.zumda.shop): Telegram Login (OpenID Connect; the old
   widget is deprecated). `GET /api/business/login` gives the bot's Client ID and a nonce (HMAC,
   10 min) → `telegram-login.js` opens Telegram's window → `POST /api/business/session` checks the
@@ -750,6 +767,11 @@ document.innerHTML = x                 // XSS
   `X-Bot: business`. No cookies, no Client Secret; @BotFather → Login Widget of
   `@zumdashop_business_bot` keeps Trusted Origin `https://business.zumda.shop` and Redirect URI
   `https://business.zumda.shop/`
+- «Platforma» in a browser (platform.zumda.shop): the same Telegram Login with Zumda | Platforma's
+  own Client ID (`/api/admin-web/login`, `/api/admin-web/session`), a session signed by
+  `ADMIN_SESSION_SECRET` and sent with `X-Bot: admin`. Neither session opens the other bot's app.
+  @BotFather → Login Widget of Zumda | Platforma keeps Trusted Origin `https://platform.zumda.shop`
+  and Redirect URI `https://platform.zumda.shop/`
 - Check `git diff` before commit
 
 **Public repository (GitHub, free CI):** the code is public, the keys never are.
@@ -999,29 +1021,31 @@ bun run format && bun run lint && bun run test && bun run build
 CI/CD: GitHub Actions. **⛔ Docker is PROHIBITED. No VPS.**
 
 ```
-Telegram ─► Mini App (Pages: app., business., delivery.zumda.shop) ─► Worker (api.zumda.shop) ─► D1 / R2
+Telegram ─► Mini App (Pages: app., business., delivery., platform.zumda.shop) ─► Worker (api.zumda.shop) ─► D1 / R2
 Mini App ─► media.zumda.shop, map.zumda.shop (R2 `zumda-media` itself: photos, the map)
-Browser ─► business.zumda.shop (Telegram Login) ─► Worker ─► D1 / R2
+Browser ─► business.zumda.shop, platform.zumda.shop (Telegram Login) ─► Worker ─► D1 / R2
 zumda.shop ─► Worker ─► 302 to t.me/zumdashop_bot (until the landing page)
-Telegram Bot API ─► /tg/:botId, /tg/platform, /tg/business, /tg/courier ─► Worker
+Telegram Bot API ─► /tg/:botId, /tg/platform, /tg/business, /tg/courier, /tg/admin ─► Worker
 ```
 
 **Worker secrets:** `ORS_API_KEY` (optional, trips' roads; GitHub secret of the same name),
 `TOKEN_ENC_KEY`, `PLATFORM_BOT_TOKEN`, `PLATFORM_WEBHOOK_SECRET`, `PLATFORM_ADMIN_IDS`,
 `COURIER_BOT_TOKEN`, `COURIER_WEBHOOK_SECRET`, `BUSINESS_BOT_TOKEN`, `BUSINESS_WEBHOOK_SECRET`,
-`BUSINESS_SESSION_SECRET` (the webhook and session secrets are derived from the bot tokens by the
-deploy).
+`BUSINESS_SESSION_SECRET`, `ADMIN_BOT_TOKEN` (GitHub secret of the same name),
+`ADMIN_WEBHOOK_SECRET`, `ADMIN_SESSION_SECRET` (the webhook and session secrets are derived from
+the bot tokens by the deploy).
 **Worker vars:** `APP_ORIGIN` (`https://app.zumda.shop`), `BUSINESS_APP_ORIGIN`
-(`https://business.zumda.shop`), `COURIER_APP_ORIGIN` (`https://delivery.zumda.shop`). The app
-picks its mode by address (`business.`, `delivery.`), locally by `?mode=`.
+(`https://business.zumda.shop`), `COURIER_APP_ORIGIN` (`https://delivery.zumda.shop`),
+`ADMIN_APP_ORIGIN` (`https://platform.zumda.shop`). The app picks its mode by address
+(`business.`, `delivery.`, `platform.`), locally by `?mode=`.
 **The bots' profiles are set by the deploy:** names «Zumda | Shop», «Zumda | Business»,
-«Zumda | Kuryer», descriptions, the command list (`/start` only), menu buttons,
+«Zumda | Kuryer», «Zumda | Platforma», descriptions, the command list (`/start` only), menu buttons,
 avatars (`brand/*-avatar.jpg`, set only when the file changed: its hash is in D1
 `platform_settings`), the `/start` videos and pictures (`brand/welcome/`). Only the Description Picture and
 the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method).
 
 - Addresses: `api.zumda.shop` and `zumda.shop` (Worker, Custom Domains); `app.`, `business.`,
-  `delivery.zumda.shop` (one Pages project); `media.` and `map.zumda.shop` (R2 custom domains of
+  `delivery.`, `platform.zumda.shop` (one Pages project); `media.` and `map.zumda.shop` (R2 custom domains of
   `zumda-media`); the deploy adds them and their DNS records. The Worker has no workers.dev
   address. Buckets: `zumda-media` (public files) and `zumda-receipts` (private, 30 days).
 - Checks run on the pull request (`static` and `unit` side by side, e2e on eight machines; the
@@ -1069,8 +1093,10 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Water (a grocery store with the bottle deposit): empty bottles + deposit; reorder
 - [ ] Service: «Xizmatlar», «Bajarilmoqda», «Bajarildi»
 - [ ] Zumda | Business in a browser: sign in with Telegram, manage a business, sign out
-- [ ] «Platforma» (admins): approve an application from its message, showcase deal, «Botni qayta
-      ulash», a district; every bot message opens the app on its order; bots have `/start` only
+- [ ] «Platforma» (admins, in Zumda | Platforma): approve an application from its message,
+      showcase deal, «Botni qayta ulash», a district; every bot message opens the app on its
+      order; bots have `/start` only; a non-admin sees «faqat Zumda jamoasi uchun»; an admin
+      without Start there gets the card from Zumda | Business; platform.zumda.shop signs in
 - [ ] Map: pick a place at checkout (the pin under a moving map), in the application and the
       settings; the courier's and the customer's order maps; «Xarita» on the storefront
 - [ ] Trips: three orders one way → «Bir yo'nalish» → reorder → «Tayinlash» → «Hammasini

@@ -66,9 +66,19 @@ Claude, и деплоем; перед подключением настоящи�
 - [ ] Старого бота с прежним названием удалите: @BotFather → `/deletebot` (его токен когда-то
       попал в чат).
 
-- [x] Третий бот **Zumda | Business** (`@zumdashop_business_bot`) (решение владельца, 3 октября 2026): владельцы и админы.
+- [x] Третий бот **Zumda | Business** (`@zumdashop_business_bot`) (решение владельца, 3 октября 2026): владельцы.
       @BotFather → `/newbot`; токен в переменные окружения Claude (`BUSINESS_BOT_TOKEN`) и в
       секреты окружения `production` в GitHub.
+- [ ] Четвёртый бот **Zumda | Platforma** (решение владельца, 16 октября 2026): только админы,
+      в нём открывается «Platforma», и все сообщения админам приходят от него.
+      @BotFather → `/newbot`; имя любое (деплой поставит «Zumda | Platforma»), username на ваш
+      выбор, например `zumdashop_platforma_bot`. Токен в секреты окружения `production` в GitHub
+      (`ADMIN_BOT_TOKEN`) и в переменные окружения Claude. **Без этого секрета деплой
+      пропускается целиком** («Deploy skipped»).
+- [ ] Вход в «Platforma» с компьютера (platform.zumda.shop): @BotFather → `/mybots` → бот
+      Zumda | Platforma → **Bot Settings** → **Login Widget**: **Trusted Origins** →
+      `https://platform.zumda.shop`, **Redirect URIs** → `https://platform.zumda.shop/`. Без этого
+      «Platforma» работает только в Telegram.
 - [ ] Bot Management Mode для **Zumda | Business** (цель 14: бот бизнеса создаётся без токена):
       @BotFather → `/mybots` → `@zumdashop_business_bot` → **Bot Settings** → **Bot Management Mode**
       → **On**. Проверка: `scripts/check-access.sh` → «can create bots for owners».
@@ -81,18 +91,20 @@ Claude, и деплоем; перед подключением настоящи�
       `/mybots` → бот → **Edit Bot** → **Edit Description Picture**: `brand/welcome/zumda-640.png`
       для `@zumdashop_bot`, `biznes-640.png` для `@zumdashop_business_bot`, `kuryer-640.png` для
       `@zumdashop_kuryer_bot`.
-- [ ] Каждый админ один раз нажимает **Start** в Zumda | Business: иначе бот не сможет писать
-      ему заявки и оповещения.
+- [ ] Каждый админ один раз нажимает **Start** в Zumda | Platforma: иначе бот не сможет писать
+      ему первым. До этого заявки и оповещения приходят из Zumda | Business с напоминанием нажать
+      Start (если и там Start не нажат, сообщение не дойдёт).
 
-Всё остальное у трёх ботов ставит деплой сам, при каждом запуске:
-- имена «Zumda | Shop», «Zumda | Business», «Zumda | Kuryer»;
+Всё остальное у четырёх ботов ставит деплой сам, при каждом запуске:
+- имена «Zumda | Shop», «Zumda | Business», «Zumda | Kuryer», «Zumda | Platforma»;
 - описания и короткие описания;
 - команды: у всех ботов только `/start` (всё остальное делается в Mini App; старые команды
   админов деплой удаляет);
 - кнопки меню;
 - аватары из `brand/*-avatar.jpg` (только когда файл изменился);
 - вебхуки;
-- адреса `app.`, `business.`, `delivery.zumda.shop` и переадресация `zumda.shop` в бот.
+- адреса `app.`, `business.`, `delivery.`, `platform.zumda.shop` и переадресация `zumda.shop` в
+  бот.
 
 - [ ] Картинка в блоке «Что умеет этот бот?» (через API её не поставить): @BotFather →
       `/mybots` → `@zumdashop_bot` → **Edit Bot** → **Edit Description Picture** → отправьте
@@ -109,6 +121,7 @@ CLOUDFLARE_ACCOUNT_ID=…       Account ID из шага 3
 PLATFORM_BOT_TOKEN=…          токен @zumdashop_bot
 COURIER_BOT_TOKEN=…           токен @zumdashop_kuryer_bot
 BUSINESS_BOT_TOKEN=…          токен @zumdashop_business_bot
+ADMIN_BOT_TOKEN=…             токен бота Zumda | Platforma
 PLATFORM_ADMIN_IDS=…          ваш Telegram ID; несколько админов: через запятую
 ```
 
@@ -126,7 +139,7 @@ D1, Pages, Workers и обоих ботов и пишет `OK` / `FAIL` с по�
 
 - [ ] **Окружение деплоя:** **Settings → Environments → New environment** → `production`.
   - **Deployment branches and tags** → **Selected branches and tags** → правило `main`.
-  - **Environment secrets** → **Add environment secret**: те же 5 имён и значений, что в шаге 5.
+  - **Environment secrets** → **Add environment secret**: те же 7 имён и значений, что в шаге 5.
   - Так ключи получает только деплой из `main`, а не pull request и не форки.
 - [ ] **Settings → Actions → General:**
   - **Fork pull request workflows from outside collaborators** → **Require approval for all
@@ -145,7 +158,7 @@ D1, Pages, Workers и обоих ботов и пишет `OK` / `FAIL` с по�
 - [ ] Удалите старые секреты от прошлого проекта, если они есть: `SSH_HOST`, `SSH_USER`,
       `SSH_PRIVATE_KEY`, `DISCORD_WEBHOOK`.
 
-**Проверка:** в окружении `production` 6 секретов (с `BUSINESS_BOT_TOKEN`) (значения GitHub не показывает, это нормально).
+**Проверка:** в окружении `production` 7 секретов (с `BUSINESS_BOT_TOKEN` и `ADMIN_BOT_TOKEN`) (значения GitHub не показывает, это нормально).
 
 **Ключ шифрования `TOKEN_ENC_KEY`** пока не нужен: первый деплой создаст его сам. Перед
 подключением настоящих магазинов сделаем сохранённую копию (`SECURITY.md`, «Encryption key»):
@@ -159,7 +172,7 @@ D1, Pages, Workers и обоих ботов и пишет `OK` / `FAIL` с по�
    статусы → уведомления. Деплой сам подключает адреса `api.zumda.shop` (Worker) и
    `app.zumda.shop` (Mini App) с их DNS-записями. Новый адрес иногда включается дольше 5 минут:
    тогда запуск остановится с понятной ошибкой, и Claude запустит его снова событием `deploy`;
-4. попросит вас задать район сети доставки: Zumda | Business → «Platforma» → «Tumanlar» →
+4. попросит вас задать район сети доставки: Zumda | Platforma → «Platforma» → «Tumanlar» →
    «Yangi tuman» (имя, вилоят, центр на карте «Xaritada belgilash», радиус 20 км), и пришлёт
    ссылку на бота и инструкцию для магазинов (`docs/owner-guide.md`).
 
@@ -170,7 +183,7 @@ D1, Pages, Workers и обоих ботов и пишет `OK` / `FAIL` с по�
 - [ ] **Еда, вода, продукты:** каждый создаёт своего бота в @BotFather и подключает магазин
       через бота Zumda (инструкция, раздел 1). На шаге 3 он вписывает **карту для оплаты**:
       клиенты платят только переводом на неё, до начала работы над заказом. Вы одобряете заявку
-      кнопкой «✅ Tasdiqlash» в сообщении Zumda | Business или в «Platforma» → «Arizalar».
+      кнопкой «✅ Tasdiqlash» в сообщении Zumda | Platforma или в «Platforma» → «Arizalar».
 - [ ] Каждый заполняет каталог: минимум 5 товаров с фото.
   - Вода: включить **Возврат бутылей и залог**, указать залог, отметить бутыль 19 л как возвратную.
   - Продукты: весовые товары в **кг** с шагом продажи.
@@ -185,7 +198,7 @@ D1, Pages, Workers и обоих ботов и пишет `OK` / `FAIL` с по�
 ## Шаг 8. Витрина Zumda (когда договоритесь с магазином)
 
 - [ ] Договоритесь с владельцем о проценте комиссии с продаж через витрину.
-- [ ] Zumda | Business → «Platforma» → «Bizneslar» → карточка магазина: включите «Zumda
+- [ ] Zumda | Platforma → «Platforma» → «Bizneslar» → карточка магазина: включите «Zumda
       vitrinasida», впишите процент (например `5`) и нажмите «Saqlash».
 - [ ] Приложение покажет «Vitrina saqlandi», владелец получит сообщение.
 - [ ] Убрать из витрины: выключите тот же переключатель.
@@ -204,7 +217,7 @@ D1, Pages, Workers и обоих ботов и пишет `OK` / `FAIL` с по�
 | Потеряли токен Cloudflare | Удалите старый (Roll / Delete) и создайте новый по шагу 3 |
 | Потеряли токен бота | В @BotFather: `/mybots` → ваш бот → **API Token** |
 | Бот Zumda пишет «🚨 Ошибка на сервере Zumda» | Перешлите это сообщение мне. Ключей в нём нет |
-| Бот магазина не подключился после одобрения | Zumda | Business пришлёт причину и кнопку «Platformani ochish». Когда исправите, нажмите в карточке магазина «Botni qayta ulash» |
+| Бот магазина не подключился после одобрения | Zumda \| Platforma пришлёт причину и кнопку «Platformani ochish». Когда исправите, нажмите в карточке магазина «Botni qayta ulash» |
 | Деплой остановился: «The Worker lost TOKEN_ENC_KEY» | Добавьте сохранённый ключ в секрет `TOKEN_ENC_KEY` и запустите деплой снова |
 
 ## Раз в неделю: копия базы (5 минут)

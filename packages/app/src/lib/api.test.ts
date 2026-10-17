@@ -3,9 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
     API_URL,
     ApiError,
+    adminApi,
     api,
     fetchAll,
     onWebSessionExpired,
+    scopedKey,
+    setAdminBot,
     setShop,
     setWebSession,
 } from "./api.js"
@@ -68,6 +71,25 @@ describe("api client", () => {
             ["business", "osh-markaz", null],
             [null, "osh-markaz", "marketplace"],
         ])
+    })
+
+    it("«Platforma» is signed by Zumda | Platforma, with no shop, apart in the cache", async () => {
+        fetchMock.mockResolvedValue(reply(200, { admin: true }))
+        setAdminBot()
+        expect(scopedKey("platform:pending")).toBe("admin|platform:pending")
+        await adminApi.me()
+        await api.web.login("admin")
+        const [url, init] = fetchMock.mock.calls[0] ?? []
+        const [loginUrl] = fetchMock.mock.calls[1] ?? []
+        expect(url).toBe(`${API_URL}/api/admin/me`)
+        const headers = new Headers(init?.headers)
+        expect([headers.get("X-Bot"), headers.get("X-Shop")]).toEqual(["admin", null])
+        expect(loginUrl).toBe(`${API_URL}/api/admin-web/login`)
+        // A shop opened afterwards is signed by its own bot again.
+        setShop("osh-markaz")
+        await api.me()
+        const after = new Headers(fetchMock.mock.calls[2]?.[1]?.headers)
+        expect([after.get("X-Bot"), after.get("X-Shop")]).toEqual([null, "osh-markaz"])
     })
 
     it("sends only product ids and quantities when ordering", async () => {

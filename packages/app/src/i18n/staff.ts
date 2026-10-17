@@ -26,6 +26,7 @@ export const staffUz = {
         PAYMENT_NOT_REFUNDABLE: "Bu pul allaqachon qaytarilgan.",
         PAYMENT_NOT_REJECTABLE: "Bu o'tkazma allaqachon ko'rib chiqilgan. Ro'yxat yangilandi.",
         ADMIN_ONLY: "Bu bo'lim faqat Zumda administratorlari uchun.",
+        ADMIN_NO_SHOP: "«Platforma» Zumda | Platforma botida, do'kondan tashqarida ochiladi.",
         SHOP_ALREADY_ACTIVE: "Biznes allaqachon ishlayapti. Ro'yxat yangilandi.",
         SHOP_ALREADY_REVIEWED: "Bu ariza allaqachon ko'rib chiqilgan. Ro'yxat yangilandi.",
         DISTRICT_EXISTS: "Bu nomli tuman bor. Uni ro'yxatdan ochib o'zgartiring.",
@@ -602,6 +603,13 @@ export const staffUz = {
     platform: {
         title: "Platforma",
         entryHint: "Arizalar, bizneslar, tumanlar va qo'llanma",
+        // Zumda | Platforma: the admins' own bot and app.
+        webTitle: "Zumda | Platforma",
+        webText: "Zumda jamoasi uchun: arizalar, bizneslar, tumanlar va qo'llanma.",
+        notAdminTitle: "Bu bo'lim faqat Zumda jamoasi uchun",
+        notAdminText:
+            "Buyurtma berish uchun Zumda Shop'ni, biznesingiz uchun Zumda Business'ni oching.",
+        moved: "«Platforma» endi alohida botda: @{bot}",
         tabs: {
             applications: "Arizalar",
             shops: "Bizneslar",
@@ -611,7 +619,7 @@ export const staffUz = {
         live: "Ishlayapti",
         off: "O'chirilgan",
         noApplications: "Yangi arizalar yo'q",
-        noApplicationsText: "Ariza kelganda Zumda | Business xabar beradi.",
+        noApplicationsText: "Ariza kelganda Zumda | Platforma xabar beradi.",
         noShops: "Bu ro'yxat bo'sh",
         owner: "Egasi",
         ownerUnknown: "Ism hali noma'lum",

@@ -3,8 +3,8 @@
 #
 #   scripts/check-access.sh
 #
-# Reads CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, BUSINESS_BOT_TOKEN, COURIER_BOT_TOKEN and
-# PLATFORM_ADMIN_IDS from the environment (Claude's cloud environment, or your shell). It never
+# Reads CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, PLATFORM_BOT_TOKEN, BUSINESS_BOT_TOKEN, COURIER_BOT_TOKEN,
+# ADMIN_BOT_TOKEN and PLATFORM_ADMIN_IDS from the environment (Claude's cloud environment, or your shell). It never
 # prints their values: only OK / FAIL per check and what to do about a FAIL.
 # Steps to create the keys: docs/launch-checklist.md.
 set -uo pipefail
@@ -36,7 +36,7 @@ cf_error() { jq -r '[.errors[]?.message] | join("; ") | if . == "" then "unknown
 
 check_variables() {
     local missing=0
-    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN COURIER_BOT_TOKEN BUSINESS_BOT_TOKEN PLATFORM_ADMIN_IDS; do
+    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN COURIER_BOT_TOKEN BUSINESS_BOT_TOKEN ADMIN_BOT_TOKEN PLATFORM_ADMIN_IDS; do
         if [[ -n "${!name:-}" ]]; then
             ok "variable ${name} is set"
         else
@@ -147,6 +147,8 @@ if check_variables; then
     check_bot "BUSINESS_BOT_TOKEN" "$BUSINESS_BOT_TOKEN" "$BUSINESS_BOT"
     check_bot_management
     check_bot "COURIER_BOT_TOKEN" "$COURIER_BOT_TOKEN" "$COURIER_BOT"
+    # Zumda | Platforma: its username is the owner's choice, any answering bot will do.
+    check_bot "ADMIN_BOT_TOKEN" "$ADMIN_BOT_TOKEN" ""
 fi
 
 if ((failures > 0)); then

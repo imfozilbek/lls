@@ -80,3 +80,35 @@ test("a login Telegram did not sign, for another bot, or cancelled is refused", 
     // One business: straight into it.
     await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
 })
+
+test("«Platforma» in a browser: its own Telegram Login, admins only, apart from Business", async ({
+    page,
+}) => {
+    const next = { answer: { user: PEOPLE.foodOwner } as LoginAnswer }
+    await page.route("https://telegram.org/**", (route) =>
+        route.fulfill({ status: 200, contentType: "text/javascript", body: "" }),
+    )
+    await stubTelegramLogin(page, () => next.answer)
+    await page.goto(`${APP_URL}/?mode=admin`)
+    await expect(page.getByRole("heading", { name: "Zumda | Platforma" })).toBeVisible()
+
+    // An owner may sign in to Zumda | Platforma, but «Platforma» stays closed to them.
+    await signInButton(page).click()
+    await expect(page.getByText("Bu bo'lim faqat Zumda jamoasi uchun")).toBeVisible()
+    await page.evaluate(() => window.localStorage.clear())
+
+    next.answer = { user: PEOPLE.admin }
+    await page.reload()
+    await signInButton(page).click()
+    await expect(page.getByRole("heading", { name: "Platforma" })).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Arizalar" })).toBeVisible()
+    // The sign-in survives a reload and is not one of Zumda | Business.
+    await page.reload()
+    await expect(page.getByRole("tab", { name: "Arizalar" })).toBeVisible()
+    await page.goto(`${APP_URL}/?mode=business`)
+    await expect(page.getByRole("heading", { name: "Zumda Business" })).toBeVisible()
+
+    await page.goto(`${APP_URL}/?mode=admin`)
+    await page.getByRole("button", { name: "Chiqish" }).click()
+    await expect(page.getByRole("heading", { name: "Zumda | Platforma" })).toBeVisible()
+})

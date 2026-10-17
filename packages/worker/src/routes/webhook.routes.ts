@@ -19,6 +19,7 @@ import {
 } from "../telegram/updates.js"
 import { sendWelcome, welcomePictureUrl, welcomeVideo } from "../telegram/welcome.js"
 
+import { handleAdminMessage } from "./admin-bot.js"
 import { handleBusinessMessage, handleReviewCallback } from "./business-bot.js"
 import { handleCourierBotCallback, handleCourierBotMessage } from "./courier-bot.js"
 
@@ -323,7 +324,10 @@ export const webhookRoutes = new Hono<AppEnv>()
         return c.json({ ok: true })
     })
 
-    /** The Zumda Business bot: owners, applications, admins' approvals, bots it manages. */
+    /**
+     * The Zumda Business bot: owners, applications, bots it manages; the approval cards admins got
+     * from it before Zumda | Platforma, or when Zumda | Platforma could not reach them.
+     */
     .post("/business", async (c) => {
         const secret = c.req.header(SECRET_HEADER) ?? ""
         if (!timingSafeEqual(secret, c.env.BUSINESS_WEBHOOK_SECRET)) {
@@ -345,6 +349,28 @@ export const webhookRoutes = new Hono<AppEnv>()
         const managed = update?.managed_bot
         if (managed) {
             await handleSafely(() => handleManagedBot(services, managed, origin))
+        }
+        return c.json({ ok: true })
+    })
+
+    /** Zumda | Platforma: the platform admins' bot; its cards' «Tasdiqlash» / «Rad etish». */
+    .post("/admin", async (c) => {
+        const secret = c.req.header(SECRET_HEADER) ?? ""
+        if (!timingSafeEqual(secret, c.env.ADMIN_WEBHOOK_SECRET)) {
+            return c.json({ ok: false }, 401)
+        }
+        const services = c.get("services")
+        const update = await readUpdate(c.req.raw)
+        const message = update?.message
+        if (message) {
+            await handleSafely(() => handleAdminMessage(services, message))
+        }
+        const callback = update?.callback_query
+        if (callback) {
+            const origin = new URL(c.req.url).origin
+            await handleSafely(() =>
+                handleReviewCallback(services, services.env.ADMIN_BOT_TOKEN, callback, origin),
+            )
         }
         return c.json({ ok: true })
     })

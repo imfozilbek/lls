@@ -18,6 +18,7 @@ import { WorkingHours, demoTemplate, searchText } from "@zumda/core"
 import { encryptSecret } from "../src/crypto.js"
 
 import {
+    DEV_ADMIN_BOT,
     DEV_ADMIN_ID,
     DEV_BUSINESS_BOT,
     DEV_COURIER,
@@ -99,6 +100,9 @@ function defaultDevVars(): Record<string, string> {
         BUSINESS_BOT_TOKEN: DEV_BUSINESS_BOT.token,
         BUSINESS_WEBHOOK_SECRET: DEV_BUSINESS_BOT.webhookSecret,
         BUSINESS_SESSION_SECRET: "dev-business-session-secret",
+        ADMIN_BOT_TOKEN: DEV_ADMIN_BOT.token,
+        ADMIN_WEBHOOK_SECRET: DEV_ADMIN_BOT.webhookSecret,
+        ADMIN_SESSION_SECRET: "dev-admin-session-secret",
     }
 }
 

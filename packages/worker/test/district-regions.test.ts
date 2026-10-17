@@ -95,7 +95,7 @@ describe("viloyats and the two districts of Yakkabog'", () => {
     })
 
     it("«Tumanlar» needs the viloyat of a new district and shows it", async () => {
-        const platform = client.as(ADMIN, { businessBot: true })
+        const platform = client.as(ADMIN, { adminBot: true })
         const body = { name: "Qarshi", center: { latitude: 38.86, longitude: 65.79 }, radiusKm: 20 }
         const missing = await platform("/api/admin/districts", { method: "PUT", json: body })
         expect(missing.status).toBe(400)

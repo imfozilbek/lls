@@ -1,8 +1,8 @@
 /**
  * The Zumda Business bot (webhook `/tg/business`): it only notifies. `/start` and any other
- * message open «Mening bizneslarim»; platform admins approve applications with the card's buttons
- * and do everything else in «Platforma» (owner's decision: bots notify, the Mini App acts). The
- * one answer it takes is the owner's phone, with the button of «Raqam so'rash».
+ * message open «Mening bizneslarim» (owner's decision: bots notify, the Mini App acts). The one
+ * answer it takes is the owner's phone, with the button of «Raqam so'rash». Platform admins work
+ * in Zumda | Platforma; an approval card that reached them here still works.
  */
 import { ConflictError, DomainError, languageFromTelegram } from "@zumda/core"
 
@@ -20,7 +20,8 @@ import type { Callback, IncomingMessage } from "../telegram/updates.js"
 
 /**
  * An admin's «Tasdiqlash / Rad etish» on an application card. `token` is the bot the card came
- * from: Zumda Business, or the customers' Zumda bot for cards sent before Zumda Business existed.
+ * from: Zumda | Platforma; Zumda Business for cards sent before it (or when it could not reach
+ * the admin); the customers' Zumda bot for cards sent before Zumda Business existed.
  */
 export async function handleReviewCallback(
     services: Services,

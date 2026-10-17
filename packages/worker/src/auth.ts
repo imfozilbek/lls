@@ -13,11 +13,14 @@ import { bearerOf, readSession } from "./web-session.js"
 
 import type { AppEnv, AuthContext, ViewerRole } from "./env.js"
 import type { Services } from "./services.js"
-import type { Business } from "@zumda/core"
+import type { Business, TelegramUser } from "@zumda/core"
 import type { Context } from "hono"
 
 export const INIT_DATA_HEADER = "X-Telegram-Init-Data"
-/** `Bearer <session>`: Zumda | Business in a browser (business.zumda.shop), after the widget. */
+/**
+ * `Bearer <session>`: Zumda | Business in a browser (business.zumda.shop), or with
+ * `X-Bot: admin` «Platforma» in a browser (platform.zumda.shop), after Telegram Login.
+ */
 export const AUTHORIZATION_HEADER = "Authorization"
 export const SHOP_HEADER = "X-Shop"
 /** `marketplace`: a shop opened from the Zumda showcase, inside the Zumda bot. */
@@ -26,10 +29,12 @@ export const VIA_MARKETPLACE = "marketplace"
 /**
  * `courier`: the Zumda courier bot opened the app (the courier's screen across their shops).
  * `business`: the Zumda Business bot opened it («Mening bizneslarim», and an owner's own shop).
+ * `admin`: the Zumda | Platforma bot opened it («Platforma», the platform admins' app).
  */
 export const BOT_HEADER = "X-Bot"
 export const BOT_COURIER = "courier"
 export const BOT_BUSINESS = "business"
+export const BOT_ADMIN = "admin"
 
 /** Which bot opened the app, so which token must have signed it. */
 type Entry = "shop" | typeof VIA_MARKETPLACE | typeof BOT_BUSINESS
@@ -82,6 +87,8 @@ async function signerOf(
  * - `X-Bot: business`: the Zumda Business bot: «Mening bizneslarim» without `X-Shop`; with it,
  *   only the shop's owner gets in (else 403);
  * - `X-Bot: courier`: the Zumda courier bot (the courier's screen, no shop);
+ * - `X-Bot: admin`: the Zumda | Platforma bot («Platforma», no shop; who is an admin, the
+ *   admin routes decide);
  * - nothing: the Zumda bot (showcase search).
  * The token that verified the signature fixes the order channel, so the client cannot pick it.
  */
@@ -97,6 +104,15 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
         throw unauthorized()
     }
     const services = c.get("services")
+    if (c.req.header(BOT_HEADER) === BOT_ADMIN) {
+        const admin = await verifyInitData(initData, c.env.ADMIN_BOT_TOKEN, services.clock.now())
+        if (!admin) {
+            throw unauthorized()
+        }
+        c.set("auth", adminAuth(c.req.header(SHOP_HEADER), admin.user))
+        await next()
+        return
+    }
     if (c.req.header(BOT_HEADER) === BOT_COURIER) {
         const courier = await verifyInitData(
             initData,
@@ -133,15 +149,39 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
 })
 
 /**
- * Zumda | Business in a browser: the session from the Telegram Login Widget stands for the same
- * person and the same rights as `X-Bot: business` (no shop: «Mening bizneslarim»; with `X-Shop`:
- * that shop's owner only).
+ * «Platforma», from the Zumda | Platforma bot or its browser session: no shop and no order
+ * channel of its own. Whether this person is a platform admin, the admin routes check.
+ */
+function adminAuth(slug: string | undefined, user: TelegramUser): AuthContext {
+    if (slug) {
+        throw new ApiError(400, "ADMIN_NO_SHOP", "Zumda | Platforma opens no shop")
+    }
+    return {
+        user,
+        business: null,
+        channel: OrderChannel.SHOP_BOT,
+        scope: TRUSTED_SCOPE,
+        role: "admin",
+    }
+}
+
+/**
+ * A browser session from Telegram Login. Zumda | Business's stands for the same person and the
+ * same rights as `X-Bot: business` (no shop: «Mening bizneslarim»; with `X-Shop`: that shop's
+ * owner only); with `X-Bot: admin` only a «Platforma» session counts, signed by its own secret,
+ * so neither opens the other.
  */
 async function authenticateSession(c: Context<AppEnv>, token: string): Promise<void> {
     const services = c.get("services")
-    const user = await readSession(token, c.env.BUSINESS_SESSION_SECRET, services.clock.now())
+    const admin = c.req.header(BOT_HEADER) === BOT_ADMIN
+    const secret = admin ? c.env.ADMIN_SESSION_SECRET : c.env.BUSINESS_SESSION_SECRET
+    const user = await readSession(token, secret, services.clock.now())
     if (!user) {
         throw unauthorized()
+    }
+    if (admin) {
+        c.set("auth", adminAuth(c.req.header(SHOP_HEADER), user))
+        return
     }
     const slug = c.req.header(SHOP_HEADER)
     const business = slug ? await services.businesses.findBySlug(slug) : null

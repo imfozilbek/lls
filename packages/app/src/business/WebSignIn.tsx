@@ -6,7 +6,7 @@ import { haptic } from "../lib/telegram.js"
 import { Button } from "../ui/primitives.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
-import type { WebSession } from "../lib/api.js"
+import type { WebBot, WebSession } from "../lib/api.js"
 
 /** Telegram Login (OpenID Connect): Telegram's own window confirms who signs in. */
 const LOGIN_SRC = "https://oauth.telegram.org/js/telegram-login.js?6"
@@ -53,13 +53,19 @@ interface LoginSetup {
 }
 
 /**
- * business.zumda.shop in a browser: one Telegram button. Telegram's window confirms the person;
- * the Worker checks Telegram's signed `id_token` and gives a 30-day session.
+ * business.zumda.shop (or platform.zumda.shop: `bot` "admin") in a browser: one Telegram button.
+ * Telegram's window confirms the person; the Worker checks Telegram's signed `id_token` and gives
+ * a 30-day session.
  */
 export function WebSignIn({
     onSignedIn,
+    bot = "business",
+    copy,
 }: {
     onSignedIn(session: WebSession): void
+    bot?: WebBot
+    /** The page's own title and line («Platforma»); Zumda | Business's by default. */
+    copy?: { title: string; text: string }
 }): React.JSX.Element {
     const t = useT()
     const [setup, setSetup] = useState<LoginSetup | null>(null)
@@ -70,7 +76,7 @@ export function WebSignIn({
 
     const prepare = async (): Promise<LoginSetup | null> => {
         try {
-            const [login] = await Promise.all([api.business.login(), loadLibrary()])
+            const [login] = await Promise.all([api.web.login(bot), loadLibrary()])
             const next = { ...login, at: Date.now() }
             setSetup(next)
             return next
@@ -95,7 +101,7 @@ export function WebSignIn({
             return
         }
         try {
-            const session = await api.business.signIn(result.id_token)
+            const session = await api.web.signIn(bot, result.id_token)
             haptic.success()
             done.current(session)
         } catch (caught) {
@@ -130,11 +136,12 @@ export function WebSignIn({
     }
 
     return (
-        <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
-            <div className="flex animate-rise flex-col items-center text-center">
-                <ZumdaMark size={72} />
-                <h1 className="mt-6 text-balance text-3xl font-bold">{t.web.title}</h1>
-                <p className="mt-3 max-w-[32ch] text-tg-hint">{t.web.text}</p>
+        <SignInPage
+            title={copy?.title ?? t.web.title}
+            text={copy?.text ?? t.web.text}
+            hint={t.web.hint}
+            error={error}
+            button={
                 <Button
                     size="lg"
                     className="mt-8 w-full max-w-xs"
@@ -146,12 +153,38 @@ export function WebSignIn({
                 >
                     {t.web.signIn}
                 </Button>
+            }
+        />
+    )
+}
+
+/** The page around the one button: the mark, what this app is, a failed sign-in's reason. */
+function SignInPage({
+    title,
+    text,
+    hint,
+    error,
+    button,
+}: {
+    title: string
+    text: string
+    hint: string
+    error: string | null
+    button: React.ReactNode
+}): React.JSX.Element {
+    return (
+        <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-6 py-12">
+            <div className="flex animate-rise flex-col items-center text-center">
+                <ZumdaMark size={72} />
+                <h1 className="mt-6 text-balance text-3xl font-bold">{title}</h1>
+                <p className="mt-3 max-w-[32ch] text-tg-hint">{text}</p>
+                {button}
                 {error ? (
                     <p className="mt-4 text-sm font-medium text-tg-destructive" role="alert">
                         {error}
                     </p>
                 ) : null}
-                <p className="mt-10 text-sm text-tg-hint">{t.web.hint}</p>
+                <p className="mt-10 text-sm text-tg-hint">{hint}</p>
             </div>
         </main>
     )

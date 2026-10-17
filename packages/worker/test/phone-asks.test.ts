@@ -41,7 +41,7 @@ describe("«Raqam so'rash»: one button in the role's bot, once a day", () => {
     let food: { id: string; slug: string }
     // Signed at the test's own time: a day later the admin opens «Platforma» again.
     const admin = (): ReturnType<TestClient["as"]> =>
-        client.as(ADMIN, { businessBot: true, authDate: new Date(now) })
+        client.as(ADMIN, { adminBot: true, authDate: new Date(now) })
     const counts = async (): Promise<Count[]> =>
         (await json<{ data: Count[] }>(await admin()("/api/admin/phone-asks"))).data
     const press = async (): Promise<unknown> =>

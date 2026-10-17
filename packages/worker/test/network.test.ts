@@ -69,9 +69,9 @@ describe("district network", () => {
     const courierApp = (user: object): ReturnType<TestClient["as"]> =>
         client.as(user, { courierBot: true })
 
-    /** «Platforma» in Zumda | Business: what admins did with bot commands. */
+    /** «Platforma» in Zumda | Platforma: what admins did with bot commands. */
     const platform = (from: object = ADMIN): ReturnType<TestClient["as"]> =>
-        client.as(from, { businessBot: true })
+        client.as(from, { adminBot: true })
 
     async function setDistrict(body: object, from: object = ADMIN): Promise<Response> {
         return platform(from)("/api/admin/districts", { method: "PUT", json: body })
@@ -372,8 +372,9 @@ describe("district network", () => {
         expect(stats.data[0]).toMatchObject({ name: "Guliston", waiting: 1 })
         const report = client.telegram.sent.filter((m) => m.chatId === ADMIN.id)
         const late = report.find((m) => m.html.includes(`#${order.number}`))
-        expect(late?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toContain(
-            "admin=districts",
+        expect(late?.token).toBe(env.ADMIN_BOT_TOKEN)
+        expect(late?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
+            "https://platform.zumda.test/?mode=admin&admin=districts",
         )
         expect(
             client.telegram.sent.some(

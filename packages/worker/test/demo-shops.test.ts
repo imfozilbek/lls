@@ -35,7 +35,7 @@ describe("demo shops («Namuna»): made in «Platforma», never real", () => {
     let client: TestClient
     let shop: { id: string; slug: string }
 
-    const admin = (): ReturnType<TestClient["as"]> => client.as(ADMIN, { businessBot: true })
+    const admin = (): ReturnType<TestClient["as"]> => client.as(ADMIN, { adminBot: true })
     const customer = (): ReturnType<TestClient["as"]> =>
         client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: shop.slug })
     const makeDemo = (template = "food"): Promise<Response> =>

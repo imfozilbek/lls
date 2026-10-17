@@ -29,14 +29,16 @@ readonly DB_PLACEHOLDER="00000000-0000-0000-0000-000000000000"
 # Zumda's own addresses. The Worker has no workers.dev address (wrangler.jsonc).
 readonly DOMAIN="zumda.shop"
 readonly API_HOST="api.${DOMAIN}"
-# One Mini App, three addresses: customers, businesses (Mini App and web), couriers.
+# One Mini App, four addresses: customers, businesses (Mini App and web), couriers, platform
+# admins («Platforma», Mini App and web).
 readonly APP_HOST="app.${DOMAIN}"
 readonly BUSINESS_HOST="business.${DOMAIN}"
 readonly COURIER_HOST="delivery.${DOMAIN}"
+readonly ADMIN_HOST="platform.${DOMAIN}"
 # R2 serves these itself: no Worker request per photo or map piece (the free plan counts them).
 readonly MEDIA_HOST="media.${DOMAIN}"
 readonly MAP_HOST="map.${DOMAIN}"
-readonly APP_HOSTS=("$APP_HOST" "$BUSINESS_HOST" "$COURIER_HOST")
+readonly APP_HOSTS=("$APP_HOST" "$BUSINESS_HOST" "$COURIER_HOST" "$ADMIN_HOST")
 readonly WORKER_URL="https://${API_HOST}"
 # The Zumda | Business bot: its Login Widget signs owners in on business.zumda.shop (its domain is
 # set by hand once in @BotFather: /setdomain).
@@ -46,6 +48,7 @@ readonly SHOP_BOT="zumdashop_bot"
 readonly APP_ORIGIN="https://${APP_HOST}"
 readonly BUSINESS_ORIGIN="https://${BUSINESS_HOST}"
 readonly COURIER_ORIGIN="https://${COURIER_HOST}"
+readonly ADMIN_ORIGIN="https://${ADMIN_HOST}"
 readonly CF_ROOT="https://api.cloudflare.com/client/v4"
 readonly CF_API="${CF_ROOT}/accounts/${CLOUDFLARE_ACCOUNT_ID}"
 
@@ -216,8 +219,8 @@ ensure_app_domain() {
 media_cors() {
     log "R2 '${BUCKET}': CORS"
     cf_call PUT "/r2/buckets/${BUCKET}/cors" "$(jq -n --arg a "$APP_ORIGIN" --arg b "$BUSINESS_ORIGIN" \
-        --arg c "$COURIER_ORIGIN" \
-        '{rules: [{allowed: {origins: [$a, $b, $c], methods: ["GET", "HEAD"],
+        --arg c "$COURIER_ORIGIN" --arg d "$ADMIN_ORIGIN" \
+        '{rules: [{allowed: {origins: [$a, $b, $c, $d], methods: ["GET", "HEAD"],
           headers: ["Range", "If-None-Match"]},
           exposeHeaders: ["ETag", "Content-Range", "Content-Length", "Accept-Ranges"],
           maxAgeSeconds: 86400}]}')"
@@ -348,10 +351,15 @@ deploy_worker() {
     BUSINESS_WEBHOOK_SECRET="$(webhook_secret zumda-business-webhook "$BUSINESS_BOT_TOKEN")"
     # Signs the browser sessions of business.zumda.shop; a new bot token signs everyone out.
     BUSINESS_SESSION_SECRET="$(webhook_secret zumda-business-session "$BUSINESS_BOT_TOKEN")"
+    ADMIN_WEBHOOK_SECRET="$(webhook_secret zumda-admin-webhook "$ADMIN_BOT_TOKEN")"
+    # Signs the browser sessions of platform.zumda.shop: «Platforma» only.
+    ADMIN_SESSION_SECRET="$(webhook_secret zumda-admin-session "$ADMIN_BOT_TOKEN")"
     echo "::add-mask::${PLATFORM_WEBHOOK_SECRET}"
     echo "::add-mask::${COURIER_WEBHOOK_SECRET}"
     echo "::add-mask::${BUSINESS_WEBHOOK_SECRET}"
     echo "::add-mask::${BUSINESS_SESSION_SECRET}"
+    echo "::add-mask::${ADMIN_WEBHOOK_SECRET}"
+    echo "::add-mask::${ADMIN_SESSION_SECRET}"
 
     SECRETS_FILE="$(mktemp)"
     chmod 600 "$SECRETS_FILE"
@@ -361,10 +369,13 @@ deploy_worker() {
         --arg hook "$PLATFORM_WEBHOOK_SECRET" --arg courier "$COURIER_BOT_TOKEN" \
         --arg courier_hook "$COURIER_WEBHOOK_SECRET" --arg business "$BUSINESS_BOT_TOKEN" \
         --arg business_hook "$BUSINESS_WEBHOOK_SECRET" --arg session "$BUSINESS_SESSION_SECRET" \
+        --arg admin "$ADMIN_BOT_TOKEN" --arg admin_hook "$ADMIN_WEBHOOK_SECRET" \
+        --arg admin_session "$ADMIN_SESSION_SECRET" \
         '{PLATFORM_BOT_TOKEN: $bot, PLATFORM_ADMIN_IDS: $admins, PLATFORM_WEBHOOK_SECRET: $hook,
           COURIER_BOT_TOKEN: $courier, COURIER_WEBHOOK_SECRET: $courier_hook,
           BUSINESS_BOT_TOKEN: $business, BUSINESS_WEBHOOK_SECRET: $business_hook,
-          BUSINESS_SESSION_SECRET: $session}' \
+          BUSINESS_SESSION_SECRET: $session, ADMIN_BOT_TOKEN: $admin,
+          ADMIN_WEBHOOK_SECRET: $admin_hook, ADMIN_SESSION_SECRET: $admin_session}' \
         >"$secrets_file"
     if needs_encryption_key; then
         encryption_key
@@ -381,14 +392,18 @@ deploy_worker() {
     # zumda.shop answers with a redirect to the customers' bot until the landing page exists.
     wrangler deploy --domain "$API_HOST" --domain "$DOMAIN" \
         --var "APP_ORIGIN:${APP_ORIGIN}" --var "BUSINESS_APP_ORIGIN:${BUSINESS_ORIGIN}" \
-        --var "COURIER_APP_ORIGIN:${COURIER_ORIGIN}" \
+        --var "COURIER_APP_ORIGIN:${COURIER_ORIGIN}" --var "ADMIN_APP_ORIGIN:${ADMIN_ORIGIN}" \
         --secrets-file "$secrets_file"
 }
 
 deploy_app() {
     log "Mini App"
+    # Zumda | Platforma's username is the owner's choice in @BotFather: asked, never written here.
+    local admin_bot
+    admin_bot="$(curl -sS "https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/getMe" | jq -r '.result.username // empty')"
+    [[ -n "$admin_bot" ]] || fail "ADMIN_BOT_TOKEN does not answer getMe: check the secret."
     local vars=("VITE_API_URL=${WORKER_URL}" "VITE_BUSINESS_BOT=${BUSINESS_BOT}"
-        "VITE_SHOP_BOT=${SHOP_BOT}")
+        "VITE_SHOP_BOT=${SHOP_BOT}" "VITE_ADMIN_BOT=${admin_bot}")
     # Without them (R2's addresses not live yet) the app reads photos and the map via the Worker.
     if [[ -n "${MEDIA_URL:-}" ]]; then vars+=("VITE_MEDIA_URL=${MEDIA_URL}"); fi
     if [[ -n "${MAP_URL:-}" ]]; then vars+=("VITE_MAP_URL=${MAP_URL}"); fi
@@ -440,11 +455,24 @@ TEXT
 readonly BUSINESS_DESCRIPTION
 readonly BUSINESS_SHORT_DESCRIPTION="Biznesingiz uchun o'z buyurtma boti: yarating va boshqaring. Menyu, buyurtmalar, pul, kuryerlar."
 readonly COURIER_SHORT_DESCRIPTION="Zumda kuryerlari uchun: do'kon, oshxona va xizmatlar buyurtmalarini yetkazing."
+read -r -d '' ADMIN_DESCRIPTION <<'TEXT' || true
+Zumda | Platforma: Zumda jamoasi uchun.
+
+📋 Arizalar: tasdiqlash yoki rad etish
+🏪 Bizneslar, vitrina va bot
+🗺 Tumanlar va yetkazish tarmog'i
+🚨 Ogohlantirishlar shu yerga keladi
+
+Buyurtma berish uchun: @zumdashop_bot
+TEXT
+readonly ADMIN_DESCRIPTION
+readonly ADMIN_SHORT_DESCRIPTION="Zumda jamoasi uchun: arizalar, bizneslar, tumanlar va ogohlantirishlar."
 
 # The bots' names, the owner's choice (October 2026).
 readonly PLATFORM_NAME="Zumda | Shop"
 readonly BUSINESS_NAME="Zumda | Business"
 readonly COURIER_NAME="Zumda | Kuryer"
+readonly ADMIN_NAME="Zumda | Platforma"
 
 # `set_profile <token> <name> <description> <short description>`: setMyName only when it differs
 # (Telegram limits how often a name may change).
@@ -511,8 +539,8 @@ connect_platform_bot() {
     echo "webhook, menu button, name, descriptions, commands and avatar set"
 }
 
-# Zumda Business: owners' «Mening bizneslarim», applications, admins' «Platforma». It creates and
-# manages the shops' bots, so it hears `managed_bot`.
+# Zumda Business: owners' «Mening bizneslarim» and applications. It creates and manages the
+# shops' bots, so it hears `managed_bot`.
 connect_business_bot() {
     log "Business bot"
     telegram "$BUSINESS_BOT_TOKEN" setWebhook \
@@ -525,6 +553,22 @@ connect_business_bot() {
     telegram "$BUSINESS_BOT_TOKEN" setMyCommands --data-urlencode "commands=${START_COMMAND}"
     clear_admin_commands "$BUSINESS_BOT_TOKEN"
     set_avatar "$BUSINESS_BOT_TOKEN" business zumda-business-avatar.jpg
+    echo "webhook, menu button, name, descriptions, commands and avatar set"
+}
+
+# Zumda | Platforma: the platform admins' own bot; its menu button opens «Platforma», and every
+# message to the admins comes from it.
+connect_admin_bot() {
+    log "Admin bot"
+    telegram "$ADMIN_BOT_TOKEN" setWebhook \
+        --data-urlencode "url=${WORKER_URL}/tg/admin" \
+        --data-urlencode "secret_token=${ADMIN_WEBHOOK_SECRET}" \
+        --data-urlencode 'allowed_updates=["message","callback_query"]'
+    telegram "$ADMIN_BOT_TOKEN" setChatMenuButton --data-urlencode "menu_button=$(jq -nc --arg url "${ADMIN_ORIGIN}/" \
+        '{type: "web_app", text: "Platforma", web_app: {url: $url}}')"
+    set_profile "$ADMIN_BOT_TOKEN" "$ADMIN_NAME" "$ADMIN_DESCRIPTION" "$ADMIN_SHORT_DESCRIPTION"
+    telegram "$ADMIN_BOT_TOKEN" setMyCommands --data-urlencode "commands=${START_COMMAND}"
+    set_avatar "$ADMIN_BOT_TOKEN" platforma zumda-platforma-avatar.jpg
     echo "webhook, menu button, name, descriptions, commands and avatar set"
 }
 
@@ -563,16 +607,16 @@ smoke_test() {
         wait_for "https://${host}/"
     done
     echo "Worker:   ${WORKER_URL}"
-    echo "Mini App: ${APP_ORIGIN}, ${BUSINESS_ORIGIN}, ${COURIER_ORIGIN}"
+    echo "Mini App: ${APP_ORIGIN}, ${BUSINESS_ORIGIN}, ${COURIER_ORIGIN}, ${ADMIN_ORIGIN}"
     {
         echo "### Deployed"
         echo "- Worker: ${WORKER_URL}"
-        echo "- Mini App: ${APP_ORIGIN}, ${BUSINESS_ORIGIN}, ${COURIER_ORIGIN}"
+        echo "- Mini App: ${APP_ORIGIN}, ${BUSINESS_ORIGIN}, ${COURIER_ORIGIN}, ${ADMIN_ORIGIN}"
     } >>"${GITHUB_STEP_SUMMARY:-/dev/null}"
 }
 
 main() {
-    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN PLATFORM_ADMIN_IDS COURIER_BOT_TOKEN BUSINESS_BOT_TOKEN; do
+    for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID PLATFORM_BOT_TOKEN PLATFORM_ADMIN_IDS COURIER_BOT_TOKEN BUSINESS_BOT_TOKEN ADMIN_BOT_TOKEN; do
         [[ -n "${!name:-}" ]] || fail "Secret ${name} is not set."
     done
     ensure_d1
@@ -591,6 +635,7 @@ main() {
     smoke_test
     connect_platform_bot
     connect_business_bot
+    connect_admin_bot
     connect_courier_bot
 }
 

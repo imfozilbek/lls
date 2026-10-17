@@ -1,6 +1,7 @@
 /**
- * «Platforma»: what platform admins did with bot commands, now in Zumda | Business (Mini App or
- * business.zumda.shop). Only a person in `PLATFORM_ADMIN_IDS`; the use cases check it again.
+ * «Platforma»: what platform admins did with bot commands, now in the Mini App of their own bot,
+ * Zumda | Platforma (or platform.zumda.shop in a browser). Only a person in `PLATFORM_ADMIN_IDS`;
+ * the use cases check it again.
  */
 import { zValidator } from "@hono/zod-validator"
 import { PLATFORM_SHOPS_LIMIT, toShopOwnerDTO } from "@zumda/core"
@@ -70,14 +71,24 @@ export function isPlatformAdmin(services: Services, telegramId: number): boolean
     return platformAdminIds(services.env).includes(telegramId)
 }
 
+/**
+ * «Platforma»: only from the Zumda | Platforma bot (`X-Bot: admin`, or its browser session), and
+ * only for a platform admin. Zumda | Business no longer opens it.
+ */
 export const adminRoutes = new Hono<AppEnv>()
     .use(async (c, next) => {
         const { business, role, user } = c.get("auth")
-        if (business || role !== "business" || !isPlatformAdmin(c.get("services"), user.id)) {
+        if (business || role !== "admin" || !isPlatformAdmin(c.get("services"), user.id)) {
             throw new ApiError(403, "ADMIN_ONLY", "Only a platform admin can open this")
         }
         await next()
     })
+
+    /**
+     * «Platforma»'s door: the app asks once on opening, so someone who is not an admin sees one
+     * clear screen instead of an error in every tab. No D1 read: the guard above decided.
+     */
+    .get("/me", (c) => c.json({ admin: true }))
 
     /** «Arizalar» (pending), «Bizneslar» (active), turned-off shops (disabled). */
     .get("/shops", zValidator("query", adminShopsQuery, onInvalid), async (c) => {

@@ -242,8 +242,9 @@ describe("Zumda Business bot: a failed connection on approval", () => {
         const warning = client.telegram.sent.at(-1)
         expect(warning?.chatId).toBe(ADMIN.id)
         expect(warning?.html).toContain("Botni qayta ulash")
+        expect(warning?.token).toBe(env.ADMIN_BOT_TOKEN)
         expect(warning?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
-            `https://business.zumda.test/?mode=business&admin=shop_${shop.id}`,
+            `https://platform.zumda.test/?mode=admin&admin=shop_${shop.id}`,
         )
 
         // The command is gone: the bot points to the app and changes nothing.
@@ -255,7 +256,7 @@ describe("Zumda Business bot: a failed connection on approval", () => {
         expect(client.telegram.sent.at(-1)?.html).toContain("ilovada")
 
         const reconnect = (user: object): Promise<Response> =>
-            client.as(user, { businessBot: true })(`/api/admin/shops/${shop.id}/reconnect`, {
+            client.as(user, { adminBot: true })(`/api/admin/shops/${shop.id}/reconnect`, {
                 method: "POST",
             })
         expect((await reconnect(STRANGER)).status).toBe(403)

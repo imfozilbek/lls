@@ -58,6 +58,9 @@ export function readableText(channels: string): string {
 /** The product's name: the showcase, the courier screen, the poster footer. */
 export const ZUMDA_NAME = "Zumda"
 
+/** Zumda | Platforma, the admins' own bot: the deploy passes its username (`VITE_ADMIN_BOT`). */
+export const ZUMDA_ADMIN_BOT: string = import.meta.env.VITE_ADMIN_BOT ?? "zumdashop_platforma_bot"
+
 /** Zumda's own color: the showcase and onboarding, where no shop leads; a new shop's color. */
 export const ZUMDA_BRAND_COLOR = "#15803d"
 

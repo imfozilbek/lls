@@ -244,6 +244,7 @@ describe("a bot created from Zumda Business (Managed Bots)", () => {
         await managedBotUpdate(client, STRANGER, NEW_MANAGED_TOKEN)
         const alert = client.telegram.sent.at(-1)
         expect(alert?.chatId).toBe(ADMIN.id)
+        expect(alert?.token).toBe(env.ADMIN_BOT_TOKEN)
         expect(alert?.html).toContain("egasi o'zgardi")
         expect(alert?.html).toContain(`tg://user?id=${STRANGER.id}`)
         const owner = await env.DB.prepare("SELECT owner_telegram_id FROM businesses WHERE id = ?")
@@ -283,7 +284,7 @@ describe("a bot created from Zumda Business (Managed Bots)", () => {
 
         const third = "555000:managed-bot-token-third-in-tests-xxxxx" // secret-scan: fake
         client.telegram.managedTokens.set(MANAGED_BOT.id, third)
-        const reconnected = await client.as(ADMIN, { businessBot: true })(
+        const reconnected = await client.as(ADMIN, { adminBot: true })(
             `/api/admin/shops/${shop.id}/reconnect`,
             { method: "POST" },
         )

@@ -13,6 +13,9 @@ declare global {
             BUSINESS_BOT_TOKEN: string
             BUSINESS_WEBHOOK_SECRET: string
             BUSINESS_SESSION_SECRET: string
+            ADMIN_BOT_TOKEN: string
+            ADMIN_WEBHOOK_SECRET: string
+            ADMIN_SESSION_SECRET: string
         }
     }
 }

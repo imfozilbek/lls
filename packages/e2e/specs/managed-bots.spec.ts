@@ -11,7 +11,7 @@ import {
     controlTelegram,
     lastSeq,
     managedBotUpdate,
-    businessChat,
+    adminChat,
     waitForCall,
     waitForMessage,
 } from "../support/telegram.js"
@@ -102,7 +102,7 @@ test("«Bot yaratish»: the bot is created in Telegram's window, no token anywhe
 test("approval connects the created bot like any other", async () => {
     const card = await waitForMessage(PEOPLE.admin.id, "Kamola Somsa")
     const since = await lastSeq()
-    await businessChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
+    await adminChat().press(PEOPLE.admin, card.buttons[0]?.callback_data ?? "")
     await waitForMessage(OWNER.id, "ishga tushdi", since)
     const hook = await waitForCall("setWebhook", managedBotToken(BOT_ID, 1), since)
     expect(hook.body["url"]).toBe(`http://localhost:8787/tg/${BOT_ID}`)

@@ -1,9 +1,8 @@
-import { Language } from "@zumda/core"
-
+import { toAdmin } from "./admins.js"
 import { appKeyboard, platformAppUrl } from "./app-links.js"
 import { TelegramApiError, escapeHtml } from "./gateway.js"
 import { Notifier } from "./notifier.js"
-import { fill, textsFor } from "./texts.js"
+import { fill } from "./texts.js"
 
 import type { Services } from "../services.js"
 import type { ShopOwnerDTO } from "@zumda/core"
@@ -39,14 +38,12 @@ export async function warnBotNotConnected(
     reason: string,
     adminChatId: number,
 ): Promise<void> {
-    const customer = await services.customers.findByTelegramId(adminChatId)
-    const t = textsFor(customer?.language ?? Language.UZ)
-    const warning = fill(t.botNotConnected, {
-        shop: `<b>${escapeHtml(shop.name)}</b>`,
-        reason: escapeHtml(reason),
-    })
-    const url = platformAppUrl(services.env.BUSINESS_APP_ORIGIN, { shopId: shop.id })
-    await services.telegram.sendMessage(services.env.BUSINESS_BOT_TOKEN, adminChatId, warning, {
+    const url = platformAppUrl(services.env.ADMIN_APP_ORIGIN, { shopId: shop.id })
+    await toAdmin(services, adminChatId, (t) => ({
+        text: fill(t.botNotConnected, {
+            shop: `<b>${escapeHtml(shop.name)}</b>`,
+            reason: escapeHtml(reason),
+        }),
         keyboard: appKeyboard(t.openPlatform, url),
-    })
+    }))
 }

@@ -187,9 +187,7 @@ describe("a number saved under the older, looser rules", () => {
         )
         expect(shop.status).toBe(200)
         expect(await json(shop)).toMatchObject({ callPhone: "+99890123456" })
-        const shops = await client.as(ADMIN, { businessBot: true })(
-            "/api/admin/shops?status=active",
-        )
+        const shops = await client.as(ADMIN, { adminBot: true })("/api/admin/shops?status=active")
         expect(shops.status).toBe(200)
     })
 })

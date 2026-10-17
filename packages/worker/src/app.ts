@@ -11,6 +11,7 @@ import {
     VIA_HEADER,
     authenticate,
 } from "./auth.js"
+import { appOrigins } from "./env.js"
 import { toErrorResponse } from "./http/errors.js"
 import { adminRoutes } from "./routes/admin.routes.js"
 import { clientErrorRoutes } from "./routes/client-errors.routes.js"
@@ -29,17 +30,12 @@ import { createServices } from "./services.js"
 import { HttpTelegramGateway, telegramApiBase } from "./telegram/gateway.js"
 import { publishedKeys, telegramOauthBase } from "./telegram-login.js"
 
-import type { AppEnv, Bindings } from "./env.js"
+import type { AppEnv } from "./env.js"
 import type { ServiceDeps, Services } from "./services.js"
 
 /** The bare domain: it sends people to the customers' Zumda bot (the landing page comes later). */
 const ROOT_HOST = "zumda.shop"
 const SHOP_BOT_LINK = "https://t.me/zumdashop_bot"
-
-/** The Mini App's addresses that may call the API: customers, businesses, couriers. */
-function appOrigins(env: Bindings): string[] {
-    return [env.APP_ORIGIN, env.BUSINESS_APP_ORIGIN, env.COURIER_APP_ORIGIN]
-}
 
 export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
     const clock = overrides.clock ?? systemClock
@@ -97,8 +93,10 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
 
     app.get("/health", (c) => c.json({ status: "ok" }))
 
-    // Before `/api` and its initData check: this is where a browser gets its session.
-    app.route("/api/business", webSessionRoutes)
+    // Before `/api` and its initData check: this is where a browser gets its session, from
+    // Zumda | Business or from Zumda | Platforma.
+    app.route("/api/business", webSessionRoutes("business"))
+    app.route("/api/admin-web", webSessionRoutes("admin"))
     // Before `/api` too: a Mini App crash may come before any sign-in.
     app.route("/api/client-errors", clientErrorRoutes)
 

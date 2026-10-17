@@ -11,13 +11,21 @@ export interface Bindings extends Env {
     COURIER_BOT_TOKEN: string
     COURIER_WEBHOOK_SECRET: string
     /**
-     * The Zumda Business bot: owners' «Mening bizneslarim», applications, admins' commands; it
-     * creates and manages the shops' bots (Telegram Managed Bots).
+     * The Zumda Business bot: owners' «Mening bizneslarim» and applications; it creates and
+     * manages the shops' bots (Telegram Managed Bots).
      */
     BUSINESS_BOT_TOKEN: string
     BUSINESS_WEBHOOK_SECRET: string
     /** Signs the web sessions of Zumda | Business (business.zumda.shop in a browser). */
     BUSINESS_SESSION_SECRET: string
+    /**
+     * The Zumda | Platforma bot: the platform admins' own bot. «Platforma» opens from it, and
+     * every message to the admins comes from it (applications, alerts).
+     */
+    ADMIN_BOT_TOKEN: string
+    ADMIN_WEBHOOK_SECRET: string
+    /** Signs the web sessions of «Platforma» (platform.zumda.shop in a browser). */
+    ADMIN_SESSION_SECRET: string
     /** Comma-separated Telegram ids of platform admins. */
     PLATFORM_ADMIN_IDS: string
     /** Local stand only: a fake Bot API on localhost. Never set in production. */
@@ -41,13 +49,17 @@ export interface AuthContext {
     /**
      * The viewer's role: `owner` or `customer` in a shop; `courier` when the Zumda courier bot
      * opened the app (no shop: a courier works for several); `customer` in the showcase;
-     * `business` in Zumda Business before a shop is opened.
+     * `business` in Zumda Business before a shop is opened; `admin` in the Zumda | Platforma bot
+     * (who of them is a platform admin, the admin routes check).
      */
     role: ViewerRole
 }
 
-/** `business`: a person in the Zumda Business bot without a shop open («Mening bizneslarim»). */
-export type ViewerRole = "owner" | "courier" | "customer" | "business"
+/**
+ * `business`: a person in the Zumda Business bot without a shop open («Mening bizneslarim»).
+ * `admin`: a person in the Zumda | Platforma bot.
+ */
+export type ViewerRole = "owner" | "courier" | "customer" | "business" | "admin"
 
 export interface AppEnv {
     Bindings: Bindings
@@ -61,4 +73,9 @@ export function platformAdminIds(env: Bindings): number[] {
     return env.PLATFORM_ADMIN_IDS.split(",")
         .map((id) => Number(id.trim()))
         .filter((id) => Number.isSafeInteger(id) && id > 0)
+}
+
+/** The Mini App's addresses that may call the API: customers, businesses, couriers, admins. */
+export function appOrigins(env: Bindings): string[] {
+    return [env.APP_ORIGIN, env.BUSINESS_APP_ORIGIN, env.COURIER_APP_ORIGIN, env.ADMIN_APP_ORIGIN]
 }

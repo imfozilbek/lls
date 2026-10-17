@@ -96,7 +96,7 @@ test("a new order reaches the owner through Zumda | Business; admins see the bot
         )
         .toBe(true)
     const shops = (await (
-        await apiAs(PEOPLE.admin, "/admin/shops?status=active", { businessBot: true })
+        await apiAs(PEOPLE.admin, "/admin/shops?status=active", { adminBot: true })
     ).json()) as { data: { slug: string; ownerChat: string }[] }
     expect(shops.data.find((s) => s.slug === GROCERY)?.ownerChat).toBe("closed")
 })

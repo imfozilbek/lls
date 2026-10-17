@@ -7,6 +7,8 @@ interface ImportMetaEnv {
     readonly VITE_BUSINESS_BOT?: string
     /** Zumda | Shop's username, for the QR that opens a shop in it (`zumdashop_bot`). */
     readonly VITE_SHOP_BOT?: string
+    /** Zumda | Platforma's username: where «Platforma» is now, for an old button of Business. */
+    readonly VITE_ADMIN_BOT?: string
     /** Public photos straight from R2 (https://media.zumda.shop). Defaults to the Worker's /img. */
     readonly VITE_MEDIA_URL?: string
     /** The map straight from R2 (https://map.zumda.shop). Defaults to the Worker. */

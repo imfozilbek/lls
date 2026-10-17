@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
-import { ZUMDA_BRAND_COLOR, applyBrand } from "../lib/brand.js"
+import { ZUMDA_ADMIN_BOT, ZUMDA_BRAND_COLOR, applyBrand } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
 import { hasLanded, markLanded } from "../lib/landing.js"
 import { useMainAction } from "../lib/main-button.js"
@@ -10,7 +10,7 @@ import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
-import { BotIcon, ChevronIcon, PlusIcon, ShieldIcon, WifiOffIcon } from "../ui/icons.js"
+import { BotIcon, ChevronIcon, PlusIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, PoweredBy, Section, Skeleton } from "../ui/primitives.js"
 import { BottomSpacer } from "../ui/shell.js"
 import { ShopLogo } from "../ui/shop-logo.js"
@@ -99,49 +99,21 @@ function Intro({ onStart }: { onStart(): void }): React.JSX.Element {
     )
 }
 
-/** Platform admins only: «Platforma» above their own businesses. */
-function PlatformRow({ onOpen }: { onOpen(): void }): React.JSX.Element {
-    const t = useT().platform
-    return (
-        <button
-            type="button"
-            onClick={(): void => {
-                haptic.tap()
-                onOpen()
-            }}
-            className="tap mb-6 flex w-full animate-rise items-center gap-3 rounded-tile bg-brand/10 p-3 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
-        >
-            <span className="grid h-12 w-12 place-items-center rounded-control bg-brand text-brand-ink">
-                <ShieldIcon size={24} />
-            </span>
-            <span className="min-w-0 flex-1">
-                <span className="block font-semibold">{t.title}</span>
-                <span className="block truncate text-sm text-tg-subtitle">{t.entryHint}</span>
-            </span>
-            <ChevronIcon size={18} className="text-tg-hint" />
-        </button>
-    )
-}
-
 function Home({
     shops,
     onAdd,
     onOpen,
     onSignOut,
-    onPlatform,
 }: {
     shops: ShopOwnerDTO[]
     onAdd(): void
     onOpen(slug: string): void
     onSignOut?: () => void
-    /** Set for platform admins. */
-    onPlatform?: () => void
 }): React.JSX.Element {
     const web = useT().web
     const t = useT().onboarding
     return (
         <main className="px-4 pt-4">
-            {onPlatform ? <PlatformRow onOpen={onPlatform} /> : null}
             <Section title={t.myShops}>
                 {shops.length === 0 ? (
                     <p className="rounded-tile bg-tg-secondary p-4 text-tg-subtitle">
@@ -188,29 +160,27 @@ function Home({
 export function OnboardingApp({
     onOpen,
     onSignOut,
-    onPlatform,
+    platformMoved = false,
 }: {
     onOpen(slug: string): void
     /** In a browser (business.zumda.shop): sign out of this computer. */
     onSignOut?: () => void
-    /** «Platforma», shown to platform admins only. */
-    onPlatform(): void
+    /** An old «Platforma» button brought the admin here: say where «Platforma» is now. */
+    platformMoved?: boolean
 }): React.JSX.Element {
     const t = useT()
     const [shops, setShops] = useCachedState<ShopOwnerDTO[]>("my-businesses")
-    const [admin, setAdmin] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [wizard, setWizard] = useState(false)
 
     const load = async (): Promise<void> => {
         setError(null)
         try {
-            const [mine, me] = await Promise.all([api.platform.myShops(), api.platform.me()])
-            setAdmin(me.admin)
+            const mine = await api.platform.myShops()
             setShops(mine)
             const only = mine.length === 1 ? mine[0] : undefined
             // Once a session (lib/landing.ts): Back from it, the list stays.
-            if (!hasLanded() && only && !me.admin) {
+            if (!hasLanded() && only && !platformMoved) {
                 markLanded()
                 onOpen(only.slug)
                 return
@@ -232,6 +202,9 @@ export function OnboardingApp({
     }
     useEffect(() => {
         applyBrand(ZUMDA_BRAND_COLOR)
+        if (platformMoved) {
+            toast(fill(t.platform.moved, { bot: ZUMDA_ADMIN_BOT }))
+        }
         void load()
     }, [])
     useRefresh(wizard ? null : load)
@@ -269,7 +242,7 @@ export function OnboardingApp({
             </div>
         )
     }
-    if (shops.length === 0 && !admin) {
+    if (shops.length === 0) {
         return <Intro onStart={(): void => setWizard(true)} />
     }
     return (
@@ -278,7 +251,6 @@ export function OnboardingApp({
             onAdd={(): void => setWizard(true)}
             onOpen={onOpen}
             onSignOut={onSignOut}
-            onPlatform={admin ? onPlatform : undefined}
         />
     )
 }

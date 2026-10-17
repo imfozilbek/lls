@@ -54,14 +54,14 @@ describe("admin alerts", () => {
         slug = (await createActiveShop(client)).slug
     })
 
-    it("a server error reaches the admins through the Zumda bot, once per quiet period", async () => {
+    it("a server error reaches the admins through Zumda | Platforma, once per quiet period", async () => {
         await breakTheShop()
         const as = client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug })
         expect((await as("/api/shop")).status).toBe(500)
         expect((await as("/api/shop")).status).toBe(500)
 
         expect(alerts()).toHaveLength(1)
-        expect(alerts()[0]?.token).toBe(env.BUSINESS_BOT_TOKEN)
+        expect(alerts()[0]?.token).toBe(env.ADMIN_BOT_TOKEN)
         // Where it broke, so the next one is found at once.
         expect(alerts()[0]?.html).toContain("GET /api/shop")
 

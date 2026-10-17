@@ -50,7 +50,7 @@ describe("Zumda showcase", () => {
 
     /** The showcase deal, from «Platforma» in Zumda | Business. */
     async function market(percent: number | null, from: object = ADMIN): Promise<Response> {
-        return client.as(from, { businessBot: true })(`/api/admin/shops/${shopId}/marketplace`, {
+        return client.as(from, { adminBot: true })(`/api/admin/shops/${shopId}/marketplace`, {
             method: "PUT",
             json: { percent },
         })

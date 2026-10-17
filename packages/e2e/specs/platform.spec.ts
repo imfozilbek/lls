@@ -1,21 +1,22 @@
 /**
- * Bots only notify; the work is done in the Mini App (owner's decision). «Platforma» in
- * Zumda | Business does what admins once did with commands; every message opens the app on what
- * it is about; a bot answers any text with the way into the app.
+ * Bots only notify; the work is done in the Mini App (owner's decision). «Platforma», the app of
+ * the admins' own bot Zumda | Platforma, does what admins once did with commands; every message
+ * opens the app on what it is about; a bot answers any text with the way into the app.
  */
 import { expect, test } from "@playwright/test"
 
-import { businessBot, courierBot } from "../stand/config.js"
+import { adminBot, businessBot, courierBot } from "../stand/config.js"
 import { runSql } from "../stand/seed.js"
 import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import {
+    adminChat,
     businessChat,
     lastSeq,
     shopChat,
     waitForCall,
     waitForMessage,
 } from "../support/telegram.js"
-import { appQueryOf, openApp, pickOnMap } from "../support/webapp.js"
+import { appQueryOf, backButtonVisible, openApp, pickOnMap } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -28,22 +29,45 @@ const OWNER_PHONE = "+998905550001"
 test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
-test("only an admin sees «Platforma» in «Mening bizneslarim»", async ({ page }) => {
+test("«Platforma» is its own bot: only an admin gets in, Zumda | Business has none", async ({
+    page,
+}) => {
     const owner = await openApp(page, { user: PEOPLE.foodOwner, businessBot: true })
     // One business: the owner lands right in it; back leads to the list.
     await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
     await owner.back()
     await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
     await expect(page.getByRole("button", { name: /Platforma/ })).toBeHidden()
-    const forbidden = await apiAs(PEOPLE.foodOwner, "/admin/shops?status=pending", {
-        businessBot: true,
-    })
-    expect(forbidden.status).toBe(403)
+    for (const options of [{ adminBot: true }, { businessBot: true }]) {
+        const forbidden = await apiAs(PEOPLE.foodOwner, "/admin/shops?status=pending", options)
+        expect(forbidden.status).toBe(403)
+    }
+    // Not the admin's old door either: Zumda | Business no longer opens «Platforma».
+    const old = await apiAs(PEOPLE.admin, "/admin/shops?status=pending", { businessBot: true })
+    expect(old.status).toBe(403)
 
-    await openApp(page, { user: PEOPLE.admin, businessBot: true })
-    await page.getByRole("button", { name: /Platforma/ }).click()
+    // Someone who is not an admin opens Zumda | Platforma: one clear screen.
+    await openApp(page, { user: PEOPLE.foodOwner, adminBot: true })
+    await expect(page.getByText("Bu bo'lim faqat Zumda jamoasi uchun")).toBeVisible()
+    await expect(page.getByRole("tab", { name: "Arizalar" })).toHaveCount(0)
+
+    // The admin: «Platforma» is the first screen, no «back» out of it.
+    await openApp(page, { user: PEOPLE.admin, adminBot: true })
     await expect(page.getByRole("heading", { name: "Platforma" })).toBeVisible()
     await expect(page.getByText("Yangi arizalar yo'q")).toBeVisible()
+    expect(await backButtonVisible(page)).toBe(false)
+
+    // In Zumda | Business the admin is an owner like any other; an old «Platforma» button says
+    // where it is now.
+    await openApp(page, {
+        user: PEOPLE.admin,
+        businessBot: true,
+        query: "?mode=business&admin=applications",
+    })
+    await expect(
+        page.getByText(`«Platforma» endi alohida botda: @${adminBot().username}`),
+    ).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Platforma" })).toHaveCount(0)
 })
 
 test("an application: the message opens it in «Platforma», «Tasdiqlash» starts the shop", async ({
@@ -63,10 +87,11 @@ test("an application: the message opens it in «Platforma», «Tasdiqlash» star
     })
     expect(applied.status).toBe(201)
     const card = await waitForMessage(PEOPLE.admin.id, "Malika Pishiriq", since)
+    expect(card.token).toBe(adminBot().token)
     const query = appQueryOf(card.buttons)
-    expect(query).toContain("admin=shop_")
+    expect(query).toBe(`?mode=admin&admin=shop_${((await applied.json()) as { id: string }).id}`)
 
-    await openApp(page, { user: PEOPLE.admin, businessBot: true, query })
+    await openApp(page, { user: PEOPLE.admin, adminBot: true, query })
     const application = page.getByRole("listitem").filter({ hasText: "Malika Pishiriq" })
     await expect(application).toContainText("Malika")
     await application.getByRole("button", { name: "Tasdiqlash" }).click()
@@ -83,8 +108,8 @@ test("«Tumanlar»: a new district in its viloyat by its center, then a longer w
     // The admin stands in Guliston: the map's «Joylashuvim» puts the center there.
     await openApp(page, {
         user: PEOPLE.admin,
-        businessBot: true,
-        query: "?mode=business&admin=districts",
+        adminBot: true,
+        query: "?mode=admin&admin=districts",
         location: GULISTAN,
     })
     const viloyat = (name: string): ReturnType<Page["getByRole"]> =>
@@ -134,8 +159,7 @@ test("«Qo'llanma»: the couriers' guide goes to each courier once, from Zumda |
     page,
 }) => {
     const since = await lastSeq()
-    await openApp(page, { user: PEOPLE.admin, businessBot: true })
-    await page.getByRole("button", { name: /Platforma/ }).click()
+    await openApp(page, { user: PEOPLE.admin, adminBot: true })
     await page.getByRole("tab", { name: "Qo'llanma" }).click()
     const couriers = page.getByRole("listitem").filter({ hasText: "Kuryerlar" })
     await expect(couriers).toContainText(/kishi kutmoqda/)
@@ -161,8 +185,7 @@ test("«Raqam so'rash»: the owner and the courier get one button; the owner's n
          UPDATE courier_profiles SET phone = NULL WHERE telegram_id = ${PEOPLE.courier.id}`,
     )
     const since = await lastSeq()
-    await openApp(page, { user: PEOPLE.admin, businessBot: true })
-    await page.getByRole("button", { name: /Platforma/ }).click()
+    await openApp(page, { user: PEOPLE.admin, adminBot: true })
     await page.getByRole("tab", { name: "Bizneslar" }).click()
     const card = page.getByRole("region", { name: "Raqamsiz" })
     await expect(card).toContainText(/Do'kon egalari: \d+ · Kuryerlar: \d+/)
@@ -227,6 +250,18 @@ test("a bot answers any text with the way into the app; only /start is a command
     await businessChat().send(PEOPLE.admin, "/network")
     const business = await waitForMessage(PEOPLE.admin.id, "ish esa ilovada", since)
     expect(appQueryOf(business.buttons)).toBe("?mode=business")
+    // Zumda | Platforma: «Platforma» for an admin, Zumda's other bots for anyone else.
+    const platform = await lastSeq()
+    await adminChat().send(PEOPLE.admin, "/network")
+    const toAdmin = await waitForMessage(PEOPLE.admin.id, "ish esa ilovada", platform)
+    expect(toAdmin.token).toBe(adminBot().token)
+    expect(appQueryOf(toAdmin.buttons)).toBe("?mode=admin")
+    await adminChat().send(PEOPLE.customer, "/start")
+    const stranger = await waitForMessage(PEOPLE.customer.id, "faqat Zumda jamoasi", platform)
+    expect(stranger.buttons.map((b) => b.url)).toEqual([
+        "https://t.me/zumda_dev_bot",
+        `https://t.me/${businessBot().username}`,
+    ])
     await shopChat(FOOD).send(PEOPLE.customer, "salom")
     const shop = await waitForMessage(PEOPLE.customer.id, "ish esa ilovada", since)
     expect(appQueryOf(shop.buttons)).toBe(`?shop=${FOOD}`)

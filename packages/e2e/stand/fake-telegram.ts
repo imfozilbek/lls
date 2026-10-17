@@ -21,6 +21,7 @@ import { createServer } from "node:http"
 import {
     DEV_SHOPS,
     NEW_BOT_TOKEN_PATTERN,
+    adminBot,
     businessBot,
     courierBot,
     managedBotToken,
@@ -78,6 +79,12 @@ function knownBots(): Map<string, Bot> {
         id: business.id,
         username: business.username,
         first_name: "Zumda Business",
+    })
+    const admin = adminBot()
+    bots.set(admin.token, {
+        id: admin.id,
+        username: admin.username,
+        first_name: "Zumda | Platforma",
     })
     const courier = courierBot()
     bots.set(courier.token, {

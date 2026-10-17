@@ -180,13 +180,13 @@ describe("rows read per request, on six months of history", () => {
                 // their orders: a district of 1 000 customers reads about 2 000.
                 [
                     "admin: «Qo'llanma» counts",
-                    () => client.as(ADMIN, { businessBot: true })("/api/admin/guides"),
+                    () => client.as(ADMIN, { adminBot: true })("/api/admin/guides"),
                     50,
                 ],
                 // The same: the live shops and their couriers, a row or two each.
                 [
                     "admin: «Raqam so'rash» counts",
-                    () => client.as(ADMIN, { businessBot: true })("/api/admin/phone-asks"),
+                    () => client.as(ADMIN, { adminBot: true })("/api/admin/phone-asks"),
                     50,
                 ],
             ]
