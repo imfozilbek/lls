@@ -1,6 +1,7 @@
 /**
  * A crash in the Mini App reaches the server log and the admins, and tells nothing about the
- * person: no phone, no name, no token (owner's decision: logs and errors first).
+ * person: no phone, no name, no token (owner's decision: logs and errors first). An app that
+ * cannot go on says so plainly instead of freezing.
  */
 import { readFileSync } from "node:fs"
 
@@ -91,4 +92,32 @@ test("a logo whose file is gone: the shop's letter instead, and the server hears
     expect(line).toContain('"name":"ImageMissing"')
     expect(line).toContain('"detail":"logo"')
     expect(line).not.toContain("/logo/")
+})
+
+/** The Worker takes Telegram's signature for a day; the app says it 5 minutes before. */
+const OUTDATED_AFTER_S = 24 * 60 * 60 - 5 * 60
+const REOPEN = "Ilovani qayta oching"
+
+test("an app opened over a day ago asks to be opened again, and closes", async ({ page }) => {
+    const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD, signedAgo: 25 * 3600 })
+    await expect(page.getByRole("heading", { name: REOPEN })).toBeVisible()
+    await page.getByRole("button", { name: "Yopish" }).click()
+    expect((await app.calls()).map((c) => c.method)).toContain("close")
+})
+
+test("a collapsed app that came back after its day asks the same, at once", async ({ page }) => {
+    const margin = 15
+    const signedAt = Date.now()
+    const app = await openApp(page, {
+        user: PEOPLE.customer,
+        shop: FOOD,
+        signedAgo: OUTDATED_AFTER_S - margin,
+    })
+    // Still within its day: the shop works.
+    await expect(page.getByText("To'y oshi").first()).toBeVisible()
+    await expect(page.getByRole("heading", { name: REOPEN })).toBeHidden()
+    await app.fire("deactivated")
+    await page.waitForTimeout(Math.max(0, signedAt + (margin + 1) * 1000 - Date.now()))
+    await app.fire("activated")
+    await expect(page.getByRole("heading", { name: REOPEN })).toBeVisible()
 })

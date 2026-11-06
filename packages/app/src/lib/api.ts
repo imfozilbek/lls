@@ -1,5 +1,5 @@
 import { DeadlineExceeded, fetchWithin } from "./deadline.js"
-import { webApp } from "./telegram.js"
+import { launchOutdated, webApp } from "./telegram.js"
 
 import type { Shop } from "../stores/session.js"
 import type {
@@ -82,6 +82,7 @@ let adminBot = false
 let webSession: string | null = null
 
 let onSessionExpired: (() => void) | null = null
+let onOutdated: (() => void) | null = null
 
 /** Outside Telegram: every request carries the session instead of initData. */
 export function setWebSession(token: string | null): void {
@@ -91,6 +92,11 @@ export function setWebSession(token: string | null): void {
 /** The browser session ran out (30 days): back to «Telegram orqali kirish». */
 export function onWebSessionExpired(handler: (() => void) | null): void {
     onSessionExpired = handler
+}
+
+/** Telegram's signature ran out (the app was opened a day ago): only a new opening helps. */
+export function onLaunchOutdated(handler: (() => void) | null): void {
+    onOutdated = handler
 }
 
 /**
@@ -222,10 +228,12 @@ function parseBody(text: string): unknown {
     }
 }
 
-/** A refused request: the rule's code from the body, and the browser session check. */
+/** A refused request: the rule's code from the body; a 401 asks whose signature ran out. */
 function refusal(answer: Answer): ApiError {
     if (answer.status === 401 && webSession) {
         onSessionExpired?.()
+    } else if (answer.status === 401 && launchOutdated()) {
+        onOutdated?.()
     }
     const error = (parseBody(answer.text) as ErrorBody | null)?.error
     return new ApiError(

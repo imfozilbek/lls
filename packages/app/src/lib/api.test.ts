@@ -10,6 +10,7 @@ import {
     adminApi,
     api,
     fetchAll,
+    onLaunchOutdated,
     onWebSessionExpired,
     scopedKey,
     setAdminBot,
@@ -54,6 +55,27 @@ describe("api client", () => {
         expect(expired).toHaveBeenCalledOnce()
         setWebSession(null)
         onWebSessionExpired(null)
+    })
+
+    it("a refusal of a day-old Telegram signature asks for a new opening", async () => {
+        const outdated = vi.fn()
+        onLaunchOutdated(outdated)
+        fetchMock.mockImplementation(fresh(401, { error: { code: "UNAUTHORIZED", message: "" } }))
+        const signedAgo = (seconds: number): string =>
+            `auth_date=${Math.floor(Date.now() / 1000) - seconds}&hash=abc`
+        // Refused for another reason while the signature is fresh: not this.
+        vi.stubGlobal("window", { Telegram: { WebApp: { initData: signedAgo(60) } } })
+        await expect(api.me()).rejects.toMatchObject({ status: 401 })
+        expect(outdated).not.toHaveBeenCalled()
+        vi.stubGlobal("window", { Telegram: { WebApp: { initData: signedAgo(25 * 3600) } } })
+        await expect(api.me()).rejects.toMatchObject({ status: 401 })
+        expect(outdated).toHaveBeenCalledOnce()
+        // A browser session has its own way back (sign in again).
+        setWebSession("session-token")
+        await expect(api.me()).rejects.toMatchObject({ status: 401 })
+        expect(outdated).toHaveBeenCalledOnce()
+        setWebSession(null)
+        onLaunchOutdated(null)
     })
 
     it("sends initData and the shop with every request", async () => {

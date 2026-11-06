@@ -57,6 +57,8 @@ export interface WebApp {
     setBackgroundColor?(color: string): void
     setBottomBarColor?(color: string): void
     isVersionAtLeast(version: string): boolean
+    /** Closes the Mini App. */
+    close?(): void
     MainButton: BottomButton
     BackButton: BackButtonApi
     HapticFeedback: {
@@ -407,6 +409,27 @@ export function hideKeyboard(): void {
     if (active instanceof HTMLElement) {
         active.blur()
     }
+}
+
+/** Telegram signs initData once, at opening; the Worker takes it for a day (`crypto.ts`). */
+const LAUNCH_MAX_AGE_SECONDS = 24 * 60 * 60
+/** A little early: a phone clock a few minutes off still says it before the refusals do. */
+const LAUNCH_MARGIN_SECONDS = 5 * 60
+
+/**
+ * Opened in Telegram about a day ago (a collapsed app lives on): its signature opens nothing any
+ * more, and only a new opening gets a fresh one. False outside Telegram.
+ */
+export function launchOutdated(now: number = Date.now()): boolean {
+    const initData = webApp()?.initData
+    if (!initData) {
+        return false
+    }
+    const signedAt = Number(new URLSearchParams(initData).get("auth_date"))
+    if (!Number.isFinite(signedAt) || signedAt <= 0) {
+        return false
+    }
+    return now / 1000 - signedAt >= LAUNCH_MAX_AGE_SECONDS - LAUNCH_MARGIN_SECONDS
 }
 
 /** 8.0: is the app on screen now (not collapsed, not in the background)? */
