@@ -7,6 +7,16 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The app never waits forever (an owner's report: it froze until reopened)
+- Every request of the Mini App has a deadline: 20 s to read, 30 s for an action, 120 s for a
+  photo. Over a connection that died in the background, or a stalled regional network, the
+  screen says «Internet bilan aloqa yo'q» instead of spinning until the app is opened again. A
+  read that broke at once goes again once; an action is never sent twice.
+- The pull spinner lets go after 25 s at most, and the next pull works; a timer's refresh never
+  starts while the last one still waits. The Zumda catalog and the map file have deadlines too.
+- An app opened over a day ago and kept collapsed (Telegram's signature is good for 24 hours)
+  shows «Ilovani qayta oching» with «Yopish», instead of quietly refusing everything.
+
 ### «Platforma» in its own bot, Zumda | Platforma
 - The platform admins have their own bot and Mini App (owner's decision, 16 October 2026):
   «Platforma» is the bot's first screen (platform.zumda.shop), and Zumda | Business is for owners
