@@ -52,6 +52,27 @@ test("pull down on the order screen refreshes it in place, without a skeleton", 
     expect(haptics.map((c) => c.args[0])).toContain("medium")
 })
 
+test("a pull over a dead connection lets go with a word; the next pull works", async ({ page }) => {
+    test.setTimeout(90_000)
+    const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
+    await openOrder(page, order.number)
+    await expect(page.getByText("O'tkazma kutilmoqda").first()).toBeVisible()
+    // The connection died while the app was in the background: no answer, no error, nothing.
+    await page.route("**/api/orders/*", () => undefined)
+    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    await pullDown(page)
+    await expect(page.getByTestId("pull-indicator")).toBeVisible()
+    // Before the deadline the spinner stayed there until the app was opened again.
+    await expect(page.getByText("Internet bilan aloqa yo'q").first()).toBeVisible({
+        timeout: 30_000,
+    })
+    await expect(page.getByTestId("pull-indicator")).toBeHidden()
+    await page.unrouteAll({ behavior: "ignoreErrors" })
+    await pullDown(page)
+    await expect(page.getByText("Buyurtmangiz tayyorlanmoqda")).toBeVisible()
+    await expect(page.getByTestId("pull-indicator")).toBeHidden()
+})
+
 test("coming back to the app refreshes the order at once", async ({ page }) => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
     const app = await openOrder(page, order.number)

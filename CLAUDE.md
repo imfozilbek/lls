@@ -603,6 +603,10 @@ the rule id (e.g. `PHONE_REQUIRED`, `SHOP_CLOSED`) so the app can show a transla
 // Constant-time compare. Reject auth_date older than 24h or in the future
 // Never trust client-side data without validation
 ```
+Telegram signs initData once, when the app opens: an app kept open (collapsed) past its day
+shows «Ilovani qayta oching» with «Yopish» (`ReopenGate`), never a silent 401: after the server
+refused a day-old signature, or on coming back when the phone's clock agreed with Telegram's at
+opening (`launchSurelyOutdated`: a phone set to the wrong day is never locked out).
 
 **Bot webhook:**
 - Register with `setWebhook` + `secret_token`. Reject requests without a matching
@@ -905,7 +909,10 @@ console.log            // Use logger
   `useClosingGuard`, or is kept as a draft (the checkout keeps its fields on every change).
   A sheet's own button goes in its `footer` (never under its scroll); an error toast stays 6 s
   and longer for a long sentence; a failed pull says why in one toast (`ui/gestures.tsx`). Fields
-  stay 16px (iOS zooms below) with the dark caret (`index.css`).
+  stay 16px (iOS zooms below) with the dark caret (`index.css`). Nothing waits forever: every
+  request has a deadline (`lib/deadline.ts`; 20 s reads, 30 s writes, 120 s files; a read that
+  broke before any answer goes once more, a write never), a pull lets go after 25 s, a timer
+  tick never starts while the last one waits.
 
 ## Skills Usage (MANDATORY)
 

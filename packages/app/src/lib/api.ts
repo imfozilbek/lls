@@ -1,4 +1,5 @@
-import { webApp } from "./telegram.js"
+import { DeadlineExceeded, fetchWithin } from "./deadline.js"
+import { launchOutdated, webApp } from "./telegram.js"
 
 import type { Shop } from "../stores/session.js"
 import type {
@@ -81,6 +82,7 @@ let adminBot = false
 let webSession: string | null = null
 
 let onSessionExpired: (() => void) | null = null
+let onOutdated: (() => void) | null = null
 
 /** Outside Telegram: every request carries the session instead of initData. */
 export function setWebSession(token: string | null): void {
@@ -90,6 +92,11 @@ export function setWebSession(token: string | null): void {
 /** The browser session ran out (30 days): back to «Telegram orqali kirish». */
 export function onWebSessionExpired(handler: (() => void) | null): void {
     onSessionExpired = handler
+}
+
+/** Telegram's signature ran out (the app was opened a day ago): only a new opening helps. */
+export function onLaunchOutdated(handler: (() => void) | null): void {
+    onOutdated = handler
 }
 
 /**
@@ -152,6 +159,94 @@ function authHeaders(): Headers {
     return headers
 }
 
+/**
+ * How long a request may take before the app gives up and says so: a slow regional network still
+ * fits, a connection that died in the background does not hold the screen forever.
+ */
+export const READ_DEADLINE_MS = 20_000
+export const WRITE_DEADLINE_MS = 30_000
+/** A photo or a transfer screenshot (up to 1.5 MB) on a slow 3G. */
+export const UPLOAD_DEADLINE_MS = 120_000
+/** A read that broke before any answer (the first request after the background) goes again. */
+export const RETRY_PAUSE_MS = 400
+
+/** What came back: the status and the raw body, read within the request's deadline. */
+interface Answer {
+    status: number
+    statusText: string
+    text: string
+}
+
+function deadlineOf(init: RequestInit): number {
+    if (init.body instanceof Blob) {
+        return UPLOAD_DEADLINE_MS
+    }
+    return (init.method ?? "GET") === "GET" ? READ_DEADLINE_MS : WRITE_DEADLINE_MS
+}
+
+function pause(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * One call to the Worker that always ends: within its deadline, or with `NETWORK`. A read that
+ * broke before any answer goes once more; a write never does (the server may have done it), and
+ * neither does a request that ran out of time.
+ */
+async function call<T>(
+    path: string,
+    init: RequestInit,
+    read: (response: Response) => Promise<T>,
+): Promise<T> {
+    const attempt = (): Promise<T> => fetchWithin(`${API_URL}${path}`, init, deadlineOf(init), read)
+    try {
+        return await attempt()
+    } catch (error) {
+        if ((init.method ?? "GET") === "GET" && !(error instanceof DeadlineExceeded)) {
+            await pause(RETRY_PAUSE_MS)
+            return attempt().catch(() => {
+                throw new ApiError(0, "NETWORK", "No connection")
+            })
+        }
+        throw new ApiError(0, "NETWORK", "No connection")
+    }
+}
+
+async function answerOf(response: Response): Promise<Answer> {
+    return {
+        status: response.status,
+        statusText: response.statusText,
+        text: response.status === 204 ? "" : await response.text(),
+    }
+}
+
+function parseBody(text: string): unknown {
+    try {
+        return text ? (JSON.parse(text) as unknown) : null
+    } catch {
+        return null
+    }
+}
+
+/** A refused request: the rule's code from the body; a 401 asks whose signature ran out. */
+function refusal(answer: Answer): ApiError {
+    if (answer.status === 401 && webSession) {
+        onSessionExpired?.()
+    } else if (answer.status === 401 && launchOutdated()) {
+        onOutdated?.()
+    }
+    const error = (parseBody(answer.text) as ErrorBody | null)?.error
+    return new ApiError(
+        answer.status,
+        error?.code ?? "HTTP_ERROR",
+        error?.message ?? answer.statusText,
+    )
+}
+
+function isOk(status: number): boolean {
+    return status >= 200 && status < 300
+}
+
 async function request<T>(method: string, path: string, body?: BodyInit | object): Promise<T> {
     const headers = authHeaders()
     let payload: BodyInit | undefined
@@ -163,51 +258,27 @@ async function request<T>(method: string, path: string, body?: BodyInit | object
         payload = JSON.stringify(body)
     }
 
-    let response: Response
-    try {
-        response = await fetch(`${API_URL}${path}`, { method, headers, body: payload })
-    } catch {
-        throw new ApiError(0, "NETWORK", "No connection")
-    }
-
-    if (response.status === 204) {
+    const answer = await call(path, { method, headers, body: payload }, answerOf)
+    if (answer.status === 204) {
         return undefined as T
     }
-    const data = (await response.json().catch(() => null)) as T | ErrorBody | null
-    if (response.status === 401 && webSession) {
-        onSessionExpired?.()
+    if (!isOk(answer.status)) {
+        throw refusal(answer)
     }
-    if (!response.ok) {
-        const error = (data as ErrorBody | null)?.error
-        throw new ApiError(
-            response.status,
-            error?.code ?? "HTTP_ERROR",
-            error?.message ?? response.statusText,
-        )
-    }
-    return data as T
+    return parseBody(answer.text) as T
 }
 
 /** A private file the Worker streams (the transfer screenshot): read as a Blob, never cached. */
 async function requestBlob(path: string): Promise<Blob> {
-    let response: Response
-    try {
-        response = await fetch(`${API_URL}${path}`, { headers: authHeaders(), cache: "no-store" })
-    } catch {
-        throw new ApiError(0, "NETWORK", "No connection")
+    const result = await call(
+        path,
+        { headers: authHeaders(), cache: "no-store" },
+        async (response) => (isOk(response.status) ? response.blob() : answerOf(response)),
+    )
+    if (result instanceof Blob) {
+        return result
     }
-    if (!response.ok) {
-        if (response.status === 401 && webSession) {
-            onSessionExpired?.()
-        }
-        const error = ((await response.json().catch(() => null)) as ErrorBody | null)?.error
-        throw new ApiError(
-            response.status,
-            error?.code ?? "HTTP_ERROR",
-            error?.message ?? response.statusText,
-        )
-    }
-    return response.blob()
+    throw refusal(result)
 }
 
 function query(params: Record<string, string | number | undefined>): string {

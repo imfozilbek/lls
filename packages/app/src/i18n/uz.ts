@@ -9,6 +9,10 @@ export const uz = {
         retry: "Qayta urinish",
         crashTitle: "Ilova to'liq yuklanmadi",
         crashText: "Internet sekin bo'lishi mumkin. Savatingiz va yozganlaringiz saqlangan.",
+        reopenTitle: "Ilovani qayta oching",
+        reopenText:
+            "Ilova bir kundan ortiq ochiq turdi. Xavfsizlik uchun uni yoping va botdagi tugmadan qayta oching.",
+        closeApp: "Yopish",
         save: "Saqlash",
         saving: "Saqlanmoqda…",
         delete: "O'chirish",

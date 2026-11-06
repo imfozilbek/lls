@@ -57,6 +57,8 @@ export interface WebApp {
     setBackgroundColor?(color: string): void
     setBottomBarColor?(color: string): void
     isVersionAtLeast(version: string): boolean
+    /** Closes the Mini App. */
+    close?(): void
     MainButton: BottomButton
     BackButton: BackButtonApi
     HapticFeedback: {
@@ -407,6 +409,47 @@ export function hideKeyboard(): void {
     if (active instanceof HTMLElement) {
         active.blur()
     }
+}
+
+/** Telegram signs initData once, at opening; the Worker takes it for a day (`crypto.ts`). */
+const LAUNCH_MAX_AGE_SECONDS = 24 * 60 * 60
+/** A little early: a phone clock a few minutes off still says it before the refusals do. */
+const LAUNCH_MARGIN_SECONDS = 5 * 60
+/** When this page started, by the phone's clock. */
+const LOADED_AT_SECONDS = Date.now() / 1000
+/** At opening the signature is seconds old: further apart, the phone's clock cannot date it. */
+const CLOCK_AGREES_SECONDS = 10 * 60
+
+/** When Telegram signed this opening (unix seconds); null outside Telegram. */
+function signedAt(): number | null {
+    const initData = webApp()?.initData
+    if (!initData) {
+        return null
+    }
+    const at = Number(new URLSearchParams(initData).get("auth_date"))
+    return Number.isFinite(at) && at > 0 ? at : null
+}
+
+/**
+ * Opened in Telegram about a day ago by the phone's clock (a collapsed app lives on): its
+ * signature opens nothing any more, and only a new opening gets a fresh one. Trusted after the
+ * server refused it; on its own, see `launchSurelyOutdated`. False outside Telegram.
+ */
+export function launchOutdated(now: number = Date.now()): boolean {
+    const at = signedAt()
+    return at !== null && now / 1000 - at >= LAUNCH_MAX_AGE_SECONDS - LAUNCH_MARGIN_SECONDS
+}
+
+/**
+ * The same without asking the server, only when the phone's clock can tell: it agreed with
+ * Telegram's when the app opened. A phone set to the wrong day never locks anyone out.
+ */
+export function launchSurelyOutdated(now: number = Date.now()): boolean {
+    const at = signedAt()
+    if (at === null || Math.abs(LOADED_AT_SECONDS - at) > CLOCK_AGREES_SECONDS) {
+        return false
+    }
+    return launchOutdated(now)
 }
 
 /** 8.0: is the app on screen now (not collapsed, not in the background)? */

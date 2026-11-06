@@ -93,6 +93,8 @@ export interface OpenOptions {
     signWith?: string
     /** Empty initData: the page was opened outside Telegram. */
     noInitData?: boolean
+    /** initData signed this many seconds ago: an app opened long ago that stayed collapsed. */
+    signedAgo?: number
     /** Telegram's native MainButton instead of the in-app bottom bar. */
     native?: boolean
     /** Telegram on an iPhone (the native MainButton too). Default: `android` with `native`. */
@@ -173,6 +175,7 @@ function nativeFeel(record: Recorder): { api: Record<string, unknown>; fire(even
         lockOrientation: record("lockOrientation"),
         hideKeyboard: record("hideKeyboard"),
         addToHomeScreen: record("addToHomeScreen"),
+        close: record("close"),
         checkHomeScreenStatus: record("checkHomeScreenStatus", (callback) =>
             (callback as (status: string) => void)("missed"),
         ),
@@ -425,12 +428,21 @@ function openedFrom(options: OpenOptions): { token: string; chat: Chat; query: s
     return { token: platformBot().token, chat: platformChat(), query: "" }
 }
 
-export async function openApp(page: Page, options: OpenOptions): Promise<OpenedApp> {
-    const { token: botToken, chat, query: defaultQuery } = openedFrom(options)
-    const token = options.signWith ?? botToken
+/** What Telegram signs besides the user: the `startapp` value, and when it signed. */
+function signedExtra(options: OpenOptions): Record<string, string> {
     const extra: Record<string, string> = options.startParam
         ? { start_param: options.startParam }
         : {}
+    if (options.signedAgo !== undefined) {
+        extra["auth_date"] = String(Math.floor(Date.now() / 1000) - options.signedAgo)
+    }
+    return extra
+}
+
+export async function openApp(page: Page, options: OpenOptions): Promise<OpenedApp> {
+    const { token: botToken, chat, query: defaultQuery } = openedFrom(options)
+    const token = options.signWith ?? botToken
+    const extra = signedExtra(options)
     const initData = options.noInitData ? "" : signInitData(options.user, token, extra)
     const phone = options.phone ?? "+998901234567"
 

@@ -1,8 +1,10 @@
-import { Component } from "react"
+import { Component, useEffect, useState } from "react"
 
 import { useT } from "../i18n/index.js"
+import { onLaunchOutdated } from "../lib/api.js"
+import { launchSurelyOutdated, onAppActive, webApp } from "../lib/telegram.js"
 
-import { WifiOffIcon } from "./icons.js"
+import { ClockIcon, WifiOffIcon } from "./icons.js"
 import { Button, EmptyState, Skeleton, Spinner } from "./primitives.js"
 
 import type { ReactNode } from "react"
@@ -48,6 +50,46 @@ export function CrashScreen(): React.JSX.Element {
                 action={
                     <Button variant="secondary" onClick={(): void => window.location.reload()}>
                         {t.common.retry}
+                    </Button>
+                }
+            />
+        </main>
+    )
+}
+
+/**
+ * The app was opened about a day ago and stayed open (collapsed): Telegram's signature has run
+ * out and every request is refused. One clear screen instead of a silent, frozen app: only
+ * closing it and opening it from the bot again helps.
+ */
+export function ReopenGate({ children }: { children: ReactNode }): ReactNode {
+    const t = useT()
+    const [outdated, setOutdated] = useState(false)
+    useEffect(() => {
+        // The server refused a day-old signature, or the app came back after its day.
+        onLaunchOutdated(() => setOutdated(true))
+        const stop = onAppActive(() => {
+            if (launchSurelyOutdated()) {
+                setOutdated(true)
+            }
+        })
+        return (): void => {
+            onLaunchOutdated(null)
+            stop()
+        }
+    }, [])
+    if (!outdated) {
+        return children
+    }
+    return (
+        <main className="px-4 pt-16">
+            <EmptyState
+                art={<ClockIcon size={44} />}
+                title={t.common.reopenTitle}
+                text={t.common.reopenText}
+                action={
+                    <Button variant="secondary" onClick={(): void => webApp()?.close?.()}>
+                        {t.common.closeApp}
                     </Button>
                 }
             />
