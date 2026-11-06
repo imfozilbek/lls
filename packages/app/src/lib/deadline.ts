@@ -35,3 +35,15 @@ export async function fetchWithin<T>(
         clearTimeout(timer)
     }
 }
+
+/**
+ * `work`, or `DeadlineExceeded` once `ms` pass: whoever waits on it is let go in time, even when
+ * the work itself (several requests one after another) takes longer.
+ */
+export function settleWithin<T>(work: Promise<T>, ms: number): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const deadline = new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new DeadlineExceeded()), ms)
+    })
+    return Promise.race([work, deadline]).finally(() => clearTimeout(timer))
+}

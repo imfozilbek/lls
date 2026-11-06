@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { dictionaryFor, errorText, useLanguageStore } from "../i18n/index.js"
 import { ApiError } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
+import { DeadlineExceeded, settleWithin } from "../lib/deadline.js"
 import {
     PULL_TRIGGER_PX,
     SWIPE_TRIGGER_PX,
@@ -24,6 +25,9 @@ import type { GestureKind, GestureStart } from "../lib/gesture.js"
 /** A failed pull in the reader's words: the server's reason, or the network's. */
 function refreshFailedText(caught: unknown): string {
     const t = dictionaryFor(useLanguageStore.getState().language)
+    if (caught instanceof DeadlineExceeded) {
+        return errorText(t, "NETWORK")
+    }
     return errorText(t, caught instanceof ApiError ? caught.code : "generic")
 }
 
@@ -31,6 +35,11 @@ function refreshFailedText(caught: unknown): string {
 const MIN_REFRESH_MS = 450
 /** The indicator rests here while the screen refreshes. */
 const REFRESHING_AT_PX = 56
+/**
+ * The spinner never stays longer: every request has its own deadline, and a screen that asks
+ * several things one after another is let go here (its data still lands when it comes).
+ */
+export const REFRESH_CAP_MS = 25_000
 
 type Haptic = "selection" | "medium" | "success" | "error"
 
@@ -157,7 +166,7 @@ function useGestures(): { drag: Drag; refreshing: boolean } {
                 setRefreshing(true)
                 feel("medium")
                 const wait = new Promise((resolve) => window.setTimeout(resolve, MIN_REFRESH_MS))
-                void Promise.all([runRefresh(), wait])
+                void Promise.all([settleWithin(runRefresh(), REFRESH_CAP_MS), wait])
                     .then(() => feel("success"))
                     // The same word on every screen: what is shown stays, the toast says why
                     // it did not change.
