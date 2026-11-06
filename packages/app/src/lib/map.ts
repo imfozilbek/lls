@@ -1,7 +1,8 @@
 import { Location } from "@zumda/core"
 import { useEffect, useState } from "react"
 
-import { MAP_URL } from "./api.js"
+import { MAP_URL, READ_DEADLINE_MS } from "./api.js"
+import { fetchWithin } from "./deadline.js"
 
 /**
  * Zumda's own map (R2 at map.zumda.shop; the Worker's /map on the stand): only its name lives in
@@ -25,8 +26,9 @@ let info: Promise<MapInfo | null> | undefined
 
 /** Which map file is current; null when there is no map yet (the app works as before). */
 export function mapInfo(): Promise<MapInfo | null> {
-    info ??= fetch(`${MAP_URL}/current.json`)
-        .then(async (response) => (response.ok ? ((await response.json()) as MapInfo) : null))
+    info ??= fetchWithin(`${MAP_URL}/current.json`, {}, READ_DEADLINE_MS, async (response) =>
+        response.ok ? ((await response.json()) as MapInfo) : null,
+    )
         .then((found) => (found && typeof found.file === "string" ? found : null))
         .catch(() => {
             // No network now: ask again next time.

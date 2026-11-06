@@ -3,6 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
     API_URL,
     ApiError,
+    READ_DEADLINE_MS,
+    RETRY_PAUSE_MS,
+    UPLOAD_DEADLINE_MS,
+    WRITE_DEADLINE_MS,
     adminApi,
     api,
     fetchAll,
@@ -18,6 +22,11 @@ function reply(status: number, body?: unknown): Response {
         status,
         headers: { "Content-Type": "application/json" },
     })
+}
+
+/** Every call its own answer, as a real `fetch` gives: a body is read only once. */
+function fresh(status: number, body?: unknown): () => Promise<Response> {
+    return (): Promise<Response> => Promise.resolve(reply(status, body))
 }
 
 describe("api client", () => {
@@ -37,7 +46,7 @@ describe("api client", () => {
     it("an expired browser session sends the owner back to sign in", async () => {
         const expired = vi.fn()
         onWebSessionExpired(expired)
-        fetchMock.mockResolvedValue(reply(401, { error: { code: "UNAUTHORIZED", message: "" } }))
+        fetchMock.mockImplementation(fresh(401, { error: { code: "UNAUTHORIZED", message: "" } }))
         await expect(api.me()).rejects.toBeInstanceOf(ApiError)
         expect(expired).not.toHaveBeenCalled()
         setWebSession("session-token")
@@ -58,7 +67,7 @@ describe("api client", () => {
     })
 
     it("Zumda Business signs «Mening bizneslarim» and an owner's shop opened from it", async () => {
-        fetchMock.mockResolvedValue(reply(200, []))
+        fetchMock.mockImplementation(fresh(200, []))
         setShop(null, { via: "business" })
         await api.platform.myShops()
         setShop("osh-markaz", { via: "business" })
@@ -74,7 +83,7 @@ describe("api client", () => {
     })
 
     it("«Platforma» is signed by Zumda | Platforma, with no shop, apart in the cache", async () => {
-        fetchMock.mockResolvedValue(reply(200, { admin: true }))
+        fetchMock.mockImplementation(fresh(200, { admin: true }))
         setAdminBot()
         expect(scopedKey("platform:pending")).toBe("admin|platform:pending")
         await adminApi.me()
@@ -133,6 +142,98 @@ describe("api client", () => {
         expect(init?.method).toBe("PUT")
         expect(new Headers(init?.headers).get("Content-Type")).toBe("image/webp")
         expect(init?.body).toBe(image)
+    })
+})
+
+/** A request whose connection died: it answers nothing until it is aborted. */
+function hang(_url: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+    return new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () =>
+            reject(new DOMException("The operation was aborted.", "AbortError")),
+        )
+    })
+}
+
+describe("api client: every request ends", () => {
+    const fetchMock = vi.fn<typeof fetch>()
+
+    beforeEach(() => {
+        vi.useFakeTimers()
+        vi.stubGlobal("window", { Telegram: { WebApp: { initData: "signed" } } })
+        vi.stubGlobal("fetch", fetchMock)
+        setShop("osh-markaz")
+    })
+
+    afterEach(() => {
+        fetchMock.mockReset()
+        vi.unstubAllGlobals()
+        vi.useRealTimers()
+    })
+
+    it("a read that hangs ends as NETWORK at its deadline, without a second try", async () => {
+        fetchMock.mockImplementation(hang)
+        const result = api.shop().catch((e: unknown) => e)
+        await vi.advanceTimersByTimeAsync(READ_DEADLINE_MS - 1)
+        expect(vi.getTimerCount()).toBe(1)
+        await vi.advanceTimersByTimeAsync(1)
+        await expect(result).resolves.toMatchObject({ status: 0, code: "NETWORK" })
+        expect(fetchMock).toHaveBeenCalledOnce()
+    })
+
+    it("a write that hangs ends at its own deadline and is never sent again", async () => {
+        fetchMock.mockImplementation(hang)
+        const result = api.cancelOrder("o1").catch((e: unknown) => e)
+        await vi.advanceTimersByTimeAsync(READ_DEADLINE_MS)
+        expect(fetchMock).toHaveBeenCalledOnce()
+        await vi.advanceTimersByTimeAsync(WRITE_DEADLINE_MS - READ_DEADLINE_MS)
+        await expect(result).resolves.toMatchObject({ code: "NETWORK" })
+        expect(fetchMock).toHaveBeenCalledOnce()
+    })
+
+    it("a photo has longer: slow 3G still uploads it", async () => {
+        fetchMock.mockImplementation(hang)
+        const image = new Blob(["x"], { type: "image/webp" })
+        const result = api.owner.uploadProductImage("p1", image).catch((e: unknown) => e)
+        await vi.advanceTimersByTimeAsync(WRITE_DEADLINE_MS)
+        expect(vi.getTimerCount()).toBe(1)
+        await vi.advanceTimersByTimeAsync(UPLOAD_DEADLINE_MS - WRITE_DEADLINE_MS)
+        await expect(result).resolves.toMatchObject({ code: "NETWORK" })
+    })
+
+    it("a read that broke before any answer goes once more and gets it", async () => {
+        fetchMock
+            .mockRejectedValueOnce(new TypeError("The network connection was lost."))
+            .mockResolvedValueOnce(reply(200, { slug: "osh-markaz" }))
+        const result = api.shop()
+        await vi.advanceTimersByTimeAsync(RETRY_PAUSE_MS)
+        await expect(result).resolves.toEqual({ slug: "osh-markaz" })
+        expect(fetchMock).toHaveBeenCalledTimes(2)
+    })
+
+    it("a write that broke is not sent again: the server may have done it", async () => {
+        fetchMock.mockRejectedValue(new TypeError("Failed to fetch"))
+        const result = api.cancelOrder("o1").catch((e: unknown) => e)
+        await vi.advanceTimersByTimeAsync(RETRY_PAUSE_MS)
+        await expect(result).resolves.toMatchObject({ code: "NETWORK" })
+        expect(fetchMock).toHaveBeenCalledOnce()
+    })
+
+    it("a body cut off on the way is a failure, never an empty success", async () => {
+        const cut = new ReadableStream<Uint8Array>({
+            start(controller): void {
+                controller.error(new TypeError("network error"))
+            },
+        })
+        fetchMock.mockResolvedValue(new Response(cut, { status: 200 }))
+        const result = api.shop().catch((e: unknown) => e)
+        await vi.advanceTimersByTimeAsync(RETRY_PAUSE_MS)
+        await expect(result).resolves.toMatchObject({ code: "NETWORK" })
+    })
+
+    it("an answer in time leaves no timer behind", async () => {
+        fetchMock.mockResolvedValue(reply(200, { slug: "osh-markaz" }))
+        await expect(api.shop()).resolves.toEqual({ slug: "osh-markaz" })
+        expect(vi.getTimerCount()).toBe(0)
     })
 })
 
