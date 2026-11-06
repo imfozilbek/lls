@@ -604,7 +604,9 @@ the rule id (e.g. `PHONE_REQUIRED`, `SHOP_CLOSED`) so the app can show a transla
 // Never trust client-side data without validation
 ```
 Telegram signs initData once, when the app opens: an app kept open (collapsed) past its day
-shows «Ilovani qayta oching» with «Yopish» (`ReopenGate`, `launchOutdated`), never a silent 401.
+shows «Ilovani qayta oching» with «Yopish» (`ReopenGate`), never a silent 401: after the server
+refused a day-old signature, or on coming back when the phone's clock agreed with Telegram's at
+opening (`launchSurelyOutdated`: a phone set to the wrong day is never locked out).
 
 **Bot webhook:**
 - Register with `setWebhook` + `secret_token`. Reject requests without a matching

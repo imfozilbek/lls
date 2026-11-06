@@ -2,7 +2,7 @@ import { Component, useEffect, useState } from "react"
 
 import { useT } from "../i18n/index.js"
 import { onLaunchOutdated } from "../lib/api.js"
-import { launchOutdated, onAppActive, webApp } from "../lib/telegram.js"
+import { launchSurelyOutdated, onAppActive, webApp } from "../lib/telegram.js"
 
 import { ClockIcon, WifiOffIcon } from "./icons.js"
 import { Button, EmptyState, Skeleton, Spinner } from "./primitives.js"
@@ -59,16 +59,17 @@ export function CrashScreen(): React.JSX.Element {
 
 /**
  * The app was opened about a day ago and stayed open (collapsed): Telegram's signature has run
- * out and every request would be refused. One clear screen instead of a silent, frozen app: only
+ * out and every request is refused. One clear screen instead of a silent, frozen app: only
  * closing it and opening it from the bot again helps.
  */
 export function ReopenGate({ children }: { children: ReactNode }): ReactNode {
     const t = useT()
-    const [outdated, setOutdated] = useState(() => launchOutdated())
+    const [outdated, setOutdated] = useState(false)
     useEffect(() => {
+        // The server refused a day-old signature, or the app came back after its day.
         onLaunchOutdated(() => setOutdated(true))
         const stop = onAppActive(() => {
-            if (launchOutdated()) {
+            if (launchSurelyOutdated()) {
                 setOutdated(true)
             }
         })

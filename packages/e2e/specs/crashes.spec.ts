@@ -94,9 +94,8 @@ test("a logo whose file is gone: the shop's letter instead, and the server hears
     expect(line).not.toContain("/logo/")
 })
 
-/** The Worker takes Telegram's signature for a day; the app says it 5 minutes before. */
-const OUTDATED_AFTER_S = 24 * 60 * 60 - 5 * 60
 const REOPEN = "Ilovani qayta oching"
+const DISH = "To'y oshi"
 
 test("an app opened over a day ago asks to be opened again, and closes", async ({ page }) => {
     const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD, signedAgo: 25 * 3600 })
@@ -106,18 +105,21 @@ test("an app opened over a day ago asks to be opened again, and closes", async (
 })
 
 test("a collapsed app that came back after its day asks the same, at once", async ({ page }) => {
-    const margin = 15
-    const signedAt = Date.now()
-    const app = await openApp(page, {
-        user: PEOPLE.customer,
-        shop: FOOD,
-        signedAgo: OUTDATED_AFTER_S - margin,
-    })
-    // Still within its day: the shop works.
-    await expect(page.getByText("To'y oshi").first()).toBeVisible()
-    await expect(page.getByRole("heading", { name: REOPEN })).toBeHidden()
+    await page.clock.install()
+    const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD })
+    await expect(page.getByText(DISH).first()).toBeVisible()
     await app.fire("deactivated")
-    await page.waitForTimeout(Math.max(0, signedAt + (margin + 1) * 1000 - Date.now()))
+    await page.clock.fastForward("24:00:00")
     await app.fire("activated")
     await expect(page.getByRole("heading", { name: REOPEN })).toBeVisible()
+})
+
+test("a phone set two days ahead still opens the shop and comes back to it", async ({ page }) => {
+    await page.clock.install({ time: Date.now() + 2 * 24 * 3600 * 1000 })
+    const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD })
+    await expect(page.getByText(DISH).first()).toBeVisible()
+    await app.fire("deactivated")
+    await app.fire("activated")
+    await expect(page.getByText(DISH).first()).toBeVisible()
+    await expect(page.getByRole("heading", { name: REOPEN })).toBeHidden()
 })

@@ -5,6 +5,7 @@ import {
     callLink,
     canRequestChat,
     launchOutdated,
+    launchSurelyOutdated,
     paintLightFrame,
     readLaunchParams,
     requestChat,
@@ -267,5 +268,32 @@ describe("launchOutdated", () => {
         expect(launchOutdated(now)).toBe(false)
         vi.stubGlobal("window", { Telegram: { WebApp: { initData: "hash=abc" } } })
         expect(launchOutdated(now)).toBe(false)
+    })
+})
+
+describe("launchSurelyOutdated", () => {
+    const DAY_MS = 24 * 60 * 60 * 1000
+
+    afterEach(() => {
+        vi.unstubAllGlobals()
+    })
+
+    const openedAgo = (seconds: number): void => {
+        const initData = `auth_date=${Math.floor(Date.now() / 1000) - seconds}&hash=abc`
+        vi.stubGlobal("window", { Telegram: { WebApp: { initData } } })
+    }
+
+    it("a fresh opening, collapsed for a day, is outdated by the phone's clock alone", () => {
+        openedAgo(30)
+        expect(launchSurelyOutdated(Date.now() + DAY_MS / 2)).toBe(false)
+        expect(launchSurelyOutdated(Date.now() + DAY_MS)).toBe(true)
+    })
+
+    it("a phone clock a day off at opening never locks the app by itself", () => {
+        // The phone thinks the fresh signature is two days old: it cannot date anything.
+        openedAgo(2 * 24 * 60 * 60)
+        expect(launchOutdated()).toBe(true)
+        expect(launchSurelyOutdated()).toBe(false)
+        expect(launchSurelyOutdated(Date.now() + DAY_MS)).toBe(false)
     })
 })
