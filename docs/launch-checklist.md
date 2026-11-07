@@ -69,13 +69,13 @@ Claude, и деплоем; перед подключением настоящи�
 - [x] Третий бот **Zumda | Business** (`@zumdashop_business_bot`) (решение владельца, 3 октября 2026): владельцы.
       @BotFather → `/newbot`; токен в переменные окружения Claude (`BUSINESS_BOT_TOKEN`) и в
       секреты окружения `production` в GitHub.
-- [ ] Четвёртый бот **Zumda | Platforma** (решение владельца, 16 октября 2026): только админы,
+- [x] Четвёртый бот **Zumda | Platforma** (решение владельца, 16 октября 2026; в проде с 7 ноября 2026): только админы,
       в нём открывается «Platforma», и все сообщения админам приходят от него.
       @BotFather → `/newbot`; имя любое (деплой поставит «Zumda | Platforma»), username на ваш
       выбор, например `zumdashop_platforma_bot`. Токен в секреты окружения `production` в GitHub
       (`ADMIN_BOT_TOKEN`) и в переменные окружения Claude. **Без этого секрета деплой
       пропускается целиком** («Deploy skipped»).
-- [ ] Вход в «Platforma» с компьютера (platform.zumda.shop): @BotFather → `/mybots` → бот
+- [x] Вход в «Platforma» с компьютера (platform.zumda.shop): @BotFather → `/mybots` → бот
       Zumda | Platforma → **Bot Settings** → **Login Widget**: **Trusted Origins** →
       `https://platform.zumda.shop`, **Redirect URIs** → `https://platform.zumda.shop/`. Без этого
       «Platforma» работает только в Telegram.
@@ -91,7 +91,7 @@ Claude, и деплоем; перед подключением настоящи�
       `/mybots` → бот → **Edit Bot** → **Edit Description Picture**: `brand/welcome/zumda-640.png`
       для `@zumdashop_bot`, `biznes-640.png` для `@zumdashop_business_bot`, `kuryer-640.png` для
       `@zumdashop_kuryer_bot`.
-- [ ] Каждый админ один раз нажимает **Start** в Zumda | Platforma: иначе бот не сможет писать
+- [x] Каждый админ один раз нажимает **Start** в Zumda | Platforma: иначе бот не сможет писать
       ему первым. До этого заявки и оповещения приходят из Zumda | Business с напоминанием нажать
       Start (если и там Start не нажат, сообщение не дойдёт).
 
