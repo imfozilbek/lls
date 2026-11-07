@@ -1,4 +1,5 @@
 import {
+    AGES,
     BUSINESS_STATUSES,
     BUSINESS_TYPES,
     DEMO_TEMPLATES,
@@ -20,6 +21,7 @@ import {
     PAYMENT_OPTIONS,
     REGIONS,
     UNITS,
+    isAge,
     WEEKDAYS,
 } from "@zumda/core"
 import { z } from "zod"
@@ -121,12 +123,21 @@ const productOptions = z.object({
         .max(OPTION_LIMITS.addons),
 })
 
+/** The child's age a product is for: one of `AGES`, or null for none. */
+const ageFrom = z
+    .number()
+    .int()
+    .refine((age) => isAge(age), { message: `Must be one of: ${AGES.join(", ")}` })
+
 export const productBody = z.object({
     name: text(80),
     description: z.string().trim().max(500).optional(),
     price: z.number().int().min(1).max(100_000_000),
     unit: z.enum(UNITS),
     category: z.enum(CATEGORIES),
+    /** Up to two more categories for the storefront; the core refuses twins and the main one. */
+    moreCategories: z.array(z.enum(CATEGORIES)).max(2).optional(),
+    ageFrom: ageFrom.nullable().optional(),
     step: z.number().int().min(1).max(10_000).optional(),
     returnable: z.boolean().optional(),
     position: z.number().int().min(0).max(100_000).optional(),
@@ -136,13 +147,21 @@ export const productBody = z.object({
 /** «Ro'yxat bilan qo'shish»: a list of plain products (no variants), at most 50. */
 export const productsBody = z.object({
     items: z
-        .array(productBody.omit({ options: true, position: true }))
+        .array(
+            productBody.omit({
+                options: true,
+                position: true,
+                moreCategories: true,
+                ageFrom: true,
+            }),
+        )
         .min(1)
         .max(MAX_PRODUCTS_AT_ONCE),
 })
 
 export const productPatchBody = productBody.partial().extend({
     description: z.string().trim().max(500).nullable().optional(),
+    moreCategories: z.array(z.enum(CATEGORIES)).max(2).nullable().optional(),
     options: productOptions.nullable().optional(),
     isAvailable: z.boolean().optional(),
     stopForToday: z.literal(true).optional(),

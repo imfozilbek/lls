@@ -5,12 +5,15 @@ import {
     Product,
     ProductOptions,
     UNITS,
+    isAge,
     offsetOf,
 } from "@zumda/core"
 
 import { bool, flag, oneOf, optional, placeholders } from "./rows.js"
 
 import type {
+    Age,
+    Category,
     Page,
     PageRequest,
     ProductListQuery,
@@ -35,10 +38,13 @@ interface ProductRow {
     created_at: number
     updated_at: number
     options: string | null
+    more_categories: string | null
+    age_from: number | null
 }
 
 const COLUMNS = `id, business_id, name, description, price, unit, step, category, image_key,
-    is_available, unavailable_until, returnable, position, created_at, updated_at, options`
+    is_available, unavailable_until, returnable, position, created_at, updated_at, options,
+    more_categories, age_from`
 
 /** The same columns read through the `p` alias of a join. */
 const JOINED_COLUMNS = COLUMNS.split(",")
@@ -74,12 +80,45 @@ export const SHOWCASE_BY_WORD_FROM = `FROM (
     CROSS JOIN products p ON p.id = m.product_id
     CROSS JOIN businesses b ON b.id = p.business_id`
 
+/** The showcase without words (a category alone): the showcase shops' products. */
+export const SHOWCASE_ALL_FROM = "FROM products p JOIN businesses b ON b.id = p.business_id"
+
 /** Every further word of the search; binds: its range. */
 export const WORD_FILTER =
     "p.id IN (SELECT product_id FROM product_words WHERE word >= ? AND word < ?)"
 
 /** Every name of a shop's products, read from the catalog index alone (`EXPLAIN` in query-plans). */
 export const NAMES_OF = "SELECT name FROM products WHERE business_id = ?"
+
+/**
+ * A product standing in a category as its main one or a further one; binds: `inCategoryBinds`.
+ * The further ones are a JSON array of ids, so the id in quotes matches it exactly.
+ */
+export function inCategory(alias = ""): string {
+    return `(${alias}category = ? OR instr(coalesce(${alias}more_categories, ''), ?) > 0)`
+}
+
+export function inCategoryBinds(category: Category): [string, string] {
+    return [category, JSON.stringify(category)]
+}
+
+function moreCategoriesOf(row: ProductRow): Category[] | undefined {
+    if (row.more_categories === null) {
+        return undefined
+    }
+    const ids = JSON.parse(row.more_categories) as string[]
+    return ids.map((id) => oneOf(id, CATEGORIES, "category"))
+}
+
+function ageOf(row: ProductRow): Age | undefined {
+    if (row.age_from === null) {
+        return undefined
+    }
+    if (!isAge(row.age_from)) {
+        throw new Error(`Corrupt age_from in database: ${row.age_from}`)
+    }
+    return row.age_from
+}
 
 /** The distinct words of a product's search text. */
 function wordsOf(text: string): string[] {
@@ -96,6 +135,8 @@ function toProduct(row: ProductRow): Product {
         unit: oneOf(row.unit, UNITS, "unit"),
         step: row.step,
         category: oneOf(row.category, CATEGORIES, "category"),
+        moreCategories: moreCategoriesOf(row),
+        ageFrom: ageOf(row),
         imageKey: optional(row.image_key),
         isAvailable: bool(row.is_available),
         unavailableUntil:
@@ -147,8 +188,8 @@ export class D1ProductRepository implements ProductRepository {
             params.push(query.availableAt.getTime())
         }
         if (query.category !== undefined) {
-            conditions.push("category = ?")
-            params.push(query.category)
+            conditions.push(inCategory())
+            params.push(...inCategoryBinds(query.category))
         }
         const where = conditions.join(" AND ")
         const [rows, count] = await this.db.batch([
@@ -181,17 +222,14 @@ export class D1ProductRepository implements ProductRepository {
         const [first, ...rest] = words
         // The first word drives the read (its prefix range in product_words); the other words
         // only filter what it found. Without words (a category alone): the showcase's products.
-        const from =
-            first === undefined
-                ? "FROM products p JOIN businesses b ON b.id = p.business_id"
-                : SHOWCASE_BY_WORD_FROM
+        const from = first === undefined ? SHOWCASE_ALL_FROM : SHOWCASE_BY_WORD_FROM
         if (first !== undefined) {
             params.push(...wordRange(first))
         }
         params.push(BusinessStatus.ACTIVE, search.availableAt.getTime())
         if (search.category !== undefined) {
-            conditions.push("p.category = ?")
-            params.push(search.category)
+            conditions.push(inCategory("p."))
+            params.push(...inCategoryBinds(search.category))
         }
         for (const word of rest) {
             conditions.push(WORD_FILTER)
@@ -243,7 +281,7 @@ export class D1ProductRepository implements ProductRepository {
         const upsert = this.db
             .prepare(
                 `INSERT INTO products (${COLUMNS}, search_text)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT (id) DO UPDATE SET name = excluded.name,
                     search_text = excluded.search_text,
                     description = excluded.description, price = excluded.price,
@@ -251,7 +289,8 @@ export class D1ProductRepository implements ProductRepository {
                     image_key = excluded.image_key, is_available = excluded.is_available,
                     unavailable_until = excluded.unavailable_until,
                     returnable = excluded.returnable, position = excluded.position,
-                    options = excluded.options, updated_at = excluded.updated_at`,
+                    options = excluded.options, updated_at = excluded.updated_at,
+                    more_categories = excluded.more_categories, age_from = excluded.age_from`,
             )
             .bind(
                 product.id,
@@ -270,6 +309,8 @@ export class D1ProductRepository implements ProductRepository {
                 product.createdAt.getTime(),
                 product.updatedAt.getTime(),
                 product.options ? JSON.stringify(product.options.toJSON()) : null,
+                product.moreCategories.length > 0 ? JSON.stringify(product.moreCategories) : null,
+                product.ageFrom ?? null,
                 ` ${product.searchText}`,
             )
         return [

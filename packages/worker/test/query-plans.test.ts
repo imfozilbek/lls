@@ -25,8 +25,11 @@ import {
 import { COUNT_SQL, NEXT_SQL } from "../src/repositories/phone-ask.repository.js"
 import {
     NAMES_OF,
+    SHOWCASE_ALL_FROM,
     SHOWCASE_BY_WORD_FROM,
     WORD_FILTER,
+    inCategory,
+    inCategoryBinds,
 } from "../src/repositories/product.repository.js"
 import {
     OPEN_TRIPS_OF_BUSINESS_SQL,
@@ -171,6 +174,25 @@ describe("query plans", () => {
             0,
         ])
         expectIndexed(plan, ["idx_orders_business_status (business_id=? AND status=?)"])
+    })
+
+    it("a category, main or further: a shop's catalog index range, never all products", async () => {
+        const inShop = await planOf(
+            `SELECT id FROM products WHERE business_id = ? AND is_available = 1
+             AND ${inCategory()} ORDER BY position, name`,
+            ["biz-1", ...inCategoryBinds("books")],
+        )
+        expect(inShop.join("\n")).toContain("USING INDEX idx_products_catalog")
+        expect(inShop.join("\n")).not.toMatch(/SCAN products\b/)
+        const showcase = await planOf(
+            `SELECT p.id ${SHOWCASE_ALL_FROM} WHERE b.status = ?
+             AND b.marketplace_commission_bps IS NOT NULL AND p.is_available = 1
+             AND ${inCategory("p.")} ORDER BY p.name`,
+            ["active", ...inCategoryBinds("books")],
+        )
+        const text = showcase.join("\n")
+        expect(text).toContain("USING INDEX idx_products_catalog")
+        expect(text).not.toMatch(/SCAN (p|products)\b/)
     })
 
     it("a showcase search reads only the products whose words match", async () => {
