@@ -16,6 +16,9 @@ describe("the category from the product name", () => {
         expect(guessCategory("Sement 50 kg")).toBe("building")
         expect(guessCategory("Gilam yuvish")).toBe("carpet")
         expect(guessCategory("Tandir non")).toBe("bakery")
+        expect(guessCategory("Rivojlantiruvchi gilamcha")).toBe("educational_toys")
+        expect(guessCategory("Mantiqiy kubik")).toBe("logic_games")
+        expect(guessCategory("Bolalar kitobi")).toBe("books")
     })
 
     it("says nothing when it does not know", () => {

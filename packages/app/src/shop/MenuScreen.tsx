@@ -45,6 +45,8 @@ import { BottomSpacer } from "../ui/shell.js"
 import { ShopLogo } from "../ui/shop-logo.js"
 
 import { ProductSheet, hasOptions } from "./ProductSheet.js"
+import { AgeBadge } from "./age-badge.js"
+import { matchesChip, menuChips } from "./menu-chips.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { Shop } from "../stores/session.js"
@@ -477,6 +479,7 @@ function PriceLine({ product }: { product: ProductDTO }): React.JSX.Element {
             <span className="text-tg-hint">
                 {prices.size > 1 ? ` ${t.shop.from}` : ` / ${unit}`}
             </span>
+            <AgeBadge product={product} />
         </p>
     )
 }
@@ -702,12 +705,13 @@ export function MenuScreen(): React.JSX.Element {
     const [category, setCategory] = useState<string | null>(null)
     const [query, setQuery] = useState("")
 
-    const categories = useMemo(() => [...new Set(catalog.map((p) => p.category))], [catalog])
-    // A category that left the catalog (after a refresh) never keeps filtering it empty.
-    const active = category && (categories as string[]).includes(category) ? category : null
+    // The tabs: ages («3+») and every category a product stands in.
+    const categories = useMemo(() => menuChips(catalog), [catalog])
+    // A tab that left the catalog (after a refresh) never keeps filtering it empty.
+    const active = category && categories.includes(category) ? category : null
     const words = searchWords(query)
     const visible = catalog.filter(
-        (p) => (!active || p.category === active) && (words.length === 0 || matches(p, words)),
+        (p) => (!active || matchesChip(p, active)) && (words.length === 0 || matches(p, words)),
     )
     const cart = summarize(lines, catalog)
     const detail = useProductDetail((state) => state.product)

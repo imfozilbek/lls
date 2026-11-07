@@ -9,6 +9,8 @@ import { Button, Spinner, Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { Sheet } from "../ui/sheet.js"
 
+import { AgeBadge } from "./age-badge.js"
+
 import type { ProductDTO } from "@zumda/core"
 
 /** Only products with variants or add-ons need it: its own small chunk. */
@@ -66,6 +68,7 @@ export function ProductSheet({
                                 {formatMoney(product.price, language)}
                             </span>
                             <span className="text-tg-hint"> / {unit}</span>
+                            <AgeBadge product={product} />
                         </p>
                         {quantity === 0 ? (
                             <Button

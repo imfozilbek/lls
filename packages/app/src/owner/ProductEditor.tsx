@@ -1,4 +1,5 @@
 import {
+    AGES,
     CATEGORIES,
     CATEGORY_GROUPS,
     Feature,
@@ -7,6 +8,7 @@ import {
     SUGGESTED_UNITS,
     UNITS,
     Unit,
+    ageLabel,
     categoriesOf,
     defaultStep,
     isBottleUnit,
@@ -49,6 +51,7 @@ import {
     optionsValid,
 } from "./OptionsEditor.js"
 import { ProductPreview } from "./ProductPreview.js"
+import { allOf, asksAge, togglePick, usedCategories } from "./category-picks.js"
 import { onSaleNow } from "./stopped.js"
 import { useOwner } from "./store.js"
 
@@ -56,7 +59,7 @@ import type { OptionsDraft } from "./OptionsEditor.js"
 import type { Template } from "./catalog.js"
 import type { ProductInput } from "../lib/api.js"
 import type { MainAction } from "../lib/main-button.js"
-import type { BusinessType, Category, ProductDTO, ProductOptionsProps } from "@zumda/core"
+import type { Age, BusinessType, Category, ProductDTO, ProductOptionsProps } from "@zumda/core"
 
 /** Selling steps offered for weight items, in grams: by the kilo, by 100 g, by the gram. */
 const WEIGHT_STEPS: Partial<Record<Unit, readonly number[]>> = {
@@ -84,7 +87,12 @@ interface Draft {
     description: string
     price: number | null
     unit: Unit
+    /** The main category; an order line keeps it. */
     category: Category
+    /** Further categories it also stands in on the storefront (up to two). */
+    moreCategories: Category[]
+    /** The child's age it is for; null: not given. */
+    ageFrom: Age | null
     /** Selling step in grams; used only for weight units. */
     step: number
     returnable: boolean
@@ -108,6 +116,8 @@ function newDraft(type: BusinessType | undefined): Draft {
         price: null,
         unit,
         category: (type && SUGGESTED_CATEGORIES[type][0]) || "other",
+        moreCategories: [],
+        ageFrom: null,
         step: defaultStep(unit),
         returnable: isBottleUnit(unit),
         isAvailable: true,
@@ -126,6 +136,10 @@ function draftOf(product: ProductDTO | undefined, type: BusinessType | undefined
         price: product.price,
         unit: product.unit,
         category: product.category,
+        moreCategories: product.moreCategories ?? [],
+        ageFrom: product.ageFrom ?? null,
+        // Its categories were the owner's choice: a tap adds or removes one.
+        categoryPicked: true,
         step: isWeightUnit(product.unit) ? product.step : defaultStep(product.unit),
         returnable: product.returnable,
         // Stopped for today shows as off sale: switching it on here puts it back today.
@@ -190,6 +204,8 @@ async function saveFields(product: ProductDTO | undefined, draft: Draft): Promis
         price: priceOf(draft),
         unit: draft.unit,
         category: draft.category,
+        moreCategories: draft.moreCategories,
+        ageFrom: draft.ageFrom,
         returnable: draft.returnable,
         ...(isWeightUnit(draft.unit) ? { step: draft.step } : {}),
     }
@@ -327,29 +343,68 @@ function unitOptions(type: BusinessType | undefined, current: Unit, all: boolean
     return suggested.includes(current) ? suggested : [...suggested, current]
 }
 
-/** Four at most: what the name suggests, then the shop's usual ones; the current one stays. */
+/** Chips where several can be on: the categories of one product. */
+function PickChips<T extends string>({
+    selected,
+    options,
+    label,
+    onToggle,
+}: {
+    selected: readonly T[]
+    options: readonly T[]
+    label(option: T): string
+    onToggle(value: T): void
+}): React.JSX.Element {
+    return (
+        <div className="flex flex-wrap gap-2">
+            {options.map((option) => (
+                <button
+                    key={option}
+                    type="button"
+                    aria-pressed={selected.includes(option)}
+                    onClick={(): void => {
+                        haptic.select()
+                        onToggle(option)
+                    }}
+                    className={cn(
+                        "tap h-11 rounded-full px-3.5 text-sm font-medium transition-colors duration-200",
+                        selected.includes(option) ? "bg-brand text-brand-ink" : "bg-tg-secondary",
+                    )}
+                >
+                    {label(option)}
+                </button>
+            ))}
+        </div>
+    )
+}
+
+/**
+ * Four at most: what the name suggests, then the shop's own categories, then its usual ones;
+ * the picked ones always stay in view.
+ */
 const LIKELY_CATEGORIES = 4
 
 function likelyCategories(
     name: string,
+    used: readonly Category[],
     suggested: readonly Category[],
-    value: Category,
+    selected: readonly Category[],
 ): Category[] {
     const guess = guessCategory(name)
-    const likely = [...new Set([...(guess ? [guess] : []), ...suggested])].slice(
+    const likely = [...new Set([...(guess ? [guess] : []), ...used, ...suggested])].slice(
         0,
         LIKELY_CATEGORIES,
     )
-    return likely.includes(value) ? likely : [value, ...likely.slice(0, LIKELY_CATEGORIES - 1)]
+    return [...selected.filter((c) => !likely.includes(c)), ...likely]
 }
 
 /** Every category, shelf by shelf, the shop's own shelf first: no wall of 100 chips. */
 function AllCategories({
-    value,
-    onChange,
+    selected,
+    onToggle,
 }: {
-    value: Category
-    onChange(category: Category): void
+    selected: readonly Category[]
+    onToggle(category: Category): void
 }): React.JSX.Element {
     const t = useT()
     const type = useSession((state) => state.shop?.type)
@@ -363,11 +418,11 @@ function AllCategories({
                     <h3 className="px-1 text-sm font-semibold text-tg-hint">
                         {t.owner.product.groups[group]}
                     </h3>
-                    <Chips
-                        value={value}
+                    <PickChips
+                        selected={selected}
                         options={categoriesOf(group)}
                         label={(c): string => categories[c] ?? c}
-                        onChange={onChange}
+                        onToggle={onToggle}
                     />
                 </div>
             ))}
@@ -375,31 +430,50 @@ function AllCategories({
     )
 }
 
+/**
+ * Up to three categories: a toy stands in «Mantiqiy o'yinlar» and «Kitoblar» at once. The first
+ * tap on a guessed category replaces it; later taps add and remove.
+ */
 function CategoryField({
-    value,
-    name,
-    onChange,
+    draft,
+    patch,
 }: {
-    value: Category
-    name: string
-    onChange(category: Category): void
+    draft: Draft
+    patch(change: Partial<Draft>): void
 }): React.JSX.Element {
     const t = useT()
     const type = useSession((state) => state.shop?.type)
+    const products = useOwner((state) => state.products)
     const suggested = type ? SUGGESTED_CATEGORIES[type] : CATEGORIES
     const [all, setAll] = useState(false)
     const categories = t.categories as Record<string, string>
+    const selected = allOf(draft)
+    const toggle = (category: Category): void => {
+        const next = togglePick(draft, category, draft.categoryPicked === true)
+        if (next === null) {
+            haptic.error()
+            toast(t.owner.product.categoriesFull, "error")
+            return
+        }
+        patch({ ...next, categoryPicked: true })
+    }
+    const label = (c: Category): string => categories[c] ?? c
     return (
         <Section title={t.owner.product.category}>
             {all ? (
-                <AllCategories value={value} onChange={onChange} />
+                <AllCategories selected={selected} onToggle={toggle} />
             ) : (
                 <>
-                    <Chips
-                        value={value}
-                        options={likelyCategories(name, suggested, value)}
-                        label={(c): string => categories[c] ?? c}
-                        onChange={onChange}
+                    <PickChips
+                        selected={selected}
+                        options={likelyCategories(
+                            draft.name,
+                            usedCategories(products),
+                            suggested,
+                            selected,
+                        )}
+                        label={label}
+                        onToggle={toggle}
                     />
                     <button
                         type="button"
@@ -410,6 +484,38 @@ function CategoryField({
                     </button>
                 </>
             )}
+            <p className="px-1 text-sm text-tg-hint">{t.owner.product.categoriesHint}</p>
+        </Section>
+    )
+}
+
+const NO_AGE = "none"
+
+/** «Yoshi» for children's goods: the age it is for, or none. */
+function AgeField({
+    draft,
+    patch,
+}: {
+    draft: Draft
+    patch(change: Partial<Draft>): void
+}): React.JSX.Element | null {
+    const t = useT()
+    if (draft.ageFrom === null && !asksAge(draft)) {
+        return null
+    }
+    return (
+        <Section title={t.owner.product.age}>
+            <Chips
+                value={draft.ageFrom === null ? NO_AGE : String(draft.ageFrom)}
+                options={[NO_AGE, ...AGES.map(String)]}
+                label={(v): string => {
+                    const age = AGES.find((a) => String(a) === v)
+                    return age === undefined ? t.owner.product.ageNone : ageLabel(age)
+                }}
+                onChange={(v): void =>
+                    patch({ ageFrom: AGES.find((a) => String(a) === v) ?? null })
+                }
+            />
         </Section>
     )
 }
@@ -478,11 +584,8 @@ function KindFields({
                     />
                 </label>
             ) : null}
-            <CategoryField
-                value={draft.category}
-                name={draft.name}
-                onChange={(category): void => patch({ category, categoryPicked: true })}
-            />
+            <CategoryField draft={draft} patch={patch} />
+            <AgeField draft={draft} patch={patch} />
         </>
     )
 }
@@ -495,7 +598,13 @@ function KindSummary({ draft, onOpen }: { draft: Draft; onOpen(): void }): React
     const t = useT()
     const units = t.units as Record<string, string>
     const categories = t.categories as Record<string, string>
-    const words = [units[draft.unit] ?? draft.unit, categories[draft.category] ?? draft.category]
+    const words = [
+        units[draft.unit] ?? draft.unit,
+        allOf(draft)
+            .map((c) => categories[c] ?? c)
+            .join(", "),
+        ...(draft.ageFrom === null ? [] : [ageLabel(draft.ageFrom)]),
+    ]
     return (
         <div className="flex items-center gap-3 rounded-control bg-tg-secondary px-4 py-2">
             <p className="min-w-0 flex-1 font-medium">{words.join(" · ")}</p>
@@ -579,6 +688,7 @@ function fromTemplate(draft: Draft, template: Template): Draft {
         ...draft,
         name: template.name,
         category: template.category,
+        moreCategories: draft.moreCategories.filter((c) => c !== template.category),
         categoryPicked: true,
         unit: template.unit,
         step: template.step ?? defaultStep(template.unit),
@@ -801,6 +911,10 @@ function useSave(input: {
                 unit: draft.unit,
                 step: draft.step,
                 category: draft.category,
+                moreCategories: draft.moreCategories,
+                ageFrom: draft.ageFrom,
+                // Several categories are a choice: the next name never moves them.
+                categoryPicked: draft.moreCategories.length > 0,
             })
             onSaved()
             window.scrollTo({ top: 0 })

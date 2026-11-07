@@ -346,6 +346,10 @@ export interface ProductInput {
     price: number
     unit: string
     category: string
+    /** Further categories for the storefront (up to two); `[]` on an update drops them. */
+    moreCategories?: string[]
+    /** The child's age it is for; `null` drops it. */
+    ageFrom?: number | null
     step?: number
     returnable?: boolean
     position?: number
