@@ -261,9 +261,9 @@ Pilot: **food, water and grocery at the same time.**
       o'yinchoqlar», «Mantiqiy o'yinlar», «Kitoblar» in the taxonomy (117 ids), up to three
       categories a product, the age «Yoshi» (0+ to 12+), the storefront's tabs by age and
       category; reaches the shop with the first deploy after goal 19
-- [ ] Zumda | Platforma live (goal 19, `docs/goals/19-platforma-live.md`): the owner creates the
-      bot and `ADMIN_BOT_TOKEN`, presses Start, sets its Login Widget; until the secret exists
-      the deploy of `main` is skipped as a whole
+- [ ] Zumda | Platforma live (goal 19, `docs/goals/19-platforma-live.md`): in production since 7
+      November 2026 (bot, secret, deploy, Start, Login Widget, «Platforma» from the bot and the
+      browser); left: the first application and the first alert seen from the new bot
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
 
