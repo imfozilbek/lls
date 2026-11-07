@@ -308,11 +308,20 @@ cover each one's whole process; what exactly comes from the meeting with them.
   yana qo'shish», «Nusxa olish»; a typed draft is guarded. «Ro'yxat bilan qo'shish»: one product
   a line «Nomi narx [birlik]», up to 50 in one `db.batch` (`POST /api/owner/products/bulk`, 5 a
   minute), a name the shop has is skipped.
+- **A toy shop's tabs (owner's decisions, November 2026):** «Rivojlantiruvchi o'yinchoqlar»,
+  «Mantiqiy o'yinlar», «Kitoblar» stand on the goods shelf after «Bolalar tovarlari». A product
+  stands in up to three categories (`MAX_CATEGORIES`): the main one, which an order line and the
+  showcase deal keep, and up to two more for the storefront and the category filter
+  (`products.more_categories`). Children's goods (`KIDS_CATEGORIES`) ask «Yoshi», the age they
+  are for (`AGES`: 0+, 1+, 3+, 5+, 7+, 12+; `products.age_from`). The form: the first tap on a
+  guessed category replaces it, later taps add and remove; the shop's own categories come right
+  after the name's guess. The storefront's tabs: the ages first (two or more), then every
+  category a product stands in (`shop/menu-chips.ts`); a card shows «3+».
 - Add a feature only when a real client asks for it.
 - Design stage 1 so stages 2–3 need no rewrite:
   - multi-tenant: `business_id` in every business-owned table
   - one global customer per `telegram_id` + customer↔business link
-  - shared category taxonomy (114 ids on four shelves: food, grocery, goods, services; ids are
+  - shared category taxonomy (117 ids on four shelves: food, grocery, goods, services; ids are
     stored, so only added, never renamed) + units (pieces, portion, kg, 100 g, g, l, 19 l, 20 l,
     packs and boxes, metre, m², m³, hour, day, month, session, trip, sotix; goal 17)
   - geo: business location + delivery zone, customer location
@@ -512,7 +521,7 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | Entity | Key Fields |
 |--------|------------|
 | Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
-| Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17) |
+| Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy; the main one), more_categories (up to two more, storefront only), age_from (0, 1, 3, 5, 7, 12: children's goods), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
 | District | id, name, region (one of the 14 viloyats), center (lat, lng), radius, wait_minutes: a circle of the delivery network |
@@ -1109,6 +1118,8 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Trips: three orders one way → «Bir yo'nalish» → reorder → «Tayinlash» → «Hammasini
       oldim» → Yandex link in order → delivered stops grey for the owner
 - [ ] Grocery: weight items (kg steps); spices by 100 g («× 300 g» in the message); stop-list for today
+- [ ] Toys: a toy in «Mantiqiy o'yinlar» and «Kitoblar» with «3+»; a fourth category refused; the
+      storefront's tabs «0+», «3+» and the categories, each toy under each of its tabs
 - [ ] Each order stores channel + commission (0 for own bot)
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow
