@@ -180,7 +180,7 @@ export class InMemoryProducts implements ProductRepository {
         const matching = [...this.items.values()]
             .filter((p) => p.belongsTo(businessId))
             .filter((p) => query.availableAt === undefined || p.isAvailableAt(query.availableAt))
-            .filter((p) => query.category === undefined || p.category === query.category)
+            .filter((p) => query.category === undefined || p.categories.includes(query.category))
             .sort((a, b) => a.position - b.position || a.name.localeCompare(b.name))
         return paginate(matching, page)
     }
@@ -188,7 +188,7 @@ export class InMemoryProducts implements ProductRepository {
         const shops = new Set((await this.businesses?.listInShowcase())?.map((b) => b.id))
         const matching = [...this.items.values()]
             .filter((p) => shops.has(p.businessId) && p.isAvailableAt(search.availableAt))
-            .filter((p) => search.category === undefined || p.category === search.category)
+            .filter((p) => search.category === undefined || p.categories.includes(search.category))
             .filter((p) => search.words.every((word) => ` ${p.searchText}`.includes(` ${word}`)))
             .sort((a, b) => a.name.localeCompare(b.name))
         return paginate(matching, page)

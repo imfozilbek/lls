@@ -23,6 +23,8 @@ export interface CreateProductInput {
     price: number
     unit: string
     category: string
+    moreCategories?: readonly string[]
+    ageFrom?: number | null
     step?: number
     returnable?: boolean
     position?: number
@@ -45,6 +47,8 @@ export class CreateProductUseCase {
             price: input.price,
             unit: input.unit,
             category: input.category,
+            moreCategories: input.moreCategories,
+            ageFrom: input.ageFrom,
             step: input.step,
             returnable: input.returnable,
             position: input.position,
