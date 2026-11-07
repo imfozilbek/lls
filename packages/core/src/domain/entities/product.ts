@@ -1,4 +1,5 @@
-import { CATEGORIES } from "../enums/category.js"
+import { AGES, isAge } from "../enums/age.js"
+import { CATEGORIES, MAX_CATEGORIES } from "../enums/category.js"
 import { UNITS, Unit, defaultStep, isWeightUnit } from "../enums/unit.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ValidationError } from "../errors/validation.error.js"
@@ -8,6 +9,7 @@ import { addDays, startOfLocalDay } from "../shared/time.js"
 import { Money } from "../value-objects/money.js"
 import { ProductOptions } from "../value-objects/product-options.js"
 
+import type { Age } from "../enums/age.js"
 import type { Category } from "../enums/category.js"
 import type {
     ChosenOptions,
@@ -35,6 +37,10 @@ export interface ProductProps {
     /** Selling step in base units: grams for `kg`, always 1 for pieces. */
     step: number
     category: Category
+    /** Further categories it also stands in on the storefront (the main one goes in orders). */
+    moreCategories?: Category[]
+    /** The child's age it is for, from this many years (children's goods). */
+    ageFrom?: Age
     imageKey?: string
     isAvailable: boolean
     /** Stop-list: hidden until this moment (the next local midnight), then back on sale. */
@@ -56,6 +62,8 @@ export interface CreateProductProps {
     price: number
     unit: string
     category: string
+    moreCategories?: readonly string[] | null
+    ageFrom?: number | null
     step?: number
     returnable?: boolean
     position?: number
@@ -68,6 +76,10 @@ export interface ProductPatch {
     price?: number
     unit?: string
     category?: string
+    /** null or [] leaves only the main category. */
+    moreCategories?: readonly string[] | null
+    /** null: no age. */
+    ageFrom?: number | null
     step?: number
     returnable?: boolean
     position?: number
@@ -102,6 +114,38 @@ function validOptions(
     return options.isEmpty ? undefined : options
 }
 
+/** The categories besides the main one: known ones, each once, never the main one again. */
+function validMoreCategories(
+    main: Category,
+    input: readonly string[] | null | undefined,
+): Category[] | undefined {
+    if (!input || input.length === 0) {
+        return undefined
+    }
+    if (input.length > MAX_CATEGORIES - 1) {
+        throw ValidationError.fromField(
+            "moreCategories",
+            `At most ${MAX_CATEGORIES} categories in all`,
+            input.length,
+        )
+    }
+    const more = input.map((category) => requireOneOf("moreCategories", category, CATEGORIES))
+    if (new Set([main, ...more]).size !== more.length + 1) {
+        throw ValidationError.fromField("moreCategories", "Each category once", input.join(","))
+    }
+    return more
+}
+
+function validAge(input: number | null | undefined): Age | undefined {
+    if (input === null || input === undefined) {
+        return undefined
+    }
+    if (!isAge(input)) {
+        throw ValidationError.fromField("ageFrom", `Must be one of: ${AGES.join(", ")}`, input)
+    }
+    return input
+}
+
 function validPrice(amount: number): Money {
     return Money.of(requireInteger("price", amount, 1, MAX_PRICE))
 }
@@ -113,6 +157,7 @@ export class Product {
         const now = new Date()
         const unit = requireOneOf("unit", input.unit, UNITS)
         const options = validOptions(unit, input.options)
+        const category = requireOneOf("category", input.category, CATEGORIES)
         return new Product({
             id: input.id,
             businessId: input.businessId,
@@ -122,7 +167,9 @@ export class Product {
             price: validPrice(options?.lowestPrice ?? input.price),
             unit,
             step: validStep(unit, input.step),
-            category: requireOneOf("category", input.category, CATEGORIES),
+            category,
+            moreCategories: validMoreCategories(category, input.moreCategories),
+            ageFrom: validAge(input.ageFrom),
             isAvailable: true,
             returnable: input.returnable ?? false,
             position: requireInteger("position", input.position ?? 0, 0, MAX_POSITION),
@@ -167,8 +214,19 @@ export class Product {
     get returnable(): boolean {
         return this.props.returnable
     }
+    /** The main category: the one an order line keeps. */
     get category(): Category {
         return this.props.category
+    }
+    get moreCategories(): Category[] {
+        return this.props.moreCategories ?? []
+    }
+    /** Every category it stands in: the main one first. */
+    get categories(): Category[] {
+        return [this.props.category, ...this.moreCategories]
+    }
+    get ageFrom(): Age | undefined {
+        return this.props.ageFrom
     }
     get imageKey(): string | undefined {
         return this.props.imageKey
@@ -231,14 +289,35 @@ export class Product {
         if (patch.returnable !== undefined) {
             this.props.returnable = patch.returnable
         }
-        if (patch.category !== undefined) {
-            this.props.category = requireOneOf("category", patch.category, CATEGORIES)
+        this.applyCategories(patch)
+        if (patch.ageFrom !== undefined) {
+            this.props.ageFrom = validAge(patch.ageFrom)
         }
         if (patch.position !== undefined) {
             this.props.position = requireInteger("position", patch.position, 0, MAX_POSITION)
         }
         this.applyOptions(patch)
         this.touch()
+    }
+
+    /**
+     * A new main category, new further ones, or both. A main category that was a further one
+     * leaves the further ones by itself: the owner moved it, not doubled it.
+     */
+    private applyCategories(patch: ProductPatch): void {
+        if (patch.category === undefined && patch.moreCategories === undefined) {
+            return
+        }
+        const main =
+            patch.category === undefined
+                ? this.props.category
+                : requireOneOf("category", patch.category, CATEGORIES)
+        const more =
+            patch.moreCategories === undefined
+                ? this.moreCategories.filter((category) => category !== main)
+                : patch.moreCategories
+        this.props.category = main
+        this.props.moreCategories = validMoreCategories(main, more)
     }
 
     /** New variants and add-ons, or the old ones checked again against a new unit. */

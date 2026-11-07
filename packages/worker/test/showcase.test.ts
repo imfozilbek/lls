@@ -114,6 +114,32 @@ describe("Zumda showcase", () => {
         expect(shops.data).toEqual([])
     })
 
+    it("a category finds a product standing in it as a further one too", async () => {
+        await market(5)
+        const response = await inShop(OWNER)("/api/owner/products", {
+            method: "POST",
+            json: {
+                name: "Ertaklar",
+                price: 25_000,
+                unit: "pcs",
+                category: "books",
+                moreCategories: ["educational_toys"],
+                ageFrom: 3,
+            },
+        })
+        expect(response.status).toBe(201)
+        const found = await json<{ data: { name: string; ageFrom?: number }[] }>(
+            await viaPlatform(CUSTOMER)("/api/showcase/products?category=educational_toys"),
+        )
+        expect(found.data.map((p) => p.name)).toEqual(["Ertaklar"])
+        expect(found.data[0]?.ageFrom).toBe(3)
+        // An id inside another id's name never matches: «books» is no «baby_goods».
+        const none = await json<{ data: unknown[] }>(
+            await viaPlatform(CUSTOMER)("/api/showcase/products?category=baby_goods"),
+        )
+        expect(none.data).toEqual([])
+    })
+
     it("search finds products in any alphabet, lists shops, hides stop-listed items", async () => {
         await market(5)
         const shops = await json<{ data: { slug: string }[] }>(

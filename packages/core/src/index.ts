@@ -1,4 +1,5 @@
 // Domain - Enums
+export * from "./domain/enums/age.js"
 export * from "./domain/enums/business-type.js"
 export * from "./domain/enums/business-profile.js"
 export * from "./domain/enums/business-status.js"

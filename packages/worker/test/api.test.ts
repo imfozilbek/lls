@@ -265,6 +265,53 @@ describe("inside a shop", () => {
         expect(stranger.status).toBe(403)
     })
 
+    it("a toy in several categories with an age: kept, changed, cleared; a wrong one refused", async () => {
+        const created = await asOwner()("/api/owner/products", {
+            method: "POST",
+            json: {
+                name: "Mantiqiy kubik",
+                price: 90_000,
+                unit: "pcs",
+                category: "logic_games",
+                moreCategories: ["books"],
+                ageFrom: 3,
+            },
+        })
+        expect(created.status).toBe(201)
+        const toy = await json<{ id: string }>(created)
+        expect(toy).toMatchObject({
+            category: "logic_games",
+            moreCategories: ["books"],
+            ageFrom: 3,
+        })
+
+        const seen = await json<{ data: Json[] }>(await asCustomer()("/api/shop/products"))
+        expect(seen.data.find((p) => p["id"] === toy.id)).toMatchObject({
+            moreCategories: ["books"],
+            ageFrom: 3,
+        })
+        const books = await json<{ data: Json[] }>(
+            await asCustomer()("/api/shop/products?category=books"),
+        )
+        expect(books.data.map((p) => p["id"])).toEqual([toy.id])
+
+        const patch = (body: Json): Promise<Response> =>
+            asOwner()(`/api/owner/products/${toy.id}`, { method: "PATCH", json: body })
+        const changed = await json<Json>(
+            await patch({ moreCategories: ["educational_toys", "books"], ageFrom: 5 }),
+        )
+        expect(changed).toMatchObject({ moreCategories: ["educational_toys", "books"], ageFrom: 5 })
+        const cleared = await json<Json>(await patch({ moreCategories: null, ageFrom: null }))
+        expect(cleared["moreCategories"]).toBeUndefined()
+        expect(cleared["ageFrom"]).toBeUndefined()
+
+        expect((await patch({ ageFrom: 2 })).status).toBe(400)
+        expect((await patch({ moreCategories: ["toys"] })).status).toBe(400)
+        expect((await patch({ moreCategories: ["books", "baby_goods", "meals"] })).status).toBe(400)
+        // The main category again among the further ones: the core refuses the twin.
+        expect((await patch({ moreCategories: ["logic_games"] })).status).toBe(400)
+    })
+
     it("variants and add-ons: the server prices the pick, refuses a missing or foreign one", async () => {
         const created = await asOwner()("/api/owner/products", {
             method: "POST",

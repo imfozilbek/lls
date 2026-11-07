@@ -70,6 +70,10 @@ export const CATEGORIES = [
     "hygiene",
     "cosmetics",
     "baby_goods",
+    // A toy shop's own words (owner's decision, November 2026)
+    "educational_toys",
+    "logic_games",
+    "books",
     "paper",
     "kitchenware",
     "textile",
@@ -125,6 +129,17 @@ export const CATEGORIES = [
 ] as const
 
 export type Category = (typeof CATEGORIES)[number]
+
+/** A product may stand in this many categories in all: the main one and up to two more. */
+export const MAX_CATEGORIES = 3
+
+/** Children's goods: their form asks for the age they are for. */
+export const KIDS_CATEGORIES: readonly Category[] = [
+    "baby_goods",
+    "educational_toys",
+    "logic_games",
+    "books",
+]
 
 /** The four shelves of the taxonomy: what an owner picks from and what a kind of shop suggests. */
 export enum CategoryGroup {

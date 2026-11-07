@@ -7,6 +7,16 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### A toy shop sorts its toys the way parents look for them
+- Three categories join the goods shelf (owner's decisions, 7 November 2026): «Rivojlantiruvchi
+  o'yinchoqlar», «Mantiqiy o'yinlar» and «Kitoblar».
+- A product stands in up to three categories: a logic game can be a book too. The main one stays
+  in orders; the others place it under more tabs. The form's first tap replaces a guessed
+  category, later taps add and remove, and the shop's own categories come first.
+- Children's goods say the age they are for, «Yoshi»: 0+, 1+, 3+, 5+, 7+ or 12+.
+- The storefront's tabs: the ages first, then every category; a toy is under each of its tabs,
+  and its card shows «3+».
+
 ### The app never waits forever (an owner's report: it froze until reopened)
 - Every request of the Mini App has a deadline: 20 s to read, 30 s for an action, 120 s for a
   photo. Over a connection that died in the background, or a stalled regional network, the

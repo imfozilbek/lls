@@ -190,6 +190,10 @@ export const staffUz = {
             step: "Qanchadan sotiladi",
             category: "Bo'lim",
             moreCategories: "Boshqa bo'limlar",
+            categoriesHint: "3 tagacha bo'lim tanlash mumkin",
+            categoriesFull: "Bitta mahsulot 3 tagacha bo'limda turadi",
+            age: "Yoshi",
+            ageNone: "Ko'rsatilmagan",
             groups: {
                 food: "Ovqat",
                 grocery: "Oziq-ovqat",

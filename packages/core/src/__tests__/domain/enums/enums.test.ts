@@ -7,10 +7,12 @@ import {
     SUGGESTED_UNITS,
 } from "../../../domain/enums/business-profile.js"
 import { BUSINESS_TYPES, BusinessType } from "../../../domain/enums/business-type.js"
+import { AGES, ageLabel, isAge } from "../../../domain/enums/age.js"
 import {
     CATEGORIES,
     CATEGORY_GROUPS,
     CategoryGroup,
+    KIDS_CATEGORIES,
     categoriesOf,
     categoryGroup,
 } from "../../../domain/enums/category.js"
@@ -150,6 +152,23 @@ describe("business profiles", () => {
         for (const type of BUSINESS_TYPES) {
             expect(SUGGESTED_CATEGORIES[type].every((c) => CATEGORIES.includes(c))).toBe(true)
         }
+    })
+
+    it("a toy shop's categories stand on the goods shelf, next to the children's goods", () => {
+        const goods = categoriesOf(CategoryGroup.GOODS)
+        const after = goods.slice(goods.indexOf("baby_goods"), goods.indexOf("baby_goods") + 4)
+        expect(after).toEqual(["baby_goods", "educational_toys", "logic_games", "books"])
+        expect(KIDS_CATEGORIES.every((c) => categoryGroup(c) === CategoryGroup.GOODS)).toBe(true)
+        // The services shelf still starts where it did.
+        expect(categoryGroup("cleaning")).toBe(CategoryGroup.SERVICES)
+        expect(categoryGroup("gas")).toBe(CategoryGroup.GOODS)
+    })
+
+    it("ages go up from 0+ to 12+", () => {
+        expect(AGES.map(ageLabel)).toEqual(["0+", "1+", "3+", "5+", "7+", "12+"])
+        expect(isAge(3)).toBe(true)
+        expect(isAge(2)).toBe(false)
+        expect(isAge("3")).toBe(false)
     })
 })
 
