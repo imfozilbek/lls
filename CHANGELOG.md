@@ -7,6 +7,17 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Collecting is a step of its own
+- «Qabul qilish» and «Pul keldi» accept the order, and it waits under «Yig'ish kerak»
+  («Tayyorlash kerak» for food) until the owner presses «Yig'ishni boshlash» (owner's decision,
+  November 2026; it replaces October's «accepting starts the order»). A service starts the moment
+  it is accepted: there is nothing to collect.
+- The customer hears «qabul qilindi» (with «To'lovingiz keldi» for a transfer), then «hozir
+  yig'ilmoqda» («tayyorlanmoqda»). Their order screen shows «Qabul qilindi» with the work not yet
+  under way; the courier reads «Buyurtma qabul qilindi, tayyor bo'lganda xabar keladi».
+- The shop's only courier and the district network are still asked right after the accept.
+- One more step an order: 42 rows written instead of 36 (`docs/capacity.md`).
+
 ### «Raqamni nusxalash» opens the customer's bank app
 - Under the shop's card one button, «Raqamni nusxalash» (owner's decision, November 2026): it
   copies the number and opens a sheet with the sum to type, large and not copied, and Click,

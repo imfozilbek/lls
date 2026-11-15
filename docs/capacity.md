@@ -20,9 +20,9 @@ that Zumda fits its share on a busy day, line by line, and how each number was f
 
 | Line | Account free limit | Zumda's share | Typical day | Heavy day | Fits |
 |------|-------------------:|--------------:|------------:|----------:|------|
-| Worker requests | 100 000 / day | 35 000 | ~32 700 | ~40 000 | typical yes; heavy: see "Levers" |
+| Worker requests | 100 000 / day | 35 000 | ~33 700 | ~41 000 | typical yes; heavy: see "Levers" |
 | D1 rows read | 5 000 000 / day | 1 500 000 | ~0.6 M | ~1.1 M | yes, also after 6 months |
-| D1 rows written | 100 000 / day | 20 000 | ~14 100 | ~17 800 | yes |
+| D1 rows written | 100 000 / day | 20 000 | ~15 900 | ~19 600 | yes, heavy close to the share |
 | R2 storage | 10 GB | 4 GB | ~2 GB | ~2.3 GB | yes, and it stops growing |
 | Cron triggers | 5 / account | 0-1 | 0 | 0 | yes |
 
@@ -54,7 +54,7 @@ Rows read per request (authentication included):
 | Owner: «Pul» this month | 285 at day 5, ~1 700 at day 30 | opening «Pul» with the month |
 | Courier: home | 166 (30 finished today, 11 open; +1 per shop of the day without its own number) | every 45 s while visible |
 | Showcase: a search | 10 | after a pause in typing; two letters match a whole word only, a prefix from three |
-| One order, placing to delivered (6 calls: accepting starts it) | 81 read, 36 written | 300 a day |
+| One order, placing to delivered (7 calls: «Yig'ishni boshlash» is a step of its own) | 102 read, 42 written | 300 a day |
 
 What the measurement found and fixed on the way (before, on the same data):
 
@@ -76,13 +76,13 @@ Photos, logos and the map no longer reach the Worker: R2 serves them at `media.z
 | Customers opening a shop | 1 000 × 5 (me, shop, menu pages, my orders) | 5 000 | 5 000 |
 | Customers who order | 300 × (6 actions + 20 order-screen checks) | 7 800 | 7 800 |
 | Owners: version checks | 10 × 2 h × 180 / h (heavy: 6 h) | 3 600 | 10 800 |
-| Owners: list reloads and actions | 300 orders × 6 changes + 300 × 6 actions | 3 600 | 3 600 |
+| Owners: list reloads and actions | 300 orders × 7 changes + 300 × 7 actions | 4 200 | 4 200 |
 | Couriers | 15 × 3 h × 80 / h + 300 × 2 actions | 4 200 | 4 200 |
 | Bots (button presses, `/start`, contacts) | | 1 000 | 1 000 |
 | Showcase searches | | 500 | 500 |
 | Mini App crash reports (`POST /api/client-errors`) | one per kind of crash a session, at most 5; no preflight (text/plain) | < 50 | < 200 |
-| CORS preflights (`OPTIONS`) | ~60% of the ~11 500 requests that are not repeated checks | 7 000 | 7 000 |
-| **Total** | | **~32 700** | **~40 000** |
+| CORS preflights (`OPTIONS`) | ~60% of the ~12 100 requests that are not repeated checks | 7 400 | 7 400 |
+| **Total** | | **~33 700** | **~41 000** |
 
 A repeated check of the same address is preflighted once per cache period (`Access-Control-Max-Age`
 is one day; browsers cap it: Chromium at 2 hours). Every new address (another order, another
@@ -100,11 +100,11 @@ page) needs its own preflight, which is why they are a large share.
 | What | Calculation | Typical | Heavy |
 |------|-------------|--------:|------:|
 | Customers opening a shop | 1 000 × ~97 (me, shop, menu 1.5 pages) | 97 000 | 97 000 |
-| Orders placed to delivered | 300 × 91 | 27 000 | 27 000 |
+| Orders placed to delivered | 300 × 102 | 30 600 | 30 600 |
 | Order-screen checks | 300 × 20 × 5 | 30 000 | 30 000 |
 | My orders | 300 × 83 | 25 000 | 25 000 |
 | Owners: version checks | 3 600 × 18 (heavy 10 800) | 65 000 | 194 000 |
-| Owners: list reloads | 1 800 × 61 | 110 000 | 110 000 |
+| Owners: list reloads | 2 100 × 61 | 128 000 | 128 000 |
 | Owners: «Pul» and finished lists | 10 shops × 10 × (300 + 107) | 41 000 | 41 000 |
 | Couriers' home | 3 600 × ~50 (20 deliveries spread over the day; heavy: 166) | 180 000 | 600 000 |
 | Showcase, bots, admin | | 15 000 | 15 000 |
@@ -126,7 +126,7 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 
 | What | Calculation | Typical | Heavy |
 |------|-------------|--------:|------:|
-| Orders | 300 × 36 | 10 800 | 10 800 |
+| Orders (accept and «Yig'ishni boshlash» are two steps since November 2026) | 300 × 42 | 12 600 | 12 600 |
 | Customers (new ones, phone shares) | ~50 × 6 | 300 | 600 |
 | Products saved (row + search words + indexes) | 10 shops × 10 × ~15 | 1 500 | 3 000 |
 | «Ro'yxat bilan qo'shish»: a new shop's list, once (50 × ~15; reads: the shop's names, one covering index) | rare, at most 5 a minute | 0 | 750 |
@@ -134,7 +134,7 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 | Counted stock: a placed order with a counted product, a cancel giving it back (one product row each; `stock` is in no index) | ~50 orders × ~1.5 | 75 | 300 |
 | A dispatcher's «Jo'natdim» and notes (one order row each: only the changed columns, `updated_at` re-indexed) | ~20 orders × ~3 × ~4 | 240 | 500 |
 | Bot message ids, alerts, sessions | 300 × 2 × 2 + ~200 | 1 400 | 1 700 |
-| **Total** | | **~14 100** | **~17 800** |
+| **Total** | | **~15 900** | **~19 600** |
 
 ## R2 storage
 
