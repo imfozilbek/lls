@@ -353,9 +353,10 @@ export interface CourierChoice {
 
 /**
  * Owner: the next step + cancel, or no buttons for a finished order. A new transfer order waits
- * for the money: its step is «Деньги пришли, принять». A cash order is accepted at once. An order
- * nobody is on yet asks who takes it (`choice`) before «Tayyor»; the dispatcher's steps are never
- * on the owner's card.
+ * for the customer's screenshot with only cancel; once it came, its step is «Pul keldi, qabul
+ * qilish» (owner's decision, November 2026). A cash order is accepted at once. An order nobody
+ * is on yet asks who takes it (`choice`) before «Tayyor»; the dispatcher's steps are never on the
+ * owner's card.
  */
 export function orderKeyboard(
     order: OrderDTO,
@@ -378,25 +379,46 @@ export function orderKeyboard(
             : { text: t.deliverMyself, callback_data: `m:${order.id}` }
         return { inline_keyboard: [[who], cancel] }
     }
-    const waitsForMoney =
-        next === OrderStatus.ACCEPTED &&
-        !isPaid(order) &&
-        order.payment.method !== PaymentMethod.CASH
-    const step: InlineButton = waitsForMoney
-        ? { text: t.paidAccept, callback_data: `p:${order.id}` }
-        : { text: t.actions[next] ?? next, callback_data: `a:${order.id}:${next}` }
+    const money = moneyStep(order, next, t)
+    if (money === "wait") {
+        return { inline_keyboard: [cancel] }
+    }
+    const step: InlineButton = money ?? {
+        text: t.actions[next] ?? next,
+        callback_data: `a:${order.id}:${next}`,
+    }
     return { inline_keyboard: [[step], cancel] }
 }
 
-/** «Pul keldi»: the owner answers after looking at the bank app, never by reflex. */
-export function confirmPaidKeyboard(order: OrderDTO, t: BotTexts, sum: string): InlineKeyboard {
-    const rows: InlineButton[][] = [
-        [{ text: fill(t.confirmPaidYes, { sum }), callback_data: `pc:${order.id}` }],
-    ]
-    if (order.payment.status === PaymentStatus.AWAITING) {
-        rows.push([{ text: t.confirmPaidNo, callback_data: `pn:${order.id}` }])
+/**
+ * A new transfer order before the money: «Pul keldi, qabul qilish» once the customer's
+ * screenshot came, "wait" before it; null when the money is not the next thing.
+ */
+function moneyStep(order: OrderDTO, next: OrderStatus, t: BotTexts): InlineButton | "wait" | null {
+    if (
+        next !== OrderStatus.ACCEPTED ||
+        isPaid(order) ||
+        order.payment.method === PaymentMethod.CASH
+    ) {
+        return null
     }
-    return { inline_keyboard: rows }
+    if (order.payment.status === PaymentStatus.UNPAID) {
+        return "wait"
+    }
+    return { text: t.paidAccept, callback_data: `p:${order.id}` }
+}
+
+/**
+ * «Pul keldi» under the customer's screenshot: the owner answers after looking at the bank app,
+ * never by reflex.
+ */
+export function confirmPaidKeyboard(order: OrderDTO, t: BotTexts, sum: string): InlineKeyboard {
+    return {
+        inline_keyboard: [
+            [{ text: fill(t.confirmPaidYes, { sum }), callback_data: `pc:${order.id}` }],
+            [{ text: t.confirmPaidNo, callback_data: `pn:${order.id}` }],
+        ],
+    }
 }
 
 /** The receipt's warnings for the owner: the same picture again, earlier transfers not found. */

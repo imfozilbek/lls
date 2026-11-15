@@ -28,7 +28,7 @@ import { EntityNotFoundError } from "../../domain/errors/not-found.error.js"
 import { ValidationError } from "../../domain/errors/validation.error.js"
 import { Location } from "../../domain/value-objects/location.js"
 import { Money } from "../../domain/value-objects/money.js"
-import { OWNER_TG, makeBusiness, makeCourier } from "../fixtures.js"
+import { OWNER_TG, makeBusiness, makeCourier, withReceipt } from "../fixtures.js"
 import {
     InMemoryBusinesses,
     InMemoryCouriers,
@@ -84,7 +84,7 @@ describe("district network", () => {
             location: Location.create(40.5, 68.79),
             customerName: "Aziz",
         })
-        order.confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndStart()
         await orders.save(order)
         return order
     }
@@ -518,7 +518,7 @@ describe("district network", () => {
             address: "Navoiy 12",
             customerName: "Aziz",
         })
-        order.confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndStart()
         order.requestNetwork(now)
         await orders.save(order)
         const [listed] = await new ListNetworkOrdersUseCase(deps()).execute({

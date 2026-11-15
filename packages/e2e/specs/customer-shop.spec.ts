@@ -3,7 +3,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, GROCERY, PEOPLE, WATER, apiAs, resetStand } from "../support/stand.js"
+import { FOOD, GROCERY, PEOPLE, WATER, apiAs, resetStand, sendReceipt } from "../support/stand.js"
 import { lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
 import { bottomButton, fillAddress, openApp, pickOnMap, toCart } from "../support/webapp.js"
 
@@ -132,21 +132,37 @@ test.describe("customer of a food shop: order and status", () => {
         expect(card.text).toContain("maktab yonida")
         expect(card.text).toContain("3-qavat")
         expect(card.text).toContain("+998 90 123 45 67")
-        expect(card.buttons.map((b) => b.callback_data)).toEqual(
-            expect.arrayContaining([expect.stringMatching(/^p:/), expect.stringMatching(/^x:/)]),
-        )
-        // Unpaid: the big button is the one thing to do now, «O'tkazdim» with the screenshot.
-        await expect(bottomButton(page)).toContainText("O'tkazdim")
+        // No screenshot yet: nothing for the owner to confirm, only cancel.
+        expect(card.buttons.map((b) => b.callback_data).filter(Boolean)).toEqual([
+            expect.stringMatching(/^x:/),
+        ])
+        // Unpaid: the big button is «Chekni yuklash»; «O'tkazdim» opens once it is picked.
+        await expect(bottomButton(page)).toContainText("Chekni yuklash")
         await bottomButton(page).click()
-        await expect(page.getByRole("dialog").filter({ hasText: "O'tkazma cheki" })).toBeVisible()
+        const sheet = page.getByRole("dialog").filter({ hasText: "O'tkazma cheki" })
+        await expect(sheet).toBeVisible()
+        await expect(sheet.getByRole("button", { name: "O'tkazdim" })).toBeDisabled()
     })
 
     test("the money came, the owner accepts in the chat; the customer can no longer cancel", async ({
         page,
     }) => {
         const card = (await messagesTo(PEOPLE.foodOwner.id)).find((m) => m.text.includes("#1"))
-        const accept = card?.buttons.find((b) => b.callback_data?.startsWith("p:"))
-        expect(accept?.text).toBe("💳 Pul keldi, qabul qilish")
+        const cancel = card?.buttons.find((b) => b.callback_data?.startsWith("x:"))
+        const orderId = cancel?.callback_data?.slice("x:".length) ?? ""
+        // The customer's screenshot: the owner's card gets «Pul keldi».
+        const sent = await lastSeq()
+        expect((await sendReceipt(PEOPLE.customer, FOOD, orderId)).status).toBe(200)
+        let accept: { text: string; callback_data?: string } | undefined
+        await expect
+            .poll(async () => {
+                const cards = await messagesTo(PEOPLE.foodOwner.id, sent)
+                accept = cards
+                    .flatMap((m) => m.buttons)
+                    .findLast((b) => b.callback_data === `p:${orderId}`)
+                return accept?.text
+            })
+            .toBe("💳 Pul keldi, qabul qilish")
         const since = await lastSeq()
         await shopChat(FOOD).press(PEOPLE.foodOwner, accept?.callback_data ?? "")
         // «Pul keldi» asks first, with the sum and the card; «Ha» confirms.

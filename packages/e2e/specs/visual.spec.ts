@@ -55,7 +55,7 @@ for (const theme of ["light"] as const) {
         await snap(page, "04-history", theme)
         await page.getByRole("button", { name: /Buyurtma #1/ }).click()
         await snap(page, "05-order", theme)
-        await page.getByRole("button", { name: "O'tkazdim" }).click()
+        await page.getByRole("button", { name: "Chekni yuklash" }).click()
         await page.locator('input[type="file"]').setInputFiles({
             name: "chek.png",
             mimeType: "image/png",
@@ -63,7 +63,7 @@ for (const theme of ["light"] as const) {
         })
         await expect(page.getByRole("img", { name: "O'tkazma cheki" })).toBeVisible()
         await snap(page, "07-receipt-sheet", theme)
-        await page.getByRole("button", { name: "Chekni yuborish" }).click()
+        await page.getByRole("button", { name: "O'tkazdim" }).click()
         await expect(page.getByRole("heading", { name: "Do'kon pulni tekshirmoqda" })).toBeVisible()
         await snap(page, "08-order-checking", theme)
         await openApp(page, { user: PEOPLE.customer, shop: WATER, theme })

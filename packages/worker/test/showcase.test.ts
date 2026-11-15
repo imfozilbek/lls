@@ -5,13 +5,14 @@ import {
     ADMIN,
     CUSTOMER,
     OWNER,
+    PIN,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
     STRANGER,
     createActiveShop,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
-    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -219,6 +220,7 @@ describe("Zumda showcase", () => {
         expect(card?.token).toBe(SHOP_BOT_TOKEN)
         expect(card?.html).toContain("3 000")
 
+        await sendReceipt(viaShowcase(CUSTOMER), order.id)
         await inShop(OWNER)(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },

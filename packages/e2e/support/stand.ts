@@ -1,4 +1,6 @@
 /** Test data and direct API access for the stand. */
+import { createHash } from "node:crypto"
+
 import {
     WORKER_URL,
     adminBot,
@@ -9,6 +11,7 @@ import {
 } from "../stand/config.js"
 import { seed } from "../stand/seed.js"
 
+import { fetchOnce } from "./fetch-once.js"
 import { pngImage } from "./images.js"
 import { resetTelegram, shopChat } from "./telegram.js"
 import { signInitData } from "./webapp.js"
@@ -145,23 +148,6 @@ export async function apiAs(
     })
 }
 
-/**
- * The local Worker closes a kept-alive connection that waited a few seconds (a spec's `runSql`),
- * and Node may send the next request on it just then: "other side closed" before the request was
- * read. That one case is sent again on a new connection; any answer, or any other error, is not.
- */
-async function fetchOnce(url: string, init: RequestInit): Promise<Response> {
-    try {
-        return await fetch(url, init)
-    } catch (error) {
-        const code = (error as { cause?: { code?: string } }).cause?.code
-        if (code !== "UND_ERR_SOCKET") {
-            throw error
-        }
-        return fetch(url, init)
-    }
-}
-
 export interface PlacedOrder {
     id: string
     number: number
@@ -194,10 +180,24 @@ export async function placeOrder(
     if (response.status !== 201) {
         throw new Error(`Order failed: ${response.status} ${await response.text()}`)
     }
-    return (await response.json()) as PlacedOrder
+    const order = (await response.json()) as PlacedOrder
+    placedBy.set(order.id, { customer, shop })
+    return order
 }
 
-/** «O'tkazdim» with the screenshot of the transfer, as the app sends it. */
+/**
+ * A screenshot of its own for each order: one picture sent for two orders warns the owner, which
+ * the specs about that warning send on purpose.
+ */
+function receiptOf(orderId: string): Buffer {
+    const digest = createHash("sha256").update(orderId).digest()
+    return pngImage(32, [digest[0] ?? 0, digest[1] ?? 0, digest[2] ?? 0])
+}
+
+/** Who placed each order through `placeOrder`, and where: «Pul keldi» needs their screenshot. */
+const placedBy = new Map<string, { customer: TgUser; shop: string }>()
+
+/** «Chekni yuklash» and «O'tkazdim»: the screenshot of the transfer, as the app sends it. */
 export async function sendReceipt(
     customer: TgUser,
     shop: string,
@@ -213,13 +213,23 @@ export async function sendReceipt(
 
 /**
  * «Pul keldi»: the owner of `shop` saw the transfer on the card. The order is paid, accepted and
- * started in one step (the shop starts only after the money).
+ * started in one step (the shop starts only after the money). The customer who placed it through
+ * `placeOrder` sends the screenshot first, as «Pul keldi» waits for it (owner's decision, November
+ * 2026); for an order placed in the browser, name its `customer`.
  */
 export async function payAndAccept(
     owner: TgUser,
     shop: string,
     orderId: string,
+    customer?: TgUser,
 ): Promise<Response> {
+    const placed = placedBy.get(orderId) ?? (customer ? { customer, shop } : undefined)
+    if (placed) {
+        const sent = await sendReceipt(placed.customer, placed.shop, orderId, receiptOf(orderId))
+        if (sent.status !== 200) {
+            throw new Error(`Receipt failed: ${sent.status} ${await sent.text()}`)
+        }
+    }
     return apiAs(owner, `/owner/orders/${orderId}/payment`, {
         shop,
         method: "PATCH",

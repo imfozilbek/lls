@@ -9,6 +9,7 @@ import {
     STRANGER,
     createActiveShop,
     hireCourier,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
 } from "./helpers.js"
@@ -71,7 +72,8 @@ describe("a dispatcher sends the order on and keeps the customer told", () => {
         })
         expect(placed.status).toBe(201)
         const order = await json<Order>(placed)
-        // «Pul keldi»: paid, accepted and started in one tap.
+        // «Pul keldi» after the screenshot: paid, accepted and started in one tap.
+        await sendReceipt(customer, order.id)
         const paid = await owner()(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },

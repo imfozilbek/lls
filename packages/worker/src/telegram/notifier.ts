@@ -6,7 +6,6 @@ import {
     OrderStatus,
     OwnerChat,
     PaymentMethod,
-    PaymentStatus,
     cardSystemOf,
     formatPhone,
     shopCallPhone,
@@ -276,7 +275,6 @@ export class Notifier {
                 sum: `<b>${sum}</b>`,
                 card: cardTail(order),
             }),
-            ...(order.payment.status === PaymentStatus.UNPAID ? [t.confirmPaidNoReceipt] : []),
             ...receiptWarnings(order, t),
         ]
         await this.textToOwner(

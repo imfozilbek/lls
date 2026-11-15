@@ -28,10 +28,11 @@ import {
     CUSTOMER_TG,
     OWNER_TG,
     STRANGER_TG,
+    courierSharesPhone,
     makeBusiness,
     makeCustomer,
     makeProduct,
-    courierSharesPhone,
+    receiptSent,
 } from "../fixtures.js"
 import {
     FakeRoutes,
@@ -88,6 +89,7 @@ describe("trips: several orders one way, one courier, stops in order", () => {
             address: "Navoiy 12",
             location: km === null ? undefined : north(km),
         })
+        await receiptSent(orders, order.id)
         await new ConfirmPaymentUseCase(deps()).execute({ ...owner, orderId: order.id })
         return order
     }

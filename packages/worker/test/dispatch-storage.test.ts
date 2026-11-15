@@ -11,6 +11,7 @@ import {
     OWNER,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
+    STORED_RECEIPT,
     createActiveShop,
     hireCourier,
     sharePhoneWithShops,
@@ -84,6 +85,7 @@ describe("dispatchers in D1", () => {
             throw new Error("order not found")
         }
         const at = new Date("2026-11-15T10:00:00Z")
+        order.markTransferSent(STORED_RECEIPT)
         order.confirmPaymentAndStart()
         order.assignCourier(link, new Date())
         order.addDeliveryNote(courierId, "Taksi chaqirildi", at)

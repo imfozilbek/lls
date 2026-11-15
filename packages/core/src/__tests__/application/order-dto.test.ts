@@ -8,7 +8,7 @@ import { OrderStatus } from "../../domain/enums/order-status.js"
 import { Unit } from "../../domain/enums/unit.js"
 import { Money } from "../../domain/value-objects/money.js"
 import { Phone } from "../../domain/value-objects/phone.js"
-import { makeCourier } from "../fixtures.js"
+import { makeCourier, withReceipt } from "../fixtures.js"
 
 const NOW = new Date()
 
@@ -35,7 +35,7 @@ function readyOrder(): Order {
         customerName: "Aziz",
         customerPhone: Phone.create("+998901234567"),
     })
-    order.confirmPaymentAndStart()
+    withReceipt(order).confirmPaymentAndStart()
     order.advanceTo(OrderStatus.READY)
     return order
 }

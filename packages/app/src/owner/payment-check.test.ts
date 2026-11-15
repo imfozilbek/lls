@@ -25,12 +25,6 @@ describe("what makes the owner look twice before «Pul keldi»", () => {
         expect(paymentWarnings(clean, uz)).toEqual([])
     })
 
-    it("no «O'tkazdim» yet: the customer never said they paid", () => {
-        expect(paymentWarnings(order({ status: PaymentStatus.UNPAID }), uz)).toEqual([
-            uz.owner.check.noReceipt,
-        ])
-    })
-
     it("the same screenshot before, here or in another shop; transfers never found", () => {
         const here = order({
             receipt: { at: AT, reusedFrom: 12, customerRejections: 1 },

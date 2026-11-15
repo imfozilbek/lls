@@ -185,6 +185,11 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect(toPay?.html).toContain("Visa <code>4111 1111 1111 1111</code>")
         expect(toPay?.html).toContain("80 000")
 
+        // «Pul keldi» waits for the customer's screenshot (owner's decision, November 2026).
+        const early = await payment(order.id, "paid")
+        expect(early.status).toBe(422)
+        expect(await json(early)).toMatchObject({ error: { code: "RECEIPT_NOT_SENT" } })
+
         // Only the customer of the order says it is sent.
         expect((await transferSent(order.id, OWNER)).status).toBe(403)
         const sent = await transferSent(order.id)
@@ -328,6 +333,7 @@ describe("money: transfer before the shop starts, report, files", () => {
 
     it("one «Доставил» for the courier, nothing to collect; the report adds up", async () => {
         const order = await json<Order>(await place())
+        await transferSent(order.id)
         await payment(order.id, "paid")
         await as(OWNER)(`/api/owner/orders/${order.id}/courier`, {
             method: "PUT",
@@ -375,6 +381,7 @@ describe("money: transfer before the shop starts, report, files", () => {
 
     it("cancelled after the money came: owed back until «Вернул»", async () => {
         const paid = await json<Order>(await place())
+        await transferSent(paid.id)
         await payment(paid.id, "paid")
         await setStatus(paid.id, "cancelled")
         let report = await money()
@@ -472,6 +479,7 @@ describe("money: transfer before the shop starts, report, files", () => {
 
     it("the owner deleted the order card: a new one comes, the customer still hears", async () => {
         const order = await json<Order>(await place())
+        expect((await transferSent(order.id)).status).toBe(200)
         const card = await env.DB.prepare("SELECT owner_message_id FROM orders WHERE id = ?")
             .bind(order.id)
             .first<{ owner_message_id: number }>()

@@ -15,6 +15,8 @@ import {
     shopBySlug,
 } from "../stand/config.js"
 
+import { fetchOnce } from "./fetch-once.js"
+
 import type { BotCall } from "../stand/fake-telegram.js"
 
 export type { BotCall }
@@ -55,12 +57,12 @@ export interface ReplyButton {
 }
 
 export async function botCalls(): Promise<BotCall[]> {
-    const response = await fetch(`${FAKE_TELEGRAM_URL}/__log`)
+    const response = await fetchOnce(`${FAKE_TELEGRAM_URL}/__log`)
     return (await response.json()) as BotCall[]
 }
 
 export async function resetTelegram(): Promise<void> {
-    await fetch(`${FAKE_TELEGRAM_URL}/__reset`, { method: "POST" })
+    await fetchOnce(`${FAKE_TELEGRAM_URL}/__reset`, { method: "POST" })
 }
 
 export async function controlTelegram(control: {
@@ -72,7 +74,7 @@ export async function controlTelegram(control: {
     /** The owner presses «Revoke token» in @BotFather for this managed bot. */
     revokeManagedBot?: number
 }): Promise<void> {
-    await fetch(`${FAKE_TELEGRAM_URL}/__control`, {
+    await fetchOnce(`${FAKE_TELEGRAM_URL}/__control`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(control),
@@ -162,7 +164,7 @@ export async function callsOf(method: string, since = 0): Promise<BotCall[]> {
 let updateId = 1
 
 async function postUpdate(path: string, secret: string, update: object): Promise<Response> {
-    return fetch(`${WORKER_URL}${path}`, {
+    return fetchOnce(`${WORKER_URL}${path}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

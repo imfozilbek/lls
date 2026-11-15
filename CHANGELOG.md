@@ -7,6 +7,17 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### «Chekni yuklash» before «O'tkazdim», «Pul keldi» only after the screenshot
+- The customer's main button on an unpaid transfer is «Chekni yuklash» (owner's decision,
+  November 2026); «O'tkazdim» opens in its sheet once the screenshot is picked, and sends it.
+- «Pul keldi» waits for the customer's screenshot: before it the owner's card in the app says
+  «Mijoz pulni o'tkazib, chekni yuklashi kerak», the bot's new order card has only «Bekor qilish»
+  and says «Kartaga o'tkazma va chek kutilmoqda», an old card's button answers one line, and the
+  server refuses it (`RECEIPT_NOT_SENT`), also after «Pul kelmadi». Production had seven transfer
+  orders confirmed without a screenshot, three of them in the last days in live shops.
+- The stand's requests to the fake Telegram are sent once more after a closed kept-alive
+  connection, as its requests to the Worker already were.
+
 ### Screens that say what they do, short lists, words that read as living Uzbek
 - Long lists became short (owner's decision, November 2026). The owner's orders are short cards
   (who, what, how much, the one next step; «Batafsil» opens the phone, the place, the courier and

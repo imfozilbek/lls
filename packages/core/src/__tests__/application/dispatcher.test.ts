@@ -35,6 +35,7 @@ import {
     makeBusiness,
     makeCustomer,
     makeProduct,
+    receiptSent,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -120,6 +121,7 @@ describe("a dispatcher sends the shop's orders on and keeps the customer told", 
             address: "Qarshi, Navoiy 12",
             location: PIN,
         })
+        await receiptSent(orders, order.id)
         return new ConfirmPaymentUseCase(deps()).execute(ids(order))
     }
 

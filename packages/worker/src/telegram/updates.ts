@@ -81,6 +81,9 @@ export function callbackErrorText(error: unknown, texts: BotTexts): string {
     if (error instanceof BusinessRuleViolationError && error.rule === "COURIER_PHONE_REQUIRED") {
         return texts.courierNoPhone
     }
+    if (error instanceof BusinessRuleViolationError && error.rule === "RECEIPT_NOT_SENT") {
+        return texts.callbackNoReceipt
+    }
     if (error instanceof DomainError) {
         return texts.callbackOutdated
     }

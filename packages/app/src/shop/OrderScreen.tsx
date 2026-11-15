@@ -38,7 +38,7 @@ import { useReorder } from "./reorder.js"
 import type { Dictionary } from "../i18n/index.js"
 import type { OrderDTO } from "@zumda/core"
 
-/** Opened only by «O'tkazdim»: a cash order and a paid one never download it. */
+/** Opened only by «Chekni yuklash»: a cash order and a paid one never download it. */
 const loadReceiptSheet = (): Promise<typeof import("./ReceiptSheet.js")> =>
     import("./ReceiptSheet.js")
 const ReceiptSheet = lazy(() => loadReceiptSheet().then((m) => ({ default: m.ReceiptSheet })))
@@ -186,9 +186,10 @@ function Calls({ order }: { order: OrderDTO }): React.JSX.Element | null {
 }
 
 /**
- * Paid before the shop starts: until then the shop's card stays at hand with «O'tkazdim», which
- * asks for the screenshot of the transfer. After it the customer sees that the shop is checking,
- * and the screenshot they sent; «Pul kelmadi» from the shop brings the card back with a clear why.
+ * Paid before the shop starts: until then the shop's card stays at hand with «Chekni yuklash»,
+ * which asks for the screenshot of the transfer before «O'tkazdim». After it the customer sees that
+ * the shop is checking, and the screenshot they sent; «Pul kelmadi» from the shop brings the card
+ * back with a clear why.
  */
 function Payment({
     order,
@@ -197,7 +198,7 @@ function Payment({
 }: {
     order: OrderDTO
     onChange(order: OrderDTO): void
-    /** «O'tkazdim» itself is the big bottom button; here only «Boshqa chek yuborish». */
+    /** «Chekni yuklash» itself is the big bottom button; here only «Boshqa chek yuborish». */
     onOpenSheet(): void
 }): React.JSX.Element {
     const t = useT()
@@ -454,7 +455,7 @@ function OrderActions({
     if (reorder) {
         return null
     }
-    // Quiet and far from «O'tkazdim»: a mistaken tap here costs the order. While the shop checks
+    // Quiet and far from «Chekni yuklash»: a mistaken tap here costs the order. While the shop checks
     // money already sent, it hides behind one more tap: panic is the wrong moment to cancel.
     if (order.status === OrderStatus.PENDING && cancelHidden) {
         return (
@@ -513,8 +514,9 @@ function heroText(
 }
 
 /**
- * Unpaid: the big button is «O'tkazdim» (the one thing to do now). After that, right after
- * placing, it leads back to the menu; the order stays in "My orders".
+ * Unpaid: the big button is «Chekni yuklash» (the one thing to do now); «O'tkazdim» opens in its
+ * sheet once the screenshot is picked. After that, right after placing, it leads back to the menu;
+ * the order stays in "My orders".
  */
 function useOrderMainAction(
     order: OrderDTO | null,
@@ -533,7 +535,7 @@ function useOrderMainAction(
     useMainAction(
         toPay
             ? {
-                  text: order.payment.rejections > 0 ? t.pay.resend : t.pay.sent,
+                  text: order.payment.rejections > 0 ? t.pay.resend : t.pay.upload,
                   onClick: (): void => {
                       haptic.tap()
                       openSheet()
@@ -624,7 +626,7 @@ export function OrderScreen({
     const { order, error, reload, setOrder } = useOrder(id)
     const [sheet, setSheet] = useState(false)
     useOrderMainAction(order, justPlaced, (): void => setSheet(true))
-    // A transfer still to send: «O'tkazdim»'s sheet loads now, so the tap opens it at once even
+    // A transfer still to send: the screenshot's sheet loads now, so the tap opens it at once even
     // on a slow network.
     const transferOpen = order?.payment.status === PaymentStatus.UNPAID
     useEffect(() => {

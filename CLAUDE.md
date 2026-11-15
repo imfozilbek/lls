@@ -149,9 +149,13 @@ cover each one's whole process; what exactly comes from the meeting with them.
   picks one at checkout and only that one's rules apply to the order; `PAYMENT_METHOD_UNAVAILABLE`
   for a way the shop does not take). Every order stores its method (`card_transfer` | `cash`).
 - **Transfer: paid to the shop's card before the shop starts.** The order is placed unpaid → the
-  customer transfers and presses «Я перевёл» → the owner sees the money and presses «Деньги
-  пришли, принять» (paid, accepted and started in one tap). A transfer order is never accepted
-  unpaid (`PAYMENT_REQUIRED`).
+  customer transfers, presses «Chekni yuklash», picks the screenshot, and only then «O'tkazdim»
+  opens and sends it → the owner sees the money and presses «Pul keldi, qabul qilish» (paid,
+  accepted and started in one tap). A transfer order is never accepted unpaid
+  (`PAYMENT_REQUIRED`). **«Pul keldi» waits for the screenshot** (owner's decision, November
+  2026): before it the owner's card and bot message carry no «Pul keldi», only a quiet «Mijoz pulni
+  o'tkazib, chekni yuklashi kerak», and the server refuses it (`RECEIPT_NOT_SENT`, also after «Pul
+  kelmadi»). An order paid without «O'tkazdim» waits for the customer.
 - **Cash: paid to the courier at the door** (owner's decision, October 2026). The owner accepts it
   at once with «Qabul qilish». It goes only with the shop's own courier or the owner, never to
   the district network (`CASH_NOT_FOR_NETWORK`; auto-network skips it). The courier card says
@@ -169,7 +173,8 @@ cover each one's whole process; what exactly comes from the meeting with them.
   dispatcher's note. Such an order never goes to the district network
   (`CARRIER_NOT_FOR_NETWORK`).
 - **The transfer screenshot (owner's decision, October 2026).** «O'tkazdim» carries the
-  screenshot of the transfer (`RECEIPT_REQUIRED` without it); it is a hint, never proof: the
+  screenshot of the transfer (`RECEIPT_REQUIRED` without it; it opens only once one is picked); it
+  is a hint, never proof: the
   money on the card is. It is stored in its own private R2 bucket `zumda-receipts` (never in the
   public `zumda-media`), **kept 30 days** (owner's decision, October 2026: the bucket's lifecycle
   deletes it, `RECEIPT_KEEP_DAYS`; then 410 `RECEIPT_EXPIRED`, the app says it was deleted),
@@ -696,11 +701,14 @@ courier of that shop and asks for the phone; the owner gets "Подтверди�
 shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин".
 
 **Notifications (no WebSockets):**
-- New order → message to the owner «💳 Ждём перевод» with «Деньги пришли, принять» + «Отменить»;
-  the customer gets the shop's card and the sum. A cash order: «💵 Naqd: kuryer yetkazganda
-  oladi» with «Qabul qilish»; the customer gets the sum to give the courier. «Я перевёл» with the screenshot → the owner gets
-  the picture, the sum, the card tail, warnings and «Ha, … keldi» / «Yo'q, kelmadi». After that
-  the owner's button is the **next allowed status** («Tayyor»: accepting already started it).
+- New order → message to the owner «💳 Kartaga o'tkazma va chek kutilmoqda» with only «Bekor
+  qilish» (no «Pul keldi» before the screenshot); the customer gets the shop's card, the sum and
+  «chekni yuklang va «O'tkazdim» ni bosing». A cash order: «💵 Naqd: kuryer yetkazganda oladi»
+  with «Qabul qilish»; the customer gets the sum to give the courier. «O'tkazdim» with the
+  screenshot → the owner gets the picture, the sum, the card tail, warnings and «Ha, … keldi» /
+  «Yo'q, kelmadi», and the card gets «Pul keldi, qabul qilish» (an old card's button before the
+  screenshot answers one line). After that the owner's button is the **next allowed status**
+  («Tayyor»: accepting already started it).
 - Every bot message about an order opens the app on it: the shop's bot `?shop=&order=`, the
   Zumda | Business fallback `?mode=business&shop=&order=`, Zumda | Kuryer `?mode=courier&order=`
   (its card scrolls into view).
@@ -763,18 +771,20 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   out-of-zone order is never paid and refunded; the storefront says «{km} km gacha yetkazamiz»
 - Phone: Telegram "share contact" button, never typed by hand
 - Payment: the shop's choice. Transfer: checkout tells the sum, the order screen shows the card
-  with a copy button; the customer transfers after placing and presses «Я перевёл» with the
-  screenshot; the owner confirms by hand («Деньги пришли, принять», asked once more), then the
-  shop starts. Cash: checkout and the order screen say the sum to give the courier. «Ikkalasi»:
+  with a copy button; the customer transfers after placing, presses «Chekni yuklash» and, with the
+  screenshot picked, «O'tkazdim»; the owner confirms by hand («Pul keldi», asked once more), then
+  the shop starts. Cash: checkout and the order screen say the sum to give the courier. «Ikkalasi»:
   checkout asks which one (the card first, then the way the customer paid last; the pick is kept
   in the draft)
 
 **User Flow:**
 - Customer: Open shop link → Browse → «Savat» (the cart and the order are one screen, owner's
   decision, October 2026: «+», «Savat», «Buyurtma berish»; a returning customer's phone and place
-  are one line each) → Transfer → «Я перевёл» → Track (cash: Order → Track → pay the courier)
+  are one line each) → Transfer → «Chekni yuklash» → «O'tkazdim» → Track (cash: Order → Track →
+  pay the courier)
 - Showcase customer: Zumda bot → Search → Shop → «Savat» → Order → Track
-- Owner: New order message → the transfer arrives → «Деньги пришли, принять» (started at once;
+- Owner: New order message → the customer's screenshot → the transfer on the card → «Pul keldi,
+  qabul qilish» (started at once;
   the only courier gets it by itself) → «Kuryerga topshirish» or «O'zim yetkazaman» when nobody
   is on it → «Tayyor»; catalog, couriers and the card in "Мой магазин"
 - Courier: Invite link → Zumda courier bot → phone → approved → "on shift" → assigned order card →
@@ -1140,9 +1150,10 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Owner without Start in the shop's bot: «Botingizni oching» in «Ishga tayyor»; the poster
       and a new order come through Zumda | Business with the note; «Yuklab olish» saves the
       poster; after Start the shop's bot writes again
-- [ ] Money: card on the order screen → «Я перевёл» with the screenshot → «Деньги пришли,
-      принять» (asked once more) → one «Доставил»; «Pul kelmadi» → sent again; a reused
-      screenshot warns; cancel after paid → «Вернул»; a shop without a card takes no orders
+- [ ] Money: card on the order screen → «Chekni yuklash» → «O'tkazdim» (closed until the
+      screenshot is picked) → «Pul keldi» (none before the screenshot, asked once more) → one
+      «Yetkazdim»; «Pul kelmadi» → sent again; a reused screenshot warns; cancel after paid →
+      «Qaytardim»; a shop without a card takes no orders
 - [ ] Cash: «Naqd pul» in «To'lov» → no card at checkout → «Qabul qilish» without money → no
       network option → «Mijozdan … naqd oling» → «Pulni oldim, yetkazdim» → «Pul» →
       «Kuryerlardagi naqd pul» → «Pulni oldim»; «Ikkalasi»: the customer picks; «Karta»: no cash

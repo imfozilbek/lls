@@ -8,11 +8,12 @@ import { Language } from "@zumda/core"
 const WORDS = {
     [Language.UZ]: {
         title: "O'tkazma cheki",
-        hint: "Bank ilovasidagi o'tkazma chekining skrinshotini tanlang: summa va karta ko'rinsin.",
+        hint: "Bank ilovasidagi o'tkazma chekining skrinshotini yuklang: summa va karta ko'rinsin. Keyin «O'tkazdim» ni bosing.",
         howTo: "Chek ochiq turganda skrinshot oling: Android'da quvvat va ovozni pasaytirish, iPhone'da yon tugma va ovozni oshirish tugmalarini birga bosing.",
         pick: "Skrinshotni tanlash",
         change: "Boshqa rasm",
-        send: "Chekni yuborish",
+        /** Opens once the screenshot is picked (owner's decision, November 2026). */
+        confirm: "O'tkazdim",
         sent: "Chek yuborildi. Do'kon pulni tekshiradi.",
         unreadable: "Bu rasmni ochib bo'lmadi. Boshqa skrinshot tanlang.",
         open: "Chekni ko'rish",

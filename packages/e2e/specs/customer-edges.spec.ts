@@ -162,7 +162,7 @@ test("Uzbek customer: texts and bot messages in Uzbek", async ({ page }) => {
     const orders = (await (
         await apiAs(PEOPLE.groceryOwner, "/owner/orders?status=active", { shop: GROCERY })
     ).json()) as { data: { id: string }[] }
-    await payAndAccept(PEOPLE.groceryOwner, GROCERY, orders.data[0]?.id ?? "")
+    await payAndAccept(PEOPLE.groceryOwner, GROCERY, orders.data[0]?.id ?? "", PEOPLE.customerUz)
     await waitForMessage(PEOPLE.customerUz.id, "qabul qilindi", since)
 })
 

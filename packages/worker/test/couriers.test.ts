@@ -6,14 +6,15 @@ import {
     CUSTOMER,
     OTHER_BOT_TOKEN,
     OWNER,
+    PIN,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
     STRANGER,
     createActiveShop,
     hireCourier,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
-    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -79,17 +80,33 @@ describe("shop couriers, verticals and channels", () => {
             json: { items, address: "Navoiy 12", location: PIN, ...extra },
         })
         expect(response.status).toBe(201)
-        return json(response)
+        const order = await json(response)
+        customerOf.set(String(order.id), customer)
+        return order
     }
 
-    /** "accepted" is «Деньги пришли, принять»: the shop starts only after the transfer. */
-    const setStatus = (orderId: unknown, status: string, owner = as(OWNER)): Promise<Response> =>
-        status === "accepted"
-            ? owner(`/api/owner/orders/${String(orderId)}/payment`, {
-                  method: "PATCH",
-                  json: { action: "paid" },
-              })
-            : owner(`/api/owner/orders/${String(orderId)}`, { method: "PATCH", json: { status } })
+    /** Who placed each order: «Pul keldi» comes only after their screenshot. */
+    const customerOf = new Map<string, ReturnType<TestClient["as"]>>()
+
+    /** "accepted" is «Pul keldi»: the customer sent the screenshot, the shop starts. */
+    async function setStatus(
+        orderId: unknown,
+        status: string,
+        owner = as(OWNER),
+    ): Promise<Response> {
+        const id = String(orderId)
+        if (status !== "accepted") {
+            return owner(`/api/owner/orders/${id}`, { method: "PATCH", json: { status } })
+        }
+        const customer = customerOf.get(id)
+        if (customer) {
+            await sendReceipt(customer, id)
+        }
+        return owner(`/api/owner/orders/${id}/payment`, {
+            method: "PATCH",
+            json: { action: "paid" },
+        })
+    }
 
     const assign = (orderId: unknown, courierId: string, owner = as(OWNER)): Promise<Response> =>
         owner(`/api/owner/orders/${String(orderId)}/courier`, {

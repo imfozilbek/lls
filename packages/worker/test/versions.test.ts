@@ -15,13 +15,14 @@ import { D1PayoutCardRepository } from "../src/repositories/payout-card.reposito
 import {
     CUSTOMER,
     OWNER,
+    PIN,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
+    STORED_RECEIPT,
     TEST_CARD,
     createActiveShop,
     sharePhoneWithShops,
     testClient,
-    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -93,6 +94,7 @@ describe("a save writes only over the version it loaded", () => {
         }
         byCustomer.cancel("customer")
         await orders.save(byCustomer)
+        byOwner.markTransferSent(STORED_RECEIPT)
         byOwner.confirmPaymentAndStart()
         await expect(orders.save(byOwner)).rejects.toBeInstanceOf(ConflictError)
         expect((await orders.findById(id))?.status).toBe("cancelled")

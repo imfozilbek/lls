@@ -4,7 +4,10 @@ import type { OrderDTO } from "@zumda/core"
 
 /**
  * The owner's one main button on an order:
- * - `money`: «Pul keldi, qabul qilish» (a transfer order starts only after the money);
+ * - `receipt`: a transfer with no screenshot yet, nothing for the owner: the customer uploads it
+ *   and presses «O'tkazdim» first (owner's decision, November 2026; the server refuses otherwise);
+ * - `money`: «Pul keldi, qabul qilish» under the screenshot (a transfer order starts only after
+ *   the money);
  * - `step`: the next status;
  * - `choose`: who takes it, before «Tayyor» (owner's decision, November 2026; the server refuses
  *   otherwise): «Kuryerga topshirish» in a shop with couriers, «O'zim yetkazaman» without them
@@ -14,6 +17,7 @@ import type { OrderDTO } from "@zumda/core"
  *   «Yetkazildi deb belgilash» stays for a courier who went silent).
  */
 export type OwnerStep =
+    | { kind: "receipt" }
     | { kind: "money" }
     | { kind: "step"; to: OrderStatus }
     | { kind: "choose" }
@@ -31,7 +35,9 @@ export function ownerStep(order: OrderDTO): OwnerStep | null {
         order.payment.method !== PaymentMethod.CASH &&
         order.payment.status !== PaymentStatus.PAID
     if (waitsForMoney) {
-        return { kind: "money" }
+        return order.payment.status === PaymentStatus.UNPAID
+            ? { kind: "receipt" }
+            : { kind: "money" }
     }
     const leaves = next === OrderStatus.PICKED_UP || next === OrderStatus.DELIVERED
     if (order.dispatcher && leaves) {

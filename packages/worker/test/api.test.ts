@@ -5,14 +5,15 @@ import {
     CUSTOMER,
     OTHER_BOT_TOKEN,
     OWNER,
+    PIN,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
     STRANGER,
+    TEST_CARD,
     createActiveShop,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
-    TEST_CARD,
-    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -449,6 +450,7 @@ describe("inside a shop", () => {
         })
         expect(unpaid.status).toBe(422)
         expect(await json(unpaid)).toMatchObject({ error: { code: "PAYMENT_REQUIRED" } })
+        await sendReceipt(asCustomer(), order.id)
         const accepted = await asOwner()(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },

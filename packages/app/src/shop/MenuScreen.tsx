@@ -158,7 +158,7 @@ interface OrdersGlance {
 
 /**
  * Whether the customer has an order on its way here («Buyurtmalarim» wears a dot), and the
- * transfer still to send: back from the bank app the way to «O'tkazdim» is right on top.
+ * transfer still to send: back from the bank app the way to «Chekni yuklash» is right on top.
  */
 function useOrdersGlance(shopId: string | undefined): OrdersGlance {
     // Known at once on a return to the menu: the dot never pops in late a second time.
@@ -202,7 +202,7 @@ function useOrdersGlance(shopId: string | undefined): OrdersGlance {
     return glance ?? { active: false, unpaid: null }
 }
 
-/** «Buyurtma #12: 55 000 so'm o'tkazing»: one tap to the card and «O'tkazdim». */
+/** «Buyurtma #12: 55 000 so'm o'tkazing»: one tap to the card and «Chekni yuklash». */
 function UnpaidBanner({
     order,
 }: {

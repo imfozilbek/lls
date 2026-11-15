@@ -5,13 +5,14 @@ import {
     ADMIN,
     CUSTOMER,
     OWNER,
+    PIN,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
     createActiveShop,
     hireCourier,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
-    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -67,6 +68,7 @@ describe("phones: everyone on an order can call each other", () => {
 
     /** Paid and accepted, then given to the courier. */
     async function assigned(order: Order, courierId: string): Promise<Order> {
+        await sendReceipt(customer(), order.id)
         await owner()(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },
@@ -240,6 +242,7 @@ describe("no phone, no orders (owner's decision, October 2026)", () => {
                 json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12", location: PIN },
             }),
         )
+        await sendReceipt(customer(), order.id)
         await owner()(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },

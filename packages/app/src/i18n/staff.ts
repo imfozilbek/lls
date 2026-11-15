@@ -23,6 +23,7 @@ export const staffUz = {
         PAYMENT_CARD_IN_USE: "Mijozlar shu kartaga to'laydi: avval boshqasini tanlang.",
         PAYMENT_REQUIRED: "O'tkazma hali kelmadi: avval «Pul keldi» ni belgilang.",
         PAYMENT_NOT_CONFIRMABLE: "Bu to'lov allaqachon belgilangan. Ro'yxat yangilandi.",
+        RECEIPT_NOT_SENT: "Avval mijoz chekni yuklashi kerak. Shundan keyin pulni tekshirasiz.",
         PAYMENT_NOT_REFUNDABLE: "Bu pul allaqachon qaytarilgan.",
         PAYMENT_NOT_REJECTABLE: "Bu o'tkazma allaqachon ko'rib chiqilgan. Ro'yxat yangilandi.",
         ADMIN_ONLY: "Bu bo'lim faqat Zumda administratorlari uchun.",
@@ -167,6 +168,8 @@ export const staffUz = {
         dispatcherSends: "Dispetcher jo'natadi va mijozga yozadi",
         dispatcherDelivers: "Yetkazilganini dispetcher belgilaydi",
         courierDelivers: "Kuryer yetkazmoqda",
+        /** A transfer with no screenshot: the customer acts first (owner's decision, November 2026). */
+        waitReceipt: "Mijoz pulni o'tkazib, chekni yuklashi kerak",
         markDelivered: "Yetkazildi deb belgilash",
         markDeliveredCourierConfirm:
             "Kuryer hali «Yetkazdim» demadi. Buyurtma yetib borganini bilsangiz, belgilang.",
@@ -348,7 +351,6 @@ export const staffUz = {
             title: "{sum} keldimi?",
             toCard: "{card} kartangizga",
             hint: "Bank ilovangizni oching va pul kelganini ko'ring. Chek dalil emas: pul kartada bo'lishi kerak.",
-            noReceipt: "Mijoz o'tkazganini hali bildirmagan, chek yo'q.",
             reusedHere: "Bu chek avval #{n} buyurtmada yuborilgan.",
             reusedElsewhere: "Bu chek boshqa do'kon buyurtmasida ham yuborilgan.",
             rejectedBefore: "Bu mijozning {count} ta o'tkazmasi avval topilmagan.",

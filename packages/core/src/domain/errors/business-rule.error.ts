@@ -229,8 +229,19 @@ export class BusinessRuleViolationError extends DomainError {
     static paymentNotConfirmable(status: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "PAYMENT_NOT_CONFIRMABLE",
-            "Only an unpaid or awaited payment can be confirmed",
+            "Only an awaited payment can be confirmed",
             { status },
+        )
+    }
+
+    /**
+     * «Pul keldi» before the customer's screenshot (owner's decision, November 2026): the owner
+     * checks the money only after «Chekni yuklash» and «O'tkazdim».
+     */
+    static receiptNotSent(): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "RECEIPT_NOT_SENT",
+            "The customer has not sent the screenshot of the transfer yet",
         )
     }
 
