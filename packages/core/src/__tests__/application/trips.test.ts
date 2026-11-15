@@ -174,8 +174,8 @@ describe("trips: several orders one way, one courier, stops in order", () => {
         const a = await accepted(1)
         const b = await accepted(2)
         await expect(create([a.id])).rejects.toMatchObject({ rule: "TRIP_STOPS" })
-        const noPin = await accepted(null)
-        await expect(create([a.id, noPin.id])).rejects.toMatchObject({ rule: "NOT_FOR_TRIP" })
+        // No pin, no order at all (owner's decision, November 2026): every stop has one.
+        await expect(accepted(null)).rejects.toMatchObject({ rule: "LOCATION_REQUIRED" })
         await expect(
             new CreateTripUseCase(deps()).execute({
                 actorTelegramId: STRANGER_TG,

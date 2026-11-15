@@ -34,6 +34,17 @@ export const staffUz = {
         CASH_NOT_FOR_NETWORK:
             "Naqd buyurtma tuman tarmog'iga berilmaydi: o'z kuryeringiz olib boradi.",
         NOT_A_TRANSFER: "Bu buyurtma naqd pulga: o'tkazma kerak emas.",
+        CASH_NOT_FOR_DISPATCHER:
+            "Naqd buyurtma dispetcherga berilmaydi: pulni eshikda olib boradigan kuryer oladi.",
+        CARRIER_NOT_FOR_NETWORK:
+            "Yetkazish haqini mijoz o'zi to'laydi: bunday buyurtma tuman tarmog'iga berilmaydi.",
+        COURIER_NOT_CHOSEN:
+            "Avval buyurtmani kuryerga topshiring yoki «O'zim yetkazaman»ni tanlang.",
+        SEND_WAY_REQUIRED: "Bu buyurtmani dispetcher jo'natadi: qanday jo'natilganini u yozadi.",
+        NOT_A_DISPATCHER_ORDER: "Bu buyurtma dispetcherda emas. Ro'yxat yangilandi.",
+        NOTES_CLOSED: "Buyurtma yakunlangan: endi izoh qo'shib bo'lmaydi.",
+        TOO_MANY_NOTES: "Bitta buyurtmaga 20 tagacha izoh yoziladi.",
+        NOT_OWN_COURIER: "Faqat do'konning o'z kuryeri dispetcher bo'la oladi.",
         NOT_FOR_TRIP:
             "Buyurtmalardan biri allaqachon boshqa yo'lda yoki tarmoqda. Ro'yxat yangilandi.",
         TRIP_STOPS: "Yo'l o'zgargan: bir manzil yetkazildi. Ro'yxat yangilandi.",
@@ -142,6 +153,23 @@ export const staffUz = {
             "Bugun ishlamaydi deb belgilangan: bossangiz, bugunga qaytariladi va tayinlanadi",
         assign: "Kuryer tayinlash",
         reassign: "Boshqa kuryer",
+        // Owner's decision, November 2026: a shop with couriers hands the order on first.
+        handOver: "Kuryerga topshirish",
+        deliverMyself: "O'zim yetkazaman",
+        deliverMyselfHint: "Kuryersiz: qadamlarni o'zingiz bosasiz",
+        dispatcher: "Dispetcher",
+        dispatcherSends: "Dispetcher jo'natadi va mijozga yozadi",
+        dispatcherDelivers: "Yetkazilganini dispetcher belgilaydi",
+        markDelivered: "Yetkazildi deb belgilash",
+        markDeliveredConfirm:
+            "Dispetcher hali «Yetkazildi» demadi. Buyurtma yetib borganini bilsangiz, belgilang.",
+        cashNotForDispatcher: "naqd buyurtma dispetcherga berilmaydi",
+        sentVia: {
+            self: "Dispetcherning o'zi olib bormoqda",
+            taxi: "Taksi bilan jo'natildi",
+            post: "Pochta orqali jo'natildi",
+            other: "Boshqa yo'l bilan jo'natildi",
+        },
         noCouriers: "Hali kuryer yo'q: o'zingiz yetkazasiz yoki kuryer taklif qilasiz.",
         inviteCourier: "Kuryer taklif qilish",
         toNetwork: "Tuman tarmog'i kuryeri",
@@ -332,6 +360,7 @@ export const staffUz = {
             linkGroup: "Havola, QR-kod va vitrina",
             summary: {
                 free: "Bepul yetkazish",
+                carrier: "Yetkazish haqini mijoz to'laydi",
                 radius: "{km} km gacha",
                 everyDay: "Har kuni",
                 allDay: "kecha-kunduz",
@@ -352,6 +381,9 @@ export const staffUz = {
             minOrder: "Minimal buyurtma",
             radius: "Yetkazish radiusi, km",
             radiusHint: "Bo'sh qoldirsangiz, masofa cheklanmaydi.",
+            customerPaysCarrier: "Yetkazish haqini mijoz o'zi to'laydi",
+            customerPaysCarrierHint:
+                "Taksi yoki pochtaga: narxi buyurtmaga qo'shilmaydi, mijoz «Yetkazish haqi alohida»ni ko'radi.",
             radiusNone: "Cheklovsiz",
             currentColor: "Hozirgi rang",
             colorNames: ["Yashil", "Firuza", "Ko'k", "Binafsha", "Malina", "Olovrang", "Tilla"],
@@ -390,6 +422,9 @@ export const staffUz = {
             workDays: "Ish kunlari",
             offToday: "Bugun ishlamaydi",
             worksToday: "Bugun ishlaydi",
+            dispatcher: "Dispetcher",
+            dispatcherHint:
+                "O'zi olib bormaydi: taksi, pochta yoki boshqa yo'l bilan jo'natadi va mijozga izoh yozadi.",
             onShift: "Smenada",
             notOnShift: "Smenada emas",
             invite: "Kuryerni taklif qilish",
@@ -494,6 +529,36 @@ export const staffUz = {
         callShop: "Do'konga qo'ng'iroq",
         pickupFrom: "Olib ketish joyi",
         toShop: "Yo'l",
+        from: "Qayerdan",
+        to: "Qayerga",
+        toCustomer: "Yo'l",
+        // A dispatcher (owner's decision, November 2026): sends the parcel on, writes the customer.
+        dispatcher: "Dispetcher",
+        dispatcherWait:
+            "Do'kon qadoqlamoqda: tayyor bo'lganda «Jo'natdim»ni bosasiz. Izohni hozir ham yozish mumkin.",
+        send: "Jo'natdim",
+        sendTitle: "#{n}: qanday jo'natdingiz?",
+        ways: {
+            taxi: "Taksi",
+            post: "Pochta",
+            self: "O'zim olib boraman",
+            other: "Boshqa",
+        },
+        sentVia: {
+            self: "O'zingiz olib borasiz",
+            taxi: "Taksi bilan jo'natildi",
+            post: "Pochta orqali jo'natildi",
+            other: "Boshqa yo'l bilan jo'natildi",
+        },
+        noteLabel: "Mijozga izoh",
+        notePlaceholder: "Trek raqami, mashina raqami, haydovchi telefoni, yo'l haqi",
+        noteHint: "Mijoz buni do'kon botidan oladi va buyurtmasida ko'radi.",
+        noteNeeded: "«Boshqa» bo'lsa, kim olib ketganini yozing",
+        sentToast: "#{n} jo'natildi: mijozga xabar ketdi",
+        addNote: "Izoh qo'shish",
+        noteTitle: "#{n}: mijozga izoh",
+        noteSend: "Yuborish",
+        noteSent: "Izoh mijozga yuborildi",
         phoneTitle: "Raqamingizni yuboring",
         phoneHint:
             "Do'kon va mijozlar sizga qo'ng'iroq qila olishi kerak: raqamsiz buyurtma kelmaydi.",

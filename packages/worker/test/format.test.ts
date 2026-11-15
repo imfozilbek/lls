@@ -1,8 +1,23 @@
-import { BusinessType, Language, OrderChannel, OrderStatus, PaymentStatus, Unit } from "@zumda/core"
+import {
+    BusinessType,
+    Language,
+    OrderChannel,
+    OrderStatus,
+    PaymentStatus,
+    SendWay,
+    Unit,
+} from "@zumda/core"
 import { describe, expect, it } from "vitest"
 
 import { ordersCsv } from "../src/http/csv.js"
-import { formatOrderForOwner } from "../src/telegram/format.js"
+import {
+    courierKeyboard,
+    formatOrderForCourier,
+    formatOrderForOwner,
+    formatStatusForCustomer,
+    orderKeyboard,
+    parseOrderCallback,
+} from "../src/telegram/format.js"
 import { textsFor } from "../src/telegram/texts.js"
 
 import type { OrderDTO } from "@zumda/core"
@@ -115,5 +130,98 @@ describe("the owner's CSV", () => {
         const [header, row] = csv.split("\r\n")
         expect(header?.split(";").at(-1)).toBe("Mahsulotlar")
         expect(row?.split(";").at(-1)).toBe("Latte (0,4 l · Sirop) × 2, Qora murch × 300 g")
+    })
+})
+
+describe("a dispatcher's order in the bots", () => {
+    const reader = { language: Language.UZ, type: BusinessType.STORE }
+    const withDispatcher = (extra: Partial<OrderDTO>): OrderDTO => ({
+        ...orderOf([{ name: "Mantiqiy kubik", unit: Unit.PIECE, quantity: 1 }]),
+        payment: { method: "card_transfer", status: PaymentStatus.PAID } as OrderDTO["payment"],
+        courierId: "c-1",
+        courierName: "Dilshod",
+        courierPhone: "+998901112233",
+        dispatcher: true,
+        deliveryNotes: [],
+        customerPaysCarrier: false,
+        needsCourierChoice: false,
+        ...extra,
+    })
+
+    it("tells the customer how it went, with the note, the fee to the carrier and the phone", () => {
+        const sent = withDispatcher({
+            status: OrderStatus.PICKED_UP,
+            sentVia: SendWay.TAXI,
+            customerPaysCarrier: true,
+        })
+        expect(formatStatusForCustomer(sent, reader, "01 A 123 BC, 30 000 so'm")).toBe(
+            [
+                "🚕 #7 buyurtmangiz taksi bilan jo'natildi.",
+                "📝 01 A 123 BC, 30 000 so'm",
+                "💵 Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz.",
+                "📞 Dispetcher: +998 90 111 22 33",
+            ].join("\n"),
+        )
+        const self = withDispatcher({ status: OrderStatus.PICKED_UP, sentVia: SendWay.SELF })
+        expect(formatStatusForCustomer(self, reader)).toContain(
+            "buyurtmangizni Dilshod olib kelmoqda",
+        )
+        // A rider's order reads as before.
+        const rider = withDispatcher({ status: OrderStatus.PICKED_UP, dispatcher: false })
+        expect(formatStatusForCustomer(rider, reader)).toBe(
+            "🚚 #7 buyurtmangizni Dilshod olib kelmoqda.\n📞 Kuryer: +998 90 111 22 33",
+        )
+    })
+
+    it("the dispatcher's card: where from, the notes, and «Jo'natdim» to the app once packed", () => {
+        const preparing = withDispatcher({
+            status: OrderStatus.PREPARING,
+            deliveryNotes: [{ at: "2026-11-15T10:00:00.000Z", text: "Taksi <chaqirildi>" }],
+        })
+        const card = formatOrderForCourier(preparing, reader, { name: "ABC", address: "Bozor 1" })
+        expect(card).toContain("🏪 Qayerdan: Bozor 1")
+        expect(card).toContain("📝 Taksi &lt;chaqirildi&gt;")
+        expect(card).toContain("Do'kon qadoqlamoqda")
+        expect(courierKeyboard(preparing, reader, "https://d/x").inline_keyboard).toEqual([])
+        const ready = withDispatcher({
+            status: OrderStatus.READY,
+            nextStatus: OrderStatus.PICKED_UP,
+        })
+        expect(courierKeyboard(ready, reader, "https://d/x").inline_keyboard).toEqual([
+            [{ text: "📮 Jo'natdim", web_app: { url: "https://d/x" } }],
+        ])
+    })
+
+    it("the owner's card: no dispatcher's step; an order nobody is on goes to the app", () => {
+        const ready = withDispatcher({
+            status: OrderStatus.READY,
+            nextStatus: OrderStatus.PICKED_UP,
+        })
+        const rows = orderKeyboard(ready, reader).inline_keyboard
+        expect(rows.flat().map((b) => b.callback_data)).toEqual(["x:o-1"])
+        const open = withDispatcher({
+            status: OrderStatus.PREPARING,
+            nextStatus: OrderStatus.READY,
+            courierId: undefined,
+            courierName: undefined,
+            dispatcher: false,
+            needsCourierChoice: true,
+        })
+        const choice = { url: "https://app/o", shopHasCouriers: true }
+        expect(orderKeyboard(open, reader, choice).inline_keyboard[0]).toEqual([
+            { text: "🛵 Kuryerga topshirish", web_app: { url: "https://app/o" } },
+        ])
+        // A shop without couriers: «O'zim yetkazaman» right in the chat, never «Tayyor» first.
+        const alone = orderKeyboard(open, reader, { ...choice, shopHasCouriers: false })
+        expect(alone.inline_keyboard[0]).toEqual([
+            { text: "🙋 O'zim yetkazaman", callback_data: "m:o-1" },
+        ])
+        expect(parseOrderCallback("m:o-1")).toEqual({ kind: "deliverMyself", orderId: "o-1" })
+        const owner = formatOrderForOwner(
+            withDispatcher({ status: OrderStatus.PICKED_UP, sentVia: SendWay.POST }),
+            reader,
+        )
+        expect(owner).toContain("📮 Dispetcher: Dilshod, +998 90 111 22 33")
+        expect(owner).toContain("🚚 Jo'natildi: pochta orqali")
     })
 })

@@ -7,6 +7,20 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### A courier who is a dispatcher, and someone on every order
+- A shop's courier may be a dispatcher (owner's decisions, November 2026): the owner packs and
+  presses «Tayyor bo'ldi», the dispatcher sends the parcel by a taxi, the post or someone else
+  («Jo'natdim» with a note) and writes more notes as it travels. The customer gets each from the
+  shop's bot and sees them on the order, newest first, with the dispatcher's phone. The carrier is
+  never in Zumda: only the way and the notes are.
+- Nobody skips the courier any more: the shop's only courier gets an accepted order by itself;
+  with two or more the owner's button is «Kuryerga topshirish», with none «O'zim yetkazaman»
+  (also right in the bot). «Tayyor» waits until someone is on it.
+- Every courier card says where from and where to, on every step.
+- Every order carries the customer's pin on the map, in every shop.
+- «Yetkazish haqini mijoz o'zi to'laydi»: a shop that sends by a taxi or the post says
+  «Yetkazish haqi alohida» instead of «Bepul yetkazish», and adds no fee to the order.
+
 ### A toy shop sorts its toys the way parents look for them
 - Three categories join the goods shelf (owner's decisions, 7 November 2026): «Rivojlantiruvchi
   o'yinchoqlar», «Mantiqiy o'yinlar» and «Kitoblar».

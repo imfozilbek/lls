@@ -5,7 +5,15 @@
 import { expect, test } from "@playwright/test"
 
 import { businessBot, platformBot } from "../stand/config.js"
-import { FOOD, PEOPLE, WATER, apiAs, resetStand, payAndAccept } from "../support/stand.js"
+import {
+    FOOD,
+    PEOPLE,
+    STAND_PIN,
+    WATER,
+    apiAs,
+    payAndAccept,
+    resetStand,
+} from "../support/stand.js"
 import {
     businessChat,
     callsOf,
@@ -144,6 +152,7 @@ test("orders through the shop's own bot carry no commission", async () => {
         json: {
             items: [{ productId: "dev-food-p1", quantity: 1 }],
             address: "Navoiy 7",
+            location: STAND_PIN,
             channel: "marketplace",
         },
     })

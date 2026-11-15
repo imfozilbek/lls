@@ -32,9 +32,9 @@ import {
     AddressSummary,
     CHECKOUT_ADDRESS,
     addressComplete,
-    needsPin,
     outsideZone,
 } from "./checkout-address.js"
+import { deliveryWords } from "./delivery-words.js"
 
 import type { Delivery } from "./checkout-address.js"
 import type { Dictionary } from "../i18n/index.js"
@@ -423,6 +423,19 @@ function PaymentSection({
     )
 }
 
+/** The delivery line of the totals: the fee, «bepul», or «alohida» (paid to the carrier). */
+function deliveryValue(
+    shop: Shop | null,
+    fee: number,
+    t: Dictionary,
+    language: Language,
+): number | string {
+    if (shop?.delivery.customerPaysCarrier) {
+        return deliveryWords(language).apart
+    }
+    return fee === 0 ? t.common.free : fee
+}
+
 function Totals({ rows }: { rows: [string, number | string, boolean?][] }): React.JSX.Element {
     const language = useLanguage()
     return (
@@ -482,7 +495,7 @@ function customerStep(
         return { id: CHECKOUT_PHONE, text: t.checkout.needPhone }
     }
     const hasPin = delivery.location !== null
-    if (needsPin(shop) && !hasPin) {
+    if (!hasPin) {
         return { id: CHECKOUT_ADDRESS, text: t.checkout.needPin }
     }
     const radius = shop?.delivery.radiusMeters
@@ -813,13 +826,18 @@ export function CheckoutScreen(): React.JSX.Element {
             <Totals
                 rows={[
                     [t.cart.subtotal, cart.subtotal],
-                    [t.cart.delivery, fee === 0 ? t.common.free : fee],
+                    [t.cart.delivery, deliveryValue(shop, fee, t, language)],
                     ...(bottles.deposit > 0
                         ? [[t.cart.deposit, bottles.deposit] as [string, number]]
                         : []),
                     [t.cart.total, total, true],
                 ]}
             />
+            {shop?.delivery.customerPaysCarrier ? (
+                <p className="-mt-2 px-1 text-sm text-tg-hint">
+                    {deliveryWords(language).apartHint}
+                </p>
+            ) : null}
             <BottomSpacer />
         </main>
     )

@@ -61,6 +61,9 @@ export async function signInitData(
     return params.toString()
 }
 
+/** Yakkabog': every order carries the customer's pin (owner's decision, November 2026). */
+export const PIN = { latitude: 38.9785, longitude: 66.6831 }
+
 export interface SentMessage {
     token: string
     chatId: number

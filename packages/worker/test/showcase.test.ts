@@ -11,6 +11,7 @@ import {
     createActiveShop,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -197,7 +198,11 @@ describe("Zumda showcase", () => {
         const osh = products.data.find((p) => p.name === "To'y oshi")
         const placed = await viaShowcase(CUSTOMER)("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: osh?.id, quantity: 2 }], address: "Navoiy 12" },
+            json: {
+                items: [{ productId: osh?.id, quantity: 2 }],
+                address: "Navoiy 12",
+                location: PIN,
+            },
         })
         expect(placed.status).toBe(201)
         const order = await json<{ id: string }>(placed)
@@ -243,6 +248,7 @@ describe("Zumda showcase", () => {
             json: {
                 items: [{ productId: products.data[0]?.id, quantity: 1 }],
                 address: "Navoiy 12",
+                location: PIN,
                 channel: "marketplace",
             },
         })

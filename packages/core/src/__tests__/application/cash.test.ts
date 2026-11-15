@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest"
 import {
     AssignCourierUseCase,
     CreateCourierInviteUseCase,
+    DeliverMyselfUseCase,
     GetCourierHomeUseCase,
     JoinAsCourierUseCase,
     ReviewCourierUseCase,
@@ -35,6 +36,7 @@ import {
     makeCustomer,
     makeProduct,
     courierSharesPhone,
+    PIN,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -91,6 +93,7 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
             businessId: "biz-1",
             items: [{ productId: "prod-1", quantity: 2 }],
             address: "Navoiy 12",
+            location: PIN,
             paymentMethod,
         })
 
@@ -238,12 +241,13 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
     it("the owner delivered it: the money is in the shop at once", async () => {
         await setOptions(PaymentOptions.CASH)
         const order = await place()
-        for (const to of [
-            OrderStatus.ACCEPTED,
-            OrderStatus.READY,
-            OrderStatus.PICKED_UP,
-            OrderStatus.DELIVERED,
-        ]) {
+        await advance(order, OrderStatus.ACCEPTED)
+        // The shop has a courier: «O'zim yetkazaman» first, then the owner's own steps.
+        await expect(advance(order, OrderStatus.READY)).rejects.toMatchObject({
+            rule: "COURIER_NOT_CHOSEN",
+        })
+        await new DeliverMyselfUseCase(deps()).execute(ids(order))
+        for (const to of [OrderStatus.READY, OrderStatus.PICKED_UP, OrderStatus.DELIVERED]) {
             await advance(order, to)
         }
         const stored = orders.items.get(order.id)

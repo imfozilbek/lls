@@ -15,6 +15,7 @@ import {
     makeBusiness,
     makeCustomer,
     makeProduct,
+    PIN,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -64,6 +65,7 @@ async function order(shop: Business): Promise<unknown> {
         businessId: shop.id,
         items: [{ productId: "prod-1", quantity: 1 }],
         address: "Navoiy 12",
+        location: PIN,
     })
 }
 

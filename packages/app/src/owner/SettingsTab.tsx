@@ -46,7 +46,7 @@ import type { Dictionary } from "../i18n/index.js"
 import type { ShopPatch } from "../lib/api.js"
 import type { BotAvatarInput } from "../lib/bot-avatar.js"
 import type { MainAction } from "../lib/main-button.js"
-import type { ShopOwnerDTO } from "@zumda/core"
+import type { Language, ShopOwnerDTO } from "@zumda/core"
 
 interface Form {
     name: string
@@ -60,6 +60,8 @@ interface Form {
     minOrder: number | null
     /** Delivery radius in whole km; empty = no limit. */
     radiusKm: number | null
+    /** «Yetkazish haqini mijoz o'zi to'laydi»: the fee is the carrier's, not in the order. */
+    customerPaysCarrier: boolean
     hours: Hours
     features: Feature[]
     bottleDeposit: number | null
@@ -99,6 +101,7 @@ function formOf(shop: ShopOwnerDTO): Form {
         radiusKm: shop.deliveryRadiusMeters
             ? Math.round(shop.deliveryRadiusMeters / METERS_PER_KM)
             : null,
+        customerPaysCarrier: shop.delivery.customerPaysCarrier,
         hours: hoursOf(shop.workingHours),
         features: [...shop.features],
         bottleDeposit: shop.bottleDeposit || null,
@@ -113,10 +116,12 @@ function patchOf(form: Form): ShopPatch {
         location: form.location,
         contactPhone: form.contactPhone.trim() || null,
         delivery: {
-            fee: form.fee ?? 0,
-            freeFrom: form.freeFrom,
+            // Paid to the carrier: the shop asks no fee of its own (the server says the same).
+            fee: form.customerPaysCarrier ? 0 : (form.fee ?? 0),
+            freeFrom: form.customerPaysCarrier ? null : form.freeFrom,
             minOrder: form.minOrder,
             radiusMeters: form.radiusKm ? form.radiusKm * METERS_PER_KM : null,
+            customerPaysCarrier: form.customerPaysCarrier,
         },
         workingHours: scheduleOf(form.hours),
         // Canonical order, so ticking a box off and on again leaves the form clean.
@@ -386,6 +391,15 @@ function ShopLink({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
     )
 }
 
+/** «Bepul yetkazish», the fee, or that the customer pays the carrier. */
+function deliveryPrice(s: Settings, shop: ShopOwnerDTO, language: Language): string {
+    if (shop.delivery.customerPaysCarrier) {
+        return s.summary.carrier
+    }
+    const { fee } = shop.delivery
+    return fee > 0 ? formatMoney(fee, language) : s.summary.free
+}
+
 function DeliveryFields({
     form,
     patch,
@@ -396,16 +410,36 @@ function DeliveryFields({
     const s = useT().owner.settings
     return (
         <Section id={sectionId("delivery")}>
-            <Field label={s.fee} htmlFor="fee">
-                <MoneyInput id="fee" value={form.fee} onChange={(fee): void => patch({ fee })} />
-            </Field>
-            <Field label={s.freeFrom} htmlFor="free-from">
-                <MoneyInput
-                    id="free-from"
-                    value={form.freeFrom}
-                    onChange={(freeFrom): void => patch({ freeFrom })}
+            {/* Owner's decision, November 2026: a taxi or the post, paid by the customer. */}
+            <div className="flex items-center gap-3">
+                <div className="flex-1">
+                    <p className="font-semibold">{s.customerPaysCarrier}</p>
+                    <p className="text-sm text-tg-subtitle">{s.customerPaysCarrierHint}</p>
+                </div>
+                <Switch
+                    checked={form.customerPaysCarrier}
+                    onChange={(customerPaysCarrier): void => patch({ customerPaysCarrier })}
+                    label={s.customerPaysCarrier}
                 />
-            </Field>
+            </div>
+            {form.customerPaysCarrier ? null : (
+                <>
+                    <Field label={s.fee} htmlFor="fee">
+                        <MoneyInput
+                            id="fee"
+                            value={form.fee}
+                            onChange={(fee): void => patch({ fee })}
+                        />
+                    </Field>
+                    <Field label={s.freeFrom} htmlFor="free-from">
+                        <MoneyInput
+                            id="free-from"
+                            value={form.freeFrom}
+                            onChange={(freeFrom): void => patch({ freeFrom })}
+                        />
+                    </Field>
+                </>
+            )}
             <Field label={s.minOrder} htmlFor="min-order">
                 <MoneyInput
                     id="min-order"
@@ -731,7 +765,6 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
             loadCouriers().catch(() => undefined)
         }
     }, [couriers, loadCouriers])
-    const { fee } = shop.delivery
     const radius = shop.deliveryRadiusMeters
     const on = shop.features.map((f) => s.featureNames[f])
     const team = couriers?.filter((c) => c.status === "active").length
@@ -745,7 +778,7 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
         },
         delivery: {
             text: [
-                fee > 0 ? formatMoney(fee, language) : s.summary.free,
+                deliveryPrice(s, shop, language),
                 radius ? fill(s.summary.radius, { km: String(radius / METERS_PER_KM) }) : null,
             ]
                 .filter(Boolean)

@@ -15,15 +15,26 @@ import {
     Payment,
     PayoutCard,
     Phone,
+    SEND_WAYS,
     UNITS,
+    deliveryNote,
     offsetOf,
 } from "@zumda/core"
 
-import { IN_CHUNK, Versions, isUniqueViolation, oneOf, optional, placeholders } from "./rows.js"
+import {
+    IN_CHUNK,
+    Versions,
+    flag,
+    isUniqueViolation,
+    oneOf,
+    optional,
+    placeholders,
+} from "./rows.js"
 
 import type {
     CancelledBy,
     ChosenOptions,
+    DeliveryNote,
     MoneyTotals,
     NetworkShare,
     OrderRepository,
@@ -80,6 +91,11 @@ interface OrderRow {
     cash_received_at: number | null
     trip_id: string | null
     trip_stop: number | null
+    dispatcher: number
+    owner_delivers: number
+    sent_via: string | null
+    delivery_notes: string | null
+    customer_pays_carrier: number
 }
 
 interface ItemRow {
@@ -104,7 +120,8 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     delivered_at, created_at, updated_at, network_requested_at, network_alerted_at,
     delivery_fee_to, payment_card_number, payment_card_holder, receipt_key, receipt_hash,
     receipt_at, receipt_reused_from, customer_rejections, transfer_rejections,
-    transfer_reminded_at, cash_received_at, trip_id, trip_stop`
+    transfer_reminded_at, cash_received_at, trip_id, trip_stop, dispatcher, owner_delivers,
+    sent_via, delivery_notes, customer_pays_carrier`
 
 /** A cash order whose money a courier still holds. */
 const WITH_COURIER = `payment_method = 'cash' AND payment_status = 'paid'
@@ -268,6 +285,10 @@ const MUTABLE_COLUMNS = [
     "cash_received_at",
     "trip_id",
     "trip_stop",
+    "dispatcher",
+    "owner_delivers",
+    "sent_via",
+    "delivery_notes",
 ] as const
 
 /**
@@ -331,6 +352,11 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         deliveryFeeTo: oneOf(row.delivery_fee_to, DELIVERY_FEE_RECIPIENTS, "delivery_fee_to"),
         tripId: optional(row.trip_id),
         tripStop: optional(row.trip_stop),
+        dispatcher: row.dispatcher === 1,
+        ownerDelivers: row.owner_delivers === 1,
+        sentVia: row.sent_via === null ? undefined : oneOf(row.sent_via, SEND_WAYS, "sent_via"),
+        deliveryNotes: notesOf(row.delivery_notes),
+        customerPaysCarrier: row.customer_pays_carrier === 1,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -349,6 +375,32 @@ function toReceipt(row: OrderRow): TransferReceipt | undefined {
         reusedFrom: optional(row.receipt_reused_from),
         customerRejections: row.customer_rejections,
     }
+}
+
+/** The dispatcher's notes as stored: `[{ at, text }]`, `at` in unix ms. */
+function notesOf(stored: string | null): DeliveryNote[] {
+    if (stored === null) {
+        return []
+    }
+    const rows = JSON.parse(stored) as { at: number; text: string }[]
+    return rows.map((note) => deliveryNote(note.text, new Date(note.at)))
+}
+
+function storedNotes(order: Order): string | null {
+    const notes = order.deliveryNotes
+    return notes.length === 0
+        ? null
+        : JSON.stringify(notes.map((note) => ({ at: note.at.getTime(), text: note.text })))
+}
+
+/** Who carries it: a dispatcher, the owner himself; how it was sent; the notes. */
+function dispatchValues(order: Order): (string | number | null)[] {
+    return [
+        flag(order.isWithDispatcher()),
+        flag(order.ownerDelivers),
+        order.sentVia ?? null,
+        storedNotes(order),
+    ]
 }
 
 function dateOrUndefined(value: number | null): Date | undefined {
@@ -398,6 +450,8 @@ function orderValues(order: Order): (string | number | null)[] {
         ...receiptValues(order),
         ...cashValues(order),
         ...tripValues(order),
+        ...dispatchValues(order),
+        flag(order.customerPaysCarrier),
     ]
 }
 
@@ -441,6 +495,7 @@ function mutableValues(order: Order): (string | number | null)[] {
         ...receiptValues(order),
         ...cashValues(order),
         ...tripValues(order),
+        ...dispatchValues(order),
     ]
 }
 

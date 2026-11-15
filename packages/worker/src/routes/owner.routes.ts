@@ -229,12 +229,16 @@ export const ownerRoutes = new Hono<AppEnv>()
             const business = shopOf(c)
             const orderId = c.req.valid("param").id
             const previous = await services.orders.findById(orderId)
-            const order = await services.useCases.assignCourier.execute({
-                actorTelegramId: c.get("auth").user.id,
-                businessId: business.id,
-                orderId,
-                courierId: c.req.valid("json").courierId,
-            })
+            const body = c.req.valid("json")
+            const ids = { actorTelegramId: c.get("auth").user.id, businessId: business.id, orderId }
+            // «O'zim yetkazaman»: the owner takes it; a courier who had it hears it.
+            const order =
+                "self" in body
+                    ? await services.useCases.deliverMyself.execute(ids)
+                    : await services.useCases.assignCourier.execute({
+                          ...ids,
+                          courierId: body.courierId,
+                      })
             inBackground(
                 c.executionCtx,
                 services,

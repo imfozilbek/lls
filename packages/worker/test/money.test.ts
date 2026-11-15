@@ -12,6 +12,7 @@ import {
     hireCourier,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -55,7 +56,7 @@ describe("money: transfer before the shop starts, report, files", () => {
     async function place(): Promise<Response> {
         return as(CUSTOMER)("/api/orders", {
             method: "POST",
-            json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12" },
+            json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12", location: PIN },
         })
     }
 

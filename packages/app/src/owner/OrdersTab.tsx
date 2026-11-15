@@ -17,12 +17,13 @@ import { formatMoney, formatQuantity, formatTime } from "../lib/format.js"
 import { usePagedList } from "../lib/paged.js"
 import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
-import { haptic } from "../lib/telegram.js"
+import { confirm, haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { useRingOnNews } from "../lib/use-ring.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { CallLink, CompactAddress } from "../ui/contact-links.js"
+import { DeliveryNotes } from "../ui/delivery-notes.js"
 import {
     AlertIcon,
     CardIcon,
@@ -50,12 +51,14 @@ import { BottomSpacer } from "../ui/shell.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import { PaymentCheckSheet } from "./PaymentCheck.js"
+import { ownerStep } from "./order-step.js"
 import { useOwner } from "./store.js"
 import { TripScope, TripSlot } from "./trips.js"
 
+import type { OwnerStep } from "./order-step.js"
 import type { Dictionary } from "../i18n/index.js"
 import type { PagedList } from "../lib/paged.js"
-import type { OrderDTO } from "@zumda/core"
+import type { CourierDTO, OrderDTO } from "@zumda/core"
 
 type Filter = "active" | "done"
 
@@ -80,42 +83,32 @@ function failToast(t: Dictionary, caught: unknown): void {
     toast(errorText(t, caught instanceof ApiError ? caught.code : "generic"), "error")
 }
 
-/** Pick one of the shop's couriers on shift today. Couriers are invited in Settings. */
-function CourierSheet({
-    order,
-    onChange,
-    onStale,
-    onClose,
-}: CardProps & { onClose(): void }): React.JSX.Element {
-    const t = useT()
-    const couriers = useOwner((state) => state.couriers)
-    const loadCouriers = useOwner((state) => state.loadCouriers)
-    // Available ones first; the rest stay visible, greyed, with the reason.
-    const active = couriers
-        ?.filter((courier) => courier.isActive)
-        .sort((a, b) => Number(a.unavailableReason !== null) - Number(b.unavailableReason !== null))
-    useEffect(() => {
-        loadCouriers().catch(() => undefined)
-    }, [loadCouriers])
+type AssignTo = string | "network" | "self"
 
+/** Hands the order on and closes the sheet once the server answered (never twice at once). */
+function useAssign(
+    { order, onChange, onStale }: CardProps,
+    onClose: () => void,
+): { pending: boolean; assign(to: AssignTo, backToday?: boolean): Promise<void> } {
+    const t = useT()
     const replaceCourier = useOwner((state) => state.replaceCourier)
-    const goToSection = useOwner((state) => state.goToSection)
-    // The sheet stays until the server answers: the card's buttons are not pressed meanwhile.
     const [pending, setPending] = useState(false)
-    const assign = async (courierId: string | "network", backToday = false): Promise<void> => {
+    const assign = async (to: AssignTo, backToday = false): Promise<void> => {
         if (pending) {
             return
         }
         setPending(true)
         try {
-            if (backToday && courierId !== "network") {
+            if (backToday && to !== "network" && to !== "self") {
                 // Switched off for today, maybe by mistake: picking them is the owner's yes.
-                replaceCourier(await api.owner.setCourierSchedule(courierId, { offToday: false }))
+                replaceCourier(await api.owner.setCourierSchedule(to, { offToday: false }))
             }
             onChange(
-                courierId === "network"
+                to === "network"
                     ? await api.owner.toNetwork(order.id)
-                    : await api.owner.assignCourier(order.id, courierId),
+                    : to === "self"
+                      ? await api.owner.deliverMyself(order.id)
+                      : await api.owner.assignCourier(order.id, to),
             )
             haptic.success()
         } catch (caught) {
@@ -126,6 +119,64 @@ function CourierSheet({
             onClose()
         }
     }
+    return { pending, assign }
+}
+
+/** The shop's approved couriers: available ones first, the rest greyed with the reason. */
+function CourierOptions({
+    couriers,
+    cash,
+    pending,
+    onPick,
+}: {
+    couriers: readonly CourierDTO[]
+    cash: boolean
+    pending: boolean
+    onPick(courierId: string, backToday: boolean): void
+}): React.JSX.Element {
+    const t = useT()
+    const sorted = [...couriers].sort(
+        (a, b) => Number(a.unavailableReason !== null) - Number(b.unavailableReason !== null),
+    )
+    return (
+        <>
+            {sorted.map((courier) => {
+                // «Bugun ishlamaydi» is the owner's own switch: one tap turns it back and assigns.
+                const offToday = courier.unavailableReason === "off_today" && courier.onShift
+                // A dispatcher hands the parcel on: no cash goes that way.
+                const noCash = courier.dispatcher && cash
+                const busy = courier.unavailableReason !== null && !offToday
+                return (
+                    <SheetOption
+                        key={courier.id}
+                        label={
+                            courier.dispatcher
+                                ? `${courier.name} · ${t.owner.dispatcher}`
+                                : courier.name
+                        }
+                        hint={courierHint(t, courier, offToday, noCash)}
+                        disabled={pending || noCash || busy}
+                        onClick={(): void => onPick(courier.id, offToday)}
+                    />
+                )
+            })}
+        </>
+    )
+}
+
+/** Pick one of the shop's couriers on shift today. Couriers are invited in Settings. */
+function CourierSheet(props: CardProps & { onClose(): void }): React.JSX.Element {
+    const { order, onClose } = props
+    const t = useT()
+    const couriers = useOwner((state) => state.couriers)
+    const loadCouriers = useOwner((state) => state.loadCouriers)
+    const goToSection = useOwner((state) => state.goToSection)
+    const active = couriers?.filter((courier) => courier.isActive)
+    useEffect(() => {
+        loadCouriers().catch(() => undefined)
+    }, [loadCouriers])
+    const { pending, assign } = useAssign(props, onClose)
+    const cash = order.payment.method === "cash"
 
     return (
         <Sheet title={t.owner.assign} onClose={pending ? (): void => undefined : onClose}>
@@ -144,31 +195,29 @@ function CourierSheet({
                     />
                 </>
             ) : null}
-            {active?.map((courier) => {
-                // «Bugun ishlamaydi» is the owner's own switch: one tap turns it back and assigns.
-                const offToday = courier.unavailableReason === "off_today" && courier.onShift
-                return (
-                    <SheetOption
-                        key={courier.id}
-                        label={courier.name}
-                        hint={
-                            offToday
-                                ? t.owner.backTodayAssign
-                                : courier.unavailableReason
-                                  ? t.owner.courierReasons[courier.unavailableReason]
-                                  : courier.phone
-                                    ? formatPhone(courier.phone)
-                                    : undefined
-                        }
-                        disabled={pending || (courier.unavailableReason !== null && !offToday)}
-                        onClick={(): void => void assign(courier.id, offToday)}
-                    />
-                )
-            })}
-            {/* A network courier carries no money: a cash order goes only with the shop's own. */}
+            {active ? (
+                <CourierOptions
+                    couriers={active}
+                    cash={cash}
+                    pending={pending}
+                    onPick={(id, backToday): void => void assign(id, backToday)}
+                />
+            ) : null}
+            {/* Never a dead end: the owner may always take it, the old steps come back. */}
+            {order.ownerDelivers ? null : (
+                <SheetOption
+                    label={t.owner.deliverMyself}
+                    hint={t.owner.deliverMyselfHint}
+                    disabled={pending}
+                    onClick={(): void => void assign("self")}
+                />
+            )}
+            {/* A network courier carries no money: a cash order, or one whose delivery the
+                customer pays to the carrier, goes only with the shop's own. */}
             {order.waitingForNetwork ||
             order.courierId ||
-            order.payment.method === "cash" ? null : (
+            cash ||
+            order.customerPaysCarrier ? null : (
                 <SheetOption
                     label={t.owner.toNetwork}
                     hint={t.owner.toNetworkHint}
@@ -178,6 +227,25 @@ function CourierSheet({
             )}
         </Sheet>
     )
+}
+
+/** Why a courier is greyed, the off-today shortcut, or their phone. */
+function courierHint(
+    t: Dictionary,
+    courier: CourierDTO,
+    offToday: boolean,
+    noCash: boolean,
+): string | undefined {
+    if (noCash) {
+        return t.owner.cashNotForDispatcher
+    }
+    if (offToday) {
+        return t.owner.backTodayAssign
+    }
+    if (courier.unavailableReason) {
+        return t.owner.courierReasons[courier.unavailableReason]
+    }
+    return courier.phone ? formatPhone(courier.phone) : undefined
 }
 
 /** Cancel with an optional reason: the customer sees it. */
@@ -238,11 +306,85 @@ function CancelSheet({
     )
 }
 
+/** The one main thing to do now: the money, «Kuryerga topshirish», a step, or the dispatcher's. */
+function MainStep({
+    order,
+    step,
+    busy,
+    alone,
+    onStep,
+    onSheet,
+    onSelf,
+}: {
+    order: OrderDTO
+    step: OwnerStep | null
+    busy: boolean
+    /** The shop has no courier: «O'zim yetkazaman» is the only answer, one tap. */
+    alone: boolean
+    onStep(to: OrderStatus): void
+    onSheet(sheet: "courier" | "pay"): void
+    onSelf(): void
+}): React.JSX.Element | null {
+    const t = useT()
+    const actions = t.owner.actions as Record<string, string>
+    switch (step?.kind) {
+        case "money":
+            // No screenshot yet: possible, but not the main thing to do.
+            return (
+                <Button
+                    variant={
+                        order.payment.status === PaymentStatus.AWAITING ? "primary" : "surface"
+                    }
+                    disabled={busy}
+                    icon={<CardIcon size={18} />}
+                    onClick={(): void => onSheet("pay")}
+                >
+                    {t.owner.paidAccept}
+                </Button>
+            )
+        case "choose":
+            return alone ? (
+                <Button loading={busy} onClick={onSelf}>
+                    {t.owner.deliverMyself}
+                </Button>
+            ) : (
+                <Button
+                    disabled={busy}
+                    icon={<ScooterIcon size={18} />}
+                    onClick={(): void => onSheet("courier")}
+                >
+                    {t.owner.handOver}
+                </Button>
+            )
+        case "step":
+            return (
+                <Button loading={busy} onClick={(): void => onStep(step.to)}>
+                    {actions[step.to] ?? step.to}
+                </Button>
+            )
+        case "dispatcher":
+            return (
+                <p className="flex items-center gap-2 rounded-control bg-tg-bg px-3 py-2.5 text-sm text-tg-subtitle">
+                    <ClockIcon size={18} className="shrink-0 text-brand" />
+                    {step.to === OrderStatus.PICKED_UP
+                        ? t.owner.dispatcherSends
+                        : t.owner.dispatcherDelivers}
+                </p>
+            )
+        default:
+            return null
+    }
+}
+
 function OrderActions(props: CardProps): React.JSX.Element | null {
     const { order, onChange, onStale } = props
     const t = useT()
     const [busy, setBusy] = useState(false)
     const [sheet, setSheet] = useState<"courier" | "cancel" | "pay" | null>(null)
+    // No courier at all: «O'zim yetkazaman» at once (unknown until they load: the sheet asks).
+    const alone = useOwner(
+        (state) => state.couriers !== null && !state.couriers.some((c) => c.isActive),
+    )
     if (isFinalStatus(order.status)) {
         return null
     }
@@ -259,53 +401,51 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
             setBusy(false)
         }
     }
-
-    const next = order.nextStatus
-    // A transfer order starts only after the money: accepting is «Деньги пришли, принять».
-    // A cash order is accepted at once and paid at the door.
-    const waitsForMoney =
-        next === OrderStatus.ACCEPTED &&
-        order.payment.method !== "cash" &&
-        order.payment.status !== PaymentStatus.PAID
-    const actions = t.owner.actions as Record<string, string>
+    // The dispatcher went silent: the owner may still close it, after one question.
+    const markDelivered = async (): Promise<void> => {
+        if (await confirm(t.owner.markDeliveredConfirm, { yes: t.owner.actions.delivered })) {
+            await act(() => api.owner.setStatus(order.id, OrderStatus.DELIVERED))
+        }
+    }
+    const step = ownerStep(order)
     const close = (): void => setSheet(null)
+    const open = (next: "courier" | "pay"): void => {
+        haptic.tap()
+        setSheet(next)
+    }
+    const quietDelivered = step?.kind === "dispatcher" && step.to === OrderStatus.DELIVERED
     return (
         <div className="mt-3 flex flex-col gap-1">
-            {next && waitsForMoney ? (
-                // No screenshot yet: possible, but not the main thing to do.
-                <Button
-                    variant={
-                        order.payment.status === PaymentStatus.AWAITING ? "primary" : "surface"
-                    }
-                    disabled={busy}
-                    icon={<CardIcon size={18} />}
-                    onClick={(): void => {
-                        haptic.tap()
-                        setSheet("pay")
-                    }}
-                >
-                    {t.owner.paidAccept}
-                </Button>
-            ) : null}
-            {next && !waitsForMoney ? (
-                <Button
-                    loading={busy}
-                    onClick={(): void => void act(() => api.owner.setStatus(order.id, next))}
-                >
-                    {actions[next] ?? next}
-                </Button>
-            ) : null}
+            <MainStep
+                order={order}
+                step={step}
+                busy={busy}
+                alone={alone}
+                onStep={(to): void => void act(() => api.owner.setStatus(order.id, to))}
+                onSheet={open}
+                onSelf={(): void => void act(() => api.owner.deliverMyself(order.id))}
+            />
             {/* One main step above; the courier and the cancel stay quiet below it. */}
             <div className="flex flex-wrap items-center justify-between gap-x-2">
-                {ASSIGNABLE.includes(order.status) ? (
+                {/* Without couriers the sheet still offers the network and an invite. */}
+                {ASSIGNABLE.includes(order.status) && (step?.kind !== "choose" || alone) ? (
                     <Button
                         variant="ghost"
                         className="-ml-2 whitespace-nowrap px-2"
                         icon={<ScooterIcon size={18} />}
                         disabled={busy}
-                        onClick={(): void => setSheet("courier")}
+                        onClick={(): void => open("courier")}
                     >
                         {order.courierName ? t.owner.reassign : t.owner.assign}
+                    </Button>
+                ) : quietDelivered ? (
+                    <Button
+                        variant="ghost"
+                        className="-ml-2 whitespace-nowrap px-2"
+                        disabled={busy}
+                        onClick={(): void => void markDelivered()}
+                    >
+                        {t.owner.markDelivered}
                     </Button>
                 ) : (
                     <span />
@@ -366,7 +506,7 @@ function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
         <div className="flex flex-col gap-2">
             <p className="flex flex-wrap items-center gap-2 px-1 font-medium">
                 <ScooterIcon size={18} className="text-brand" />
-                {t.owner.courier}: {order.courierName}
+                {order.dispatcher ? t.owner.dispatcher : t.owner.courier}: {order.courierName}
                 {order.viaNetwork ? (
                     <span className="rounded-full bg-brand/15 px-2 py-0.5 text-xs font-semibold">
                         {t.owner.viaNetwork}
@@ -379,6 +519,12 @@ function CourierLine({ order }: { order: OrderDTO }): React.JSX.Element | null {
                     phone={order.courierPhone}
                     label={t.owner.callCourier}
                     className="bg-tg-bg"
+                />
+            ) : null}
+            {order.dispatcher ? (
+                <DeliveryNotes
+                    order={order}
+                    sent={order.sentVia ? t.owner.sentVia[order.sentVia] : undefined}
                 />
             ) : null}
         </div>
@@ -700,6 +846,14 @@ export function OrdersTab(): React.JSX.Element {
     const refresh = (): void => void list.reload()
     // Orders waiting: «Ishga tayyor» folds into one line so the orders come first.
     const setActiveOrders = useOwner((state) => state.setActiveOrders)
+    // The main button asks whether the shop has couriers («Kuryerga topshirish»): once a session.
+    const couriersKnown = useOwner((state) => state.couriers !== null)
+    const loadCouriers = useOwner((state) => state.loadCouriers)
+    useEffect(() => {
+        if (!couriersKnown) {
+            loadCouriers().catch(() => undefined)
+        }
+    }, [couriersKnown, loadCouriers])
     const activeCount = filter === "active" ? list.items?.length : undefined
     useEffect(() => {
         if (activeCount !== undefined) {

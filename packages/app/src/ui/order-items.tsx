@@ -1,5 +1,6 @@
 import { fill, useLanguage, useT } from "../i18n/index.js"
 import { formatMoney, formatQuantity } from "../lib/format.js"
+import { deliveryWords } from "../shop/delivery-words.js"
 
 import type { OrderDTO } from "@zumda/core"
 
@@ -33,9 +34,11 @@ export function OrderItems({ order }: { order: OrderDTO }): React.JSX.Element {
             <div className="flex justify-between text-tg-subtitle">
                 <span>{t.cart.delivery}</span>
                 <span className="tabular-nums">
-                    {order.deliveryFee === 0
-                        ? t.common.free
-                        : formatMoney(order.deliveryFee, language)}
+                    {order.customerPaysCarrier
+                        ? deliveryWords(language).apart
+                        : order.deliveryFee === 0
+                          ? t.common.free
+                          : formatMoney(order.deliveryFee, language)}
                 </span>
             </div>
             {order.depositTotal > 0 ? (

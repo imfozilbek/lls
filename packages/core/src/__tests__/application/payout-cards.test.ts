@@ -20,6 +20,7 @@ import {
     makeBusiness,
     makeCustomer,
     makeProduct,
+    PIN,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -191,6 +192,7 @@ describe("payout card use cases", () => {
             businessId: "biz-1",
             items: [{ productId: "prod-1", quantity: 1 }],
             address: "Navoiy 12",
+            location: PIN,
         }
         const before = await place.execute(input)
         expect(before.payment.card).toEqual(FIRST)

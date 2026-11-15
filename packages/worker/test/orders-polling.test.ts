@@ -13,6 +13,7 @@ import {
     createActiveShop,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -33,7 +34,7 @@ describe("owner orders: version and pages", () => {
     const place = async (): Promise<string> => {
         const response = await as(CUSTOMER)("/api/orders", {
             method: "POST",
-            json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12" },
+            json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12", location: PIN },
         })
         expect(response.status).toBe(201)
         return ((await response.json()) as { id: string }).id

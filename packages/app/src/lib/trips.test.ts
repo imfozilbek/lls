@@ -23,6 +23,8 @@ describe("trips in the app", () => {
         expect(canJoinTrip(order("a", north(1), { status: "picked_up" }))).toBe(false)
         expect(canJoinTrip(order("a", north(1), { viaNetwork: true }))).toBe(false)
         expect(canJoinTrip(order("a", north(1), { tripId: "t" }))).toBe(false)
+        // A dispatcher sends each order its own way.
+        expect(canJoinTrip(order("a", north(1), { dispatcher: true }))).toBe(false)
     })
 
     it("finds the orders the same way and puts them in Zumda's order", () => {

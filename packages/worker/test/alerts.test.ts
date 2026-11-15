@@ -11,6 +11,7 @@ import {
     createActiveShop,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -44,7 +45,7 @@ describe("admin alerts", () => {
         const { id } = (await created.json()) as { id: string }
         return as("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: id, quantity: 1 }], address: "Navoiy 12" },
+            json: { items: [{ productId: id, quantity: 1 }], address: "Navoiy 12", location: PIN },
         })
     }
 

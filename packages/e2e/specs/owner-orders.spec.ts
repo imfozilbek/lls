@@ -57,7 +57,8 @@ test("empty orders, then a new order: card, every step from the app, customer to
         // Accepting starts it: one message, one tap less.
         ["Pul keldi, qabul qilish", "qabul qilindi va tayyorlanmoqda"],
         ["Tayyor bo'ldi", "tayyor"],
-        ["Jo'natish", "yo'lda"],
+        // The shop's only courier got it with «Pul keldi» (owner's decision, November 2026).
+        ["Jo'natish", "Jasur olib kelmoqda"],
         ["Yetkazildi", "yetkazildi"],
     ]
     for (const [button, told] of steps) {

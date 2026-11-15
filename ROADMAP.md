@@ -278,6 +278,12 @@ Pilot: **food, water and grocery at the same time.**
       alerts (production has no district yet: an owner task)
 - [x] Orders from several points in one place; each point sees only its own
 - [x] Today's shop couriers move to the new model without losing data
+- [x] Someone is on every order before «Tayyor» (owner's decisions, November 2026): the only
+      courier gets it by itself, two or more are picked by the owner, none: «O'zim yetkazaman»
+- [x] A courier may be a dispatcher (the toy shop): «Jo'natdim» by a taxi or the post with a
+      note, more notes for the customer; «Qayerdan» and «Qayerga» on every courier card
+- [x] Every order carries the customer's pin; «Yetkazish haqi alohida» when the customer pays
+      the carrier
 - [ ] Decide (owner): who gets the delivery fee for a network delivery, and Zumda's share
       (temporary rule in code: the shop keeps it, Zumda takes none)
 

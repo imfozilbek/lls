@@ -11,6 +11,7 @@ import {
     createActiveShop,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -131,7 +132,11 @@ describe("demo shops («Namuna»): made in «Platforma», never real", () => {
             .first<{ id: string }>()
         const placed = await customer()("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: product?.id, quantity: 1 }], address: "Navoiy 12" },
+            json: {
+                items: [{ productId: product?.id, quantity: 1 }],
+                address: "Navoiy 12",
+                location: PIN,
+            },
         })
         expect(placed.status).toBe(201)
         const order = await json<{ id: string; payment: { card?: { number: string } } }>(placed)

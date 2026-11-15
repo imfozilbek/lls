@@ -40,6 +40,7 @@ import {
     makeCustomer,
     makeProduct,
     courierSharesPhone,
+    PIN,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -103,6 +104,7 @@ describe("money: transfer before the shop starts, report", () => {
             businessId: "biz-1",
             items: [{ productId: "prod-1", quantity: 2 }],
             address: "Navoiy 12",
+            location: PIN,
         })
     }
 
@@ -278,6 +280,7 @@ describe("money: transfer before the shop starts, report", () => {
             businessId: "biz-1",
             items: [{ productId: "prod-1", quantity: 1 }],
             address: "Navoiy 12",
+            location: PIN,
         })
         expect((await sent(order, OWNER_TG)).payment.status).toBe(PaymentStatus.AWAITING)
         // Someone else's order stays closed to him as a customer action.

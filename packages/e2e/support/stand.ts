@@ -175,6 +175,9 @@ export interface PlacedOrder {
  * A customer orders through the API (the UI path is covered in customer-shop.spec.ts):
  * the phone goes to the bot first, as Telegram would send it.
  */
+/** Yakkabog', where the stand's shops are: the pin of the orders `placeOrder` makes. */
+export const STAND_PIN = { latitude: 38.9785, longitude: 66.6831 }
+
 export async function placeOrder(
     customer: TgUser,
     shop: string,
@@ -185,7 +188,8 @@ export async function placeOrder(
     const response = await apiAs(customer, "/orders", {
         shop,
         method: "POST",
-        json: { items, address: "Navoiy 12", ...extra },
+        // Every order carries the customer's pin (owner's decision, November 2026).
+        json: { items, address: "Navoiy 12", location: STAND_PIN, ...extra },
     })
     if (response.status !== 201) {
         throw new Error(`Order failed: ${response.status} ${await response.text()}`)

@@ -172,6 +172,8 @@ test("a courier moves only own orders and only the delivery part; never cancels"
         { productId: "dev-food-p1", quantity: 1 },
     ])
     await accept(order.id)
+    // The shop's only courier got it by itself; «O'zim yetkazaman» takes it back.
+    expect((await owner(order.id, { self: true }, "/courier")).status).toBe(200)
     const path = `/orders/${order.id}`
     expect((await courierApi(PEOPLE.courier, path, "PATCH", { status: "picked_up" })).status).toBe(
         403,
@@ -357,7 +359,8 @@ test("days and shift: «сегодня не работает» and «не на �
 
     // In the order the owner sees why, and cannot pick them.
     await page.getByRole("tab", { name: "Buyurtmalar" }).click()
-    await page.getByRole("button", { name: "Kuryer tayinlash" }).first().click()
+    // Nobody could take it: «Kuryerga topshirish» is the order's main button.
+    await page.getByRole("button", { name: "Kuryerga topshirish" }).first().click()
     const option = page.getByRole("dialog").getByRole("button", { name: /Jasur/ })
     await expect(option).toContainText("smenada emas")
     await expect(option).toBeDisabled()
@@ -374,20 +377,21 @@ test("a courier on shift switched off for today by mistake is still one tap away
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
-    await accept(order.id)
+    // Off before the order is accepted: the shop's only courier does not get it by itself.
     const off = await apiAs(PEOPLE.foodOwner, `/owner/couriers/${COURIER_ID}`, {
         shop: FOOD,
         method: "PATCH",
         json: { offToday: true },
     })
     expect(off.status).toBe(200)
+    await accept(order.id)
 
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
     const card = page
         .locator("li")
         .filter({ has: page.getByText(`Buyurtma #${order.number}`, { exact: true }) })
-    await card.getByRole("button", { name: "Kuryer tayinlash" }).click()
+    await card.getByRole("button", { name: "Kuryerga topshirish" }).click()
     const option = page.getByRole("dialog").getByRole("button", { name: /Jasur/ })
     await expect(option).toContainText("bugunga qaytariladi")
     await expect(option).toBeEnabled()

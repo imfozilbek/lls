@@ -582,7 +582,8 @@ export async function toCart(page: Page): Promise<void> {
 
 /**
  * The place at checkout. A returning customer's place (the last order's) is folded in one line:
- * «O'zgartirish» opens the fields.
+ * «O'zgartirish» opens the fields. Every order carries the pin (owner's decision, November
+ * 2026): «Joylashuvni yuborish» gives Telegram's place (the stub's: Yakkabog' by default).
  */
 export async function fillAddress(page: Page, address: string): Promise<void> {
     const field = page.getByRole("textbox", { name: "Manzil" })
@@ -592,6 +593,14 @@ export async function fillAddress(page: Page, address: string): Promise<void> {
         await change.click()
     }
     await field.fill(address)
+    const share = page.getByRole("button", { name: "Joylashuvni yuborish" })
+    if (await share.isVisible()) {
+        await share.click()
+        // With the map: the pin on it; without: a checked button.
+        await expect(
+            page.getByRole("button", { name: /Joy belgilandi|Joylashuv qo'shildi/ }),
+        ).toBeVisible()
+    }
 }
 
 /**

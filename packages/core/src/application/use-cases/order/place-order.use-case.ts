@@ -198,6 +198,7 @@ export class PlaceOrderUseCase {
                 customerPhone: customer.phone,
                 paymentMethod,
                 paymentCard: business.payoutCard,
+                customerPaysCarrier: business.delivery.customerPaysCarrier === true,
             })
             if (await orders.insert(order)) {
                 await customers.linkToBusiness(customer.id, business.id, now)

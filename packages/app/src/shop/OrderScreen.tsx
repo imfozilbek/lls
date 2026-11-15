@@ -15,6 +15,7 @@ import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { SheetLoading } from "../ui/boundary.js"
 import { CallLink } from "../ui/contact-links.js"
+import { DeliveryNotes } from "../ui/delivery-notes.js"
 import {
     CashIcon,
     CloseIcon,
@@ -31,6 +32,7 @@ import { Button, EmptyState, Section, Skeleton } from "../ui/primitives.js"
 import { ReceiptThumb } from "../ui/receipt.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import { deliveryWords } from "./delivery-words.js"
 import { useReorder } from "./reorder.js"
 
 import type { Dictionary } from "../i18n/index.js"
@@ -159,6 +161,7 @@ function moneyOpen(order: OrderDTO): boolean {
  */
 function Calls({ order }: { order: OrderDTO }): React.JSX.Element | null {
     const t = useT()
+    const language = useLanguage()
     const shopPhone = useSession((state) => state.shop?.callPhone)
     const courier = order.courierPhone
     const shop = moneyOpen(order) ? undefined : shopPhone
@@ -167,7 +170,16 @@ function Calls({ order }: { order: OrderDTO }): React.JSX.Element | null {
     }
     return (
         <div className="flex flex-col gap-2">
-            {courier ? <CallLink phone={courier} label={t.order.callCourier} /> : null}
+            {courier ? (
+                <CallLink
+                    phone={courier}
+                    label={
+                        order.dispatcher
+                            ? deliveryWords(language).callDispatcher
+                            : t.order.callCourier
+                    }
+                />
+            ) : null}
             {shop ? <CallLink phone={shop} label={t.pay.callShop} /> : null}
         </div>
     )
@@ -538,6 +550,7 @@ function useOrderMainAction(
 function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
+    const words = deliveryWords(language)
     const shopPlace = useSession((state) => state.shop?.location)
     return (
         <>
@@ -565,8 +578,17 @@ function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
             {order.courierName && !isFinalStatus(order.status) ? (
                 <p className="flex items-center gap-2 rounded-control bg-brand/10 px-4 py-3 font-medium">
                     <ScooterIcon size={20} className="text-brand" />
-                    {fill(t.order.courier, { name: order.courierName })}
+                    {fill(order.dispatcher ? words.dispatcher : t.order.courier, {
+                        name: order.courierName,
+                    })}
                 </p>
+            ) : null}
+            {/* How the dispatcher sent it and every note, like a parcel's tracking. */}
+            {order.dispatcher && order.status !== OrderStatus.CANCELLED ? (
+                <DeliveryNotes
+                    order={order}
+                    sent={order.sentVia ? words.sentVia[order.sentVia] : undefined}
+                />
             ) : null}
             <Calls order={order} />
 

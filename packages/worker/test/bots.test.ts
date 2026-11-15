@@ -11,6 +11,7 @@ import {
     createActiveShop,
     testClient,
     TEST_CARD,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -359,7 +360,12 @@ describe("shop bot", () => {
         const customer = client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug })
         const response = await customer("/api/orders", {
             method: "POST",
-            json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12", landmark: "Maktab" },
+            json: {
+                items: [{ productId, quantity: 2 }],
+                address: "Navoiy 12",
+                landmark: "Maktab",
+                location: PIN,
+            },
         })
         expect(response.status).toBe(201)
         return (await response.json()) as { id: string; number: number }
@@ -470,8 +476,9 @@ describe("shop bot", () => {
         expect(client.telegram.answered).toContain("cb-1")
         const edited = client.telegram.edited.at(-1)
         expect(edited?.messageId).toBeGreaterThan(0)
+        // No courier in the shop: «O'zim yetkazaman» before «Tayyor» (owner's decision).
         expect(edited?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
-            `a:${order.id}:ready`,
+            `m:${order.id}`,
         )
         expect(edited?.html).toContain("O'tkazma bilan to'langan")
         const toCustomer = client.telegram.sent.at(-1)
@@ -526,6 +533,24 @@ describe("shop bot", () => {
         expect(again).toEqual({ transfer_rejections: 1 })
     })
 
+    it("«O'zim yetkazaman» from the chat brings «Tayyor» back, the customer hears nothing", async () => {
+        const order = await placeOrder()
+        await shopUpdate({ callback_query: { id: "cb-p", from: OWNER, data: `pc:${order.id}` } })
+        const told = client.telegram.sent.length
+        await shopUpdate({ callback_query: { id: "cb-m", from: OWNER, data: `m:${order.id}` } })
+        expect(client.telegram.answered).toContain("cb-m")
+        const row = await env.DB.prepare("SELECT owner_delivers FROM orders").first()
+        expect(row).toEqual({ owner_delivers: 1 })
+        const card = client.telegram.edited.at(-1)
+        expect(card?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
+            `a:${order.id}:ready`,
+        )
+        expect(client.telegram.sent.length).toBe(told)
+        // Someone else's press changes nothing.
+        await shopUpdate({ callback_query: { id: "cb-s", from: STRANGER, data: `m:${order.id}` } })
+        expect(client.telegram.answered).toContain("cb-s")
+    })
+
     it("a failed answer to the button still updates the order and the owner card", async () => {
         const order = await placeOrder()
         client.telegram.failReplies = true
@@ -536,7 +561,7 @@ describe("shop bot", () => {
         const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
         expect(row?.status).toBe("preparing")
         expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual(
-            expect.objectContaining({ callback_data: `a:${order.id}:ready` }),
+            expect.objectContaining({ callback_data: `m:${order.id}` }),
         )
     })
 

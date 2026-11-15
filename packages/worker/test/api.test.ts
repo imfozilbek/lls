@@ -12,6 +12,7 @@ import {
     sharePhoneWithShops,
     testClient,
     TEST_CARD,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -361,6 +362,7 @@ describe("inside a shop", () => {
                     },
                 ],
                 address: "Navoiy 12",
+                location: PIN,
             },
         })
         expect(placed.status).toBe(201)
@@ -375,7 +377,11 @@ describe("inside a shop", () => {
 
         const noVariant = await asCustomer()("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: latte.id, quantity: 1 }], address: "Navoiy 12" },
+            json: {
+                items: [{ productId: latte.id, quantity: 1 }],
+                address: "Navoiy 12",
+                location: PIN,
+            },
         })
         expect(noVariant.status).toBe(422)
         expect(await json(noVariant)).toMatchObject({ error: { code: "VARIANT_REQUIRED" } })
@@ -384,6 +390,7 @@ describe("inside a shop", () => {
             json: {
                 items: [{ productId: latte.id, quantity: 1, variantId: "m", addonIds: ["gold"] }],
                 address: "Navoiy 12",
+                location: PIN,
             },
         })
         expect(foreign.status).toBe(422)
@@ -420,7 +427,11 @@ describe("inside a shop", () => {
         const second = await json<{ number: number }>(
             await asCustomer()("/api/orders", {
                 method: "POST",
-                json: { items: [{ productId: osh, quantity: 1 }], address: "Navoiy 12" },
+                json: {
+                    items: [{ productId: osh, quantity: 1 }],
+                    address: "Navoiy 12",
+                    location: PIN,
+                },
             }),
         )
         expect(second.number).toBe(2)
@@ -481,6 +492,7 @@ describe("inside a shop", () => {
         const body = {
             items: [{ productId: osh, quantity: 2 }],
             address: "Navoiy 12",
+            location: PIN,
             clientOrderId: "5f0c2a8e-7b6d-4c1e-9f3a-2b4c6d8e0a1b",
         }
         const first = await asCustomer()("/api/orders", { method: "POST", json: body })
@@ -514,7 +526,11 @@ describe("inside a shop", () => {
         const placed = await json<{ id: string }>(
             await asCustomer()("/api/orders", {
                 method: "POST",
-                json: { items: [{ productId: osh, quantity: 1 }], address: "Navoiy 12" },
+                json: {
+                    items: [{ productId: osh, quantity: 1 }],
+                    address: "Navoiy 12",
+                    location: PIN,
+                },
             }),
         )
         // A second shop of the same owner (same bot token for simplicity).
@@ -526,7 +542,8 @@ describe("inside a shop", () => {
                 bottle_deposit, marketplace_commission_bps, marketplace_joined_at,
                 created_at, updated_at, payout_card_number, payout_card_holder, district_id,
                 network_delivery, payment_card_id, bot_source, rejected_at, review_note,
-                contact_phone, payment_options, owner_chat_open_at, owner_chat_closed_at, demo_at
+                contact_phone, payment_options, owner_chat_open_at, owner_chat_closed_at, demo_at,
+                customer_pays_carrier
              FROM businesses WHERE slug = ?`,
         )
             .bind(slug)
@@ -553,7 +570,7 @@ describe("inside a shop", () => {
         const osh = await addProduct("Osh", 35_000)
         const response = await asCustomer()("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: osh, quantity: 1 }], address: "Navoiy 12" },
+            json: { items: [{ productId: osh, quantity: 1 }], address: "Navoiy 12", location: PIN },
         })
         expect(response.status).toBe(422)
         expect(await json(response)).toMatchObject({ error: { code: "PHONE_REQUIRED" } })

@@ -37,6 +37,11 @@ export interface DeliverySettings {
     freeFrom?: Money
     minOrder?: Money
     radiusMeters?: number
+    /**
+     * «Yetkazish haqini mijoz o'zi to'laydi» (owner's decision, November 2026): the customer pays
+     * the carrier (a taxi, the post) for the delivery; nothing of it is in the order's total.
+     */
+    customerPaysCarrier?: boolean
 }
 
 /** The shop's deal with Zumda for sales through the marketplace channel. */
@@ -132,6 +137,10 @@ export interface ProfilePatch {
 function validateDelivery(delivery: DeliverySettings): DeliverySettings {
     if (delivery.radiusMeters !== undefined) {
         requireInteger("delivery.radiusMeters", delivery.radiusMeters, 1, MAX_RADIUS_METERS)
+    }
+    // Paid to the carrier: the shop asks no fee of its own, so no "free from" either.
+    if (delivery.customerPaysCarrier) {
+        return { ...delivery, fee: Money.zero(), freeFrom: undefined, customerPaysCarrier: true }
     }
     return { ...delivery }
 }
@@ -434,17 +443,18 @@ export class Business {
     }
 
     /**
-     * A shop with a radius and its own location takes orders only from inside it, so the
-     * customer's pin is required there: without it an out-of-zone order would be paid, then
+     * Every order carries the customer's pin (owner's decision, November 2026): whoever delivers
+     * it, a courier or a dispatcher's taxi, knows where to. A shop with a radius and its own
+     * location takes orders only from inside it: an out-of-zone order would be paid, then
      * refunded. A shop without a radius (or without a location) delivers anywhere.
      */
     assertDeliversTo(destination: Location | undefined): void {
         const { radiusMeters } = this.props.delivery
-        if (radiusMeters === undefined || !this.props.location) {
-            return
-        }
         if (!destination) {
             throw BusinessRuleViolationError.locationRequired(radiusMeters)
+        }
+        if (radiusMeters === undefined || !this.props.location) {
+            return
         }
         const distance = this.props.location.distanceTo(destination)
         if (distance > radiusMeters) {
@@ -453,8 +463,8 @@ export class Business {
     }
 
     deliveryFeeFor(subtotal: Money): Money {
-        const { fee, freeFrom } = this.props.delivery
-        if (freeFrom && subtotal.isAtLeast(freeFrom)) {
+        const { fee, freeFrom, customerPaysCarrier } = this.props.delivery
+        if (customerPaysCarrier || (freeFrom && subtotal.isAtLeast(freeFrom))) {
             return Money.zero()
         }
         return fee

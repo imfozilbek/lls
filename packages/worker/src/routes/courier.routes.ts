@@ -4,6 +4,8 @@ import { Hono } from "hono"
 import { requireCourier } from "../auth.js"
 import {
     courierOrderBody,
+    deliveryNoteBody,
+    sendOrderBody,
     courierProfileBody,
     idParam,
     networkMembershipBody,
@@ -140,5 +142,55 @@ export const courierRoutes = new Hono<AppEnv>()
                 )
             }
             return c.json(order)
+        },
+    )
+
+    /** «Jo'natdim»: the dispatcher sent the order on; the customer hears how, with the note. */
+    .post(
+        "/orders/:id/send",
+        zValidator("param", idParam, onInvalid),
+        zValidator("json", sendOrderBody, onInvalid),
+        async (c) => {
+            const services = c.get("services")
+            const { via, note } = c.req.valid("json")
+            const order = await services.useCases.sendOrder.execute({
+                telegramId: c.get("auth").user.id,
+                orderId: c.req.valid("param").id,
+                via,
+                note,
+            })
+            const business = await services.businesses.findById(order.businessId)
+            if (business) {
+                inBackground(
+                    c.executionCtx,
+                    services,
+                    new Notifier(services).orderChanged(business, order, note || undefined),
+                )
+            }
+            return c.json(order)
+        },
+    )
+
+    /** «Izoh qo'shish»: a note for the customer; the shop's bot brings it to them. */
+    .post(
+        "/orders/:id/notes",
+        zValidator("param", idParam, onInvalid),
+        zValidator("json", deliveryNoteBody, onInvalid),
+        async (c) => {
+            const services = c.get("services")
+            const order = await services.useCases.addDeliveryNote.execute({
+                telegramId: c.get("auth").user.id,
+                orderId: c.req.valid("param").id,
+                text: c.req.valid("json").text,
+            })
+            const business = await services.businesses.findById(order.businessId)
+            if (business) {
+                inBackground(
+                    c.executionCtx,
+                    services,
+                    new Notifier(services).deliveryNoteAdded(business, order),
+                )
+            }
+            return c.json(order, 201)
         },
     )

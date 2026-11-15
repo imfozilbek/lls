@@ -30,6 +30,8 @@ export interface ShopSettingsPatch {
         freeFrom?: number | null
         minOrder?: number | null
         radiusMeters?: number | null
+        /** «Yetkazish haqini mijoz o'zi to'laydi»; left out: as it was. */
+        customerPaysCarrier?: boolean
     }
     /** `null` = always open. */
     workingHours?: WeeklySchedule | null
@@ -81,6 +83,8 @@ function applyPatch(business: Business, patch: ShopSettingsPatch): void {
             freeFrom: Money.optional(patch.delivery.freeFrom),
             minOrder: Money.optional(patch.delivery.minOrder),
             radiusMeters: patch.delivery.radiusMeters ?? undefined,
+            customerPaysCarrier:
+                patch.delivery.customerPaysCarrier ?? business.delivery.customerPaysCarrier,
         })
     }
     if (patch.workingHours !== undefined) {

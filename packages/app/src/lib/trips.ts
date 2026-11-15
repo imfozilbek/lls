@@ -9,12 +9,16 @@ import type { OrderDTO, TripDTO } from "@zumda/core"
  */
 const JOINABLE: readonly string[] = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
 
-/** Not yet picked up, with the customer's pin, not with the network, not already in a trip. */
+/**
+ * Not yet picked up, with the customer's pin, not with the network or a dispatcher (who sends
+ * each order its own way), not already in a trip.
+ */
 export function canJoinTrip(order: OrderDTO): boolean {
     return (
         JOINABLE.includes(order.status) &&
         order.location !== undefined &&
         !order.viaNetwork &&
+        !order.dispatcher &&
         order.tripId === undefined
     )
 }

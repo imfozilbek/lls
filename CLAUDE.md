@@ -161,6 +161,13 @@ cover each one's whole process; what exactly comes from the meeting with them.
   (asked once more; `cash_received_at`). The courier sees «Do'konga topshirasiz: {sum}» per shop
   until then. No change (qaytim) field: the customer writes it in the comment. Transfer steps on a
   cash order are refused (`NOT_A_TRANSFER`).
+- **«Yetkazish haqini mijoz o'zi to'laydi»** (owner's decision, November 2026): a shop that sends
+  by a taxi or the post switches it on in «Yetkazib berish». The customer pays the carrier; the
+  order adds no delivery fee (the shop's fee and «dan bepul» step aside, a snapshot
+  `customer_pays_carrier` in the order). The storefront, the showcase, the checkout and the order
+  say «Yetkazish haqi alohida», and the bot's first message says it too. The sum is the
+  dispatcher's note. Such an order never goes to the district network
+  (`CARRIER_NOT_FOR_NETWORK`).
 - **The transfer screenshot (owner's decision, October 2026).** «O'tkazdim» carries the
   screenshot of the transfer (`RECEIPT_REQUIRED` without it); it is a hint, never proof: the
   money on the card is. It is stored in its own private R2 bucket `zumda-receipts` (never in the
@@ -228,6 +235,24 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - **Done:** a business never sees its courier's other businesses. A transfer order is paid to the
   shop's card before cooking; a cash order's money goes from the shop's own courier to the owner,
   per order.
+- **Someone is on every order before «Tayyor»** (owner's decision, November 2026): a shop with
+  one courier gives the accepted order to that courier by itself (`AutoAssignOnlyCourierUseCase`,
+  when they can take it now; the owner may still give it to someone else); with two or more the
+  owner's main button is «Kuryerga topshirish»; with none it is «O'zim yetkazaman» (the bot card
+  too: `m:<orderId>`). «Tayyor» and «Jo'natish» are refused until then (`COURIER_NOT_CHOSEN`);
+  the network looking for a courier counts as chosen.
+- **A courier may be a dispatcher** (owner's decision, November 2026: the toy shop sends parcels
+  by a taxi or the post). The owner switches «Dispetcher» on the courier in «Kuryerlar» (per
+  shop; never a network link). The owner packs and presses «Tayyor bo'ldi»; the dispatcher's
+  «Jo'natdim» asks the way (Taksi, Pochta, O'zim olib boraman, Boshqa: `SendWay`, stored
+  `sent_via`) and a note (required for «Boshqa»), «Izoh qo'shish» adds more (up to 20, 300
+  characters each, `delivery_notes`). The carrier is never in Zumda: only the way and the notes.
+  The customer gets each from the shop's bot (a showcase order from Zumda | Shop) and sees them
+  on the order with «Dispetcher» and the call. The owner never makes the dispatcher's steps
+  (`SEND_WAY_REQUIRED`); a quiet «Yetkazildi deb belgilash» (asked once more) closes an order
+  whose dispatcher went silent. A cash order never goes to a dispatcher
+  (`CASH_NOT_FOR_DISPATCHER`) and a dispatcher's order never joins a trip. Every courier card
+  says «Qayerdan» and «Qayerga» on every step.
 - **Done (goal 06):** every courier a business approves is **offered** once to deliver for other
   points of the district too (`in_network`, only the courier's own consent).
 - **Done:** a district is a circle (center + radius) the platform admin sets in «Platforma» →
@@ -520,15 +545,15 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
+| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order, customer_pays_carrier), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy; the main one), more_categories (up to two more, storefront only), age_from (0, 1, 3, 5, 7, 12: children's goods), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
 | District | id, name, region (one of the 14 viloyats), center (lat, lng), radius, wait_minutes: a circle of the delivery network |
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
-| Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until: the person's link to one shop (`network`: took a network order of it) |
+| Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until, dispatcher (sends orders on by a taxi or the post, writes notes): the person's link to one shop (`network`: took a network order of it) |
 | Trip | id, business_id, courier_id, route (JSON line), distance_m, duration_s: several orders of one shop one way; stops are `orders.trip_id` + `trip_stop` |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces (metres, hours...), or
@@ -551,7 +576,9 @@ cancelled  cancelled  cancelled  cancelled  cancelled
   accept). A cash order is accepted at once and becomes paid on `delivered`.
 - Owner moves every step and may cancel. The assigned courier moves only
   `ready → picked_up → delivered` and never cancels. The customer cancels only while `pending`.
-- The owner assigns a courier (`accepted`…`ready`); without couriers the owner delivers.
+- The owner assigns a courier (`accepted`…`ready`), or says «O'zim yetkazaman», before «Tayyor»
+  (`COURIER_NOT_CHOSEN`); the shop's only courier gets it by itself when it is accepted. A
+  dispatcher's `ready → picked_up` is only their «Jo'natdim» with the way (`SEND_WAY_REQUIRED`).
 - Only ONE transitions table (and one actor rule next to it) in the codebase.
 
 ## Database (Cloudflare D1)
@@ -684,10 +711,14 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   in the chat); «Platforma» marks such a shop. The QR poster is also kept in R2
   (`shops/<id>/poster-<hash>.png`, public) and downloads in the app («Yuklab olish»:
   `WebApp.downloadFile`, a link in a browser).
-- Courier assigned → order card from the Zumda courier bot, titled with the shop's name (address,
-  landmark, map, the customer's and the shop's phones, «Оплачено заранее: денег не брать» or for
-  cash «Mijozdan {sum} naqd oling», empty bottles) with "Забрал", then one "Доставил" («Pulni
-  oldim, yetkazdim» for cash).
+- Courier assigned → order card from the Zumda courier bot, titled with the shop's name (where
+  from: the shop's address; address, landmark, map, the customer's and the shop's phones,
+  «Оплачено заранее: денег не брать» or for cash «Mijozdan {sum} naqd oling», empty bottles) with
+  "Забрал", then one "Доставил" («Pulni oldim, yetkazdim» for cash). A dispatcher's card: «📮
+  Jo'natdim» opens the app (the way and the note), then «Yetkazildi»; the last notes are on it.
+- A dispatcher's «Jo'natdim» → the customer hears how it went («taksi bilan», «pochta orqali»…),
+  with the note, «Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz» when the customer pays the
+  carrier, and the dispatcher's phone; each further note comes on its own («📝 #7 buyurtma: …»).
 - **The Zumda sound** (owner's choice, October 2026: «Zum-da», `lib/sound.ts`, synthesized): while
   the Mini App is open, news rings it: the shop (new order, «O'tkazdim») and the courier (new
   delivery, ready to pick up, network order nearby) twice, the customer once and softly (the
@@ -723,8 +754,9 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   product (app, bots, owner and courier guides). The dictionary mechanism stays (`Language`, one
   dictionary per language, no heavy i18n library): another language is one more dictionary.
   Telegram's `language_code` and old `ru` rows read as Uzbek.
-- Address: Telegram location + "ориентир" (landmark) field. A shop with a delivery radius (and
-  its own location) takes orders only with the customer's pin (`LOCATION_REQUIRED`), so an
+- Address: Telegram location + "ориентир" (landmark) field. Every order carries the customer's
+  pin (owner's decision, November 2026: `LOCATION_REQUIRED`): the courier always knows where to.
+  A shop with a delivery radius (and its own location) also refuses a pin beyond it, so an
   out-of-zone order is never paid and refunded; the storefront says «{km} km gacha yetkazamiz»
 - Phone: Telegram "share contact" button, never typed by hand
 - Payment: the shop's choice. Transfer: checkout tells the sum, the order screen shows the card
@@ -739,11 +771,16 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   decision, October 2026: «+», «Savat», «Buyurtma berish»; a returning customer's phone and place
   are one line each) → Transfer → «Я перевёл» → Track (cash: Order → Track → pay the courier)
 - Showcase customer: Zumda bot → Search → Shop → «Savat» → Order → Track
-- Owner: New order message → the transfer arrives → «Деньги пришли, принять» (started at once) →
-  «Tayyor» → assign courier; catalog, couriers and the card in "Мой магазин"
+- Owner: New order message → the transfer arrives → «Деньги пришли, принять» (started at once;
+  the only courier gets it by itself) → «Kuryerga topshirish» or «O'zim yetkazaman» when nobody
+  is on it → «Tayyor»; catalog, couriers and the card in "Мой магазин"
 - Courier: Invite link → Zumda courier bot → phone → approved → "on shift" → assigned order card →
   «Buyurtmani oldim» → «Yetkazdim» (cash: takes the sum, «Pulni oldim, yetkazdim», hands it to the
   owner). With one step to make, it is on Telegram's own button too («#12 · Yetkazdim»)
+- Dispatcher: approved and marked «Dispetcher» by the owner → "on shift" → the order of their only
+  shop comes by itself after «Pul keldi» (or the owner hands it over) → «Izoh qo'shish» while the
+  owner packs → «Tayyor» → «Jo'natdim» (Taksi / Pochta / O'zim / Boshqa + note) → more notes →
+  «Yetkazildi»
 - Network courier: approved by a point → «Да, для района» in the Zumda courier bot → "on shift" →
   «Новый заказ рядом» → «Беру» → full card → Picked up → Delivered
 - Trip: owner «Shu yo'nalishda yana N ta» → «Bir yo'nalish» (order, courier) → «Tayinlash» →
@@ -1098,6 +1135,11 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       network option → «Mijozdan … naqd oling» → «Pulni oldim, yetkazdim» → «Pul» →
       «Kuryerlardagi naqd pul» → «Pulni oldim»; «Ikkalasi»: the customer picks; «Karta»: no cash
 - [ ] Courier invite → assign → picked up → delivered
+- [ ] One courier: the accepted order is theirs by itself; two: «Kuryerga topshirish» before
+      «Tayyor»; none: «O'zim yetkazaman» (also in the bot); every order needs the pin
+- [ ] Dispatcher: «Dispetcher» in «Kuryerlar» → «Tayyor» by the owner → «Jo'natdim» (Pochta +
+      trek) → «Izoh qo'shish» → the customer gets both and sees them on the order; «Yetkazish
+      haqi alohida» on the storefront when the customer pays the carrier
 - [ ] Phones: the owner calls the customer and the courier from the card; the customer calls the
       courier and the shop (storefront, order); the courier calls the customer and the shop; a
       shop without its own number shows the owner's, without either it takes no orders; a courier

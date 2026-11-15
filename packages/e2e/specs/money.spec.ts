@@ -13,6 +13,7 @@ import {
     FOOD,
     GROCERY,
     PEOPLE,
+    STAND_PIN,
     apiAs,
     payAndAccept,
     placeOrder,
@@ -437,7 +438,11 @@ test("no card, no orders: the storefront waits; the owner adds the card from the
     const refused = await apiAs(PEOPLE.customer, "/orders", {
         shop: GROCERY,
         method: "POST",
-        json: { items: [{ productId: "dev-grocery-p1", quantity: 500 }], address: "Navoiy 12" },
+        json: {
+            items: [{ productId: "dev-grocery-p1", quantity: 500 }],
+            address: "Navoiy 12",
+            location: STAND_PIN,
+        },
     })
     expect(refused.status).toBe(422)
     expect(await refused.json()).toMatchObject({ error: { code: "NO_PAYOUT_CARD" } })

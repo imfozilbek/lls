@@ -29,6 +29,7 @@ import {
     makeBusiness,
     makeCustomer,
     makeProduct,
+    PIN,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -57,6 +58,7 @@ describe("order use cases", () => {
             businessId: "biz-1",
             items: [{ productId: "prod-1", quantity: 2 }],
             address: "Navoiy 12",
+            location: PIN,
             landmark: "Maktab yonida",
             ...overrides,
         }

@@ -43,6 +43,7 @@ import {
     makeCustomer,
     makeProduct,
     courierSharesPhone,
+    PIN,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -91,6 +92,7 @@ describe("shop couriers and vertical features", () => {
             businessId: "biz-1",
             items: [{ productId: "prod-1", quantity: 2 }],
             address: "Navoiy 12",
+            location: PIN,
             ...overrides,
         })
 

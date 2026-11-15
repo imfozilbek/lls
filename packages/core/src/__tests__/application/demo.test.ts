@@ -8,7 +8,7 @@ import {
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
-import { CUSTOMER_TG, OWNER_TG, makeBusiness, makeCustomer, makeProduct } from "../fixtures.js"
+import { CUSTOMER_TG, OWNER_TG, makeBusiness, makeCustomer, makeProduct, PIN } from "../fixtures.js"
 import {
     InMemoryBusinesses,
     InMemoryCouriers,
@@ -112,6 +112,7 @@ describe("demo shops («Namuna»)", () => {
             businessId: "biz-1",
             items: [{ productId: dish?.id ?? "", quantity: 1 }],
             address: "Navoiy 12",
+            location: PIN,
         })
         expect(deps.orders.items.size).toBe(1)
         await deps.products.save(makeProduct({ id: "extra", name: "Qo'shimcha" }))

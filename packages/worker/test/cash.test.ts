@@ -10,6 +10,7 @@ import {
     hireCourier,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -49,7 +50,12 @@ describe("cash: chosen by the shop, collected by its courier, taken by the owner
     const place = (paymentMethod?: string): Promise<Response> =>
         as(CUSTOMER)("/api/orders", {
             method: "POST",
-            json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12", paymentMethod },
+            json: {
+                items: [{ productId, quantity: 2 }],
+                address: "Navoiy 12",
+                paymentMethod,
+                location: PIN,
+            },
         })
     const setStatus = (id: string, status: string): Promise<Response> =>
         as(OWNER)(`/api/owner/orders/${id}`, { method: "PATCH", json: { status } })

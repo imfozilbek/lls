@@ -266,7 +266,7 @@ test.describe("customer of a grocery", () => {
         await expect(page.getByText(money("41 750")).first()).toBeVisible()
         await page.getByRole("button", { name: "Raqamni yuborish" }).click()
         await expect(page.getByText("+998 90 123 45 67")).toBeVisible({ timeout: 20_000 })
-        await page.getByRole("textbox", { name: "Manzil" }).fill("Navoiy 1")
+        await fillAddress(page, "Navoiy 1")
         const since = await lastSeq()
         await bottomButton(page).click()
         await expect(page.getByText("Pomidor")).toBeVisible()

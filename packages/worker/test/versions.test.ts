@@ -21,6 +21,7 @@ import {
     createActiveShop,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -80,7 +81,7 @@ describe("a save writes only over the version it loaded", () => {
         const { id: productId } = (await created.json()) as { id: string }
         const placed = await customer("/api/orders", {
             method: "POST",
-            json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12" },
+            json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12", location: PIN },
         })
         const { id } = (await placed.json()) as { id: string }
 

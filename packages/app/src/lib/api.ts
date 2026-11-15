@@ -26,6 +26,7 @@ import type {
     PayoutCardsDTO,
     ProductDTO,
     Region,
+    SendWay,
     ShopOwnerDTO,
     MoneyPeriod,
     MoneyReportDTO,
@@ -331,6 +332,8 @@ export type ShopPatch = Partial<{
         freeFrom?: number | null
         minOrder?: number | null
         radiusMeters?: number | null
+        /** «Yetkazish haqini mijoz o'zi to'laydi»: the customer pays the carrier. */
+        customerPaysCarrier?: boolean
     }
     workingHours: Record<string, { open: string; close: string }> | null
     acceptingOrders: boolean
@@ -512,6 +515,9 @@ export const api = {
             request("DELETE", `/api/owner/couriers/${id}`),
         assignCourier: (orderId: string, courierId: string): Promise<OrderDTO> =>
             request("PUT", `/api/owner/orders/${orderId}/courier`, { courierId }),
+        /** «O'zim yetkazaman»: the owner delivers it; a courier who had it is told. */
+        deliverMyself: (orderId: string): Promise<OrderDTO> =>
+            request("PUT", `/api/owner/orders/${orderId}/courier`, { self: true }),
         /** «Доставщик сети района»: the first free courier of the district takes it. */
         toNetwork: (orderId: string): Promise<OrderDTO> =>
             request("PUT", `/api/owner/orders/${orderId}/network`),
@@ -519,7 +525,7 @@ export const api = {
             request("POST", `/api/owner/couriers/${id}/review`, { approve }),
         setCourierSchedule: (
             id: string,
-            patch: { workDays?: Weekday[]; offToday?: boolean },
+            patch: { workDays?: Weekday[]; offToday?: boolean; dispatcher?: boolean },
         ): Promise<CourierDTO> => request("PATCH", `/api/owner/couriers/${id}`, patch),
         /** The shop's trips still on the way. */
         trips: (): Promise<Page<TripWithOrders>> => request("GET", "/api/owner/trips"),
@@ -535,6 +541,12 @@ export const api = {
         home: (): Promise<CourierHomeDTO> => request("GET", "/api/courier/home"),
         setStatus: (id: string, status: "picked_up" | "delivered"): Promise<OrderDTO> =>
             request("PATCH", `/api/courier/orders/${id}`, { status }),
+        /** «Jo'natdim»: the dispatcher's way, and a note the customer reads. */
+        send: (id: string, via: SendWay, note?: string): Promise<OrderDTO> =>
+            request("POST", `/api/courier/orders/${id}/send`, { via, note }),
+        /** «Izoh qo'shish»: a note for the customer about the delivery. */
+        addNote: (id: string, text: string): Promise<OrderDTO> =>
+            request("POST", `/api/courier/orders/${id}/notes`, { text }),
         shift: (onShift: boolean): Promise<CourierProfileDTO> =>
             request("PUT", "/api/courier/shift", { onShift }),
         profile: (vehicle: string | null): Promise<CourierProfileDTO> =>
