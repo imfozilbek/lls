@@ -23,6 +23,8 @@ import {
     UNITS,
     isAge,
     WEEKDAYS,
+    DELIVERY_NOTE_MAX,
+    SEND_WAYS,
 } from "@zumda/core"
 import { z } from "zod"
 
@@ -167,7 +169,11 @@ export const productPatchBody = productBody.partial().extend({
     stopForToday: z.literal(true).optional(),
 })
 
-export const assignCourierBody = z.object({ courierId: z.string().min(1).max(64) })
+/** One of the shop's couriers, or «O'zim yetkazaman»: the owner delivers it. */
+export const assignCourierBody = z.union([
+    z.object({ courierId: z.string().min(1).max(64) }),
+    z.object({ self: z.literal(true) }),
+])
 
 /** «Bir yo'nalish»: the orders in the order of the stops (the core checks 2..10). */
 export const tripBody = z.object({
@@ -185,10 +191,16 @@ export const courierSchedulePatch = z
     .object({
         workDays: z.array(z.enum(WEEKDAYS)).min(1).max(WEEKDAYS.length).optional(),
         offToday: z.boolean().optional(),
+        /** «Dispetcher»: sends the shop's orders on by a taxi, the post or someone else. */
+        dispatcher: z.boolean().optional(),
     })
-    .refine((patch) => patch.workDays !== undefined || patch.offToday !== undefined, {
-        message: "Nothing to change",
-    })
+    .refine(
+        (patch) =>
+            patch.workDays !== undefined ||
+            patch.offToday !== undefined ||
+            patch.dispatcher !== undefined,
+        { message: "Nothing to change" },
+    )
 
 export const courierReviewBody = z.object({ approve: z.boolean() })
 
@@ -203,6 +215,17 @@ export const courierProfileBody = z.object({
 /** A courier moves only the delivery part. */
 export const courierOrderBody = z.object({
     status: z.enum([OrderStatus.PICKED_UP, OrderStatus.DELIVERED]),
+})
+
+/** «Jo'natdim»: the dispatcher's way, and a note for the customer (required for «Boshqa»). */
+export const sendOrderBody = z.object({
+    via: z.enum(SEND_WAYS),
+    note: z.string().trim().max(DELIVERY_NOTE_MAX).optional(),
+})
+
+/** «Izoh qo'shish»: one note for the customer. */
+export const deliveryNoteBody = z.object({
+    text: z.string().trim().min(1).max(DELIVERY_NOTE_MAX),
 })
 
 /**
@@ -249,6 +272,8 @@ export const shopPatchBody = z.object({
             freeFrom: optionalMoney,
             minOrder: optionalMoney,
             radiusMeters: z.number().int().min(1).max(100_000).nullable().optional(),
+            /** «Yetkazish haqini mijoz o'zi to'laydi»; left out: as it was. */
+            customerPaysCarrier: z.boolean().optional(),
         })
         .optional(),
     workingHours: z.partialRecord(z.enum(WEEKDAYS), timeRange).nullable().optional(),
