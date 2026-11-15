@@ -30,8 +30,8 @@ test("a photo that failed to upload: «Saqlash» again saves it, never a second 
     await page.getByLabel("Narxi").fill("25000")
     // The weak network drops the photo once.
     let failed = false
-    await page.route("**/image", async (route) => {
-        if (!failed && route.request().method() === "PUT") {
+    await page.route("**/images", async (route) => {
+        if (!failed && route.request().method() === "POST") {
             failed = true
             await route.fulfill({ status: 503, body: "" })
             return
