@@ -65,6 +65,9 @@ test("a demo order: «Namuna» in every message, a test card to look at", async 
     await expect(page.getByText("0000 0000 0000 0000")).toBeVisible()
     await expect(page.getByText(/Namuna karta: bu do'kon namuna/)).toBeVisible()
     await expect(page.getByText(/do'koniga tegishli/)).toHaveCount(0)
+    // Nobody transfers to a test card: copying it opens no bank apps.
+    await page.getByRole("button", { name: "Raqamni nusxalash" }).click()
+    await expect(page.getByRole("dialog")).toHaveCount(0)
 })
 
 test("«Namunani tozalash»: the demo's orders are gone", async ({ page }) => {
