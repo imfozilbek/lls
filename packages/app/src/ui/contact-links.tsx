@@ -46,12 +46,15 @@ export function CallLink({
 /** The courier's calls and map: the customer, the shop (its number, or the owner's), the way. */
 export function ContactLinks({
     order,
+    route = true,
 }: {
     order: OrderDTO & { shopPhone?: string }
+    /** False where a route block already shows the ways (a single delivery's card). */
+    route?: boolean
 }): React.JSX.Element | null {
     const t = useT()
     // The way to the door from where the courier is now, like a trip's: not just a point.
-    const map = order.location ? yandexRouteUrl([order.location]) : null
+    const map = route && order.location ? yandexRouteUrl([order.location]) : null
     if (!order.customerPhone && !order.shopPhone && !map) {
         return null
     }

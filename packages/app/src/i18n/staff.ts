@@ -529,6 +529,9 @@ export const staffUz = {
     },
     courier: {
         title: "Yetkazishlarim",
+        details: "Batafsil",
+        detailsHide: "Yopish",
+        settings: "Sozlamalar",
         active: "Hozir",
         doneToday: "Bugun yetkazilgan",
         empty: "Hozircha buyurtma yo'q",
@@ -546,10 +549,10 @@ export const staffUz = {
         callCustomer: "Mijozga qo'ng'iroq",
         callShop: "Do'konga qo'ng'iroq",
         pickupFrom: "Olib ketish joyi",
-        toShop: "Yo'l",
+        toShop: "Do'konga yo'l",
         from: "Qayerdan",
         to: "Qayerga",
-        toCustomer: "Yo'l",
+        toCustomer: "Mijozga yo'l",
         // A dispatcher (owner's decision, November 2026): sends the parcel on, writes the customer.
         dispatcher: "Dispetcher",
         dispatcherWait:
@@ -600,7 +603,6 @@ export const staffUz = {
         networkHint:
             "Yuboradigan odami yo'q tuman do'konlari buyurtmalari. Qulay bo'lsagina olasiz.",
         nearby: "Yaqindagi buyurtmalar",
-        nearbyEmpty: "Yaqinda hozircha buyurtma yo'q",
         take: "Olaman",
         items: "{n} dona olib borasiz",
         distance: "mijozgacha ≈ {km} km",
