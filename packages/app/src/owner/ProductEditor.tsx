@@ -52,12 +52,14 @@ import {
 } from "./OptionsEditor.js"
 import { ProductPreview } from "./ProductPreview.js"
 import { allOf, asksAge, togglePick, usedCategories } from "./category-picks.js"
+import { savePhotos, sentPhoto, slotsOf } from "./photos.js"
 import { parseStock, stockText, stockUnit } from "./stock-input.js"
 import { onSaleNow } from "./stopped.js"
 import { useOwner } from "./store.js"
 
 import type { OptionsDraft } from "./OptionsEditor.js"
 import type { Template } from "./catalog.js"
+import type { PhotoSlot } from "./photos.js"
 import type { ProductInput } from "../lib/api.js"
 import type { MainAction } from "../lib/main-button.js"
 import type { Age, BusinessType, Category, ProductDTO, ProductOptionsProps } from "@zumda/core"
@@ -98,8 +100,8 @@ interface Draft {
     step: number
     returnable: boolean
     isAvailable: boolean
-    /** New photo picked on this screen, or "remove" to drop the current one. */
-    photo: Blob | "remove" | null
+    /** Up to three photos, the main one first: kept ones and ones picked here (`photos.ts`). */
+    photos: PhotoSlot[]
     /** The owner chose the category: the name no longer moves it. */
     categoryPicked?: boolean
     /** Variants and add-ons as they are typed. */
@@ -126,7 +128,7 @@ function newDraft(type: BusinessType | undefined): Draft {
         step: defaultStep(unit),
         returnable: isBottleUnit(unit),
         isAvailable: true,
-        photo: null,
+        photos: [],
         options: NO_OPTIONS,
         counted: false,
         stock: "",
@@ -151,7 +153,7 @@ function draftOf(product: ProductDTO | undefined, type: BusinessType | undefined
         returnable: product.returnable,
         // Stopped for today shows as off sale: switching it on here puts it back today.
         isAvailable: onSaleNow(product),
-        photo: null,
+        photos: slotsOf(product),
         options: optionsDraftOf(product.options),
         counted: product.stock !== undefined,
         stock: stockText(product.stock, product.unit),
@@ -240,16 +242,6 @@ async function saveFields(product: ProductDTO | undefined, draft: Draft): Promis
     })
 }
 
-async function savePhoto(product: ProductDTO, photo: Draft["photo"]): Promise<ProductDTO> {
-    if (photo instanceof Blob) {
-        return api.owner.uploadProductImage(product.id, photo)
-    }
-    if (photo === "remove" && product.imageKey) {
-        return api.owner.removeProductImage(product.id)
-    }
-    return product
-}
-
 function useEditor(id: string | null): {
     product: ProductDTO | undefined
     loading: boolean
@@ -281,7 +273,7 @@ export function ProductEditor({ id }: { id: string | null }): React.JSX.Element 
     return <EditorForm key={product?.id ?? "new"} product={product} />
 }
 
-/** «Nusxa olish»: a new product starting from another one, without its photo. */
+/** «Nusxa olish»: a new product starting from another one, without its photos. */
 function useCopy(product: ProductDTO | undefined): ProductDTO | undefined {
     const [copy] = useState(() => (product ? null : useOwner.getState().copyOf))
     useEffect(() => {
@@ -741,10 +733,10 @@ function StockField({
 /** After a catalog pick the form renders first, then the price takes the keyboard. */
 const FOCUS_DELAY_MS = 80
 
-/** What makes a draft worth guarding: everything but the photo, which counts once picked. */
+/** What makes a draft worth guarding: a picked photo counts by its place, not its bytes. */
 function fingerprint(draft: Draft): string {
-    const { photo, suggestedAddons: _offered, categoryPicked: _picked, ...rest } = draft
-    return JSON.stringify({ ...rest, photo: photo === null ? null : "changed" })
+    const { photos, suggestedAddons: _offered, categoryPicked: _picked, ...rest } = draft
+    return JSON.stringify({ ...rest, photos: photos.map((s) => ("key" in s ? s.key : "new")) })
 }
 
 /** The template's words, unit, step and variants (their prices are the owner's). */
@@ -858,7 +850,7 @@ function useEditorState(initial: ProductDTO | undefined): {
     const [start, setStart] = useState<Draft>(() =>
         // A copy is another product: counted like the original, its own count still to type.
         copy
-            ? { ...draftOf(copy, shopType), isAvailable: true, stock: "" }
+            ? { ...draftOf(copy, shopType), isAvailable: true, stock: "", photos: [] }
             : draftOf(initial, shopType),
     )
     const [draft, setDraft] = useState<Draft>(start)
@@ -961,12 +953,15 @@ function useSave(input: {
     onMissing(): void
     /** The product once it exists: a retry after a failed photo updates it, never adds a twin. */
     remember(product: ProductDTO): void
+    /** A picked photo reached the server: a retry never sends it again. */
+    onPhotoSent(id: string, key: string): void
 }): (next?: boolean) => Promise<void> {
     const t = useT()
     const back = useRouter((state) => state.back)
     const shopType = useSession((state) => state.shop?.type)
     const upsert = useOwner((state) => state.upsert)
     const { draft, product, saving, setSaving, restart, onSaved, onMissing, remember } = input
+    const { onPhotoSent } = input
     return async (next = false): Promise<void> => {
         if (saving || missing(draft)) {
             onMissing()
@@ -977,7 +972,7 @@ function useSave(input: {
             const fields = await saveFields(product, draft)
             upsert(fields)
             remember(fields)
-            upsert(await savePhoto(fields, draft.photo))
+            upsert(await savePhotos(fields, draft.photos, onPhotoSent))
             haptic.success()
             toast(t.owner.settings.saved, "success")
             if (!next) {
@@ -1073,6 +1068,7 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
         },
         onMissing: (): void => setTried(true),
         remember: setProduct,
+        onPhotoSent: (id, key): void => patch({ photos: sentPhoto(draft.photos, id, key) }),
     })
 
     const [typed, setTyped] = useState("")
@@ -1179,14 +1175,13 @@ function EditorFields({
     return (
         <>
             <ProductPreview
-                product={product}
                 name={draft.name}
                 price={hasVariants(draft.options) ? priceOf(draft) : draft.price}
                 unit={draft.unit}
                 category={draft.category}
                 priceFrom={prices.size > 1}
-                photo={draft.photo}
-                onPhoto={(photo): void => patch({ photo })}
+                photos={draft.photos}
+                onPhotos={(photos): void => patch({ photos })}
             />
             <NameField draft={draft} product={product} error={gap === "name"} patch={patch} />
             <PriceField draft={draft} patch={patch} error={gap === "price"} />

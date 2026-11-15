@@ -226,7 +226,11 @@ export const staffUz = {
             edit: "Mahsulot",
             addPhoto: "Rasm qo'shish",
             changePhoto: "Almashtirish",
-            removePhoto: "Olib tashlash",
+            removePhoto: "Rasmni o'chirish",
+            /** Up to three photos (owner's decision, November 2026). */
+            mainPhoto: "Asosiy",
+            makeMain: "Asosiy qilish",
+            photosHint: "Ko'pi bilan 3 ta rasm. Birinchisi ro'yxatda va vitrinada ko'rinadi.",
             name: "Nomi",
             namePlaceholder: "Masalan: To'y oshi",
             needName: "Mahsulot nomini yozing",

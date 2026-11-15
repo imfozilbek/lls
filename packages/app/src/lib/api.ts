@@ -514,6 +514,14 @@ export const api = {
             request("PUT", `/api/owner/products/${id}/image`, image),
         removeProductImage: (id: string): Promise<ProductDTO> =>
             request("DELETE", `/api/owner/products/${id}/image`),
+        /** One more photo, up to three: the first a product gets is its main one. */
+        addProductPhoto: (id: string, image: Blob): Promise<ProductDTO> =>
+            request("POST", `/api/owner/products/${id}/images`, image),
+        removeProductPhoto: (id: string, key: string): Promise<ProductDTO> =>
+            request("DELETE", `/api/owner/products/${id}/images?key=${encodeURIComponent(key)}`),
+        /** The same photos in a new order: the first is the main one. */
+        orderProductPhotos: (id: string, keys: string[]): Promise<ProductDTO> =>
+            request("PATCH", `/api/owner/products/${id}/images`, { keys }),
         couriers: (): Promise<CourierDTO[]> => request("GET", "/api/owner/couriers"),
         inviteCourier: (): Promise<CourierInvite> => request("POST", "/api/owner/couriers/invites"),
         removeCourier: (id: string): Promise<void> =>
