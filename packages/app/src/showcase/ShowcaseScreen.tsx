@@ -182,10 +182,11 @@ function ShopRow({
     const t = useT()
     const language = useLanguage()
     const types = t.showcase.types as Record<string, string>
-    const fee =
-        shop.delivery.fee === 0
-            ? t.shop.deliveryFree
-            : fill(t.shop.deliveryFee, { sum: formatMoney(shop.delivery.fee, language) })
+    const fee = shop.delivery.customerPaysCarrier
+        ? t.shop.deliveryApart
+        : shop.delivery.fee === 0
+          ? t.shop.deliveryFree
+          : fill(t.shop.deliveryFee, { sum: formatMoney(shop.delivery.fee, language) })
     return (
         <li className="animate-rise" style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}>
             <button

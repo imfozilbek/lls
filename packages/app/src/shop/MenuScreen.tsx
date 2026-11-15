@@ -90,9 +90,11 @@ function shopFacts(shop: Shop, t: Dictionary, language: Language): string[] {
     const { delivery } = shop
     const money = (amount: number): string => formatMoney(amount, language)
     const facts = [
-        delivery.fee === 0
-            ? t.shop.deliveryFree
-            : fill(t.shop.deliveryFee, { sum: money(delivery.fee) }),
+        delivery.customerPaysCarrier
+            ? t.shop.deliveryApart
+            : delivery.fee === 0
+              ? t.shop.deliveryFree
+              : fill(t.shop.deliveryFee, { sum: money(delivery.fee) }),
     ]
     if (delivery.freeFrom && delivery.fee > 0) {
         facts.push(fill(t.shop.freeFrom, { sum: money(delivery.freeFrom) }))

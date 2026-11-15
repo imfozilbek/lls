@@ -109,6 +109,7 @@ export const uz = {
         opensSoon: "Tez orada ochiladi: katalogni hozir ko'rib chiqing",
         deliveryFee: "Yetkazish {sum}",
         deliveryFree: "Bepul yetkazish",
+        deliveryApart: "Yetkazish haqi alohida",
         freeFrom: "{sum}dan bepul",
         minOrder: "Minimal {sum}",
         radius: "{km} km gacha yetkazamiz",
