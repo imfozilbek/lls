@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest"
 
 import { readableInk, readableText } from "./brand.js"
-import { formatMoney, formatQuantity, formatTime, hexToRgbChannels } from "./format.js"
+import {
+    formatMoney,
+    formatQuantity,
+    formatTime,
+    hexToRgbChannels,
+    quantityMark,
+} from "./format.js"
 
 import type { Language } from "@zumda/core"
 
@@ -75,5 +81,14 @@ describe("formatQuantity", () => {
         expect(formatQuantity(12, "m2", units)).toBe("12 m²")
         expect(formatQuantity(2, "hour", units)).toBe("2 soat")
         expect(formatQuantity(4, "pack", units)).toBe("4 qadoq")
+    })
+})
+
+describe("quantityMark", () => {
+    const units = { kg: "kg", g: "g", pack: "qadoq", portion: "porsiya" }
+    it("puts × after a bare count only", () => {
+        expect(quantityMark(2, "portion", units)).toBe("2×")
+        expect(quantityMark(1, "pack", units)).toBe("1 qadoq")
+        expect(quantityMark(1500, "kg", units)).toBe("1,5 kg")
     })
 })

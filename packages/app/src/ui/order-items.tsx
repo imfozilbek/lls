@@ -1,5 +1,5 @@
 import { fill, useLanguage, useT } from "../i18n/index.js"
-import { formatMoney, formatQuantity } from "../lib/format.js"
+import { formatMoney, quantityMark } from "../lib/format.js"
 import { deliveryWords } from "../shop/delivery-words.js"
 
 import type { OrderDTO } from "@zumda/core"
@@ -14,7 +14,7 @@ export function OrderItems({ order }: { order: OrderDTO }): React.JSX.Element {
                 {order.items.map((item, line) => (
                     <li key={line} className="flex gap-3">
                         <span className="shrink-0 font-semibold tabular-nums text-tg-hint">
-                            {formatQuantity(item.quantity, item.unit, t.units)}×
+                            {quantityMark(item.quantity, item.unit, t.units)}
                         </span>
                         <span className="min-w-0 flex-1">
                             {item.name}

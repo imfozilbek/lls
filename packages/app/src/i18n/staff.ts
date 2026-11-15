@@ -116,6 +116,10 @@ export const staffUz = {
         rejectedBanner: "Ariza rad etildi",
         disabledBanner: "Zumda bu biznesni o'chirgan. Savollar bo'lsa, bizga yozing.",
         fromMessage: "Xabardagi buyurtma",
+        /** A short order card opens with this. */
+        details: "Batafsil",
+        detailsHide: "Yopish",
+        stagesLabel: "Buyurtma bosqichi",
         hideFocused: "Yopish",
         tabs: {
             orders: "Buyurtmalar",
@@ -162,7 +166,10 @@ export const staffUz = {
         dispatcher: "Dispetcher",
         dispatcherSends: "Dispetcher jo'natadi va mijozga yozadi",
         dispatcherDelivers: "Yetkazilganini dispetcher belgilaydi",
+        courierDelivers: "Kuryer yetkazmoqda",
         markDelivered: "Yetkazildi deb belgilash",
+        markDeliveredCourierConfirm:
+            "Kuryer hali «Yetkazdim» demadi. Buyurtma yetib borganini bilsangiz, belgilang.",
         markDeliveredConfirm:
             "Dispetcher hali «Yetkazildi» demadi. Buyurtma yetib borganini bilsangiz, belgilang.",
         cashNotForDispatcher: "naqd buyurtma dispetcherga berilmaydi",

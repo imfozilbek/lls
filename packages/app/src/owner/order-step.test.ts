@@ -46,6 +46,16 @@ describe("the owner's main button", () => {
         expect(ownerStep(order({ dispatcher: true }))).toEqual({ kind: "step", to: "ready" })
     })
 
+    it("on the way with a courier, the owner only watches; delivering it oneself keeps the step", () => {
+        const road = { status: "picked_up", nextStatus: "delivered" }
+        expect(ownerStep(order({ ...road, courierName: "Jasur" }))).toEqual({
+            kind: "courier",
+            to: "delivered",
+        })
+        const self = { ...road, ownerDelivers: true }
+        expect(ownerStep(order(self))).toEqual({ kind: "step", to: "delivered" })
+    })
+
     it("a finished order has no button", () => {
         expect(ownerStep(order({ status: "delivered", nextStatus: null }))).toBeNull()
     })
