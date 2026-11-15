@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import { lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
-import { openApp } from "../support/webapp.js"
+import { openApp, openOrderCard } from "../support/webapp.js"
 
 import type { OpenedApp } from "../support/webapp.js"
 import type { Page } from "@playwright/test"
@@ -59,7 +59,6 @@ test("empty orders, then a new order: card, every step from the app, customer to
         ["Tayyor bo'ldi", "tayyor"],
         // The shop's only courier got it with «Pul keldi» (owner's decision, November 2026).
         ["Jo'natish", "Jasur olib kelmoqda"],
-        ["Yetkazildi", "yetkazildi"],
     ]
     for (const [button, told] of steps) {
         const since = await lastSeq()
@@ -72,6 +71,17 @@ test("empty orders, then a new order: card, every step from the app, customer to
         await expect(page.getByRole("dialog")).toBeHidden()
         await waitForMessage(PEOPLE.customer.id, told, since)
     }
+    // On the way with a courier, the door is the courier's step: the owner only watches, and a
+    // quiet «Yetkazildi deb belgilash» (asked once more) stays for a courier who went silent.
+    await expect(one).toContainText("Kuryer yetkazmoqda")
+    await expect(one.getByRole("button", { name: "Yetkazildi", exact: true })).toHaveCount(0)
+    const since = await lastSeq()
+    await (
+        await openOrderCard(page, order.number)
+    )
+        .getByRole("button", { name: "Yetkazildi deb belgilash" })
+        .click()
+    await waitForMessage(PEOPLE.customer.id, "yetkazildi", since)
     // Delivered: it leaves «Faol» at once and waits in «Yakunlangan», paid, with nothing to press.
     await expect(one).toBeHidden()
     await page.getByRole("tab", { name: "Yakunlangan" }).click()
@@ -86,7 +96,11 @@ test("cancel with a reason: the customer sees the reason", async ({ page }) => {
     ])
     await openOwner(page)
     const since = await lastSeq()
-    await card(page, order.number).getByRole("button", { name: "Bekor qilish" }).click()
+    await (
+        await openOrderCard(page, order.number)
+    )
+        .getByRole("button", { name: "Bekor qilish" })
+        .click()
     await page.getByLabel("Sabab (ixtiyoriy)").fill("Palov tugadi")
     await page
         .getByRole("dialog")

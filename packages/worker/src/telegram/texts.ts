@@ -238,7 +238,7 @@ const BASE = {
         courierReady: "📦 {shop}: #{n} buyurtma tayyor, olib keting.",
         // A dispatcher (owner's decision, November 2026): sends the order on, writes to the customer.
         dispatcherWait:
-            "⏳ Do'kon qadoqlamoqda: tayyor bo'lganda xabar beramiz. Mijozga izohni hozir ham yozish mumkin.",
+            "⏳ Do'kon buyurtmani tayyorlayapti: tayyor bo'lganda xabar beramiz. Mijozga izohni hozir ham yozish mumkin.",
         dispatcherReady: "📦 {shop}: #{n} buyurtma tayyor, jo'nating.",
         dispatcherSend: "📮 Jo'natdim",
         pickupFrom: "🏪 Qayerdan: {place}",

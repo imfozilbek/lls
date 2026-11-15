@@ -43,7 +43,7 @@ export const staffUz = {
         SEND_WAY_REQUIRED: "Bu buyurtmani dispetcher jo'natadi: qanday jo'natilganini u yozadi.",
         NOT_A_DISPATCHER_ORDER: "Bu buyurtma dispetcherda emas. Ro'yxat yangilandi.",
         NOTES_CLOSED: "Buyurtma yakunlangan: endi izoh qo'shib bo'lmaydi.",
-        TOO_MANY_NOTES: "Bitta buyurtmaga 20 tagacha izoh yoziladi.",
+        TOO_MANY_NOTES: "Bitta buyurtmaga 20 tadan ortiq izoh yozib bo'lmaydi.",
         NOT_OWN_COURIER: "Faqat do'konning o'z kuryeri dispetcher bo'la oladi.",
         NOT_FOR_TRIP:
             "Buyurtmalardan biri allaqachon boshqa yo'lda yoki tarmoqda. Ro'yxat yangilandi.",
@@ -82,6 +82,8 @@ export const staffUz = {
     },
     owner: {
         demoBadge: "Namuna",
+        /** The badge of an order that waits for the owner (a cash order needs no money first). */
+        newBadge: "Yangi",
         ready: {
             title: "Ishga tayyor",
             progress: "{done}/{all}",
@@ -114,6 +116,10 @@ export const staffUz = {
         rejectedBanner: "Ariza rad etildi",
         disabledBanner: "Zumda bu biznesni o'chirgan. Savollar bo'lsa, bizga yozing.",
         fromMessage: "Xabardagi buyurtma",
+        /** A short order card opens with this. */
+        details: "Batafsil",
+        detailsHide: "Kamroq ko'rsatish",
+        stagesLabel: "Buyurtma holati",
         hideFocused: "Yopish",
         tabs: {
             orders: "Buyurtmalar",
@@ -160,7 +166,10 @@ export const staffUz = {
         dispatcher: "Dispetcher",
         dispatcherSends: "Dispetcher jo'natadi va mijozga yozadi",
         dispatcherDelivers: "Yetkazilganini dispetcher belgilaydi",
+        courierDelivers: "Kuryer yetkazmoqda",
         markDelivered: "Yetkazildi deb belgilash",
+        markDeliveredCourierConfirm:
+            "Kuryer hali «Yetkazdim» demadi. Buyurtma yetib borganini bilsangiz, belgilang.",
         markDeliveredConfirm:
             "Dispetcher hali «Yetkazildi» demadi. Buyurtma yetib borganini bilsangiz, belgilang.",
         cashNotForDispatcher: "naqd buyurtma dispetcherga berilmaydi",
@@ -191,12 +200,19 @@ export const staffUz = {
         onSale: "Sotuvda",
         addPhotos:
             "{n} ta mahsulotda rasm yo'q. Rasmli mahsulot yaxshiroq sotiladi: chapdagi katakni bosib rasm tanlang.",
+        catalogFilterLabel: "Mahsulot holati",
+        catalogFilters: {
+            all: "Hammasi",
+            onSale: "Sotuvda",
+            today: "Bugun yo'q",
+            hidden: "Yashirilgan",
+            noPhoto: "Rasmsiz",
+        },
         offSale: "Sotilmaydi",
         offTitle: "Sotuvdan olish",
         stopToday: "Faqat bugunga",
         stopTodayHint: "Ertaga o'zi qaytadi",
         hideForGood: "Butunlay yashirish",
-        moreFor: "Sotuvdan olish: {name}",
         stoppedTodayToast: "{name} bugunga sotuvdan olindi. Ertaga o'zi qaytadi.",
         product: {
             new: "Yangi mahsulot",
@@ -301,7 +317,7 @@ export const staffUz = {
             cashReceived: "Pulni oldim",
             cashConfirm: "{name} sizga #{n} buyurtma uchun {sum} berdimi?",
             cashTaken: "Pul do'konda",
-            inProgress: "Yana {n} ta buyurtma jarayonda: yetkazilgach tushumga qo'shiladi",
+            inProgress: "Yana {n} ta buyurtma yetkazilmagan: yetkazilgach tushumga qo'shiladi",
             goods: "Tovarlar",
             delivery: "Yetkazish",
             deposits: "Idish garovi",
@@ -316,7 +332,7 @@ export const staffUz = {
             refunded: "Qaytardim",
             refundConfirm:
                 "#{n} buyurtma uchun {sum} mijozga qaytarildimi? Buni ortga qaytarib bo'lmaydi.",
-            export: "Excel uchun hisobot",
+            export: "Hisobotni chatga yuborish (Excel)",
             exportSent: "Hisobot bot bilan chatga yuborildi",
             exportSentBusiness:
                 "Botingiz sizga yoza olmadi: hisobot Zumda Business'ga yuborildi. Botingizni oching va Start bosing.",
@@ -346,6 +362,8 @@ export const staffUz = {
             shop: "Do'kon",
             name: "Nomi",
             logo: "Logotip",
+            logoAdd: "Logotip qo'shish",
+            logoChange: "Logotipni almashtirish",
             botPhotoHint: "Bot rasmi avtomatik: logotip (yoki nom) va Zumda belgisi.",
             color: "Rang",
             accepting: "Buyurtma qabul qilish",
@@ -353,7 +371,7 @@ export const staffUz = {
             unsavedLeave: "O'zgarishlar saqlanmagan. Saqlamasdan chiqasizmi?",
             acceptingOff: "Buyurtmalar to'xtatilgan: mijozlar hozir buyurtma bera olmaydi.",
             acceptingOffAsk:
-                "Buyurtmalar to'xtatilsinmi? Qayta yoqmaguningizcha mijozlar buyurtma bera olmaydi.",
+                "Buyurtmalar to'xtatilsinmi? Siz qayta yoqmaguncha mijozlar buyurtma bera olmaydi.",
             acceptingOffYes: "To'xtatish",
             acceptingOn: "Yoqish",
             acceptingBackOn: "Buyurtmalar yana qabul qilinmoqda",
@@ -409,11 +427,11 @@ export const staffUz = {
             networkTitle: "Tuman tarmog'i",
             networkSwitch: "Kuryerlarim band bo'lsa, tuman tarmog'iga berish",
             networkHint:
-                "Buyurtmani tumanning bo'sh kuryeri oladi: u mijoz manzilini ko'radi va buyurtma pulini sizga topshiradi.",
+                "Buyurtmani tumanning bo'sh kuryeri olib boradi. Unga faqat oldindan to'langan buyurtma beriladi: kuryer pul olmaydi.",
             notInDistrict:
                 "Do'koningiz hali Zumda tarmog'i tumanlaridan tashqarida: do'kon joylashuvini kiriting.",
             couriersHint:
-                "Kuryer Zumda kuryer botida ishlaydi: buyurtmani oladi va «Oldim», «Yetkazdim» tugmalarini bosadi.",
+                "Kuryer Zumda | Kuryer botida ishlaydi: buyurtmani oladi va «Buyurtmani oldim», «Yetkazdim» tugmalarini bosadi.",
             pendingTitle: "Tasdiqlashni kutmoqda",
             approve: "Tasdiqlash",
             decline: "Rad etish",
@@ -434,10 +452,17 @@ export const staffUz = {
             removeCourier: "Kuryerni o'chirasizmi?",
             features: "Do'kon imkoniyatlari",
             featureNames: {
-                reorder: "Buyurtmani takrorlash",
+                reorder: "Qayta buyurtma",
                 bottleDeposit: "Idish qaytarish va garov",
                 weightItems: "Tortib sotish (kg)",
-                stopList: "Bugungi to'xtatish ro'yxati",
+                stopList: "«Bugun yo'q» belgisi",
+            },
+            /** What each switch does, one line under its name. */
+            featureHints: {
+                reorder: "Mijoz oldingi buyurtmasini bir bosishda qayta beradi",
+                bottleDeposit: "Mijoz bo'sh idishni qaytaradi, qaytarmasa garov to'laydi",
+                weightItems: "Mahsulotni kilogramm yoki gramm bilan sotasiz",
+                stopList: "Tugagan mahsulotni bugunga olib qo'yasiz, ertaga o'zi qaytadi",
             },
             bottleDeposit: "Bitta idish garovi",
             link: "Do'kon havolasi",
@@ -503,7 +528,7 @@ export const staffUz = {
             saved: "Saqlandi",
             showcase: "Zumda vitrinasi",
             showcaseOn:
-                "Do'koningiz Zumda botidagi qidiruvda. Vitrina orqali sotuvdan komissiya: {rate}%.",
+                "Do'koningiz Zumda Shop qidiruvida bor. Vitrina orqali sotilgan tovarlardan komissiya: {rate}%.",
             showcaseOff:
                 "Do'koningiz Zumda vitrinasida emas. Qo'shilish uchun Zumda bilan bog'laning.",
         },
@@ -511,6 +536,9 @@ export const staffUz = {
     },
     courier: {
         title: "Yetkazishlarim",
+        details: "Batafsil",
+        detailsHide: "Kamroq ko'rsatish",
+        settings: "Sozlamalar",
         active: "Hozir",
         doneToday: "Bugun yetkazilgan",
         empty: "Hozircha buyurtma yo'q",
@@ -528,14 +556,14 @@ export const staffUz = {
         callCustomer: "Mijozga qo'ng'iroq",
         callShop: "Do'konga qo'ng'iroq",
         pickupFrom: "Olib ketish joyi",
-        toShop: "Yo'l",
+        toShop: "Do'konga yo'l",
         from: "Qayerdan",
         to: "Qayerga",
-        toCustomer: "Yo'l",
+        toCustomer: "Mijozga yo'l",
         // A dispatcher (owner's decision, November 2026): sends the parcel on, writes the customer.
         dispatcher: "Dispetcher",
         dispatcherWait:
-            "Do'kon qadoqlamoqda: tayyor bo'lganda «Jo'natdim»ni bosasiz. Izohni hozir ham yozish mumkin.",
+            "Do'kon buyurtmani tayyorlayapti: tayyor bo'lganda «Jo'natdim»ni bosasiz. Izohni hozir ham yozish mumkin.",
         send: "Jo'natdim",
         sendTitle: "#{n}: qanday jo'natdingiz?",
         ways: {
@@ -582,7 +610,6 @@ export const staffUz = {
         networkHint:
             "Yuboradigan odami yo'q tuman do'konlari buyurtmalari. Qulay bo'lsagina olasiz.",
         nearby: "Yaqindagi buyurtmalar",
-        nearbyEmpty: "Yaqinda hozircha buyurtma yo'q",
         take: "Olaman",
         items: "{n} dona olib borasiz",
         distance: "mijozgacha ≈ {km} km",
@@ -714,6 +741,14 @@ export const staffUz = {
         disableConfirm: "{shop}ni o'chirasizmi?",
         moreActions: "Boshqa amallar",
         searchShops: "Do'kon, egasi yoki bot bo'yicha qidirish",
+        filtersLabel: "Bizneslar holati",
+        filters: {
+            all: "Hammasi",
+            showcase: "Vitrina",
+            demo: "Namuna",
+            noPhone: "Raqamsiz",
+            chatClosed: "Bot yoza olmaydi",
+        },
         noShopsFound: "Bunday do'kon topilmadi",
         disabled: "{shop} o'chirildi",
         disableHint: "Mijozlar buyurtma bera olmaydi. Keyin qayta yoqish mumkin.",

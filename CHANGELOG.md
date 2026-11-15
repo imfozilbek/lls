@@ -7,6 +7,25 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Screens that say what they do, short lists, words that read as living Uzbek
+- Long lists became short (owner's decision, November 2026). The owner's orders are short cards
+  (who, what, how much, the one next step; «Batafsil» opens the phone, the place, the courier and
+  the cancel), with chips by stage and counts: «Yangi», «Yig'ilmoqda», «Tayyor», «Yo'lda». The
+  courier's delivery to do now is open, the others say where and the next step. «Platforma» shows
+  shops as short rows with marks («Vitrina 5%», «Namuna», «Raqamsiz», «Bot yoza olmaydi») and
+  chips. The catalog filters by «Sotuvda», «Bugun yo'q», «Yashirilgan», «Rasmsiz».
+- Words that promised the wrong thing are fixed: the district network hint said the courier
+  brings the order's money (only prepaid orders go there); the customer read «Jasur olib
+  kelmoqda» while the order was still being made; a new cash order showed the owner the
+  customer's «Yuborildi»; the courier had two buttons called «Yo'l» and a third «Yo'lni ochish».
+- Parts in their places: «Ish vaqti» no longer sticks out of the screen and speaks 24 hours
+  («12:00 AM» is gone); the cart's sum is under the lines; «Takrorlash» is inside its card and the
+  main button of a finished order; the storefront's call chip wraps instead of being cut; an
+  order on its way with a courier no longer gives the owner a big «Yetkazildi».
+- Every string of the app and the bots went through the Prizma corpus check (27 M words of public
+  Uzbek channels): eight changed, and the new words were chosen with it, each only where the
+  corpus read it as at least as natural and flagged nothing new.
+
 ### A courier who is a dispatcher, and someone on every order
 - A shop's courier may be a dispatcher (owner's decisions, November 2026): the owner packs and
   presses «Tayyor bo'ldi», the dispatcher sends the parcel by a taxi, the post or someone else

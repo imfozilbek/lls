@@ -71,6 +71,19 @@ export function formatQuantity(
     return word ? `${quantity} ${word}` : String(quantity)
 }
 
+/**
+ * The quantity before a line's name: «2×» for pieces and portions, but «1 qadoq», «1,5 kg»
+ * where the unit already says how much («1 qadoq×» reads as a typo).
+ */
+export function quantityMark(
+    quantity: number,
+    unit: string,
+    units: Record<string, string>,
+): string {
+    const text = formatQuantity(quantity, unit, units)
+    return text.includes(" ") ? text : `${text}×`
+}
+
 const METERS_PER_KM = 1000
 
 /** 3000 → "3", 2500 → "2,5": the radius as people say it. */

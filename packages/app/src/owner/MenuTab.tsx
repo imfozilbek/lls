@@ -9,19 +9,22 @@ import { compressImage } from "../lib/image.js"
 import { useMainAction } from "../lib/main-button.js"
 import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
-import { CatalogSearch, SEARCH_FROM, matches } from "../shop/MenuScreen.js"
+import { CatalogSearch, matches } from "../shop/MenuScreen.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { BagIcon, ClockIcon, ImageIcon, ListIcon, WifiOffIcon } from "../ui/icons.js"
+import { FilterChips } from "../ui/filter-chips.js"
+import { BagIcon, ImageIcon, ListIcon, WifiOffIcon } from "../ui/icons.js"
 import { Button, EmptyState, Skeleton, Switch } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import { OWNER_SEARCH_FROM, filterCounts, inFilter, shownFilters } from "./catalog-filter.js"
 import { stoppedToday } from "./stopped.js"
 import { useOwner } from "./store.js"
 
+import type { CatalogFilter } from "./catalog-filter.js"
 import type { ProductDTO } from "@zumda/core"
 
 /** Until the server answers with the real midnight. */
@@ -191,57 +194,44 @@ function ProductRow({ product }: { product: ProductDTO }): React.JSX.Element {
         }
     }
 
+    // One control (owner's decision, November 2026: a clock beside the switch said nothing):
+    // off asks «only today or for good» where the shop has a stop-list.
+    const turn = (next: boolean): void => {
+        if (saving) {
+            return
+        }
+        if (!next && canStop) {
+            haptic.tap()
+            setAsking(true)
+            return
+        }
+        void save({ isAvailable: next })
+    }
+    const pick = (patch: ProductPatch): void => {
+        void save(patch).then((saved) => {
+            if (saved && patch.stopForToday) {
+                toast(fill(t.owner.stoppedTodayToast, { name: product.name }))
+            }
+        })
+    }
     return (
         <li className="flex animate-rise items-center gap-3 py-3">
             {product.imageKey ? null : <QuickPhoto product={product} />}
             <ProductSummary product={product} onSale={onSale} today={today} />
-            {canStop ? (
-                <button
-                    type="button"
-                    aria-label={fill(t.owner.moreFor, { name: product.name })}
-                    onClick={(): void => {
-                        haptic.tap()
-                        setAsking(true)
-                    }}
-                    className="tap grid h-11 w-11 shrink-0 place-items-center rounded-full text-tg-subtitle active:bg-tg-secondary"
-                >
-                    {/* A clock, not «…»: it only takes the item off, for today or for good. */}
-                    <ClockIcon size={22} />
-                </button>
-            ) : null}
-            {/* One tap does the everyday thing: off for today where the shop has a stop-list. */}
             <div className="flex w-16 shrink-0 flex-col items-center gap-1">
                 <Switch
                     checked={onSale}
-                    onChange={(next): void => {
-                        if (saving) {
-                            return
-                        }
-                        if (!next && canStop) {
-                            void save({ stopForToday: true }).then((saved) => {
-                                if (saved) {
-                                    toast(fill(t.owner.stoppedTodayToast, { name: product.name }))
-                                }
-                            })
-                            return
-                        }
-                        void save({ isAvailable: next })
-                    }}
+                    onChange={turn}
                     label={`${t.owner.product.available}: ${product.name}`}
                 />
                 <span
                     aria-hidden
                     className={cn("text-xs font-medium", onSale ? "text-brand" : "text-tg-hint")}
                 >
-                    {onSale ? t.owner.onSale : t.owner.offSale}
+                    {onSale ? t.owner.onSale : today ? t.owner.stoppedToday : t.owner.offSale}
                 </span>
             </div>
-            {asking ? (
-                <OffSheet
-                    onPick={(patch): void => void save(patch)}
-                    onClose={(): void => setAsking(false)}
-                />
-            ) : null}
+            {asking ? <OffSheet onPick={pick} onClose={(): void => setAsking(false)} /> : null}
         </li>
     )
 }
@@ -295,9 +285,68 @@ function ProductGroups({
     )
 }
 
+/** The list with its search, state chips, photo nudge and «Ro'yxat bilan qo'shish». */
+function CatalogView({ products }: { products: ProductDTO[] }): React.JSX.Element {
+    const t = useT()
+    const push = useRouter((state) => state.push)
+    const [query, setQuery] = useState("")
+    const [filter, setFilter] = useState<CatalogFilter>("all")
+    const counts = filterCounts(products)
+    const chips = shownFilters(counts)
+    // A chip that emptied (its last product came back on sale) falls back to all.
+    const current = chips.includes(filter) ? filter : "all"
+    const shown = products.filter((product) => inFilter(product, current))
+    return (
+        <section className="px-4">
+            {products.length > OWNER_SEARCH_FROM ? (
+                <div className="-mx-4 mt-2">
+                    <CatalogSearch value={query} onChange={setQuery} />
+                </div>
+            ) : null}
+            {chips.length > 0 ? (
+                <div className="mt-2">
+                    <FilterChips<CatalogFilter>
+                        label={t.owner.catalogFilterLabel}
+                        value={current}
+                        onChange={setFilter}
+                        options={chips.map((chip) => ({
+                            value: chip,
+                            label: t.owner.catalogFilters[chip],
+                            count: counts[chip],
+                        }))}
+                    />
+                </div>
+            ) : null}
+            {counts.noPhoto > 0 && current !== "noPhoto" ? (
+                // A photo sells: the storefront without them looks like a price list.
+                <button
+                    type="button"
+                    onClick={(): void => {
+                        haptic.tap()
+                        setFilter("noPhoto")
+                    }}
+                    className="tap mt-2 flex w-full items-center gap-2 rounded-control bg-brand/10 px-3 py-2.5 text-left text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                >
+                    <ImageIcon size={18} className="shrink-0 text-brand" />
+                    {fill(t.owner.addPhotos, { n: counts.noPhoto })}
+                </button>
+            ) : null}
+            <button
+                type="button"
+                onClick={(): void => push({ name: "bulk" })}
+                className="tap mt-2 flex min-h-11 w-full items-center gap-2 rounded-control px-1 text-sm font-semibold text-brand active:bg-brand/10"
+            >
+                <ListIcon size={18} />
+                {t.owner.product.bulk}
+            </button>
+            <ProductGroups products={shown} query={query} />
+            <BottomSpacer />
+        </section>
+    )
+}
+
 export function MenuTab(): React.JSX.Element {
     const t = useT()
-    const [query, setQuery] = useState("")
     const push = useRouter((state) => state.push)
     const products = useOwner((state) => state.products)
     const loadProducts = useOwner((state) => state.loadProducts)
@@ -363,31 +412,5 @@ export function MenuTab(): React.JSX.Element {
             />
         )
     }
-    const noPhoto = products.filter((product) => !product.imageKey).length
-    return (
-        <section className="px-4">
-            {products.length > SEARCH_FROM ? (
-                <div className="-mx-4 mt-2">
-                    <CatalogSearch value={query} onChange={setQuery} />
-                </div>
-            ) : null}
-            {noPhoto > 0 ? (
-                // A photo sells: the storefront without them looks like a price list.
-                <p className="mt-2 flex items-center gap-2 rounded-control bg-brand/10 px-3 py-2.5 text-sm">
-                    <ImageIcon size={18} className="shrink-0 text-brand" />
-                    {fill(t.owner.addPhotos, { n: noPhoto })}
-                </p>
-            ) : null}
-            <button
-                type="button"
-                onClick={(): void => push({ name: "bulk" })}
-                className="tap mt-2 flex min-h-11 w-full items-center gap-2 rounded-control px-1 text-sm font-semibold text-brand active:bg-brand/10"
-            >
-                <ListIcon size={18} />
-                {t.owner.product.bulk}
-            </button>
-            <ProductGroups products={products} query={query} />
-            <BottomSpacer />
-        </section>
-    )
+    return <CatalogView products={products} />
 }

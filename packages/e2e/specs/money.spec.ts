@@ -354,7 +354,7 @@ test("the day adds up to the sum; the CSV report arrives in the owner's chat", a
     // A card shop: no cash line, no couriers' cash.
     await expect(page.getByText(/Naqd/)).toHaveCount(0)
     await page.getByRole("tab", { name: "Shu oy" }).click()
-    await page.getByRole("button", { name: "Excel uchun hisobot" }).click()
+    await page.getByRole("button", { name: "Hisobotni chatga yuborish (Excel)" }).click()
     await expect(page.getByText("Hisobot bot bilan chatga yuborildi")).toBeVisible()
     const [csv] = await documentsTo(PEOPLE.foodOwner.id, since)
     expect(csv?.name).toMatch(/^osh-markaz-dev-.+\.csv$/)
@@ -518,8 +518,8 @@ test("hours per day: Monday off, Tuesday 9–18, then Monday's hours for every d
     }
     await page.getByRole("switch", { name: "Du", exact: true }).click()
     await expect(page.getByText("Dam olish")).toBeVisible()
-    await page.getByLabel("Se · Ochiladi").fill("09:00")
-    await page.getByLabel("Se · Yopiladi").fill("18:00")
+    await page.getByLabel("Se · Ochiladi").selectOption("09:00")
+    await page.getByLabel("Se · Yopiladi").selectOption("18:00")
     await bottomButton(page).click()
     await expect(page.getByText("Saqlandi")).toBeVisible()
 
@@ -531,8 +531,8 @@ test("hours per day: Monday off, Tuesday 9–18, then Monday's hours for every d
 
     // Back to every day, Monday 08:00–23:00 copied to the rest.
     await page.getByRole("switch", { name: "Du", exact: true }).click()
-    await page.getByLabel("Du · Ochiladi").fill("08:00")
-    await page.getByLabel("Du · Yopiladi").fill("23:00")
+    await page.getByLabel("Du · Ochiladi").selectOption("08:00")
+    await page.getByLabel("Du · Yopiladi").selectOption("23:00")
     await page.getByRole("button", { name: "Hamma kunlarga dushanbadagidek" }).click()
     await bottomButton(page).click()
     await expect(page.getByText("Saqlandi")).toBeVisible()

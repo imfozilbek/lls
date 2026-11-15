@@ -574,6 +574,9 @@ cancelled  cancelled  cancelled  cancelled  cancelled
 - A transfer order: `pending → accepted` only when paid: the owner's «Деньги пришли, принять»
   confirms the transfer and accepts and starts it in one step (`Order.advanceTo` refuses an unpaid
   accept). A cash order is accepted at once and becomes paid on `delivered`.
+- The door is the courier's (owner's decision, November 2026): on the way with a courier the
+  owner's card says «Kuryer yetkazmoqda»; a quiet «Yetkazildi deb belgilash» (asked once more)
+  stays for a courier who went silent.
 - Owner moves every step and may cancel. The assigned courier moves only
   `ready → picked_up → delivered` and never cancels. The customer cancels only while `pending`.
 - The owner assigns a courier (`accepted`…`ready`), or says «O'zim yetkazaman», before «Tayyor»
@@ -946,6 +949,15 @@ console.log            // Use logger
 **REQUIRED:**
 - Micro-interactions on all interactive elements
 - Personality: custom icons and empty states with character (no stock illustrations)
+- **Short lists (owner's decision, November 2026):** a card in a long list shows who, what, how
+  much and the one next step; «Batafsil» opens the rest (the owner's orders, the courier's
+  deliveries, «Platforma» shops; the one to do now, or a bot message's, is open). A list that
+  spans states gets chips with counts (`ui/filter-chips.tsx`): orders by stage, the catalog by
+  state, «Bizneslar» by marks. A label names what the button does, never a near thing.
+- **Living Uzbek (owner's decision, November 2026):** a new or changed string goes through the
+  Prizma corpus check (`tools/native/native_check.py` of `imfozilbek/data-driven-approach`,
+  27 M words of public Uzbek channels; Gemini's variants too when its key is set); a variant is
+  taken only when the corpus rates it no worse and flags nothing new.
 - **Native feel (owner's decision, October 2026):** every screen with server data registers
   `useRefresh` (pull down from the top) and keeps its data on refresh; data comes through
   `usePagedList` / `useCachedState` (this session's copy at once, a quiet refresh behind it,

@@ -21,7 +21,7 @@ import {
     platformChat,
     waitForMessage,
 } from "../support/telegram.js"
-import { bottomButton, fillAddress, openApp, toCart } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, openPlatformShop, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -177,7 +177,8 @@ test("the admin adds and removes a shop in «Platforma»; others cannot", async 
 
     await openApp(page, { user: PEOPLE.admin, adminBot: true })
     await page.getByRole("tab", { name: "Bizneslar" }).click()
-    const card = page.getByRole("listitem").filter({ hasText: "Toza Suv" })
+    // A short row by default: a tap opens the showcase deal.
+    const card = await openPlatformShop(page, "Toza Suv")
     // On is saved at once, with the usual 5%; the percent is changed after.
     await card.getByRole("switch", { name: "Zumda vitrinasida" }).click()
     await waitForMessage(PEOPLE.waterOwner.id, "tovarlarning 5%", since)

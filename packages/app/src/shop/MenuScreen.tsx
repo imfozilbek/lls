@@ -328,7 +328,8 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                     {t.shop.demo}
                 </p>
             ) : null}
-            <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 text-sm [scrollbar-width:none]">
+            {/* Wrapped, never cut: the call with its number was half off the screen. */}
+            <div className="mt-3 flex flex-wrap gap-2 text-sm">
                 <HeaderAction
                     icon={<ReceiptIcon size={16} />}
                     label={t.shop.myOrders}

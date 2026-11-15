@@ -181,7 +181,7 @@ describe("a dispatcher's order in the bots", () => {
         const card = formatOrderForCourier(preparing, reader, { name: "ABC", address: "Bozor 1" })
         expect(card).toContain("🏪 Qayerdan: Bozor 1")
         expect(card).toContain("📝 Taksi &lt;chaqirildi&gt;")
-        expect(card).toContain("Do'kon qadoqlamoqda")
+        expect(card).toContain("Do'kon buyurtmani tayyorlayapti")
         expect(courierKeyboard(preparing, reader, "https://d/x").inline_keyboard).toEqual([])
         const ready = withDispatcher({
             status: OrderStatus.READY,

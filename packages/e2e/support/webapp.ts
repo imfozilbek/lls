@@ -26,7 +26,7 @@ import {
 } from "./telegram.js"
 
 import type { Chat, TgUser } from "./telegram.js"
-import type { Page } from "@playwright/test"
+import type { Locator, Page } from "@playwright/test"
 
 /** Telegram's Bot API version that brought `WebApp.requestChat` (Managed Bots). */
 const REQUEST_CHAT_VERSION = 9.6
@@ -625,4 +625,43 @@ export async function pickOnMap(
     )
     await picker.getByRole("button", { name: "Shu yer" }).click()
     await expect(picker).toBeHidden()
+}
+
+/**
+ * The owner's order card «#n», opened: a short card shows who, what, how much and the next step;
+ * «Batafsil» opens the phone, the place, the courier and the cancel.
+ */
+export async function openOrderCard(page: Page, number: number): Promise<Locator> {
+    const card = page.locator(`[data-order-card="${number}"]`).first()
+    await expect(card).toBeVisible()
+    const more = card.getByRole("button", { name: "Batafsil", exact: true })
+    if (await more.isVisible()) {
+        await more.click()
+    }
+    return card
+}
+
+/** The courier's delivery «#n», opened: only the one to do now is open by itself. */
+export async function openDelivery(page: Page, number: number): Promise<Locator> {
+    const card = page
+        .locator("li[data-order]")
+        .filter({ hasText: `#${number}` })
+        .first()
+    await expect(card).toBeVisible()
+    const more = card.getByRole("button", { name: "Batafsil", exact: true })
+    if (await more.isVisible()) {
+        await more.click()
+    }
+    return card
+}
+
+/** A shop's row in «Platforma» → «Bizneslar», opened: the owner, the showcase, the actions. */
+export async function openPlatformShop(page: Page, name: string): Promise<Locator> {
+    const row = page.getByRole("listitem").filter({ hasText: name }).first()
+    await expect(row).toBeVisible()
+    const closed = row.locator('button[aria-expanded="false"]').first()
+    if (await closed.isVisible()) {
+        await closed.click()
+    }
+    return row
 }

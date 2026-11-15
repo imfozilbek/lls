@@ -9,6 +9,7 @@ import { useRefresh } from "../lib/refresh.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { toast } from "../stores/toast.js"
+import { FilterChips } from "../ui/filter-chips.js"
 import { AlertIcon, CheckIcon, ChevronIcon, StoreIcon, WifiOffIcon } from "../ui/icons.js"
 import {
     Button,
@@ -24,7 +25,9 @@ import { Sheet } from "../ui/sheet.js"
 import { DemoBlock } from "./DemoBlock.js"
 import { PhoneAskCard, usePhoneAsks } from "./PhoneAskCard.js"
 import { OwnerLine, PlaceLine, ShopHead, botToast, useBusy } from "./shared.js"
+import { inShopFilter, lacksPhone, shopFilterCounts, shownShopFilters } from "./shop-filter.js"
 
+import type { ShopFilter } from "./shop-filter.js"
 import type { PlatformShopDTO } from "@zumda/core"
 
 /**
@@ -217,8 +220,8 @@ function percentText(bps: number | undefined): string {
     return bps === undefined ? "" : String(bps / 100).replace(".", ",")
 }
 
-/** A list this long gets a search field. */
-const SEARCH_FROM = 5
+/** More than one shop: the search is there (owner's decision, November 2026). */
+const SEARCH_FROM = 1
 
 /** The showcase's usual share when a shop is first switched on (the field can change it). */
 const DEFAULT_PERCENT = 5
@@ -325,10 +328,15 @@ function ShowcaseBlock({
 function LiveShopCard({
     shop,
     focused,
+    open,
+    onToggle,
     onDone,
 }: {
     shop: PlatformShopDTO
     focused: boolean
+    /** Kept by the list: a row stays open when a save re-draws it (a demo gets a new key). */
+    open: boolean
+    onToggle(): void
     onDone(): void
 }): React.JSX.Element {
     const t = useT()
@@ -361,7 +369,95 @@ function LiveShopCard({
                 focused && "ring-2 ring-brand",
             )}
         >
-            <ShopHead shop={shop} />
+            <button
+                type="button"
+                aria-expanded={open}
+                onClick={(): void => {
+                    haptic.tap()
+                    onToggle()
+                }}
+                className="tap -m-1 flex flex-col gap-2 rounded-control p-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+            >
+                <span className="flex w-full items-center gap-2">
+                    <span className="min-w-0 flex-1">
+                        <ShopHead shop={shop} />
+                    </span>
+                    <ChevronIcon
+                        size={18}
+                        className={cn(
+                            "shrink-0 text-tg-hint transition-transform duration-200",
+                            open ? "-rotate-90" : "rotate-90",
+                        )}
+                    />
+                </span>
+                <ShopMarks shop={shop} />
+            </button>
+            {open ? (
+                <ShopOpen
+                    shop={shop}
+                    live={live}
+                    busy={busy}
+                    onReconnect={reconnect}
+                    onDisable={disable}
+                    onDone={onDone}
+                />
+            ) : null}
+            {live ? null : (
+                <Button loading={busy === "approve"} onClick={(): void => void review("approve")}>
+                    {t.platform.enable}
+                </Button>
+            )}
+        </li>
+    )
+}
+
+/** Short marks under a shop's name: what needs the team at a glance. */
+function ShopMarks({ shop }: { shop: PlatformShopDTO }): React.JSX.Element | null {
+    const t = useT().platform
+    const marks = [
+        shop.marketplace
+            ? `${t.filters.showcase} ${percentText(shop.marketplace.commissionBps)}%`
+            : null,
+        shop.demo ? t.demoBadge : null,
+        lacksPhone(shop) ? t.phoneAskTitle : null,
+        shop.ownerChat === OwnerChat.CLOSED ? t.filters.chatClosed : null,
+    ].filter((mark): mark is string => mark !== null)
+    if (marks.length === 0) {
+        return null
+    }
+    return (
+        <span className="flex flex-wrap gap-1.5">
+            {marks.map((mark) => (
+                <span
+                    key={mark}
+                    className="rounded-full bg-tg-bg px-2.5 py-1 text-xs font-semibold text-tg-subtitle"
+                >
+                    {mark}
+                </span>
+            ))}
+        </span>
+    )
+}
+
+/** An open shop: its owner, the showcase deal or the demo, and the rare actions. */
+function ShopOpen({
+    shop,
+    live,
+    busy,
+    onReconnect,
+    onDisable,
+    onDone,
+}: {
+    shop: PlatformShopDTO
+    live: boolean
+    busy: string | null
+    onReconnect(): Promise<void>
+    onDisable(): Promise<void>
+    onDone(): void
+}): React.JSX.Element {
+    const t = useT()
+    return (
+        <div className="flex animate-fade-in flex-col gap-3">
             <OwnerLine shop={shop} />
             {shop.ownerChat === OwnerChat.CLOSED ? (
                 // Orders reach this owner only through Zumda | Business until Start in the bot.
@@ -388,25 +484,21 @@ function LiveShopCard({
                         <Button
                             variant="surface"
                             loading={busy === "reconnect"}
-                            onClick={(): void => void reconnect()}
+                            onClick={(): void => void onReconnect()}
                         >
                             {t.platform.reconnect}
                         </Button>
                         <Button
                             variant="quietDanger"
                             loading={busy === "reject"}
-                            onClick={(): void => void disable()}
+                            onClick={(): void => void onDisable()}
                         >
                             {t.platform.disable}
                         </Button>
                     </div>
                 </details>
-            ) : (
-                <Button loading={busy === "approve"} onClick={(): void => void review("approve")}>
-                    {t.platform.enable}
-                </Button>
-            )}
-        </li>
+            ) : null}
+        </div>
     )
 }
 
@@ -502,6 +594,89 @@ export function ApplicationsTab({
 
 type ShopsFilter = "active" | "disabled"
 
+/** The chips over the live list and the shops the chip and the search leave. */
+function shopView(
+    shops: PlatformShopDTO[] | null,
+    filter: ShopsFilter,
+    chip: ShopFilter,
+    query: string,
+): {
+    counts: Record<ShopFilter, number> | null
+    chips: ShopFilter[]
+    current: ShopFilter
+    found: PlatformShopDTO[] | undefined
+} {
+    const counts = shops && filter === "active" ? shopFilterCounts(shops) : null
+    const chips = counts ? shownShopFilters(counts) : []
+    // A chip that emptied falls back to all of them.
+    const current = chips.includes(chip) ? chip : "all"
+    // Found by its name, its bot or its owner: one shop among many in a few letters.
+    const words = searchWords(query)
+    const found = shops?.filter(
+        (shop) =>
+            inShopFilter(shop, current) &&
+            words.every((word) =>
+                searchText(`${shop.name} ${shop.botUsername} ${shop.owner.name ?? ""}`).includes(
+                    word,
+                ),
+            ),
+    )
+    return { counts, chips, current, found }
+}
+
+/** The rows, or why there are none. */
+function ShopsBody({
+    shops,
+    found,
+    error,
+    focusId,
+    onReload,
+}: {
+    shops: PlatformShopDTO[] | null
+    found: PlatformShopDTO[] | undefined
+    error: string | null
+    focusId: string | null
+    onReload(): void
+}): React.JSX.Element {
+    const t = useT().platform
+    // A short row by default: the one a message opened is open.
+    const [openIds, setOpenIds] = useState<ReadonlySet<string>>(
+        () => new Set(focusId ? [focusId] : []),
+    )
+    const toggle = (id: string): void =>
+        setOpenIds((ids) => {
+            const next = new Set(ids)
+            if (!next.delete(id)) {
+                next.add(id)
+            }
+            return next
+        })
+    if (shops === null || found === undefined) {
+        return <ListState error={error} onRetry={onReload} />
+    }
+    if (shops.length === 0) {
+        return <EmptyState art={<StoreIcon size={44} />} title={t.noShops} />
+    }
+    if (found.length === 0) {
+        return <EmptyState art={<StoreIcon size={44} />} title={t.noShopsFound} />
+    }
+    return (
+        <ul className="flex flex-col gap-3">
+            {found.map((shop) => (
+                <LiveShopCard
+                    // The showcase block keeps its own switch and percent across a save.
+                    key={`${shop.id}:${shop.demo}`}
+                    shop={shop}
+                    focused={shop.id === focusId}
+                    open={openIds.has(shop.id)}
+                    onToggle={(): void => toggle(shop.id)}
+                    onDone={onReload}
+                />
+            ))}
+        </ul>
+    )
+}
+
 /** «Bizneslar»: live shops (showcase, bot, turn off) and turned-off ones (turn back on). */
 export function ShopsTab({
     focusId,
@@ -516,35 +691,8 @@ export function ShopsTab({
     const asks = usePhoneAsks()
     const { shops, error, reload } = useShops(status, asks.reload)
     const [query, setQuery] = useState("")
-    // Found by its name, its bot or its owner: one shop among many in a few letters.
-    const words = searchWords(query)
-    const found = shops?.filter((shop) =>
-        words.every((word) =>
-            searchText(`${shop.name} ${shop.botUsername} ${shop.owner.name ?? ""}`).includes(word),
-        ),
-    )
-    let body: React.JSX.Element
-    if (shops === null || found === undefined) {
-        body = <ListState error={error} onRetry={(): void => void reload()} />
-    } else if (shops.length === 0) {
-        body = <EmptyState art={<StoreIcon size={44} />} title={t.noShops} />
-    } else if (found.length === 0) {
-        body = <EmptyState art={<StoreIcon size={44} />} title={t.noShopsFound} />
-    } else {
-        body = (
-            <ul className="flex flex-col gap-3">
-                {found.map((shop) => (
-                    <LiveShopCard
-                        // The showcase block keeps its own switch and percent across a save.
-                        key={`${shop.id}:${shop.demo}`}
-                        shop={shop}
-                        focused={shop.id === focusId}
-                        onDone={(): void => void reload()}
-                    />
-                ))}
-            </ul>
-        )
-    }
+    const [chip, setChip] = useState<ShopFilter>("all")
+    const { counts, chips, current, found } = shopView(shops, filter, chip, query)
     return (
         <div className="flex flex-col gap-4">
             <Segmented<ShopsFilter>
@@ -562,6 +710,18 @@ export function ShopsTab({
             {filter === "active" && asks.counts ? (
                 <PhoneAskCard counts={asks.counts} onDone={asks.reload} />
             ) : null}
+            {counts && chips.length > 0 ? (
+                <FilterChips<ShopFilter>
+                    label={t.filtersLabel}
+                    value={current}
+                    onChange={setChip}
+                    options={chips.map((value) => ({
+                        value,
+                        label: t.filters[value],
+                        count: counts[value],
+                    }))}
+                />
+            ) : null}
             {(shops?.length ?? 0) > SEARCH_FROM || query !== "" ? (
                 <TextInput
                     type="search"
@@ -571,7 +731,13 @@ export function ShopsTab({
                     onChange={(e): void => setQuery(e.target.value)}
                 />
             ) : null}
-            {body}
+            <ShopsBody
+                shops={shops}
+                found={found}
+                error={error}
+                focusId={focusId}
+                onReload={(): void => void reload()}
+            />
         </div>
     )
 }

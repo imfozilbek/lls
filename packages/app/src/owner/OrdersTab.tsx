@@ -13,23 +13,25 @@ import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { ZUMDA_NAME } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
-import { formatMoney, formatQuantity, formatTime } from "../lib/format.js"
+import { formatMoney, formatTime, quantityMark } from "../lib/format.js"
 import { usePagedList } from "../lib/paged.js"
 import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
-import { confirm, haptic } from "../lib/telegram.js"
+import { callLink, confirm, haptic } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { useRingOnNews } from "../lib/use-ring.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { CallLink, CompactAddress } from "../ui/contact-links.js"
 import { DeliveryNotes } from "../ui/delivery-notes.js"
+import { FilterChips } from "../ui/filter-chips.js"
 import {
     AlertIcon,
     CardIcon,
     ChevronIcon,
     ClockIcon,
     CloseIcon,
+    PhoneIcon,
     ReceiptIcon,
     ScooterIcon,
     WifiOffIcon,
@@ -51,10 +53,12 @@ import { BottomSpacer } from "../ui/shell.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import { PaymentCheckSheet } from "./PaymentCheck.js"
+import { shownStages, stageCounts, stageOf } from "./order-stage.js"
 import { ownerStep } from "./order-step.js"
 import { useOwner } from "./store.js"
 import { TripScope, TripSlot } from "./trips.js"
 
+import type { OrderStage } from "./order-stage.js"
 import type { OwnerStep } from "./order-step.js"
 import type { Dictionary } from "../i18n/index.js"
 import type { PagedList } from "../lib/paged.js"
@@ -363,12 +367,15 @@ function MainStep({
                 </Button>
             )
         case "dispatcher":
+        case "courier":
             return (
                 <p className="flex items-center gap-2 rounded-control bg-tg-bg px-3 py-2.5 text-sm text-tg-subtitle">
                     <ClockIcon size={18} className="shrink-0 text-brand" />
-                    {step.to === OrderStatus.PICKED_UP
-                        ? t.owner.dispatcherSends
-                        : t.owner.dispatcherDelivers}
+                    {step.kind === "courier"
+                        ? t.owner.courierDelivers
+                        : step.to === OrderStatus.PICKED_UP
+                          ? t.owner.dispatcherSends
+                          : t.owner.dispatcherDelivers}
                 </p>
             )
         default:
@@ -376,19 +383,29 @@ function MainStep({
     }
 }
 
-function OrderActions(props: CardProps): React.JSX.Element | null {
+type CardSheet = "courier" | "cancel" | "pay"
+
+interface CardActions {
+    busy: boolean
+    step: OwnerStep | null
+    /** The shop has no courier: «O'zim yetkazaman» is the answer (unknown until they load). */
+    alone: boolean
+    open(sheet: CardSheet): void
+    act(request: () => Promise<OrderDTO>): Promise<void>
+    /** The courier or the dispatcher went silent: the owner closes it, after one question. */
+    markDelivered(): Promise<void>
+    sheets: React.JSX.Element | null
+}
+
+/** What a card can do: the step, the courier, the money check and the cancel, with their sheets. */
+function useCardActions(props: CardProps): CardActions {
     const { order, onChange, onStale } = props
     const t = useT()
     const [busy, setBusy] = useState(false)
-    const [sheet, setSheet] = useState<"courier" | "cancel" | "pay" | null>(null)
-    // No courier at all: «O'zim yetkazaman» at once (unknown until they load: the sheet asks).
+    const [sheet, setSheet] = useState<CardSheet | null>(null)
     const alone = useOwner(
         (state) => state.couriers !== null && !state.couriers.some((c) => c.isActive),
     )
-    if (isFinalStatus(order.status)) {
-        return null
-    }
-
     const act = async (request: () => Promise<OrderDTO>): Promise<void> => {
         setBusy(true)
         try {
@@ -401,69 +418,75 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
             setBusy(false)
         }
     }
-    // The dispatcher went silent: the owner may still close it, after one question.
     const markDelivered = async (): Promise<void> => {
-        if (await confirm(t.owner.markDeliveredConfirm, { yes: t.owner.actions.delivered })) {
+        const ask = order.dispatcher
+            ? t.owner.markDeliveredConfirm
+            : t.owner.markDeliveredCourierConfirm
+        if (await confirm(ask, { yes: t.owner.actions.delivered })) {
             await act(() => api.owner.setStatus(order.id, OrderStatus.DELIVERED))
         }
     }
-    const step = ownerStep(order)
     const close = (): void => setSheet(null)
-    const open = (next: "courier" | "pay"): void => {
-        haptic.tap()
-        setSheet(next)
+    const sheets =
+        sheet === "courier" ? (
+            <CourierSheet {...props} onClose={close} />
+        ) : sheet === "cancel" ? (
+            <CancelSheet {...props} onClose={close} />
+        ) : sheet === "pay" ? (
+            <PaymentCheckSheet {...props} onClose={close} />
+        ) : null
+    return {
+        busy,
+        step: ownerStep(order),
+        alone,
+        open: (next): void => {
+            haptic.tap()
+            setSheet(next)
+        },
+        act,
+        markDelivered,
+        sheets,
     }
-    const quietDelivered = step?.kind === "dispatcher" && step.to === OrderStatus.DELIVERED
-    return (
-        <div className="mt-3 flex flex-col gap-1">
-            <MainStep
-                order={order}
-                step={step}
-                busy={busy}
-                alone={alone}
-                onStep={(to): void => void act(() => api.owner.setStatus(order.id, to))}
-                onSheet={open}
-                onSelf={(): void => void act(() => api.owner.deliverMyself(order.id))}
-            />
-            {/* One main step above; the courier and the cancel stay quiet below it. */}
-            <div className="flex flex-wrap items-center justify-between gap-x-2">
-                {/* Without couriers the sheet still offers the network and an invite. */}
-                {ASSIGNABLE.includes(order.status) && (step?.kind !== "choose" || alone) ? (
-                    <Button
-                        variant="ghost"
-                        className="-ml-2 whitespace-nowrap px-2"
-                        icon={<ScooterIcon size={18} />}
-                        disabled={busy}
-                        onClick={(): void => open("courier")}
-                    >
-                        {order.courierName ? t.owner.reassign : t.owner.assign}
-                    </Button>
-                ) : quietDelivered ? (
-                    <Button
-                        variant="ghost"
-                        className="-ml-2 whitespace-nowrap px-2"
-                        disabled={busy}
-                        onClick={(): void => void markDelivered()}
-                    >
-                        {t.owner.markDelivered}
-                    </Button>
-                ) : (
-                    <span />
-                )}
-                <Button
-                    variant="quietDanger"
-                    className="-mr-2 whitespace-nowrap px-2"
-                    disabled={busy}
-                    onClick={(): void => setSheet("cancel")}
-                >
-                    {t.owner.cancelOrder}
-                </Button>
-            </div>
-            {sheet === "courier" ? <CourierSheet {...props} onClose={close} /> : null}
-            {sheet === "cancel" ? <CancelSheet {...props} onClose={close} /> : null}
-            {sheet === "pay" ? <PaymentCheckSheet {...props} onClose={close} /> : null}
-        </div>
-    )
+}
+
+/** Under the courier line: hand it to someone (else), or close it for a courier who went silent. */
+function CourierAction({
+    order,
+    actions,
+}: {
+    order: OrderDTO
+    actions: CardActions
+}): React.JSX.Element | null {
+    const t = useT()
+    const { step, alone, busy } = actions
+    // Without couriers the sheet still offers the network and an invite.
+    if (ASSIGNABLE.includes(order.status) && (step?.kind !== "choose" || alone)) {
+        return (
+            <Button
+                variant="ghost"
+                className="-ml-2 self-start whitespace-nowrap px-2"
+                icon={<ScooterIcon size={18} />}
+                disabled={busy}
+                onClick={(): void => actions.open("courier")}
+            >
+                {order.courierName ? t.owner.reassign : t.owner.assign}
+            </Button>
+        )
+    }
+    const theirs = step?.kind === "dispatcher" || step?.kind === "courier"
+    if (theirs && step.to === OrderStatus.DELIVERED) {
+        return (
+            <Button
+                variant="ghost"
+                className="-ml-2 self-start whitespace-nowrap px-2"
+                disabled={busy}
+                onClick={(): void => void actions.markDelivered()}
+            >
+                {t.owner.markDelivered}
+            </Button>
+        )
+    }
+    return null
 }
 
 const MINUTE_MS = 60_000
@@ -571,7 +594,7 @@ function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
             {shown.map((item, line) => (
                 <li key={line} className="flex gap-2">
                     <span className="shrink-0 font-semibold tabular-nums">
-                        {formatQuantity(item.quantity, item.unit, t.units)}×
+                        {quantityMark(item.quantity, item.unit, t.units)}
                     </span>
                     <span className="flex-1">
                         {item.name}
@@ -599,46 +622,59 @@ function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
     )
 }
 
-function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
+/** A short card's lines in one row: «2× To'y oshi, 3× Lag'mon +2». */
+function ItemsLine({ order }: { order: OrderDTO }): React.JSX.Element {
+    const t = useT()
+    const shown = order.items.slice(0, 2)
+    const more = order.items.length - shown.length
+    const line = shown
+        .map((item) => `${quantityMark(item.quantity, item.unit, t.units)} ${item.name}`)
+        .join(", ")
+    return (
+        <p className="mt-2 truncate">
+            {line}
+            {more > 0 ? <span className="text-tg-subtitle"> +{more}</span> : null}
+        </p>
+    )
+}
+
+/** Number, status, time, customer and how long it has waited. */
+function CardHead({ order }: { order: OrderDTO }): React.JSX.Element {
+    const t = useT()
+    const language = useLanguage()
+    return (
+        <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+                <span className="text-lg font-bold">
+                    {fill(t.order.title, { n: order.number })}
+                </span>
+                {/* Time, who, and how long it has waited: one line, so the card stays short. */}
+                <p className="flex flex-wrap items-center gap-x-2 text-sm text-tg-hint">
+                    <span className="min-w-0 truncate">
+                        {formatTime(order.createdAt, language)} · {order.customerName}
+                    </span>
+                    {isFinalStatus(order.status) ? null : <OrderAge createdAt={order.createdAt} />}
+                </p>
+            </div>
+            <OrderBadge order={order} forOwner />
+        </div>
+    )
+}
+
+/** What an open card adds: bottles, the showcase deal, the phone and place, the courier. */
+function CardDetails({
+    order,
+    actions,
+}: {
+    order: OrderDTO
+    actions: CardActions
+}): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
     const shopPlace = useSession((state) => state.shop?.location)
+    const live = !isFinalStatus(order.status)
     return (
-        <li
-            className={cn(
-                "animate-rise rounded-tile bg-tg-secondary p-4",
-                needsCheck(order) && "ring-2 ring-warning/60",
-            )}
-            data-needs-check={needsCheck(order) || undefined}
-        >
-            <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                    <span className="text-lg font-bold">
-                        {fill(t.order.title, { n: order.number })}
-                    </span>
-                    {/* Time, who, and how long it has waited: one line, so the card stays short. */}
-                    <p className="flex flex-wrap items-center gap-x-2 text-sm text-tg-hint">
-                        <span className="min-w-0 truncate">
-                            {formatTime(order.createdAt, language)} · {order.customerName}
-                        </span>
-                        {isFinalStatus(order.status) ? null : (
-                            <OrderAge createdAt={order.createdAt} />
-                        )}
-                    </p>
-                </div>
-                <OrderBadge order={order} forOwner />
-            </div>
-            <CardItems order={order} />
-            <p className="mt-1.5 flex justify-between font-semibold">
-                <span>{t.cart.total}</span>
-                <span className="tabular-nums">{formatMoney(order.total, language)}</span>
-            </p>
-            {/* Not yet transferred: the badge already says it, once is enough. Cash says so. */}
-            {order.status === OrderStatus.PENDING &&
-            order.payment.method !== "cash" &&
-            order.payment.status === PaymentStatus.UNPAID ? null : (
-                <PaymentLine order={order} forOwner className="mt-1" />
-            )}
+        <div className="animate-fade-in">
             {order.bottlesReturned > 0 ? (
                 <p className="text-sm text-tg-subtitle">
                     {fill(t.owner.bottlesBack, { n: order.bottlesReturned })}
@@ -656,9 +692,164 @@ function OrderCard({ order, onChange, onStale }: CardProps): React.JSX.Element {
             <div className="mt-3 flex flex-col gap-2 border-t border-tg-separator pt-3 text-sm">
                 <CompactAddress order={order} shop={shopPlace} />
                 <CourierLine order={order} />
-                <TripSlot order={order} />
+                {live ? <CourierAction order={order} actions={actions} /> : null}
             </div>
-            <OrderActions order={order} onChange={onChange} onStale={onStale} />
+        </div>
+    )
+}
+
+/** Who is on it, in a short card: one line (the open card has the phone and the notes). */
+function CourierShort({ order }: { order: OrderDTO }): React.JSX.Element | null {
+    const t = useT()
+    const who = order.waitingForNetwork
+        ? t.owner.networkSearching
+        : order.courierName
+          ? `${order.dispatcher ? t.owner.dispatcher : t.owner.courier}: ${order.courierName}`
+          : null
+    if (!who) {
+        return null
+    }
+    return (
+        <p className="mt-1 flex items-center gap-2 text-sm text-tg-subtitle">
+            <ScooterIcon size={16} className="shrink-0 text-brand" />
+            <span className="truncate">{who}</span>
+        </p>
+    )
+}
+
+/** A transfer order before the money: its badge says so already. */
+function awaitsTransfer(order: OrderDTO): boolean {
+    return (
+        order.status === OrderStatus.PENDING &&
+        order.payment.method !== "cash" &&
+        order.payment.status === PaymentStatus.UNPAID
+    )
+}
+
+/** «Batafsil» to open the card; a short card calls the customer, an open one cancels. */
+function CardFoot({
+    order,
+    open,
+    busy,
+    onToggle,
+    onCancel,
+}: {
+    order: OrderDTO
+    open: boolean
+    busy: boolean
+    onToggle(): void
+    onCancel(): void
+}): React.JSX.Element {
+    const t = useT()
+    const live = !isFinalStatus(order.status)
+    return (
+        <div className="mt-1 flex items-center justify-between gap-2">
+            <button
+                type="button"
+                aria-expanded={open}
+                onClick={(): void => {
+                    haptic.tap()
+                    onToggle()
+                }}
+                className="tap -ml-2 flex h-11 items-center gap-1 rounded-control px-2 text-sm font-semibold text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+            >
+                {open ? t.owner.detailsHide : t.owner.details}
+                <ChevronIcon
+                    size={16}
+                    className={cn(
+                        "transition-transform duration-200",
+                        open ? "-rotate-90" : "rotate-90",
+                    )}
+                />
+            </button>
+            {open && live ? (
+                <Button
+                    variant="quietDanger"
+                    className="-mr-2 whitespace-nowrap px-2"
+                    disabled={busy}
+                    onClick={onCancel}
+                >
+                    {t.owner.cancelOrder}
+                </Button>
+            ) : !open && order.customerPhone ? (
+                <a
+                    {...callLink(order.customerPhone)}
+                    aria-label={`${t.owner.call}: ${order.customerName}`}
+                    onClick={(): void => haptic.tap()}
+                    className="tap -mr-1 grid h-11 w-11 place-items-center rounded-full bg-tg-bg text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                >
+                    <PhoneIcon size={20} />
+                </a>
+            ) : null}
+        </div>
+    )
+}
+
+/**
+ * One order. Short by default (owner's decision, November 2026: a long list of open cards hid
+ * the queue): who, what, how much and the one next step; «Batafsil» opens the phone, the place,
+ * the courier and the cancel. An order with money to check opens by itself.
+ */
+function OrderCard({
+    order,
+    onChange,
+    onStale,
+    startOpen = false,
+}: CardProps & { startOpen?: boolean }): React.JSX.Element {
+    const t = useT()
+    const language = useLanguage()
+    const [open, setOpen] = useState(startOpen || needsCheck(order))
+    const actions = useCardActions({ order, onChange, onStale })
+    const live = !isFinalStatus(order.status)
+    return (
+        <li
+            className={cn(
+                "animate-rise rounded-tile bg-tg-secondary p-4",
+                needsCheck(order) && "ring-2 ring-warning/60",
+            )}
+            data-order-card={order.number}
+            data-needs-check={needsCheck(order) || undefined}
+        >
+            <CardHead order={order} />
+            {open ? <CardItems order={order} /> : <ItemsLine order={order} />}
+            <p className="mt-1.5 flex justify-between font-semibold">
+                <span>{t.cart.total}</span>
+                <span className="tabular-nums">{formatMoney(order.total, language)}</span>
+            </p>
+            {/* Not yet transferred: the badge already says it, once is enough. Cash says so. */}
+            {awaitsTransfer(order) ? null : <PaymentLine order={order} forOwner className="mt-1" />}
+            {open ? (
+                <CardDetails order={order} actions={actions} />
+            ) : (
+                <CourierShort order={order} />
+            )}
+            {/* «Shu yo'nalishda yana N ta» stays in sight: it is how trips are found. */}
+            <TripSlot order={order} />
+            {live ? (
+                <div className="mt-3 flex flex-col">
+                    <MainStep
+                        order={order}
+                        step={actions.step}
+                        busy={actions.busy}
+                        alone={actions.alone}
+                        onStep={(to): void =>
+                            void actions.act(() => api.owner.setStatus(order.id, to))
+                        }
+                        onSheet={actions.open}
+                        onSelf={(): void =>
+                            void actions.act(() => api.owner.deliverMyself(order.id))
+                        }
+                    />
+                </div>
+            ) : null}
+            <CardFoot
+                order={order}
+                open={open}
+                busy={actions.busy}
+                onToggle={(): void => setOpen(!open)}
+                onCancel={(): void => actions.open("cancel")}
+            />
+            {actions.sheets}
         </li>
     )
 }
@@ -716,6 +907,7 @@ function FocusedOrder({
             </div>
             <ul className="rounded-tile ring-2 ring-brand">
                 <OrderCard
+                    startOpen
                     order={order}
                     onChange={change}
                     onStale={(): void =>
@@ -778,7 +970,14 @@ function ownerQueue(
         )
 }
 
-function ToCheckBanner({ count }: { count: number }): React.JSX.Element | null {
+function ToCheckBanner({
+    count,
+    onShow,
+}: {
+    count: number
+    /** Before the scroll: a stage chip must not hide the order to check. */
+    onShow(): void
+}): React.JSX.Element | null {
     const t = useT()
     if (count === 0) {
         return null
@@ -789,9 +988,12 @@ function ToCheckBanner({ count }: { count: number }): React.JSX.Element | null {
             type="button"
             onClick={(): void => {
                 haptic.tap()
-                document
-                    .querySelector("[data-needs-check]")
-                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                onShow()
+                requestAnimationFrame(() =>
+                    document
+                        .querySelector("[data-needs-check]")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" }),
+                )
             }}
             className="tap flex animate-rise items-center gap-2 rounded-control bg-warning/15 px-4 py-3 text-left font-semibold"
         >
@@ -837,12 +1039,154 @@ function useOrdersView(
     return { list, orders, toCheck, focused, replace, replaceMany }
 }
 
+type StageFilter = OrderStage | "all"
+
+/** «Hammasi · Yangi · Yig'ilmoqda · Tayyor · Yo'lda» with counts, when the queue spans stages. */
+function StageChips({
+    orders,
+    value,
+    onChange,
+}: {
+    orders: readonly OrderDTO[]
+    value: StageFilter
+    onChange(value: StageFilter): void
+}): React.JSX.Element | null {
+    const t = useT()
+    const counts = stageCounts(orders)
+    const stages = shownStages(counts)
+    if (stages.length === 0) {
+        return null
+    }
+    // The badge's own words: the chip and the card say the same.
+    const names: Record<OrderStage, string> = {
+        new: t.owner.newBadge,
+        work: t.order.steps.preparing,
+        ready: t.order.steps.ready,
+        road: t.order.steps.picked_up,
+    }
+    return (
+        <FilterChips<StageFilter>
+            label={t.owner.stagesLabel}
+            value={value}
+            onChange={onChange}
+            options={[
+                { value: "all", label: t.shop.all, count: orders.length },
+                ...stages.map((stage) => ({
+                    value: stage,
+                    label: names[stage],
+                    count: counts[stage],
+                })),
+            ]}
+        />
+    )
+}
+
+/** The cards of one list, in the queue order, after the stage chip. */
+function OrderList({
+    filter,
+    orders,
+    list,
+    onChange,
+    onMany,
+    onStale,
+}: {
+    filter: Filter
+    orders: OrderDTO[]
+    list: PagedList<OrderDTO>
+    onChange(order: OrderDTO): void
+    onMany(changed: OrderDTO[]): void
+    onStale(): void
+}): React.JSX.Element {
+    const shopPlace = useSession((state) => state.shop?.location)
+    return (
+        <TripScope
+            orders={filter === "active" ? list.items : null}
+            shop={shopPlace}
+            onChange={onMany}
+        >
+            <ul className="flex flex-col gap-3">
+                {orders.map((order) => (
+                    <OrderCard
+                        key={order.id}
+                        order={order}
+                        // One order on the screen: nothing to scan, it opens at once.
+                        startOpen={orders.length === 1}
+                        onChange={onChange}
+                        onStale={onStale}
+                    />
+                ))}
+            </ul>
+            <LoadMore list={list} />
+        </TripScope>
+    )
+}
+
+/** The list, or why there is none: a failed load, the first load, nothing yet. */
+function ListBody({
+    filter,
+    shown,
+    list,
+    onChange,
+    onMany,
+    onStale,
+}: {
+    filter: Filter
+    shown: OrderDTO[] | null
+    list: PagedList<OrderDTO>
+    onChange(order: OrderDTO): void
+    onMany(changed: OrderDTO[]): void
+    onStale(): void
+}): React.JSX.Element {
+    const t = useT()
+    if (list.error && shown === null) {
+        return (
+            <EmptyState
+                art={<WifiOffIcon size={44} />}
+                title={errorText(t, list.error)}
+                action={
+                    <Button variant="secondary" onClick={onStale}>
+                        {t.common.retry}
+                    </Button>
+                }
+            />
+        )
+    }
+    if (shown === null) {
+        return (
+            <div className="flex flex-col gap-3">
+                {[0, 1].map((i) => (
+                    <Skeleton key={i} className="h-40 rounded-tile" />
+                ))}
+            </div>
+        )
+    }
+    if (shown.length === 0) {
+        return (
+            <EmptyState
+                art={<ReceiptIcon size={44} />}
+                title={filter === "active" ? t.owner.noActive : t.owner.noDone}
+                text={filter === "active" ? t.owner.noActiveText : undefined}
+            />
+        )
+    }
+    return (
+        <OrderList
+            filter={filter}
+            orders={shown}
+            list={list}
+            onChange={onChange}
+            onMany={onMany}
+            onStale={onStale}
+        />
+    )
+}
+
 export function OrdersTab(): React.JSX.Element {
     const t = useT()
     const [filter, setFilter] = useState<Filter>("active")
+    const [stage, setStage] = useState<StageFilter>("all")
     const focusId = useOwner((state) => state.focusOrderId)
     const { list, orders, toCheck, focused, replace, replaceMany } = useOrdersView(filter, focusId)
-    const shopPlace = useSession((state) => state.shop?.location)
     const refresh = (): void => void list.reload()
     // Orders waiting: «Ishga tayyor» folds into one line so the orders come first.
     const setActiveOrders = useOwner((state) => state.setActiveOrders)
@@ -860,57 +1204,10 @@ export function OrdersTab(): React.JSX.Element {
             setActiveOrders(activeCount)
         }
     }, [activeCount, setActiveOrders])
-
-    let body: React.JSX.Element
-    if (list.error && orders === null) {
-        body = (
-            <EmptyState
-                art={<WifiOffIcon size={44} />}
-                title={errorText(t, list.error)}
-                action={
-                    <Button variant="secondary" onClick={refresh}>
-                        {t.common.retry}
-                    </Button>
-                }
-            />
-        )
-    } else if (orders === null) {
-        body = (
-            <div className="flex flex-col gap-3">
-                {[0, 1].map((i) => (
-                    <Skeleton key={i} className="h-64 rounded-tile" />
-                ))}
-            </div>
-        )
-    } else if (orders.length === 0) {
-        body = (
-            <EmptyState
-                art={<ReceiptIcon size={44} />}
-                title={filter === "active" ? t.owner.noActive : t.owner.noDone}
-                text={filter === "active" ? t.owner.noActiveText : undefined}
-            />
-        )
-    } else {
-        body = (
-            <TripScope
-                orders={filter === "active" ? list.items : null}
-                shop={shopPlace}
-                onChange={replaceMany}
-            >
-                <ul className="flex flex-col gap-3">
-                    {orders.map((order) => (
-                        <OrderCard
-                            key={order.id}
-                            order={order}
-                            onChange={replace}
-                            onStale={refresh}
-                        />
-                    ))}
-                </ul>
-                <LoadMore list={list} />
-            </TripScope>
-        )
-    }
+    // A stage that emptied (its last order moved on) falls back to all of them.
+    const staged =
+        filter === "active" && stage !== "all" && orders?.some((o) => stageOf(o) === stage)
+    const shown = staged && orders ? orders.filter((o) => stageOf(o) === stage) : orders
 
     return (
         <section className="flex flex-col gap-4 px-4 pt-2">
@@ -925,8 +1222,26 @@ export function OrdersTab(): React.JSX.Element {
                     { value: "done", label: t.owner.done },
                 ]}
             />
-            {filter === "active" ? <ToCheckBanner count={toCheck} /> : null}
-            {body}
+            {filter === "active" ? (
+                <>
+                    <ToCheckBanner count={toCheck} onShow={(): void => setStage("all")} />
+                    {orders ? (
+                        <StageChips
+                            orders={orders}
+                            value={staged ? stage : "all"}
+                            onChange={setStage}
+                        />
+                    ) : null}
+                </>
+            ) : null}
+            <ListBody
+                filter={filter}
+                shown={shown}
+                list={list}
+                onChange={replace}
+                onMany={replaceMany}
+                onStale={refresh}
+            />
             <BottomSpacer />
         </section>
     )

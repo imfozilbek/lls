@@ -294,7 +294,7 @@ function LogoPicker({
                 className="h-16 w-16 rounded-[1.25rem] text-2xl"
             />
             <Button variant="secondary" loading={busy} onClick={(): void => input.current?.click()}>
-                {t.owner.settings.logo}
+                {shop.logoKey ? t.owner.settings.logoChange : t.owner.settings.logoAdd}
             </Button>
             <input
                 ref={input}
@@ -410,18 +410,6 @@ function DeliveryFields({
     const s = useT().owner.settings
     return (
         <Section id={sectionId("delivery")}>
-            {/* Owner's decision, November 2026: a taxi or the post, paid by the customer. */}
-            <div className="flex items-center gap-3">
-                <div className="flex-1">
-                    <p className="font-semibold">{s.customerPaysCarrier}</p>
-                    <p className="text-sm text-tg-subtitle">{s.customerPaysCarrierHint}</p>
-                </div>
-                <Switch
-                    checked={form.customerPaysCarrier}
-                    onChange={(customerPaysCarrier): void => patch({ customerPaysCarrier })}
-                    label={s.customerPaysCarrier}
-                />
-            </div>
             {form.customerPaysCarrier ? null : (
                 <>
                     <Field label={s.fee} htmlFor="fee">
@@ -463,6 +451,19 @@ function DeliveryFields({
                     }}
                 />
             </Field>
+            {/* Owner's decision, November 2026: a taxi or the post, paid by the customer. The
+                rare case comes after the usual price, not before it. */}
+            <div className="flex items-center gap-3">
+                <div className="flex-1">
+                    <p className="font-semibold">{s.customerPaysCarrier}</p>
+                    <p className="text-sm text-tg-subtitle">{s.customerPaysCarrierHint}</p>
+                </div>
+                <Switch
+                    checked={form.customerPaysCarrier}
+                    onChange={(customerPaysCarrier): void => patch({ customerPaysCarrier })}
+                    label={s.customerPaysCarrier}
+                />
+            </div>
         </Section>
     )
 }
@@ -596,8 +597,13 @@ function FeatureFields({
         <Section>
             <div className="flex flex-col divide-y divide-tg-separator rounded-tile bg-tg-secondary px-4">
                 {FEATURES.map((feature) => (
-                    <label key={feature} className="flex min-h-[52px] items-center gap-3 py-2">
-                        <span className="flex-1 font-medium">{s.featureNames[feature]}</span>
+                    <label key={feature} className="flex min-h-[52px] items-center gap-3 py-3">
+                        <span className="flex-1">
+                            <span className="block font-medium">{s.featureNames[feature]}</span>
+                            <span className="block text-sm text-tg-subtitle">
+                                {s.featureHints[feature]}
+                            </span>
+                        </span>
                         <Switch
                             checked={form.features.includes(feature)}
                             onChange={(on): void => toggle(feature, on)}
