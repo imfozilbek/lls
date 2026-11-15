@@ -518,8 +518,8 @@ test("hours per day: Monday off, Tuesday 9–18, then Monday's hours for every d
     }
     await page.getByRole("switch", { name: "Du", exact: true }).click()
     await expect(page.getByText("Dam olish")).toBeVisible()
-    await page.getByLabel("Se · Ochiladi").fill("09:00")
-    await page.getByLabel("Se · Yopiladi").fill("18:00")
+    await page.getByLabel("Se · Ochiladi").selectOption("09:00")
+    await page.getByLabel("Se · Yopiladi").selectOption("18:00")
     await bottomButton(page).click()
     await expect(page.getByText("Saqlandi")).toBeVisible()
 
@@ -531,8 +531,8 @@ test("hours per day: Monday off, Tuesday 9–18, then Monday's hours for every d
 
     // Back to every day, Monday 08:00–23:00 copied to the rest.
     await page.getByRole("switch", { name: "Du", exact: true }).click()
-    await page.getByLabel("Du · Ochiladi").fill("08:00")
-    await page.getByLabel("Du · Yopiladi").fill("23:00")
+    await page.getByLabel("Du · Ochiladi").selectOption("08:00")
+    await page.getByLabel("Du · Yopiladi").selectOption("23:00")
     await page.getByRole("button", { name: "Hamma kunlarga dushanbadagidek" }).click()
     await bottomButton(page).click()
     await expect(page.getByText("Saqlandi")).toBeVisible()

@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
 import { drag, pullDown, swipeLeft, swipeRight } from "../support/touch.js"
-import { bottomButton, fillAddress, openApp, toCart } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, openOrderCard, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -147,7 +147,9 @@ test("cancelling asks in Uzbek with a red button; a swipe right closes a sheet",
 
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
-    const card = page.getByRole("listitem").filter({ hasText: "Buyurtma #" }).first()
+    // Any active order of the shop (the customer's own was just cancelled): its card, opened.
+    const first = page.locator("[data-order-card]").first()
+    const card = await openOrderCard(page, Number(await first.getAttribute("data-order-card")))
     await card.getByRole("button", { name: "Bekor qilish" }).first().click()
     await expect(page.getByRole("dialog")).toBeVisible()
     await swipeRight(page)

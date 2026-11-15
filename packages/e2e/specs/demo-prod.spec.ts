@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import { lastSeq, waitForMessage } from "../support/telegram.js"
-import { openApp } from "../support/webapp.js"
+import { openApp, openPlatformShop } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -17,7 +17,8 @@ test.beforeAll(resetStand)
 async function shopCard(page: Page): Promise<ReturnType<Page["getByRole"]>> {
     await openApp(page, { user: PEOPLE.admin, adminBot: true })
     await page.getByRole("tab", { name: "Bizneslar" }).click()
-    return page.getByRole("listitem").filter({ hasText: "Osh Markaz" })
+    // A short row by default: a tap opens the showcase and the actions.
+    return openPlatformShop(page, "Osh Markaz")
 }
 
 async function showcaseNames(): Promise<string[]> {

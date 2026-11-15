@@ -101,20 +101,21 @@ test("catalog: edit price, take off for today, hide, show again, delete", async 
             (r) => r.url().includes("/owner/products/") && r.request().method() === "PATCH",
         )
     const onSale = page.getByRole("switch", { name: "Sotuvda bor: Manti" })
-    // One tap: off for today, and it says so.
-    await Promise.all([saved(), onSale.click()])
-    await expect(page.getByText("Bugun yo'q")).toBeVisible()
+    // One labelled switch: off asks «only today or for good». Today says so.
+    await onSale.click()
+    await Promise.all([saved(), page.getByRole("button", { name: "Faqat bugunga" }).click()])
+    await expect(page.getByText("Bugun yo'q").first()).toBeVisible()
     await expect(page.getByText("Manti bugunga sotuvdan olindi")).toBeVisible()
     await Promise.all([saved(), onSale.click()])
     await expect(onSale).toHaveAttribute("aria-checked", "true")
-    // For good: from «⋯». The sheet sits at the bottom of the screen, over everything.
-    await page.getByRole("button", { name: "Sotuvdan olish: Manti" }).click()
+    // For good: the same switch, the other answer. The sheet sits at the bottom, over everything.
+    await onSale.click()
     const sheet = page.getByRole("dialog")
     const box = await sheet.getByRole("heading", { name: "Sotuvdan olish" }).boundingBox()
     const height = page.viewportSize()?.height ?? 0
     expect(box?.y ?? 0).toBeGreaterThan(height / 2)
     await Promise.all([saved(), page.getByRole("button", { name: "Butunlay yashirish" }).click()])
-    await expect(page.getByText("Yashirilgan")).toBeVisible()
+    await expect(page.getByText("Yashirilgan").first()).toBeVisible()
 
     const catalog = (await (
         await apiAs(PEOPLE.customer, "/shop/products", { shop: FOOD })
@@ -150,7 +151,7 @@ test("settings: name, color, delivery and features reach the storefront", async 
     await openSettings(page, "Havola, QR-kod va vitrina")
     await expect(
         page.getByText(
-            "Do'koningiz Zumda botidagi qidiruvda. Vitrina orqali sotuvdan komissiya: 5%.",
+            "Do'koningiz Zumda Shop qidiruvida bor. Vitrina orqali sotilgan tovarlardan komissiya: 5%.",
         ),
     ).toBeVisible()
     await expect(page.getByText("https://t.me/osh_markaz_dev_bot")).toBeVisible()
@@ -190,7 +191,7 @@ test("settings: name, color, delivery and features reach the storefront", async 
 
     // A switch is saved as it is flipped: no «Saqlash» to forget.
     await openGroup(page, "Do'kon imkoniyatlari")
-    await page.getByRole("switch", { name: "«Takrorlash» tugmasi" }).click()
+    await page.getByRole("switch", { name: "Qayta buyurtma" }).click()
     await expect(page.getByText("Saqlandi").first()).toBeVisible()
     await expect(bottomButton(page)).toBeHidden()
 
