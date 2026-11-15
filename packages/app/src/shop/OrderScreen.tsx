@@ -578,9 +578,14 @@ function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
             {order.courierName && !isFinalStatus(order.status) ? (
                 <p className="flex items-center gap-2 rounded-control bg-brand/10 px-4 py-3 font-medium">
                     <ScooterIcon size={20} className="text-brand" />
-                    {fill(order.dispatcher ? words.dispatcher : t.order.courier, {
-                        name: order.courierName,
-                    })}
+                    {fill(
+                        order.dispatcher
+                            ? words.dispatcher
+                            : order.status === OrderStatus.PICKED_UP
+                              ? t.order.courier
+                              : t.order.courierAssigned,
+                        { name: order.courierName },
+                    )}
                 </p>
             ) : null}
             {/* How the dispatcher sent it and every note, like a parcel's tracking. */}

@@ -190,7 +190,7 @@ test("settings: name, color, delivery and features reach the storefront", async 
 
     // A switch is saved as it is flipped: no «Saqlash» to forget.
     await openGroup(page, "Do'kon imkoniyatlari")
-    await page.getByRole("switch", { name: "Buyurtmani takrorlash" }).click()
+    await page.getByRole("switch", { name: "«Takrorlash» tugmasi" }).click()
     await expect(page.getByText("Saqlandi").first()).toBeVisible()
     await expect(bottomButton(page)).toBeHidden()
 

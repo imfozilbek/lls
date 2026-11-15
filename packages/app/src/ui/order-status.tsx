@@ -60,7 +60,14 @@ export function toneOf(status: OrderStatus): { tint: string; icon: string } {
     return { tint: "bg-warning/15", icon: "text-warning" }
 }
 
-export function StatusBadge({ status }: { status: OrderStatus }): React.JSX.Element {
+export function StatusBadge({
+    status,
+    label,
+}: {
+    status: OrderStatus
+    /** Another word for the same step (the owner's «Yangi»). */
+    label?: string
+}): React.JSX.Element {
     const t = useT()
     const icon = useIcon()
     return (
@@ -71,7 +78,7 @@ export function StatusBadge({ status }: { status: OrderStatus }): React.JSX.Elem
             )}
         >
             <span className={toneOf(status).icon}>{icon(status, 14)}</span>
-            {t.order.steps[status]}
+            {label ?? t.order.steps[status]}
         </span>
     )
 }
@@ -90,14 +97,25 @@ export function OrderBadge({
     const t = useT()
     const payment = order.payment.status
     // A cash order is paid at the door: nothing about money while it waits for the shop.
-    if (
-        order.status !== OrderStatus.PENDING ||
-        payment === PaymentStatus.PAID ||
-        order.payment.method === "cash"
-    ) {
-        return <StatusBadge status={order.status} />
+    const moneyAside = payment === PaymentStatus.PAID || order.payment.method === "cash"
+    if (order.status !== OrderStatus.PENDING || moneyAside) {
+        // «Yuborildi» is the customer's word: for the shop it is a new order to take.
+        const fresh = forOwner && order.status === OrderStatus.PENDING
+        return <StatusBadge status={order.status} label={fresh ? t.owner.newBadge : undefined} />
     }
-    const awaiting = payment === PaymentStatus.AWAITING
+    return <MoneyBadge awaiting={payment === PaymentStatus.AWAITING} forOwner={forOwner} />
+}
+
+/** A transfer order before the shop starts: waiting for the money, or the money to check. */
+function MoneyBadge({
+    awaiting,
+    forOwner,
+}: {
+    awaiting: boolean
+    forOwner: boolean
+}): React.JSX.Element {
+    const t = useT()
+    const check = awaiting && forOwner
     const label = awaiting
         ? forOwner
             ? t.owner.checkBadge
@@ -107,11 +125,11 @@ export function OrderBadge({
         <span
             className={cn(
                 "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold text-tg-text",
-                awaiting && forOwner ? "bg-warning/20" : "bg-tg-hint/15",
+                check ? "bg-warning/20" : "bg-tg-hint/15",
             )}
         >
-            <span className={awaiting && forOwner ? "text-warning" : "text-tg-subtitle"}>
-                {awaiting && forOwner ? <AlertIcon size={14} /> : <CardIcon size={14} />}
+            <span className={check ? "text-warning" : "text-tg-subtitle"}>
+                {check ? <AlertIcon size={14} /> : <CardIcon size={14} />}
             </span>
             {label}
         </span>

@@ -294,7 +294,7 @@ function LogoPicker({
                 className="h-16 w-16 rounded-[1.25rem] text-2xl"
             />
             <Button variant="secondary" loading={busy} onClick={(): void => input.current?.click()}>
-                {t.owner.settings.logo}
+                {shop.logoKey ? t.owner.settings.logoChange : t.owner.settings.logoAdd}
             </Button>
             <input
                 ref={input}
@@ -596,8 +596,13 @@ function FeatureFields({
         <Section>
             <div className="flex flex-col divide-y divide-tg-separator rounded-tile bg-tg-secondary px-4">
                 {FEATURES.map((feature) => (
-                    <label key={feature} className="flex min-h-[52px] items-center gap-3 py-2">
-                        <span className="flex-1 font-medium">{s.featureNames[feature]}</span>
+                    <label key={feature} className="flex min-h-[52px] items-center gap-3 py-3">
+                        <span className="flex-1">
+                            <span className="block font-medium">{s.featureNames[feature]}</span>
+                            <span className="block text-sm text-tg-subtitle">
+                                {s.featureHints[feature]}
+                            </span>
+                        </span>
                         <Switch
                             checked={form.features.includes(feature)}
                             onChange={(on): void => toggle(feature, on)}

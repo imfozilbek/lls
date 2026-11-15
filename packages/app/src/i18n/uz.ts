@@ -456,6 +456,8 @@ export const uz = {
         items: "Tarkibi",
         address: "Manzil",
         courier: "{name} olib kelmoqda",
+        /** A courier is on the order, but it has not left the shop yet. */
+        courierAssigned: "Kuryer: {name}",
         callCourier: "Kuryerga qo'ng'iroq",
         bottlesBack: "Qaytariladigan bo'sh idish: {n} ta",
         reorder: "Takrorlash",

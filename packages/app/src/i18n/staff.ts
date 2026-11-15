@@ -82,6 +82,8 @@ export const staffUz = {
     },
     owner: {
         demoBadge: "Namuna",
+        /** The badge of an order that waits for the owner (a cash order needs no money first). */
+        newBadge: "Yangi",
         ready: {
             title: "Ishga tayyor",
             progress: "{done}/{all}",
@@ -316,7 +318,7 @@ export const staffUz = {
             refunded: "Qaytardim",
             refundConfirm:
                 "#{n} buyurtma uchun {sum} mijozga qaytarildimi? Buni ortga qaytarib bo'lmaydi.",
-            export: "Excel uchun hisobot",
+            export: "Hisobotni chatga yuborish (Excel)",
             exportSent: "Hisobot bot bilan chatga yuborildi",
             exportSentBusiness:
                 "Botingiz sizga yoza olmadi: hisobot Zumda Business'ga yuborildi. Botingizni oching va Start bosing.",
@@ -346,6 +348,8 @@ export const staffUz = {
             shop: "Do'kon",
             name: "Nomi",
             logo: "Logotip",
+            logoAdd: "Logotip qo'shish",
+            logoChange: "Logotipni almashtirish",
             botPhotoHint: "Bot rasmi avtomatik: logotip (yoki nom) va Zumda belgisi.",
             color: "Rang",
             accepting: "Buyurtma qabul qilish",
@@ -409,11 +413,11 @@ export const staffUz = {
             networkTitle: "Tuman tarmog'i",
             networkSwitch: "Kuryerlarim band bo'lsa, tuman tarmog'iga berish",
             networkHint:
-                "Buyurtmani tumanning bo'sh kuryeri oladi: u mijoz manzilini ko'radi va buyurtma pulini sizga topshiradi.",
+                "Buyurtmani tumanning bo'sh kuryeri olib boradi. Unga faqat oldindan to'langan buyurtma beriladi: kuryer pul olmaydi.",
             notInDistrict:
                 "Do'koningiz hali Zumda tarmog'i tumanlaridan tashqarida: do'kon joylashuvini kiriting.",
             couriersHint:
-                "Kuryer Zumda kuryer botida ishlaydi: buyurtmani oladi va «Oldim», «Yetkazdim» tugmalarini bosadi.",
+                "Kuryer Zumda | Kuryer botida ishlaydi: buyurtmani oladi va «Buyurtmani oldim», «Yetkazdim» tugmalarini bosadi.",
             pendingTitle: "Tasdiqlashni kutmoqda",
             approve: "Tasdiqlash",
             decline: "Rad etish",
@@ -434,10 +438,17 @@ export const staffUz = {
             removeCourier: "Kuryerni o'chirasizmi?",
             features: "Do'kon imkoniyatlari",
             featureNames: {
-                reorder: "Buyurtmani takrorlash",
+                reorder: "«Takrorlash» tugmasi",
                 bottleDeposit: "Idish qaytarish va garov",
                 weightItems: "Tortib sotish (kg)",
-                stopList: "Bugungi to'xtatish ro'yxati",
+                stopList: "«Bugun yo'q» belgisi",
+            },
+            /** What each switch does, one line under its name. */
+            featureHints: {
+                reorder: "Mijoz oldingi buyurtmasini bir bosishda qayta beradi",
+                bottleDeposit: "Mijoz bo'sh idishni qaytaradi, qaytarmasa garov to'laydi",
+                weightItems: "Mahsulotni kilogramm yoki gramm bilan sotasiz",
+                stopList: "Tugagan mahsulotni bugunga olib qo'yasiz, ertaga o'zi qaytadi",
             },
             bottleDeposit: "Bitta idish garovi",
             link: "Do'kon havolasi",

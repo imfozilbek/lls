@@ -354,7 +354,7 @@ test("the day adds up to the sum; the CSV report arrives in the owner's chat", a
     // A card shop: no cash line, no couriers' cash.
     await expect(page.getByText(/Naqd/)).toHaveCount(0)
     await page.getByRole("tab", { name: "Shu oy" }).click()
-    await page.getByRole("button", { name: "Excel uchun hisobot" }).click()
+    await page.getByRole("button", { name: "Hisobotni chatga yuborish (Excel)" }).click()
     await expect(page.getByText("Hisobot bot bilan chatga yuborildi")).toBeVisible()
     const [csv] = await documentsTo(PEOPLE.foodOwner.id, since)
     expect(csv?.name).toMatch(/^osh-markaz-dev-.+\.csv$/)
