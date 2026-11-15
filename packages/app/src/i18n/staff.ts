@@ -86,6 +86,8 @@ export const staffUz = {
         demoBadge: "Namuna",
         /** The badge of an order that waits for the owner (a cash order needs no money first). */
         newBadge: "Yangi",
+        /** Accepted, not started: the badge and the chip (owner's decision, November 2026). */
+        queueBadge: "Yig'ish kerak",
         ready: {
             title: "Ishga tayyor",
             progress: "{done}/{all}",
@@ -568,6 +570,8 @@ export const staffUz = {
         pickedUp: "Buyurtmani oldim",
         delivered: "Yetkazdim",
         waitReady: "Buyurtma tayyorlanmoqda, tayyor bo'lganda xabar keladi",
+        /** The shop took the order and has not started it yet. */
+        waitAccepted: "Buyurtma qabul qilindi, tayyor bo'lganda xabar keladi",
         nothingToCollect: "Oldindan to'langan, pul olmang",
         callCustomer: "Mijozga qo'ng'iroq",
         callShop: "Do'konga qo'ng'iroq",

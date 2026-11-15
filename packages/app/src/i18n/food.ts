@@ -33,6 +33,7 @@ export const FOOD_STAFF = (base: StaffDictionary): Overrides<StaffDictionary> =>
         ...base.owner,
         tabs: { ...base.owner.tabs, menu: "Menyu" },
         actions: { ...base.owner.actions, preparing: "Tayyorlashni boshlash" },
+        queueBadge: "Tayyorlash kerak",
         menuEmpty: "Menyu bo'sh",
         menuEmptyText: "Birinchi taomni qo'shing: mijozlar uni darhol ko'radi.",
     },
