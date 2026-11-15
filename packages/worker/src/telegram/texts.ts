@@ -183,6 +183,8 @@ const BASE = {
         },
         callbackDone: "Tayyor",
         callbackOutdated: "Holat allaqachon o'zgargan",
+        /** «Pul keldi» before the customer's screenshot (owner's decision, November 2026). */
+        callbackNoReceipt: "Avval mijoz chekni yuklashi kerak. Shundan keyin pulni tekshirasiz.",
         callbackForbidden: "Bu amal siz uchun emas",
         courierBotWelcome:
             "<b>Zumda kuryer boti.</b>\n\nTumandagi do'kon, oshxona va xizmatlar buyurtmalari shu yerga keladi. Ishni boshlash uchun biznes egasidan taklif havolasini so'rang.",
@@ -267,7 +269,7 @@ const BASE = {
         chooseCourier: "🛵 Kuryerga topshirish",
         deliverMyself: "🙋 O'zim yetkazaman",
         payment: {
-            unpaid: "💳 Kartaga o'tkazma kutilmoqda",
+            unpaid: "💳 Kartaga o'tkazma va chek kutilmoqda",
             sent: "💳 Mijoz o'tkazdim dedi, kartani tekshiring",
             paid: "✅ O'tkazma bilan to'langan",
             refundDue: "↩️ Mijozga qaytarish kerak",
@@ -290,7 +292,6 @@ const BASE = {
         customerRejected: "⚠️ Bu mijozning {count} ta o'tkazmasi avval topilmagan.",
         confirmPaidQuestion:
             "💳 #{n}: {sum} {card} kartangizga keldimi?\nBank ilovangizda tekshirib, javob bering.",
-        confirmPaidNoReceipt: "⚠️ Mijoz o'tkazganini hali bildirmagan.",
         transferReminder: "⏰ #{n}: mijoz o'tkazmani tekshirishingizni kutmoqda.",
         confirmPaidYes: "✅ Ha, {sum} keldi",
         confirmPaidNo: "Yo'q, kelmadi",
@@ -298,7 +299,7 @@ const BASE = {
             "Do'kon #{n} buyurtma uchun pulni topmadi. Kartangizdan o'tganini tekshiring va chekni qayta yuboring.",
         transferRejectedOwner: "#{n}: «Pul kelmadi» belgilandi. Mijozdan chekni qayta so'radik.",
         payByTransfer:
-            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n{system}<code>{card}</code> ({holder})\nSo'ng ilovada «O'tkazdim» ni bosing. Pul kelishi bilan do'kon boshlaydi.",
+            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n{system}<code>{card}</code> ({holder})\nKeyin ilovada chekni yuklang va «O'tkazdim» ni bosing. Pul kelishi bilan do'kon boshlaydi.",
         /** A card's system before its number; Zumda does not know every card (then nothing). */
         cardSystems: {
             humo: "Humo",

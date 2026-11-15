@@ -185,6 +185,11 @@ describe("money: transfer before the shop starts, report, files", () => {
         expect(toPay?.html).toContain("Visa <code>4111 1111 1111 1111</code>")
         expect(toPay?.html).toContain("80 000")
 
+        // «Pul keldi» waits for the customer's screenshot (owner's decision, November 2026).
+        const early = await payment(order.id, "paid")
+        expect(early.status).toBe(422)
+        expect(await json(early)).toMatchObject({ error: { code: "RECEIPT_NOT_SENT" } })
+
         // Only the customer of the order says it is sent.
         expect((await transferSent(order.id, OWNER)).status).toBe(403)
         const sent = await transferSent(order.id)

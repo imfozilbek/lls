@@ -1,4 +1,10 @@
-import { ForbiddenError, OrderStatus, languageFromTelegram } from "@zumda/core"
+import {
+    BusinessRuleViolationError,
+    ForbiddenError,
+    OrderStatus,
+    PaymentStatus,
+    languageFromTelegram,
+} from "@zumda/core"
 import { Hono } from "hono"
 
 import { timingSafeEqual } from "../crypto.js"
@@ -185,6 +191,10 @@ async function askPaymentConfirm(
             businessId: business.id,
             orderId,
         })
+        // An old card's «Pul keldi» before the screenshot: the customer acts first.
+        if (order.payment.status === PaymentStatus.UNPAID) {
+            throw BusinessRuleViolationError.receiptNotSent()
+        }
         await new Notifier(services).askPaymentConfirm(business, order)
     } catch (error) {
         await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, texts))
