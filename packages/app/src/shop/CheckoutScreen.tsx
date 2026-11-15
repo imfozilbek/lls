@@ -807,6 +807,23 @@ export function CheckoutScreen(): React.JSX.Element {
     return (
         <main className="flex flex-col gap-6 px-4 pt-4">
             <CartLines cart={cart} rules={rules} shop={shop} />
+            {/* The sum right under the lines (owner's decision, November 2026): it was under the
+                comment, far from what it adds up. */}
+            <Totals
+                rows={[
+                    [t.cart.subtotal, cart.subtotal],
+                    [t.cart.delivery, deliveryValue(shop, fee, t, language)],
+                    ...(bottles.deposit > 0
+                        ? [[t.cart.deposit, bottles.deposit] as [string, number]]
+                        : []),
+                    [t.cart.total, total, true],
+                ]}
+            />
+            {shop?.delivery.customerPaysCarrier ? (
+                <p className="-mt-2 px-1 text-sm text-tg-hint">
+                    {deliveryWords(language).apartHint}
+                </p>
+            ) : null}
             {cart.count > 0 && (!shop || takesOrdersNow(shop)) ? (
                 <OrderDetails
                     delivery={delivery}
@@ -822,21 +839,6 @@ export function CheckoutScreen(): React.JSX.Element {
                         value: bottles.bottlesReturned,
                     }}
                 />
-            ) : null}
-            <Totals
-                rows={[
-                    [t.cart.subtotal, cart.subtotal],
-                    [t.cart.delivery, deliveryValue(shop, fee, t, language)],
-                    ...(bottles.deposit > 0
-                        ? [[t.cart.deposit, bottles.deposit] as [string, number]]
-                        : []),
-                    [t.cart.total, total, true],
-                ]}
-            />
-            {shop?.delivery.customerPaysCarrier ? (
-                <p className="-mt-2 px-1 text-sm text-tg-hint">
-                    {deliveryWords(language).apartHint}
-                </p>
             ) : null}
             <BottomSpacer />
         </main>

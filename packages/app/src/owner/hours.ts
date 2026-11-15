@@ -56,3 +56,17 @@ export function sameAsMonday(hours: Hours): Hours {
 export function hasOpenDay(hours: Hours): boolean {
     return hours.alwaysOpen || hours.days.some((day) => day.open)
 }
+
+const STEP_MINUTES = 15
+const DAY_MINUTES = 24 * 60
+
+/** «00:00», «00:15» … «23:45», and the shop's own time when it is off the grid («09:10»). */
+export function timeChoices(current: string): string[] {
+    const grid = Array.from({ length: DAY_MINUTES / STEP_MINUTES }, (_, i) => {
+        const minutes = i * STEP_MINUTES
+        const h = String(Math.floor(minutes / 60)).padStart(2, "0")
+        const m = String(minutes % 60).padStart(2, "0")
+        return `${h}:${m}`
+    })
+    return grid.includes(current) ? grid : [...grid, current].sort()
+}

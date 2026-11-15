@@ -25,12 +25,12 @@ function onSaleCount(order: OrderDTO, catalog: readonly ProductDTO[]): number {
  * "Order again": the same items at today's prices go to the cart; missing ones are skipped
  * with a note. `null` when the shop has no reorder or the order is still running.
  */
-export function useReorder(order: OrderDTO): (() => void) | null {
+export function useReorder(order: OrderDTO | null): (() => void) | null {
     const t = useT()
     const reset = useRouter((state) => state.reset)
     const catalog = useSession((state) => state.catalog)
     const enabled = useSession((state) => state.shop?.features.includes(Feature.REORDER) ?? false)
-    if (!enabled || !isFinalStatus(order.status)) {
+    if (!order || !enabled || !isFinalStatus(order.status)) {
         return null
     }
     return (): void => {

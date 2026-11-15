@@ -125,37 +125,39 @@ function CardRow({
             )}
         >
             <div className="flex items-start gap-3">
-                <span className={isPayment ? "text-brand" : "text-tg-hint"}>
+                <span className={cn("mt-1", isPayment ? "text-brand" : "text-tg-hint")}>
                     <CardIcon size={24} />
                 </span>
                 <span className="min-w-0 flex-1">
-                    {system ? (
-                        <span className="block text-sm font-semibold text-tg-subtitle">
-                            {t.pay.cardSystems[system]}
+                    {/* The mark (or the bin) shares the system's line: the number keeps a line
+                        of its own and never breaks in two. */}
+                    <span className="flex min-h-7 items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-tg-subtitle">
+                            {system ? t.pay.cardSystems[system] : null}
                         </span>
-                    ) : null}
-                    <span className="block font-semibold tabular-nums tracking-wide">
+                        {isPayment ? (
+                            <span className="flex shrink-0 animate-pop items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-xs font-semibold text-brand-ink">
+                                <CheckIcon size={14} />
+                                {s.paymentCard}
+                            </span>
+                        ) : (
+                            <button
+                                type="button"
+                                aria-label={s.removeCard}
+                                onClick={onRemove}
+                                className="tap -m-2 grid h-11 w-11 shrink-0 place-items-center rounded-full text-tg-hint transition-colors hover:text-tg-destructive focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand active:text-tg-destructive"
+                            >
+                                <TrashIcon size={18} />
+                            </button>
+                        )}
+                    </span>
+                    <span className="block whitespace-nowrap font-semibold tabular-nums tracking-wide">
                         {grouped(card.number)}
                     </span>
                     <span className="block truncate text-sm uppercase text-tg-subtitle">
                         {card.holder}
                     </span>
                 </span>
-                {isPayment ? (
-                    <span className="flex shrink-0 animate-pop items-center gap-1 rounded-full bg-brand px-2.5 py-1 text-xs font-semibold text-brand-ink">
-                        <CheckIcon size={14} />
-                        {s.paymentCard}
-                    </span>
-                ) : (
-                    <button
-                        type="button"
-                        aria-label={s.removeCard}
-                        onClick={onRemove}
-                        className="tap -m-2 grid h-11 w-11 shrink-0 place-items-center rounded-full text-tg-hint transition-colors hover:text-tg-destructive focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand active:text-tg-destructive"
-                    >
-                        <TrashIcon size={18} />
-                    </button>
-                )}
             </div>
             {isPayment ? null : (
                 <Button variant="surface" loading={busy} onClick={onChoose}>

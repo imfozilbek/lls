@@ -410,18 +410,6 @@ function DeliveryFields({
     const s = useT().owner.settings
     return (
         <Section id={sectionId("delivery")}>
-            {/* Owner's decision, November 2026: a taxi or the post, paid by the customer. */}
-            <div className="flex items-center gap-3">
-                <div className="flex-1">
-                    <p className="font-semibold">{s.customerPaysCarrier}</p>
-                    <p className="text-sm text-tg-subtitle">{s.customerPaysCarrierHint}</p>
-                </div>
-                <Switch
-                    checked={form.customerPaysCarrier}
-                    onChange={(customerPaysCarrier): void => patch({ customerPaysCarrier })}
-                    label={s.customerPaysCarrier}
-                />
-            </div>
             {form.customerPaysCarrier ? null : (
                 <>
                     <Field label={s.fee} htmlFor="fee">
@@ -463,6 +451,19 @@ function DeliveryFields({
                     }}
                 />
             </Field>
+            {/* Owner's decision, November 2026: a taxi or the post, paid by the customer. The
+                rare case comes after the usual price, not before it. */}
+            <div className="flex items-center gap-3">
+                <div className="flex-1">
+                    <p className="font-semibold">{s.customerPaysCarrier}</p>
+                    <p className="text-sm text-tg-subtitle">{s.customerPaysCarrierHint}</p>
+                </div>
+                <Switch
+                    checked={form.customerPaysCarrier}
+                    onChange={(customerPaysCarrier): void => patch({ customerPaysCarrier })}
+                    label={s.customerPaysCarrier}
+                />
+            </div>
         </Section>
     )
 }

@@ -450,12 +450,9 @@ function OrderActions({
         }
     }
 
+    // «Takrorlash» is the main button now (useOrderMainAction).
     if (reorder) {
-        return (
-            <Button variant="secondary" className="w-full" onClick={reorder}>
-                {t.order.reorder}
-            </Button>
-        )
+        return null
     }
     // Quiet and far from «O'tkazdim»: a mistaken tap here costs the order. While the shop checks
     // money already sent, it hides behind one more tap: panic is the wrong moment to cancel.
@@ -526,6 +523,8 @@ function useOrderMainAction(
 ): void {
     const t = useT()
     const reset = useRouter((state) => state.reset)
+    // A finished order's one thing to do is to order it again: at the thumb, not under the map.
+    const reorder = useReorder(order)
     const toPay =
         order !== null &&
         order.status !== OrderStatus.CANCELLED &&
@@ -542,7 +541,9 @@ function useOrderMainAction(
               }
             : justPlaced && order
               ? { text: t.cart.toMenu, onClick: (): void => reset() }
-              : null,
+              : reorder
+                ? { text: t.order.reorder, onClick: reorder }
+                : null,
     )
 }
 
@@ -601,7 +602,10 @@ function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
                 <OrderItems order={order} />
             </Section>
             <Section title={t.order.address}>
-                <OrderMap shop={shopPlace} customer={order.location} />
+                {/* A finished order needs no map: the address says where it went. */}
+                {isFinalStatus(order.status) ? null : (
+                    <OrderMap shop={shopPlace} customer={order.location} />
+                )}
                 <Address order={order} />
             </Section>
         </>

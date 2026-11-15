@@ -25,7 +25,7 @@ function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.J
         .join(", ")}`
     return (
         <li
-            className="flex animate-rise flex-col gap-1.5"
+            className="flex animate-rise flex-col rounded-tile bg-tg-secondary"
             style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
         >
             <button
@@ -34,7 +34,7 @@ function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.J
                     haptic.tap()
                     push({ name: "order", id: order.id })
                 }}
-                className="tap flex w-full items-center gap-3 rounded-tile bg-tg-secondary p-4 text-left"
+                className="tap flex w-full items-center gap-3 rounded-tile p-4 text-left"
             >
                 <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
@@ -58,14 +58,17 @@ function OrderRow({ order, index }: { order: OrderDTO; index: number }): React.J
                 </div>
                 <ChevronIcon size={18} className="shrink-0 text-tg-hint" />
             </button>
+            {/* Inside its own card (it hung between two cards before, owning neither). */}
             {reorder ? (
-                <button
-                    type="button"
-                    onClick={reorder}
-                    className="tap h-11 self-end rounded-full px-4 text-sm font-semibold text-brand"
-                >
-                    {t.order.reorder}
-                </button>
+                <div className="flex justify-end border-t border-tg-separator px-2 py-1">
+                    <button
+                        type="button"
+                        onClick={reorder}
+                        className="tap h-11 rounded-full px-4 text-sm font-semibold text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                    >
+                        {t.order.reorder}
+                    </button>
+                </div>
             ) : null}
         </li>
     )
