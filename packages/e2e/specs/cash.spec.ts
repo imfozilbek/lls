@@ -98,8 +98,9 @@ test("the owner accepts without money; a cash order never goes to the network", 
     await expect(card).toContainText("Yetkazganda to'lanadi")
     await expect(card.getByRole("button", { name: "Pul keldi, qabul qilish" })).toHaveCount(0)
     await card.getByRole("button", { name: "Qabul qilish" }).click()
-    await expect(card.getByRole("button", { name: "Kuryer tayinlash" })).toBeVisible()
-    await card.getByRole("button", { name: "Kuryer tayinlash" }).click()
+    // The shop's only courier got it by itself (owner's decision, November 2026).
+    await expect(card).toContainText("Jasur")
+    await card.getByRole("button", { name: "Boshqa kuryer" }).click()
     const sheet = page.getByRole("dialog")
     await expect(sheet.getByRole("button", { name: /Jasur/ })).toBeVisible()
     await expect(sheet.getByText("Tuman tarmog'i kuryeri")).toHaveCount(0)

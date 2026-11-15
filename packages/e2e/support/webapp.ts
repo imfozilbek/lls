@@ -596,7 +596,10 @@ export async function fillAddress(page: Page, address: string): Promise<void> {
     const share = page.getByRole("button", { name: "Joylashuvni yuborish" })
     if (await share.isVisible()) {
         await share.click()
-        await expect(page.getByRole("button", { name: "Joylashuv qo'shildi" })).toBeVisible()
+        // With the map: the pin on it; without: a checked button.
+        await expect(
+            page.getByRole("button", { name: /Joy belgilandi|Joylashuv qo'shildi/ }),
+        ).toBeVisible()
     }
 }
 
