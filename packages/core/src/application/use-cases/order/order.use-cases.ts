@@ -8,6 +8,7 @@ import { emptyPage, mapPage, normalizePage } from "../../dtos/pagination.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
 import type { Order, OrderMover } from "../../../domain/entities/order.js"
+import type { SendWay } from "../../../domain/enums/send-way.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
 import type { Page } from "../../dtos/pagination.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
@@ -113,6 +114,13 @@ export class AdvanceOrderUseCase {
         if (mover.role === "customer") {
             throw ForbiddenError.notOwner(order.businessId)
         }
+        // Nobody on it yet: a shop with couriers chooses one before «Tayyor» (asked only then).
+        if (mover.role === "owner" && order.needsCourierChoice()) {
+            const couriers = await this.deps.couriers.listByBusiness(order.businessId)
+            if (couriers.some((courier) => courier.isActive)) {
+                order.assertCourierChosen(input.to)
+            }
+        }
         // Accepting starts the order at once: one tap less on every order.
         if (input.to === OrderStatus.ACCEPTED) {
             order.acceptAndStart(mover)
@@ -143,6 +151,64 @@ export class CourierAdvanceOrderUseCase {
             orderId: order.id,
             to: input.to,
         })
+    }
+}
+
+export interface DeliveryDeps extends OrderAccessDeps {
+    clock: Clock
+}
+
+/** The order and the link of the courier it is assigned to, or a 403/404. */
+async function requireAssignedCourier(
+    deps: OrderAccessDeps,
+    orderId: string,
+    telegramId: number,
+): Promise<{ order: Order; courierId: string }> {
+    const order = await deps.orders.findById(orderId)
+    if (!order) {
+        throw EntityNotFoundError.order(orderId)
+    }
+    const courier = await deps.couriers.findByTelegramId(order.businessId, telegramId)
+    if (!courier?.deliversFor(order.businessId) || !order.isAssignedTo(courier.id)) {
+        throw ForbiddenError.notAssignedCourier(order.id)
+    }
+    return { order, courierId: courier.id }
+}
+
+export class SendOrderUseCase {
+    constructor(private readonly deps: DeliveryDeps) {}
+
+    /** «Jo'natdim»: the dispatcher sent the order on, by this way, with a note. */
+    async execute(input: {
+        telegramId: number
+        orderId: string
+        via: SendWay
+        note?: string
+    }): Promise<OrderDTO> {
+        const { order, courierId } = await requireAssignedCourier(
+            this.deps,
+            input.orderId,
+            input.telegramId,
+        )
+        order.send(courierId, input.via, input.note, this.deps.clock.now())
+        await this.deps.orders.save(order)
+        return toOrderDTO(order)
+    }
+}
+
+export class AddDeliveryNoteUseCase {
+    constructor(private readonly deps: DeliveryDeps) {}
+
+    /** «Izoh qo'shish»: the dispatcher tells the customer something about the delivery. */
+    async execute(input: { telegramId: number; orderId: string; text: string }): Promise<OrderDTO> {
+        const { order, courierId } = await requireAssignedCourier(
+            this.deps,
+            input.orderId,
+            input.telegramId,
+        )
+        order.addDeliveryNote(courierId, input.text, this.deps.clock.now())
+        await this.deps.orders.save(order)
+        return toOrderDTO(order)
     }
 }
 

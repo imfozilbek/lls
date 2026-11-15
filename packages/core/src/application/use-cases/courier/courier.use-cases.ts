@@ -218,13 +218,14 @@ export class ReviewCourierUseCase {
 export class SetCourierScheduleUseCase {
     constructor(private readonly deps: CourierDeps) {}
 
-    /** The owner's week for a courier, and "сегодня не работает". */
+    /** The owner's week for a courier, "сегодня не работает", and «Dispetcher». */
     async execute(input: {
         actorTelegramId: number
         businessId: string
         courierId: string
         workDays?: string[]
         offToday?: boolean
+        dispatcher?: boolean
     }): Promise<CourierDTO> {
         const courier = await requireShopCourier(this.deps, input)
         const now = this.deps.clock.now()
@@ -233,6 +234,9 @@ export class SetCourierScheduleUseCase {
         }
         if (input.offToday !== undefined) {
             courier.setOffToday(input.offToday, now)
+        }
+        if (input.dispatcher !== undefined) {
+            courier.setDispatcher(input.dispatcher, now)
         }
         await this.deps.couriers.save(courier)
         return toCourierDTO(courier, now)
@@ -272,6 +276,26 @@ export class AssignCourierUseCase {
         }
         order.assignCourier(courier, this.deps.clock.now())
         await orders.save(order)
+        return toOrderDTO(order)
+    }
+}
+
+export class DeliverMyselfUseCase {
+    constructor(private readonly deps: CourierDeps) {}
+
+    /** «O'zim yetkazaman»: the owner delivers the order; a courier who had it is let go. */
+    async execute(input: {
+        actorTelegramId: number
+        businessId: string
+        orderId: string
+    }): Promise<OrderDTO> {
+        await requireOwnedBusiness(this.deps.businesses, input.businessId, input.actorTelegramId)
+        const order = await this.deps.orders.findById(input.orderId)
+        if (!order || order.businessId !== input.businessId) {
+            throw EntityNotFoundError.order(input.orderId)
+        }
+        order.deliverMyself()
+        await this.deps.orders.save(order)
         return toOrderDTO(order)
     }
 }
