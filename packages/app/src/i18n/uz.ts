@@ -64,6 +64,7 @@ export const uz = {
         NOT_ACCEPTING_ORDERS: "Do'kon hozir buyurtma qabul qilmayapti.",
         SHOP_NOT_ACTIVE: "Do'kon hali ishga tushmagan.",
         PRODUCT_NOT_AVAILABLE: "Savatdagi mahsulotlardan biri tugab qoldi.",
+        OUT_OF_STOCK: "Savatdagi mahsulotlardan biri tugab qoldi yoki kam qoldi.",
         VARIANT_REQUIRED: "Mahsulotning turini tanlang.",
         OPTION_UNAVAILABLE: "Do'kon mahsulotni o'zgartirdi. Savatni tekshiring.",
         MIN_ORDER_NOT_REACHED: "Buyurtma minimal summadan kam.",
