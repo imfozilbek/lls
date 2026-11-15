@@ -69,7 +69,7 @@ test("the owner chooses «Naqd pul»: the cards step aside", async ({ page }) =>
     await expect(page.getByRole("button").filter({ hasText: "Naqd pul" })).toBeVisible()
 })
 
-test("cash only: the customer sees the sum for the courier, no card, no «O'tkazdim»", async ({
+test("cash only: the customer sees the sum for the courier, no card, no «Chekni yuklash»", async ({
     page,
 }) => {
     await toCheckout(page)
@@ -82,7 +82,7 @@ test("cash only: the customer sees the sum for the courier, no card, no «O'tkaz
     await bottomButton(page).click()
     await expect(page.getByRole("heading", { name: "Buyurtma yuborildi!" })).toBeVisible()
     await expect(page.getByText(/Naqd: kuryerga 55\s000\sso'm berasiz/)).toBeVisible()
-    await expect(bottomButton(page)).not.toContainText("O'tkazdim")
+    await expect(bottomButton(page)).not.toContainText("Chekni yuklash")
     await expect(page.getByText("8600 1234 5678 9012")).toHaveCount(0)
     const told = await waitForMessage(PEOPLE.customer.id, "To'lov naqd", since)
     expect(told.text).toMatch(/kuryerga.*55\s000/)
