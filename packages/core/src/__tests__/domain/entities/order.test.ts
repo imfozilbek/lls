@@ -12,7 +12,7 @@ import { InvalidOrderTransitionError } from "../../../domain/errors/invalid-tran
 import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { Money } from "../../../domain/value-objects/money.js"
 import { Payment } from "../../../domain/value-objects/payment.js"
-import { makeCourier } from "../../fixtures.js"
+import { makeCourier, withReceipt } from "../../fixtures.js"
 
 import type { Courier } from "../../../domain/entities/courier.js"
 import type { PlaceOrderProps } from "../../../domain/entities/order.js"
@@ -53,7 +53,7 @@ function courier(businessId = "biz-1", id = "courier-1"): Courier {
 
 function readyOrder(): Order {
     const order = placeOrder()
-    order.confirmPaymentAndStart()
+    withReceipt(order).confirmPaymentAndStart()
     order.advanceTo(OrderStatus.READY)
     return order
 }
@@ -118,7 +118,7 @@ describe("Order", () => {
 
     it("moves forward step by step once the transfer arrived", () => {
         const order = placeOrder()
-        order.confirmPayment()
+        withReceipt(order).confirmPayment()
         for (const status of [
             OrderStatus.ACCEPTED,
             OrderStatus.PREPARING,
@@ -164,7 +164,7 @@ describe("Order", () => {
 
     it("cancelling a paid order owes the money back", () => {
         const order = placeOrder()
-        order.confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndStart()
         order.cancel("owner", "Tugab qoldi")
         expect(order.payment.status).toBe(PaymentStatus.REFUND_DUE)
     })
@@ -195,13 +195,13 @@ describe("Order", () => {
         expect(pending.cancelReason).toBe("Adashdim")
 
         const accepted = placeOrder()
-        accepted.confirmPaymentAndStart()
+        withReceipt(accepted).confirmPaymentAndStart()
         expect(() => accepted.cancel("customer")).toThrow(BusinessRuleViolationError)
     })
 
     it("owner can cancel any active order, but not a final one", () => {
         const order = placeOrder()
-        order.confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndStart()
         order.cancel("owner", "Tugab qoldi")
         expect(order.cancelledBy).toBe("owner")
         expect(() => order.cancel("owner")).toThrow(InvalidOrderTransitionError)
@@ -243,7 +243,7 @@ describe("Order and couriers", () => {
     it("the owner assigns a courier of the shop between accepted and ready", () => {
         const order = placeOrder()
         expect(() => order.assignCourier(courier(), NOW)).toThrow(BusinessRuleViolationError)
-        order.confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndStart()
         order.assignCourier(courier(), NOW)
         expect(order.courierName).toBe("Jasur")
         order.assignCourier(courier("biz-1", "courier-2"), NOW)
@@ -291,7 +291,7 @@ describe("Order and couriers", () => {
 
     it("the assigned courier moves only the delivery part", () => {
         const order = placeOrder()
-        order.confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndStart()
         order.assignCourier(courier(), NOW)
         const me = { role: "courier", courierId: "courier-1" } as const
         expect(() => order.advanceTo(OrderStatus.READY, me)).toThrow(ForbiddenError)
@@ -301,6 +301,14 @@ describe("Order and couriers", () => {
         expect(order.status).toBe(OrderStatus.DELIVERED)
         // Paid in advance: the courier holds no money.
         expect(order.payment.cashCourierId).toBeUndefined()
+    })
+
+    it("an older order without a pin never joins a trip", () => {
+        const order = readyOrder()
+        order.assignCourier(courier(), NOW)
+        expect(() => order.joinTrip("trip-1", 1)).toThrow(
+            expect.objectContaining({ details: expect.objectContaining({ why: "no_location" }) }),
+        )
     })
 
     it("another courier cannot touch the order", () => {

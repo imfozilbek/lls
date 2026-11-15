@@ -272,6 +272,8 @@ const CATEGORY_PATHS: Record<string, ReactNode> = {
     clothes: <path d="M8 3L3 6l2 4 3-1v12h8V9l3 1 2-4-5-3c0 2-1.5 3-4 3S8 5 8 3z" />,
     electrical: <path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0zM12 17v4" />,
     stationery: <path d="M4 20l1-5L16 4l4 4L9 19zM14 6l4 4" />,
+    educational_toys: <path d="M4 13h7v7H4zM13 13h7v7h-7zM8.5 4h7v7h-7z" />,
+    books: <path d="M5 19.5V5a2 2 0 0 1 2-2h12v15H7a2 2 0 0 0-2 2 2 2 0 0 0 2 2h12M9 7h6" />,
     flowers: (
         <path d="M12 12v9M12 12a3 3 0 1 1 0-6 3 3 0 1 1 0 6zM8 17c2 0 4 1 4 3M16 16c-2 0-4 1-4 3" />
     ),
@@ -327,6 +329,7 @@ const CATEGORY_LOOKS_LIKE: Record<string, string> = {
     hygiene: "household",
     cosmetics: "beauty",
     baby_goods: "household",
+    logic_games: "educational_toys",
     paper: "household",
     pets: "household",
     textile: "clothes",

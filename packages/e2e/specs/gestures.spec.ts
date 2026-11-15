@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test"
 
 import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
 import { drag, pullDown, swipeLeft, swipeRight } from "../support/touch.js"
-import { bottomButton, fillAddress, openApp, toCart } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, openOrderCard, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -50,6 +50,27 @@ test("pull down on the order screen refreshes it in place, without a skeleton", 
     await expect(page.getByTestId("pull-indicator")).toBeHidden()
     const haptics = (await app.calls()).filter((c) => c.method === "haptic.impact")
     expect(haptics.map((c) => c.args[0])).toContain("medium")
+})
+
+test("a pull over a dead connection lets go with a word; the next pull works", async ({ page }) => {
+    test.setTimeout(90_000)
+    const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
+    await openOrder(page, order.number)
+    await expect(page.getByText("O'tkazma kutilmoqda").first()).toBeVisible()
+    // The connection died while the app was in the background: no answer, no error, nothing.
+    await page.route("**/api/orders/*", () => undefined)
+    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    await pullDown(page)
+    await expect(page.getByTestId("pull-indicator")).toBeVisible()
+    // Before the deadline the spinner stayed there until the app was opened again.
+    await expect(page.getByText("Internet bilan aloqa yo'q").first()).toBeVisible({
+        timeout: 30_000,
+    })
+    await expect(page.getByTestId("pull-indicator")).toBeHidden()
+    await page.unrouteAll({ behavior: "ignoreErrors" })
+    await pullDown(page)
+    await expect(page.getByText("Buyurtmangiz tayyorlanmoqda")).toBeVisible()
+    await expect(page.getByTestId("pull-indicator")).toBeHidden()
 })
 
 test("coming back to the app refreshes the order at once", async ({ page }) => {
@@ -126,7 +147,9 @@ test("cancelling asks in Uzbek with a red button; a swipe right closes a sheet",
 
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
-    const card = page.getByRole("listitem").filter({ hasText: "Buyurtma #" }).first()
+    // Any active order of the shop (the customer's own was just cancelled): its card, opened.
+    const first = page.locator("[data-order-card]").first()
+    const card = await openOrderCard(page, Number(await first.getAttribute("data-order-card")))
     await card.getByRole("button", { name: "Bekor qilish" }).first().click()
     await expect(page.getByRole("dialog")).toBeVisible()
     await swipeRight(page)

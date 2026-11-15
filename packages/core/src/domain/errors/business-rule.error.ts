@@ -85,11 +85,15 @@ export class BusinessRuleViolationError extends DomainError {
     }
 
     /** The shop delivers only so far: without the customer's pin nobody can tell. */
-    static locationRequired(radiusMeters: number): BusinessRuleViolationError {
+    /**
+     * Every order carries the customer's pin (owner's decision, November 2026): the courier always
+     * knows where to; a shop with a radius also checks it against the zone.
+     */
+    static locationRequired(radiusMeters?: number): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "LOCATION_REQUIRED",
-            "Share the delivery location: the shop delivers within a radius",
-            { radiusMeters },
+            "Share the delivery location on the map",
+            radiusMeters === undefined ? {} : { radiusMeters },
         )
     }
 
@@ -225,8 +229,40 @@ export class BusinessRuleViolationError extends DomainError {
     static paymentNotConfirmable(status: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "PAYMENT_NOT_CONFIRMABLE",
-            "Only an unpaid or awaited payment can be confirmed",
+            "Only an awaited payment can be confirmed",
             { status },
+        )
+    }
+
+    /**
+     * «Pul keldi» before the customer's screenshot (owner's decision, November 2026): the owner
+     * checks the money only after «Chekni yuklash» and «O'tkazdim».
+     */
+    /**
+     * More of a counted product than is left (owner's decision, November 2026): `left` in base
+     * units, so the cart can lower its line.
+     */
+    static outOfStock(productId: string, left: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "OUT_OF_STOCK",
+            "Not that much of the product is left",
+            { productId, left },
+        )
+    }
+
+    /** A product keeps at most this many photos (owner's decision, November 2026). */
+    static tooManyPhotos(max: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "TOO_MANY_PHOTOS",
+            `A product keeps at most ${max} photos`,
+            { max },
+        )
+    }
+
+    static receiptNotSent(): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "RECEIPT_NOT_SENT",
+            "The customer has not sent the screenshot of the transfer yet",
         )
     }
 
@@ -293,6 +329,80 @@ export class BusinessRuleViolationError extends DomainError {
             "CASH_NOT_FOR_NETWORK",
             "A cash order is delivered only by the shop's own courier",
             { orderId },
+        )
+    }
+
+    /** A dispatcher never carries money to the door: a cash order goes to a courier or the owner. */
+    static cashNotForDispatcher(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "CASH_NOT_FOR_DISPATCHER",
+            "A cash order goes to a courier who carries it, not to a dispatcher",
+            { orderId },
+        )
+    }
+
+    /** The customer pays the carrier for the delivery: a network courier carries no money. */
+    static carrierNotForNetwork(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "CARRIER_NOT_FOR_NETWORK",
+            "The customer pays this delivery to the carrier: it is not for the district network",
+            { orderId },
+        )
+    }
+
+    /**
+     * The order goes to a courier (or the owner says «O'zim yetkazaman») before it is ready and
+     * sent (owner's decision, November 2026): no order leaves without someone on it.
+     */
+    static courierNotChosen(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "COURIER_NOT_CHOSEN",
+            "Hand the order to a courier, or say you deliver it yourself",
+            { orderId },
+        )
+    }
+
+    /** The dispatcher sends the order on, and says how: nobody else marks it sent. */
+    static sendWayRequired(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "SEND_WAY_REQUIRED",
+            "The dispatcher marks this order sent, with the way it went",
+            { orderId },
+        )
+    }
+
+    /** «Jo'natdim» and the notes belong to an order the shop gave to its dispatcher. */
+    static notADispatcherOrder(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NOT_A_DISPATCHER_ORDER",
+            "This order is not with a dispatcher",
+            { orderId },
+        )
+    }
+
+    /** A finished order takes no more notes. */
+    static notesClosed(orderId: string, status: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NOTES_CLOSED",
+            "The order is finished: no more notes",
+            { orderId, status },
+        )
+    }
+
+    static tooManyNotes(max: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "TOO_MANY_NOTES",
+            `An order keeps at most ${max} notes`,
+            { max },
+        )
+    }
+
+    /** Only the shop's own courier can be its dispatcher, never a network one. */
+    static notOwnCourier(courierId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NOT_OWN_COURIER",
+            "Only the shop's own courier can be its dispatcher",
+            { courierId },
         )
     }
 

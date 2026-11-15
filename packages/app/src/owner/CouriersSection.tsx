@@ -211,7 +211,7 @@ function CourierRow({
     onRemove,
 }: {
     courier: CourierDTO
-    onSchedule(patch: { workDays?: Weekday[]; offToday?: boolean }): void
+    onSchedule(patch: { workDays?: Weekday[]; offToday?: boolean; dispatcher?: boolean }): void
     onRemove(): void
 }): React.JSX.Element {
     const t = useT()
@@ -246,6 +246,21 @@ function CourierRow({
                     label={`${s.worksToday}: ${courier.name}`}
                 />
             </label>
+            {/* Owner's decision, November 2026: a courier who sends parcels on, by a taxi or
+                the post, and writes the customer notes. */}
+            <label className="flex items-center justify-between gap-3">
+                <span className="min-w-0">
+                    <span className={cn("block text-sm", courier.dispatcher && "font-medium")}>
+                        {s.dispatcher}
+                    </span>
+                    <span className="block text-sm text-tg-hint">{s.dispatcherHint}</span>
+                </span>
+                <Switch
+                    checked={courier.dispatcher}
+                    onChange={(dispatcher): void => onSchedule({ dispatcher })}
+                    label={`${s.dispatcher}: ${courier.name}`}
+                />
+            </label>
         </li>
     )
 }
@@ -254,7 +269,7 @@ interface CourierActions {
     review(courier: CourierDTO, approve: boolean): Promise<void>
     schedule(
         courier: CourierDTO,
-        patch: { workDays?: Weekday[]; offToday?: boolean },
+        patch: { workDays?: Weekday[]; offToday?: boolean; dispatcher?: boolean },
     ): Promise<void>
     remove(courier: CourierDTO): Promise<void>
 }
@@ -282,7 +297,7 @@ function useCourierActions(): CourierActions {
 
     const schedule = async (
         courier: CourierDTO,
-        patch: { workDays?: Weekday[]; offToday?: boolean },
+        patch: { workDays?: Weekday[]; offToday?: boolean; dispatcher?: boolean },
     ): Promise<void> => {
         // Optimistic: the chip flips at once, the server answer settles it.
         replaceCourier({ ...courier, ...patch })

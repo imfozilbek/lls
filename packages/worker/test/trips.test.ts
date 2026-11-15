@@ -16,6 +16,7 @@ import {
     STRANGER,
     createActiveShop,
     hireCourier,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
 } from "./helpers.js"
@@ -68,6 +69,7 @@ describe("trips: several orders one way, one courier", () => {
         })
         expect(placed.status).toBe(201)
         const order = await json<Order>(placed)
+        await sendReceipt(as(CUSTOMER), order.id)
         const paid = await as(OWNER)(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },
@@ -164,17 +166,13 @@ describe("trips: several orders one way, one courier", () => {
         expect(one.status).toBe(422)
         expect(await json(one)).toMatchObject({ error: { code: "TRIP_STOPS" } })
 
+        // No pin, no order at all (owner's decision, November 2026): every stop has one.
         const placed = await as(CUSTOMER)("/api/orders", {
             method: "POST",
             json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12" },
         })
-        const noPin = await json<Order>(placed)
-        await as(OWNER)(`/api/owner/orders/${noPin.id}/payment`, {
-            method: "PATCH",
-            json: { action: "paid" },
-        })
-        const refused = await createTrip([a.id, noPin.id])
-        expect(await json(refused)).toMatchObject({ error: { code: "NOT_FOR_TRIP" } })
+        expect(placed.status).toBe(422)
+        expect(await json(placed)).toMatchObject({ error: { code: "LOCATION_REQUIRED" } })
         expect((await as(STRANGER)("/api/owner/trips")).status).toBe(403)
         expect((await createTrip([])).status).toBe(400)
     })
@@ -221,9 +219,10 @@ describe("trips: several orders one way, one courier", () => {
         )
             .bind(a.id, b.id)
             .all()
+        // The shop's only courier got both when they were accepted; no trip, no stop.
         expect(rows.results).toEqual([
-            { trip_id: null, trip_stop: null, courier_id: null },
-            { trip_id: null, trip_stop: null, courier_id: null },
+            { trip_id: null, trip_stop: null, courier_id: courierId },
+            { trip_id: null, trip_stop: null, courier_id: courierId },
         ])
 
         const fresh = await joined("trip-fresh")

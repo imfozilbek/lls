@@ -5,13 +5,15 @@ import {
     CUSTOMER,
     OTHER_BOT_TOKEN,
     OWNER,
+    PIN,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
     STRANGER,
+    TEST_CARD,
     createActiveShop,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
-    TEST_CARD,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -265,6 +267,53 @@ describe("inside a shop", () => {
         expect(stranger.status).toBe(403)
     })
 
+    it("a toy in several categories with an age: kept, changed, cleared; a wrong one refused", async () => {
+        const created = await asOwner()("/api/owner/products", {
+            method: "POST",
+            json: {
+                name: "Mantiqiy kubik",
+                price: 90_000,
+                unit: "pcs",
+                category: "logic_games",
+                moreCategories: ["books"],
+                ageFrom: 3,
+            },
+        })
+        expect(created.status).toBe(201)
+        const toy = await json<{ id: string }>(created)
+        expect(toy).toMatchObject({
+            category: "logic_games",
+            moreCategories: ["books"],
+            ageFrom: 3,
+        })
+
+        const seen = await json<{ data: Json[] }>(await asCustomer()("/api/shop/products"))
+        expect(seen.data.find((p) => p["id"] === toy.id)).toMatchObject({
+            moreCategories: ["books"],
+            ageFrom: 3,
+        })
+        const books = await json<{ data: Json[] }>(
+            await asCustomer()("/api/shop/products?category=books"),
+        )
+        expect(books.data.map((p) => p["id"])).toEqual([toy.id])
+
+        const patch = (body: Json): Promise<Response> =>
+            asOwner()(`/api/owner/products/${toy.id}`, { method: "PATCH", json: body })
+        const changed = await json<Json>(
+            await patch({ moreCategories: ["educational_toys", "books"], ageFrom: 5 }),
+        )
+        expect(changed).toMatchObject({ moreCategories: ["educational_toys", "books"], ageFrom: 5 })
+        const cleared = await json<Json>(await patch({ moreCategories: null, ageFrom: null }))
+        expect(cleared["moreCategories"]).toBeUndefined()
+        expect(cleared["ageFrom"]).toBeUndefined()
+
+        expect((await patch({ ageFrom: 2 })).status).toBe(400)
+        expect((await patch({ moreCategories: ["toys"] })).status).toBe(400)
+        expect((await patch({ moreCategories: ["books", "baby_goods", "meals"] })).status).toBe(400)
+        // The main category again among the further ones: the core refuses the twin.
+        expect((await patch({ moreCategories: ["logic_games"] })).status).toBe(400)
+    })
+
     it("variants and add-ons: the server prices the pick, refuses a missing or foreign one", async () => {
         const created = await asOwner()("/api/owner/products", {
             method: "POST",
@@ -314,6 +363,7 @@ describe("inside a shop", () => {
                     },
                 ],
                 address: "Navoiy 12",
+                location: PIN,
             },
         })
         expect(placed.status).toBe(201)
@@ -328,7 +378,11 @@ describe("inside a shop", () => {
 
         const noVariant = await asCustomer()("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: latte.id, quantity: 1 }], address: "Navoiy 12" },
+            json: {
+                items: [{ productId: latte.id, quantity: 1 }],
+                address: "Navoiy 12",
+                location: PIN,
+            },
         })
         expect(noVariant.status).toBe(422)
         expect(await json(noVariant)).toMatchObject({ error: { code: "VARIANT_REQUIRED" } })
@@ -337,6 +391,7 @@ describe("inside a shop", () => {
             json: {
                 items: [{ productId: latte.id, quantity: 1, variantId: "m", addonIds: ["gold"] }],
                 address: "Navoiy 12",
+                location: PIN,
             },
         })
         expect(foreign.status).toBe(422)
@@ -373,7 +428,11 @@ describe("inside a shop", () => {
         const second = await json<{ number: number }>(
             await asCustomer()("/api/orders", {
                 method: "POST",
-                json: { items: [{ productId: osh, quantity: 1 }], address: "Navoiy 12" },
+                json: {
+                    items: [{ productId: osh, quantity: 1 }],
+                    address: "Navoiy 12",
+                    location: PIN,
+                },
             }),
         )
         expect(second.number).toBe(2)
@@ -391,6 +450,7 @@ describe("inside a shop", () => {
         })
         expect(unpaid.status).toBe(422)
         expect(await json(unpaid)).toMatchObject({ error: { code: "PAYMENT_REQUIRED" } })
+        await sendReceipt(asCustomer(), order.id)
         const accepted = await asOwner()(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },
@@ -434,6 +494,7 @@ describe("inside a shop", () => {
         const body = {
             items: [{ productId: osh, quantity: 2 }],
             address: "Navoiy 12",
+            location: PIN,
             clientOrderId: "5f0c2a8e-7b6d-4c1e-9f3a-2b4c6d8e0a1b",
         }
         const first = await asCustomer()("/api/orders", { method: "POST", json: body })
@@ -467,7 +528,11 @@ describe("inside a shop", () => {
         const placed = await json<{ id: string }>(
             await asCustomer()("/api/orders", {
                 method: "POST",
-                json: { items: [{ productId: osh, quantity: 1 }], address: "Navoiy 12" },
+                json: {
+                    items: [{ productId: osh, quantity: 1 }],
+                    address: "Navoiy 12",
+                    location: PIN,
+                },
             }),
         )
         // A second shop of the same owner (same bot token for simplicity).
@@ -479,7 +544,8 @@ describe("inside a shop", () => {
                 bottle_deposit, marketplace_commission_bps, marketplace_joined_at,
                 created_at, updated_at, payout_card_number, payout_card_holder, district_id,
                 network_delivery, payment_card_id, bot_source, rejected_at, review_note,
-                contact_phone, payment_options, owner_chat_open_at, owner_chat_closed_at, demo_at
+                contact_phone, payment_options, owner_chat_open_at, owner_chat_closed_at, demo_at,
+                customer_pays_carrier
              FROM businesses WHERE slug = ?`,
         )
             .bind(slug)
@@ -506,7 +572,7 @@ describe("inside a shop", () => {
         const osh = await addProduct("Osh", 35_000)
         const response = await asCustomer()("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: osh, quantity: 1 }], address: "Navoiy 12" },
+            json: { items: [{ productId: osh, quantity: 1 }], address: "Navoiy 12", location: PIN },
         })
         expect(response.status).toBe(422)
         expect(await json(response)).toMatchObject({ error: { code: "PHONE_REQUIRED" } })

@@ -53,6 +53,7 @@ interface BusinessRow {
     free_delivery_from: number | null
     min_order: number | null
     delivery_radius_m: number | null
+    customer_pays_carrier: number
     working_hours: string | null
     features: string
     accepting_orders: number
@@ -81,7 +82,8 @@ const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_us
     delivery_radius_m, working_hours, features, accepting_orders, bottle_deposit,
     marketplace_commission_bps, marketplace_joined_at, payout_card_number, payout_card_holder,
     district_id, network_delivery, payment_card_id, contact_phone, payment_options, rejected_at,
-    review_note, owner_chat_open_at, owner_chat_closed_at, demo_at, created_at, updated_at`
+    review_note, owner_chat_open_at, owner_chat_closed_at, demo_at, customer_pays_carrier,
+    created_at, updated_at`
 
 interface SecretRow {
     bot_id: number
@@ -130,6 +132,7 @@ function reconstitute(row: BusinessRow): Business {
             freeFrom: Money.optional(row.free_delivery_from),
             minOrder: Money.optional(row.min_order),
             radiusMeters: optional(row.delivery_radius_m),
+            ...(row.customer_pays_carrier === 1 ? { customerPaysCarrier: true } : {}),
         },
         workingHours: WorkingHours.fromJSON(
             row.working_hours === null ? null : (JSON.parse(row.working_hours) as WeeklySchedule),
@@ -213,6 +216,7 @@ function mutableValues(b: Business): (string | number | null)[] {
         b.paymentOptions,
         ...rejectionValues(b),
         b.demoAt?.getTime() ?? null,
+        flag(b.delivery.customerPaysCarrier === true),
         b.updatedAt.getTime(),
     ]
 }
@@ -322,10 +326,11 @@ export class D1BusinessRepository implements BusinessRepository {
                         marketplace_commission_bps, marketplace_joined_at, payout_card_number,
                         payout_card_holder, district_id, network_delivery, payment_card_id,
                         contact_phone, payment_options, rejected_at, review_note, demo_at,
-                        updated_at, id, slug, type, owner_telegram_id, bot_id, bot_username,
-                        bot_token_enc, webhook_secret, created_at, bot_source)
+                        customer_pays_carrier, updated_at, id, slug, type, owner_telegram_id,
+                        bot_id, bot_username, bot_token_enc, webhook_secret, created_at,
+                        bot_source)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 )
                 .bind(
                     ...mutableValues(business),
@@ -421,7 +426,7 @@ export class D1BusinessRepository implements BusinessRepository {
                     payout_card_number = ?, payout_card_holder = ?, district_id = ?,
                     network_delivery = ?, payment_card_id = ?, contact_phone = ?,
                     payment_options = ?, rejected_at = ?, review_note = ?, demo_at = ?,
-                    updated_at = ?
+                    customer_pays_carrier = ?, updated_at = ?
                  WHERE id = ?${guard}`,
             )
             .bind(...values, business.id, ...(expected === undefined ? [] : [expected]))

@@ -10,7 +10,7 @@ import {
     searchWords,
     toLocalTime,
 } from "@zumda/core"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import { create } from "zustand"
 
 import { fill, useLanguage, useT } from "../i18n/index.js"
@@ -25,6 +25,7 @@ import { useCachedState } from "../lib/use-cached.js"
 import { productOfKey, summarize, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
+import { SheetLoading } from "../ui/boundary.js"
 import {
     BagIcon,
     CardIcon,
@@ -44,7 +45,9 @@ import { ProductImage } from "../ui/product-image.js"
 import { BottomSpacer } from "../ui/shell.js"
 import { ShopLogo } from "../ui/shop-logo.js"
 
-import { ProductSheet, hasOptions } from "./ProductSheet.js"
+import { AgeBadge } from "./age-badge.js"
+import { matchesChip, menuChips } from "./menu-chips.js"
+import { hasOptions } from "./product-options.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { Shop } from "../stores/session.js"
@@ -88,9 +91,11 @@ function shopFacts(shop: Shop, t: Dictionary, language: Language): string[] {
     const { delivery } = shop
     const money = (amount: number): string => formatMoney(amount, language)
     const facts = [
-        delivery.fee === 0
-            ? t.shop.deliveryFree
-            : fill(t.shop.deliveryFee, { sum: money(delivery.fee) }),
+        delivery.customerPaysCarrier
+            ? t.shop.deliveryApart
+            : delivery.fee === 0
+              ? t.shop.deliveryFree
+              : fill(t.shop.deliveryFee, { sum: money(delivery.fee) }),
     ]
     if (delivery.freeFrom && delivery.fee > 0) {
         facts.push(fill(t.shop.freeFrom, { sum: money(delivery.freeFrom) }))
@@ -154,7 +159,7 @@ interface OrdersGlance {
 
 /**
  * Whether the customer has an order on its way here («Buyurtmalarim» wears a dot), and the
- * transfer still to send: back from the bank app the way to «O'tkazdim» is right on top.
+ * transfer still to send: back from the bank app the way to «Chekni yuklash» is right on top.
  */
 function useOrdersGlance(shopId: string | undefined): OrdersGlance {
     // Known at once on a return to the menu: the dot never pops in late a second time.
@@ -198,7 +203,7 @@ function useOrdersGlance(shopId: string | undefined): OrdersGlance {
     return glance ?? { active: false, unpaid: null }
 }
 
-/** «Buyurtma #12: 55 000 so'm o'tkazing»: one tap to the card and «O'tkazdim». */
+/** «Buyurtma #12: 55 000 so'm o'tkazing»: one tap to the card and «Chekni yuklash». */
 function UnpaidBanner({
     order,
 }: {
@@ -324,7 +329,8 @@ function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
                     {t.shop.demo}
                 </p>
             ) : null}
-            <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 text-sm [scrollbar-width:none]">
+            {/* Wrapped, never cut: the call with its number was half off the screen. */}
+            <div className="mt-3 flex flex-wrap gap-2 text-sm">
                 <HeaderAction
                     icon={<ReceiptIcon size={16} />}
                     label={t.shop.myOrders}
@@ -434,6 +440,13 @@ function CategoryChips({
 
 const GLOW_MS = 1800
 
+/** The product up close: its own chunk, loaded while the customer looks at the menu. */
+const loadProductSheet = (): Promise<typeof import("./ProductSheet.js")> =>
+    import("./ProductSheet.js")
+const ProductSheet = lazy(() => loadProductSheet().then((m) => ({ default: m.ProductSheet })))
+/** Long enough for the menu's own pictures to come first on a slow line. */
+const SHEET_PRELOAD_MS = 1500
+
 /** The product opened up close, and the one a showcase tap asked for (it glows a moment). */
 const useProductDetail = create<{
     product: ProductDTO | null
@@ -477,6 +490,7 @@ function PriceLine({ product }: { product: ProductDTO }): React.JSX.Element {
             <span className="text-tg-hint">
                 {prices.size > 1 ? ` ${t.shop.from}` : ` / ${unit}`}
             </span>
+            <AgeBadge product={product} />
         </p>
     )
 }
@@ -516,6 +530,86 @@ function PickButton({
     )
 }
 
+/** The two looks of the control: over a tile's photo, or at the end of a list row. */
+const CONTROL_LOOK = {
+    tile: {
+        place: "absolute bottom-2 right-2",
+        round: "h-11 w-11 bg-tg-bg text-brand shadow-md",
+        mark: "h-9 bg-tg-bg shadow-md",
+    },
+    row: {
+        place: "shrink-0",
+        round: "h-11 w-11 bg-brand/10 text-brand",
+        mark: "h-9 bg-tg-secondary",
+    },
+}
+
+/**
+ * «+», the stepper, or the sheet for a product with options; a counted product that ran out shows
+ * «Tugagan» in their place (owner's decision, November 2026): seen as it is, never added.
+ */
+function CartControl({
+    product,
+    look,
+}: {
+    product: ProductDTO
+    look: keyof typeof CONTROL_LOOK
+}): React.JSX.Element {
+    const t = useT()
+    const quantity = useInCart(product)
+    const add = useCart((state) => state.add)
+    const remove = useCart((state) => state.remove)
+    const style = CONTROL_LOOK[look]
+    if (product.soldOut) {
+        return (
+            <span
+                className={cn(
+                    "inline-flex items-center rounded-full px-3 text-sm font-semibold text-tg-subtitle",
+                    style.place,
+                    style.mark,
+                )}
+            >
+                {t.shop.soldOut}
+            </span>
+        )
+    }
+    if (hasOptions(product)) {
+        return (
+            <PickButton
+                product={product}
+                quantity={quantity}
+                className={cn(style.place, style.round)}
+            />
+        )
+    }
+    if (quantity === 0) {
+        return (
+            <button
+                type="button"
+                onClick={(): void => {
+                    haptic.tap()
+                    add(product.id, product.step)
+                }}
+                aria-label={`${t.shop.add}: ${product.name}`}
+                className={cn("tap grid place-items-center rounded-full", style.place, style.round)}
+            >
+                <PlusIcon size={22} strokeWidth={2.25} />
+            </button>
+        )
+    }
+    return (
+        <div className={style.place}>
+            <Stepper
+                quantity={quantity}
+                display={formatQuantity(quantity, product.unit, t.units)}
+                onAdd={(): void => add(product.id, product.step)}
+                onRemove={(): void => remove(product.id, product.step)}
+                label={product.name}
+            />
+        </div>
+    )
+}
+
 function productAnchor(id: string): string {
     return `product-${id}`
 }
@@ -549,10 +643,6 @@ function ProductTile({
     product: ProductDTO
     index: number
 }): React.JSX.Element {
-    const t = useT()
-    const quantity = useInCart(product)
-    const add = useCart((state) => state.add)
-    const remove = useCart((state) => state.remove)
     const glowing = useProductDetail((state) => state.glowId === product.id)
     return (
         <article
@@ -571,35 +661,7 @@ function ProductTile({
                     name={product.name}
                     className="aspect-[4/3] rounded-tile"
                 />
-                {hasOptions(product) ? (
-                    <PickButton
-                        product={product}
-                        quantity={quantity}
-                        className="absolute bottom-2 right-2 h-11 w-11 bg-tg-bg text-brand shadow-md"
-                    />
-                ) : quantity === 0 ? (
-                    <button
-                        type="button"
-                        onClick={(): void => {
-                            haptic.tap()
-                            add(product.id, product.step)
-                        }}
-                        aria-label={`${t.shop.add}: ${product.name}`}
-                        className="tap absolute bottom-2 right-2 grid h-11 w-11 place-items-center rounded-full bg-tg-bg text-brand shadow-md"
-                    >
-                        <PlusIcon size={22} strokeWidth={2.25} />
-                    </button>
-                ) : (
-                    <div className="absolute bottom-2 right-2">
-                        <Stepper
-                            quantity={quantity}
-                            display={formatQuantity(quantity, product.unit, t.units)}
-                            onAdd={(): void => add(product.id, product.step)}
-                            onRemove={(): void => remove(product.id, product.step)}
-                            label={product.name}
-                        />
-                    </div>
-                )}
+                <CartControl product={product} look="tile" />
             </div>
             <button
                 type="button"
@@ -623,10 +685,6 @@ function ProductTile({
  * letter tiles. One row per product, the same «+» and stepper.
  */
 function ProductListRow({ product }: { product: ProductDTO }): React.JSX.Element {
-    const t = useT()
-    const quantity = useInCart(product)
-    const add = useCart((state) => state.add)
-    const remove = useCart((state) => state.remove)
     const glowing = useProductDetail((state) => state.glowId === product.id)
     return (
         <li
@@ -655,33 +713,7 @@ function ProductListRow({ product }: { product: ProductDTO }): React.JSX.Element
                 ) : null}
                 <PriceLine product={product} />
             </button>
-            {hasOptions(product) ? (
-                <PickButton
-                    product={product}
-                    quantity={quantity}
-                    className="h-11 w-11 shrink-0 bg-brand/10 text-brand"
-                />
-            ) : quantity === 0 ? (
-                <button
-                    type="button"
-                    onClick={(): void => {
-                        haptic.tap()
-                        add(product.id, product.step)
-                    }}
-                    aria-label={`${t.shop.add}: ${product.name}`}
-                    className="tap grid h-11 w-11 shrink-0 place-items-center rounded-full bg-brand/10 text-brand"
-                >
-                    <PlusIcon size={22} strokeWidth={2.25} />
-                </button>
-            ) : (
-                <Stepper
-                    quantity={quantity}
-                    display={formatQuantity(quantity, product.unit, t.units)}
-                    onAdd={(): void => add(product.id, product.step)}
-                    onRemove={(): void => remove(product.id, product.step)}
-                    label={product.name}
-                />
-            )}
+            <CartControl product={product} look="row" />
         </li>
     )
 }
@@ -701,13 +733,22 @@ export function MenuScreen(): React.JSX.Element {
     const push = useRouter((state) => state.push)
     const [category, setCategory] = useState<string | null>(null)
     const [query, setQuery] = useState("")
+    // The first tap on a product opens its sheet at once, even on a slow network.
+    useEffect(() => {
+        const timer = window.setTimeout(
+            () => void loadProductSheet().catch(() => undefined),
+            SHEET_PRELOAD_MS,
+        )
+        return (): void => window.clearTimeout(timer)
+    }, [])
 
-    const categories = useMemo(() => [...new Set(catalog.map((p) => p.category))], [catalog])
-    // A category that left the catalog (after a refresh) never keeps filtering it empty.
-    const active = category && (categories as string[]).includes(category) ? category : null
+    // The tabs: ages («3+») and every category a product stands in.
+    const categories = useMemo(() => menuChips(catalog), [catalog])
+    // A tab that left the catalog (after a refresh) never keeps filtering it empty.
+    const active = category && categories.includes(category) ? category : null
     const words = searchWords(query)
     const visible = catalog.filter(
-        (p) => (!active || p.category === active) && (words.length === 0 || matches(p, words)),
+        (p) => (!active || matchesChip(p, active)) && (words.length === 0 || matches(p, words)),
     )
     const cart = summarize(lines, catalog)
     const detail = useProductDetail((state) => state.product)
@@ -760,10 +801,12 @@ export function MenuScreen(): React.JSX.Element {
                 </div>
             )}
             {detail ? (
-                <ProductSheet
-                    product={detail}
-                    onClose={(): void => useProductDetail.getState().show(null)}
-                />
+                <Suspense fallback={<SheetLoading />}>
+                    <ProductSheet
+                        product={detail}
+                        onClose={(): void => useProductDetail.getState().show(null)}
+                    />
+                </Suspense>
             ) : null}
             <PoweredBy />
             <BottomSpacer />

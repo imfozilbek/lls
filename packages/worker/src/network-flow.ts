@@ -7,8 +7,10 @@ import type { Business, NetworkClaim, NetworkRequest, OrderDTO } from "@zumda/co
 
 /**
  * After the owner's step: an order the shop just accepted (and so started, in the same tap)
- * goes to the district network when no courier of its own is free. `accepted`: the step was
- * «Qabul qilish» or «Pul keldi». Returns the order as it is now, and the request if one was made.
+ * goes to the shop's only courier by itself (owner's decision, November 2026), else to the
+ * district network when no courier of its own is free. `accepted`: the step was «Qabul qilish»
+ * or «Pul keldi». Returns the order as it is now, and the request if one was made. The courier
+ * gets the order's card with the owner's step (`Notifier.orderChanged`).
  */
 export async function networkAfterStep(
     services: Services,
@@ -17,6 +19,10 @@ export async function networkAfterStep(
 ): Promise<{ order: OrderDTO; request: NetworkRequest | null }> {
     if (!accepted) {
         return { order, request: null }
+    }
+    const assigned = await services.useCases.autoAssignOnlyCourier.execute({ orderId: order.id })
+    if (assigned) {
+        return { order: assigned, request: null }
     }
     const request = await services.useCases.autoRequestNetwork.execute({ orderId: order.id })
     return { order: request?.order ?? order, request }

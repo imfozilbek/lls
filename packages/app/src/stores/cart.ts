@@ -115,6 +115,11 @@ interface CartState {
      * products of the dropped lines (once each), so the customer can be told which.
      */
     prune(catalog: readonly ProductDTO[]): string[]
+    /**
+     * Only `left` (base units, in steps of `step`) of a counted product is left: its lines come
+     * down, the last ones first, until together they fit.
+     */
+    fitStock(productId: string, left: number, step: number): void
 }
 
 function read(shop: string): CartLines {
@@ -175,6 +180,30 @@ export function fitQuantity(quantity: number, step: number): number {
     return steps * unit
 }
 
+/** The lines of one product brought down, the first ones kept first, to `left` in all. */
+export function fittedToStock(
+    lines: CartLines,
+    productId: string,
+    left: number,
+    step: number,
+): CartLines {
+    const fitted = { ...lines }
+    let room = Math.floor(Math.max(left, 0) / step) * step
+    for (const key of Object.keys(fitted)) {
+        if (productOfKey(key) !== productId) {
+            continue
+        }
+        const kept = Math.min(fitted[key] ?? 0, room)
+        room -= kept
+        if (kept > 0) {
+            fitted[key] = kept
+        } else {
+            delete fitted[key]
+        }
+    }
+    return fitted
+}
+
 export const useCart = create<CartState>((set, get) => {
     const update = (lines: CartLines): void => {
         const checkoutId = uuid()
@@ -211,7 +240,7 @@ export const useCart = create<CartState>((set, get) => {
         },
         clear: (): void => update({}),
         refill: (items, catalog): number => {
-            const onSale = new Map(catalog.filter((p) => p.isAvailable).map((p) => [p.id, p]))
+            const onSale = new Map(catalog.filter(canBeOrdered).map((p) => [p.id, p]))
             const lines = { ...get().lines }
             let skipped = 0
             for (const item of items) {
@@ -231,8 +260,9 @@ export const useCart = create<CartState>((set, get) => {
             return skipped
         },
         prune: (catalog): string[] => {
-            // Products no longer in the catalog (gone, or sold out today) and picks the shop
-            // changed leave the cart; a quantity off the product's new step is fitted to it.
+            // Products no longer in the catalog (gone, or off for today), counted ones that ran
+            // out, and picks the shop changed leave the cart; a quantity off the product's new
+            // step is fitted to it.
             const known = new Map(catalog.map((p) => [p.id, p]))
             const lines = { ...get().lines }
             const gone = new Set<string>()
@@ -240,7 +270,7 @@ export const useCart = create<CartState>((set, get) => {
             for (const [key, quantity] of Object.entries(lines)) {
                 const { productId, pick } = parseKey(key)
                 const product = known.get(productId)
-                if (!product || !pickPrice(product, pick)) {
+                if (!product || product.soldOut || !pickPrice(product, pick)) {
                     delete lines[key]
                     gone.add(productId)
                     continue
@@ -255,6 +285,9 @@ export const useCart = create<CartState>((set, get) => {
                 update(lines)
             }
             return [...gone]
+        },
+        fitStock: (productId, left, step): void => {
+            update(fittedToStock(get().lines, productId, left, step))
         },
     }
 })
@@ -279,6 +312,11 @@ export interface CartSummary {
     subtotal: number
     /** Returnable bottles ordered: they may carry a deposit. */
     returnable: number
+}
+
+/** On sale and not run out: it may go into an order. */
+export function canBeOrdered(product: ProductDTO): boolean {
+    return product.isAvailable && product.soldOut !== true
 }
 
 /** Price per piece or per kg × quantity in pieces or grams, rounded like the server does. */
@@ -310,7 +348,7 @@ export function summarize(lines: CartLines, catalog: readonly ProductDTO[]): Car
             quantity,
             total: lineTotal(product, quantity, priced?.unitPrice),
         }
-        ;(product.isAvailable && priced ? available : unavailable).push(line)
+        ;(canBeOrdered(product) && priced ? available : unavailable).push(line)
     }
     return {
         lines: available,

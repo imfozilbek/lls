@@ -3,12 +3,42 @@ import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
 import { Switch } from "../ui/primitives.js"
 
-import { sameAsMonday } from "./hours.js"
+import { sameAsMonday, timeChoices } from "./hours.js"
 
 import type { DayHours, Hours } from "./hours.js"
 
 const TIME_INPUT =
-    "field h-11 w-full min-w-0 rounded-[0.625rem] bg-tg-bg px-2 text-center tabular-nums"
+    "field h-11 w-full min-w-0 appearance-none rounded-[0.625rem] bg-tg-bg px-1 text-center tabular-nums"
+
+/**
+ * A time as people here say it: 24 hours, «09:00». The browser's own time field shows
+ * «12:00 AM» on many Android phones (it reads the page's language, and has no Uzbek), and was
+ * wider than the screen.
+ */
+function TimeSelect({
+    value,
+    label,
+    onChange,
+}: {
+    value: string
+    label: string
+    onChange(value: string): void
+}): React.JSX.Element {
+    return (
+        <select
+            aria-label={label}
+            value={value}
+            onChange={(e): void => onChange(e.target.value)}
+            className={TIME_INPUT}
+        >
+            {timeChoices(value).map((time) => (
+                <option key={time} value={time}>
+                    {time}
+                </option>
+            ))}
+        </select>
+    )
+}
 
 function DayRow({
     label,
@@ -21,26 +51,22 @@ function DayRow({
 }): React.JSX.Element {
     const s = useT().owner.settings
     return (
-        <div className="grid min-h-[52px] grid-cols-[2.25rem_1fr_auto] items-center gap-2 py-1.5">
+        <div className="grid min-h-[52px] grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-2 py-1.5">
             <span className={cn("font-semibold", day.open ? "text-tg-text" : "text-tg-hint")}>
                 {label}
             </span>
             {day.open ? (
-                <div className="flex animate-fade-in items-center gap-1.5">
-                    <input
-                        type="time"
-                        aria-label={`${label} · ${s.opens}`}
+                <div className="flex min-w-0 animate-fade-in items-center gap-1.5">
+                    <TimeSelect
+                        label={`${label} · ${s.opens}`}
                         value={day.from}
-                        onChange={(e): void => onChange({ ...day, from: e.target.value })}
-                        className={TIME_INPUT}
+                        onChange={(from): void => onChange({ ...day, from })}
                     />
-                    <span className="text-tg-hint">–</span>
-                    <input
-                        type="time"
-                        aria-label={`${label} · ${s.closes}`}
+                    <span className="text-tg-hint">-</span>
+                    <TimeSelect
+                        label={`${label} · ${s.closes}`}
                         value={day.to}
-                        onChange={(e): void => onChange({ ...day, to: e.target.value })}
-                        className={TIME_INPUT}
+                        onChange={(to): void => onChange({ ...day, to })}
                     />
                 </div>
             ) : (

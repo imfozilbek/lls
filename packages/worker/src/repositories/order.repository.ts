@@ -15,17 +15,29 @@ import {
     Payment,
     PayoutCard,
     Phone,
+    SEND_WAYS,
     UNITS,
+    deliveryNote,
     offsetOf,
 } from "@zumda/core"
 
-import { IN_CHUNK, Versions, isUniqueViolation, oneOf, optional, placeholders } from "./rows.js"
+import {
+    IN_CHUNK,
+    Versions,
+    flag,
+    isUniqueViolation,
+    oneOf,
+    optional,
+    placeholders,
+} from "./rows.js"
 
 import type {
     CancelledBy,
     ChosenOptions,
+    DeliveryNote,
     MoneyTotals,
     NetworkShare,
+    OrderInsert,
     OrderRepository,
     Page,
     PageRequest,
@@ -80,6 +92,11 @@ interface OrderRow {
     cash_received_at: number | null
     trip_id: string | null
     trip_stop: number | null
+    dispatcher: number
+    owner_delivers: number
+    sent_via: string | null
+    delivery_notes: string | null
+    customer_pays_carrier: number
 }
 
 interface ItemRow {
@@ -92,6 +109,7 @@ interface ItemRow {
     unit_price: number
     quantity: number
     options: string | null
+    from_stock: number | null
 }
 
 /** Who gets a Telegram card for an order; each card is edited in place on status changes. */
@@ -104,7 +122,8 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     delivered_at, created_at, updated_at, network_requested_at, network_alerted_at,
     delivery_fee_to, payment_card_number, payment_card_holder, receipt_key, receipt_hash,
     receipt_at, receipt_reused_from, customer_rejections, transfer_rejections,
-    transfer_reminded_at, cash_received_at, trip_id, trip_stop`
+    transfer_reminded_at, cash_received_at, trip_id, trip_stop, dispatcher, owner_delivers,
+    sent_via, delivery_notes, customer_pays_carrier`
 
 /** A cash order whose money a courier still holds. */
 const WITH_COURIER = `payment_method = 'cash' AND payment_status = 'paid'
@@ -143,7 +162,27 @@ export const RECEIPT_REUSE_SQL = `SELECT business_id, number FROM orders
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
 
 const ITEM_COLUMNS =
-    "order_id, line, product_id, name, unit, category, unit_price, quantity, options"
+    "order_id, line, product_id, name, unit, category, unit_price, quantity, options, from_stock"
+
+/**
+ * An order takes what it ordered of a counted product. The column's CHECK (never below zero) fails
+ * the whole batch when less is left: the order and its lines are not kept either.
+ */
+export const STOCK_TAKE_SQL = `UPDATE products SET stock = stock - ?
+    WHERE id = ? AND business_id = ? AND stock IS NOT NULL`
+
+/**
+ * A cancel gives it back, only when this very save cancelled the order (its status and the new
+ * version are in the row): a stale copy or a second save never gives it twice.
+ */
+export const STOCK_RETURN_SQL = `UPDATE products SET stock = stock + ?
+    WHERE id = ? AND business_id = ? AND stock IS NOT NULL
+      AND EXISTS (SELECT 1 FROM orders WHERE id = ? AND status = 'cancelled' AND updated_at = ?)`
+
+/** SQLite's words when a product's stock would go below zero. */
+function isStockShortage(error: unknown): boolean {
+    return error instanceof Error && error.message.includes("CHECK constraint failed")
+}
 
 const CANCELLED_BY: readonly CancelledBy[] = ["customer", "owner"]
 
@@ -237,6 +276,7 @@ function toItem(row: ItemRow): OrderItem {
         unitPrice: Money.of(row.unit_price),
         quantity: row.quantity,
         options: row.options === null ? undefined : (JSON.parse(row.options) as ChosenOptions),
+        fromStock: row.from_stock === 1,
     })
 }
 
@@ -268,6 +308,10 @@ const MUTABLE_COLUMNS = [
     "cash_received_at",
     "trip_id",
     "trip_stop",
+    "dispatcher",
+    "owner_delivers",
+    "sent_via",
+    "delivery_notes",
 ] as const
 
 /**
@@ -331,6 +375,11 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         deliveryFeeTo: oneOf(row.delivery_fee_to, DELIVERY_FEE_RECIPIENTS, "delivery_fee_to"),
         tripId: optional(row.trip_id),
         tripStop: optional(row.trip_stop),
+        dispatcher: row.dispatcher === 1,
+        ownerDelivers: row.owner_delivers === 1,
+        sentVia: row.sent_via === null ? undefined : oneOf(row.sent_via, SEND_WAYS, "sent_via"),
+        deliveryNotes: notesOf(row.delivery_notes),
+        customerPaysCarrier: row.customer_pays_carrier === 1,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -349,6 +398,32 @@ function toReceipt(row: OrderRow): TransferReceipt | undefined {
         reusedFrom: optional(row.receipt_reused_from),
         customerRejections: row.customer_rejections,
     }
+}
+
+/** The dispatcher's notes as stored: `[{ at, text }]`, `at` in unix ms. */
+function notesOf(stored: string | null): DeliveryNote[] {
+    if (stored === null) {
+        return []
+    }
+    const rows = JSON.parse(stored) as { at: number; text: string }[]
+    return rows.map((note) => deliveryNote(note.text, new Date(note.at)))
+}
+
+function storedNotes(order: Order): string | null {
+    const notes = order.deliveryNotes
+    return notes.length === 0
+        ? null
+        : JSON.stringify(notes.map((note) => ({ at: note.at.getTime(), text: note.text })))
+}
+
+/** Who carries it: a dispatcher, the owner himself; how it was sent; the notes. */
+function dispatchValues(order: Order): (string | number | null)[] {
+    return [
+        flag(order.isWithDispatcher()),
+        flag(order.ownerDelivers),
+        order.sentVia ?? null,
+        storedNotes(order),
+    ]
 }
 
 function dateOrUndefined(value: number | null): Date | undefined {
@@ -398,6 +473,8 @@ function orderValues(order: Order): (string | number | null)[] {
         ...receiptValues(order),
         ...cashValues(order),
         ...tripValues(order),
+        ...dispatchValues(order),
+        flag(order.customerPaysCarrier),
     ]
 }
 
@@ -441,6 +518,7 @@ function mutableValues(order: Order): (string | number | null)[] {
         ...receiptValues(order),
         ...cashValues(order),
         ...tripValues(order),
+        ...dispatchValues(order),
     ]
 }
 
@@ -460,6 +538,8 @@ export interface OrderSave {
     statement: D1PreparedStatement
     /** The version the row must still have; none for an order this Worker never loaded. */
     expected: number | undefined
+    /** The version this save writes. */
+    version: number
     /** After the statement changed the row: what the next save compares with. */
     saved(): void
 }
@@ -499,6 +579,7 @@ export function orderSaveStatement(
     return {
         statement,
         expected,
+        version,
         saved: (): void => {
             written.set(order, values)
             versions.remember(order, version)
@@ -528,7 +609,7 @@ export class D1OrderRepository implements OrderRepository {
         return row?.next ?? 1
     }
 
-    async insert(order: Order): Promise<boolean> {
+    async insert(order: Order): Promise<OrderInsert> {
         const values = orderValues(order)
         const statements = [
             this.db
@@ -538,7 +619,7 @@ export class D1OrderRepository implements OrderRepository {
                 this.db
                     .prepare(
                         `INSERT INTO order_items (${ITEM_COLUMNS}, total)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     )
                     .bind(
                         order.id,
@@ -550,18 +631,27 @@ export class D1OrderRepository implements OrderRepository {
                         item.unitPrice.amount,
                         item.quantity,
                         item.options ? JSON.stringify(item.options) : null,
+                        item.fromStock ? 1 : null,
                         item.total.amount,
                     ),
             ),
+            ...order
+                .stockTaken()
+                .map(({ productId, quantity }) =>
+                    this.db.prepare(STOCK_TAKE_SQL).bind(quantity, productId, order.businessId),
+                ),
         ]
         try {
             await this.db.batch(statements)
             written.set(order, mutableValues(order))
             versions.remember(order, order.updatedAt.getTime())
-            return true
+            return "placed"
         } catch (error) {
             if (isUniqueViolation(error)) {
-                return false
+                return "number_taken"
+            }
+            if (isStockShortage(error)) {
+                return "out_of_stock"
             }
             throw error
         }
@@ -573,11 +663,30 @@ export class D1OrderRepository implements OrderRepository {
      */
     async save(order: Order): Promise<void> {
         const save = orderSaveStatement(this.db, order)
-        const result = await save.statement.run()
-        if (result.meta.changes === 0) {
+        const restock = this.restockOnCancel(order, save.version)
+        const result =
+            restock.length === 0
+                ? await save.statement.run()
+                : (await this.db.batch([save.statement, ...restock]))[0]
+        if (!result || result.meta.changes === 0) {
             throw ConflictError.stale("order", order.id)
         }
         save.saved()
+    }
+
+    /** The stock an order gives back when this save is the one that cancels it. */
+    private restockOnCancel(order: Order, version: number): D1PreparedStatement[] {
+        const before = written.get(order)?.[MUTABLE_COLUMNS.indexOf("status")]
+        if (order.status !== OrderStatus.CANCELLED || before === OrderStatus.CANCELLED) {
+            return []
+        }
+        return order
+            .stockTaken()
+            .map(({ productId, quantity }) =>
+                this.db
+                    .prepare(STOCK_RETURN_SQL)
+                    .bind(quantity, productId, order.businessId, order.id, version),
+            )
     }
 
     /** One statement with the condition: of two «Беру» at the same moment, one changes a row. */

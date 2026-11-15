@@ -22,7 +22,7 @@ that Zumda fits its share on a busy day, line by line, and how each number was f
 |------|-------------------:|--------------:|------------:|----------:|------|
 | Worker requests | 100 000 / day | 35 000 | ~32 700 | ~40 000 | typical yes; heavy: see "Levers" |
 | D1 rows read | 5 000 000 / day | 1 500 000 | ~0.6 M | ~1.1 M | yes, also after 6 months |
-| D1 rows written | 100 000 / day | 20 000 | ~14 000 | ~17 000 | yes |
+| D1 rows written | 100 000 / day | 20 000 | ~14 100 | ~17 800 | yes |
 | R2 storage | 10 GB | 4 GB | ~2 GB | ~2.3 GB | yes, and it stops growing |
 | Cron triggers | 5 / account | 0-1 | 0 | 0 | yes |
 
@@ -131,8 +131,10 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 | Products saved (row + search words + indexes) | 10 shops × 10 × ~15 | 1 500 | 3 000 |
 | «Ro'yxat bilan qo'shish»: a new shop's list, once (50 × ~15; reads: the shop's names, one covering index) | rare, at most 5 a minute | 0 | 750 |
 | Couriers' shifts, network offers | | 500 | 1 000 |
+| Counted stock: a placed order with a counted product, a cancel giving it back (one product row each; `stock` is in no index) | ~50 orders × ~1.5 | 75 | 300 |
+| A dispatcher's «Jo'natdim» and notes (one order row each: only the changed columns, `updated_at` re-indexed) | ~20 orders × ~3 × ~4 | 240 | 500 |
 | Bot message ids, alerts, sessions | 300 × 2 × 2 + ~200 | 1 400 | 1 700 |
-| **Total** | | **~14 000** | **~17 000** |
+| **Total** | | **~14 100** | **~17 800** |
 
 ## R2 storage
 
@@ -140,7 +142,7 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 |------|-----:|--------|
 | The map: the current file and the one before (`map-data.mjs` removes the rest) | ~550 MB | no |
 | Fonts and icons of the map | a few MB | no |
-| Product photos (10 shops × 100 × ~80 KB) and logos, posters | ~100 MB | with the catalogs only |
+| Product photos (10 shops × 100 × up to 3 × ~80 KB) and logos, posters | ~100-250 MB | with the catalogs only |
 | Transfer screenshots (`zumda-receipts`): 300 a day × ~150 KB (1 280 px) × 30 days | ~1.35 GB | no: R2 deletes each after 30 days |
 | **Total** | **~2 GB** | |
 

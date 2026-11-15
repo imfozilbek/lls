@@ -5,6 +5,9 @@ import type { Category } from "@zumda/core"
  * category they point to. The first match wins, so narrower words come before wider ones.
  */
 const STEMS: readonly [Category, readonly string[]][] = [
+    ["educational_toys", ["rivojlantiruvchi", "развива"]],
+    ["logic_games", ["mantiqiy", "логическ"]],
+    ["books", ["kitob", "китоб", "книг"]],
     ["water", ["suv", "вода", "сув", "19 l", "19л", "20 l", "20л"]],
     ["carpet", ["gilam", "kovyor", "ковёр", "ковер", "гилам"]],
     ["car_wash", ["moyka", "мойка"]],

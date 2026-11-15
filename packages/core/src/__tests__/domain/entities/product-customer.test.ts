@@ -57,6 +57,59 @@ describe("Product", () => {
         expect(() => product.update({ unit: "ton" })).toThrow(ValidationError)
         expect(() => product.update({ category: "cars" })).toThrow(ValidationError)
     })
+
+    it("stands in up to three categories and keeps an age for children's goods", () => {
+        const toy = Product.create({
+            id: "toy-1",
+            businessId: "biz-1",
+            name: "Mantiqiy kubik",
+            price: 90_000,
+            unit: Unit.PIECE,
+            category: "logic_games",
+            moreCategories: ["books", "educational_toys"],
+            ageFrom: 3,
+        })
+        expect(toy.categories).toEqual(["logic_games", "books", "educational_toys"])
+        expect(toy.ageFrom).toBe(3)
+
+        // The main category moved onto a further one: it is not doubled.
+        toy.update({ category: "books" })
+        expect(toy.categories).toEqual(["books", "educational_toys"])
+        toy.update({ moreCategories: null, ageFrom: null })
+        expect(toy.categories).toEqual(["books"])
+        expect(toy.ageFrom).toBeUndefined()
+        toy.update({ moreCategories: ["logic_games"], ageFrom: 12 })
+        expect(toy.categories).toEqual(["books", "logic_games"])
+        expect(toy.ageFrom).toBe(12)
+        // Untouched by other edits.
+        toy.update({ price: 95_000 })
+        expect(toy.categories).toEqual(["books", "logic_games"])
+        expect(toy.ageFrom).toBe(12)
+    })
+
+    it("refuses more than three categories, twins, unknown ids and ages off the list", () => {
+        const toy = (moreCategories: string[], ageFrom?: number): Product =>
+            Product.create({
+                id: "toy-2",
+                businessId: "biz-1",
+                name: "Kitob",
+                price: 30_000,
+                unit: Unit.PIECE,
+                category: "books",
+                moreCategories,
+                ageFrom,
+            })
+        expect(() => toy(["logic_games", "educational_toys", "baby_goods"])).toThrow(
+            ValidationError,
+        )
+        expect(() => toy(["books"])).toThrow(ValidationError)
+        expect(() => toy(["logic_games", "logic_games"])).toThrow(ValidationError)
+        expect(() => toy(["toys"])).toThrow(ValidationError)
+        expect(() => toy([], 2)).toThrow(ValidationError)
+        expect(() => toy([], -1)).toThrow(ValidationError)
+        expect(toy([]).moreCategories).toEqual([])
+        expect(() => toy([]).update({ moreCategories: ["books"] })).toThrow(ValidationError)
+    })
 })
 
 describe("Product for grocery and water", () => {

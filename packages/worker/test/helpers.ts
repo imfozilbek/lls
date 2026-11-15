@@ -15,7 +15,7 @@ import type {
     VideoLink,
 } from "../src/telegram/gateway.js"
 import type { LoginKeys } from "../src/telegram-login.js"
-import type { Clock } from "@zumda/core"
+import type { Clock, TransferReceipt } from "@zumda/core"
 
 export const OWNER = { id: 1001, first_name: "Rustam", language_code: "uz" }
 export const CUSTOMER = { id: 2002, first_name: "Aziz", last_name: "Karimov", language_code: "ru" }
@@ -60,6 +60,9 @@ export async function signInitData(
     params.set("hash", hash)
     return params.toString()
 }
+
+/** Yakkabog': every order carries the customer's pin (owner's decision, November 2026). */
+export const PIN = { latitude: 38.9785, longitude: 66.6831 }
 
 export interface SentMessage {
     token: string
@@ -516,3 +519,32 @@ export async function hireCourier(
 }
 
 export const SHOP_BOT: BotInfo = { id: 777000, username: "osh_markaz_bot", firstName: "Osh" }
+
+/** The smallest JPEG the server takes: a transfer screenshot in tests. */
+export const RECEIPT_JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3])
+
+/**
+ * «Chekni yuklash» and «O'tkazdim» by the order's customer: only after it may the owner press
+ * «Pul keldi» (owner's decision, November 2026). `customer` is that customer's Mini App.
+ */
+export async function sendReceipt(
+    customer: ReturnType<TestClient["as"]>,
+    orderId: string,
+): Promise<void> {
+    const response = await customer(`/api/orders/${orderId}/transfer-sent`, {
+        method: "POST",
+        headers: { "Content-Type": "image/jpeg" },
+        body: RECEIPT_JPEG,
+    })
+    if (response.status !== 200) {
+        throw new Error(`The receipt was refused: ${response.status} ${await response.text()}`)
+    }
+}
+
+/** A screenshot already stored, for tests that move an order by hand. */
+export const STORED_RECEIPT: TransferReceipt = {
+    key: "receipts/test.jpg",
+    hash: "f".repeat(64),
+    at: new Date("2026-11-15T09:55:00Z"),
+    customerRejections: 0,
+}

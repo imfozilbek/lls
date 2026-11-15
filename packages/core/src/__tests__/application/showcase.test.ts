@@ -109,6 +109,23 @@ describe("Zumda showcase", () => {
         await expect(search.execute({ category: "cars" })).rejects.toBeInstanceOf(ValidationError)
     })
 
+    it("a category finds the products that stand in it as a further one too", async () => {
+        const book = Product.create({
+            id: "p7",
+            businessId: "biz-2",
+            name: "Ertaklar",
+            price: 25_000,
+            unit: Unit.PIECE,
+            category: "books",
+            moreCategories: ["educational_toys"],
+            ageFrom: 3,
+        })
+        await products.save(book)
+        const found = await search.execute({ category: "educational_toys" })
+        expect(found.data.map((p) => p.name)).toEqual(["Ertaklar"])
+        expect(found.data[0]).toMatchObject({ moreCategories: ["educational_toys"], ageFrom: 3 })
+    })
+
     it("tells an active shop's own bot, also outside the showcase", async () => {
         const botOf = new ShopBotOfUseCase(businesses)
         expect(await botOf.execute("toza-suv")).toEqual({

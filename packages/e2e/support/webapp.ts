@@ -26,7 +26,7 @@ import {
 } from "./telegram.js"
 
 import type { Chat, TgUser } from "./telegram.js"
-import type { Page } from "@playwright/test"
+import type { Locator, Page } from "@playwright/test"
 
 /** Telegram's Bot API version that brought `WebApp.requestChat` (Managed Bots). */
 const REQUEST_CHAT_VERSION = 9.6
@@ -93,6 +93,8 @@ export interface OpenOptions {
     signWith?: string
     /** Empty initData: the page was opened outside Telegram. */
     noInitData?: boolean
+    /** initData signed this many seconds ago: an app opened long ago that stayed collapsed. */
+    signedAgo?: number
     /** Telegram's native MainButton instead of the in-app bottom bar. */
     native?: boolean
     /** Telegram on an iPhone (the native MainButton too). Default: `android` with `native`. */
@@ -173,6 +175,7 @@ function nativeFeel(record: Recorder): { api: Record<string, unknown>; fire(even
         lockOrientation: record("lockOrientation"),
         hideKeyboard: record("hideKeyboard"),
         addToHomeScreen: record("addToHomeScreen"),
+        close: record("close"),
         checkHomeScreenStatus: record("checkHomeScreenStatus", (callback) =>
             (callback as (status: string) => void)("missed"),
         ),
@@ -425,12 +428,21 @@ function openedFrom(options: OpenOptions): { token: string; chat: Chat; query: s
     return { token: platformBot().token, chat: platformChat(), query: "" }
 }
 
-export async function openApp(page: Page, options: OpenOptions): Promise<OpenedApp> {
-    const { token: botToken, chat, query: defaultQuery } = openedFrom(options)
-    const token = options.signWith ?? botToken
+/** What Telegram signs besides the user: the `startapp` value, and when it signed. */
+function signedExtra(options: OpenOptions): Record<string, string> {
     const extra: Record<string, string> = options.startParam
         ? { start_param: options.startParam }
         : {}
+    if (options.signedAgo !== undefined) {
+        extra["auth_date"] = String(Math.floor(Date.now() / 1000) - options.signedAgo)
+    }
+    return extra
+}
+
+export async function openApp(page: Page, options: OpenOptions): Promise<OpenedApp> {
+    const { token: botToken, chat, query: defaultQuery } = openedFrom(options)
+    const token = options.signWith ?? botToken
+    const extra = signedExtra(options)
     const initData = options.noInitData ? "" : signInitData(options.user, token, extra)
     const phone = options.phone ?? "+998901234567"
 
@@ -570,7 +582,8 @@ export async function toCart(page: Page): Promise<void> {
 
 /**
  * The place at checkout. A returning customer's place (the last order's) is folded in one line:
- * «O'zgartirish» opens the fields.
+ * «O'zgartirish» opens the fields. Every order carries the pin (owner's decision, November
+ * 2026): «Joylashuvni yuborish» gives Telegram's place (the stub's: Yakkabog' by default).
  */
 export async function fillAddress(page: Page, address: string): Promise<void> {
     const field = page.getByRole("textbox", { name: "Manzil" })
@@ -580,6 +593,14 @@ export async function fillAddress(page: Page, address: string): Promise<void> {
         await change.click()
     }
     await field.fill(address)
+    const share = page.getByRole("button", { name: "Joylashuvni yuborish" })
+    if (await share.isVisible()) {
+        await share.click()
+        // With the map: the pin on it; without: a checked button.
+        await expect(
+            page.getByRole("button", { name: /Joy belgilandi|Joylashuv qo'shildi/ }),
+        ).toBeVisible()
+    }
 }
 
 /**
@@ -604,4 +625,43 @@ export async function pickOnMap(
     )
     await picker.getByRole("button", { name: "Shu yer" }).click()
     await expect(picker).toBeHidden()
+}
+
+/**
+ * The owner's order card «#n», opened: a short card shows who, what, how much and the next step;
+ * «Batafsil» opens the phone, the place, the courier and the cancel.
+ */
+export async function openOrderCard(page: Page, number: number): Promise<Locator> {
+    const card = page.locator(`[data-order-card="${number}"]`).first()
+    await expect(card).toBeVisible()
+    const more = card.getByRole("button", { name: "Batafsil", exact: true })
+    if (await more.isVisible()) {
+        await more.click()
+    }
+    return card
+}
+
+/** The courier's delivery «#n», opened: only the one to do now is open by itself. */
+export async function openDelivery(page: Page, number: number): Promise<Locator> {
+    const card = page
+        .locator("li[data-order]")
+        .filter({ hasText: `#${number}` })
+        .first()
+    await expect(card).toBeVisible()
+    const more = card.getByRole("button", { name: "Batafsil", exact: true })
+    if (await more.isVisible()) {
+        await more.click()
+    }
+    return card
+}
+
+/** A shop's row in «Platforma» → «Bizneslar», opened: the owner, the showcase, the actions. */
+export async function openPlatformShop(page: Page, name: string): Promise<Locator> {
+    const row = page.getByRole("listitem").filter({ hasText: name }).first()
+    await expect(row).toBeVisible()
+    const closed = row.locator('button[aria-expanded="false"]').first()
+    if (await closed.isVisible()) {
+        await closed.click()
+    }
+    return row
 }

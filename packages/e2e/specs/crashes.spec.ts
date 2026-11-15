@@ -1,6 +1,7 @@
 /**
  * A crash in the Mini App reaches the server log and the admins, and tells nothing about the
- * person: no phone, no name, no token (owner's decision: logs and errors first).
+ * person: no phone, no name, no token (owner's decision: logs and errors first). An app that
+ * cannot go on says so plainly instead of freezing.
  */
 import { readFileSync } from "node:fs"
 
@@ -91,4 +92,34 @@ test("a logo whose file is gone: the shop's letter instead, and the server hears
     expect(line).toContain('"name":"ImageMissing"')
     expect(line).toContain('"detail":"logo"')
     expect(line).not.toContain("/logo/")
+})
+
+const REOPEN = "Ilovani qayta oching"
+const DISH = "To'y oshi"
+
+test("an app opened over a day ago asks to be opened again, and closes", async ({ page }) => {
+    const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD, signedAgo: 25 * 3600 })
+    await expect(page.getByRole("heading", { name: REOPEN })).toBeVisible()
+    await page.getByRole("button", { name: "Yopish" }).click()
+    expect((await app.calls()).map((c) => c.method)).toContain("close")
+})
+
+test("a collapsed app that came back after its day asks the same, at once", async ({ page }) => {
+    await page.clock.install()
+    const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD })
+    await expect(page.getByText(DISH).first()).toBeVisible()
+    await app.fire("deactivated")
+    await page.clock.fastForward("24:00:00")
+    await app.fire("activated")
+    await expect(page.getByRole("heading", { name: REOPEN })).toBeVisible()
+})
+
+test("a phone set two days ahead still opens the shop and comes back to it", async ({ page }) => {
+    await page.clock.install({ time: Date.now() + 2 * 24 * 3600 * 1000 })
+    const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD })
+    await expect(page.getByText(DISH).first()).toBeVisible()
+    await app.fire("deactivated")
+    await app.fire("activated")
+    await expect(page.getByText(DISH).first()).toBeVisible()
+    await expect(page.getByRole("heading", { name: REOPEN })).toBeHidden()
 })

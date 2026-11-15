@@ -4,6 +4,8 @@ import {
     LIGHT_SURFACE,
     callLink,
     canRequestChat,
+    launchOutdated,
+    launchSurelyOutdated,
     paintLightFrame,
     readLaunchParams,
     requestChat,
@@ -235,5 +237,63 @@ describe("callLink (a call from the Mini App)", () => {
         expect(callLink("+998901234567")).toEqual({ href: "tel:+998901234567" })
         vi.stubGlobal("window", {})
         expect(callLink("+998901234567")).toEqual({ href: "tel:+998901234567" })
+    })
+})
+
+describe("launchOutdated", () => {
+    const DAY_S = 24 * 60 * 60
+    const now = Date.UTC(2026, 10, 6, 12)
+    const signed = (agoSeconds: number): string =>
+        `auth_date=${Math.floor(now / 1000) - agoSeconds}&hash=abc`
+
+    afterEach(() => {
+        vi.unstubAllGlobals()
+    })
+
+    it("is outdated a little before the Worker's day runs out, never before", () => {
+        const open = (initData: string): boolean => {
+            vi.stubGlobal("window", { Telegram: { WebApp: { initData } } })
+            return launchOutdated(now)
+        }
+        expect(open(signed(60))).toBe(false)
+        expect(open(signed(DAY_S - 6 * 60))).toBe(false)
+        expect(open(signed(DAY_S - 5 * 60))).toBe(true)
+        expect(open(signed(3 * DAY_S))).toBe(true)
+    })
+
+    it("outside Telegram, or with no signing time, nothing is outdated", () => {
+        vi.stubGlobal("window", {})
+        expect(launchOutdated(now)).toBe(false)
+        vi.stubGlobal("window", { Telegram: { WebApp: { initData: "" } } })
+        expect(launchOutdated(now)).toBe(false)
+        vi.stubGlobal("window", { Telegram: { WebApp: { initData: "hash=abc" } } })
+        expect(launchOutdated(now)).toBe(false)
+    })
+})
+
+describe("launchSurelyOutdated", () => {
+    const DAY_MS = 24 * 60 * 60 * 1000
+
+    afterEach(() => {
+        vi.unstubAllGlobals()
+    })
+
+    const openedAgo = (seconds: number): void => {
+        const initData = `auth_date=${Math.floor(Date.now() / 1000) - seconds}&hash=abc`
+        vi.stubGlobal("window", { Telegram: { WebApp: { initData } } })
+    }
+
+    it("a fresh opening, collapsed for a day, is outdated by the phone's clock alone", () => {
+        openedAgo(30)
+        expect(launchSurelyOutdated(Date.now() + DAY_MS / 2)).toBe(false)
+        expect(launchSurelyOutdated(Date.now() + DAY_MS)).toBe(true)
+    })
+
+    it("a phone clock a day off at opening never locks the app by itself", () => {
+        // The phone thinks the fresh signature is two days old: it cannot date anything.
+        openedAgo(2 * 24 * 60 * 60)
+        expect(launchOutdated()).toBe(true)
+        expect(launchSurelyOutdated()).toBe(false)
+        expect(launchSurelyOutdated(Date.now() + DAY_MS)).toBe(false)
     })
 })

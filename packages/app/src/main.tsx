@@ -14,7 +14,7 @@ import {
     webApp,
 } from "./lib/telegram.js"
 import { useRouter } from "./stores/router.js"
-import { Boundary, CrashScreen } from "./ui/boundary.js"
+import { Boundary, CrashScreen, ReopenGate } from "./ui/boundary.js"
 import "./index.css"
 
 const app = webApp()
@@ -54,7 +54,9 @@ if (root) {
     createRoot(root).render(
         <StrictMode>
             <Boundary fallback={<CrashScreen />}>
-                <App launch={launch} />
+                <ReopenGate>
+                    <App launch={launch} />
+                </ReopenGate>
             </Boundary>
         </StrictMode>,
     )

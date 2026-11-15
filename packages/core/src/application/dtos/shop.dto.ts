@@ -39,6 +39,8 @@ export interface ShopPublicDTO {
         minOrder?: number
         /** Set with the shop's location: orders come only from inside it, with the pin. */
         radiusMeters?: number
+        /** The customer pays the carrier (a taxi, the post): «Yetkazish haqi alohida». */
+        customerPaysCarrier: boolean
     }
     workingHours: WeeklySchedule | null
     acceptingOrders: boolean
@@ -127,6 +129,7 @@ export function toShopPublicDTO(
             freeFrom: freeFrom?.amount,
             minOrder: minOrder?.amount,
             radiusMeters: business.location ? business.delivery.radiusMeters : undefined,
+            customerPaysCarrier: business.delivery.customerPaysCarrier === true,
         },
         workingHours: business.workingHours.toJSON(),
         acceptingOrders: business.acceptingOrders,

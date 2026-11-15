@@ -1,5 +1,7 @@
 import { CATEGORIES, SHELF_OF, UNITS, categoryGroup, searchText, searchWords } from "@zumda/core"
 
+import { fetchWithin } from "../lib/deadline.js"
+
 import type { BusinessType, Category, Unit } from "@zumda/core"
 
 /** A product of the Zumda catalog (goal 17): everything but the price and the photo. */
@@ -28,6 +30,8 @@ interface Indexed {
 type Row = [string, string, string, string, number?, string?, string[]?, string[]?]
 
 const RESULTS = 30
+/** The file is ~65 KB on the wire: a slow network has time, a dead connection does not hang it. */
+const CATALOG_DEADLINE_MS = 30_000
 let loading: Promise<Indexed[]> | null = null
 
 /**
@@ -72,14 +76,18 @@ export function indexCatalog(rows: readonly Row[]): Indexed[] {
 
 /** The catalog file, fetched once from the app's own address (no Worker request) and kept. */
 export function loadCatalog(): Promise<Indexed[]> {
-    loading ??= fetch(`${import.meta.env.BASE_URL}catalog/v1.json`)
-        .then(async (response) => {
+    loading ??= fetchWithin(
+        `${import.meta.env.BASE_URL}catalog/v1.json`,
+        {},
+        CATALOG_DEADLINE_MS,
+        async (response) => {
             if (!response.ok) {
                 throw new Error(`catalog ${response.status}`)
             }
-            const body = (await response.json()) as { items: Row[] }
-            return indexCatalog(body.items)
-        })
+            return (await response.json()) as { items: Row[] }
+        },
+    )
+        .then((body) => indexCatalog(body.items))
         .catch((error: unknown) => {
             loading = null
             throw error

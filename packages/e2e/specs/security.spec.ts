@@ -9,11 +9,12 @@ import {
     FOOD,
     GROCERY,
     PEOPLE,
+    STAND_PIN,
     WATER,
     apiAs,
+    payAndAccept,
     placeOrder,
     resetStand,
-    payAndAccept,
 } from "../support/stand.js"
 import { signInitData } from "../support/webapp.js"
 
@@ -85,6 +86,7 @@ test("prices and totals come from the server; extra fields are ignored", async (
         json: {
             items: [{ productId: "dev-food-p1", quantity: 1, price: 1 }],
             address: "Navoiy 1",
+            location: STAND_PIN,
             total: 1,
             customerId: "someone-else",
         },
@@ -97,7 +99,11 @@ test("a product of another shop cannot be ordered here", async () => {
     const response = await apiAs(PEOPLE.customer, "/orders", {
         shop: FOOD,
         method: "POST",
-        json: { items: [{ productId: "dev-grocery-p1", quantity: 500 }], address: "Navoiy 1" },
+        json: {
+            items: [{ productId: "dev-grocery-p1", quantity: 500 }],
+            address: "Navoiy 1",
+            location: STAND_PIN,
+        },
     })
     expect([404, 422]).toContain(response.status)
 })

@@ -1,4 +1,5 @@
 // Domain - Enums
+export * from "./domain/enums/age.js"
 export * from "./domain/enums/business-type.js"
 export * from "./domain/enums/business-profile.js"
 export * from "./domain/enums/business-status.js"
@@ -13,6 +14,7 @@ export * from "./domain/enums/order-channel.js"
 export * from "./domain/enums/order-status.js"
 export * from "./domain/enums/payment.js"
 export * from "./domain/enums/region.js"
+export * from "./domain/enums/send-way.js"
 export * from "./domain/enums/unit.js"
 
 // Domain - Shared
@@ -22,6 +24,7 @@ export * from "./domain/shared/time.js"
 
 // Domain - Value Objects
 export * from "./domain/value-objects/brand-color.js"
+export * from "./domain/value-objects/delivery-note.js"
 export * from "./domain/value-objects/location.js"
 export * from "./domain/value-objects/money.js"
 export * from "./domain/value-objects/product-options.js"

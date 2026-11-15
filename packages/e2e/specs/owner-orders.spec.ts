@@ -4,9 +4,17 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, WATER, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import {
+    FOOD,
+    PEOPLE,
+    WATER,
+    apiAs,
+    placeOrder,
+    resetStand,
+    sendReceipt,
+} from "../support/stand.js"
 import { lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
-import { openApp } from "../support/webapp.js"
+import { openApp, openOrderCard } from "../support/webapp.js"
 
 import type { OpenedApp } from "../support/webapp.js"
 import type { Page } from "@playwright/test"
@@ -53,12 +61,18 @@ test("empty orders, then a new order: card, every step from the app, customer to
     await expect(one).toContainText("Aziz Karimov")
 
     await expect(one).toContainText("O'tkazma kutilmoqda")
+    // No screenshot yet: the customer acts first, the card has no «Pul keldi».
+    await expect(one).toContainText("Mijoz pulni o'tkazib, chekni yuklashi kerak")
+    await expect(one.getByRole("button", { name: "Pul keldi, qabul qilish" })).toHaveCount(0)
+    expect((await sendReceipt(PEOPLE.customer, FOOD, order.id)).status).toBe(200)
+    await page.getByRole("tab", { name: "Yakunlangan" }).click()
+    await page.getByRole("tab", { name: "Faol" }).click()
     const steps: [string, string][] = [
         // Accepting starts it: one message, one tap less.
         ["Pul keldi, qabul qilish", "qabul qilindi va tayyorlanmoqda"],
         ["Tayyor bo'ldi", "tayyor"],
-        ["Jo'natish", "yo'lda"],
-        ["Yetkazildi", "yetkazildi"],
+        // The shop's only courier got it with «Pul keldi» (owner's decision, November 2026).
+        ["Jo'natish", "Jasur olib kelmoqda"],
     ]
     for (const [button, told] of steps) {
         const since = await lastSeq()
@@ -71,6 +85,17 @@ test("empty orders, then a new order: card, every step from the app, customer to
         await expect(page.getByRole("dialog")).toBeHidden()
         await waitForMessage(PEOPLE.customer.id, told, since)
     }
+    // On the way with a courier, the door is the courier's step: the owner only watches, and a
+    // quiet «Yetkazildi deb belgilash» (asked once more) stays for a courier who went silent.
+    await expect(one).toContainText("Kuryer yetkazmoqda")
+    await expect(one.getByRole("button", { name: "Yetkazildi", exact: true })).toHaveCount(0)
+    const since = await lastSeq()
+    await (
+        await openOrderCard(page, order.number)
+    )
+        .getByRole("button", { name: "Yetkazildi deb belgilash" })
+        .click()
+    await waitForMessage(PEOPLE.customer.id, "yetkazildi", since)
     // Delivered: it leaves «Faol» at once and waits in «Yakunlangan», paid, with nothing to press.
     await expect(one).toBeHidden()
     await page.getByRole("tab", { name: "Yakunlangan" }).click()
@@ -85,7 +110,11 @@ test("cancel with a reason: the customer sees the reason", async ({ page }) => {
     ])
     await openOwner(page)
     const since = await lastSeq()
-    await card(page, order.number).getByRole("button", { name: "Bekor qilish" }).click()
+    await (
+        await openOrderCard(page, order.number)
+    )
+        .getByRole("button", { name: "Bekor qilish" })
+        .click()
     await page.getByLabel("Sabab (ixtiyoriy)").fill("Palov tugadi")
     await page
         .getByRole("dialog")
@@ -103,16 +132,27 @@ test("cancel with a reason: the customer sees the reason", async ({ page }) => {
     await expect(page.getByText("Palov tugadi")).toBeVisible()
 })
 
-test("bot chat buttons: «Деньги пришли, принять»; old buttons and strangers are refused", async () => {
+test("bot chat buttons: «Pul keldi» after the screenshot; old buttons and strangers are refused", async () => {
     const since = await lastSeq()
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
     const newCard = await waitForMessage(PEOPLE.foodOwner.id, `#${order.number}`, since)
-    // A new order waits for the transfer: the step is «Деньги пришли, принять».
-    expect(newCard.text).toContain("Kartaga o'tkazma kutilmoqda")
-    const accept = newCard.buttons.find((b) => b.callback_data === `p:${order.id}`)
-    expect(accept?.text).toBe("💳 Pul keldi, qabul qilish")
+    // A new order waits for the transfer and its screenshot: no «Pul keldi» yet.
+    expect(newCard.text).toContain("Kartaga o'tkazma va chek kutilmoqda")
+    expect(newCard.buttons.map((b) => b.callback_data)).not.toContain(`p:${order.id}`)
+    // The screenshot came: the card gets «Pul keldi, qabul qilish».
+    const receipt = await lastSeq()
+    expect((await sendReceipt(PEOPLE.customer, FOOD, order.id)).status).toBe(200)
+    let accept: { text: string; callback_data?: string } | undefined
+    await expect
+        .poll(async () => {
+            accept = (await messagesTo(PEOPLE.foodOwner.id, receipt))
+                .flatMap((m) => m.buttons)
+                .findLast((b) => b.callback_data === `p:${order.id}`)
+            return accept?.text
+        })
+        .toBe("💳 Pul keldi, qabul qilish")
 
     // A stranger who got the button data cannot press it.
     await shopChat(FOOD).press(PEOPLE.stranger, accept?.callback_data ?? "")

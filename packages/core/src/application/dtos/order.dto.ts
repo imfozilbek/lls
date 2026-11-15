@@ -7,6 +7,7 @@ import type { DeliveryFeeRecipient } from "../../domain/enums/delivery-fee.js"
 import type { OrderChannel } from "../../domain/enums/order-channel.js"
 import type { OrderStatus } from "../../domain/enums/order-status.js"
 import type { PaymentMethod, PaymentStatus } from "../../domain/enums/payment.js"
+import type { SendWay } from "../../domain/enums/send-way.js"
 import type { Unit } from "../../domain/enums/unit.js"
 import type { ChosenOptions } from "../../domain/value-objects/product-options.js"
 
@@ -54,6 +55,18 @@ export interface OrderDTO {
     /** In a trip of several orders with one courier, and this order's stop there (1…). */
     tripId?: string
     tripStop?: number
+    /** With the shop's dispatcher: they send it on and write the notes. */
+    dispatcher: boolean
+    /** «O'zim yetkazaman»: the owner delivers it. */
+    ownerDelivers: boolean
+    /** No courier, no «O'zim yetkazaman», no network yet: whom to give it to is still open. */
+    needsCourierChoice: boolean
+    /** How the dispatcher sent it on. */
+    sentVia?: SendWay
+    /** The dispatcher's notes for the customer, oldest first. */
+    deliveryNotes: DeliveryNoteDTO[]
+    /** The customer pays the carrier (a taxi, the post) for the delivery, outside the total. */
+    customerPaysCarrier: boolean
     address: string
     landmark?: string
     location?: LocationDTO
@@ -66,6 +79,11 @@ export interface OrderDTO {
     deliveredAt?: string
     createdAt: string
     updatedAt: string
+}
+
+export interface DeliveryNoteDTO {
+    at: string
+    text: string
 }
 
 export interface OrderPaymentDTO {
@@ -125,6 +143,15 @@ export function toOrderDTO(order: Order): OrderDTO {
         deliveryFeeTo: order.deliveryFeeTo,
         tripId: order.tripId,
         tripStop: order.tripStop,
+        dispatcher: order.isWithDispatcher(),
+        ownerDelivers: order.ownerDelivers,
+        needsCourierChoice: order.needsCourierChoice(),
+        sentVia: order.sentVia,
+        deliveryNotes: order.deliveryNotes.map((note) => ({
+            at: note.at.toISOString(),
+            text: note.text,
+        })),
+        customerPaysCarrier: order.customerPaysCarrier,
         address: order.address,
         landmark: order.landmark,
         location: toLocationDTO(order.location),

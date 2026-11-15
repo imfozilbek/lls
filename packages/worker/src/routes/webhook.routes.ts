@@ -1,4 +1,10 @@
-import { ForbiddenError, OrderStatus, languageFromTelegram } from "@zumda/core"
+import {
+    BusinessRuleViolationError,
+    ForbiddenError,
+    OrderStatus,
+    PaymentStatus,
+    languageFromTelegram,
+} from "@zumda/core"
 import { Hono } from "hono"
 
 import { timingSafeEqual } from "../crypto.js"
@@ -152,6 +158,9 @@ async function handleOrderCallback(
             await notifyPaymentConfirmed(services, business, step.order, step.request)
         } else if (action.kind === "notPaid") {
             await new Notifier(services).transferRejected(business, order)
+        } else if (action.kind === "deliverMyself") {
+            // Nothing for the customer: the owner's card shows the steps again.
+            await new Notifier(services).ownerCardChanged(business, order)
         } else {
             await notifyOwnerStep(services, business, step.order, step.request)
         }
@@ -182,6 +191,10 @@ async function askPaymentConfirm(
             businessId: business.id,
             orderId,
         })
+        // An old card's «Pul keldi» before the screenshot: the customer acts first.
+        if (order.payment.status === PaymentStatus.UNPAID) {
+            throw BusinessRuleViolationError.receiptNotSent()
+        }
         await new Notifier(services).askPaymentConfirm(business, order)
     } catch (error) {
         await services.telegram.answerCallback(token, callback.id, callbackErrorText(error, texts))
@@ -207,6 +220,8 @@ async function runOrderAction(
             return services.useCases.rejectTransfer.execute(ids)
         case "cancel":
             return requireOwnerCancel(services, business, actorTelegramId, action.orderId)
+        case "deliverMyself":
+            return services.useCases.deliverMyself.execute(ids)
     }
 }
 

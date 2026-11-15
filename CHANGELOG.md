@@ -7,6 +7,90 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Up to three photos a product
+- The owner adds up to three photos in the product's form (owner's decision, November 2026): a
+  tile each, the first is «Asosiy» (the menu, the showcase and the catalog show it), a tap makes
+  another the main one or takes it away. «Saqlash» sends only the difference; a retry after a weak
+  network never sends a photo twice.
+- The customer swipes through the photos in the product's sheet, with a dot for each.
+- A product deleted, a photo taken away and «Namunani tozalash» delete the files from the storage
+  (a demo's owner photos used to stay there for good).
+
+### The shop's stock: counted where the owner wants, «Tugagan» at zero
+- The owner switches on «Qoldiqni hisoblash» for a product and writes how many are left
+  (owner's decisions, November 2026): one number for every variant, kg with a comma. The catalog
+  says «12 ta qoldi» and has a chip «Tugagan».
+- An order takes from the count when it is placed and a cancel gives it back. Two customers
+  never get the last piece: the order, its lines and the count go in one transaction, and the
+  second order is refused with how many are left (`OUT_OF_STOCK`).
+- At zero the customer still sees the product, on the storefront, in its sheet and in the
+  showcase, with «Tugagan» in place of «+». The cart drops it («… tugab qoldi»), or brings a line
+  down to what is left («To'y oshi: faqat 1 ta qoldi»). The customer never sees the number.
+- The product's sheet loads on its own (the storefront's first download went down to 99.54 KB).
+### «Chekni yuklash» before «O'tkazdim», «Pul keldi» only after the screenshot
+- The customer's main button on an unpaid transfer is «Chekni yuklash» (owner's decision,
+  November 2026); «O'tkazdim» opens in its sheet once the screenshot is picked, and sends it.
+- «Pul keldi» waits for the customer's screenshot: before it the owner's card in the app says
+  «Mijoz pulni o'tkazib, chekni yuklashi kerak», the bot's new order card has only «Bekor qilish»
+  and says «Kartaga o'tkazma va chek kutilmoqda», an old card's button answers one line, and the
+  server refuses it (`RECEIPT_NOT_SENT`), also after «Pul kelmadi». Production had seven transfer
+  orders confirmed without a screenshot, three of them in the last days in live shops.
+- The stand's requests to the fake Telegram are sent once more after a closed kept-alive
+  connection, as its requests to the Worker already were.
+
+### Screens that say what they do, short lists, words that read as living Uzbek
+- Long lists became short (owner's decision, November 2026). The owner's orders are short cards
+  (who, what, how much, the one next step; «Batafsil» opens the phone, the place, the courier and
+  the cancel), with chips by stage and counts: «Yangi», «Yig'ilmoqda», «Tayyor», «Yo'lda». The
+  courier's delivery to do now is open, the others say where and the next step. «Platforma» shows
+  shops as short rows with marks («Vitrina 5%», «Namuna», «Raqamsiz», «Bot yoza olmaydi») and
+  chips. The catalog filters by «Sotuvda», «Bugun yo'q», «Yashirilgan», «Rasmsiz».
+- Words that promised the wrong thing are fixed: the district network hint said the courier
+  brings the order's money (only prepaid orders go there); the customer read «Jasur olib
+  kelmoqda» while the order was still being made; a new cash order showed the owner the
+  customer's «Yuborildi»; the courier had two buttons called «Yo'l» and a third «Yo'lni ochish».
+- Parts in their places: «Ish vaqti» no longer sticks out of the screen and speaks 24 hours
+  («12:00 AM» is gone); the cart's sum is under the lines; «Takrorlash» is inside its card and the
+  main button of a finished order; the storefront's call chip wraps instead of being cut; an
+  order on its way with a courier no longer gives the owner a big «Yetkazildi».
+- Every string of the app and the bots went through the Prizma corpus check (27 M words of public
+  Uzbek channels): eight changed, and the new words were chosen with it, each only where the
+  corpus read it as at least as natural and flagged nothing new.
+
+### A courier who is a dispatcher, and someone on every order
+- A shop's courier may be a dispatcher (owner's decisions, November 2026): the owner packs and
+  presses «Tayyor bo'ldi», the dispatcher sends the parcel by a taxi, the post or someone else
+  («Jo'natdim» with a note) and writes more notes as it travels. The customer gets each from the
+  shop's bot and sees them on the order, newest first, with the dispatcher's phone. The carrier is
+  never in Zumda: only the way and the notes are.
+- Nobody skips the courier any more: the shop's only courier gets an accepted order by itself;
+  with two or more the owner's button is «Kuryerga topshirish», with none «O'zim yetkazaman»
+  (also right in the bot). «Tayyor» waits until someone is on it.
+- Every courier card says where from and where to, on every step.
+- Every order carries the customer's pin on the map, in every shop.
+- «Yetkazish haqini mijoz o'zi to'laydi»: a shop that sends by a taxi or the post says
+  «Yetkazish haqi alohida» instead of «Bepul yetkazish», and adds no fee to the order.
+
+### A toy shop sorts its toys the way parents look for them
+- Three categories join the goods shelf (owner's decisions, 7 November 2026): «Rivojlantiruvchi
+  o'yinchoqlar», «Mantiqiy o'yinlar» and «Kitoblar».
+- A product stands in up to three categories: a logic game can be a book too. The main one stays
+  in orders; the others place it under more tabs. The form's first tap replaces a guessed
+  category, later taps add and remove, and the shop's own categories come first.
+- Children's goods say the age they are for, «Yoshi»: 0+, 1+, 3+, 5+, 7+ or 12+.
+- The storefront's tabs: the ages first, then every category; a toy is under each of its tabs,
+  and its card shows «3+».
+
+### The app never waits forever (an owner's report: it froze until reopened)
+- Every request of the Mini App has a deadline: 20 s to read, 30 s for an action, 120 s for a
+  photo. Over a connection that died in the background, or a stalled regional network, the
+  screen says «Internet bilan aloqa yo'q» instead of spinning until the app is opened again. A
+  read that broke at once goes again once; an action is never sent twice.
+- The pull spinner lets go after 25 s at most, and the next pull works; a timer's refresh never
+  starts while the last one still waits. The Zumda catalog and the map file have deadlines too.
+- An app opened over a day ago and kept collapsed (Telegram's signature is good for 24 hours)
+  shows «Ilovani qayta oching» with «Yopish», instead of quietly refusing everything.
+
 ### «Platforma» in its own bot, Zumda | Platforma
 - The platform admins have their own bot and Mini App (owner's decision, 16 October 2026):
   «Platforma» is the bot's first screen (platform.zumda.shop), and Zumda | Business is for owners

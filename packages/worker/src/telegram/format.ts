@@ -9,6 +9,7 @@ import {
     mapUrl,
 } from "@zumda/core"
 
+import { appButton } from "./app-links.js"
 import { escapeHtml } from "./gateway.js"
 import { fill, textsFor } from "./texts.js"
 
@@ -114,6 +115,41 @@ export function paymentLine(order: OrderDTO, t: BotTexts): string {
     }
 }
 
+/** «bepul», the fee, or «alohida» when the customer pays the carrier (a taxi, the post). */
+function deliveryText(order: OrderDTO, t: BotTexts, language: Language): string {
+    if (order.customerPaysCarrier) {
+        return t.deliveryApart
+    }
+    return order.deliveryFee === 0 ? t.free : formatMoney(order.deliveryFee, language)
+}
+
+/** The dispatcher's last notes on a card: the newest are what matters, the app has them all. */
+const CARD_NOTES = 3
+
+function noteLines(order: OrderDTO, t: BotTexts): string[] {
+    return order.deliveryNotes
+        .slice(-CARD_NOTES)
+        .map((note) => fill(t.noteLine, { text: escapeHtml(note.text) }))
+}
+
+/** Who carries it on the owner's card: the network, a dispatcher (and how it went), a courier. */
+function courierLines(order: OrderDTO, t: BotTexts): string[] {
+    if (order.waitingForNetwork) {
+        return [t.networkSearching]
+    }
+    if (!order.courierName) {
+        return []
+    }
+    // The courier's phone next to the name: the owner calls from the chat too.
+    const phone = order.courierPhone ? `, ${formatPhone(order.courierPhone)}` : ""
+    const name = `${escapeHtml(order.courierName)}${phone}`
+    if (order.dispatcher) {
+        const sent = order.sentVia ? [fill(t.sentLine, { way: t.sendWays[order.sentVia] })] : []
+        return [fill(t.dispatcherLine, { name }), ...sent, ...noteLines(order, t)]
+    }
+    return [order.viaNetwork ? fill(t.networkCourier, { name }) : `🚚 ${t.courier}: ${name}`]
+}
+
 /** The owner's order card: items, totals, customer, address, courier, current status. */
 export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
     const { language } = reader
@@ -124,8 +160,7 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
         "",
         ...itemLines(order, t, language),
     ]
-    const delivery = order.deliveryFee === 0 ? t.free : formatMoney(order.deliveryFee, language)
-    lines.push(`${t.delivery}: ${delivery}`)
+    lines.push(`${t.delivery}: ${deliveryText(order, t, language)}`)
     if (order.depositTotal > 0) {
         lines.push(`${t.deposit}: ${formatMoney(order.depositTotal, language)}`)
     }
@@ -135,14 +170,7 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
         lines.push(fill(t.bottlesBack, { n: order.bottlesReturned }))
     }
     lines.push("", ...addressLines(order, t))
-    if (order.waitingForNetwork) {
-        lines.push(t.networkSearching)
-    } else if (order.courierName) {
-        // The courier's phone next to the name: the owner calls from the chat too.
-        const phone = order.courierPhone ? `, ${formatPhone(order.courierPhone)}` : ""
-        const name = `${escapeHtml(order.courierName)}${phone}`
-        lines.push(order.viaNetwork ? fill(t.networkCourier, { name }) : `🚚 ${t.courier}: ${name}`)
-    }
+    lines.push(...courierLines(order, t))
     lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
     if (order.channel === OrderChannel.MARKETPLACE) {
         const sum = formatMoney(order.commission, language)
@@ -174,7 +202,7 @@ export function formatNewOrderForOwner(order: OrderDTO, reader: Reader): string 
 export function formatOrderForCourier(
     order: OrderDTO,
     reader: Reader,
-    shop: { name: string; phone?: string },
+    shop: { name: string; phone?: string; address?: string },
 ): string {
     const { language } = reader
     const t = textsFor(language, reader.type)
@@ -188,13 +216,19 @@ export function formatOrderForCourier(
     if (order.bottlesReturned > 0) {
         lines.push(fill(t.bottlesToCollect, { n: order.bottlesReturned }))
     }
-    lines.push("", ...addressLines(order, t))
+    // Where from and where to, on every step: a dispatcher tells a taxi both.
+    lines.push("", fill(t.pickupFrom, { place: escapeHtml(shop.address ?? shop.name) }))
+    lines.push(...addressLines(order, t))
     if (shop.phone) {
         lines.push(fill(t.shopPhone, { phone: formatPhone(shop.phone) }))
     }
     lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
+    if (order.sentVia) {
+        lines.push(fill(t.sentLine, { way: t.sendWays[order.sentVia] }))
+    }
+    lines.push(...noteLines(order, t))
     if (order.status === OrderStatus.ACCEPTED || order.status === OrderStatus.PREPARING) {
-        lines.push(t.courierWait)
+        lines.push(order.dispatcher ? t.dispatcherWait : t.courierWait)
     }
     return lines.join("\n")
 }
@@ -208,23 +242,56 @@ function courierMoneyLine(order: OrderDTO, t: BotTexts, language: Language): str
     return order.payment.status === PaymentStatus.PAID ? t.nothingToCollect : paymentLine(order, t)
 }
 
-export function formatStatusForCustomer(order: OrderDTO, reader: Reader): string | null {
+/**
+ * The customer's message about a step. On the way: who brings it, or how the dispatcher sent it
+ * (with the note sent along, `note`), and the number to call.
+ */
+export function formatStatusForCustomer(
+    order: OrderDTO,
+    reader: Reader,
+    note?: string,
+): string | null {
     const t = textsFor(reader.language, reader.type)
-    const template =
-        order.status === OrderStatus.PICKED_UP && order.courierName
-            ? t.courierOnTheWay
-            : t.customerStatus[order.status]
+    const onTheWay = order.status === OrderStatus.PICKED_UP && order.courierName !== undefined
+    const template = onTheWay ? onTheWayText(order, t) : t.customerStatus[order.status]
     if (!template) {
         return null
     }
     const text = fill(template, { n: order.number, courier: escapeHtml(order.courierName ?? "") })
-    // On the way: the customer can call the courier straight from the chat.
-    const phone =
-        template === t.courierOnTheWay && order.courierPhone
-            ? `\n${fill(t.courierPhone, { phone: formatPhone(order.courierPhone) })}`
-            : ""
-    const reason = order.cancelReason ? `\n${t.reason}: ${escapeHtml(order.cancelReason)}` : ""
-    return text + transferLine(order, t) + phone + reason
+    const lines = [text + transferLine(order, t)]
+    if (onTheWay) {
+        lines.push(...onTheWayLines(order, t, note))
+    }
+    if (order.cancelReason) {
+        lines.push(`${t.reason}: ${escapeHtml(order.cancelReason)}`)
+    }
+    return lines.join("\n")
+}
+
+function onTheWayText(order: OrderDTO, t: BotTexts): string {
+    return order.dispatcher && order.sentVia ? t.sentCustomer[order.sentVia] : t.courierOnTheWay
+}
+
+/** The note sent along, the fee to pay the carrier, and the number to call from the chat. */
+function onTheWayLines(order: OrderDTO, t: BotTexts, note: string | undefined): string[] {
+    const lines: string[] = []
+    if (note) {
+        lines.push(fill(t.noteLine, { text: escapeHtml(note) }))
+    }
+    if (order.customerPaysCarrier) {
+        lines.push(t.carrierFeeCustomer)
+    }
+    if (order.courierPhone) {
+        const template = order.dispatcher ? t.dispatcherPhone : t.courierPhone
+        lines.push(fill(template, { phone: formatPhone(order.courierPhone) }))
+    }
+    return lines
+}
+
+/** A dispatcher's note on its own: «📝 #7 buyurtma: …». */
+export function formatNoteForCustomer(order: OrderDTO, text: string, reader: Reader): string {
+    const t = textsFor(reader.language, reader.type)
+    return fill(t.noteCustomer, { n: order.number, text: escapeHtml(text) })
 }
 
 /** «To'lovingiz keldi» once the shop took a transfer order: the customer's money is seen. */
@@ -239,19 +306,23 @@ function transferLine(order: OrderDTO, t: BotTexts): string {
 
 // Callback data (≤ 64 bytes): "a:<orderId>:<status>" advance, "x:<orderId>" cancel,
 // "p:<orderId>" «Деньги пришли, принять» (asks first), "pc:<orderId>" yes, the money is here,
-// "pn:<orderId>" «Pul kelmadi».
+// "pn:<orderId>" «Pul kelmadi», "m:<orderId>" «O'zim yetkazaman».
 export type OrderCallback =
     | { kind: "advance"; orderId: string; to: OrderStatus }
     | { kind: "cancel"; orderId: string }
     | { kind: "askPaid"; orderId: string }
     | { kind: "paid"; orderId: string }
     | { kind: "notPaid"; orderId: string }
+    | { kind: "deliverMyself"; orderId: string }
 
-const SIMPLE_CALLBACKS: Record<string, "cancel" | "askPaid" | "paid" | "notPaid"> = {
+type SimpleCallback = "cancel" | "askPaid" | "paid" | "notPaid" | "deliverMyself"
+
+const SIMPLE_CALLBACKS: Record<string, SimpleCallback> = {
     x: "cancel",
     p: "askPaid",
     pc: "paid",
     pn: "notPaid",
+    m: "deliverMyself",
 }
 
 const ORDER_STATUS_VALUES = new Set<string>(Object.values(OrderStatus))
@@ -272,34 +343,82 @@ export function parseOrderCallback(data: string): OrderCallback | null {
 }
 
 /**
- * Owner: the next step + cancel, or no buttons for a finished order. A new transfer order waits
- * for the money: its step is «Деньги пришли, принять». A cash order is accepted at once.
+ * Who takes an order nobody is on yet, as the owner's card offers it: «Kuryerga topshirish» in
+ * the app (`url`) when the shop has couriers, else «O'zim yetkazaman» right in the chat.
  */
-export function orderKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard {
+export interface CourierChoice {
+    url: string
+    shopHasCouriers: boolean
+}
+
+/**
+ * Owner: the next step + cancel, or no buttons for a finished order. A new transfer order waits
+ * for the customer's screenshot with only cancel; once it came, its step is «Pul keldi, qabul
+ * qilish» (owner's decision, November 2026). A cash order is accepted at once. An order nobody
+ * is on yet asks who takes it (`choice`) before «Tayyor»; the dispatcher's steps are never on the
+ * owner's card.
+ */
+export function orderKeyboard(
+    order: OrderDTO,
+    reader: Reader,
+    choice?: CourierChoice,
+): InlineKeyboard {
     const t = textsFor(reader.language, reader.type)
     const next = order.nextStatus
     if (!next) {
         return { inline_keyboard: [] }
     }
-    const waitsForMoney =
-        next === OrderStatus.ACCEPTED &&
-        !isPaid(order) &&
-        order.payment.method !== PaymentMethod.CASH
-    const step: InlineButton = waitsForMoney
-        ? { text: t.paidAccept, callback_data: `p:${order.id}` }
-        : { text: t.actions[next] ?? next, callback_data: `a:${order.id}:${next}` }
-    return { inline_keyboard: [[step], [{ text: t.cancel, callback_data: `x:${order.id}` }]] }
+    const cancel: InlineButton[] = [{ text: t.cancel, callback_data: `x:${order.id}` }]
+    const leavesTheShop = next === OrderStatus.READY || next === OrderStatus.PICKED_UP
+    if (order.dispatcher && (next === OrderStatus.PICKED_UP || next === OrderStatus.DELIVERED)) {
+        return { inline_keyboard: [cancel] }
+    }
+    if (choice && order.needsCourierChoice && leavesTheShop) {
+        const who = choice.shopHasCouriers
+            ? appButton(t.chooseCourier, choice.url)
+            : { text: t.deliverMyself, callback_data: `m:${order.id}` }
+        return { inline_keyboard: [[who], cancel] }
+    }
+    const money = moneyStep(order, next, t)
+    if (money === "wait") {
+        return { inline_keyboard: [cancel] }
+    }
+    const step: InlineButton = money ?? {
+        text: t.actions[next] ?? next,
+        callback_data: `a:${order.id}:${next}`,
+    }
+    return { inline_keyboard: [[step], cancel] }
 }
 
-/** «Pul keldi»: the owner answers after looking at the bank app, never by reflex. */
-export function confirmPaidKeyboard(order: OrderDTO, t: BotTexts, sum: string): InlineKeyboard {
-    const rows: InlineButton[][] = [
-        [{ text: fill(t.confirmPaidYes, { sum }), callback_data: `pc:${order.id}` }],
-    ]
-    if (order.payment.status === PaymentStatus.AWAITING) {
-        rows.push([{ text: t.confirmPaidNo, callback_data: `pn:${order.id}` }])
+/**
+ * A new transfer order before the money: «Pul keldi, qabul qilish» once the customer's
+ * screenshot came, "wait" before it; null when the money is not the next thing.
+ */
+function moneyStep(order: OrderDTO, next: OrderStatus, t: BotTexts): InlineButton | "wait" | null {
+    if (
+        next !== OrderStatus.ACCEPTED ||
+        isPaid(order) ||
+        order.payment.method === PaymentMethod.CASH
+    ) {
+        return null
     }
-    return { inline_keyboard: rows }
+    if (order.payment.status === PaymentStatus.UNPAID) {
+        return "wait"
+    }
+    return { text: t.paidAccept, callback_data: `p:${order.id}` }
+}
+
+/**
+ * «Pul keldi» under the customer's screenshot: the owner answers after looking at the bank app,
+ * never by reflex.
+ */
+export function confirmPaidKeyboard(order: OrderDTO, t: BotTexts, sum: string): InlineKeyboard {
+    return {
+        inline_keyboard: [
+            [{ text: fill(t.confirmPaidYes, { sum }), callback_data: `pc:${order.id}` }],
+            [{ text: t.confirmPaidNo, callback_data: `pn:${order.id}` }],
+        ],
+    }
 }
 
 /** The receipt's warnings for the owner: the same picture again, earlier transfers not found. */
@@ -330,9 +449,15 @@ function isPaid(order: OrderDTO): boolean {
     return order.payment.status === PaymentStatus.PAID
 }
 
-/** Courier: "Picked up" once the order is ready, then "Delivered". Nothing before or after. */
-export function courierKeyboard(order: OrderDTO, reader: Reader): InlineKeyboard {
+/**
+ * Courier: "Picked up" once the order is ready, then "Delivered". Nothing before or after. A
+ * dispatcher's «Jo'natdim» asks the way and a note: it opens the order in the app (`sendUrl`).
+ */
+export function courierKeyboard(order: OrderDTO, reader: Reader, sendUrl?: string): InlineKeyboard {
     const t = textsFor(reader.language, reader.type)
+    if (order.dispatcher && order.status === OrderStatus.READY) {
+        return { inline_keyboard: sendUrl ? [[appButton(t.dispatcherSend, sendUrl)]] : [] }
+    }
     const next =
         order.status === OrderStatus.READY || order.status === OrderStatus.PICKED_UP
             ? order.nextStatus

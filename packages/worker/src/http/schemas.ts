@@ -1,4 +1,5 @@
 import {
+    AGES,
     BUSINESS_STATUSES,
     BUSINESS_TYPES,
     DEMO_TEMPLATES,
@@ -20,7 +21,10 @@ import {
     PAYMENT_OPTIONS,
     REGIONS,
     UNITS,
+    isAge,
     WEEKDAYS,
+    DELIVERY_NOTE_MAX,
+    SEND_WAYS,
 } from "@zumda/core"
 import { z } from "zod"
 
@@ -121,34 +125,70 @@ const productOptions = z.object({
         .max(OPTION_LIMITS.addons),
 })
 
+/** The child's age a product is for: one of `AGES`, or null for none. */
+const ageFrom = z
+    .number()
+    .int()
+    .refine((age) => isAge(age), { message: `Must be one of: ${AGES.join(", ")}` })
+
 export const productBody = z.object({
     name: text(80),
     description: z.string().trim().max(500).optional(),
     price: z.number().int().min(1).max(100_000_000),
     unit: z.enum(UNITS),
     category: z.enum(CATEGORIES),
+    /** Up to two more categories for the storefront; the core refuses twins and the main one. */
+    moreCategories: z.array(z.enum(CATEGORIES)).max(2).optional(),
+    ageFrom: ageFrom.nullable().optional(),
     step: z.number().int().min(1).max(10_000).optional(),
     returnable: z.boolean().optional(),
     position: z.number().int().min(0).max(100_000).optional(),
     options: productOptions.optional(),
+    /** What is left in base units (pieces, or grams); null: not counted. */
+    stock: z.number().int().min(0).max(10_000_000).nullable().optional(),
 })
 
 /** «Ro'yxat bilan qo'shish»: a list of plain products (no variants), at most 50. */
 export const productsBody = z.object({
     items: z
-        .array(productBody.omit({ options: true, position: true }))
+        .array(
+            productBody.omit({
+                options: true,
+                position: true,
+                moreCategories: true,
+                ageFrom: true,
+                stock: true,
+            }),
+        )
         .min(1)
         .max(MAX_PRODUCTS_AT_ONCE),
 })
 
+/** A product photo's R2 key, as `storeImage` makes it. */
+const photoKey = z
+    .string()
+    .max(200)
+    .regex(/^shops\/[\w-]+\/products\/[\w-]+\.(webp|jpg|png)$/)
+
+/** «Rasmni o'chirish»: which photo. */
+export const photoQuery = z.object({ key: photoKey })
+
+/** «Asosiy qilish»: the product's photos in their new order, the first is the main one. */
+export const photosOrderBody = z.object({ keys: z.array(photoKey).min(1).max(3) })
+
 export const productPatchBody = productBody.partial().extend({
     description: z.string().trim().max(500).nullable().optional(),
+    moreCategories: z.array(z.enum(CATEGORIES)).max(2).nullable().optional(),
     options: productOptions.nullable().optional(),
     isAvailable: z.boolean().optional(),
     stopForToday: z.literal(true).optional(),
 })
 
-export const assignCourierBody = z.object({ courierId: z.string().min(1).max(64) })
+/** One of the shop's couriers, or «O'zim yetkazaman»: the owner delivers it. */
+export const assignCourierBody = z.union([
+    z.object({ courierId: z.string().min(1).max(64) }),
+    z.object({ self: z.literal(true) }),
+])
 
 /** «Bir yo'nalish»: the orders in the order of the stops (the core checks 2..10). */
 export const tripBody = z.object({
@@ -166,10 +206,16 @@ export const courierSchedulePatch = z
     .object({
         workDays: z.array(z.enum(WEEKDAYS)).min(1).max(WEEKDAYS.length).optional(),
         offToday: z.boolean().optional(),
+        /** «Dispetcher»: sends the shop's orders on by a taxi, the post or someone else. */
+        dispatcher: z.boolean().optional(),
     })
-    .refine((patch) => patch.workDays !== undefined || patch.offToday !== undefined, {
-        message: "Nothing to change",
-    })
+    .refine(
+        (patch) =>
+            patch.workDays !== undefined ||
+            patch.offToday !== undefined ||
+            patch.dispatcher !== undefined,
+        { message: "Nothing to change" },
+    )
 
 export const courierReviewBody = z.object({ approve: z.boolean() })
 
@@ -184,6 +230,17 @@ export const courierProfileBody = z.object({
 /** A courier moves only the delivery part. */
 export const courierOrderBody = z.object({
     status: z.enum([OrderStatus.PICKED_UP, OrderStatus.DELIVERED]),
+})
+
+/** «Jo'natdim»: the dispatcher's way, and a note for the customer (required for «Boshqa»). */
+export const sendOrderBody = z.object({
+    via: z.enum(SEND_WAYS),
+    note: z.string().trim().max(DELIVERY_NOTE_MAX).optional(),
+})
+
+/** «Izoh qo'shish»: one note for the customer. */
+export const deliveryNoteBody = z.object({
+    text: z.string().trim().min(1).max(DELIVERY_NOTE_MAX),
 })
 
 /**
@@ -230,6 +287,8 @@ export const shopPatchBody = z.object({
             freeFrom: optionalMoney,
             minOrder: optionalMoney,
             radiusMeters: z.number().int().min(1).max(100_000).nullable().optional(),
+            /** «Yetkazish haqini mijoz o'zi to'laydi»; left out: as it was. */
+            customerPaysCarrier: z.boolean().optional(),
         })
         .optional(),
     workingHours: z.partialRecord(z.enum(WEEKDAYS), timeRange).nullable().optional(),

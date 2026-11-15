@@ -10,6 +10,7 @@ import {
     STRANGER,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -129,7 +130,11 @@ describe("a short application: name, kind, bot and where the business is", () =>
         )
         const order = await customer("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: product.id, quantity: 1 }], address: "Navoiy 12" },
+            json: {
+                items: [{ productId: product.id, quantity: 1 }],
+                address: "Navoiy 12",
+                location: PIN,
+            },
         })
         expect(order.status).toBe(422)
         expect(await json(order)).toMatchObject({ error: { code: "SHOP_NOT_ACTIVE" } })

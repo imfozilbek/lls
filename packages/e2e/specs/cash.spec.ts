@@ -5,7 +5,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, STAND_PIN, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import { lastSeq, waitForMessage } from "../support/telegram.js"
 import { bottomButton, fillAddress, openApp, openSettings, toCart } from "../support/webapp.js"
 
@@ -69,7 +69,7 @@ test("the owner chooses «Naqd pul»: the cards step aside", async ({ page }) =>
     await expect(page.getByRole("button").filter({ hasText: "Naqd pul" })).toBeVisible()
 })
 
-test("cash only: the customer sees the sum for the courier, no card, no «O'tkazdim»", async ({
+test("cash only: the customer sees the sum for the courier, no card, no «Chekni yuklash»", async ({
     page,
 }) => {
     await toCheckout(page)
@@ -82,7 +82,7 @@ test("cash only: the customer sees the sum for the courier, no card, no «O'tkaz
     await bottomButton(page).click()
     await expect(page.getByRole("heading", { name: "Buyurtma yuborildi!" })).toBeVisible()
     await expect(page.getByText(/Naqd: kuryerga 55\s000\sso'm berasiz/)).toBeVisible()
-    await expect(bottomButton(page)).not.toContainText("O'tkazdim")
+    await expect(bottomButton(page)).not.toContainText("Chekni yuklash")
     await expect(page.getByText("8600 1234 5678 9012")).toHaveCount(0)
     const told = await waitForMessage(PEOPLE.customer.id, "To'lov naqd", since)
     expect(told.text).toMatch(/kuryerga.*55\s000/)
@@ -98,8 +98,9 @@ test("the owner accepts without money; a cash order never goes to the network", 
     await expect(card).toContainText("Yetkazganda to'lanadi")
     await expect(card.getByRole("button", { name: "Pul keldi, qabul qilish" })).toHaveCount(0)
     await card.getByRole("button", { name: "Qabul qilish" }).click()
-    await expect(card.getByRole("button", { name: "Kuryer tayinlash" })).toBeVisible()
-    await card.getByRole("button", { name: "Kuryer tayinlash" }).click()
+    // The shop's only courier got it by itself (owner's decision, November 2026).
+    await expect(card).toContainText("Jasur")
+    await card.getByRole("button", { name: "Boshqa kuryer" }).click()
     const sheet = page.getByRole("dialog")
     await expect(sheet.getByRole("button", { name: /Jasur/ })).toBeVisible()
     await expect(sheet.getByText("Tuman tarmog'i kuryeri")).toHaveCount(0)
@@ -180,6 +181,7 @@ test("card only: cash is refused", async () => {
         json: {
             items: [{ productId: P1, quantity: 1 }],
             address: "Navoiy 12",
+            location: STAND_PIN,
             paymentMethod: "cash",
         },
     })

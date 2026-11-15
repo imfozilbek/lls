@@ -228,12 +228,8 @@ test("«Buyurtmani ochish»: the owner lands on the order, the customer on its t
         { productId: "dev-food-p1", quantity: 1 },
     ])
     const card = await waitForMessage(PEOPLE.foodOwner.id, `#${order.number}`, since)
-    // The owner's card: «Pul keldi, qabul qilish», «Bekor qilish», then the order in the app.
-    expect(card.buttons.map((b) => b.callback_data ?? "app")).toEqual([
-        `p:${order.id}`,
-        `x:${order.id}`,
-        "app",
-    ])
+    // The owner's card before the screenshot: «Bekor qilish», then the order in the app.
+    expect(card.buttons.map((b) => b.callback_data ?? "app")).toEqual([`x:${order.id}`, "app"])
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD, query: appQueryOf(card.buttons) })
     const focused = page.getByRole("region", { name: "Xabardagi buyurtma" })
     await expect(focused).toContainText(`Buyurtma #${order.number}`)

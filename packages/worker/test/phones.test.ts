@@ -5,10 +5,12 @@ import {
     ADMIN,
     CUSTOMER,
     OWNER,
+    PIN,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
     createActiveShop,
     hireCourier,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
 } from "./helpers.js"
@@ -54,7 +56,11 @@ describe("phones: everyone on an order can call each other", () => {
         await sharePhoneWithShops(CUSTOMER.id)
         const response = await customer()("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: product.id, quantity: 2 }], address: "Navoiy 12" },
+            json: {
+                items: [{ productId: product.id, quantity: 2 }],
+                address: "Navoiy 12",
+                location: PIN,
+            },
         })
         expect(response.status).toBe(201)
         return json<Order>(response)
@@ -62,6 +68,7 @@ describe("phones: everyone on an order can call each other", () => {
 
     /** Paid and accepted, then given to the courier. */
     async function assigned(order: Order, courierId: string): Promise<Order> {
+        await sendReceipt(customer(), order.id)
         await owner()(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },
@@ -232,9 +239,10 @@ describe("no phone, no orders (owner's decision, October 2026)", () => {
         const order = await json<Order>(
             await customer()("/api/orders", {
                 method: "POST",
-                json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12" },
+                json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12", location: PIN },
             }),
         )
+        await sendReceipt(customer(), order.id)
         await owner()(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },
@@ -278,7 +286,7 @@ describe("no phone, no orders (owner's decision, October 2026)", () => {
         await sharePhoneWithShops(CUSTOMER.id)
         const refused = await customer()("/api/orders", {
             method: "POST",
-            json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12" },
+            json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12", location: PIN },
         })
         expect(refused.status).toBe(422)
         expect(await json(refused)).toMatchObject({ error: { code: "NO_SHOP_PHONE" } })

@@ -14,6 +14,8 @@ import { TelegramId } from "../domain/value-objects/telegram-id.js"
 
 import type { CourierRepository } from "../application/ports/courier-repository.js"
 import type { DeliverySettings } from "../domain/entities/business.js"
+import type { Order } from "../domain/entities/order.js"
+import type { TransferReceipt } from "../domain/value-objects/payment.js"
 
 export const OWNER_TG = 1001
 export const CUSTOMER_TG = 2002
@@ -24,6 +26,9 @@ export const TEST_CARD = { number: "4111111111111111", holder: "Rustam Karimov" 
 export const TEST_CARD_ID = "card-1"
 
 /** An active shop with a card: it takes orders. `card: false`: a shop that has not added one. */
+/** Yakkabog': every order carries the customer's pin (owner's decision, November 2026). */
+export const PIN = { latitude: 38.9785, longitude: 66.6831 }
+
 export function makeBusiness(
     overrides: {
         id?: string
@@ -134,4 +139,30 @@ export function makeCourier(
     })
     courier.approve(now)
     return courier
+}
+
+/** The screenshot of a transfer, as «O'tkazdim» sends it. */
+export const TEST_RECEIPT: TransferReceipt = {
+    key: "receipts/test.jpg",
+    hash: "f".repeat(64),
+    at: new Date("2026-09-28T07:05:00Z"),
+    customerRejections: 0,
+}
+
+/** «Chekni yuklash» and «O'tkazdim»: only now may the owner confirm the money. */
+export function withReceipt<T extends Order>(order: T): T {
+    order.markTransferSent(TEST_RECEIPT)
+    return order
+}
+
+/** The same for an order kept in a repository (the in-memory one keeps the instance). */
+export async function receiptSent(
+    orders: { findById(id: string): Promise<Order | null> },
+    orderId: string,
+): Promise<void> {
+    const order = await orders.findById(orderId)
+    if (!order) {
+        throw new Error(`No order ${orderId}`)
+    }
+    withReceipt(order)
 }

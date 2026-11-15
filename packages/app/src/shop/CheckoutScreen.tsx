@@ -13,7 +13,7 @@ import {
 import { ApiError, api, currentShopVia, loadCatalog, scopedKey } from "../lib/api.js"
 import { remember } from "../lib/cache.js"
 import { cn } from "../lib/cn.js"
-import { formatMoney, kmText } from "../lib/format.js"
+import { amountText, formatMoney, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { removedText } from "../lib/removed.js"
 import { takesOrdersNow } from "../lib/shop-ready.js"
@@ -32,9 +32,9 @@ import {
     AddressSummary,
     CHECKOUT_ADDRESS,
     addressComplete,
-    needsPin,
     outsideZone,
 } from "./checkout-address.js"
+import { deliveryWords } from "./delivery-words.js"
 
 import type { Delivery } from "./checkout-address.js"
 import type { Dictionary } from "../i18n/index.js"
@@ -120,6 +120,7 @@ function PhoneRow(): React.JSX.Element {
 /** Codes that mean the cart or the shop changed under the customer: what they see is reloaded. */
 const CATALOG_CHANGED = new Set([
     "PRODUCT_NOT_AVAILABLE",
+    "OUT_OF_STOCK",
     "OPTION_UNAVAILABLE",
     "VARIANT_REQUIRED",
     "ENTITY_NOT_FOUND",
@@ -165,6 +166,27 @@ function refreshAfterRefusal(code: string, t: Dictionary): void {
 /** At checkout «not found» is a product that left the shop, not a list to refresh. */
 function refusalText(t: Dictionary, code: string): string {
     return code === "ENTITY_NOT_FOUND" ? t.checkout.itemGone : errorText(t, code)
+}
+
+/**
+ * Less of a counted product is left than the cart holds: the cart comes down to it at once, by
+ * name. Run out entirely, the catalog read again takes it out (`soldOutNamed`).
+ */
+function stockShortText(t: Dictionary, error: ApiError): string | null {
+    const productId = error.details?.["productId"]
+    const left = error.details?.["left"]
+    const product = useSession.getState().catalog.find((p) => p.id === productId)
+    if (error.code !== "OUT_OF_STOCK" || typeof left !== "number" || !product) {
+        return null
+    }
+    if (left < product.step) {
+        return null
+    }
+    useCart.getState().fitStock(product.id, left, product.step)
+    return fill(t.checkout.onlyLeft, {
+        name: product.name,
+        left: amountText(left, product.unit, t.units, t.shop.pieces),
+    })
 }
 
 /**
@@ -260,7 +282,11 @@ function usePlaceOrder(
         } catch (error) {
             haptic.error()
             const code = error instanceof ApiError ? error.code : "generic"
-            toast(refusalText(t, code), "error")
+            const short = error instanceof ApiError ? stockShortText(t, error) : null
+            // A product that ran out is named by the catalog read again.
+            if (short || code !== "OUT_OF_STOCK") {
+                toast(short ?? refusalText(t, code), "error")
+            }
             refreshAfterRefusal(code, t)
         } finally {
             inFlight.current = false
@@ -423,6 +449,19 @@ function PaymentSection({
     )
 }
 
+/** The delivery line of the totals: the fee, «bepul», or «alohida» (paid to the carrier). */
+function deliveryValue(
+    shop: Shop | null,
+    fee: number,
+    t: Dictionary,
+    language: Language,
+): number | string {
+    if (shop?.delivery.customerPaysCarrier) {
+        return deliveryWords(language).apart
+    }
+    return fee === 0 ? t.common.free : fee
+}
+
 function Totals({ rows }: { rows: [string, number | string, boolean?][] }): React.JSX.Element {
     const language = useLanguage()
     return (
@@ -482,7 +521,7 @@ function customerStep(
         return { id: CHECKOUT_PHONE, text: t.checkout.needPhone }
     }
     const hasPin = delivery.location !== null
-    if (needsPin(shop) && !hasPin) {
+    if (!hasPin) {
         return { id: CHECKOUT_ADDRESS, text: t.checkout.needPin }
     }
     const radius = shop?.delivery.radiusMeters
@@ -794,6 +833,23 @@ export function CheckoutScreen(): React.JSX.Element {
     return (
         <main className="flex flex-col gap-6 px-4 pt-4">
             <CartLines cart={cart} rules={rules} shop={shop} />
+            {/* The sum right under the lines (owner's decision, November 2026): it was under the
+                comment, far from what it adds up. */}
+            <Totals
+                rows={[
+                    [t.cart.subtotal, cart.subtotal],
+                    [t.cart.delivery, deliveryValue(shop, fee, t, language)],
+                    ...(bottles.deposit > 0
+                        ? [[t.cart.deposit, bottles.deposit] as [string, number]]
+                        : []),
+                    [t.cart.total, total, true],
+                ]}
+            />
+            {shop?.delivery.customerPaysCarrier ? (
+                <p className="-mt-2 px-1 text-sm text-tg-hint">
+                    {deliveryWords(language).apartHint}
+                </p>
+            ) : null}
             {cart.count > 0 && (!shop || takesOrdersNow(shop)) ? (
                 <OrderDetails
                     delivery={delivery}
@@ -810,16 +866,6 @@ export function CheckoutScreen(): React.JSX.Element {
                     }}
                 />
             ) : null}
-            <Totals
-                rows={[
-                    [t.cart.subtotal, cart.subtotal],
-                    [t.cart.delivery, fee === 0 ? t.common.free : fee],
-                    ...(bottles.deposit > 0
-                        ? [[t.cart.deposit, bottles.deposit] as [string, number]]
-                        : []),
-                    [t.cart.total, total, true],
-                ]}
-            />
             <BottomSpacer />
         </main>
     )

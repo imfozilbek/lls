@@ -4,18 +4,20 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api, setCourierBot } from "../lib/api.js"
 import { ZUMDA_BRAND_COLOR, ZUMDA_NAME, applyBrand } from "../lib/brand.js"
+import { cn } from "../lib/cn.js"
 import { formatMoney } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
 import { canRequestContact, haptic, requestContact } from "../lib/telegram.js"
-import { yandexRouteUrl } from "../lib/trips.js"
 import { useRingOnNews } from "../lib/use-ring.js"
 import { toast } from "../stores/toast.js"
 import { AddressBlock, ContactLinks } from "../ui/contact-links.js"
+import { DeliveryNotes } from "../ui/delivery-notes.js"
 import {
     CashIcon,
     CheckIcon,
+    ChevronIcon,
     ClockIcon,
     PhoneIcon,
     PinIcon,
@@ -40,6 +42,7 @@ import { SoundSwitch } from "../ui/sound-switch.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import { TripCard } from "./TripCard.js"
+import { DispatchScope, RouteBlock, useDispatch } from "./dispatch.js"
 import { emptyReason, stageRank } from "./order-stage.js"
 
 import type { Dictionary } from "../i18n/index.js"
@@ -87,9 +90,16 @@ function useCourierStep(
     onStale: () => void,
 ): CourierStep {
     const t = useT()
+    const dispatch = useDispatch()
     const [busy, setBusy] = useState(false)
     const step = courierStep(order.status)
+    // A dispatcher's «Jo'natdim» asks how it went and a note first.
+    const sends = order.dispatcher && step === "picked_up"
     const go = async (): Promise<void> => {
+        if (sends) {
+            dispatch?.send(order)
+            return
+        }
         // The card's button and Telegram's are two ways to the same step: one request at a time.
         if (!step || moving.has(order.id)) {
             return
@@ -118,7 +128,8 @@ function useCourierStep(
         order.payment.method === "cash" && order.payment.status !== PaymentStatus.PAID
             ? t.courier.cashDelivered
             : t.courier.delivered
-    return { step, label: step === "delivered" ? delivered : t.courier.pickedUp, busy, go }
+    const label = step === "delivered" ? delivered : sends ? t.courier.send : t.courier.pickedUp
+    return { step, label, busy, go }
 }
 
 function StepButton({
@@ -136,7 +147,7 @@ function StepButton({
         return (
             <p className="flex items-center gap-2 rounded-control bg-tg-bg p-3 text-sm text-tg-hint">
                 <ClockIcon size={18} className="shrink-0" />
-                {t.courier.waitReady}
+                {order.dispatcher ? t.courier.dispatcherWait : t.courier.waitReady}
             </p>
         )
     }
@@ -214,55 +225,63 @@ function Collect({ order }: { order: OrderDTO }): React.JSX.Element {
     )
 }
 
-/** Not picked up yet: still at the shop's door. */
-const BEFORE_PICKUP: readonly OrderStatus[] = [
-    OrderStatus.ACCEPTED,
-    OrderStatus.PREPARING,
-    OrderStatus.READY,
-]
-
-/**
- * Before «Oldim»: where to pick the order up and the way there. A network courier may never have
- * been to this shop; after the pickup the way leads to the customer.
- */
-function PickupBlock({ order }: { order: CourierOrderDTO }): React.JSX.Element | null {
+/** A dispatcher's order: how it went, the notes, and «Izoh qo'shish» while it is on its way. */
+function DispatcherNotes({ order }: { order: CourierOrderDTO }): React.JSX.Element {
     const t = useT()
-    if (!BEFORE_PICKUP.includes(order.status) || (!order.shopAddress && !order.shopLocation)) {
-        return null
-    }
+    const dispatch = useDispatch()
     return (
-        <div className="flex items-center gap-3 rounded-control bg-tg-bg p-3">
-            <StoreIcon size={18} className="shrink-0 text-brand" />
-            <div className="min-w-0 flex-1">
-                <p className="text-sm text-tg-hint">{t.courier.pickupFrom}</p>
-                <p className="font-medium">{order.shopAddress ?? order.shopName}</p>
-            </div>
-            {order.shopLocation ? (
-                <a
-                    href={yandexRouteUrl([order.shopLocation])}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(): void => haptic.tap()}
-                    className="tap flex h-11 shrink-0 items-center gap-1.5 rounded-control bg-tg-secondary px-3 font-semibold text-brand"
+        <div className="flex flex-col gap-1">
+            <DeliveryNotes
+                order={order}
+                sent={order.sentVia ? t.courier.sentVia[order.sentVia] : undefined}
+            />
+            {isActive(order) ? (
+                <Button
+                    variant="ghost"
+                    className="-ml-2 self-start px-2"
+                    onClick={(): void => {
+                        haptic.tap()
+                        dispatch?.note(order)
+                    }}
                 >
-                    <PinIcon size={18} />
-                    {t.courier.toShop}
-                </a>
+                    {t.courier.addNote}
+                </Button>
             ) : null}
         </div>
     )
 }
 
+/** Where it goes, in one line: what a short card keeps of the route. */
+function WhereLine({ order }: { order: CourierOrderDTO }): React.JSX.Element {
+    return (
+        <p className="flex items-center gap-2 px-1">
+            <PinIcon size={18} className="shrink-0 text-brand" />
+            <span className="min-w-0 truncate">
+                <span className="font-medium">{order.address}</span>
+                {order.landmark ? <span className="text-tg-hint"> · {order.landmark}</span> : null}
+            </span>
+        </p>
+    )
+}
+
+/**
+ * One delivery. The one to do now is open (owner's decision, November 2026: three open cards
+ * took 3 500 px); the others say where and the next step, «Batafsil» opens the map, the route,
+ * the calls and the lines. Cash to take is always in sight.
+ */
 function DeliveryCard({
     order,
     onChange,
     onStale,
+    startOpen = false,
 }: {
     order: CourierOrderDTO
     onChange(order: OrderDTO): void
     onStale(): void
+    startOpen?: boolean
 }): React.JSX.Element {
     const t = useT()
+    const [open, setOpen] = useState(startOpen)
     return (
         <li
             data-order={order.id}
@@ -280,23 +299,53 @@ function DeliveryCard({
             </div>
             {/* The step first: the courier opens the card to make it. */}
             <StepButton order={order} onChange={onChange} onStale={onStale} />
-            <PickupBlock order={order} />
-            <p className="font-medium">{order.customerName}</p>
-            <OrderMap shop={order.shopLocation} customer={order.location} />
-            <AddressBlock order={order} />
-            <ContactLinks order={order} />
-            <Collect order={order} />
-            {order.bottlesReturned > 0 ? (
-                <p className="px-1 font-medium">
-                    {fill(t.courier.bottles, { n: order.bottlesReturned })}
-                </p>
+            {open ? (
+                <div className="flex animate-fade-in flex-col gap-3">
+                    {order.dispatcher ? <DispatcherNotes order={order} /> : null}
+                    <p className="font-medium">{order.customerName}</p>
+                    <OrderMap shop={order.shopLocation} customer={order.location} />
+                    <RouteBlock order={order} />
+                    {/* The routes are in the block above: only the calls here. */}
+                    <ContactLinks order={order} route={false} />
+                </div>
+            ) : (
+                <WhereLine order={order} />
+            )}
+            {/* Money to take stays in sight; «paid, take nothing» only in the open card. */}
+            {open || order.payment.method === "cash" ? <Collect order={order} /> : null}
+            {open ? (
+                <>
+                    {order.bottlesReturned > 0 ? (
+                        <p className="px-1 font-medium">
+                            {fill(t.courier.bottles, { n: order.bottlesReturned })}
+                        </p>
+                    ) : null}
+                    <details className="group">
+                        <summary className="tap cursor-pointer list-none px-1 py-2 text-sm font-medium text-brand">
+                            {t.order.items} · {order.items.length}
+                        </summary>
+                        <OrderItems order={order} />
+                    </details>
+                </>
             ) : null}
-            <details className="group">
-                <summary className="tap cursor-pointer list-none px-1 py-2 text-sm font-medium text-brand">
-                    {t.order.items} · {order.items.length}
-                </summary>
-                <OrderItems order={order} />
-            </details>
+            <button
+                type="button"
+                aria-expanded={open}
+                onClick={(): void => {
+                    haptic.tap()
+                    setOpen(!open)
+                }}
+                className="tap -mb-2 -ml-2 flex h-11 items-center gap-1 self-start rounded-control px-2 text-sm font-semibold text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+            >
+                {open ? t.courier.detailsHide : t.courier.details}
+                <ChevronIcon
+                    size={16}
+                    className={cn(
+                        "transition-transform duration-200",
+                        open ? "-rotate-90" : "rotate-90",
+                    )}
+                />
+            </button>
         </li>
     )
 }
@@ -634,31 +683,25 @@ function Nearby({
     reload(): Promise<void>
 }): React.JSX.Element | null {
     const t = useT()
-    if (!home.profile.inNetwork) {
+    // Nothing nearby: one empty state on the screen is enough (the deliveries' one).
+    if (!home.profile.inNetwork || home.network.length === 0) {
         return null
     }
     return (
         <section className="flex flex-col gap-2">
             <h2 className="px-1 text-sm font-semibold text-tg-subtitle">
-                {t.courier.nearby}
-                {home.network.length > 0 ? ` · ${home.network.length}` : ""}
+                {t.courier.nearby} · {home.network.length}
             </h2>
-            {home.network.length === 0 ? (
-                <p className="rounded-tile bg-tg-secondary px-4 py-3 text-sm text-tg-hint">
-                    {t.courier.nearbyEmpty}
-                </p>
-            ) : (
-                <ul className="flex flex-col gap-3">
-                    {home.network.map((offer) => (
-                        <NearbyCard
-                            key={offer.id}
-                            offer={offer}
-                            onTaken={(): void => void reload()}
-                            onStale={(): void => void reload()}
-                        />
-                    ))}
-                </ul>
-            )}
+            <ul className="flex flex-col gap-3">
+                {home.network.map((offer) => (
+                    <NearbyCard
+                        key={offer.id}
+                        offer={offer}
+                        onTaken={(): void => void reload()}
+                        onStale={(): void => void reload()}
+                    />
+                ))}
+            </ul>
         </section>
     )
 }
@@ -790,10 +833,13 @@ function useShowOrder(orderId: string | null, ready: boolean): void {
 
 function Deliveries({
     home,
+    focus,
     replace,
     reload,
 }: {
     home: CourierHomeDTO
+    /** The order a bot message opened: its card opens. */
+    focus: string | null
     replace(changed: OrderDTO | OrderDTO[]): void
     reload(): Promise<void>
 }): React.JSX.Element {
@@ -814,7 +860,7 @@ function Deliveries({
     // Orders nearby are already on screen above: «nothing to deliver» would contradict them.
     const offersNearby = home.profile.inNetwork && home.network.length > 0
     return (
-        <>
+        <DispatchScope onChange={replace} onStale={stale}>
             {only ? <OneStepButton order={only} onChange={replace} onStale={stale} /> : null}
             {active.length === 0 && offersNearby ? null : active.length === 0 ? (
                 <EmptyState
@@ -848,10 +894,14 @@ function Deliveries({
                             )}
                         />
                     ))}
-                    {single.map((order) => (
+                    {single.map((order, index) => (
                         <DeliveryCard
                             key={order.id}
                             order={order}
+                            // The one to do now, or the one a bot message opened.
+                            startOpen={
+                                focus ? order.id === focus : index === 0 && trips.length === 0
+                            }
                             onChange={replace}
                             onStale={stale}
                         />
@@ -870,7 +920,7 @@ function Deliveries({
                     </ul>
                 </section>
             ) : null}
-        </>
+        </DispatchScope>
     )
 }
 
@@ -929,7 +979,7 @@ export function CourierApp({ order = null }: { order?: string | null }): React.J
                     <ShiftCard home={home} onChange={setHome} />
                     {/* Nothing to deliver yet: orders nearby come before the empty state. */}
                     {home.orders.some(isActive) ? null : <Nearby home={home} reload={reload} />}
-                    <Deliveries home={home} replace={replace} reload={reload} />
+                    <Deliveries home={home} focus={order} replace={replace} reload={reload} />
                     {home.orders.some(isActive) ? <Nearby home={home} reload={reload} /> : null}
                     {/* The district's offer waits under the deliveries: the work comes first. */}
                     <NetworkCard home={home} onChange={setHome} />
@@ -943,8 +993,13 @@ export function CourierApp({ order = null }: { order?: string | null }): React.J
                             ))}
                         </ul>
                     </section>
-                    <VehicleField home={home} onChange={setHome} />
-                    <SoundSwitch />
+                    <section className="flex flex-col gap-3">
+                        <h2 className="px-1 text-sm font-semibold text-tg-subtitle">
+                            {t.courier.settings}
+                        </h2>
+                        <VehicleField home={home} onChange={setHome} />
+                        <SoundSwitch />
+                    </section>
                 </>
             )}
             <PoweredBy />

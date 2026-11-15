@@ -70,21 +70,31 @@ describe("Payment", () => {
         expect(paid.markSent(RECEIPT)).toBe(paid)
     })
 
-    it("the owner confirms an awaited or an unannounced transfer; nothing else", () => {
-        expect(
-            Payment.start(PaymentMethod.CARD_TRANSFER).markSent(RECEIPT).confirm(AT, false),
-        ).toMatchObject({
+    it("the owner confirms only a transfer with its screenshot; nothing else", () => {
+        const paid = Payment.start(PaymentMethod.CARD_TRANSFER).markSent(RECEIPT).confirm(AT, false)
+        expect(paid).toMatchObject({
             status: PaymentStatus.PAID,
             method: PaymentMethod.CARD_TRANSFER,
             paidAt: AT,
         })
-        const paid = Payment.start(PaymentMethod.CARD_TRANSFER).confirm(AT, false)
         expect(paid.isPaid()).toBe(true)
         expect(() => paid.confirm(AT, false)).toThrow(BusinessRuleViolationError)
+        // No screenshot yet: the customer is the one to act (owner's decision, November 2026).
+        expect(() => Payment.start(PaymentMethod.CARD_TRANSFER).confirm(AT, false)).toThrow(
+            expect.objectContaining({ rule: "RECEIPT_NOT_SENT" }),
+        )
+        // «Pul kelmadi» puts it back to no screenshot.
+        const rejected = Payment.start(PaymentMethod.CARD_TRANSFER).markSent(RECEIPT).reject()
+        expect(() => rejected.confirm(AT, false)).toThrow(
+            expect.objectContaining({ rule: "RECEIPT_NOT_SENT" }),
+        )
     })
 
     it("cancelling: paid money is owed back, an unconfirmed transfer stays awaited", () => {
-        const owed = Payment.start(PaymentMethod.CARD_TRANSFER).confirm(AT, false).onCancel()
+        const owed = Payment.start(PaymentMethod.CARD_TRANSFER)
+            .markSent(RECEIPT)
+            .confirm(AT, false)
+            .onCancel()
         expect(owed.status).toBe(PaymentStatus.REFUND_DUE)
         expect(owed.refund().status).toBe(PaymentStatus.REFUNDED)
         expect(() => owed.refund().refund()).toThrow(BusinessRuleViolationError)

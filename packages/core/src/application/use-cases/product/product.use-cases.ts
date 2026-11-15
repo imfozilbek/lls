@@ -23,10 +23,14 @@ export interface CreateProductInput {
     price: number
     unit: string
     category: string
+    moreCategories?: readonly string[]
+    ageFrom?: number | null
     step?: number
     returnable?: boolean
     position?: number
     options?: ProductOptionsProps
+    /** What is left, when the owner counts it (base units); absent: not counted. */
+    stock?: number | null
 }
 
 export class CreateProductUseCase {
@@ -45,10 +49,13 @@ export class CreateProductUseCase {
             price: input.price,
             unit: input.unit,
             category: input.category,
+            moreCategories: input.moreCategories,
+            ageFrom: input.ageFrom,
             step: input.step,
             returnable: input.returnable,
             position: input.position,
             options: input.options,
+            stock: input.stock,
         })
         await this.products.save(product)
         return toProductDTO(product)
@@ -115,7 +122,7 @@ export class CreateProductsUseCase {
         if (fresh.length > 0) {
             await this.products.saveMany(fresh)
         }
-        return { created: fresh.map(toProductDTO), skipped }
+        return { created: fresh.map((product) => toProductDTO(product)), skipped }
     }
 }
 
@@ -150,6 +157,41 @@ export class UpdateProductUseCase {
         }
         if (imageKey !== undefined) {
             product.setImage(imageKey)
+        }
+        await this.products.save(product)
+        return toProductDTO(product)
+    }
+}
+
+/** One change to a product's photos: one more, one less, or a new order (the first is main). */
+export type PhotoChange = { add: string } | { remove: string } | { order: readonly string[] }
+
+export interface ChangeProductPhotosInput {
+    actorTelegramId: number
+    businessId: string
+    productId: string
+    change: PhotoChange
+}
+
+/**
+ * Up to three photos (owner's decision, November 2026): the main one shows in the menu, the
+ * showcase and the catalog; the customer swipes through all of them in the product's sheet.
+ */
+export class ChangeProductPhotosUseCase {
+    constructor(
+        private readonly businesses: BusinessRepository,
+        private readonly products: ProductRepository,
+    ) {}
+
+    async execute(input: ChangeProductPhotosInput): Promise<ProductDTO> {
+        const product = await requireOwnedProduct(this.businesses, this.products, input)
+        const { change } = input
+        if ("add" in change) {
+            product.addPhoto(change.add)
+        } else if ("remove" in change) {
+            product.removePhoto(change.remove)
+        } else {
+            product.reorderPhotos(change.order)
         }
         await this.products.save(product)
         return toProductDTO(product)
@@ -213,7 +255,7 @@ export class ListProductsUseCase {
             },
             normalizePage(input),
         )
-        return mapPage(page, toProductDTO)
+        return mapPage(page, (product) => toProductDTO(product, input.audience))
     }
 }
 

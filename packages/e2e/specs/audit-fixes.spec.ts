@@ -1,6 +1,6 @@
 /**
  * The audit of 7 October 2026: what people would hit, end to end. A photo that failed never makes
- * a product twice; the order opened from a bot message shows «O'tkazdim» without a reload; the
+ * a product twice; the order opened from a bot message shows the customer's screenshot without a reload; the
  * receipt sheet has no dead button under it.
  */
 import { expect, test } from "@playwright/test"
@@ -30,8 +30,8 @@ test("a photo that failed to upload: «Saqlash» again saves it, never a second 
     await page.getByLabel("Narxi").fill("25000")
     // The weak network drops the photo once.
     let failed = false
-    await page.route("**/image", async (route) => {
-        if (!failed && route.request().method() === "PUT") {
+    await page.route("**/images", async (route) => {
+        if (!failed && route.request().method() === "POST") {
             failed = true
             await route.fulfill({ status: 503, body: "" })
             return
@@ -51,7 +51,7 @@ test("a photo that failed to upload: «Saqlash» again saves it, never a second 
     expect(made[0]?.imageKey).toBeTruthy()
 })
 
-test("the order opened from a message shows «O'tkazdim» when the customer sends it", async ({
+test("the order opened from a message shows the screenshot when the customer sends it", async ({
     page,
 }) => {
     const since = await lastSeq()
@@ -80,10 +80,10 @@ test("the receipt sheet: the big button waits under it, the sheet's own button s
         query: `?shop=${FOOD}&order=${order.id}`,
     })
     await expect(page.getByText(`Buyurtma #${order.number}`)).toBeVisible()
-    await bottomButton(page).click() // «O'tkazdim»
+    await bottomButton(page).click() // «Chekni yuklash»
     const sheet = page.getByRole("dialog").filter({ hasText: "O'tkazma cheki" })
     await expect(sheet).toBeVisible()
-    // Nothing to tap behind the sheet: its own «Chekni yuborish» is the only way on.
+    // Nothing to tap behind the sheet: its own «O'tkazdim» is the only way on.
     await expect(bottomButton(page)).toBeHidden()
     await page.keyboard.press("Escape")
     await expect(sheet).toBeHidden()

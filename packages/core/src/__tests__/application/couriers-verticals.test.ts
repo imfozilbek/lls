@@ -38,11 +38,13 @@ import {
     CUSTOMER_TG,
     NOON_MONDAY_UZ,
     OWNER_TG,
+    PIN,
     STRANGER_TG,
+    courierSharesPhone,
     makeBusiness,
     makeCustomer,
     makeProduct,
-    courierSharesPhone,
+    receiptSent,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -91,6 +93,7 @@ describe("shop couriers and vertical features", () => {
             businessId: "biz-1",
             items: [{ productId: "prod-1", quantity: 2 }],
             address: "Navoiy 12",
+            location: PIN,
             ...overrides,
         })
 
@@ -139,6 +142,7 @@ describe("shop couriers and vertical features", () => {
 
     /** «Деньги пришли, принять»: the transfer arrived, the shop starts. */
     async function payAndAccept(orderId: string, businessId = "biz-1"): Promise<void> {
+        await receiptSent(orders, orderId)
         await new ConfirmPaymentUseCase({ businesses, orders, clock }).execute({
             actorTelegramId: OWNER_TG,
             businessId,

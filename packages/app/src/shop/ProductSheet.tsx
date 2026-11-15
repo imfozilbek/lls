@@ -6,8 +6,11 @@ import { haptic } from "../lib/telegram.js"
 import { useCart } from "../stores/cart.js"
 import { PlusIcon } from "../ui/icons.js"
 import { Button, Spinner, Stepper } from "../ui/primitives.js"
-import { ProductImage } from "../ui/product-image.js"
 import { Sheet } from "../ui/sheet.js"
+
+import { AgeBadge } from "./age-badge.js"
+import { ProductGallery } from "./product-gallery.js"
+import { hasOptions } from "./product-options.js"
 
 import type { ProductDTO } from "@zumda/core"
 
@@ -15,11 +18,6 @@ import type { ProductDTO } from "@zumda/core"
 const OptionsPicker = lazy(() =>
     import("./OptionsPicker.js").then((m) => ({ default: m.OptionsPicker })),
 )
-
-/** A product the customer must pick for: a variant, or add-ons to choose. */
-export function hasOptions(product: ProductDTO): boolean {
-    return (product.options?.variants.length ?? 0) + (product.options?.addons.length ?? 0) > 0
-}
 
 /** One product up close: the whole photo, the whole description, and the same «+». */
 export function ProductSheet({
@@ -38,18 +36,11 @@ export function ProductSheet({
     return (
         <Sheet title={product.name} onClose={onClose}>
             <div className="flex flex-col gap-3">
-                {product.imageKey ? (
-                    <ProductImage
-                        imageKey={product.imageKey}
-                        category={product.category}
-                        alt={product.name}
-                        className="aspect-[4/3] w-full rounded-tile"
-                    />
-                ) : null}
+                <ProductGallery product={product} />
                 {product.description ? (
                     <p className="whitespace-pre-line text-tg-subtitle">{product.description}</p>
                 ) : null}
-                {hasOptions(product) ? (
+                {hasOptions(product) && !product.soldOut ? (
                     <Suspense
                         fallback={
                             <div className="flex h-40 items-center justify-center text-tg-hint">
@@ -66,8 +57,14 @@ export function ProductSheet({
                                 {formatMoney(product.price, language)}
                             </span>
                             <span className="text-tg-hint"> / {unit}</span>
+                            <AgeBadge product={product} />
                         </p>
-                        {quantity === 0 ? (
+                        {product.soldOut ? (
+                            // Seen as it is, never added (owner's decision, November 2026).
+                            <Button variant="surface" disabled>
+                                {t.shop.soldOut}
+                            </Button>
+                        ) : quantity === 0 ? (
                             <Button
                                 icon={<PlusIcon size={20} />}
                                 onClick={(): void => {

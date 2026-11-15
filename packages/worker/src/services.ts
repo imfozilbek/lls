@@ -4,8 +4,12 @@ import {
     PickUpTripUseCase,
     RefreshTripRouteUseCase,
     ReorderTripUseCase,
+    AddDeliveryNoteUseCase,
     AdvanceOrderUseCase,
     AssignCourierUseCase,
+    AutoAssignOnlyCourierUseCase,
+    DeliverMyselfUseCase,
+    SendOrderUseCase,
     CancelOrderUseCase,
     CreateCourierInviteUseCase,
     CreateProductUseCase,
@@ -60,6 +64,7 @@ import {
     AskPhonesUseCase,
     UpdateCustomerUseCase,
     UpdateProductUseCase,
+    ChangeProductPhotosUseCase,
     UpdateShopUseCase,
     AutoRequestNetworkUseCase,
     ClaimNetworkOrderUseCase,
@@ -95,7 +100,7 @@ import { TelegramPhoneAskSender } from "./telegram/phone-asks.js"
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
 import type { LoginKeys } from "./telegram-login.js"
-import type { Clock, DemoShopDeps, TripDeps } from "@zumda/core"
+import type { Clock, DeliveryDeps, DemoShopDeps, TripDeps } from "@zumda/core"
 
 export interface ServiceDeps {
     telegram: TelegramGateway
@@ -120,6 +125,7 @@ export interface UseCases {
     createProduct: CreateProductUseCase
     createProducts: CreateProductsUseCase
     updateProduct: UpdateProductUseCase
+    changeProductPhotos: ChangeProductPhotosUseCase
     deleteProduct: DeleteProductUseCase
     listProducts: ListProductsUseCase
     resolveCustomer: ResolveCustomerUseCase
@@ -146,6 +152,10 @@ export interface UseCases {
     listCouriers: ListCouriersUseCase
     deactivateCourier: DeactivateCourierUseCase
     assignCourier: AssignCourierUseCase
+    deliverMyself: DeliverMyselfUseCase
+    autoAssignOnlyCourier: AutoAssignOnlyCourierUseCase
+    sendOrder: SendOrderUseCase
+    addDeliveryNote: AddDeliveryNoteUseCase
     reviewCourier: ReviewCourierUseCase
     setCourierSchedule: SetCourierScheduleUseCase
     setShift: SetShiftUseCase
@@ -210,6 +220,49 @@ function tripUseCases(deps: TripDeps): TripUseCases {
         pickUpTrip: new PickUpTripUseCase(deps),
         refreshTripRoute: new RefreshTripRouteUseCase(deps),
         listShopTrips: new ListShopTripsUseCase(deps),
+    }
+}
+
+type CourierUseCases = Pick<
+    UseCases,
+    | "createCourierInvite"
+    | "joinAsCourier"
+    | "listCouriers"
+    | "deactivateCourier"
+    | "assignCourier"
+    | "deliverMyself"
+    | "autoAssignOnlyCourier"
+    | "sendOrder"
+    | "addDeliveryNote"
+    | "reviewCourier"
+    | "setCourierSchedule"
+    | "setShift"
+    | "updateCourierProfile"
+    | "courierHome"
+    | "courierAdvanceOrder"
+>
+
+/** The shop's couriers and dispatchers, and the courier screen. */
+function courierUseCases(
+    access: DeliveryDeps,
+    network: ConstructorParameters<typeof GetCourierHomeUseCase>[0],
+): CourierUseCases {
+    return {
+        createCourierInvite: new CreateCourierInviteUseCase(access),
+        joinAsCourier: new JoinAsCourierUseCase(access),
+        listCouriers: new ListCouriersUseCase(access),
+        deactivateCourier: new DeactivateCourierUseCase(access),
+        assignCourier: new AssignCourierUseCase(access),
+        deliverMyself: new DeliverMyselfUseCase(access),
+        autoAssignOnlyCourier: new AutoAssignOnlyCourierUseCase(access),
+        sendOrder: new SendOrderUseCase(access),
+        addDeliveryNote: new AddDeliveryNoteUseCase(access),
+        reviewCourier: new ReviewCourierUseCase(access),
+        setCourierSchedule: new SetCourierScheduleUseCase(access),
+        setShift: new SetShiftUseCase(access),
+        updateCourierProfile: new UpdateCourierProfileUseCase(access),
+        courierHome: new GetCourierHomeUseCase(network),
+        courierAdvanceOrder: new CourierAdvanceOrderUseCase(access),
     }
 }
 
@@ -311,6 +364,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             createProduct: new CreateProductUseCase(businesses, products),
             createProducts: new CreateProductsUseCase(businesses, products),
             updateProduct: new UpdateProductUseCase(businesses, products, clock),
+            changeProductPhotos: new ChangeProductPhotosUseCase(businesses, products),
             deleteProduct: new DeleteProductUseCase(businesses, products),
             listProducts: new ListProductsUseCase(businesses, products, clock),
             resolveCustomer: new ResolveCustomerUseCase(customers),
@@ -332,17 +386,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             receiveCourierCash: new ReceiveCourierCashUseCase(network),
             rejectTransfer: new RejectTransferUseCase(network),
             exportOrders: new ExportOrdersUseCase(network),
-            createCourierInvite: new CreateCourierInviteUseCase(courierAccess),
-            joinAsCourier: new JoinAsCourierUseCase(courierAccess),
-            listCouriers: new ListCouriersUseCase(courierAccess),
-            deactivateCourier: new DeactivateCourierUseCase(courierAccess),
-            assignCourier: new AssignCourierUseCase(courierAccess),
-            reviewCourier: new ReviewCourierUseCase(courierAccess),
-            setCourierSchedule: new SetCourierScheduleUseCase(courierAccess),
-            setShift: new SetShiftUseCase(courierAccess),
-            updateCourierProfile: new UpdateCourierProfileUseCase(courierAccess),
-            courierHome: new GetCourierHomeUseCase(network),
-            courierAdvanceOrder: new CourierAdvanceOrderUseCase(orderAccess),
+            ...courierUseCases({ ...orderAccess, clock }, network),
             listShowcaseShops: new ListShowcaseShopsUseCase(businesses, clock),
             shopBotOf: new ShopBotOfUseCase(businesses),
             searchShowcase: new SearchShowcaseUseCase(businesses, products, clock),

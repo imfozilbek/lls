@@ -9,7 +9,7 @@ import { courierBot } from "../stand/config.js"
 import { runSql } from "../stand/seed.js"
 import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
 import { courierChat, lastSeq, messagesTo, waitForMessage } from "../support/telegram.js"
-import { appQueryOf, openApp, openSettings } from "../support/webapp.js"
+import { appQueryOf, openApp, openOrderCard, openSettings } from "../support/webapp.js"
 
 import type { PlacedOrder } from "../support/stand.js"
 
@@ -158,10 +158,10 @@ test("the owner: the network switch, «Доставщик сети района�
     const order = await placeAndAccept()
     expect(order.waitingForNetwork).toBe(false)
 
-    // By hand, from the order.
+    // By hand, from the order: nobody is on it, so it is the main button.
     await page.getByRole("tab", { name: "Buyurtmalar" }).click()
     const card = page.getByRole("listitem").filter({ hasText: `Buyurtma #${order.number}` })
-    await card.getByRole("button", { name: "Kuryer tayinlash" }).click()
+    await card.getByRole("button", { name: "Kuryerga topshirish" }).click()
     await page
         .getByRole("dialog")
         .getByRole("button", { name: /Tuman tarmog'i kuryeri/ })
@@ -171,6 +171,7 @@ test("the owner: the network switch, «Доставщик сети района�
 
     // Jasur works again: the owner gives it to him, and the network's offers close.
     await ownCourierOff(false)
+    await openOrderCard(page, order.number)
     await card.getByRole("button", { name: "Kuryer tayinlash" }).click()
     await page.getByRole("dialog").getByRole("button", { name: /Jasur/ }).click()
     await expect(card).toContainText("Kuryer: Jasur")

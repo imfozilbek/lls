@@ -1,4 +1,4 @@
-import { BusinessType, Language, OrderStatus, Unit } from "@zumda/core"
+import { BusinessType, Language, OrderStatus, SendWay, Unit } from "@zumda/core"
 
 type StatusTexts = Partial<Record<OrderStatus, string>>
 
@@ -183,6 +183,8 @@ const BASE = {
         },
         callbackDone: "Tayyor",
         callbackOutdated: "Holat allaqachon o'zgargan",
+        /** «Pul keldi» before the customer's screenshot (owner's decision, November 2026). */
+        callbackNoReceipt: "Avval mijoz chekni yuklashi kerak. Shundan keyin pulni tekshirasiz.",
         callbackForbidden: "Bu amal siz uchun emas",
         courierBotWelcome:
             "<b>Zumda kuryer boti.</b>\n\nTumandagi do'kon, oshxona va xizmatlar buyurtmalari shu yerga keladi. Ishni boshlash uchun biznes egasidan taklif havolasini so'rang.",
@@ -236,8 +238,38 @@ const BASE = {
         } as StatusTexts,
         courierWait: "⏳ Buyurtma tayyor bo'lganda xabar beramiz.",
         courierReady: "📦 {shop}: #{n} buyurtma tayyor, olib keting.",
+        // A dispatcher (owner's decision, November 2026): sends the order on, writes to the customer.
+        dispatcherWait:
+            "⏳ Do'kon buyurtmani tayyorlayapti: tayyor bo'lganda xabar beramiz. Mijozga izohni hozir ham yozish mumkin.",
+        dispatcherReady: "📦 {shop}: #{n} buyurtma tayyor, jo'nating.",
+        dispatcherSend: "📮 Jo'natdim",
+        pickupFrom: "🏪 Qayerdan: {place}",
+        dispatcherLine: "📮 Dispetcher: {name}",
+        dispatcherPhone: "📞 Dispetcher: {phone}",
+        /** How the dispatcher sent it, as the owner's card says it. */
+        sendWays: {
+            [SendWay.SELF]: "dispetcherning o'zi olib bormoqda",
+            [SendWay.TAXI]: "taksi bilan",
+            [SendWay.POST]: "pochta orqali",
+            [SendWay.OTHER]: "boshqa yo'l bilan",
+        } satisfies Record<SendWay, string>,
+        sentLine: "🚚 Jo'natildi: {way}",
+        /** «Jo'natdim» to the customer; the dispatcher's own trip says who brings it. */
+        sentCustomer: {
+            [SendWay.SELF]: "🚚 #{n} buyurtmangizni {courier} olib kelmoqda.",
+            [SendWay.TAXI]: "🚕 #{n} buyurtmangiz taksi bilan jo'natildi.",
+            [SendWay.POST]: "📮 #{n} buyurtmangiz pochta orqali jo'natildi.",
+            [SendWay.OTHER]: "🚚 #{n} buyurtmangiz jo'natildi.",
+        } satisfies Record<SendWay, string>,
+        noteLine: "📝 {text}",
+        noteCustomer: "📝 #{n} buyurtma: {text}",
+        /** «Yetkazish haqini mijoz o'zi to'laydi»: nothing of it is in the total. */
+        deliveryApart: "alohida, mijoz yetkazuvchiga o'zi to'laydi",
+        carrierFeeCustomer: "💵 Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz.",
+        chooseCourier: "🛵 Kuryerga topshirish",
+        deliverMyself: "🙋 O'zim yetkazaman",
         payment: {
-            unpaid: "💳 Kartaga o'tkazma kutilmoqda",
+            unpaid: "💳 Kartaga o'tkazma va chek kutilmoqda",
             sent: "💳 Mijoz o'tkazdim dedi, kartani tekshiring",
             paid: "✅ O'tkazma bilan to'langan",
             refundDue: "↩️ Mijozga qaytarish kerak",
@@ -260,7 +292,6 @@ const BASE = {
         customerRejected: "⚠️ Bu mijozning {count} ta o'tkazmasi avval topilmagan.",
         confirmPaidQuestion:
             "💳 #{n}: {sum} {card} kartangizga keldimi?\nBank ilovangizda tekshirib, javob bering.",
-        confirmPaidNoReceipt: "⚠️ Mijoz o'tkazganini hali bildirmagan.",
         transferReminder: "⏰ #{n}: mijoz o'tkazmani tekshirishingizni kutmoqda.",
         confirmPaidYes: "✅ Ha, {sum} keldi",
         confirmPaidNo: "Yo'q, kelmadi",
@@ -268,7 +299,7 @@ const BASE = {
             "Do'kon #{n} buyurtma uchun pulni topmadi. Kartangizdan o'tganini tekshiring va chekni qayta yuboring.",
         transferRejectedOwner: "#{n}: «Pul kelmadi» belgilandi. Mijozdan chekni qayta so'radik.",
         payByTransfer:
-            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n{system}<code>{card}</code> ({holder})\nSo'ng ilovada «O'tkazdim» ni bosing. Pul kelishi bilan do'kon boshlaydi.",
+            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n{system}<code>{card}</code> ({holder})\nKeyin ilovada chekni yuklang va «O'tkazdim» ni bosing. Pul kelishi bilan do'kon boshlaydi.",
         /** A card's system before its number; Zumda does not know every card (then nothing). */
         cardSystems: {
             humo: "Humo",

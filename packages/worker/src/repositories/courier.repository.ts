@@ -35,6 +35,7 @@ interface CourierRow extends ProfileRow {
     status: string
     work_days: string
     off_until: number | null
+    dispatcher: number
     created_at: number
     updated_at: number
 }
@@ -78,7 +79,7 @@ export function freeNetworkCouriersSql(forShop: boolean): string {
 
 /** A shop link with the person's profile: the name and phone live in the profile. */
 const SELECT_COURIER = `SELECT c.id, c.business_id, c.status, c.work_days, c.off_until,
-    c.created_at, c.updated_at, ${PROFILE_COLUMNS}
+    c.dispatcher, c.created_at, c.updated_at, ${PROFILE_COLUMNS}
     FROM couriers c JOIN courier_profiles p ON p.telegram_id = c.telegram_id`
 
 function toProfile(row: ProfileRow): CourierProfile {
@@ -111,6 +112,7 @@ function toCourier(row: CourierRow): Courier {
         status: oneOf(row.status, COURIER_STATUSES, "couriers.status"),
         workDays: toWorkDays(row.work_days),
         offUntil: row.off_until === null ? undefined : new Date(row.off_until),
+        dispatcher: row.dispatcher === 1,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -163,12 +165,12 @@ export class D1CourierRepository implements CourierRepository {
             await this.db
                 .prepare(
                     `INSERT INTO couriers (id, business_id, telegram_id, name, phone, is_active, status,
-                        work_days, off_until, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        work_days, off_until, dispatcher, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                      ON CONFLICT (id) DO UPDATE SET name = excluded.name, phone = excluded.phone,
                         is_active = excluded.is_active, status = excluded.status,
                         work_days = excluded.work_days, off_until = excluded.off_until,
-                        updated_at = excluded.updated_at`,
+                        dispatcher = excluded.dispatcher, updated_at = excluded.updated_at`,
                 )
                 .bind(
                     courier.id,
@@ -180,6 +182,7 @@ export class D1CourierRepository implements CourierRepository {
                     courier.status,
                     courier.workDays.join(","),
                     courier.offUntil?.getTime() ?? null,
+                    flag(courier.isDispatcher),
                     courier.createdAt.getTime(),
                     courier.updatedAt.getTime(),
                 )

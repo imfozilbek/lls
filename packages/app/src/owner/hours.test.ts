@@ -7,6 +7,7 @@ import {
     hoursOf,
     sameAsMonday,
     scheduleOf,
+    timeChoices,
 } from "./hours.js"
 
 describe("working hours per day", () => {
@@ -45,5 +46,16 @@ describe("working hours per day", () => {
         expect(hasOpenDay(hoursOf({}))).toBe(false)
         expect(hasOpenDay(hoursOf(null))).toBe(true)
         expect(hasOpenDay(hoursOf({ sun: { open: "09:00", close: "13:00" } }))).toBe(true)
+    })
+})
+
+describe("timeChoices", () => {
+    it("every 15 minutes in 24 hours, keeping a time off the grid", () => {
+        const grid = timeChoices("09:00")
+        expect(grid).toHaveLength(96)
+        expect(grid[0]).toBe("00:00")
+        expect(grid[grid.length - 1]).toBe("23:45")
+        expect(timeChoices("09:10")).toContain("09:10")
+        expect(timeChoices("09:10")).toHaveLength(97)
     })
 })

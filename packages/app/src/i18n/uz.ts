@@ -9,6 +9,10 @@ export const uz = {
         retry: "Qayta urinish",
         crashTitle: "Ilova to'liq yuklanmadi",
         crashText: "Internet sekin bo'lishi mumkin. Savatingiz va yozganlaringiz saqlangan.",
+        reopenTitle: "Ilovani qayta oching",
+        reopenText:
+            "Ilova bir kundan ortiq ochiq turdi. Xavfsizlik uchun uni yoping va botdagi tugmadan qayta oching.",
+        closeApp: "Yopish",
         save: "Saqlash",
         saving: "Saqlanmoqda…",
         delete: "O'chirish",
@@ -60,12 +64,13 @@ export const uz = {
         NOT_ACCEPTING_ORDERS: "Do'kon hozir buyurtma qabul qilmayapti.",
         SHOP_NOT_ACTIVE: "Do'kon hali ishga tushmagan.",
         PRODUCT_NOT_AVAILABLE: "Savatdagi mahsulotlardan biri tugab qoldi.",
+        OUT_OF_STOCK: "Savatdagi mahsulotlardan biri tugab qoldi yoki kam qoldi.",
         VARIANT_REQUIRED: "Mahsulotning turini tanlang.",
         OPTION_UNAVAILABLE: "Do'kon mahsulotni o'zgartirdi. Savatni tekshiring.",
         MIN_ORDER_NOT_REACHED: "Buyurtma minimal summadan kam.",
         OUTSIDE_DELIVERY_ZONE:
             "Bu joy do'kon yetkazadigan hududdan tashqarida: yaqinroq manzil tanlang.",
-        LOCATION_REQUIRED: "Joylashuvni yuboring: do'kon faqat ma'lum masofagacha yetkazadi.",
+        LOCATION_REQUIRED: "Xaritada uyingizni belgilang: buyurtma shu joyga yetkaziladi.",
         PHONE_REQUIRED: "Telefon raqamingizni yuboring.",
         ORDER_CANNOT_BE_CANCELLED: "Do'kon buyurtmani allaqachon qabul qildi.",
         CONFLICT: "Hozir bo'lmadi, qayta urinib ko'ring.",
@@ -78,7 +83,7 @@ export const uz = {
         NO_PAYOUT_CARD: "Do'kon tez orada buyurtma qabul qila boshlaydi.",
         NO_SHOP_PHONE: "Do'kon tez orada buyurtma qabul qila boshlaydi.",
         COURIER_PHONE_REQUIRED: "Kuryer hali raqamini yubormagan: raqam kelgach tasdiqlang.",
-        RECEIPT_REQUIRED: "O'tkazma chekining rasmini yuklang.",
+        RECEIPT_REQUIRED: "O'tkazma chekining skrinshotini yuboring.",
         RECEIPT_EXPIRED: "Chek 30 kun saqlanadi, bu chek o'chirilgan.",
         REMIND_TOO_SOON: "Do'konga yaqinda eslatildi. Birozdan keyin qayta urinib ko'ring.",
         PAYMENT_METHOD_UNAVAILABLE:
@@ -95,6 +100,12 @@ export const uz = {
         text: "Bu ilova do'kon botining ichida ishlaydi. Botga o'tib, pastdagi tugmani bosing.",
     },
     shop: {
+        /** A counted product that ran out: seen as it is, never added. */
+        soldOut: "Tugagan",
+        /** «12 ta»: pieces in a sentence. */
+        pieces: "{n} ta",
+        /** One of a product's photos, for a screen reader. */
+        photoOf: "{n}-rasm",
         unpaidOrder: "Buyurtma #{n}: {sum} o'tkazing",
         map: "Xarita",
         call: "Qo'ng'iroq",
@@ -105,6 +116,7 @@ export const uz = {
         opensSoon: "Tez orada ochiladi: katalogni hozir ko'rib chiqing",
         deliveryFee: "Yetkazish {sum}",
         deliveryFree: "Bepul yetkazish",
+        deliveryApart: "Yetkazish haqi alohida",
         freeFrom: "{sum}dan bepul",
         minOrder: "Minimal {sum}",
         radius: "{km} km gacha yetkazamiz",
@@ -213,6 +225,9 @@ export const uz = {
         hygiene: "Shaxsiy gigiyena",
         cosmetics: "Kosmetika",
         baby_goods: "Bolalar tovarlari",
+        educational_toys: "Rivojlantiruvchi o'yinchoqlar",
+        logic_games: "Mantiqiy o'yinlar",
+        books: "Kitoblar",
         paper: "Qog'oz mahsulotlari",
         kitchenware: "Idish-tovoq",
         textile: "Uy tekstili",
@@ -309,10 +324,12 @@ export const uz = {
         removed: "Savatdagi {n} ta mahsulot endi yo'q yoki o'zgardi, ularni olib tashladik.",
         removedNamed: "{names} endi yo'q: savatdan olib tashladik.",
         changedNamed: "{names} o'zgardi: savatdan olib tashladik, qaytadan tanlang.",
+        /** A counted product that ran out (owner's decision, November 2026). */
+        soldOutNamed: "{names} tugab qoldi: savatdan olib tashladik.",
         closedUntil: "Do'kon hozir yopiq, {when} ochiladi. Savat saqlanib turadi.",
         unavailable: "Tugagan",
         clear: "Savatni tozalash",
-        clearAsk: "Savatdagi hamma mahsulotlar o'chirilsinmi?",
+        clearAsk: "Savat tozalansinmi? Hamma mahsulotlar olib tashlanadi.",
     },
     checkout: {
         title: "Buyurtma",
@@ -338,6 +355,8 @@ export const uz = {
         needStreetOrLandmark: "Ko'cha va uyni yoki mo'ljalni yozing",
         needPin: "Joylashuvingizni yuboring yoki xaritada uyingizni belgilang",
         itemGone: "Savatdagi mahsulotlardan biri endi yo'q. Savatni yangiladik.",
+        /** Less left than the cart holds: the line came down to it. */
+        onlyLeft: "{name}: faqat {left} qoldi. Savatdagi sonini kamaytirdik.",
         pinHelps: "Joylashuv kuryerga eshikni topishga yordam beradi.",
         pinRequired: "Majburiy: do'kon {km} km gacha yetkazadi.",
         landmarkPlaceholder: "Masalan: maktab yonida, ko'k darvoza",
@@ -385,11 +404,12 @@ export const uz = {
         copyShort: "Raqam",
         copySumShort: "Summa",
         sumCopied: "Summa nusxalandi",
-        transferNote: "{sum} ni shu kartaga o'tkazing va «O'tkazdim» ni bosing.",
-        transferNoteAgain: "{sum} shu kartaga o'tganini tekshiring va chekni qayta yuboring.",
+        transferNote: "{sum} ni shu kartaga o'tkazing, chekni yuklang va «O'tkazdim» ni bosing.",
+        transferNoteAgain: "{sum} shu kartaga o'tganini tekshiring va chekni qayta yuklang.",
         beforeCooking:
             "Faqat do'kon kartasiga o'tkazma. Buyurtma bering va summani o'tkazing. Pul kelishi bilan do'kon boshlaydi.",
-        sent: "O'tkazdim",
+        /** The order's main button: the screenshot first, «O'tkazdim» comes after it. */
+        upload: "Chekni yuklash",
         ownerAwaiting: "Chek yuborildi",
         afterOrder: "Buyurtmadan keyin do'kon kartasiga {sum} o'tkazasiz",
         afterOrderHint:
@@ -409,8 +429,8 @@ export const uz = {
         checkingLate: "Do'kon odatdagidan kechikmoqda. Pastda do'konga eslating.",
         rejectedTitle: "Do'kon pulni hali ko'rmadi",
         rejectedText:
-            "Bank ilovangizda pul shu kartaga o'tganini tekshiring va chekni qayta yuboring.",
-        resend: "Chekni qayta yuborish",
+            "Bank ilovangizda pul shu kartaga o'tganini tekshiring va chekni qayta yuklang.",
+        resend: "Chekni qayta yuklash",
         replace: "Boshqa chek yuborish",
         sentAt: "Chek {time} da yuborildi",
         status: {
@@ -420,22 +440,6 @@ export const uz = {
             refund_due: "Do'kon pulni qaytaradi",
             refunded: "Pul qaytarildi",
         },
-    },
-    receipt: {
-        title: "O'tkazma cheki",
-        hint: "Bank ilovasidagi o'tkazma chekining skrinshotini tanlang: summa va karta ko'rinsin.",
-        howTo: "Chek ochiq turganda skrinshot oling: Android'da quvvat va ovozni pasaytirish, iPhone'da yon tugma va ovozni oshirish tugmalarini birga bosing.",
-        pick: "Skrinshotni tanlash",
-        change: "Boshqa rasm",
-        send: "Chekni yuborish",
-        sent: "Chek yuborildi. Do'kon pulni tekshiradi.",
-        unreadable: "Bu rasmni ochib bo'lmadi. Boshqa skrinshot tanlang.",
-        open: "Chekni ko'rish",
-        zoom: "Kattalashtirish",
-        close: "Yopish",
-        loadFailed: "Chekni yuklab bo'lmadi",
-        expired: "Chek o'chirilgan (30 kun saqlanadi)",
-        none: "Chek yo'q",
     },
     order: {
         title: "Buyurtma #{n}",
@@ -448,6 +452,8 @@ export const uz = {
         items: "Tarkibi",
         address: "Manzil",
         courier: "{name} olib kelmoqda",
+        /** A courier is on the order, but it has not left the shop yet. */
+        courierAssigned: "Kuryer: {name}",
         callCourier: "Kuryerga qo'ng'iroq",
         bottlesBack: "Qaytariladigan bo'sh idish: {n} ta",
         reorder: "Takrorlash",

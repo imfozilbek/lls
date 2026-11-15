@@ -149,9 +149,13 @@ cover each one's whole process; what exactly comes from the meeting with them.
   picks one at checkout and only that one's rules apply to the order; `PAYMENT_METHOD_UNAVAILABLE`
   for a way the shop does not take). Every order stores its method (`card_transfer` | `cash`).
 - **Transfer: paid to the shop's card before the shop starts.** The order is placed unpaid → the
-  customer transfers and presses «Я перевёл» → the owner sees the money and presses «Деньги
-  пришли, принять» (paid, accepted and started in one tap). A transfer order is never accepted
-  unpaid (`PAYMENT_REQUIRED`).
+  customer transfers, presses «Chekni yuklash», picks the screenshot, and only then «O'tkazdim»
+  opens and sends it → the owner sees the money and presses «Pul keldi, qabul qilish» (paid,
+  accepted and started in one tap). A transfer order is never accepted unpaid
+  (`PAYMENT_REQUIRED`). **«Pul keldi» waits for the screenshot** (owner's decision, November
+  2026): before it the owner's card and bot message carry no «Pul keldi», only a quiet «Mijoz pulni
+  o'tkazib, chekni yuklashi kerak», and the server refuses it (`RECEIPT_NOT_SENT`, also after «Pul
+  kelmadi»). An order paid without «O'tkazdim» waits for the customer.
 - **Cash: paid to the courier at the door** (owner's decision, October 2026). The owner accepts it
   at once with «Qabul qilish». It goes only with the shop's own courier or the owner, never to
   the district network (`CASH_NOT_FOR_NETWORK`; auto-network skips it). The courier card says
@@ -161,8 +165,16 @@ cover each one's whole process; what exactly comes from the meeting with them.
   (asked once more; `cash_received_at`). The courier sees «Do'konga topshirasiz: {sum}» per shop
   until then. No change (qaytim) field: the customer writes it in the comment. Transfer steps on a
   cash order are refused (`NOT_A_TRANSFER`).
+- **«Yetkazish haqini mijoz o'zi to'laydi»** (owner's decision, November 2026): a shop that sends
+  by a taxi or the post switches it on in «Yetkazib berish». The customer pays the carrier; the
+  order adds no delivery fee (the shop's fee and «dan bepul» step aside, a snapshot
+  `customer_pays_carrier` in the order). The storefront, the showcase, the checkout and the order
+  say «Yetkazish haqi alohida», and the bot's first message says it too. The sum is the
+  dispatcher's note. Such an order never goes to the district network
+  (`CARRIER_NOT_FOR_NETWORK`).
 - **The transfer screenshot (owner's decision, October 2026).** «O'tkazdim» carries the
-  screenshot of the transfer (`RECEIPT_REQUIRED` without it); it is a hint, never proof: the
+  screenshot of the transfer (`RECEIPT_REQUIRED` without it; it opens only once one is picked); it
+  is a hint, never proof: the
   money on the card is. It is stored in its own private R2 bucket `zumda-receipts` (never in the
   public `zumda-media`), **kept 30 days** (owner's decision, October 2026: the bucket's lifecycle
   deletes it, `RECEIPT_KEEP_DAYS`; then 410 `RECEIPT_EXPIRED`, the app says it was deleted),
@@ -228,6 +240,24 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - **Done:** a business never sees its courier's other businesses. A transfer order is paid to the
   shop's card before cooking; a cash order's money goes from the shop's own courier to the owner,
   per order.
+- **Someone is on every order before «Tayyor»** (owner's decision, November 2026): a shop with
+  one courier gives the accepted order to that courier by itself (`AutoAssignOnlyCourierUseCase`,
+  when they can take it now; the owner may still give it to someone else); with two or more the
+  owner's main button is «Kuryerga topshirish»; with none it is «O'zim yetkazaman» (the bot card
+  too: `m:<orderId>`). «Tayyor» and «Jo'natish» are refused until then (`COURIER_NOT_CHOSEN`);
+  the network looking for a courier counts as chosen.
+- **A courier may be a dispatcher** (owner's decision, November 2026: the toy shop sends parcels
+  by a taxi or the post). The owner switches «Dispetcher» on the courier in «Kuryerlar» (per
+  shop; never a network link). The owner packs and presses «Tayyor bo'ldi»; the dispatcher's
+  «Jo'natdim» asks the way (Taksi, Pochta, O'zim olib boraman, Boshqa: `SendWay`, stored
+  `sent_via`) and a note (required for «Boshqa»), «Izoh qo'shish» adds more (up to 20, 300
+  characters each, `delivery_notes`). The carrier is never in Zumda: only the way and the notes.
+  The customer gets each from the shop's bot (a showcase order from Zumda | Shop) and sees them
+  on the order with «Dispetcher» and the call. The owner never makes the dispatcher's steps
+  (`SEND_WAY_REQUIRED`); a quiet «Yetkazildi deb belgilash» (asked once more) closes an order
+  whose dispatcher went silent. A cash order never goes to a dispatcher
+  (`CASH_NOT_FOR_DISPATCHER`) and a dispatcher's order never joins a trip. Every courier card
+  says «Qayerdan» and «Qayerga» on every step.
 - **Done (goal 06):** every courier a business approves is **offered** once to deliver for other
   points of the district too (`in_network`, only the courier's own consent).
 - **Done:** a district is a circle (center + radius) the platform admin sets in «Platforma» →
@@ -308,11 +338,40 @@ cover each one's whole process; what exactly comes from the meeting with them.
   yana qo'shish», «Nusxa olish»; a typed draft is guarded. «Ro'yxat bilan qo'shish»: one product
   a line «Nomi narx [birlik]», up to 50 in one `db.batch` (`POST /api/owner/products/bulk`, 5 a
   minute), a name the shop has is skipped.
+- **A toy shop's tabs (owner's decisions, November 2026):** «Rivojlantiruvchi o'yinchoqlar»,
+  «Mantiqiy o'yinlar», «Kitoblar» stand on the goods shelf after «Bolalar tovarlari». A product
+  stands in up to three categories (`MAX_CATEGORIES`): the main one, which an order line and the
+  showcase deal keep, and up to two more for the storefront and the category filter
+  (`products.more_categories`). Children's goods (`KIDS_CATEGORIES`) ask «Yoshi», the age they
+  are for (`AGES`: 0+, 1+, 3+, 5+, 7+, 12+; `products.age_from`). The form: the first tap on a
+  guessed category replaces it, later taps add and remove; the shop's own categories come right
+  after the name's guess. The storefront's tabs: the ages first (two or more), then every
+  category a product stands in (`shop/menu-chips.ts`); a card shows «3+».
+- **The shop's stock (owner's decisions, November 2026):** the owner counts what is left of a
+  product only where they want it («Qoldiqni hisoblash» in its form; `products.stock`, base units:
+  pieces, or grams; NULL: not counted, sold as before). One number for the whole product: every
+  variant takes from it. An order takes it when it is placed, in the same `db.batch` as the order
+  (`STOCK_TAKE_SQL`; the column's CHECK never lets it below zero, so two customers never get the
+  last piece: the second hears `OUT_OF_STOCK` with what is left); a cancel gives back what the
+  lines took (`order_items.from_stock`, once). A product save writes the count only when the owner
+  gave a new one. Below one selling step left the product is «Tugagan»: the customer sees it as it
+  is (storefront, sheet, showcase) and cannot add it; the cart drops it, or brings a line down to
+  what is left («… faqat 1 ta qoldi»). The customer never sees the number; the owner's catalog
+  says «12 ta qoldi» and has the chip «Tugagan».
+- **Up to three photos a product (owner's decision, November 2026):** `image_key` is the main one
+  (the menu, the showcase, the catalog, the photo nudge), `products.more_images` up to two more
+  (`MAX_PHOTOS`). In the form a tile each, the first marked «Asosiy»; a tap offers «Asosiy
+  qilish» and «Rasmni o'chirish», «Rasm qo'shish» while there is room; «Saqlash» sends the
+  difference step by step (`owner/photos.ts`: removed, new ones in order, then the order), and a
+  retry never sends a photo twice. Routes: `POST`, `DELETE ?key=`, `PATCH /products/:id/images`
+  (`TOO_MANY_PHOTOS` refused before the file is stored). The customer swipes through them in the
+  product's sheet, a dot each (`shop/product-gallery.tsx`, `data-no-gesture`). A deleted product,
+  a removed photo and «Namunani tozalash» delete the files from R2.
 - Add a feature only when a real client asks for it.
 - Design stage 1 so stages 2–3 need no rewrite:
   - multi-tenant: `business_id` in every business-owned table
   - one global customer per `telegram_id` + customer↔business link
-  - shared category taxonomy (114 ids on four shelves: food, grocery, goods, services; ids are
+  - shared category taxonomy (117 ids on four shelves: food, grocery, goods, services; ids are
     stored, so only added, never renamed) + units (pieces, portion, kg, 100 g, g, l, 19 l, 20 l,
     packs and boxes, metre, m², m³, hour, day, month, session, trip, sotix; goal 17)
   - geo: business location + delivery zone, customer location
@@ -511,15 +570,15 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
-| Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17) |
+| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order, customer_pays_carrier), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
+| Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy; the main one), more_categories (up to two more, storefront only), age_from (0, 1, 3, 5, 7, 12: children's goods), image_key (the main photo), more_images (up to two more), is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17), stock (what is left in base units when the owner counts it; NULL: not counted) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
 | District | id, name, region (one of the 14 viloyats), center (lat, lng), radius, wait_minutes: a circle of the delivery network |
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
-| Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until: the person's link to one shop (`network`: took a network order of it) |
+| Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until, dispatcher (sends orders on by a taxi or the post, writes notes): the person's link to one shop (`network`: took a network order of it) |
 | Trip | id, business_id, courier_id, route (JSON line), distance_m, duration_s: several orders of one shop one way; stops are `orders.trip_id` + `trip_stop` |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), service fee (rate + amount; plan) |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces (metres, hours...), or
@@ -540,9 +599,14 @@ cancelled  cancelled  cancelled  cancelled  cancelled
 - A transfer order: `pending → accepted` only when paid: the owner's «Деньги пришли, принять»
   confirms the transfer and accepts and starts it in one step (`Order.advanceTo` refuses an unpaid
   accept). A cash order is accepted at once and becomes paid on `delivered`.
+- The door is the courier's (owner's decision, November 2026): on the way with a courier the
+  owner's card says «Kuryer yetkazmoqda»; a quiet «Yetkazildi deb belgilash» (asked once more)
+  stays for a courier who went silent.
 - Owner moves every step and may cancel. The assigned courier moves only
   `ready → picked_up → delivered` and never cancels. The customer cancels only while `pending`.
-- The owner assigns a courier (`accepted`…`ready`); without couriers the owner delivers.
+- The owner assigns a courier (`accepted`…`ready`), or says «O'zim yetkazaman», before «Tayyor»
+  (`COURIER_NOT_CHOSEN`); the shop's only courier gets it by itself when it is accepted. A
+  dispatcher's `ready → picked_up` is only their «Jo'natdim» with the way (`SEND_WAY_REQUIRED`).
 - Only ONE transitions table (and one actor rule next to it) in the codebase.
 
 ## Database (Cloudflare D1)
@@ -603,6 +667,10 @@ the rule id (e.g. `PHONE_REQUIRED`, `SHOP_CLOSED`) so the app can show a transla
 // Constant-time compare. Reject auth_date older than 24h or in the future
 // Never trust client-side data without validation
 ```
+Telegram signs initData once, when the app opens: an app kept open (collapsed) past its day
+shows «Ilovani qayta oching» with «Yopish» (`ReopenGate`), never a silent 401: after the server
+refused a day-old signature, or on coming back when the phone's clock agreed with Telegram's at
+opening (`launchSurelyOutdated`: a phone set to the wrong day is never locked out).
 
 **Bot webhook:**
 - Register with `setWebhook` + `secret_token`. Reject requests without a matching
@@ -653,11 +721,14 @@ courier of that shop and asks for the phone; the owner gets "Подтверди�
 shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин".
 
 **Notifications (no WebSockets):**
-- New order → message to the owner «💳 Ждём перевод» with «Деньги пришли, принять» + «Отменить»;
-  the customer gets the shop's card and the sum. A cash order: «💵 Naqd: kuryer yetkazganda
-  oladi» with «Qabul qilish»; the customer gets the sum to give the courier. «Я перевёл» with the screenshot → the owner gets
-  the picture, the sum, the card tail, warnings and «Ha, … keldi» / «Yo'q, kelmadi». After that
-  the owner's button is the **next allowed status** («Tayyor»: accepting already started it).
+- New order → message to the owner «💳 Kartaga o'tkazma va chek kutilmoqda» with only «Bekor
+  qilish» (no «Pul keldi» before the screenshot); the customer gets the shop's card, the sum and
+  «chekni yuklang va «O'tkazdim» ni bosing». A cash order: «💵 Naqd: kuryer yetkazganda oladi»
+  with «Qabul qilish»; the customer gets the sum to give the courier. «O'tkazdim» with the
+  screenshot → the owner gets the picture, the sum, the card tail, warnings and «Ha, … keldi» /
+  «Yo'q, kelmadi», and the card gets «Pul keldi, qabul qilish» (an old card's button before the
+  screenshot answers one line). After that the owner's button is the **next allowed status**
+  («Tayyor»: accepting already started it).
 - Every bot message about an order opens the app on it: the shop's bot `?shop=&order=`, the
   Zumda | Business fallback `?mode=business&shop=&order=`, Zumda | Kuryer `?mode=courier&order=`
   (its card scrolls into view).
@@ -671,10 +742,14 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   in the chat); «Platforma» marks such a shop. The QR poster is also kept in R2
   (`shops/<id>/poster-<hash>.png`, public) and downloads in the app («Yuklab olish»:
   `WebApp.downloadFile`, a link in a browser).
-- Courier assigned → order card from the Zumda courier bot, titled with the shop's name (address,
-  landmark, map, the customer's and the shop's phones, «Оплачено заранее: денег не брать» or for
-  cash «Mijozdan {sum} naqd oling», empty bottles) with "Забрал", then one "Доставил" («Pulni
-  oldim, yetkazdim» for cash).
+- Courier assigned → order card from the Zumda courier bot, titled with the shop's name (where
+  from: the shop's address; address, landmark, map, the customer's and the shop's phones,
+  «Оплачено заранее: денег не брать» or for cash «Mijozdan {sum} naqd oling», empty bottles) with
+  "Забрал", then one "Доставил" («Pulni oldim, yetkazdim» for cash). A dispatcher's card: «📮
+  Jo'natdim» opens the app (the way and the note), then «Yetkazildi»; the last notes are on it.
+- A dispatcher's «Jo'natdim» → the customer hears how it went («taksi bilan», «pochta orqali»…),
+  with the note, «Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz» when the customer pays the
+  carrier, and the dispatcher's phone; each further note comes on its own («📝 #7 buyurtma: …»).
 - **The Zumda sound** (owner's choice, October 2026: «Zum-da», `lib/sound.ts`, synthesized): while
   the Mini App is open, news rings it: the shop (new order, «O'tkazdim») and the courier (new
   delivery, ready to pick up, network order nearby) twice, the customer once and softly (the
@@ -710,27 +785,35 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   product (app, bots, owner and courier guides). The dictionary mechanism stays (`Language`, one
   dictionary per language, no heavy i18n library): another language is one more dictionary.
   Telegram's `language_code` and old `ru` rows read as Uzbek.
-- Address: Telegram location + "ориентир" (landmark) field. A shop with a delivery radius (and
-  its own location) takes orders only with the customer's pin (`LOCATION_REQUIRED`), so an
+- Address: Telegram location + "ориентир" (landmark) field. Every order carries the customer's
+  pin (owner's decision, November 2026: `LOCATION_REQUIRED`): the courier always knows where to.
+  A shop with a delivery radius (and its own location) also refuses a pin beyond it, so an
   out-of-zone order is never paid and refunded; the storefront says «{km} km gacha yetkazamiz»
 - Phone: Telegram "share contact" button, never typed by hand
 - Payment: the shop's choice. Transfer: checkout tells the sum, the order screen shows the card
-  with a copy button; the customer transfers after placing and presses «Я перевёл» with the
-  screenshot; the owner confirms by hand («Деньги пришли, принять», asked once more), then the
-  shop starts. Cash: checkout and the order screen say the sum to give the courier. «Ikkalasi»:
+  with a copy button; the customer transfers after placing, presses «Chekni yuklash» and, with the
+  screenshot picked, «O'tkazdim»; the owner confirms by hand («Pul keldi», asked once more), then
+  the shop starts. Cash: checkout and the order screen say the sum to give the courier. «Ikkalasi»:
   checkout asks which one (the card first, then the way the customer paid last; the pick is kept
   in the draft)
 
 **User Flow:**
 - Customer: Open shop link → Browse → «Savat» (the cart and the order are one screen, owner's
   decision, October 2026: «+», «Savat», «Buyurtma berish»; a returning customer's phone and place
-  are one line each) → Transfer → «Я перевёл» → Track (cash: Order → Track → pay the courier)
+  are one line each) → Transfer → «Chekni yuklash» → «O'tkazdim» → Track (cash: Order → Track →
+  pay the courier)
 - Showcase customer: Zumda bot → Search → Shop → «Savat» → Order → Track
-- Owner: New order message → the transfer arrives → «Деньги пришли, принять» (started at once) →
-  «Tayyor» → assign courier; catalog, couriers and the card in "Мой магазин"
+- Owner: New order message → the customer's screenshot → the transfer on the card → «Pul keldi,
+  qabul qilish» (started at once;
+  the only courier gets it by itself) → «Kuryerga topshirish» or «O'zim yetkazaman» when nobody
+  is on it → «Tayyor»; catalog, couriers and the card in "Мой магазин"
 - Courier: Invite link → Zumda courier bot → phone → approved → "on shift" → assigned order card →
   «Buyurtmani oldim» → «Yetkazdim» (cash: takes the sum, «Pulni oldim, yetkazdim», hands it to the
   owner). With one step to make, it is on Telegram's own button too («#12 · Yetkazdim»)
+- Dispatcher: approved and marked «Dispetcher» by the owner → "on shift" → the order of their only
+  shop comes by itself after «Pul keldi» (or the owner hands it over) → «Izoh qo'shish» while the
+  owner packs → «Tayyor» → «Jo'natdim» (Taksi / Pochta / O'zim / Boshqa + note) → more notes →
+  «Yetkazildi»
 - Network courier: approved by a point → «Да, для района» in the Zumda courier bot → "on shift" →
   «Новый заказ рядом» → «Беру» → full card → Picked up → Delivered
 - Trip: owner «Shu yo'nalishda yana N ta» → «Bir yo'nalish» (order, courier) → «Tayinlash» →
@@ -896,6 +979,15 @@ console.log            // Use logger
 **REQUIRED:**
 - Micro-interactions on all interactive elements
 - Personality: custom icons and empty states with character (no stock illustrations)
+- **Short lists (owner's decision, November 2026):** a card in a long list shows who, what, how
+  much and the one next step; «Batafsil» opens the rest (the owner's orders, the courier's
+  deliveries, «Platforma» shops; the one to do now, or a bot message's, is open). A list that
+  spans states gets chips with counts (`ui/filter-chips.tsx`): orders by stage, the catalog by
+  state, «Bizneslar» by marks. A label names what the button does, never a near thing.
+- **Living Uzbek (owner's decision, November 2026):** a new or changed string goes through the
+  Prizma corpus check (`tools/native/native_check.py` of `imfozilbek/data-driven-approach`,
+  27 M words of public Uzbek channels; Gemini's variants too when its key is set); a variant is
+  taken only when the corpus rates it no worse and flags nothing new.
 - **Native feel (owner's decision, October 2026):** every screen with server data registers
   `useRefresh` (pull down from the top) and keeps its data on refresh; data comes through
   `usePagedList` / `useCachedState` (this session's copy at once, a quiet refresh behind it,
@@ -905,7 +997,10 @@ console.log            // Use logger
   `useClosingGuard`, or is kept as a draft (the checkout keeps its fields on every change).
   A sheet's own button goes in its `footer` (never under its scroll); an error toast stays 6 s
   and longer for a long sentence; a failed pull says why in one toast (`ui/gestures.tsx`). Fields
-  stay 16px (iOS zooms below) with the dark caret (`index.css`).
+  stay 16px (iOS zooms below) with the dark caret (`index.css`). Nothing waits forever: every
+  request has a deadline (`lib/deadline.ts`; 20 s reads, 30 s writes, 120 s files; a read that
+  broke before any answer goes once more, a write never), a pull lets go after 25 s, a timer
+  tick never starts while the last one waits.
 
 ## Skills Usage (MANDATORY)
 
@@ -1075,13 +1170,19 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Owner without Start in the shop's bot: «Botingizni oching» in «Ishga tayyor»; the poster
       and a new order come through Zumda | Business with the note; «Yuklab olish» saves the
       poster; after Start the shop's bot writes again
-- [ ] Money: card on the order screen → «Я перевёл» with the screenshot → «Деньги пришли,
-      принять» (asked once more) → one «Доставил»; «Pul kelmadi» → sent again; a reused
-      screenshot warns; cancel after paid → «Вернул»; a shop without a card takes no orders
+- [ ] Money: card on the order screen → «Chekni yuklash» → «O'tkazdim» (closed until the
+      screenshot is picked) → «Pul keldi» (none before the screenshot, asked once more) → one
+      «Yetkazdim»; «Pul kelmadi» → sent again; a reused screenshot warns; cancel after paid →
+      «Qaytardim»; a shop without a card takes no orders
 - [ ] Cash: «Naqd pul» in «To'lov» → no card at checkout → «Qabul qilish» without money → no
       network option → «Mijozdan … naqd oling» → «Pulni oldim, yetkazdim» → «Pul» →
       «Kuryerlardagi naqd pul» → «Pulni oldim»; «Ikkalasi»: the customer picks; «Karta»: no cash
 - [ ] Courier invite → assign → picked up → delivered
+- [ ] One courier: the accepted order is theirs by itself; two: «Kuryerga topshirish» before
+      «Tayyor»; none: «O'zim yetkazaman» (also in the bot); every order needs the pin
+- [ ] Dispatcher: «Dispetcher» in «Kuryerlar» → «Tayyor» by the owner → «Jo'natdim» (Pochta +
+      trek) → «Izoh qo'shish» → the customer gets both and sees them on the order; «Yetkazish
+      haqi alohida» on the storefront when the customer pays the carrier
 - [ ] Phones: the owner calls the customer and the courier from the card; the customer calls the
       courier and the shop (storefront, order); the courier calls the customer and the shop; a
       shop without its own number shows the owner's, without either it takes no orders; a courier
@@ -1102,6 +1203,12 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Trips: three orders one way → «Bir yo'nalish» → reorder → «Tayinlash» → «Hammasini
       oldim» → Yandex link in order → delivered stops grey for the owner
 - [ ] Grocery: weight items (kg steps); spices by 100 g («× 300 g» in the message); stop-list for today
+- [ ] Toys: a toy in «Mantiqiy o'yinlar» and «Kitoblar» with «3+»; a fourth category refused; the
+      storefront's tabs «0+», «3+» and the categories, each toy under each of its tabs
+- [ ] Stock: «Qoldiqni hisoblash» 2 → two ordered → «Tugagan» on the storefront, no «+» → the
+      cancel brings «+» back; two customers and the last piece: one order; «faqat 1 ta qoldi»
+- [ ] Photos: three in the form, the third «Asosiy qilish», a fourth has no place; one taken away;
+      the customer swipes through them in the sheet, the menu shows the main one
 - [ ] Each order stores channel + commission (0 for own bot)
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow

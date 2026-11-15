@@ -5,12 +5,15 @@ import {
     Product,
     ProductOptions,
     UNITS,
+    isAge,
     offsetOf,
 } from "@zumda/core"
 
 import { bool, flag, oneOf, optional, placeholders } from "./rows.js"
 
 import type {
+    Age,
+    Category,
     Page,
     PageRequest,
     ProductListQuery,
@@ -35,10 +38,15 @@ interface ProductRow {
     created_at: number
     updated_at: number
     options: string | null
+    more_categories: string | null
+    age_from: number | null
+    stock: number | null
+    more_images: string | null
 }
 
 const COLUMNS = `id, business_id, name, description, price, unit, step, category, image_key,
-    is_available, unavailable_until, returnable, position, created_at, updated_at, options`
+    is_available, unavailable_until, returnable, position, created_at, updated_at, options,
+    more_categories, age_from, stock, more_images`
 
 /** The same columns read through the `p` alias of a join. */
 const JOINED_COLUMNS = COLUMNS.split(",")
@@ -74,6 +82,9 @@ export const SHOWCASE_BY_WORD_FROM = `FROM (
     CROSS JOIN products p ON p.id = m.product_id
     CROSS JOIN businesses b ON b.id = p.business_id`
 
+/** The showcase without words (a category alone): the showcase shops' products. */
+export const SHOWCASE_ALL_FROM = "FROM products p JOIN businesses b ON b.id = p.business_id"
+
 /** Every further word of the search; binds: its range. */
 export const WORD_FILTER =
     "p.id IN (SELECT product_id FROM product_words WHERE word >= ? AND word < ?)"
@@ -81,9 +92,51 @@ export const WORD_FILTER =
 /** Every name of a shop's products, read from the catalog index alone (`EXPLAIN` in query-plans). */
 export const NAMES_OF = "SELECT name FROM products WHERE business_id = ?"
 
+/**
+ * A product standing in a category as its main one or a further one; binds: `inCategoryBinds`.
+ * The further ones are a JSON array of ids, so the id in quotes matches it exactly.
+ */
+export function inCategory(alias = ""): string {
+    return `(${alias}category = ? OR instr(coalesce(${alias}more_categories, ''), ?) > 0)`
+}
+
+export function inCategoryBinds(category: Category): [string, string] {
+    return [category, JSON.stringify(category)]
+}
+
+function moreCategoriesOf(row: ProductRow): Category[] | undefined {
+    if (row.more_categories === null) {
+        return undefined
+    }
+    const ids = JSON.parse(row.more_categories) as string[]
+    return ids.map((id) => oneOf(id, CATEGORIES, "category"))
+}
+
+function ageOf(row: ProductRow): Age | undefined {
+    if (row.age_from === null) {
+        return undefined
+    }
+    if (!isAge(row.age_from)) {
+        throw new Error(`Corrupt age_from in database: ${row.age_from}`)
+    }
+    return row.age_from
+}
+
 /** The distinct words of a product's search text. */
 function wordsOf(text: string): string[] {
     return [...new Set(text.split(" ").filter((word) => word.length > 0))]
+}
+
+/** The shop's photos, main and more: a demo's are deleted when it starts again (rare). */
+export const PHOTOS_OF = `SELECT image_key, more_images FROM products
+    WHERE business_id = ? AND image_key IS NOT NULL`
+
+/** More photos as stored: a JSON array of R2 keys; anything else reads as none. */
+function moreImagesOf(json: string): string[] {
+    const parsed: unknown = JSON.parse(json)
+    return Array.isArray(parsed)
+        ? parsed.filter((key): key is string => typeof key === "string")
+        : []
 }
 
 function toProduct(row: ProductRow): Product {
@@ -96,6 +149,8 @@ function toProduct(row: ProductRow): Product {
         unit: oneOf(row.unit, UNITS, "unit"),
         step: row.step,
         category: oneOf(row.category, CATEGORIES, "category"),
+        moreCategories: moreCategoriesOf(row),
+        ageFrom: ageOf(row),
         imageKey: optional(row.image_key),
         isAvailable: bool(row.is_available),
         unavailableUntil:
@@ -103,6 +158,8 @@ function toProduct(row: ProductRow): Product {
         returnable: bool(row.returnable),
         position: row.position,
         options: row.options === null ? undefined : ProductOptions.create(JSON.parse(row.options)),
+        stock: row.stock ?? undefined,
+        moreImageKeys: row.more_images === null ? undefined : moreImagesOf(row.more_images),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -147,8 +204,8 @@ export class D1ProductRepository implements ProductRepository {
             params.push(query.availableAt.getTime())
         }
         if (query.category !== undefined) {
-            conditions.push("category = ?")
-            params.push(query.category)
+            conditions.push(inCategory())
+            params.push(...inCategoryBinds(query.category))
         }
         const where = conditions.join(" AND ")
         const [rows, count] = await this.db.batch([
@@ -181,17 +238,14 @@ export class D1ProductRepository implements ProductRepository {
         const [first, ...rest] = words
         // The first word drives the read (its prefix range in product_words); the other words
         // only filter what it found. Without words (a category alone): the showcase's products.
-        const from =
-            first === undefined
-                ? "FROM products p JOIN businesses b ON b.id = p.business_id"
-                : SHOWCASE_BY_WORD_FROM
+        const from = first === undefined ? SHOWCASE_ALL_FROM : SHOWCASE_BY_WORD_FROM
         if (first !== undefined) {
             params.push(...wordRange(first))
         }
         params.push(BusinessStatus.ACTIVE, search.availableAt.getTime())
         if (search.category !== undefined) {
-            conditions.push("p.category = ?")
-            params.push(search.category)
+            conditions.push(inCategory("p."))
+            params.push(...inCategoryBinds(search.category))
         }
         for (const word of rest) {
             conditions.push(WORD_FILTER)
@@ -238,12 +292,16 @@ export class D1ProductRepository implements ProductRepository {
         await this.db.batch(products.flatMap((product) => this.writesOf(product)))
     }
 
-    /** The product and its words change together. */
+    /**
+     * The product and its words change together. The count is written over the stored one only
+     * when the owner gave a new one: meanwhile orders change it in the database itself.
+     */
     private writesOf(product: Product): D1PreparedStatement[] {
+        const stock = product.stockChanged ? ", stock = excluded.stock" : ""
         const upsert = this.db
             .prepare(
                 `INSERT INTO products (${COLUMNS}, search_text)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT (id) DO UPDATE SET name = excluded.name,
                     search_text = excluded.search_text,
                     description = excluded.description, price = excluded.price,
@@ -251,7 +309,9 @@ export class D1ProductRepository implements ProductRepository {
                     image_key = excluded.image_key, is_available = excluded.is_available,
                     unavailable_until = excluded.unavailable_until,
                     returnable = excluded.returnable, position = excluded.position,
-                    options = excluded.options, updated_at = excluded.updated_at`,
+                    options = excluded.options, updated_at = excluded.updated_at,
+                    more_categories = excluded.more_categories,
+                    age_from = excluded.age_from, more_images = excluded.more_images${stock}`,
             )
             .bind(
                 product.id,
@@ -270,6 +330,10 @@ export class D1ProductRepository implements ProductRepository {
                 product.createdAt.getTime(),
                 product.updatedAt.getTime(),
                 product.options ? JSON.stringify(product.options.toJSON()) : null,
+                product.moreCategories.length > 0 ? JSON.stringify(product.moreCategories) : null,
+                product.ageFrom ?? null,
+                product.stock ?? null,
+                product.moreImageKeys.length > 0 ? JSON.stringify(product.moreImageKeys) : null,
                 ` ${product.searchText}`,
             )
         return [
@@ -287,6 +351,17 @@ export class D1ProductRepository implements ProductRepository {
         await this.db.batch([
             this.db.prepare("DELETE FROM product_words WHERE product_id = ?").bind(id),
             this.db.prepare("DELETE FROM products WHERE id = ?").bind(id),
+        ])
+    }
+
+    async photoKeysOf(businessId: string): Promise<string[]> {
+        const { results } = await this.db
+            .prepare(PHOTOS_OF)
+            .bind(businessId)
+            .all<{ image_key: string; more_images: string | null }>()
+        return results.flatMap((row) => [
+            row.image_key,
+            ...(row.more_images === null ? [] : moreImagesOf(row.more_images)),
         ])
     }
 

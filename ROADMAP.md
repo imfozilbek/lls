@@ -257,9 +257,13 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Goal 18: «Platforma» in its own bot, Zumda | Platforma, and its own Mini App (owner's decision,
       16 October 2026): every message to the admins comes from it, Zumda | Business as the
       fallback until Start; platform.zumda.shop in a browser with its own Telegram Login
-- [ ] Zumda | Platforma live (goal 19, `docs/goals/19-platforma-live.md`): the owner creates the
-      bot and `ADMIN_BOT_TOKEN`, presses Start, sets its Login Widget; until the secret exists
-      the deploy of `main` is skipped as a whole
+- [x] A toy shop's request (owner's decisions, 7 November 2026): «Rivojlantiruvchi
+      o'yinchoqlar», «Mantiqiy o'yinlar», «Kitoblar» in the taxonomy (117 ids), up to three
+      categories a product, the age «Yoshi» (0+ to 12+), the storefront's tabs by age and
+      category; reaches the shop with the first deploy after goal 19
+- [ ] Zumda | Platforma live (goal 19, `docs/goals/19-platforma-live.md`): in production since 7
+      November 2026 (bot, secret, deploy, Start, Login Widget, «Platforma» from the bot and the
+      browser); left: the first application and the first alert seen from the new bot
 - [ ] Three friends (food, water, grocery) connect their shops, fill catalogs, invite couriers
 - [ ] **First real order**
 
@@ -274,6 +278,12 @@ Pilot: **food, water and grocery at the same time.**
       alerts (production has no district yet: an owner task)
 - [x] Orders from several points in one place; each point sees only its own
 - [x] Today's shop couriers move to the new model without losing data
+- [x] Someone is on every order before «Tayyor» (owner's decisions, November 2026): the only
+      courier gets it by itself, two or more are picked by the owner, none: «O'zim yetkazaman»
+- [x] A courier may be a dispatcher (the toy shop): «Jo'natdim» by a taxi or the post with a
+      note, more notes for the customer; «Qayerdan» and «Qayerga» on every courier card
+- [x] Every order carries the customer's pin; «Yetkazish haqi alohida» when the customer pays
+      the carrier
 - [ ] Decide (owner): who gets the delivery fee for a network delivery, and Zumda's share
       (temporary rule in code: the shop keeps it, Zumda takes none)
 

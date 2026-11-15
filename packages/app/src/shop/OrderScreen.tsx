@@ -15,6 +15,7 @@ import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { SheetLoading } from "../ui/boundary.js"
 import { CallLink } from "../ui/contact-links.js"
+import { DeliveryNotes } from "../ui/delivery-notes.js"
 import {
     CashIcon,
     CloseIcon,
@@ -31,12 +32,13 @@ import { Button, EmptyState, Section, Skeleton } from "../ui/primitives.js"
 import { ReceiptThumb } from "../ui/receipt.js"
 import { BottomSpacer } from "../ui/shell.js"
 
+import { deliveryWords } from "./delivery-words.js"
 import { useReorder } from "./reorder.js"
 
 import type { Dictionary } from "../i18n/index.js"
 import type { OrderDTO } from "@zumda/core"
 
-/** Opened only by «O'tkazdim»: a cash order and a paid one never download it. */
+/** Opened only by «Chekni yuklash»: a cash order and a paid one never download it. */
 const loadReceiptSheet = (): Promise<typeof import("./ReceiptSheet.js")> =>
     import("./ReceiptSheet.js")
 const ReceiptSheet = lazy(() => loadReceiptSheet().then((m) => ({ default: m.ReceiptSheet })))
@@ -159,6 +161,7 @@ function moneyOpen(order: OrderDTO): boolean {
  */
 function Calls({ order }: { order: OrderDTO }): React.JSX.Element | null {
     const t = useT()
+    const language = useLanguage()
     const shopPhone = useSession((state) => state.shop?.callPhone)
     const courier = order.courierPhone
     const shop = moneyOpen(order) ? undefined : shopPhone
@@ -167,16 +170,26 @@ function Calls({ order }: { order: OrderDTO }): React.JSX.Element | null {
     }
     return (
         <div className="flex flex-col gap-2">
-            {courier ? <CallLink phone={courier} label={t.order.callCourier} /> : null}
+            {courier ? (
+                <CallLink
+                    phone={courier}
+                    label={
+                        order.dispatcher
+                            ? deliveryWords(language).callDispatcher
+                            : t.order.callCourier
+                    }
+                />
+            ) : null}
             {shop ? <CallLink phone={shop} label={t.pay.callShop} /> : null}
         </div>
     )
 }
 
 /**
- * Paid before the shop starts: until then the shop's card stays at hand with «O'tkazdim», which
- * asks for the screenshot of the transfer. After it the customer sees that the shop is checking,
- * and the screenshot they sent; «Pul kelmadi» from the shop brings the card back with a clear why.
+ * Paid before the shop starts: until then the shop's card stays at hand with «Chekni yuklash»,
+ * which asks for the screenshot of the transfer before «O'tkazdim». After it the customer sees that
+ * the shop is checking, and the screenshot they sent; «Pul kelmadi» from the shop brings the card
+ * back with a clear why.
  */
 function Payment({
     order,
@@ -185,7 +198,7 @@ function Payment({
 }: {
     order: OrderDTO
     onChange(order: OrderDTO): void
-    /** «O'tkazdim» itself is the big bottom button; here only «Boshqa chek yuborish». */
+    /** «Chekni yuklash» itself is the big bottom button; here only «Boshqa chek yuborish». */
     onOpenSheet(): void
 }): React.JSX.Element {
     const t = useT()
@@ -438,14 +451,11 @@ function OrderActions({
         }
     }
 
+    // «Takrorlash» is the main button now (useOrderMainAction).
     if (reorder) {
-        return (
-            <Button variant="secondary" className="w-full" onClick={reorder}>
-                {t.order.reorder}
-            </Button>
-        )
+        return null
     }
-    // Quiet and far from «O'tkazdim»: a mistaken tap here costs the order. While the shop checks
+    // Quiet and far from «Chekni yuklash»: a mistaken tap here costs the order. While the shop checks
     // money already sent, it hides behind one more tap: panic is the wrong moment to cancel.
     if (order.status === OrderStatus.PENDING && cancelHidden) {
         return (
@@ -504,8 +514,9 @@ function heroText(
 }
 
 /**
- * Unpaid: the big button is «O'tkazdim» (the one thing to do now). After that, right after
- * placing, it leads back to the menu; the order stays in "My orders".
+ * Unpaid: the big button is «Chekni yuklash» (the one thing to do now); «O'tkazdim» opens in its
+ * sheet once the screenshot is picked. After that, right after placing, it leads back to the menu;
+ * the order stays in "My orders".
  */
 function useOrderMainAction(
     order: OrderDTO | null,
@@ -514,6 +525,8 @@ function useOrderMainAction(
 ): void {
     const t = useT()
     const reset = useRouter((state) => state.reset)
+    // A finished order's one thing to do is to order it again: at the thumb, not under the map.
+    const reorder = useReorder(order)
     const toPay =
         order !== null &&
         order.status !== OrderStatus.CANCELLED &&
@@ -522,7 +535,7 @@ function useOrderMainAction(
     useMainAction(
         toPay
             ? {
-                  text: order.payment.rejections > 0 ? t.pay.resend : t.pay.sent,
+                  text: order.payment.rejections > 0 ? t.pay.resend : t.pay.upload,
                   onClick: (): void => {
                       haptic.tap()
                       openSheet()
@@ -530,7 +543,9 @@ function useOrderMainAction(
               }
             : justPlaced && order
               ? { text: t.cart.toMenu, onClick: (): void => reset() }
-              : null,
+              : reorder
+                ? { text: t.order.reorder, onClick: reorder }
+                : null,
     )
 }
 
@@ -538,6 +553,7 @@ function useOrderMainAction(
 function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
+    const words = deliveryWords(language)
     const shopPlace = useSession((state) => state.shop?.location)
     return (
         <>
@@ -565,8 +581,22 @@ function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
             {order.courierName && !isFinalStatus(order.status) ? (
                 <p className="flex items-center gap-2 rounded-control bg-brand/10 px-4 py-3 font-medium">
                     <ScooterIcon size={20} className="text-brand" />
-                    {fill(t.order.courier, { name: order.courierName })}
+                    {fill(
+                        order.dispatcher
+                            ? words.dispatcher
+                            : order.status === OrderStatus.PICKED_UP
+                              ? t.order.courier
+                              : t.order.courierAssigned,
+                        { name: order.courierName },
+                    )}
                 </p>
+            ) : null}
+            {/* How the dispatcher sent it and every note, like a parcel's tracking. */}
+            {order.dispatcher && order.status !== OrderStatus.CANCELLED ? (
+                <DeliveryNotes
+                    order={order}
+                    sent={order.sentVia ? words.sentVia[order.sentVia] : undefined}
+                />
             ) : null}
             <Calls order={order} />
 
@@ -574,7 +604,10 @@ function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
                 <OrderItems order={order} />
             </Section>
             <Section title={t.order.address}>
-                <OrderMap shop={shopPlace} customer={order.location} />
+                {/* A finished order needs no map: the address says where it went. */}
+                {isFinalStatus(order.status) ? null : (
+                    <OrderMap shop={shopPlace} customer={order.location} />
+                )}
                 <Address order={order} />
             </Section>
         </>
@@ -593,7 +626,7 @@ export function OrderScreen({
     const { order, error, reload, setOrder } = useOrder(id)
     const [sheet, setSheet] = useState(false)
     useOrderMainAction(order, justPlaced, (): void => setSheet(true))
-    // A transfer still to send: «O'tkazdim»'s sheet loads now, so the tap opens it at once even
+    // A transfer still to send: the screenshot's sheet loads now, so the tap opens it at once even
     // on a slow network.
     const transferOpen = order?.payment.status === PaymentStatus.UNPAID
     useEffect(() => {

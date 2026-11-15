@@ -123,7 +123,33 @@ describe("Business", () => {
         expect(() => business.assertDeliversTo(far)).toThrow(/delivery zone/)
         // No pin: the shop cannot tell, so the customer must share it.
         expect(() => business.assertDeliversTo(undefined)).toThrow(/delivery location/)
-        expect(() => makeBusiness().assertDeliversTo(undefined)).not.toThrow()
+    })
+
+    it("asks every order for the pin, a shop without a radius too, and takes it from anywhere", () => {
+        const anywhere = makeBusiness()
+        expect(() => anywhere.assertDeliversTo(undefined)).toThrow(BusinessRuleViolationError)
+        expect(() => anywhere.assertDeliversTo(undefined)).toThrow(
+            expect.objectContaining({ rule: "LOCATION_REQUIRED" }),
+        )
+        expect(() => anywhere.assertDeliversTo(Location.create(39.6, 66.9))).not.toThrow()
+    })
+
+    it("a delivery the customer pays to the carrier asks no fee of the shop", () => {
+        const business = makeBusiness({
+            delivery: { fee: Money.of(10_000), freeFrom: Money.of(100_000) },
+        })
+        business.updateDelivery({
+            fee: Money.of(15_000),
+            freeFrom: Money.of(50_000),
+            customerPaysCarrier: true,
+        })
+        expect(business.delivery.customerPaysCarrier).toBe(true)
+        expect(business.delivery.fee.amount).toBe(0)
+        expect(business.delivery.freeFrom).toBeUndefined()
+        expect(business.deliveryFeeFor(Money.of(10_000)).amount).toBe(0)
+        business.updateDelivery({ fee: Money.of(15_000) })
+        expect(business.delivery.customerPaysCarrier).toBeUndefined()
+        expect(business.deliveryFeeFor(Money.of(10_000)).amount).toBe(15_000)
     })
 
     it("updates profile fields and can clear optional ones", () => {

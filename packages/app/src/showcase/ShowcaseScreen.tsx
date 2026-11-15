@@ -182,10 +182,11 @@ function ShopRow({
     const t = useT()
     const language = useLanguage()
     const types = t.showcase.types as Record<string, string>
-    const fee =
-        shop.delivery.fee === 0
-            ? t.shop.deliveryFree
-            : fill(t.shop.deliveryFee, { sum: formatMoney(shop.delivery.fee, language) })
+    const fee = shop.delivery.customerPaysCarrier
+        ? t.shop.deliveryApart
+        : shop.delivery.fee === 0
+          ? t.shop.deliveryFree
+          : fill(t.shop.deliveryFee, { sum: formatMoney(shop.delivery.fee, language) })
     return (
         <li className="animate-rise" style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}>
             <button
@@ -243,12 +244,20 @@ function ProductResult({
                 }}
                 className="tap flex w-full flex-col text-left"
             >
-                <ProductImage
-                    imageKey={product.imageKey}
-                    category={product.category}
-                    alt={product.name}
-                    className="aspect-[4/3] w-full rounded-tile"
-                />
+                <span className="relative">
+                    <ProductImage
+                        imageKey={product.imageKey}
+                        category={product.category}
+                        alt={product.name}
+                        className="aspect-[4/3] w-full rounded-tile"
+                    />
+                    {/* Run out at the shop: found as it is, the shop shows it can't be added. */}
+                    {product.soldOut ? (
+                        <span className="absolute bottom-2 right-2 rounded-full bg-tg-bg px-3 py-1.5 text-sm font-semibold text-tg-subtitle shadow-md">
+                            {t.shop.soldOut}
+                        </span>
+                    ) : null}
+                </span>
                 <span className="mt-2 line-clamp-2 px-0.5 font-medium leading-snug">
                     {product.name}
                 </span>

@@ -33,6 +33,12 @@ export interface CourierProps {
     workDays: Weekday[]
     /** "Сегодня не работает" until this moment (the end of that local day). */
     offUntil?: Date
+    /**
+     * A dispatcher, not a rider (owner's decision, November 2026): sends this shop's orders on by
+     * a taxi, the post or someone else and keeps the customer told with notes. Per shop: the
+     * same person may ride for another one.
+     */
+    dispatcher?: boolean
     createdAt: Date
     updatedAt: Date
 }
@@ -122,6 +128,9 @@ export class Courier {
     get offUntil(): Date | undefined {
         return this.props.offUntil
     }
+    get isDispatcher(): boolean {
+        return this.props.dispatcher === true
+    }
     get createdAt(): Date {
         return this.props.createdAt
     }
@@ -193,6 +202,15 @@ export class Courier {
             throw ValidationError.fromField("workDays", "Pick one or more weekdays", days)
         }
         this.props.workDays = chosen
+        this.props.updatedAt = now
+    }
+
+    /** The owner makes the shop's own courier a dispatcher, or a rider again. */
+    setDispatcher(on: boolean, now: Date): void {
+        if (this.isNetwork) {
+            throw BusinessRuleViolationError.notOwnCourier(this.props.id)
+        }
+        this.props.dispatcher = on
         this.props.updatedAt = now
     }
 

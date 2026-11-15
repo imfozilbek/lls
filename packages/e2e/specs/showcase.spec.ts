@@ -5,7 +5,15 @@
 import { expect, test } from "@playwright/test"
 
 import { businessBot, platformBot } from "../stand/config.js"
-import { FOOD, PEOPLE, WATER, apiAs, resetStand, payAndAccept } from "../support/stand.js"
+import {
+    FOOD,
+    PEOPLE,
+    STAND_PIN,
+    WATER,
+    apiAs,
+    payAndAccept,
+    resetStand,
+} from "../support/stand.js"
 import {
     businessChat,
     callsOf,
@@ -13,7 +21,7 @@ import {
     platformChat,
     waitForMessage,
 } from "../support/telegram.js"
-import { bottomButton, fillAddress, openApp, toCart } from "../support/webapp.js"
+import { bottomButton, fillAddress, openApp, openPlatformShop, toCart } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -126,7 +134,7 @@ test("an order through the showcase: commission for Zumda, Zumda bot tells the c
     ).json()) as { data: { id: string; channel: string; commission: number }[] }
     expect(orders.data[0]).toMatchObject({ channel: "marketplace", commission: 2_250 })
     const before = await lastSeq()
-    await payAndAccept(PEOPLE.foodOwner, FOOD, orders.data[0]?.id ?? "")
+    await payAndAccept(PEOPLE.foodOwner, FOOD, orders.data[0]?.id ?? "", PEOPLE.customer)
     const told = await waitForMessage(PEOPLE.customer.id, "qabul qilindi", before)
     expect(told.token).toBe(platformBot().token)
     expect(told.text).toContain("Osh Markaz")
@@ -144,6 +152,7 @@ test("orders through the shop's own bot carry no commission", async () => {
         json: {
             items: [{ productId: "dev-food-p1", quantity: 1 }],
             address: "Navoiy 7",
+            location: STAND_PIN,
             channel: "marketplace",
         },
     })
@@ -168,7 +177,8 @@ test("the admin adds and removes a shop in «Platforma»; others cannot", async 
 
     await openApp(page, { user: PEOPLE.admin, adminBot: true })
     await page.getByRole("tab", { name: "Bizneslar" }).click()
-    const card = page.getByRole("listitem").filter({ hasText: "Toza Suv" })
+    // A short row by default: a tap opens the showcase deal.
+    const card = await openPlatformShop(page, "Toza Suv")
     // On is saved at once, with the usual 5%; the percent is changed after.
     await card.getByRole("switch", { name: "Zumda vitrinasida" }).click()
     await waitForMessage(PEOPLE.waterOwner.id, "tovarlarning 5%", since)

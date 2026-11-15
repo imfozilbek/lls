@@ -16,6 +16,8 @@ import {
     OPEN_PAYMENTS_FROM,
     OPEN_PAYMENTS_WHERE,
     RECEIPT_REUSE_SQL,
+    STOCK_RETURN_SQL,
+    STOCK_TAKE_SQL,
     TRANSFER_REJECTIONS_SQL,
     COURIER_ORDERS_SQL,
     networkWaitingSql,
@@ -25,8 +27,12 @@ import {
 import { COUNT_SQL, NEXT_SQL } from "../src/repositories/phone-ask.repository.js"
 import {
     NAMES_OF,
+    PHOTOS_OF,
+    SHOWCASE_ALL_FROM,
     SHOWCASE_BY_WORD_FROM,
     WORD_FILTER,
+    inCategory,
+    inCategoryBinds,
 } from "../src/repositories/product.repository.js"
 import {
     OPEN_TRIPS_OF_BUSINESS_SQL,
@@ -112,6 +118,19 @@ describe("query plans", () => {
         expect(plan).not.toMatch(/SCAN products\b/)
     })
 
+    it("an order takes and a cancel gives back stock: one product by its key", async () => {
+        const take = (await planOf(STOCK_TAKE_SQL, [1, "p-1", "biz-1"])).join("\n")
+        expect(take).toMatch(/SEARCH products USING INDEX sqlite_autoindex_products_1 \(id=\?\)/)
+        const back = await planOf(STOCK_RETURN_SQL, [1, "p-1", "biz-1", "o-1", 1])
+        expectIndexed(back, ["sqlite_autoindex_products_1", ORDERS_KEY])
+    })
+
+    it("a demo's photos before it starts again: the shop's products by the catalog index", async () => {
+        const plan = (await planOf(PHOTOS_OF, ["biz-1"])).join("\n")
+        expect(plan).toContain("USING INDEX idx_products_catalog (business_id=?)")
+        expect(plan).not.toMatch(/SCAN products\b/)
+    })
+
     it("a shop's product names for a list: the catalog index alone, no product row", async () => {
         const plan = await planOf(NAMES_OF, ["biz-1"])
         expect(plan.join("\n")).toContain("USING COVERING INDEX idx_products_catalog")
@@ -171,6 +190,25 @@ describe("query plans", () => {
             0,
         ])
         expectIndexed(plan, ["idx_orders_business_status (business_id=? AND status=?)"])
+    })
+
+    it("a category, main or further: a shop's catalog index range, never all products", async () => {
+        const inShop = await planOf(
+            `SELECT id FROM products WHERE business_id = ? AND is_available = 1
+             AND ${inCategory()} ORDER BY position, name`,
+            ["biz-1", ...inCategoryBinds("books")],
+        )
+        expect(inShop.join("\n")).toContain("USING INDEX idx_products_catalog")
+        expect(inShop.join("\n")).not.toMatch(/SCAN products\b/)
+        const showcase = await planOf(
+            `SELECT p.id ${SHOWCASE_ALL_FROM} WHERE b.status = ?
+             AND b.marketplace_commission_bps IS NOT NULL AND p.is_available = 1
+             AND ${inCategory("p.")} ORDER BY p.name`,
+            ["active", ...inCategoryBinds("books")],
+        )
+        const text = showcase.join("\n")
+        expect(text).toContain("USING INDEX idx_products_catalog")
+        expect(text).not.toMatch(/SCAN (p|products)\b/)
     })
 
     it("a showcase search reads only the products whose words match", async () => {

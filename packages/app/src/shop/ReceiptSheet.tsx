@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react"
 
-import { errorText, useT } from "../i18n/index.js"
+import { errorText, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { compressReceipt } from "../lib/image.js"
 import { useClosingGuard } from "../lib/main-button.js"
@@ -8,6 +8,7 @@ import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 import { ReceiptIcon } from "../ui/icons.js"
 import { Button, Spinner } from "../ui/primitives.js"
+import { receiptWords } from "../ui/receipt-words.js"
 import { Sheet } from "../ui/sheet.js"
 
 import type { OrderDTO } from "@zumda/core"
@@ -28,7 +29,7 @@ function ReceiptPicker({
     picked: Picked | null
     onPicked(picked: Picked): void
 }): React.JSX.Element {
-    const t = useT()
+    const receipt = receiptWords(useLanguage())
     const inputId = useId()
     const [reading, setReading] = useState(false)
 
@@ -43,7 +44,7 @@ function ReceiptPicker({
             haptic.select()
         } catch {
             haptic.error()
-            toast(t.receipt.unreadable, "error")
+            toast(receipt.unreadable, "error")
         } finally {
             setReading(false)
         }
@@ -68,7 +69,7 @@ function ReceiptPicker({
             <div className="flex animate-fade-in flex-col items-center gap-2">
                 <img
                     src={picked.url}
-                    alt={t.receipt.title}
+                    alt={receipt.title}
                     className="h-[36vh] w-auto max-w-full rounded-control bg-tg-secondary object-contain ring-1 ring-black/5"
                 />
                 {input}
@@ -76,7 +77,7 @@ function ReceiptPicker({
                     htmlFor={inputId}
                     className={`tap inline-flex min-h-11 cursor-pointer items-center rounded-control px-4 font-semibold text-brand ${FOCUS_RING}`}
                 >
-                    {t.receipt.change}
+                    {receipt.change}
                 </label>
             </div>
         )
@@ -93,15 +94,16 @@ function ReceiptPicker({
                 ) : (
                     <ReceiptIcon size={32} className="text-brand" />
                 )}
-                {t.receipt.pick}
+                {receipt.pick}
             </label>
         </div>
     )
 }
 
 /**
- * «O'tkazdim» with the proof: the customer picks the bank app's screenshot, sees it, and sends it.
- * The owner gets it in the chat next to the sum and checks the card, not the picture.
+ * «Chekni yuklash», then «O'tkazdim» (owner's decision, November 2026): the customer picks the
+ * bank app's screenshot and sees it; only then does «O'tkazdim» open and send it. The owner gets it
+ * in the chat next to the sum and checks the card, not the picture.
  */
 export function ReceiptSheet({
     order,
@@ -113,6 +115,7 @@ export function ReceiptSheet({
     onClose(): void
 }): React.JSX.Element {
     const t = useT()
+    const receipt = receiptWords(useLanguage())
     const [picked, setPicked] = useState<Picked | null>(null)
     // A screenshot picked but not sent yet: closing the app by mistake asks first.
     useClosingGuard(picked !== null)
@@ -135,7 +138,7 @@ export function ReceiptSheet({
         try {
             onSent(await api.transferSent(order.id, picked.blob))
             haptic.success()
-            toast(t.receipt.sent, "success")
+            toast(receipt.sent, "success")
             onClose()
         } catch (caught) {
             haptic.error()
@@ -147,7 +150,7 @@ export function ReceiptSheet({
 
     return (
         <Sheet
-            title={t.receipt.title}
+            title={receipt.title}
             onClose={onClose}
             footer={
                 <Button
@@ -156,13 +159,13 @@ export function ReceiptSheet({
                     loading={sending}
                     onClick={(): void => void send()}
                 >
-                    {t.receipt.send}
+                    {receipt.confirm}
                 </Button>
             }
         >
-            <p className="text-sm text-tg-subtitle">{t.receipt.hint}</p>
+            <p className="text-sm text-tg-subtitle">{receipt.hint}</p>
             {/* How to take one, until there is one. */}
-            {picked ? null : <p className="text-sm text-tg-subtitle">{t.receipt.howTo}</p>}
+            {picked ? null : <p className="text-sm text-tg-subtitle">{receipt.howTo}</p>}
             <ReceiptPicker picked={picked} onPicked={setPicked} />
         </Sheet>
     )

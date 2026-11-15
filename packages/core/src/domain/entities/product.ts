@@ -1,6 +1,8 @@
-import { CATEGORIES } from "../enums/category.js"
+import { AGES, isAge } from "../enums/age.js"
+import { CATEGORIES, MAX_CATEGORIES } from "../enums/category.js"
 import { UNITS, Unit, defaultStep, isWeightUnit } from "../enums/unit.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
+import { EntityNotFoundError } from "../errors/not-found.error.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { optionalText, requireInteger, requireOneOf, requireText } from "../shared/guards.js"
 import { searchText } from "../shared/search-text.js"
@@ -8,6 +10,7 @@ import { addDays, startOfLocalDay } from "../shared/time.js"
 import { Money } from "../value-objects/money.js"
 import { ProductOptions } from "../value-objects/product-options.js"
 
+import type { Age } from "../enums/age.js"
 import type { Category } from "../enums/category.js"
 import type {
     ChosenOptions,
@@ -24,6 +27,10 @@ const MAX_STEPS_PER_LINE = 99
 /** Weight steps: 10 g to 10 kg, or a single gram for goods priced per gram (saffron). */
 const MIN_WEIGHT_STEP = 10
 const MAX_WEIGHT_STEP = 10_000
+/** The most a shop may count of one product, in base units: ten million pieces, or 10 t. */
+const MAX_STOCK = 10_000_000
+/** Photos of one product (owner's decision, November 2026): the main one and two more. */
+export const MAX_PHOTOS = 3
 
 export interface ProductProps {
     id: string
@@ -35,7 +42,14 @@ export interface ProductProps {
     /** Selling step in base units: grams for `kg`, always 1 for pieces. */
     step: number
     category: Category
+    /** Further categories it also stands in on the storefront (the main one goes in orders). */
+    moreCategories?: Category[]
+    /** The child's age it is for, from this many years (children's goods). */
+    ageFrom?: Age
+    /** The main photo: the menu, the showcase and the owner's catalog show it. */
     imageKey?: string
+    /** Up to two more photos, after the main one, for the product's own sheet. */
+    moreImageKeys?: string[]
     isAvailable: boolean
     /** Stop-list: hidden until this moment (the next local midnight), then back on sale. */
     unavailableUntil?: Date
@@ -44,6 +58,11 @@ export interface ProductProps {
     position: number
     /** Variants (one is picked, each with its price) and add-ons; none for most products. */
     options?: ProductOptions
+    /**
+     * What is left, when the owner counts it (owner's decision, November 2026), in the order's
+     * base units: pieces, or grams for weight units. Absent: not counted, sold as before.
+     */
+    stock?: number
     createdAt: Date
     updatedAt: Date
 }
@@ -56,10 +75,14 @@ export interface CreateProductProps {
     price: number
     unit: string
     category: string
+    moreCategories?: readonly string[] | null
+    ageFrom?: number | null
     step?: number
     returnable?: boolean
     position?: number
     options?: ProductOptionsProps | null
+    /** null or absent: not counted. */
+    stock?: number | null
 }
 
 export interface ProductPatch {
@@ -68,11 +91,17 @@ export interface ProductPatch {
     price?: number
     unit?: string
     category?: string
+    /** null or [] leaves only the main category. */
+    moreCategories?: readonly string[] | null
+    /** null: no age. */
+    ageFrom?: number | null
     step?: number
     returnable?: boolean
     position?: number
     /** null drops every variant and add-on. */
     options?: ProductOptionsProps | null
+    /** A new count of what is left; null stops counting. */
+    stock?: number | null
 }
 
 /** Weight items sell in gram steps (500 g, 100 g, 1 g by default); everything else by one. */
@@ -102,18 +131,63 @@ function validOptions(
     return options.isEmpty ? undefined : options
 }
 
+/** The categories besides the main one: known ones, each once, never the main one again. */
+function validMoreCategories(
+    main: Category,
+    input: readonly string[] | null | undefined,
+): Category[] | undefined {
+    if (!input || input.length === 0) {
+        return undefined
+    }
+    if (input.length > MAX_CATEGORIES - 1) {
+        throw ValidationError.fromField(
+            "moreCategories",
+            `At most ${MAX_CATEGORIES} categories in all`,
+            input.length,
+        )
+    }
+    const more = input.map((category) => requireOneOf("moreCategories", category, CATEGORIES))
+    if (new Set([main, ...more]).size !== more.length + 1) {
+        throw ValidationError.fromField("moreCategories", "Each category once", input.join(","))
+    }
+    return more
+}
+
+function validAge(input: number | null | undefined): Age | undefined {
+    if (input === null || input === undefined) {
+        return undefined
+    }
+    if (!isAge(input)) {
+        throw ValidationError.fromField("ageFrom", `Must be one of: ${AGES.join(", ")}`, input)
+    }
+    return input
+}
+
 function validPrice(amount: number): Money {
     return Money.of(requireInteger("price", amount, 1, MAX_PRICE))
 }
 
+function validStock(input: number | null | undefined): number | undefined {
+    return input === null || input === undefined
+        ? undefined
+        : requireInteger("stock", input, 0, MAX_STOCK)
+}
+
 export class Product {
+    /**
+     * The owner set the count in this change: only then is it written over the stored one, which
+     * the orders change meanwhile (`stock = stock - ?`). A plain edit never brings an old count back.
+     */
+    private stockSet = false
+
     private constructor(private props: ProductProps) {}
 
     static create(input: CreateProductProps): Product {
         const now = new Date()
         const unit = requireOneOf("unit", input.unit, UNITS)
         const options = validOptions(unit, input.options)
-        return new Product({
+        const category = requireOneOf("category", input.category, CATEGORIES)
+        const product = new Product({
             id: input.id,
             businessId: input.businessId,
             name: requireText("name", input.name, NAME_MAX),
@@ -122,14 +196,19 @@ export class Product {
             price: validPrice(options?.lowestPrice ?? input.price),
             unit,
             step: validStep(unit, input.step),
-            category: requireOneOf("category", input.category, CATEGORIES),
+            category,
+            moreCategories: validMoreCategories(category, input.moreCategories),
+            ageFrom: validAge(input.ageFrom),
             isAvailable: true,
             returnable: input.returnable ?? false,
             position: requireInteger("position", input.position ?? 0, 0, MAX_POSITION),
             options,
+            stock: validStock(input.stock),
             createdAt: now,
             updatedAt: now,
         })
+        product.stockSet = product.tracksStock
+        return product
     }
 
     static reconstitute(props: ProductProps): Product {
@@ -167,11 +246,29 @@ export class Product {
     get returnable(): boolean {
         return this.props.returnable
     }
+    /** The main category: the one an order line keeps. */
     get category(): Category {
         return this.props.category
     }
+    get moreCategories(): Category[] {
+        return this.props.moreCategories ?? []
+    }
+    /** Every category it stands in: the main one first. */
+    get categories(): Category[] {
+        return [this.props.category, ...this.moreCategories]
+    }
+    get ageFrom(): Age | undefined {
+        return this.props.ageFrom
+    }
     get imageKey(): string | undefined {
         return this.props.imageKey
+    }
+    get moreImageKeys(): string[] {
+        return this.props.moreImageKeys ?? []
+    }
+    /** Every photo, the main one first. */
+    get photos(): string[] {
+        return this.props.imageKey ? [this.props.imageKey, ...this.moreImageKeys] : []
     }
     get isAvailable(): boolean {
         return this.props.isAvailable
@@ -181,6 +278,24 @@ export class Product {
     }
     get options(): ProductOptions | undefined {
         return this.props.options
+    }
+    /** What is left in base units, when the owner counts it. */
+    get stock(): number | undefined {
+        return this.props.stock
+    }
+    get tracksStock(): boolean {
+        return this.props.stock !== undefined
+    }
+    /**
+     * Counted and less than one selling step left: the customer still sees it, but cannot add it
+     * (owner's decision, November 2026).
+     */
+    get soldOut(): boolean {
+        return this.props.stock !== undefined && this.props.stock < this.props.step
+    }
+    /** The owner gave a new count in this change (see `stockSet`). */
+    get stockChanged(): boolean {
+        return this.stockSet
     }
     get createdAt(): Date {
         return this.props.createdAt
@@ -197,6 +312,24 @@ export class Product {
     isAvailableAt(now: Date): boolean {
         const until = this.props.unavailableUntil
         return this.props.isAvailable && (until === undefined || now >= until)
+    }
+
+    /**
+     * Orders took (`delta` < 0) or gave back what is counted. The database does it in one
+     * statement (`stock = stock + ?`); this is the same for a copy kept in memory.
+     */
+    changeStockBy(delta: number): void {
+        if (this.props.stock !== undefined) {
+            this.props.stock = Math.max(0, this.props.stock + delta)
+        }
+    }
+
+    /** Everything ordered of it in one order (base units) must be left, when it is counted. */
+    assertInStock(quantity: number): void {
+        const left = this.props.stock
+        if (left !== undefined && quantity > left) {
+            throw BusinessRuleViolationError.outOfStock(this.props.id, left)
+        }
     }
 
     /** Checks an ordered quantity (base units) against the selling step. */
@@ -231,14 +364,39 @@ export class Product {
         if (patch.returnable !== undefined) {
             this.props.returnable = patch.returnable
         }
-        if (patch.category !== undefined) {
-            this.props.category = requireOneOf("category", patch.category, CATEGORIES)
+        this.applyCategories(patch)
+        if (patch.ageFrom !== undefined) {
+            this.props.ageFrom = validAge(patch.ageFrom)
         }
         if (patch.position !== undefined) {
             this.props.position = requireInteger("position", patch.position, 0, MAX_POSITION)
         }
         this.applyOptions(patch)
+        if (patch.stock !== undefined) {
+            this.props.stock = validStock(patch.stock)
+            this.stockSet = true
+        }
         this.touch()
+    }
+
+    /**
+     * A new main category, new further ones, or both. A main category that was a further one
+     * leaves the further ones by itself: the owner moved it, not doubled it.
+     */
+    private applyCategories(patch: ProductPatch): void {
+        if (patch.category === undefined && patch.moreCategories === undefined) {
+            return
+        }
+        const main =
+            patch.category === undefined
+                ? this.props.category
+                : requireOneOf("category", patch.category, CATEGORIES)
+        const more =
+            patch.moreCategories === undefined
+                ? this.moreCategories.filter((category) => category !== main)
+                : patch.moreCategories
+        this.props.category = main
+        this.props.moreCategories = validMoreCategories(main, more)
     }
 
     /** New variants and add-ons, or the old ones checked again against a new unit. */
@@ -289,9 +447,56 @@ export class Product {
         this.touch()
     }
 
-    setImage(imageKey: string | null): void {
-        this.props.imageKey = imageKey ?? undefined
+    /**
+     * A new main photo, or none: then the next photo, if any, becomes the main one. Returns the
+     * main photo it replaced, for the storage to delete.
+     */
+    setImage(imageKey: string | null): string | undefined {
+        const previous = this.props.imageKey
+        if (imageKey !== null) {
+            this.props.imageKey = imageKey
+        } else {
+            this.setPhotos(this.moreImageKeys)
+        }
         this.touch()
+        return previous
+    }
+
+    /** One more photo: the main one when there is none, after the others otherwise. */
+    addPhoto(key: string): void {
+        if (this.photos.includes(key)) {
+            return
+        }
+        if (this.photos.length >= MAX_PHOTOS) {
+            throw BusinessRuleViolationError.tooManyPhotos(MAX_PHOTOS)
+        }
+        this.setPhotos([...this.photos, key])
+        this.touch()
+    }
+
+    /** Takes one photo away; the next one becomes the main photo when it was the main one. */
+    removePhoto(key: string): void {
+        if (!this.photos.includes(key)) {
+            throw EntityNotFoundError.photo(key)
+        }
+        this.setPhotos(this.photos.filter((photo) => photo !== key))
+        this.touch()
+    }
+
+    /** The same photos in a new order: the first is the main one. */
+    reorderPhotos(keys: readonly string[]): void {
+        const now = [...this.photos].sort()
+        if (keys.length !== now.length || [...keys].sort().some((key, i) => key !== now[i])) {
+            throw ValidationError.fromField("keys", "Must be this product's photos", keys.join(","))
+        }
+        this.setPhotos([...keys])
+        this.touch()
+    }
+
+    private setPhotos(keys: readonly string[]): void {
+        const [main, ...more] = keys
+        this.props.imageKey = main
+        this.props.moreImageKeys = more.length > 0 ? more : undefined
     }
 
     private touch(): void {

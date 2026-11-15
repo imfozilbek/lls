@@ -5,6 +5,7 @@ import type { Page, PageRequest } from "../dtos/pagination.js"
 export interface ProductListQuery {
     /** Only products on sale at this moment (not hidden, not on today's stop-list). */
     availableAt?: Date
+    /** Products standing in this category: as the main one or a further one. */
     category?: Category
 }
 
@@ -14,6 +15,7 @@ export interface ShowcaseSearch {
      * Empty = no text filter.
      */
     words: readonly string[]
+    /** As the main category or a further one. */
     category?: Category
     /** Only products on sale at this moment. */
     availableAt: Date
@@ -38,4 +40,6 @@ export interface ProductRepository {
     delete(id: string): Promise<void>
     /** Every product of the shop gives way to these, in one transaction (a demo starts again). */
     replaceAll(businessId: string, products: readonly Product[]): Promise<void>
+    /** Every photo of the shop's products: the storage deletes them when a demo starts again. */
+    photoKeysOf(businessId: string): Promise<string[]>
 }

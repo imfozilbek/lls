@@ -12,6 +12,7 @@ import {
     SHOP_BOT_TOKEN,
     createActiveShop,
     hireCourier,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
 } from "./helpers.js"
@@ -91,6 +92,7 @@ describe("district network", () => {
                 },
             }),
         )
+        await sendReceipt(customer, placed.id)
         const accepted = await foodOwner()(`/api/owner/orders/${placed.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },

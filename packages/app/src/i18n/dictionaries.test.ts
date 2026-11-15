@@ -4,6 +4,9 @@ import { BUSINESS_TYPES, BusinessType, LANGUAGES, Language } from "@zumda/core"
 
 import "./staff-register.js"
 
+import { deliveryWords } from "../shop/delivery-words.js"
+import { receiptWords } from "../ui/receipt-words.js"
+
 import { dictionaryFor } from "./index.js"
 import { staffUz } from "./staff.js"
 import { uz as base } from "./uz.js"
@@ -50,6 +53,11 @@ describe("dictionaries", () => {
                 for (const [path, value] of leaves(dictionaryFor(language, type))) {
                     expect(String(value), path).not.toMatch(/[\u0400-\u04FF]/)
                 }
+            }
+            // The words that live in lazy chunks too.
+            const lazy = { delivery: deliveryWords(language), receipt: receiptWords(language) }
+            for (const [path, value] of leaves(lazy)) {
+                expect(String(value), path).not.toMatch(/[\u0400-\u04FF]/)
             }
         }
     })
