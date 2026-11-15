@@ -1,6 +1,8 @@
 import { PaymentMethod, PaymentStatus } from "../enums/payment.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 
+import { Money } from "./money.js"
+
 import type { PayoutCard } from "./payout-card.js"
 
 /**
@@ -49,6 +51,11 @@ export interface PaymentProps {
     rejections?: number
     /** The last time the customer asked the owner to look at the transfer again. */
     remindedAt?: Date
+    /**
+     * Paid for lines the shop did not have («Yo'q», owner's decision, November 2026): the part of
+     * a transfer the shop owes the customer until «Qaytardim».
+     */
+    refundOwed?: Money
 }
 
 /**
@@ -106,6 +113,29 @@ export class Payment {
     }
     get remindedAt(): Date | undefined {
         return this.props.remindedAt
+    }
+    get refundOwed(): Money {
+        return this.props.refundOwed ?? Money.zero()
+    }
+
+    /**
+     * What the shop owes back now, for an order whose total is `total`: all of it once a paid
+     * order is cancelled (the part owed for missing lines included), the part owed while the
+     * order goes on, nothing otherwise.
+     */
+    owedBack(total: Money): Money {
+        if (this.props.status === PaymentStatus.REFUND_DUE) {
+            return total.add(this.refundOwed)
+        }
+        return this.props.status === PaymentStatus.PAID ? this.refundOwed : Money.zero()
+    }
+
+    /** A paid transfer lost a line the shop did not have: that part is owed back. */
+    oweBack(amount: Money): Payment {
+        if (this.isCash() || !this.isPaid() || amount.isZero()) {
+            return this
+        }
+        return new Payment({ ...this.props, refundOwed: this.refundOwed.add(amount) })
     }
 
     /** When the customer may next remind the owner, or undefined while nothing is awaited. */
@@ -232,11 +262,21 @@ export class Payment {
         return this
     }
 
-    /** The owner gave the money back. */
+    /**
+     * «Qaytardim»: the owner gave the money back. A cancelled order's money, all of it; or, on an
+     * order that goes on, the part owed for lines the shop did not have.
+     */
     refund(): Payment {
-        if (this.props.status !== PaymentStatus.REFUND_DUE) {
-            throw BusinessRuleViolationError.paymentNotRefundable(this.props.status)
+        if (this.props.status === PaymentStatus.REFUND_DUE) {
+            return new Payment({
+                ...this.props,
+                status: PaymentStatus.REFUNDED,
+                refundOwed: Money.zero(),
+            })
         }
-        return new Payment({ ...this.props, status: PaymentStatus.REFUNDED })
+        if (this.isPaid() && !this.refundOwed.isZero()) {
+            return new Payment({ ...this.props, refundOwed: Money.zero() })
+        }
+        throw BusinessRuleViolationError.paymentNotRefundable(this.props.status)
     }
 }

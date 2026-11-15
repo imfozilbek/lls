@@ -400,7 +400,8 @@ export class InMemoryOrders implements OrderRepository {
                 (o) =>
                     o.businessId === businessId &&
                     (o.payment.status === PaymentStatus.AWAITING ||
-                        o.payment.status === PaymentStatus.REFUND_DUE),
+                        o.payment.status === PaymentStatus.REFUND_DUE ||
+                        !o.payment.refundOwed.isZero()),
             )
             .sort((a, b) => a.number - b.number)
             .slice(0, limit)

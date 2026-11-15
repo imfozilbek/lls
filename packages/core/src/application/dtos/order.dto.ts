@@ -12,6 +12,8 @@ import type { Unit } from "../../domain/enums/unit.js"
 import type { ChosenOptions } from "../../domain/value-objects/product-options.js"
 
 export interface OrderItemDTO {
+    /** The line's number in the order: «Yo'q» names it. */
+    line: number
     productId: string
     name: string
     unit: Unit
@@ -34,6 +36,8 @@ export interface OrderDTO {
     status: OrderStatus
     nextStatus: OrderStatus | null
     items: OrderItemDTO[]
+    /** Lines the shop did not have («Yo'q»): out of the order, still shown struck through. */
+    removedItems?: OrderItemDTO[]
     subtotal: number
     deliveryFee: number
     depositTotal: number
@@ -104,6 +108,38 @@ export interface OrderPaymentDTO {
     rejections: number
     /** From when the customer may remind the owner about the transfer; absent unless awaited. */
     remindableAt?: string
+    /** Owed back for lines the shop did not have, until «Qaytardim»; absent when nothing. */
+    refundOwed?: number
+    /** All the shop owes back now («Qaytarish»): a cancelled paid order's money, or that part. */
+    owedBack?: number
+}
+
+/** The order's lines that stayed, or those taken out with «Yo'q», each with its number. */
+function lineDTOs(order: Order, removed: boolean): OrderItemDTO[] {
+    return order
+        .lines()
+        .filter(({ item }) => (item.removedAt !== undefined) === removed)
+        .map(({ line, item }) => ({
+            line,
+            productId: item.productId,
+            name: item.name,
+            unit: item.unit,
+            category: item.category,
+            unitPrice: item.unitPrice.amount,
+            quantity: item.quantity,
+            total: item.total.amount,
+            ...(item.options ? { options: item.options } : {}),
+        }))
+}
+
+function owedDTO(order: Order): { refundOwed?: number; owedBack?: number } {
+    const owed = order.payment.owedBack(order.total)
+    return {
+        ...(order.payment.refundOwed.isZero()
+            ? {}
+            : { refundOwed: order.payment.refundOwed.amount }),
+        ...(owed.isZero() ? {} : { owedBack: owed.amount }),
+    }
 }
 
 export function toOrderDTO(order: Order): OrderDTO {
@@ -115,16 +151,8 @@ export function toOrderDTO(order: Order): OrderDTO {
         channel: order.channel,
         status: order.status,
         nextStatus: order.nextStatus(),
-        items: order.items.map((item) => ({
-            productId: item.productId,
-            name: item.name,
-            unit: item.unit,
-            category: item.category,
-            unitPrice: item.unitPrice.amount,
-            quantity: item.quantity,
-            total: item.total.amount,
-            ...(item.options ? { options: item.options } : {}),
-        })),
+        items: lineDTOs(order, false),
+        ...(order.removedItems.length > 0 ? { removedItems: lineDTOs(order, true) } : {}),
         subtotal: order.subtotal.amount,
         deliveryFee: order.deliveryFee.amount,
         depositTotal: order.depositTotal.amount,
@@ -178,6 +206,7 @@ export function toOrderDTO(order: Order): OrderDTO {
             },
             rejections: order.payment.rejections,
             remindableAt: order.payment.remindableAt()?.toISOString(),
+            ...owedDTO(order),
         },
         deliveredAt: order.deliveredAt?.toISOString(),
         createdAt: order.createdAt.toISOString(),

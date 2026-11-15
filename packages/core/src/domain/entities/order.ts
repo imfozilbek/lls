@@ -11,6 +11,7 @@ import { SendWay } from "../enums/send-way.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ForbiddenError } from "../errors/forbidden.error.js"
 import { InvalidOrderTransitionError } from "../errors/invalid-transition.error.js"
+import { EntityNotFoundError } from "../errors/not-found.error.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { MAX_TRIP_STOPS } from "../services/trip-planning.js"
 import { optionalText, requireInteger, requireText } from "../shared/guards.js"
@@ -46,6 +47,9 @@ export type OrderMover = { role: "owner" } | { role: "courier"; courierId: strin
 const OWNER: OrderMover = { role: "owner" }
 
 /** A courier can take the order from the moment the shop accepted it until pickup. */
+/** «Yo'q» takes a line out until «Tayyor»: in the queue or while it is collected. */
+const REMOVABLE: readonly OrderStatus[] = [OrderStatus.ACCEPTED, OrderStatus.PREPARING]
+
 const ASSIGNABLE: readonly OrderStatus[] = [
     OrderStatus.ACCEPTED,
     OrderStatus.PREPARING,
@@ -213,17 +217,32 @@ export class Order {
     get channel(): OrderChannel {
         return this.props.channel
     }
+    /** The lines the customer gets: a line the shop did not have («Yo'q») is not among them. */
     get items(): readonly OrderItem[] {
-        return this.props.items
+        return this.props.items.filter((item) => item.removedAt === undefined)
+    }
+
+    /** Lines taken out with «Yo'q»: the customer and the owner still see what was missing. */
+    get removedItems(): readonly OrderItem[] {
+        return this.props.items.filter((item) => item.removedAt !== undefined)
+    }
+
+    /**
+     * Every line with its number (its place when the order was placed): the number stays the
+     * same when another line is taken out.
+     */
+    lines(): { line: number; item: OrderItem }[] {
+        return this.props.items.map((item, line) => ({ line, item }))
     }
 
     /**
      * What this order took from the shop's counted stock, per product (base units): a cancel
-     * gives it back (owner's decision, November 2026).
+     * gives it back (owner's decision, November 2026). A line taken out with «Yo'q» gives nothing
+     * back: the shop did not have it.
      */
     stockTaken(): { productId: string; quantity: number }[] {
         const taken = new Map<string, number>()
-        for (const item of this.props.items) {
+        for (const item of this.items) {
             if (item.fromStock) {
                 taken.set(item.productId, (taken.get(item.productId) ?? 0) + item.quantity)
             }
@@ -538,6 +557,39 @@ export class Order {
     }
 
     /** The owner gave the money of a cancelled order back. */
+    /**
+     * «Yo'q» (owner's decision, November 2026): the shop did not have this line; until «Tayyor»
+     * the owner takes it out. The goods and the commission go down; the delivery fee stays as it
+     * was; the bottle deposit never grows (`depositAfter` is what the remaining lines need). A
+     * paid transfer owes the difference back. The last line is never taken out: cancel instead.
+     */
+    removeLine(line: number, at: Date, depositAfter: Money): OrderItem {
+        if (!REMOVABLE.includes(this.props.status)) {
+            throw BusinessRuleViolationError.lineNotRemovable(this.props.id, this.props.status)
+        }
+        const item = this.props.items[line]
+        if (!item || item.removedAt !== undefined) {
+            throw EntityNotFoundError.orderLine(this.props.id, line)
+        }
+        if (this.items.length === 1) {
+            throw BusinessRuleViolationError.lastLine(this.props.id)
+        }
+        const before = this.props.total
+        this.props.items = this.props.items.map((each, index) =>
+            index === line ? each.removed(at) : each,
+        )
+        const subtotal = subtotalOf(this.items)
+        const depositTotal = this.props.depositTotal.min(depositAfter)
+        const total = subtotal.add(this.props.deliveryFee).add(depositTotal)
+        this.props.subtotal = subtotal
+        this.props.commission = subtotal.percent(this.props.commissionBps)
+        this.props.depositTotal = depositTotal
+        this.props.total = total
+        this.props.payment = this.props.payment.oweBack(before.subtract(total))
+        this.touch()
+        return item
+    }
+
     markRefunded(): void {
         this.props.payment = this.props.payment.refund()
         this.touch()

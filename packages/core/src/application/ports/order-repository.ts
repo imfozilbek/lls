@@ -32,7 +32,8 @@ export interface OrderRepository {
     moneyTotals(businessId: string, from: Date, to: Date): Promise<MoneyTotals>
     /**
      * Money that needs the owner: transfers the customer says are sent but not confirmed yet,
-     * and cancelled orders that were paid (owed back). Oldest first.
+     * cancelled orders that were paid (owed back), and the part owed for lines the shop did not
+     * have («Yo'q»). Oldest first.
      */
     listOpenPayments(businessId: string, limit: number): Promise<Order[]>
     /** Cash orders a courier of this shop collected and has not handed over yet, oldest first. */

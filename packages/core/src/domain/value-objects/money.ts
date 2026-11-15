@@ -78,4 +78,13 @@ export class Money {
     isAtLeast(other: Money): boolean {
         return this.amount >= other.amount
     }
+
+    isZero(): boolean {
+        return this.amount === 0
+    }
+
+    /** The smaller of the two: a recomputed amount never grows past what was charged. */
+    min(other: Money): Money {
+        return other.amount < this.amount ? other : this
+    }
 }

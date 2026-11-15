@@ -62,7 +62,8 @@ export class GetMoneyReportUseCase {
             totals,
             // A cancelled order stays here too: if its transfer arrives, it is owed back.
             awaiting: pick((o) => o.payment.status === PaymentStatus.AWAITING),
-            refunds: pick((o) => o.payment.status === PaymentStatus.REFUND_DUE),
+            // Owed back: a cancelled paid order, or the part paid for lines the shop did not have.
+            refunds: pick((o) => !o.payment.owedBack(o.total).isZero()),
             courierCash: byCourier(cash),
         }
     }

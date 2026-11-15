@@ -32,6 +32,8 @@ export interface OrderItemProps {
     options?: ChosenOptions
     /** The line took its quantity from the product's counted stock: a cancel gives it back. */
     fromStock?: boolean
+    /** «Yo'q»: the shop did not have it and took the line out of the order. */
+    removedAt?: Date
 }
 
 /**
@@ -47,6 +49,7 @@ export class OrderItem {
     readonly quantity: number
     readonly options?: ChosenOptions
     readonly fromStock: boolean
+    readonly removedAt?: Date
 
     private constructor(props: OrderItemProps) {
         this.productId = props.productId
@@ -57,6 +60,7 @@ export class OrderItem {
         this.quantity = props.quantity
         this.options = props.options
         this.fromStock = props.fromStock === true
+        this.removedAt = props.removedAt
     }
 
     static create(input: OrderItemProps): OrderItem {
@@ -71,6 +75,11 @@ export class OrderItem {
                   }
                 : undefined,
         })
+    }
+
+    /** The same line, taken out of the order at `at` («Yo'q»). */
+    removed(at: Date): OrderItem {
+        return new OrderItem({ ...this, removedAt: at })
     }
 
     /** 12 000 so'm/kg × 1500 g = 18 000 so'm. Pieces multiply as they are. */
