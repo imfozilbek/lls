@@ -37,6 +37,7 @@ import type {
     DeliveryNote,
     MoneyTotals,
     NetworkShare,
+    OrderInsert,
     OrderRepository,
     Page,
     PageRequest,
@@ -108,6 +109,7 @@ interface ItemRow {
     unit_price: number
     quantity: number
     options: string | null
+    from_stock: number | null
 }
 
 /** Who gets a Telegram card for an order; each card is edited in place on status changes. */
@@ -160,7 +162,27 @@ export const RECEIPT_REUSE_SQL = `SELECT business_id, number FROM orders
 const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY]
 
 const ITEM_COLUMNS =
-    "order_id, line, product_id, name, unit, category, unit_price, quantity, options"
+    "order_id, line, product_id, name, unit, category, unit_price, quantity, options, from_stock"
+
+/**
+ * An order takes what it ordered of a counted product. The column's CHECK (never below zero) fails
+ * the whole batch when less is left: the order and its lines are not kept either.
+ */
+export const STOCK_TAKE_SQL = `UPDATE products SET stock = stock - ?
+    WHERE id = ? AND business_id = ? AND stock IS NOT NULL`
+
+/**
+ * A cancel gives it back, only when this very save cancelled the order (its status and the new
+ * version are in the row): a stale copy or a second save never gives it twice.
+ */
+export const STOCK_RETURN_SQL = `UPDATE products SET stock = stock + ?
+    WHERE id = ? AND business_id = ? AND stock IS NOT NULL
+      AND EXISTS (SELECT 1 FROM orders WHERE id = ? AND status = 'cancelled' AND updated_at = ?)`
+
+/** SQLite's words when a product's stock would go below zero. */
+function isStockShortage(error: unknown): boolean {
+    return error instanceof Error && error.message.includes("CHECK constraint failed")
+}
 
 const CANCELLED_BY: readonly CancelledBy[] = ["customer", "owner"]
 
@@ -254,6 +276,7 @@ function toItem(row: ItemRow): OrderItem {
         unitPrice: Money.of(row.unit_price),
         quantity: row.quantity,
         options: row.options === null ? undefined : (JSON.parse(row.options) as ChosenOptions),
+        fromStock: row.from_stock === 1,
     })
 }
 
@@ -515,6 +538,8 @@ export interface OrderSave {
     statement: D1PreparedStatement
     /** The version the row must still have; none for an order this Worker never loaded. */
     expected: number | undefined
+    /** The version this save writes. */
+    version: number
     /** After the statement changed the row: what the next save compares with. */
     saved(): void
 }
@@ -554,6 +579,7 @@ export function orderSaveStatement(
     return {
         statement,
         expected,
+        version,
         saved: (): void => {
             written.set(order, values)
             versions.remember(order, version)
@@ -583,7 +609,7 @@ export class D1OrderRepository implements OrderRepository {
         return row?.next ?? 1
     }
 
-    async insert(order: Order): Promise<boolean> {
+    async insert(order: Order): Promise<OrderInsert> {
         const values = orderValues(order)
         const statements = [
             this.db
@@ -593,7 +619,7 @@ export class D1OrderRepository implements OrderRepository {
                 this.db
                     .prepare(
                         `INSERT INTO order_items (${ITEM_COLUMNS}, total)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     )
                     .bind(
                         order.id,
@@ -605,18 +631,27 @@ export class D1OrderRepository implements OrderRepository {
                         item.unitPrice.amount,
                         item.quantity,
                         item.options ? JSON.stringify(item.options) : null,
+                        item.fromStock ? 1 : null,
                         item.total.amount,
                     ),
             ),
+            ...order
+                .stockTaken()
+                .map(({ productId, quantity }) =>
+                    this.db.prepare(STOCK_TAKE_SQL).bind(quantity, productId, order.businessId),
+                ),
         ]
         try {
             await this.db.batch(statements)
             written.set(order, mutableValues(order))
             versions.remember(order, order.updatedAt.getTime())
-            return true
+            return "placed"
         } catch (error) {
             if (isUniqueViolation(error)) {
-                return false
+                return "number_taken"
+            }
+            if (isStockShortage(error)) {
+                return "out_of_stock"
             }
             throw error
         }
@@ -628,11 +663,30 @@ export class D1OrderRepository implements OrderRepository {
      */
     async save(order: Order): Promise<void> {
         const save = orderSaveStatement(this.db, order)
-        const result = await save.statement.run()
-        if (result.meta.changes === 0) {
+        const restock = this.restockOnCancel(order, save.version)
+        const result =
+            restock.length === 0
+                ? await save.statement.run()
+                : (await this.db.batch([save.statement, ...restock]))[0]
+        if (!result || result.meta.changes === 0) {
             throw ConflictError.stale("order", order.id)
         }
         save.saved()
+    }
+
+    /** The stock an order gives back when this save is the one that cancels it. */
+    private restockOnCancel(order: Order, version: number): D1PreparedStatement[] {
+        const before = written.get(order)?.[MUTABLE_COLUMNS.indexOf("status")]
+        if (order.status !== OrderStatus.CANCELLED || before === OrderStatus.CANCELLED) {
+            return []
+        }
+        return order
+            .stockTaken()
+            .map(({ productId, quantity }) =>
+                this.db
+                    .prepare(STOCK_RETURN_SQL)
+                    .bind(quantity, productId, order.businessId, order.id, version),
+            )
     }
 
     /** One statement with the condition: of two «Беру» at the same moment, one changes a row. */

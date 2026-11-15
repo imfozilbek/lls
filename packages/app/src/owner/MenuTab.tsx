@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
-import { formatMoney } from "../lib/format.js"
+import { amountText, formatMoney } from "../lib/format.js"
 import { compressImage } from "../lib/image.js"
 import { useMainAction } from "../lib/main-button.js"
 import { useRefresh } from "../lib/refresh.js"
@@ -106,6 +106,25 @@ function QuickPhoto({ product }: { product: ProductDTO }): React.JSX.Element {
 }
 
 /** The photo, the name and the price (or why it is off sale): a tap opens the editor. */
+/** What is left, when the owner counts it: «12 ta qoldi», or «Tugagan» once none is. */
+function StockLine({ product }: { product: ProductDTO }): React.JSX.Element | null {
+    const t = useT()
+    if (product.stock === undefined) {
+        return null
+    }
+    return product.soldOut ? (
+        <span className="mt-0.5 inline-flex rounded-full bg-danger/10 px-2 py-0.5 text-xs font-semibold text-tg-destructive">
+            {t.owner.catalogFilters.soldOut}
+        </span>
+    ) : (
+        <span className="block text-sm text-tg-subtitle">
+            {fill(t.owner.stockLeft, {
+                left: amountText(product.stock, product.unit, t.units, t.shop.pieces),
+            })}
+        </span>
+    )
+}
+
 function ProductSummary({
     product,
     onSale,
@@ -155,6 +174,7 @@ function ProductSummary({
                           ? t.owner.stoppedToday
                           : t.owner.hidden}
                 </span>
+                <StockLine product={product} />
             </span>
         </button>
     )

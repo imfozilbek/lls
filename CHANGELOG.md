@@ -7,6 +7,17 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The shop's stock: counted where the owner wants, «Tugagan» at zero
+- The owner switches on «Qoldiqni hisoblash» for a product and writes how many are left
+  (owner's decisions, November 2026): one number for every variant, kg with a comma. The catalog
+  says «12 ta qoldi» and has a chip «Tugagan».
+- An order takes from the count when it is placed and a cancel gives it back. Two customers
+  never get the last piece: the order, its lines and the count go in one transaction, and the
+  second order is refused with how many are left (`OUT_OF_STOCK`).
+- At zero the customer still sees the product, on the storefront, in its sheet and in the
+  showcase, with «Tugagan» in place of «+». The cart drops it («… tugab qoldi»), or brings a line
+  down to what is left («To'y oshi: faqat 1 ta qoldi»). The customer never sees the number.
+- The product's sheet loads on its own (the storefront's first download went down to 99.54 KB).
 ### «Chekni yuklash» before «O'tkazdim», «Pul keldi» only after the screenshot
 - The customer's main button on an unpaid transfer is «Chekni yuklash» (owner's decision,
   November 2026); «O'tkazdim» opens in its sheet once the screenshot is picked, and sends it.

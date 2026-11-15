@@ -16,6 +16,8 @@ import {
     OPEN_PAYMENTS_FROM,
     OPEN_PAYMENTS_WHERE,
     RECEIPT_REUSE_SQL,
+    STOCK_RETURN_SQL,
+    STOCK_TAKE_SQL,
     TRANSFER_REJECTIONS_SQL,
     COURIER_ORDERS_SQL,
     networkWaitingSql,
@@ -113,6 +115,13 @@ describe("query plans", () => {
         const plan = (await planOf(SHOWCASE_SHOPS, ["active"])).join("\n")
         expect(plan).toContain("USING COVERING INDEX idx_products_catalog")
         expect(plan).not.toMatch(/SCAN products\b/)
+    })
+
+    it("an order takes and a cancel gives back stock: one product by its key", async () => {
+        const take = (await planOf(STOCK_TAKE_SQL, [1, "p-1", "biz-1"])).join("\n")
+        expect(take).toMatch(/SEARCH products USING INDEX sqlite_autoindex_products_1 \(id=\?\)/)
+        const back = await planOf(STOCK_RETURN_SQL, [1, "p-1", "biz-1", "o-1", 1])
+        expectIndexed(back, ["sqlite_autoindex_products_1", ORDERS_KEY])
     })
 
     it("a shop's product names for a list: the catalog index alone, no product row", async () => {

@@ -200,6 +200,8 @@ export const staffUz = {
         menuEmptyText: "Birinchi mahsulotni qo'shing: mijozlar uni darhol ko'radi.",
         hidden: "Yashirilgan",
         stoppedToday: "Bugun yo'q",
+        /** A counted product in the catalog: «12 ta qoldi», «1,5 kg qoldi». */
+        stockLeft: "{left} qoldi",
         onSale: "Sotuvda",
         addPhotos:
             "{n} ta mahsulotda rasm yo'q. Rasmli mahsulot yaxshiroq sotiladi: chapdagi katakni bosib rasm tanlang.",
@@ -207,6 +209,7 @@ export const staffUz = {
         catalogFilters: {
             all: "Hammasi",
             onSale: "Sotuvda",
+            soldOut: "Tugagan",
             today: "Bugun yo'q",
             hidden: "Yashirilgan",
             noPhoto: "Rasmsiz",
@@ -250,6 +253,12 @@ export const staffUz = {
             available: "Sotuvda bor",
             returnable: "Qaytariladigan idish",
             returnableHint: "Mijoz bo'sh idishni qaytaradi, qaytarmasa garov olinadi.",
+            /** The shop's stock (owner's decision, November 2026). */
+            stockCount: "Qoldiqni hisoblash",
+            stockHint:
+                "Buyurtma berilganda son kamayadi, bekor qilinsa qaytadi. Tugasa, mijoz uni ko'radi, lekin buyurtma qila olmaydi.",
+            stockField: "Omborda qancha bor ({unit})",
+            needStock: "Omborda qancha borligini yozing",
             deleteConfirm: "Mahsulotni o'chirasizmi?",
             photoFailed: "Rasmni yuklab bo'lmadi. Boshqa rasm tanlang.",
             priceHint: "Faqat butun so'm",

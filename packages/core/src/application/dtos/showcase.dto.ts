@@ -29,5 +29,5 @@ export function toShowcaseShopRef(business: Business, now: Date): ShowcaseShopRe
 }
 
 export function toShowcaseProductDTO(product: Product, shop: ShowcaseShopRef): ShowcaseProductDTO {
-    return { ...toProductDTO(product), shop }
+    return { ...toProductDTO(product, "customer"), shop }
 }

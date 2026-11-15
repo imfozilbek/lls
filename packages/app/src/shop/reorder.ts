@@ -2,7 +2,7 @@ import { Feature, isFinalStatus } from "@zumda/core"
 
 import { fill, useT } from "../i18n/index.js"
 import { confirm, haptic } from "../lib/telegram.js"
-import { pickPrice, useCart } from "../stores/cart.js"
+import { canBeOrdered, pickPrice, useCart } from "../stores/cart.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
@@ -11,7 +11,7 @@ import type { OrderDTO, ProductDTO } from "@zumda/core"
 
 /** How many of the order's lines the shop sells today, as `refill` would put them back. */
 function onSaleCount(order: OrderDTO, catalog: readonly ProductDTO[]): number {
-    const onSale = new Map(catalog.filter((p) => p.isAvailable).map((p) => [p.id, p]))
+    const onSale = new Map(catalog.filter(canBeOrdered).map((p) => [p.id, p]))
     return order.items.filter((item) => {
         const product = onSale.get(item.productId)
         const pick = item.options

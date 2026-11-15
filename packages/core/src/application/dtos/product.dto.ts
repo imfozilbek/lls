@@ -28,9 +28,16 @@ export interface ProductDTO {
     position: number
     /** Variants (one is picked, each with its price) and add-ons. */
     options?: ProductOptionsProps
+    /** What is left in base units, when counted: the owner's copy only, never a customer's. */
+    stock?: number
+    /** Counted and gone: the customer sees it and cannot add it. */
+    soldOut?: true
 }
 
-export function toProductDTO(product: Product): ProductDTO {
+/** Who reads it: the owner sees the count, a customer only that it is gone. */
+export type ProductAudience = "owner" | "customer"
+
+export function toProductDTO(product: Product, audience: ProductAudience = "owner"): ProductDTO {
     return {
         id: product.id,
         businessId: product.businessId,
@@ -48,5 +55,7 @@ export function toProductDTO(product: Product): ProductDTO {
         returnable: product.returnable,
         position: product.position,
         ...(product.options ? { options: product.options.toJSON() } : {}),
+        ...(audience === "owner" && product.stock !== undefined ? { stock: product.stock } : {}),
+        ...(product.soldOut ? { soldOut: true as const } : {}),
     }
 }

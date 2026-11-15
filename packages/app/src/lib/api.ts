@@ -49,6 +49,8 @@ export class ApiError extends Error {
         /** Server error code, e.g. PHONE_REQUIRED, or NETWORK when the request never arrived. */
         public readonly code: string,
         message: string,
+        /** The rule's facts, e.g. how much of a product is left (OUT_OF_STOCK). */
+        public readonly details?: Readonly<Record<string, unknown>>,
     ) {
         super(message)
         this.name = "ApiError"
@@ -56,7 +58,7 @@ export class ApiError extends Error {
 }
 
 interface ErrorBody {
-    error?: { code?: string; message?: string }
+    error?: { code?: string; message?: string; details?: Record<string, unknown> }
 }
 
 /**
@@ -241,6 +243,7 @@ function refusal(answer: Answer): ApiError {
         answer.status,
         error?.code ?? "HTTP_ERROR",
         error?.message ?? answer.statusText,
+        error?.details,
     )
 }
 
@@ -358,6 +361,8 @@ export interface ProductInput {
     position?: number
     /** Variants and add-ons; `null` on an update drops them. */
     options?: ProductOptionsProps | null
+    /** What is left in base units (pieces, or grams); `null` stops counting. */
+    stock?: number | null
 }
 
 /** A browser session of Zumda | Business or of «Platforma». */

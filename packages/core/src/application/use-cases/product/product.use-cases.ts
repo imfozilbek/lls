@@ -29,6 +29,8 @@ export interface CreateProductInput {
     returnable?: boolean
     position?: number
     options?: ProductOptionsProps
+    /** What is left, when the owner counts it (base units); absent: not counted. */
+    stock?: number | null
 }
 
 export class CreateProductUseCase {
@@ -53,6 +55,7 @@ export class CreateProductUseCase {
             returnable: input.returnable,
             position: input.position,
             options: input.options,
+            stock: input.stock,
         })
         await this.products.save(product)
         return toProductDTO(product)
@@ -119,7 +122,7 @@ export class CreateProductsUseCase {
         if (fresh.length > 0) {
             await this.products.saveMany(fresh)
         }
-        return { created: fresh.map(toProductDTO), skipped }
+        return { created: fresh.map((product) => toProductDTO(product)), skipped }
     }
 }
 
@@ -217,7 +220,7 @@ export class ListProductsUseCase {
             },
             normalizePage(input),
         )
-        return mapPage(page, toProductDTO)
+        return mapPage(page, (product) => toProductDTO(product, input.audience))
     }
 }
 

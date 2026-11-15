@@ -144,6 +144,8 @@ export const productBody = z.object({
     returnable: z.boolean().optional(),
     position: z.number().int().min(0).max(100_000).optional(),
     options: productOptions.optional(),
+    /** What is left in base units (pieces, or grams); null: not counted. */
+    stock: z.number().int().min(0).max(10_000_000).nullable().optional(),
 })
 
 /** «Ro'yxat bilan qo'shish»: a list of plain products (no variants), at most 50. */
@@ -155,6 +157,7 @@ export const productsBody = z.object({
                 position: true,
                 moreCategories: true,
                 ageFrom: true,
+                stock: true,
             }),
         )
         .min(1)

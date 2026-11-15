@@ -40,11 +40,12 @@ interface ProductRow {
     options: string | null
     more_categories: string | null
     age_from: number | null
+    stock: number | null
 }
 
 const COLUMNS = `id, business_id, name, description, price, unit, step, category, image_key,
     is_available, unavailable_until, returnable, position, created_at, updated_at, options,
-    more_categories, age_from`
+    more_categories, age_from, stock`
 
 /** The same columns read through the `p` alias of a join. */
 const JOINED_COLUMNS = COLUMNS.split(",")
@@ -144,6 +145,7 @@ function toProduct(row: ProductRow): Product {
         returnable: bool(row.returnable),
         position: row.position,
         options: row.options === null ? undefined : ProductOptions.create(JSON.parse(row.options)),
+        stock: row.stock ?? undefined,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -276,12 +278,16 @@ export class D1ProductRepository implements ProductRepository {
         await this.db.batch(products.flatMap((product) => this.writesOf(product)))
     }
 
-    /** The product and its words change together. */
+    /**
+     * The product and its words change together. The count is written over the stored one only
+     * when the owner gave a new one: meanwhile orders change it in the database itself.
+     */
     private writesOf(product: Product): D1PreparedStatement[] {
+        const stock = product.stockChanged ? ", stock = excluded.stock" : ""
         const upsert = this.db
             .prepare(
                 `INSERT INTO products (${COLUMNS}, search_text)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT (id) DO UPDATE SET name = excluded.name,
                     search_text = excluded.search_text,
                     description = excluded.description, price = excluded.price,
@@ -290,7 +296,8 @@ export class D1ProductRepository implements ProductRepository {
                     unavailable_until = excluded.unavailable_until,
                     returnable = excluded.returnable, position = excluded.position,
                     options = excluded.options, updated_at = excluded.updated_at,
-                    more_categories = excluded.more_categories, age_from = excluded.age_from`,
+                    more_categories = excluded.more_categories,
+                    age_from = excluded.age_from${stock}`,
             )
             .bind(
                 product.id,
@@ -311,6 +318,7 @@ export class D1ProductRepository implements ProductRepository {
                 product.options ? JSON.stringify(product.options.toJSON()) : null,
                 product.moreCategories.length > 0 ? JSON.stringify(product.moreCategories) : null,
                 product.ageFrom ?? null,
+                product.stock ?? null,
                 ` ${product.searchText}`,
             )
         return [

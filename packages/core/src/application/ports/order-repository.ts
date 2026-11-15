@@ -2,12 +2,21 @@ import type { Order } from "../../domain/entities/order.js"
 import type { OrderStatus } from "../../domain/enums/order-status.js"
 import type { Page, PageRequest } from "../dtos/pagination.js"
 
+/**
+ * How a new order went: placed; another order took the same number first; or a counted product
+ * had less left by then than the order takes (nothing of the order is kept).
+ */
+export type OrderInsert = "placed" | "number_taken" | "out_of_stock"
+
 export interface OrderRepository {
     findById(id: string): Promise<Order | null>
     /** The next free order number in this shop (1, 2, 3 …). */
     nextNumber(businessId: string): Promise<number>
-    /** Returns false if another order took the same number first. */
-    insert(order: Order): Promise<boolean>
+    /**
+     * The order, its lines and what it takes from counted stock, all or nothing: the stock never
+     * goes below zero, two customers never get the last piece.
+     */
+    insert(order: Order): Promise<OrderInsert>
     save(order: Order): Promise<void>
     /** Newest first. */
     listByBusiness(

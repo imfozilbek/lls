@@ -64,6 +64,7 @@ export const uz = {
         NOT_ACCEPTING_ORDERS: "Do'kon hozir buyurtma qabul qilmayapti.",
         SHOP_NOT_ACTIVE: "Do'kon hali ishga tushmagan.",
         PRODUCT_NOT_AVAILABLE: "Savatdagi mahsulotlardan biri tugab qoldi.",
+        OUT_OF_STOCK: "Savatdagi mahsulotlardan biri tugab qoldi yoki kam qoldi.",
         VARIANT_REQUIRED: "Mahsulotning turini tanlang.",
         OPTION_UNAVAILABLE: "Do'kon mahsulotni o'zgartirdi. Savatni tekshiring.",
         MIN_ORDER_NOT_REACHED: "Buyurtma minimal summadan kam.",
@@ -99,6 +100,10 @@ export const uz = {
         text: "Bu ilova do'kon botining ichida ishlaydi. Botga o'tib, pastdagi tugmani bosing.",
     },
     shop: {
+        /** A counted product that ran out: seen as it is, never added. */
+        soldOut: "Tugagan",
+        /** «12 ta»: pieces in a sentence. */
+        pieces: "{n} ta",
         unpaidOrder: "Buyurtma #{n}: {sum} o'tkazing",
         map: "Xarita",
         call: "Qo'ng'iroq",
@@ -317,6 +322,8 @@ export const uz = {
         removed: "Savatdagi {n} ta mahsulot endi yo'q yoki o'zgardi, ularni olib tashladik.",
         removedNamed: "{names} endi yo'q: savatdan olib tashladik.",
         changedNamed: "{names} o'zgardi: savatdan olib tashladik, qaytadan tanlang.",
+        /** A counted product that ran out (owner's decision, November 2026). */
+        soldOutNamed: "{names} tugab qoldi: savatdan olib tashladik.",
         closedUntil: "Do'kon hozir yopiq, {when} ochiladi. Savat saqlanib turadi.",
         unavailable: "Tugagan",
         clear: "Savatni tozalash",
@@ -346,6 +353,8 @@ export const uz = {
         needStreetOrLandmark: "Ko'cha va uyni yoki mo'ljalni yozing",
         needPin: "Joylashuvingizni yuboring yoki xaritada uyingizni belgilang",
         itemGone: "Savatdagi mahsulotlardan biri endi yo'q. Savatni yangiladik.",
+        /** Less left than the cart holds: the line came down to it. */
+        onlyLeft: "{name}: faqat {left} qoldi. Savatdagi sonini kamaytirdik.",
         pinHelps: "Joylashuv kuryerga eshikni topishga yordam beradi.",
         pinRequired: "Majburiy: do'kon {km} km gacha yetkazadi.",
         landmarkPlaceholder: "Masalan: maktab yonida, ko'k darvoza",
