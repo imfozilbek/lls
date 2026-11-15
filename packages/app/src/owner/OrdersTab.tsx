@@ -53,6 +53,13 @@ import { BottomSpacer } from "../ui/shell.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import { PaymentCheckSheet } from "./PaymentCheck.js"
+import {
+    MissingButton,
+    MissingLineSheet,
+    RefundOwed,
+    RemovedLines,
+    canTakeOut,
+} from "./missing-line.js"
 import { shownStages, stageCounts, stageOf } from "./order-stage.js"
 import { ownerStep } from "./order-step.js"
 import { useOwner } from "./store.js"
@@ -62,7 +69,7 @@ import type { OrderStage } from "./order-stage.js"
 import type { OwnerStep } from "./order-step.js"
 import type { Dictionary } from "../i18n/index.js"
 import type { PagedList } from "../lib/paged.js"
-import type { CourierDTO, OrderDTO } from "@zumda/core"
+import type { CourierDTO, OrderDTO, OrderItemDTO } from "@zumda/core"
 
 type Filter = "active" | "done"
 
@@ -578,15 +585,23 @@ function needsCheck(order: OrderDTO): boolean {
 /** A long order shows its first lines and «+N ta»: a tap shows the rest. */
 const SHOWN_ITEMS = 3
 
-function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
+function CardItems({
+    order,
+    onMissing,
+}: {
+    order: OrderDTO
+    /** «Yo'q» on a line, while it may still be taken out. */
+    onMissing(item: OrderItemDTO): void
+}): React.JSX.Element {
     const t = useT()
     const [all, setAll] = useState(false)
     const hidden = order.items.length - SHOWN_ITEMS
     const shown = all || hidden <= 1 ? order.items : order.items.slice(0, SHOWN_ITEMS)
+    const missing = canTakeOut(order)
     return (
         <ul className="mt-2 flex flex-col gap-0.5">
-            {shown.map((item, line) => (
-                <li key={line} className="flex gap-2">
+            {shown.map((item) => (
+                <li key={item.line} className="flex items-baseline gap-2">
                     <span className="shrink-0 font-semibold tabular-nums">
                         {quantityMark(item.quantity, item.unit, t.units)}
                     </span>
@@ -596,6 +611,9 @@ function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
                             <span className="text-tg-subtitle"> ({item.options.label})</span>
                         ) : null}
                     </span>
+                    {missing ? (
+                        <MissingButton item={item} onPress={(): void => onMissing(item)} />
+                    ) : null}
                 </li>
             ))}
             {shown.length < order.items.length ? (
@@ -807,6 +825,7 @@ function OrderCard({
     const t = useT()
     const language = useLanguage()
     const [open, setOpen] = useState(startOpen || needsCheck(order))
+    const [missing, setMissing] = useState<OrderItemDTO | null>(null)
     const actions = useCardActions({ order, onChange, onStale })
     const live = !isFinalStatus(order.status)
     return (
@@ -819,13 +838,21 @@ function OrderCard({
             data-needs-check={needsCheck(order) || undefined}
         >
             <CardHead order={order} />
-            {open ? <CardItems order={order} /> : <ItemsLine order={order} />}
+            {open ? (
+                <>
+                    <CardItems order={order} onMissing={setMissing} />
+                    <RemovedLines order={order} />
+                </>
+            ) : (
+                <ItemsLine order={order} />
+            )}
             <p className="mt-1.5 flex justify-between font-semibold">
                 <span>{t.cart.total}</span>
                 <span className="tabular-nums">{formatMoney(order.total, language)}</span>
             </p>
             {/* Not yet transferred: the badge already says it, once is enough. Cash says so. */}
             {awaitsTransfer(order) ? null : <PaymentLine order={order} forOwner className="mt-1" />}
+            <RefundOwed order={order} act={actions.act} />
             {open ? (
                 <CardDetails order={order} actions={actions} />
             ) : (
@@ -857,6 +884,14 @@ function OrderCard({
                 onCancel={(): void => actions.open("cancel")}
             />
             {actions.sheets}
+            {missing ? (
+                <MissingLineSheet
+                    order={order}
+                    item={missing}
+                    act={actions.act}
+                    onClose={(): void => setMissing(null)}
+                />
+            ) : null}
         </li>
     )
 }

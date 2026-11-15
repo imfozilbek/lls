@@ -398,6 +398,8 @@ export const uz = {
         },
         card: "Kartaga o'tkazma",
         cardTitle: "Do'kon kartasi",
+        /** Paid for lines the shop did not have: the shop gives it back. */
+        owedBack: "Do'kon {sum} qaytaradi",
         copy: "Raqamni nusxalash",
         copied: "Karta raqami nusxalandi",
         /** The sheet's title when the phone gave no clipboard: the number to copy by hand. */
@@ -460,6 +462,8 @@ export const uz = {
         courierAssigned: "Kuryer: {name}",
         callCourier: "Kuryerga qo'ng'iroq",
         bottlesBack: "Qaytariladigan bo'sh idish: {n} ta",
+        /** A line the shop did not have («Yo'q»): out of the order, shown struck through. */
+        missingItem: "Do'konda yo'q edi",
         reorder: "Takrorlash",
         paidStage: "To'landi",
         itemsCount: "{n} xil mahsulot",

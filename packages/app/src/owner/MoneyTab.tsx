@@ -142,9 +142,12 @@ function Totals({ report }: { report: MoneyReportDTO }): React.JSX.Element {
 /** One order that needs the owner: number, customer, sum, and the buttons that settle it. */
 function OpenOrder({
     order,
+    sum = order.total,
     children,
 }: {
     order: OrderDTO
+    /** The sum this row is about: the order's total, or what is owed back. */
+    sum?: number
     children: ReactNode
 }): React.JSX.Element {
     const t = useT()
@@ -161,13 +164,16 @@ function OpenOrder({
                 <span className="min-w-0 flex-1 truncate text-sm text-tg-hint">
                     {order.customerName}
                 </span>
-                <span className="font-semibold tabular-nums">
-                    {formatMoney(order.total, language)}
-                </span>
+                <span className="font-semibold tabular-nums">{formatMoney(sum, language)}</span>
             </p>
             <div className="mt-2 flex flex-wrap gap-2">{children}</div>
         </li>
     )
+}
+
+/** What the shop owes back: a cancelled order's money, or the part for lines it did not have. */
+function owedOf(order: OrderDTO): number {
+    return order.payment.owedBack ?? order.total
 }
 
 function ListBlock({ title, children }: { title: string; children: ReactNode }): React.JSX.Element {
@@ -270,7 +276,7 @@ function OpenPayments({
     const refund = async (order: OrderDTO): Promise<void> => {
         const text = fill(m.refundConfirm, {
             n: order.number,
-            sum: formatMoney(order.total, language),
+            sum: formatMoney(owedOf(order), language),
         })
         if (await confirm(text, { yes: m.refunded, destructive: true })) {
             await run(order.id, () => api.owner.markRefunded(order.id))
@@ -309,7 +315,7 @@ function OpenPayments({
             {report.refunds.length > 0 ? (
                 <ListBlock title={m.refundsTitle}>
                     {report.refunds.map((order) => (
-                        <OpenOrder key={order.id} order={order}>
+                        <OpenOrder key={order.id} order={order} sum={owedOf(order)}>
                             <Button
                                 variant="danger"
                                 className="grow"

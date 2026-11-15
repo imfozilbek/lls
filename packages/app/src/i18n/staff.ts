@@ -195,6 +195,18 @@ export const staffUz = {
         networkJustAsked: "Hozirgina so'raldi",
         ageNew: "Hozirgina keldi",
         moreItems: "Yana {n} ta mahsulot",
+        /** «Yo'q» (owner's decision, November 2026): a line the shop did not have. */
+        missing: {
+            button: "Yo'q",
+            buttonLabel: "Yo'q: {name}",
+            title: "Mahsulot qolmaganmi?",
+            sum: "Summa: {old} o'rniga {new}",
+            refund: "Mijozga {sum} qaytarasiz",
+            stopToday: "Bugun sotuvdan olib qo'yish",
+            remove: "Buyurtmadan olib tashlash",
+            was: "yo'q edi",
+            owed: "{sum} qaytarish kerak",
+        },
         age: "{n} daqiqa kutmoqda",
         networkWaited: "{n} daqiqadan beri qidirilmoqda.",
         networkLate: "Hech kim olmasa, o'zingiz yetkazing.",

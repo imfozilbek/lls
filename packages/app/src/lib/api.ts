@@ -469,6 +469,12 @@ export const api = {
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "rejected" }),
         markRefunded: (orderId: string): Promise<OrderDTO> =>
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "refunded" }),
+        /** «Yo'q»: the line the shop did not have leaves the order; `stopToday` stops it today. */
+        removeLine: (orderId: string, line: number, stopToday: boolean): Promise<OrderDTO> =>
+            request(
+                "DELETE",
+                `/api/owner/orders/${orderId}/items/${line}?stop=${stopToday ? 1 : 0}`,
+            ),
         /** «Pulni oldim»: the owner took this cash order's money from the courier. */
         receiveCash: (orderId: string): Promise<OrderDTO> =>
             request("PATCH", `/api/owner/orders/${orderId}/payment`, { action: "cash_received" }),
