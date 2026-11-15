@@ -208,6 +208,9 @@ async function seedSql(tokenKey: string): Promise<string> {
             ${c.id}, ${quote(c.first_name)}, NULL, 1, 'active', ${now}, ${now});`,
     ])
     return [
+        // Who already got the guide or a phone ask: a second run on the same stand starts clean.
+        "DELETE FROM guide_sends;",
+        "DELETE FROM phone_asks;",
         "DELETE FROM managed_bots;",
         "DELETE FROM network_offers;",
         "DELETE FROM order_items;",
