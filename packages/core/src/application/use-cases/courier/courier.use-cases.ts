@@ -281,7 +281,7 @@ export class AssignCourierUseCase {
     }
 }
 
-/** Accepting starts the order (`Order.acceptAndStart`): these are the steps right after it. */
+/** The steps right after «Qabul qilish»: waiting to be collected, or a service already started. */
 const JUST_ACCEPTED: readonly OrderStatus[] = [OrderStatus.ACCEPTED, OrderStatus.PREPARING]
 
 export class AutoAssignOnlyCourierUseCase {

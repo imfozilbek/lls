@@ -140,14 +140,12 @@ describe("shop couriers and vertical features", () => {
         }
     }
 
-    /** «Деньги пришли, принять»: the transfer arrived, the shop starts. */
-    async function payAndAccept(orderId: string, businessId = "biz-1"): Promise<void> {
+    /** «Pul keldi, qabul qilish», then «Yig'ishni boshlash»: the shop is on it. */
+    async function payAndStart(orderId: string, businessId = "biz-1"): Promise<void> {
         await receiptSent(orders, orderId)
-        await new ConfirmPaymentUseCase({ businesses, orders, clock }).execute({
-            actorTelegramId: OWNER_TG,
-            businessId,
-            orderId,
-        })
+        const owner = { actorTelegramId: OWNER_TG, businessId, orderId }
+        await new ConfirmPaymentUseCase({ businesses, orders, clock }).execute(owner)
+        await new AdvanceOrderUseCase(orderDeps()).execute({ ...owner, to: OrderStatus.PREPARING })
     }
 
     beforeEach(async () => {
@@ -259,7 +257,7 @@ describe("shop couriers and vertical features", () => {
             const order = await place()
             const advance = new AdvanceOrderUseCase(orderDeps())
             const owner = { actorTelegramId: OWNER_TG, businessId: "biz-1", orderId: order.id }
-            await payAndAccept(order.id)
+            await payAndStart(order.id)
             const assign = new AssignCourierUseCase(courierDeps())
             // Not approved yet.
             await expect(assign.execute({ ...owner, courierId })).rejects.toThrow(
@@ -390,7 +388,7 @@ describe("shop couriers and vertical features", () => {
         it("the courier sees but never cancels; strangers get nothing", async () => {
             const courierId = await hireCourier()
             const order = await place()
-            await payAndAccept(order.id)
+            await payAndStart(order.id)
             await new AssignCourierUseCase(courierDeps()).execute({
                 actorTelegramId: OWNER_TG,
                 businessId: "biz-1",

@@ -112,7 +112,7 @@ describe("a dispatcher sends the shop's orders on and keeps the customer told", 
         })
     }
 
-    /** Placed and paid: «Pul keldi» accepted and started it. */
+    /** Placed and paid: «Pul keldi» accepted it, «Yig'ishni boshlash» started it. */
     async function paidOrder(): Promise<OrderDTO> {
         const order = await new PlaceOrderUseCase(deps()).execute({
             user: { id: CUSTOMER_TG, firstName: "Aziz" },
@@ -122,7 +122,8 @@ describe("a dispatcher sends the shop's orders on and keeps the customer told", 
             location: PIN,
         })
         await receiptSent(orders, order.id)
-        return new ConfirmPaymentUseCase(deps()).execute(ids(order))
+        await new ConfirmPaymentUseCase(deps()).execute(ids(order))
+        return advance(order, OrderStatus.PREPARING)
     }
 
     beforeEach(async () => {

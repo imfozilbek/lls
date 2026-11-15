@@ -95,7 +95,7 @@ describe("a save writes only over the version it loaded", () => {
         byCustomer.cancel("customer")
         await orders.save(byCustomer)
         byOwner.markTransferSent(STORED_RECEIPT)
-        byOwner.confirmPaymentAndStart()
+        byOwner.confirmPaymentAndAccept()
         await expect(orders.save(byOwner)).rejects.toBeInstanceOf(ConflictError)
         expect((await orders.findById(id))?.status).toBe("cancelled")
     })

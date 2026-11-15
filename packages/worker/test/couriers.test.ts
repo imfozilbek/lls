@@ -88,7 +88,7 @@ describe("shop couriers, verticals and channels", () => {
     /** Who placed each order: «Pul keldi» comes only after their screenshot. */
     const customerOf = new Map<string, ReturnType<TestClient["as"]>>()
 
-    /** "accepted" is «Pul keldi»: the customer sent the screenshot, the shop starts. */
+    /** "accepted" is «Pul keldi»: the customer sent the screenshot, the shop takes the order. */
     async function setStatus(
         orderId: unknown,
         status: string,
@@ -577,14 +577,16 @@ describe("shop couriers, verticals and channels", () => {
             unit: "portion",
             category: "meals",
         })
-        // Accepting starts it: the one message says how this kind of shop makes it.
+        // Starting it: the message says how this kind of shop makes it.
         const order = await placeOrder([{ productId: osh, quantity: 2 }])
         await setStatus(order.id, "accepted")
-        expect(client.telegram.sent.at(-1)?.html).toContain("qabul qilindi va tayyorlanmoqda")
+        await setStatus(order.id, "preparing")
+        expect(client.telegram.sent.at(-1)?.html).toContain("tayyorlanmoqda")
 
         await env.DB.prepare("UPDATE businesses SET type = 'grocery'").run()
         const second = await placeOrder([{ productId: osh, quantity: 2 }])
         await setStatus(second.id, "accepted")
-        expect(client.telegram.sent.at(-1)?.html).toContain("qabul qilindi va yig'ilmoqda")
+        await setStatus(second.id, "preparing")
+        expect(client.telegram.sent.at(-1)?.html).toContain("yig'ilmoqda")
     })
 })

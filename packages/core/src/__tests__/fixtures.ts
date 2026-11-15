@@ -37,13 +37,14 @@ export function makeBusiness(
         card?: boolean
         /** «Mijozlar uchun telefon»: without it (and the owner's) the shop takes no orders. */
         phone?: boolean
+        type?: BusinessType
     } = {},
 ): Business {
     const business = Business.register({
         id: overrides.id ?? "biz-1",
         slug: Slug.create("osh-markaz"),
         name: "Osh Markaz",
-        type: BusinessType.FOOD,
+        type: overrides.type ?? BusinessType.FOOD,
         ownerTelegramId: TelegramId.create(OWNER_TG),
         bot: { id: 777, username: "osh_markaz_bot" },
         delivery: overrides.delivery ?? { fee: Money.of(10_000) },

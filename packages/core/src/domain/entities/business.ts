@@ -1,6 +1,7 @@
 import { BotSource } from "../enums/bot-source.js"
 import { DEFAULT_FEATURES } from "../enums/business-profile.js"
 import { BusinessStatus } from "../enums/business-status.js"
+import { BusinessType } from "../enums/business-type.js"
 import { Feature } from "../enums/feature.js"
 import { OrderChannel } from "../enums/order-channel.js"
 import { OwnerChat } from "../enums/owner-chat.js"
@@ -12,7 +13,6 @@ import { BrandColor } from "../value-objects/brand-color.js"
 import { Money } from "../value-objects/money.js"
 import { WorkingHours } from "../value-objects/working-hours.js"
 
-import type { BusinessType } from "../enums/business-type.js"
 import type { Location } from "../value-objects/location.js"
 import type { PayoutCard } from "../value-objects/payout-card.js"
 import type { Phone } from "../value-objects/phone.js"
@@ -190,6 +190,14 @@ export class Business {
     }
     get type(): BusinessType {
         return this.props.type
+    }
+    /**
+     * Accepting starts the work at once only for a service: there is nothing to collect. Every
+     * other shop's order waits in «Yig'ish kerak» until the owner starts it (owner's decision,
+     * November 2026).
+     */
+    get startsOnAccept(): boolean {
+        return this.props.type === BusinessType.SERVICE
     }
     get ownerTelegramId(): TelegramId {
         return this.props.ownerTelegramId

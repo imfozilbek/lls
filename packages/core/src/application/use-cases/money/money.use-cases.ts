@@ -4,6 +4,7 @@ import { addDays, startOfLocalDay, startOfLocalMonth } from "../../../domain/sha
 import { toOrderDTO } from "../../dtos/order.dto.js"
 import { requireOwnedBusiness } from "../shared.js"
 
+import type { Business } from "../../../domain/entities/business.js"
 import type { Order } from "../../../domain/entities/order.js"
 import type { CourierCashDTO, MoneyPeriod, MoneyReportDTO } from "../../dtos/money.dto.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
@@ -91,8 +92,12 @@ export function byCourier(orders: readonly Order[]): CourierCashDTO[] {
 async function requireShopOrder(
     deps: MoneyDeps,
     input: { actorTelegramId: number; businessId: string; orderId: string },
+    /** The owner's shop when the caller has it already: read once. */
+    owned?: Business,
 ): Promise<Order> {
-    await requireOwnedBusiness(deps.businesses, input.businessId, input.actorTelegramId)
+    if (!owned) {
+        await requireOwnedBusiness(deps.businesses, input.businessId, input.actorTelegramId)
+    }
     const order = await deps.orders.findById(input.orderId)
     if (!order || order.businessId !== input.businessId) {
         throw EntityNotFoundError.order(input.orderId)
@@ -101,8 +106,9 @@ async function requireShopOrder(
 }
 
 /**
- * «Pul keldi»: the owner saw the transfer on the card. A new order is accepted and started in
- * the same tap (the shop starts only after the money); on a cancelled order it is owed back.
+ * «Pul keldi»: the owner saw the transfer on the card. A new order is accepted in the same tap
+ * (the shop takes it only after the money) and waits to be collected, a service starts at once;
+ * on a cancelled order it is owed back.
  */
 export class ConfirmPaymentUseCase {
     constructor(private readonly deps: MoneyDeps) {}
@@ -112,8 +118,13 @@ export class ConfirmPaymentUseCase {
         businessId: string
         orderId: string
     }): Promise<OrderDTO> {
-        const order = await requireShopOrder(this.deps, input)
-        order.confirmPaymentAndStart()
+        const business = await requireOwnedBusiness(
+            this.deps.businesses,
+            input.businessId,
+            input.actorTelegramId,
+        )
+        const order = await requireShopOrder(this.deps, input, business)
+        order.confirmPaymentAndAccept(business.startsOnAccept)
         await this.deps.orders.save(order)
         return toOrderDTO(order)
     }

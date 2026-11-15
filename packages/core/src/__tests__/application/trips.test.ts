@@ -80,7 +80,7 @@ describe("trips: several orders one way, one courier, stops in order", () => {
     })
     const owner = { actorTelegramId: OWNER_TG, businessId: "biz-1" }
 
-    /** A paid, accepted order with the customer's pin `km` north of the shop. */
+    /** A paid order the shop is collecting, with the customer's pin `km` north of the shop. */
     async function accepted(km: number | null): Promise<OrderDTO> {
         const order = await new PlaceOrderUseCase(deps()).execute({
             user: { id: CUSTOMER_TG, firstName: "Aziz" },
@@ -91,6 +91,11 @@ describe("trips: several orders one way, one courier, stops in order", () => {
         })
         await receiptSent(orders, order.id)
         await new ConfirmPaymentUseCase(deps()).execute({ ...owner, orderId: order.id })
+        await new AdvanceOrderUseCase(deps()).execute({
+            ...owner,
+            orderId: order.id,
+            to: OrderStatus.PREPARING,
+        })
         return order
     }
 

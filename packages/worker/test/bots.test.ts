@@ -493,16 +493,17 @@ describe("shop bot", () => {
         expect(client.telegram.answered).toContain("cb-1")
         const edited = client.telegram.edited.at(-1)
         expect(edited?.messageId).toBeGreaterThan(0)
-        // No courier in the shop: «O'zim yetkazaman» before «Tayyor» (owner's decision).
-        expect(edited?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
-            `m:${order.id}`,
-        )
+        // Accepted: it waits until the owner starts it (owner's decision, November 2026).
+        expect(edited?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual({
+            text: "👨‍🍳 Tayyorlashni boshlash",
+            callback_data: `a:${order.id}:preparing`,
+        })
         expect(edited?.html).toContain("O'tkazma bilan to'langan")
         const toCustomer = client.telegram.sent.at(-1)
         expect(toCustomer?.chatId).toBe(CUSTOMER.id)
         expect(toCustomer?.html).toContain(`#${order.number}`)
-        // One message: accepted and being made, the money seen.
-        expect(toCustomer?.html).toContain("qabul qilindi va tayyorlanmoqda")
+        // Accepted, the money seen.
+        expect(toCustomer?.html).toContain("qabul qilindi")
         expect(toCustomer?.html).toContain("To'lovingiz keldi")
         // The customer's message opens this order in the shop's app.
         expect(toCustomer?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
@@ -516,7 +517,17 @@ describe("shop bot", () => {
         // A stale button does not move the order again
         await shopUpdate({ callback_query: { id: "cb-2", from: OWNER, data: `pc:${order.id}` } })
         const row = await env.DB.prepare("SELECT status, payment_status FROM orders").first()
-        expect(row).toEqual({ status: "preparing", payment_status: "paid" })
+        expect(row).toEqual({ status: "accepted", payment_status: "paid" })
+
+        // «Tayyorlashni boshlash»: the customer hears it is being made; no courier in the shop,
+        // so «O'zim yetkazaman» comes before «Tayyor».
+        await shopUpdate({
+            callback_query: { id: "cb-3", from: OWNER, data: `a:${order.id}:preparing` },
+        })
+        expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual(
+            expect.objectContaining({ callback_data: `m:${order.id}` }),
+        )
+        expect(client.telegram.sent.at(-1)?.html).toContain("tayyorlanmoqda")
     })
 
     it("«Yo'q, kelmadi» under the screenshot: unpaid again, the customer sends it again", async () => {
@@ -554,6 +565,9 @@ describe("shop bot", () => {
         const order = await placeOrder()
         await sendReceipt(client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug }), order.id)
         await shopUpdate({ callback_query: { id: "cb-p", from: OWNER, data: `pc:${order.id}` } })
+        await shopUpdate({
+            callback_query: { id: "cb-a", from: OWNER, data: `a:${order.id}:preparing` },
+        })
         const told = client.telegram.sent.length
         await shopUpdate({ callback_query: { id: "cb-m", from: OWNER, data: `m:${order.id}` } })
         expect(client.telegram.answered).toContain("cb-m")
@@ -578,9 +592,9 @@ describe("shop bot", () => {
         })
         expect(response.status).toBe(200)
         const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
-        expect(row?.status).toBe("preparing")
+        expect(row?.status).toBe("accepted")
         expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual(
-            expect.objectContaining({ callback_data: `m:${order.id}` }),
+            expect.objectContaining({ callback_data: `a:${order.id}:preparing` }),
         )
     })
 

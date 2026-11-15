@@ -106,6 +106,7 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
     /** Accepted without money, cooked, carried and delivered by the shop's courier. */
     async function deliverByCourier(order: OrderDTO): Promise<OrderDTO> {
         await advance(order, OrderStatus.ACCEPTED)
+        await advance(order, OrderStatus.PREPARING)
         await assign(order)
         await advance(order, OrderStatus.READY)
         await advance(order, OrderStatus.PICKED_UP, COURIER_TG)
@@ -199,9 +200,9 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
         await expect(new ConfirmPaymentUseCase(deps()).execute(ids(order))).rejects.toMatchObject({
             rule: "NOT_A_TRANSFER",
         })
-        // «Qabul qilish» starts it at once; the money comes at the door.
+        // «Qabul qilish» takes it without money; the money comes at the door.
         const accepted = await advance(order, OrderStatus.ACCEPTED)
-        expect(accepted).toMatchObject({ status: "preparing", payment: { status: "unpaid" } })
+        expect(accepted).toMatchObject({ status: "accepted", payment: { status: "unpaid" } })
     })
 
     it("the courier collects it; the owner sees it per courier and takes it per order", async () => {
@@ -242,6 +243,7 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
         await setOptions(PaymentOptions.CASH)
         const order = await place()
         await advance(order, OrderStatus.ACCEPTED)
+        await advance(order, OrderStatus.PREPARING)
         // The shop has a courier: «O'zim yetkazaman» first, then the owner's own steps.
         await expect(advance(order, OrderStatus.READY)).rejects.toMatchObject({
             rule: "COURIER_NOT_CHOSEN",

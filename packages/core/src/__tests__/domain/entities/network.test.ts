@@ -67,7 +67,7 @@ function placed(): Order {
 
 function accepted(): Order {
     const order = placed()
-    withReceipt(order).confirmPaymentAndStart()
+    withReceipt(order).confirmPaymentAndAccept(true)
     return order
 }
 

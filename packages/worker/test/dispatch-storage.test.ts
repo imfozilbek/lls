@@ -86,7 +86,8 @@ describe("dispatchers in D1", () => {
         }
         const at = new Date("2026-11-15T10:00:00Z")
         order.markTransferSent(STORED_RECEIPT)
-        order.confirmPaymentAndStart()
+        order.confirmPaymentAndAccept()
+        order.advanceTo(OrderStatus.PREPARING)
         order.assignCourier(link, new Date())
         order.addDeliveryNote(courierId, "Taksi chaqirildi", at)
         order.advanceTo(OrderStatus.READY)

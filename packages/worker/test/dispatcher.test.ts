@@ -72,14 +72,19 @@ describe("a dispatcher sends the order on and keeps the customer told", () => {
         })
         expect(placed.status).toBe(201)
         const order = await json<Order>(placed)
-        // «Pul keldi» after the screenshot: paid, accepted and started in one tap.
+        // «Pul keldi» after the screenshot accepts it, «Yig'ishni boshlash» starts it.
         await sendReceipt(customer, order.id)
         const paid = await owner()(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },
         })
         expect(paid.status).toBe(200)
-        return json<Order>(paid)
+        const started = await owner()(`/api/owner/orders/${order.id}`, {
+            method: "PATCH",
+            json: { status: "preparing" },
+        })
+        expect(started.status).toBe(200)
+        return json<Order>(started)
     }
 
     const step = (order: Order, status: string): Promise<Response> =>

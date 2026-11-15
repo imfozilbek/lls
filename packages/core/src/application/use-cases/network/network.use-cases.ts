@@ -294,7 +294,7 @@ export class RequestNetworkCourierUseCase {
     }
 }
 
-/** An order the shop has just accepted: accepting starts it (`Order.acceptAndStart`). */
+/** An order the shop has just accepted: waiting to be collected, or a service already started. */
 const JUST_STARTED: ReadonlySet<OrderStatus> = new Set([
     OrderStatus.ACCEPTED,
     OrderStatus.PREPARING,
