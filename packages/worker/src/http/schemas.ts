@@ -61,6 +61,10 @@ export const ownerOrdersQuery = pageQuery.extend({
 
 export const idParam = z.object({ id: z.string().min(1).max(64) })
 
+/** «Yo'q»: one line of an order, by its number; `stop=1` takes the product off sale for today. */
+export const orderLineParam = idParam.extend({ line: z.coerce.number().int().min(0).max(99) })
+export const lineRemovalQuery = z.object({ stop: z.enum(["0", "1"]).default("0") })
+
 export const meBody = z.object({ language: z.enum(LANGUAGES) })
 
 /** A variant or add-on id: short, chosen by the owner's app. */

@@ -167,6 +167,7 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
     }
     lines.push(`<b>${t.total}: ${formatMoney(order.total, language)}</b>`)
     lines.push(paymentLine(order, t))
+    lines.push(...missingLines(order, t, language))
     if (order.bottlesReturned > 0) {
         lines.push(fill(t.bottlesBack, { n: order.bottlesReturned }))
     }
@@ -181,6 +182,40 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
         lines.push(`${t.reason}: ${escapeHtml(order.cancelReason)}`)
     }
     return lines.join("\n")
+}
+
+/** «Yo'q»: the lines the shop did not have, and what it owes back for them. */
+function missingLines(order: OrderDTO, t: BotTexts, language: Language): string[] {
+    const lines = (order.removedItems ?? []).map((item) =>
+        fill(t.lineRemovedOwner, { item: escapeHtml(item.name) }),
+    )
+    if (order.payment.refundOwed) {
+        lines.push(
+            fill(t.refundOwedOwner, { sum: formatMoney(order.payment.refundOwed, language) }),
+        )
+    }
+    return lines
+}
+
+/**
+ * The customer's message after «Yo'q»: what left the order, the new sum, and the money: owed back
+ * for a transfer, or what to give the courier for cash.
+ */
+export function formatLineRemovedForCustomer(
+    order: OrderDTO,
+    item: string,
+    reader: Reader,
+): string {
+    const t = textsFor(reader.language, reader.type)
+    const sum = formatMoney(order.total, reader.language)
+    const head = fill(t.lineRemovedCustomer, { n: order.number, item: escapeHtml(item), sum })
+    if (order.payment.method === PaymentMethod.CASH) {
+        return `${head}\n${fill(t.lineRemovedCash, { sum })}`
+    }
+    const owed = order.payment.refundOwed
+    return owed
+        ? `${head}\n${fill(t.lineRemovedRefund, { sum: formatMoney(owed, reader.language) })}`
+        : head
 }
 
 const BPS_PER_PERCENT = 100

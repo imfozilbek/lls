@@ -97,6 +97,7 @@ interface OrderRow {
     sent_via: string | null
     delivery_notes: string | null
     customer_pays_carrier: number
+    refund_owed: number
 }
 
 interface ItemRow {
@@ -110,6 +111,7 @@ interface ItemRow {
     quantity: number
     options: string | null
     from_stock: number | null
+    removed_at: number | null
 }
 
 /** Who gets a Telegram card for an order; each card is edited in place on status changes. */
@@ -123,7 +125,7 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     delivery_fee_to, payment_card_number, payment_card_holder, receipt_key, receipt_hash,
     receipt_at, receipt_reused_from, customer_rejections, transfer_rejections,
     transfer_reminded_at, cash_received_at, trip_id, trip_stop, dispatcher, owner_delivers,
-    sent_via, delivery_notes, customer_pays_carrier`
+    sent_via, delivery_notes, customer_pays_carrier, refund_owed`
 
 /** A cash order whose money a courier still holds. */
 const WITH_COURIER = `payment_method = 'cash' AND payment_status = 'paid'
@@ -163,6 +165,17 @@ const TAKEABLE = [OrderStatus.ACCEPTED, OrderStatus.PREPARING, OrderStatus.READY
 
 const ITEM_COLUMNS =
     "order_id, line, product_id, name, unit, category, unit_price, quantity, options, from_stock"
+/** Read with the mark of a line taken out («Yo'q»); a new order writes none. */
+const ITEM_READ_COLUMNS = `${ITEM_COLUMNS}, removed_at`
+
+/** «Pul» → «Qaytarish»: the part owed for missing lines, by its partial index (migration 0029). */
+export const REFUND_OWED_FROM = "orders INDEXED BY idx_orders_refund_owed"
+export const REFUND_OWED_WHERE = "business_id = ? AND refund_owed > 0"
+
+/** «Yo'q»: the line is marked only when this very save changed the order (its new version). */
+export const LINE_REMOVED_SQL = `UPDATE order_items SET removed_at = ?
+    WHERE order_id = ? AND line = ? AND removed_at IS NULL
+      AND EXISTS (SELECT 1 FROM orders WHERE id = ? AND updated_at = ?)`
 
 /**
  * An order takes what it ordered of a counted product. The column's CHECK (never below zero) fails
@@ -277,6 +290,7 @@ function toItem(row: ItemRow): OrderItem {
         quantity: row.quantity,
         options: row.options === null ? undefined : (JSON.parse(row.options) as ChosenOptions),
         fromStock: row.from_stock === 1,
+        removedAt: dateOrUndefined(row.removed_at),
     })
 }
 
@@ -312,6 +326,11 @@ const MUTABLE_COLUMNS = [
     "owner_delivers",
     "sent_via",
     "delivery_notes",
+    "subtotal",
+    "deposit_total",
+    "total",
+    "commission",
+    "refund_owed",
 ] as const
 
 /**
@@ -368,6 +387,7 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
             receipt: toReceipt(row),
             rejections: row.transfer_rejections,
             remindedAt: dateOrUndefined(row.transfer_reminded_at),
+            refundOwed: Money.of(row.refund_owed),
         }),
         deliveredAt: row.delivered_at === null ? undefined : new Date(row.delivered_at),
         networkRequestedAt: dateOrUndefined(row.network_requested_at),
@@ -475,6 +495,7 @@ function orderValues(order: Order): (string | number | null)[] {
         ...tripValues(order),
         ...dispatchValues(order),
         flag(order.customerPaysCarrier),
+        order.payment.refundOwed.amount,
     ]
 }
 
@@ -519,6 +540,18 @@ function mutableValues(order: Order): (string | number | null)[] {
         ...cashValues(order),
         ...tripValues(order),
         ...dispatchValues(order),
+        ...sumValues(order),
+    ]
+}
+
+/** The sums «Yo'q» rewrites; the delivery fee and the commission rate never change. */
+function sumValues(order: Order): number[] {
+    return [
+        order.subtotal.amount,
+        order.depositTotal.amount,
+        order.total.amount,
+        order.commission.amount,
+        order.payment.refundOwed.amount,
     ]
 }
 
@@ -593,7 +626,9 @@ export class D1OrderRepository implements OrderRepository {
     async findById(id: string): Promise<Order | null> {
         const [orders, items] = await this.db.batch([
             this.db.prepare(`SELECT ${COLUMNS} FROM orders WHERE id = ?`).bind(id),
-            this.db.prepare(`SELECT ${ITEM_COLUMNS} FROM order_items WHERE order_id = ?`).bind(id),
+            this.db
+                .prepare(`SELECT ${ITEM_READ_COLUMNS} FROM order_items WHERE order_id = ?`)
+                .bind(id),
         ])
         const row = orders?.results[0] as OrderRow | undefined
         return row ? toOrder(row, (items?.results ?? []) as ItemRow[]) : null
@@ -663,15 +698,36 @@ export class D1OrderRepository implements OrderRepository {
      */
     async save(order: Order): Promise<void> {
         const save = orderSaveStatement(this.db, order)
-        const restock = this.restockOnCancel(order, save.version)
+        const also = [
+            ...this.restockOnCancel(order, save.version),
+            ...this.removedLines(order, save.version),
+        ]
         const result =
-            restock.length === 0
+            also.length === 0
                 ? await save.statement.run()
-                : (await this.db.batch([save.statement, ...restock]))[0]
+                : (await this.db.batch([save.statement, ...also]))[0]
         if (!result || result.meta.changes === 0) {
             throw ConflictError.stale("order", order.id)
         }
         save.saved()
+    }
+
+    /**
+     * The lines taken out with «Yo'q», marked with this save (a line marked before is left as it
+     * is: the statement changes nothing there).
+     */
+    private removedLines(order: Order, version: number): D1PreparedStatement[] {
+        return order
+            .lines()
+            .flatMap(({ line, item }) =>
+                item.removedAt === undefined
+                    ? []
+                    : [
+                          this.db
+                              .prepare(LINE_REMOVED_SQL)
+                              .bind(item.removedAt.getTime(), order.id, line, order.id, version),
+                      ],
+            )
     }
 
     /** The stock an order gives back when this save is the one that cancels it. */
@@ -874,7 +930,13 @@ export class D1OrderRepository implements OrderRepository {
     }
 
     async listOpenPayments(businessId: string, limit: number): Promise<Order[]> {
-        return this.list(OPEN_PAYMENTS_FROM, OPEN_PAYMENTS_WHERE, [businessId], "number ASC", limit)
+        const [open, owed] = await Promise.all([
+            this.list(OPEN_PAYMENTS_FROM, OPEN_PAYMENTS_WHERE, [businessId], "number ASC", limit),
+            this.list(REFUND_OWED_FROM, REFUND_OWED_WHERE, [businessId], "number ASC", limit),
+        ])
+        // A cancelled order may be in both: refund due, with a part owed from before.
+        const byId = new Map([...open, ...owed].map((order) => [order.id, order]))
+        return [...byId.values()].sort((a, b) => a.number - b.number).slice(0, limit)
     }
 
     async listCashWithCouriers(businessId: string, limit: number): Promise<Order[]> {
@@ -980,7 +1042,7 @@ export class D1OrderRepository implements OrderRepository {
             statements.push(
                 this.db
                     .prepare(
-                        `SELECT ${ITEM_COLUMNS} FROM order_items
+                        `SELECT ${ITEM_READ_COLUMNS} FROM order_items
                          WHERE order_id IN (${placeholders(chunk.length)})`,
                     )
                     .bind(...chunk),

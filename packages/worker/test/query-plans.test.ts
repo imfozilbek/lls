@@ -13,8 +13,11 @@ import {
     BY_STATUS,
     CASH_OPEN_FROM,
     CASH_OPEN_WHERE,
+    LINE_REMOVED_SQL,
     OPEN_PAYMENTS_FROM,
     OPEN_PAYMENTS_WHERE,
+    REFUND_OWED_FROM,
+    REFUND_OWED_WHERE,
     RECEIPT_REUSE_SQL,
     STOCK_RETURN_SQL,
     STOCK_TAKE_SQL,
@@ -231,6 +234,15 @@ describe("query plans", () => {
         expectIndexed(await planOf(list(CASH_OPEN_FROM, CASH_OPEN_WHERE), ["shop-1"]), [
             "idx_orders_cash_open (business_id=?)",
         ])
+        // The part owed for lines the shop did not have («Yo'q»): its partial index.
+        expectIndexed(await planOf(list(REFUND_OWED_FROM, REFUND_OWED_WHERE), ["shop-1"]), [
+            "idx_orders_refund_owed (business_id=?)",
+        ])
+    })
+
+    it("«Yo'q» marks one line by its key, only after this very save", async () => {
+        const plan = await planOf(LINE_REMOVED_SQL, [1, "o-1", 1, "o-1", 1])
+        expectIndexed(plan, ["sqlite_autoindex_order_items_1 (order_id=? AND line=?)"])
     })
 
     it("a reused screenshot is found by its hash; the demo shops are a few rows", async () => {

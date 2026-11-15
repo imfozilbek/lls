@@ -263,6 +263,14 @@ const BASE = {
         } satisfies Record<SendWay, string>,
         noteLine: "📝 {text}",
         noteCustomer: "📝 #{n} buyurtma: {text}",
+        /** «Yo'q» (owner's decision, November 2026): a line the shop did not have left the order. */
+        lineRemovedCustomer:
+            "#{n}: {item} do'konda yo'q ekan, buyurtmadan olib tashlandi. Yangi summa: {sum}.",
+        lineRemovedRefund: "Do'kon sizga {sum} qaytaradi.",
+        lineRemovedCash: "Kuryerga {sum} berasiz.",
+        /** The owner's card: lines taken out, and what is owed back until «Qaytardim». */
+        lineRemovedOwner: "❌ {item}: yo'q",
+        refundOwedOwner: "💸 {sum} qaytarish kerak",
         /** «Yetkazish haqini mijoz o'zi to'laydi»: nothing of it is in the total. */
         deliveryApart: "alohida, mijoz yetkazuvchiga o'zi to'laydi",
         carrierFeeCustomer: "💵 Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz.",

@@ -28,6 +28,8 @@ import {
     ownerOrderBody,
     ownerOrdersQuery,
     photoQuery,
+    orderLineParam,
+    lineRemovalQuery,
     photosOrderBody,
     productBody,
     productsBody,
@@ -205,6 +207,34 @@ export const ownerRoutes = new Hono<AppEnv>()
                 )
             }
             return c.json(step.order)
+        },
+    )
+
+    /**
+     * «Yo'q» (owner's decision, November 2026): a line the shop did not have leaves the order
+     * until «Tayyor»; the customer hears the new sum.
+     */
+    .delete(
+        "/orders/:id/items/:line",
+        zValidator("param", orderLineParam, onInvalid),
+        zValidator("query", lineRemovalQuery, onInvalid),
+        async (c) => {
+            const services = c.get("services")
+            const business = shopOf(c)
+            const { id, line } = c.req.valid("param")
+            const { order, removed } = await services.useCases.removeOrderLine.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: business.id,
+                orderId: id,
+                line,
+                stopToday: c.req.valid("query").stop === "1",
+            })
+            inBackground(
+                c.executionCtx,
+                services,
+                new Notifier(services).lineRemoved(business, order, removed.name),
+            )
+            return c.json(order)
         },
     )
 
