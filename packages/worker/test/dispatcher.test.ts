@@ -108,30 +108,18 @@ describe("a dispatcher sends the order on and keeps the customer told", () => {
         expect(stored?.dispatcher).toBe(1)
     })
 
-    it("hand over, pack, «Jo'natdim» by post with a note, another note, delivered", async () => {
+    it("the only courier gets it by itself; pack, «Jo'natdim» by post, a note, delivered", async () => {
         await owner()(`/api/owner/couriers/${courierId}`, {
             method: "PATCH",
             json: { dispatcher: true },
         })
         const order = await placePaidOrder()
-        expect(order).toMatchObject({ status: "preparing", needsCourierChoice: true })
-
-        // Nobody on it: «Tayyor» waits, and the owner's card offers «Kuryerga topshirish».
-        const early = await step(order, "ready")
-        expect(early.status).toBe(422)
-        expect(await json<{ error: { code: string } }>(early)).toMatchObject({
-            error: { code: "COURIER_NOT_CHOSEN" },
+        // The shop's one courier is chosen by itself with «Pul keldi» (owner's decision).
+        expect(order).toMatchObject({
+            status: "preparing",
+            dispatcher: true,
+            needsCourierChoice: false,
         })
-        const card = client.telegram.edited.filter((m) => m.chatId === OWNER.id).at(-1)
-        const buttons = card?.options?.keyboard?.inline_keyboard.flat() ?? []
-        expect(buttons.map((b) => b.text)).toContain("🛵 Kuryerga topshirish")
-        expect(buttons.some((b) => b.callback_data === `a:${order.id}:ready`)).toBe(false)
-
-        const handed = await owner()(`/api/owner/orders/${order.id}/courier`, {
-            method: "PUT",
-            json: { courierId },
-        })
-        expect(await json<Order>(handed)).toMatchObject({ dispatcher: true })
         // The dispatcher's card: where from and where to, from the courier bot.
         const assigned = client.telegram.sent.filter((m) => m.chatId === DISPATCHER.id).at(-1)
         expect(assigned?.token).toBe(env.COURIER_BOT_TOKEN)
@@ -210,6 +198,26 @@ describe("a dispatcher sends the order on and keeps the customer told", () => {
             .first<{ dispatcher: number; sent_via: string; delivery_notes: string }>()
         expect(stored).toMatchObject({ dispatcher: 1, sent_via: "post" })
         expect(JSON.parse(stored?.delivery_notes ?? "[]")).toHaveLength(2)
+    })
+
+    it("two couriers: «Tayyor» waits until the owner hands it to one", async () => {
+        await hireCourier(client, { slug }, { id: 6006, first_name: "Bobur", language_code: "uz" })
+        const order = await placePaidOrder()
+        expect(order).toMatchObject({ needsCourierChoice: true })
+        const early = await step(order, "ready")
+        expect(early.status).toBe(422)
+        expect(await json<{ error: { code: string } }>(early)).toMatchObject({
+            error: { code: "COURIER_NOT_CHOSEN" },
+        })
+        const card = client.telegram.edited.filter((m) => m.chatId === OWNER.id).at(-1)
+        const buttons = card?.options?.keyboard?.inline_keyboard.flat() ?? []
+        expect(buttons.map((b) => b.text)).toContain("🛵 Kuryerga topshirish")
+        expect(buttons.some((b) => b.callback_data === `a:${order.id}:ready`)).toBe(false)
+        await owner()(`/api/owner/orders/${order.id}/courier`, {
+            method: "PUT",
+            json: { courierId },
+        })
+        expect((await step(order, "ready")).status).toBe(200)
     })
 
     it("bad bodies are refused before any change", async () => {

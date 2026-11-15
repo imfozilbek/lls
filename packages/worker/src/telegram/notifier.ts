@@ -1109,7 +1109,8 @@ export class Notifier {
 
     /**
      * The owner's order card: the next step and cancel, then the order in the app. Nobody on the
-     * order yet in a shop with couriers: «Kuryerga topshirish» in the app instead of the step.
+     * order yet: «Kuryerga topshirish» in the app (a shop with couriers) or «O'zim yetkazaman»
+     * instead of the step.
      */
     private async ownerKeyboard(
         business: Business,
@@ -1119,11 +1120,11 @@ export class Notifier {
         const t = textsFor(reader.language, reader.type)
         const url = shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value, order.id)
         // Asked only while the choice is open: most cards never read the couriers.
-        const choose =
+        const shopHasCouriers =
             order.needsCourierChoice &&
             (await this.services.couriers.listByBusiness(business.id)).some((c) => c.isActive)
         return withAppButton(
-            orderKeyboard(order, reader, choose ? url : undefined),
+            orderKeyboard(order, reader, { url, shopHasCouriers }),
             appButton(t.openOrder, url),
         )
     }

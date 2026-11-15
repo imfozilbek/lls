@@ -306,19 +306,23 @@ function transferLine(order: OrderDTO, t: BotTexts): string {
 
 // Callback data (≤ 64 bytes): "a:<orderId>:<status>" advance, "x:<orderId>" cancel,
 // "p:<orderId>" «Деньги пришли, принять» (asks first), "pc:<orderId>" yes, the money is here,
-// "pn:<orderId>" «Pul kelmadi».
+// "pn:<orderId>" «Pul kelmadi», "m:<orderId>" «O'zim yetkazaman».
 export type OrderCallback =
     | { kind: "advance"; orderId: string; to: OrderStatus }
     | { kind: "cancel"; orderId: string }
     | { kind: "askPaid"; orderId: string }
     | { kind: "paid"; orderId: string }
     | { kind: "notPaid"; orderId: string }
+    | { kind: "deliverMyself"; orderId: string }
 
-const SIMPLE_CALLBACKS: Record<string, "cancel" | "askPaid" | "paid" | "notPaid"> = {
+type SimpleCallback = "cancel" | "askPaid" | "paid" | "notPaid" | "deliverMyself"
+
+const SIMPLE_CALLBACKS: Record<string, SimpleCallback> = {
     x: "cancel",
     p: "askPaid",
     pc: "paid",
     pn: "notPaid",
+    m: "deliverMyself",
 }
 
 const ORDER_STATUS_VALUES = new Set<string>(Object.values(OrderStatus))
@@ -339,15 +343,24 @@ export function parseOrderCallback(data: string): OrderCallback | null {
 }
 
 /**
+ * Who takes an order nobody is on yet, as the owner's card offers it: «Kuryerga topshirish» in
+ * the app (`url`) when the shop has couriers, else «O'zim yetkazaman» right in the chat.
+ */
+export interface CourierChoice {
+    url: string
+    shopHasCouriers: boolean
+}
+
+/**
  * Owner: the next step + cancel, or no buttons for a finished order. A new transfer order waits
- * for the money: its step is «Деньги пришли, принять». A cash order is accepted at once. In a
- * shop with couriers, an order nobody is on yet goes to the app for «Kuryerga topshirish»
- * (`chooseCourierUrl`); the dispatcher's steps are never on the owner's card.
+ * for the money: its step is «Деньги пришли, принять». A cash order is accepted at once. An order
+ * nobody is on yet asks who takes it (`choice`) before «Tayyor»; the dispatcher's steps are never
+ * on the owner's card.
  */
 export function orderKeyboard(
     order: OrderDTO,
     reader: Reader,
-    chooseCourierUrl?: string,
+    choice?: CourierChoice,
 ): InlineKeyboard {
     const t = textsFor(reader.language, reader.type)
     const next = order.nextStatus
@@ -359,8 +372,11 @@ export function orderKeyboard(
     if (order.dispatcher && (next === OrderStatus.PICKED_UP || next === OrderStatus.DELIVERED)) {
         return { inline_keyboard: [cancel] }
     }
-    if (chooseCourierUrl && order.needsCourierChoice && leavesTheShop) {
-        return { inline_keyboard: [[appButton(t.chooseCourier, chooseCourierUrl)], cancel] }
+    if (choice && order.needsCourierChoice && leavesTheShop) {
+        const who = choice.shopHasCouriers
+            ? appButton(t.chooseCourier, choice.url)
+            : { text: t.deliverMyself, callback_data: `m:${order.id}` }
+        return { inline_keyboard: [[who], cancel] }
     }
     const waitsForMoney =
         next === OrderStatus.ACCEPTED &&

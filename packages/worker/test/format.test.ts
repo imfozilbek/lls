@@ -16,6 +16,7 @@ import {
     formatOrderForOwner,
     formatStatusForCustomer,
     orderKeyboard,
+    parseOrderCallback,
 } from "../src/telegram/format.js"
 import { textsFor } from "../src/telegram/texts.js"
 
@@ -206,13 +207,16 @@ describe("a dispatcher's order in the bots", () => {
             dispatcher: false,
             needsCourierChoice: true,
         })
-        expect(orderKeyboard(open, reader, "https://app/o").inline_keyboard[0]).toEqual([
+        const choice = { url: "https://app/o", shopHasCouriers: true }
+        expect(orderKeyboard(open, reader, choice).inline_keyboard[0]).toEqual([
             { text: "🛵 Kuryerga topshirish", web_app: { url: "https://app/o" } },
         ])
-        // A shop without couriers: the step as before.
-        expect(orderKeyboard(open, reader).inline_keyboard[0]?.[0]?.callback_data).toBe(
-            "a:o-1:ready",
-        )
+        // A shop without couriers: «O'zim yetkazaman» right in the chat, never «Tayyor» first.
+        const alone = orderKeyboard(open, reader, { ...choice, shopHasCouriers: false })
+        expect(alone.inline_keyboard[0]).toEqual([
+            { text: "🙋 O'zim yetkazaman", callback_data: "m:o-1" },
+        ])
+        expect(parseOrderCallback("m:o-1")).toEqual({ kind: "deliverMyself", orderId: "o-1" })
         const owner = formatOrderForOwner(
             withDispatcher({ status: OrderStatus.PICKED_UP, sentVia: SendWay.POST }),
             reader,

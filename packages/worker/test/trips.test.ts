@@ -217,9 +217,10 @@ describe("trips: several orders one way, one courier", () => {
         )
             .bind(a.id, b.id)
             .all()
+        // The shop's only courier got both when they were accepted; no trip, no stop.
         expect(rows.results).toEqual([
-            { trip_id: null, trip_stop: null, courier_id: null },
-            { trip_id: null, trip_stop: null, courier_id: null },
+            { trip_id: null, trip_stop: null, courier_id: courierId },
+            { trip_id: null, trip_stop: null, courier_id: courierId },
         ])
 
         const fresh = await joined("trip-fresh")

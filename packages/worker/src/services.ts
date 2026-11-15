@@ -7,6 +7,7 @@ import {
     AddDeliveryNoteUseCase,
     AdvanceOrderUseCase,
     AssignCourierUseCase,
+    AutoAssignOnlyCourierUseCase,
     DeliverMyselfUseCase,
     SendOrderUseCase,
     CancelOrderUseCase,
@@ -150,6 +151,7 @@ export interface UseCases {
     deactivateCourier: DeactivateCourierUseCase
     assignCourier: AssignCourierUseCase
     deliverMyself: DeliverMyselfUseCase
+    autoAssignOnlyCourier: AutoAssignOnlyCourierUseCase
     sendOrder: SendOrderUseCase
     addDeliveryNote: AddDeliveryNoteUseCase
     reviewCourier: ReviewCourierUseCase
@@ -227,6 +229,7 @@ type CourierUseCases = Pick<
     | "deactivateCourier"
     | "assignCourier"
     | "deliverMyself"
+    | "autoAssignOnlyCourier"
     | "sendOrder"
     | "addDeliveryNote"
     | "reviewCourier"
@@ -249,6 +252,7 @@ function courierUseCases(
         deactivateCourier: new DeactivateCourierUseCase(access),
         assignCourier: new AssignCourierUseCase(access),
         deliverMyself: new DeliverMyselfUseCase(access),
+        autoAssignOnlyCourier: new AutoAssignOnlyCourierUseCase(access),
         sendOrder: new SendOrderUseCase(access),
         addDeliveryNote: new AddDeliveryNoteUseCase(access),
         reviewCourier: new ReviewCourierUseCase(access),

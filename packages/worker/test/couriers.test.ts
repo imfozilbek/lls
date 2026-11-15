@@ -311,6 +311,12 @@ describe("shop couriers, verticals and channels", () => {
         await hireCourier(client, { slug }, COURIER)
         const order = await placeOrder([{ productId: await osh(), quantity: 2 }])
         await setStatus(order.id, "accepted")
+        // The shop's only courier got it by itself; «O'zim yetkazaman» takes it back.
+        const mine = await as(OWNER)(`/api/owner/orders/${String(order.id)}/courier`, {
+            method: "PUT",
+            json: { self: true },
+        })
+        expect(await json(mine)).toMatchObject({ ownerDelivers: true })
 
         const notMine = await courierApp()(`/api/courier/orders/${String(order.id)}`, {
             method: "PATCH",

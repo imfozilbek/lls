@@ -265,6 +265,7 @@ const BASE = {
         deliveryApart: "alohida, mijoz yetkazuvchiga o'zi to'laydi",
         carrierFeeCustomer: "💵 Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz.",
         chooseCourier: "🛵 Kuryerga topshirish",
+        deliverMyself: "🙋 O'zim yetkazaman",
         payment: {
             unpaid: "💳 Kartaga o'tkazma kutilmoqda",
             sent: "💳 Mijoz o'tkazdim dedi, kartani tekshiring",

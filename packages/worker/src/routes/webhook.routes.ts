@@ -152,6 +152,9 @@ async function handleOrderCallback(
             await notifyPaymentConfirmed(services, business, step.order, step.request)
         } else if (action.kind === "notPaid") {
             await new Notifier(services).transferRejected(business, order)
+        } else if (action.kind === "deliverMyself") {
+            // Nothing for the customer: the owner's card shows the steps again.
+            await new Notifier(services).ownerCardChanged(business, order)
         } else {
             await notifyOwnerStep(services, business, step.order, step.request)
         }
@@ -207,6 +210,8 @@ async function runOrderAction(
             return services.useCases.rejectTransfer.execute(ids)
         case "cancel":
             return requireOwnerCancel(services, business, actorTelegramId, action.orderId)
+        case "deliverMyself":
+            return services.useCases.deliverMyself.execute(ids)
     }
 }
 
