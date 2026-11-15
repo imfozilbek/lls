@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test"
 
 import { courierBot } from "../stand/config.js"
 import { runSql } from "../stand/seed.js"
-import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, apiAs, payAndStart, placeOrder, resetStand } from "../support/stand.js"
 import { courierChat, lastSeq, messagesTo, waitForMessage } from "../support/telegram.js"
 import { appQueryOf, openApp, openOrderCard, openSettings } from "../support/webapp.js"
 
@@ -40,7 +40,7 @@ async function placeAndAccept(): Promise<OrderBody> {
         [{ productId: "dev-food-p1", quantity: 2 }],
         { landmark: "bozor yonida", location: { latitude: 38.99, longitude: 66.69 } },
     )
-    const accepted = await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)
+    const accepted = await payAndStart(PEOPLE.foodOwner, FOOD, order.id)
     expect(accepted.status).toBe(200)
     return (await accepted.json()) as OrderBody
 }

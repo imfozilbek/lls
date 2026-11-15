@@ -68,8 +68,10 @@ test("empty orders, then a new order: card, every step from the app, customer to
     await page.getByRole("tab", { name: "Yakunlangan" }).click()
     await page.getByRole("tab", { name: "Faol" }).click()
     const steps: [string, string][] = [
-        // Accepting starts it: one message, one tap less.
-        ["Pul keldi, qabul qilish", "qabul qilindi va tayyorlanmoqda"],
+        // «Pul keldi» accepts it; collecting is a step of its own (owner's decision, November
+        // 2026), and the customer hears each.
+        ["Pul keldi, qabul qilish", "qabul qilindi"],
+        ["Tayyorlashni boshlash", "tayyorlanmoqda"],
         ["Tayyor bo'ldi", "tayyor"],
         // The shop's only courier got it with «Pul keldi» (owner's decision, November 2026).
         ["Jo'natish", "Jasur olib kelmoqda"],
@@ -172,11 +174,11 @@ test("bot chat buttons: «Pul keldi» after the screenshot; old buttons and stra
                 .at(-1)
                 ?.buttons.map((b) => b.text),
         )
-        .toContain("📦 Tayyor")
+        .toContain("👨‍🍳 Tayyorlashni boshlash")
     // The old button again: the money is confirmed already, nothing changes.
     await shopChat(FOOD).press(PEOPLE.foodOwner, yes?.callback_data ?? "")
     const after = await apiAs(PEOPLE.customer, `/orders/${order.id}`, { shop: FOOD })
-    expect(((await after.json()) as { status: string }).status).toBe("preparing")
+    expect(((await after.json()) as { status: string }).status).toBe("accepted")
 
     // Cancel from the chat.
     const cancel = newCard.buttons.find((b) => b.callback_data?.startsWith("x:"))

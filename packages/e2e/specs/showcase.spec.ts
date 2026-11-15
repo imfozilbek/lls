@@ -5,15 +5,7 @@
 import { expect, test } from "@playwright/test"
 
 import { businessBot, platformBot } from "../stand/config.js"
-import {
-    FOOD,
-    PEOPLE,
-    STAND_PIN,
-    WATER,
-    apiAs,
-    payAndAccept,
-    resetStand,
-} from "../support/stand.js"
+import { FOOD, PEOPLE, STAND_PIN, WATER, apiAs, payAndStart, resetStand } from "../support/stand.js"
 import {
     businessChat,
     callsOf,
@@ -134,7 +126,7 @@ test("an order through the showcase: commission for Zumda, Zumda bot tells the c
     ).json()) as { data: { id: string; channel: string; commission: number }[] }
     expect(orders.data[0]).toMatchObject({ channel: "marketplace", commission: 2_250 })
     const before = await lastSeq()
-    await payAndAccept(PEOPLE.foodOwner, FOOD, orders.data[0]?.id ?? "", PEOPLE.customer)
+    await payAndStart(PEOPLE.foodOwner, FOOD, orders.data[0]?.id ?? "", PEOPLE.customer)
     const told = await waitForMessage(PEOPLE.customer.id, "qabul qilindi", before)
     expect(told.token).toBe(platformBot().token)
     expect(told.text).toContain("Osh Markaz")

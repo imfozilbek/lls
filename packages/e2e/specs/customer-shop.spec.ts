@@ -169,16 +169,13 @@ test.describe("customer of a food shop: order and status", () => {
         const question = await waitForMessage(PEOPLE.foodOwner.id, "keldimi?", since)
         const yes = question.buttons.find((b) => b.callback_data?.startsWith("pc:"))
         await shopChat(FOOD).press(PEOPLE.foodOwner, yes?.callback_data ?? "")
-        await waitForMessage(
-            PEOPLE.customer.id,
-            "#1 buyurtmangiz qabul qilindi va tayyorlanmoqda",
-            since,
-        )
+        // Accepted: collecting is the owner's next step (owner's decision, November 2026).
+        await waitForMessage(PEOPLE.customer.id, "#1 buyurtmangiz qabul qilindi.", since)
 
         await openApp(page, { user: PEOPLE.customer, shop: FOOD })
         await page.getByRole("button", { name: "Buyurtmalarim" }).click()
         await page.getByRole("button", { name: /Buyurtma #1/ }).click()
-        await expect(page.getByRole("heading", { name: "Tayyorlanmoqda" })).toBeVisible()
+        await expect(page.getByRole("heading", { name: "Qabul qilindi" })).toBeVisible()
         await expect(page.getByRole("button", { name: "Buyurtmani bekor qilish" })).toBeHidden()
     })
 })
@@ -205,7 +202,7 @@ test.describe("customer of a food shop: cancel, history, Uzbek only", () => {
             data: { id: string; number: number }[]
         }
         const first = orders.data.find((o) => o.number === 1)
-        for (const status of ["ready", "picked_up", "delivered"]) {
+        for (const status of ["preparing", "ready", "picked_up", "delivered"]) {
             const response = await apiAs(PEOPLE.foodOwner, `/owner/orders/${first?.id ?? ""}`, {
                 shop: FOOD,
                 method: "PATCH",

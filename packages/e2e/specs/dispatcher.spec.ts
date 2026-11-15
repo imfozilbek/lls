@@ -5,7 +5,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { PEOPLE, STORE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
+import { PEOPLE, STORE, apiAs, payAndStart, placeOrder, resetStand } from "../support/stand.js"
 import { lastSeq, waitForMessage } from "../support/telegram.js"
 import { bottomButton, openApp, openGroup, openSettings, settingsBack } from "../support/webapp.js"
 
@@ -61,7 +61,7 @@ test("the storefront says the delivery is paid apart; the order adds nothing for
     await expect(page.getByText("Bepul yetkazish")).toHaveCount(0)
     order = await placeOrder(PEOPLE.customer, STORE, [{ productId: "dev-store-p1", quantity: 1 }])
     expect(order).toMatchObject({ deliveryFee: 0, customerPaysCarrier: true })
-    expect((await payAndAccept(PEOPLE.storeOwner, STORE, order.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.storeOwner, STORE, order.id)).status).toBe(200)
 })
 
 test("the shop's only courier, the dispatcher, got it by itself; the owner packs", async ({
@@ -148,7 +148,7 @@ test("«O'zim yetkazaman» takes it back from the dispatcher: the old steps retu
     const next = await placeOrder(PEOPLE.customer, STORE, [
         { productId: "dev-store-p1", quantity: 1 },
     ])
-    expect((await payAndAccept(PEOPLE.storeOwner, STORE, next.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.storeOwner, STORE, next.id)).status).toBe(200)
     await openApp(page, { user: PEOPLE.storeOwner, shop: STORE, query: opened(next) })
     const mine = card(page, next.number)
     await expect(mine.getByText("Dispetcher: Jasur")).toBeVisible()

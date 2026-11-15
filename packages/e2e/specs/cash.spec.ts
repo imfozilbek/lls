@@ -115,6 +115,8 @@ test("the courier takes the sum at the door and owes it to the shop", async ({ p
     const order = list.data[0]
     expect(order?.payment.method).toBe("cash")
     const id = order?.id ?? ""
+    // «Qabul qilish» took it; «Tayyorlashni boshlash», then «Tayyor».
+    await owner(`/owner/orders/${id}`, { status: "preparing" })
     await owner(`/owner/orders/${id}`, { status: "ready" })
     const picked = await apiAs(PEOPLE.courier, `/courier/orders/${id}`, {
         courierBot: true,

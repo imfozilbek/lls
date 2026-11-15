@@ -4,7 +4,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, GROCERY, PEOPLE, apiAs, resetStand, payAndAccept } from "../support/stand.js"
+import { FOOD, GROCERY, PEOPLE, apiAs, resetStand, payAndStart } from "../support/stand.js"
 import { lastSeq, waitForMessage } from "../support/telegram.js"
 import { bottomButton, fillAddress, openApp, toCart } from "../support/webapp.js"
 
@@ -162,7 +162,7 @@ test("Uzbek customer: texts and bot messages in Uzbek", async ({ page }) => {
     const orders = (await (
         await apiAs(PEOPLE.groceryOwner, "/owner/orders?status=active", { shop: GROCERY })
     ).json()) as { data: { id: string }[] }
-    await payAndAccept(PEOPLE.groceryOwner, GROCERY, orders.data[0]?.id ?? "", PEOPLE.customerUz)
+    await payAndStart(PEOPLE.groceryOwner, GROCERY, orders.data[0]?.id ?? "", PEOPLE.customerUz)
     await waitForMessage(PEOPLE.customerUz.id, "qabul qilindi", since)
 })
 

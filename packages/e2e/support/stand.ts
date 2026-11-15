@@ -212,12 +212,13 @@ export async function sendReceipt(
 }
 
 /**
- * «Pul keldi»: the owner of `shop` saw the transfer on the card. The order is paid, accepted and
- * started in one step (the shop starts only after the money). The customer who placed it through
- * `placeOrder` sends the screenshot first, as «Pul keldi» waits for it (owner's decision, November
- * 2026); for an order placed in the browser, name its `customer`.
+ * «Pul keldi», then «Yig'ishni boshlash»: the owner of `shop` saw the transfer on the card, which
+ * accepts the order, and started collecting it (a step of its own, owner's decision, November
+ * 2026; a service starts at once). The customer who placed it through `placeOrder` sends the
+ * screenshot first, as «Pul keldi» waits for it; for an order placed in the browser, name its
+ * `customer`.
  */
-export async function payAndAccept(
+export async function payAndStart(
     owner: TgUser,
     shop: string,
     orderId: string,
@@ -230,9 +231,18 @@ export async function payAndAccept(
             throw new Error(`Receipt failed: ${sent.status} ${await sent.text()}`)
         }
     }
-    return apiAs(owner, `/owner/orders/${orderId}/payment`, {
+    const paid = await apiAs(owner, `/owner/orders/${orderId}/payment`, {
         shop,
         method: "PATCH",
         json: { action: "paid" },
+    })
+    const order = paid.ok ? ((await paid.clone().json()) as { status: string }) : null
+    if (order?.status !== "accepted") {
+        return paid
+    }
+    return apiAs(owner, `/owner/orders/${orderId}`, {
+        shop,
+        method: "PATCH",
+        json: { status: "preparing" },
     })
 }

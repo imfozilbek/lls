@@ -11,7 +11,7 @@ import {
     FOOD,
     PEOPLE,
     apiAs,
-    payAndAccept,
+    payAndStart,
     placeOrder,
     resetStand,
     sendReceipt,
@@ -35,7 +35,7 @@ let order: PlacedOrder
 test.beforeAll(async () => {
     order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: "dev-food-p1", quantity: 1 }])
     expect((await sendReceipt(PEOPLE.customer, FOOD, order.id)).status).toBe(200)
-    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     const assigned = await apiAs(PEOPLE.foodOwner, `/owner/orders/${order.id}/courier`, {
         shop: FOOD,
         method: "PUT",

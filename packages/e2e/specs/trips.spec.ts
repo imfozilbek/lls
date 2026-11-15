@@ -4,7 +4,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, apiAs, payAndStart, placeOrder, resetStand } from "../support/stand.js"
 import { botCalls, lastSeq, waitForMessage } from "../support/telegram.js"
 import { openApp } from "../support/webapp.js"
 
@@ -64,7 +64,7 @@ test.beforeAll(async () => {
             [{ productId: "dev-food-p1", quantity: 2 }],
             { location: north(km) },
         )
-        expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+        expect((await payAndStart(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
         ids.push(order.id)
         numbers.push(order.number)
     }

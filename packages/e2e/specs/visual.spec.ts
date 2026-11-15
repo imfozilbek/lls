@@ -13,7 +13,7 @@ import {
     apiAs,
     placeOrder,
     resetStand,
-    payAndAccept,
+    payAndStart,
 } from "../support/stand.js"
 import { bottomButton, openApp, pickOnMap } from "../support/webapp.js"
 
@@ -161,7 +161,7 @@ for (const theme of ["light"] as const) {
         const order = await placeOrder(PEOPLE.customer, FOOD, [
             { productId: "dev-food-p1", quantity: 2 },
         ])
-        await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)
+        await payAndStart(PEOPLE.foodOwner, FOOD, order.id)
         await openApp(page, { user: PEOPLE.networkCourier, courierBot: true, theme })
         await expect(page.getByRole("button", { name: "Olaman" }).first()).toBeVisible()
         await snap(page, "25-courier-nearby", theme)
