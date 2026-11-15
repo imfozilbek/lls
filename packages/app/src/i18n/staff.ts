@@ -34,6 +34,17 @@ export const staffUz = {
         CASH_NOT_FOR_NETWORK:
             "Naqd buyurtma tuman tarmog'iga berilmaydi: o'z kuryeringiz olib boradi.",
         NOT_A_TRANSFER: "Bu buyurtma naqd pulga: o'tkazma kerak emas.",
+        CASH_NOT_FOR_DISPATCHER:
+            "Naqd buyurtma dispetcherga berilmaydi: pulni eshikda olib boradigan kuryer oladi.",
+        CARRIER_NOT_FOR_NETWORK:
+            "Yetkazish haqini mijoz o'zi to'laydi: bunday buyurtma tuman tarmog'iga berilmaydi.",
+        COURIER_NOT_CHOSEN:
+            "Avval buyurtmani kuryerga topshiring yoki «O'zim yetkazaman»ni tanlang.",
+        SEND_WAY_REQUIRED: "Bu buyurtmani dispetcher jo'natadi: qanday jo'natilganini u yozadi.",
+        NOT_A_DISPATCHER_ORDER: "Bu buyurtma dispetcherda emas. Ro'yxat yangilandi.",
+        NOTES_CLOSED: "Buyurtma yakunlangan: endi izoh qo'shib bo'lmaydi.",
+        TOO_MANY_NOTES: "Bitta buyurtmaga 20 tagacha izoh yoziladi.",
+        NOT_OWN_COURIER: "Faqat do'konning o'z kuryeri dispetcher bo'la oladi.",
         NOT_FOR_TRIP:
             "Buyurtmalardan biri allaqachon boshqa yo'lda yoki tarmoqda. Ro'yxat yangilandi.",
         TRIP_STOPS: "Yo'l o'zgargan: bir manzil yetkazildi. Ro'yxat yangilandi.",

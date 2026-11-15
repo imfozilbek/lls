@@ -37,6 +37,11 @@ export interface DeliverySettings {
     freeFrom?: Money
     minOrder?: Money
     radiusMeters?: number
+    /**
+     * «Yetkazish haqini mijoz o'zi to'laydi» (owner's decision, November 2026): the customer pays
+     * the carrier (a taxi, the post) for the delivery; nothing of it is in the order's total.
+     */
+    customerPaysCarrier?: boolean
 }
 
 /** The shop's deal with Zumda for sales through the marketplace channel. */
@@ -132,6 +137,10 @@ export interface ProfilePatch {
 function validateDelivery(delivery: DeliverySettings): DeliverySettings {
     if (delivery.radiusMeters !== undefined) {
         requireInteger("delivery.radiusMeters", delivery.radiusMeters, 1, MAX_RADIUS_METERS)
+    }
+    // Paid to the carrier: the shop asks no fee of its own, so no "free from" either.
+    if (delivery.customerPaysCarrier) {
+        return { ...delivery, fee: Money.zero(), freeFrom: undefined, customerPaysCarrier: true }
     }
     return { ...delivery }
 }
@@ -453,8 +462,8 @@ export class Business {
     }
 
     deliveryFeeFor(subtotal: Money): Money {
-        const { fee, freeFrom } = this.props.delivery
-        if (freeFrom && subtotal.isAtLeast(freeFrom)) {
+        const { fee, freeFrom, customerPaysCarrier } = this.props.delivery
+        if (customerPaysCarrier || (freeFrom && subtotal.isAtLeast(freeFrom))) {
             return Money.zero()
         }
         return fee

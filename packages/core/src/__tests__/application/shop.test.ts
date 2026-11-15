@@ -79,7 +79,12 @@ describe("shop use cases", () => {
             ).execute(registration())
             expect(shop.status).toBe(BusinessStatus.PENDING)
             expect(shop.slug).toBe("osh-markaz")
-            expect(shop.delivery).toEqual({ fee: 10_000, freeFrom: 150_000, minOrder: undefined })
+            expect(shop.delivery).toEqual({
+                fee: 10_000,
+                freeFrom: 150_000,
+                minOrder: undefined,
+                customerPaysCarrier: false,
+            })
             expect(shop.location).toEqual({ latitude: 41.32, longitude: 69.23 })
             expect(shop.botUsername).toBe("Osh_Markaz_bot")
             expect(businesses.tokens.get(shop.id)).toBe("555:secret")
@@ -382,6 +387,7 @@ describe("shop use cases", () => {
                 freeFrom: undefined,
                 minOrder: 30_000,
                 radiusMeters: 4_000,
+                customerPaysCarrier: false,
             })
             expect(shop.deliveryRadiusMeters).toBe(4_000)
             expect(shop.workingHours).toEqual({ mon: { open: "10:00", close: "22:00" } })

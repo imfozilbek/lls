@@ -7,18 +7,25 @@ import {
     isFinalStatus,
 } from "../enums/order-status.js"
 import { PaymentMethod } from "../enums/payment.js"
+import { SendWay } from "../enums/send-way.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
 import { ForbiddenError } from "../errors/forbidden.error.js"
 import { InvalidOrderTransitionError } from "../errors/invalid-transition.error.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { MAX_TRIP_STOPS } from "../services/trip-planning.js"
 import { optionalText, requireInteger, requireText } from "../shared/guards.js"
+import {
+    DELIVERY_NOTE_MAX,
+    MAX_DELIVERY_NOTES,
+    deliveryNote,
+} from "../value-objects/delivery-note.js"
 import { Money } from "../value-objects/money.js"
 import { Payment } from "../value-objects/payment.js"
 
 import type { Courier, NetworkUnavailableReason } from "./courier.js"
 import type { OrderItem } from "./order-item.js"
 import type { OrderChannel } from "../enums/order-channel.js"
+import type { DeliveryNote } from "../value-objects/delivery-note.js"
 import type { Location } from "../value-objects/location.js"
 import type { TransferReceipt } from "../value-objects/payment.js"
 import type { PayoutCard } from "../value-objects/payout-card.js"
@@ -88,6 +95,16 @@ export interface OrderProps {
     /** One trip of several orders going one way with one courier, and this order's stop (1…). */
     tripId?: string
     tripStop?: number
+    /** The courier it was handed to is the shop's dispatcher: a snapshot, like the name. */
+    dispatcher?: boolean
+    /** «O'zim yetkazaman»: the owner delivers it, no courier is needed. */
+    ownerDelivers?: boolean
+    /** How the dispatcher sent it on («Jo'natdim»). */
+    sentVia?: SendWay
+    /** The dispatcher's notes for the customer, oldest first. */
+    deliveryNotes?: readonly DeliveryNote[]
+    /** The customer pays the carrier for the delivery, outside the total: a snapshot. */
+    customerPaysCarrier?: boolean
     createdAt: Date
     updatedAt: Date
 }
@@ -113,6 +130,8 @@ export interface PlaceOrderProps {
     paymentMethod?: PaymentMethod
     /** The shop's payment card shown to the customer: kept with the order. */
     paymentCard?: PayoutCard
+    /** The shop's «Yetkazish haqini mijoz o'zi to'laydi» when the order was placed. */
+    customerPaysCarrier?: boolean
 }
 
 export function subtotalOf(items: readonly OrderItem[]): Money {
@@ -131,6 +150,8 @@ export class Order {
         }
         const subtotal = subtotalOf(input.items)
         const depositTotal = input.depositTotal ?? Money.zero()
+        // Paid to the carrier: the shop's own fee is never added on top.
+        const deliveryFee = input.customerPaysCarrier ? Money.zero() : input.deliveryFee
         const now = new Date()
         return new Order({
             id: input.id,
@@ -140,7 +161,7 @@ export class Order {
             channel: input.channel,
             items: [...input.items],
             subtotal,
-            deliveryFee: input.deliveryFee,
+            deliveryFee,
             depositTotal,
             bottlesReturned: requireInteger(
                 "bottlesReturned",
@@ -148,7 +169,7 @@ export class Order {
                 0,
                 MAX_BOTTLES_RETURNED,
             ),
-            total: subtotal.add(input.deliveryFee).add(depositTotal),
+            total: subtotal.add(deliveryFee).add(depositTotal),
             // Commission is on goods only: never on delivery or bottle deposits.
             commissionBps: input.commissionBps,
             commission: subtotal.percent(input.commissionBps),
@@ -163,13 +184,18 @@ export class Order {
                 input.paymentMethod ?? PaymentMethod.CARD_TRANSFER,
                 input.paymentCard,
             ),
+            customerPaysCarrier: input.customerPaysCarrier === true,
             createdAt: now,
             updatedAt: now,
         })
     }
 
     static reconstitute(props: OrderProps): Order {
-        return new Order({ ...props, items: [...props.items] })
+        return new Order({
+            ...props,
+            items: [...props.items],
+            deliveryNotes: [...(props.deliveryNotes ?? [])],
+        })
     }
 
     get id(): string {
@@ -268,6 +294,48 @@ export class Order {
     get deliveryFeeTo(): DeliveryFeeRecipient {
         return this.props.deliveryFeeTo ?? DeliveryFeeRecipient.BUSINESS
     }
+    get ownerDelivers(): boolean {
+        return this.props.ownerDelivers === true
+    }
+    get sentVia(): SendWay | undefined {
+        return this.props.sentVia
+    }
+    get deliveryNotes(): readonly DeliveryNote[] {
+        return this.props.deliveryNotes ?? []
+    }
+    get customerPaysCarrier(): boolean {
+        return this.props.customerPaysCarrier === true
+    }
+
+    /** Handed to the shop's dispatcher, who sends it on and writes to the customer. */
+    isWithDispatcher(): boolean {
+        return this.props.dispatcher === true && this.props.courierId !== undefined
+    }
+
+    /**
+     * Nobody is on it yet: no courier, no «O'zim yetkazaman», no network asked. A shop with
+     * couriers chooses before «Tayyor» (`assertCourierChosen`).
+     */
+    needsCourierChoice(): boolean {
+        return (
+            ASSIGNABLE.includes(this.props.status) &&
+            this.props.courierId === undefined &&
+            !this.ownerDelivers &&
+            this.props.networkRequestedAt === undefined
+        )
+    }
+
+    /**
+     * «Tayyor» and «Jo'natish» wait for the courier choice in a shop that has couriers (owner's
+     * decision, November 2026): an order went on without anyone on it, and no courier saw it.
+     * The use case knows whether the shop has couriers; a shop without any delivers itself.
+     */
+    assertCourierChosen(to: OrderStatus): void {
+        const leavesTheShop = to === OrderStatus.READY || to === OrderStatus.PICKED_UP
+        if (leavesTheShop && this.needsCourierChoice()) {
+            throw BusinessRuleViolationError.courierNotChosen(this.props.id)
+        }
+    }
 
     /** Waiting for a district network courier to press «Беру». */
     isWaitingForNetwork(): boolean {
@@ -318,6 +386,58 @@ export class Order {
      * delivered it themself.
      */
     advanceTo(status: OrderStatus, by: OrderMover = OWNER): void {
+        // The dispatcher's «Jo'natdim» says how it went (`send`): a bare step would leave the
+        // customer with «yo'lda» and nothing else, so nobody else makes it.
+        if (status === OrderStatus.PICKED_UP && this.isWithDispatcher()) {
+            throw BusinessRuleViolationError.sendWayRequired(this.props.id)
+        }
+        this.move(status, by)
+    }
+
+    /**
+     * «Jo'natdim»: the dispatcher sent the order on, by `way`, with an optional note for the
+     * customer (a note is required for «Boshqa»: it says who took it).
+     */
+    send(courierId: string, way: SendWay, note: string | undefined, now: Date): void {
+        if (!this.isWithDispatcher()) {
+            throw BusinessRuleViolationError.notADispatcherOrder(this.props.id)
+        }
+        const text = optionalText("note", note, DELIVERY_NOTE_MAX)
+        if (way === SendWay.OTHER && text === undefined) {
+            throw ValidationError.fromField("note", "Say who took it", note)
+        }
+        this.assertRoomForNote(text)
+        this.move(OrderStatus.PICKED_UP, { role: "courier", courierId })
+        this.props.sentVia = way
+        if (text !== undefined) {
+            this.props.deliveryNotes = [...this.deliveryNotes, deliveryNote(text, now)]
+        }
+    }
+
+    /** «Izoh qo'shish»: the dispatcher tells the customer something about the delivery. */
+    addDeliveryNote(courierId: string, text: string, now: Date): void {
+        if (!this.isAssignedTo(courierId)) {
+            throw ForbiddenError.notAssignedCourier(this.props.id)
+        }
+        if (!this.isWithDispatcher()) {
+            throw BusinessRuleViolationError.notADispatcherOrder(this.props.id)
+        }
+        if (this.isFinal()) {
+            throw BusinessRuleViolationError.notesClosed(this.props.id, this.props.status)
+        }
+        const note = deliveryNote(text, now)
+        this.assertRoomForNote(note.text)
+        this.props.deliveryNotes = [...this.deliveryNotes, note]
+        this.touch()
+    }
+
+    private assertRoomForNote(text: string | undefined): void {
+        if (text !== undefined && this.deliveryNotes.length >= MAX_DELIVERY_NOTES) {
+            throw BusinessRuleViolationError.tooManyNotes(MAX_DELIVERY_NOTES)
+        }
+    }
+
+    private move(status: OrderStatus, by: OrderMover): void {
         if (status === OrderStatus.CANCELLED) {
             throw ValidationError.fromField("status", "Use cancel() to cancel an order", status)
         }
@@ -421,6 +541,10 @@ export class Order {
         if (reason !== null) {
             throw BusinessRuleViolationError.courierNotAvailable(courier.id, reason)
         }
+        // A dispatcher hands the parcel to someone else: no money goes that way.
+        if (courier.isDispatcher && this.isCash()) {
+            throw BusinessRuleViolationError.cashNotForDispatcher(this.props.id)
+        }
         // Given to someone else: it leaves the trip it was in.
         if (this.props.tripId !== undefined && this.props.courierId !== courier.id) {
             this.props.tripId = undefined
@@ -429,10 +553,33 @@ export class Order {
         this.props.courierId = courier.id
         this.props.courierName = courier.name
         this.props.courierPhone = courier.phone
+        this.props.dispatcher = courier.isDispatcher
+        this.props.ownerDelivers = false
         // The shop's own courier takes it: the network no longer needs to.
         this.props.networkRequestedAt = undefined
         this.props.networkAlertedAt = undefined
         this.props.deliveryFeeTo = DeliveryFeeRecipient.BUSINESS
+        this.touch()
+    }
+
+    /**
+     * «O'zim yetkazaman»: the owner delivers it. A courier who had it is let go (and told), the
+     * network stops looking.
+     */
+    deliverMyself(): void {
+        if (!ASSIGNABLE.includes(this.props.status)) {
+            throw BusinessRuleViolationError.orderNotAssignable(this.props.id, this.props.status)
+        }
+        this.props.courierId = undefined
+        this.props.courierName = undefined
+        this.props.courierPhone = undefined
+        this.props.dispatcher = false
+        this.props.tripId = undefined
+        this.props.tripStop = undefined
+        this.props.networkRequestedAt = undefined
+        this.props.networkAlertedAt = undefined
+        this.props.deliveryFeeTo = DeliveryFeeRecipient.BUSINESS
+        this.props.ownerDelivers = true
         this.touch()
     }
 
@@ -444,10 +591,14 @@ export class Order {
         if (this.isCash()) {
             throw BusinessRuleViolationError.cashNotForNetwork(this.props.id)
         }
+        if (this.customerPaysCarrier) {
+            throw BusinessRuleViolationError.carrierNotForNetwork(this.props.id)
+        }
         if (!ASSIGNABLE.includes(this.props.status) || this.props.courierId !== undefined) {
             throw BusinessRuleViolationError.orderNotAssignable(this.props.id, this.props.status)
         }
         this.props.networkRequestedAt ??= now
+        this.props.ownerDelivers = false
         this.touch()
     }
 
@@ -466,6 +617,7 @@ export class Order {
         this.props.courierId = link.id
         this.props.courierName = link.name
         this.props.courierPhone = link.phone
+        this.props.dispatcher = false
         this.props.deliveryFeeTo = NETWORK_DELIVERY_FEE_RECIPIENT
         this.touch()
     }
@@ -483,6 +635,10 @@ export class Order {
         }
         if (this.isViaNetwork() || this.props.courierId === undefined) {
             throw BusinessRuleViolationError.notForTrip(this.props.id, "no_own_courier")
+        }
+        // A dispatcher sends each order its own way: «Bir yo'nalish» is for riders.
+        if (this.isWithDispatcher()) {
+            throw BusinessRuleViolationError.notForTrip(this.props.id, "dispatcher")
         }
         this.props.tripId = tripId
         this.setTripStop(stop)

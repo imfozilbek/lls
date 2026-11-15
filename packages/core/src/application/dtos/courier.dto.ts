@@ -19,6 +19,8 @@ export interface CourierDTO {
     onShift: boolean
     /** Why a new order cannot go to this courier now, or null when it can. */
     unavailableReason: CourierUnavailableReason | null
+    /** Sends the shop's orders on by a taxi, the post or someone else, with notes. */
+    dispatcher: boolean
     createdAt: string
 }
 
@@ -34,6 +36,7 @@ export function toCourierDTO(courier: Courier, now: Date): CourierDTO {
         offToday: courier.isOffToday(now),
         onShift: courier.profile.isOnShift(now),
         unavailableReason: courier.unavailableReason(now),
+        dispatcher: courier.isDispatcher,
         createdAt: courier.createdAt.toISOString(),
     }
 }
