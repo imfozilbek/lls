@@ -27,6 +27,7 @@ import {
 import { COUNT_SQL, NEXT_SQL } from "../src/repositories/phone-ask.repository.js"
 import {
     NAMES_OF,
+    PHOTOS_OF,
     SHOWCASE_ALL_FROM,
     SHOWCASE_BY_WORD_FROM,
     WORD_FILTER,
@@ -122,6 +123,12 @@ describe("query plans", () => {
         expect(take).toMatch(/SEARCH products USING INDEX sqlite_autoindex_products_1 \(id=\?\)/)
         const back = await planOf(STOCK_RETURN_SQL, [1, "p-1", "biz-1", "o-1", 1])
         expectIndexed(back, ["sqlite_autoindex_products_1", ORDERS_KEY])
+    })
+
+    it("a demo's photos before it starts again: the shop's products by the catalog index", async () => {
+        const plan = (await planOf(PHOTOS_OF, ["biz-1"])).join("\n")
+        expect(plan).toContain("USING INDEX idx_products_catalog (business_id=?)")
+        expect(plan).not.toMatch(/SCAN products\b/)
     })
 
     it("a shop's product names for a list: the catalog index alone, no product row", async () => {

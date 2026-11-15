@@ -41,11 +41,12 @@ interface ProductRow {
     more_categories: string | null
     age_from: number | null
     stock: number | null
+    more_images: string | null
 }
 
 const COLUMNS = `id, business_id, name, description, price, unit, step, category, image_key,
     is_available, unavailable_until, returnable, position, created_at, updated_at, options,
-    more_categories, age_from, stock`
+    more_categories, age_from, stock, more_images`
 
 /** The same columns read through the `p` alias of a join. */
 const JOINED_COLUMNS = COLUMNS.split(",")
@@ -158,6 +159,7 @@ function toProduct(row: ProductRow): Product {
         position: row.position,
         options: row.options === null ? undefined : ProductOptions.create(JSON.parse(row.options)),
         stock: row.stock ?? undefined,
+        moreImageKeys: row.more_images === null ? undefined : moreImagesOf(row.more_images),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -299,7 +301,7 @@ export class D1ProductRepository implements ProductRepository {
         const upsert = this.db
             .prepare(
                 `INSERT INTO products (${COLUMNS}, search_text)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT (id) DO UPDATE SET name = excluded.name,
                     search_text = excluded.search_text,
                     description = excluded.description, price = excluded.price,
@@ -309,7 +311,7 @@ export class D1ProductRepository implements ProductRepository {
                     returnable = excluded.returnable, position = excluded.position,
                     options = excluded.options, updated_at = excluded.updated_at,
                     more_categories = excluded.more_categories,
-                    age_from = excluded.age_from${stock}`,
+                    age_from = excluded.age_from, more_images = excluded.more_images${stock}`,
             )
             .bind(
                 product.id,
@@ -331,6 +333,7 @@ export class D1ProductRepository implements ProductRepository {
                 product.moreCategories.length > 0 ? JSON.stringify(product.moreCategories) : null,
                 product.ageFrom ?? null,
                 product.stock ?? null,
+                product.moreImageKeys.length > 0 ? JSON.stringify(product.moreImageKeys) : null,
                 ` ${product.searchText}`,
             )
         return [

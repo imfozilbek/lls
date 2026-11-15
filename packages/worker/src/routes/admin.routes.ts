@@ -9,7 +9,7 @@ import { Hono } from "hono"
 
 import { platformAdminIds } from "../env.js"
 import { ApiError } from "../http/errors.js"
-import { storeImage, withStoredImage } from "../http/images.js"
+import { deleteImage, storeImage, withStoredImage } from "../http/images.js"
 import {
     adminShopsQuery,
     demoBody,
@@ -179,10 +179,17 @@ export const adminRoutes = new Hono<AppEnv>()
 
     /** «Namunani tozalash»: the demo's orders are gone, its sample is back. */
     .post("/shops/:id/demo/reset", zValidator("param", idParam, onInvalid), async (c) => {
-        const shop = await c.get("services").useCases.resetDemoShop.execute({
+        const { useCases, products } = c.get("services")
+        const businessId = c.req.valid("param").id
+        // The sample comes back without photos: the ones the owner added leave the storage too.
+        const photos = await products.photoKeysOf(businessId)
+        const shop = await useCases.resetDemoShop.execute({
             actorTelegramId: c.get("auth").user.id,
-            businessId: c.req.valid("param").id,
+            businessId,
         })
+        for (const key of photos) {
+            await deleteImage(c.env.BUCKET, key)
+        }
         return c.json({ shop: withoutCard(shop) })
     })
 
