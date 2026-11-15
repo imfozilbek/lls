@@ -23,6 +23,7 @@ export const staffUz = {
         PAYMENT_CARD_IN_USE: "Mijozlar shu kartaga to'laydi: avval boshqasini tanlang.",
         PAYMENT_REQUIRED: "O'tkazma hali kelmadi: avval «Pul keldi» ni belgilang.",
         PAYMENT_NOT_CONFIRMABLE: "Bu to'lov allaqachon belgilangan. Ro'yxat yangilandi.",
+        RECEIPT_NOT_SENT: "Avval mijoz chekni yuklashi kerak. Shundan keyin pulni tekshirasiz.",
         PAYMENT_NOT_REFUNDABLE: "Bu pul allaqachon qaytarilgan.",
         PAYMENT_NOT_REJECTABLE: "Bu o'tkazma allaqachon ko'rib chiqilgan. Ro'yxat yangilandi.",
         ADMIN_ONLY: "Bu bo'lim faqat Zumda administratorlari uchun.",
