@@ -311,14 +311,19 @@ function MainStep({
     order,
     step,
     busy,
+    alone,
     onStep,
     onSheet,
+    onSelf,
 }: {
     order: OrderDTO
     step: OwnerStep | null
     busy: boolean
+    /** The shop has no courier: «O'zim yetkazaman» is the only answer, one tap. */
+    alone: boolean
     onStep(to: OrderStatus): void
     onSheet(sheet: "courier" | "pay"): void
+    onSelf(): void
 }): React.JSX.Element | null {
     const t = useT()
     const actions = t.owner.actions as Record<string, string>
@@ -338,7 +343,11 @@ function MainStep({
                 </Button>
             )
         case "choose":
-            return (
+            return alone ? (
+                <Button loading={busy} onClick={onSelf}>
+                    {t.owner.deliverMyself}
+                </Button>
+            ) : (
                 <Button
                     disabled={busy}
                     icon={<ScooterIcon size={18} />}
@@ -372,8 +381,10 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
     const t = useT()
     const [busy, setBusy] = useState(false)
     const [sheet, setSheet] = useState<"courier" | "cancel" | "pay" | null>(null)
-    // Unknown until the couriers load: the step as before; the server still asks for the choice.
-    const hasCouriers = useOwner((state) => state.couriers?.some((c) => c.isActive) ?? false)
+    // No courier at all: «O'zim yetkazaman» at once (unknown until they load: the sheet asks).
+    const alone = useOwner(
+        (state) => state.couriers !== null && !state.couriers.some((c) => c.isActive),
+    )
     if (isFinalStatus(order.status)) {
         return null
     }
@@ -396,7 +407,7 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
             await act(() => api.owner.setStatus(order.id, OrderStatus.DELIVERED))
         }
     }
-    const step = ownerStep(order, hasCouriers)
+    const step = ownerStep(order)
     const close = (): void => setSheet(null)
     const open = (next: "courier" | "pay"): void => {
         haptic.tap()
@@ -409,12 +420,15 @@ function OrderActions(props: CardProps): React.JSX.Element | null {
                 order={order}
                 step={step}
                 busy={busy}
+                alone={alone}
                 onStep={(to): void => void act(() => api.owner.setStatus(order.id, to))}
                 onSheet={open}
+                onSelf={(): void => void act(() => api.owner.deliverMyself(order.id))}
             />
             {/* One main step above; the courier and the cancel stay quiet below it. */}
             <div className="flex flex-wrap items-center justify-between gap-x-2">
-                {ASSIGNABLE.includes(order.status) && step?.kind !== "choose" ? (
+                {/* Without couriers the sheet still offers the network and an invite. */}
+                {ASSIGNABLE.includes(order.status) && (step?.kind !== "choose" || alone) ? (
                     <Button
                         variant="ghost"
                         className="-ml-2 whitespace-nowrap px-2"

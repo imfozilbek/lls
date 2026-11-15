@@ -6,8 +6,9 @@ import type { OrderDTO } from "@zumda/core"
  * The owner's one main button on an order:
  * - `money`: «Pul keldi, qabul qilish» (a transfer order starts only after the money);
  * - `step`: the next status;
- * - `choose`: «Kuryerga topshirish» (owner's decision, November 2026: a shop with couriers hands
- *   the order to one, or takes it itself, before «Tayyor»; the server refuses otherwise);
+ * - `choose`: who takes it, before «Tayyor» (owner's decision, November 2026; the server refuses
+ *   otherwise): «Kuryerga topshirish» in a shop with couriers, «O'zim yetkazaman» without them
+ *   (the shop's only courier was chosen by itself when the order was accepted);
  * - `dispatcher`: the dispatcher sends it on and marks it delivered, nothing for the owner.
  */
 export type OwnerStep =
@@ -17,7 +18,7 @@ export type OwnerStep =
     | { kind: "dispatcher"; to: OrderStatus }
 
 /** The main button for this order; null once it is finished. */
-export function ownerStep(order: OrderDTO, shopHasCouriers: boolean): OwnerStep | null {
+export function ownerStep(order: OrderDTO): OwnerStep | null {
     const next = order.nextStatus
     if (!next) {
         return null
@@ -34,7 +35,7 @@ export function ownerStep(order: OrderDTO, shopHasCouriers: boolean): OwnerStep 
         return { kind: "dispatcher", to: next }
     }
     const goesOn = next === OrderStatus.READY || next === OrderStatus.PICKED_UP
-    if (shopHasCouriers && order.needsCourierChoice && goesOn) {
+    if (order.needsCourierChoice && goesOn) {
         return { kind: "choose" }
     }
     return { kind: "step", to: next }

@@ -20,35 +20,33 @@ describe("the owner's main button", () => {
     it("a transfer waits for the money; a cash order is accepted at once", () => {
         const pending = { status: "pending", nextStatus: "accepted" }
         const unpaid = { method: "card_transfer", status: "unpaid" }
-        expect(ownerStep(order({ ...pending, payment: unpaid }), true)).toEqual({ kind: "money" })
+        expect(ownerStep(order({ ...pending, payment: unpaid }))).toEqual({ kind: "money" })
         const cash = { method: "cash", status: "unpaid" }
-        expect(ownerStep(order({ ...pending, payment: cash }), true)).toEqual({
+        expect(ownerStep(order({ ...pending, payment: cash }))).toEqual({
             kind: "step",
             to: "accepted",
         })
     })
 
-    it("nobody on it in a shop with couriers: «Kuryerga topshirish» before «Tayyor»", () => {
+    it("nobody on it: who takes it comes before «Tayyor», with or without couriers", () => {
         const open = order({ needsCourierChoice: true })
-        expect(ownerStep(open, true)).toEqual({ kind: "choose" })
+        expect(ownerStep(open)).toEqual({ kind: "choose" })
         const ready = order({ status: "ready", nextStatus: "picked_up", needsCourierChoice: true })
-        expect(ownerStep(ready, true)).toEqual({ kind: "choose" })
-        // A shop without couriers: the owner delivers, the steps as before.
-        expect(ownerStep(open, false)).toEqual({ kind: "step", to: "ready" })
+        expect(ownerStep(ready)).toEqual({ kind: "choose" })
         // Someone is on it: the owner packs.
-        expect(ownerStep(order({}), true)).toEqual({ kind: "step", to: "ready" })
+        expect(ownerStep(order({}))).toEqual({ kind: "step", to: "ready" })
     })
 
     it("the dispatcher's steps are not the owner's", () => {
         const ready = order({ status: "ready", nextStatus: "picked_up", dispatcher: true })
-        expect(ownerStep(ready, true)).toEqual({ kind: "dispatcher", to: "picked_up" })
+        expect(ownerStep(ready)).toEqual({ kind: "dispatcher", to: "picked_up" })
         const sent = order({ status: "picked_up", nextStatus: "delivered", dispatcher: true })
-        expect(ownerStep(sent, true)).toEqual({ kind: "dispatcher", to: "delivered" })
+        expect(ownerStep(sent)).toEqual({ kind: "dispatcher", to: "delivered" })
         // Packing is still the owner's.
-        expect(ownerStep(order({ dispatcher: true }), true)).toEqual({ kind: "step", to: "ready" })
+        expect(ownerStep(order({ dispatcher: true }))).toEqual({ kind: "step", to: "ready" })
     })
 
     it("a finished order has no button", () => {
-        expect(ownerStep(order({ status: "delivered", nextStatus: null }), true)).toBeNull()
+        expect(ownerStep(order({ status: "delivered", nextStatus: null }))).toBeNull()
     })
 })
