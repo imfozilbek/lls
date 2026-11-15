@@ -172,6 +172,8 @@ test("a courier moves only own orders and only the delivery part; never cancels"
         { productId: "dev-food-p1", quantity: 1 },
     ])
     await accept(order.id)
+    // The shop's only courier got it by itself; «O'zim yetkazaman» takes it back.
+    expect((await owner(order.id, { self: true }, "/courier")).status).toBe(200)
     const path = `/orders/${order.id}`
     expect((await courierApi(PEOPLE.courier, path, "PATCH", { status: "picked_up" })).status).toBe(
         403,
