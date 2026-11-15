@@ -2,7 +2,7 @@ import { receiptExpired } from "@zumda/core"
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
 
-import { useT } from "../i18n/index.js"
+import { useLanguage } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { useBackButton } from "../lib/main-button.js"
@@ -10,6 +10,7 @@ import { haptic } from "../lib/telegram.js"
 
 import { CloseIcon, ReceiptIcon } from "./icons.js"
 import { Skeleton } from "./primitives.js"
+import { receiptWords } from "./receipt-words.js"
 
 type Loaded =
     | { state: "loading" }
@@ -64,7 +65,7 @@ export function useReceiptUrl(orderId: string, sentAt: string | undefined): Load
  * what they sent. Back (and the swipe) closes the picture first, never the screen under it.
  */
 function ReceiptViewer({ url, onClose }: { url: string; onClose(): void }): React.JSX.Element {
-    const t = useT()
+    const receipt = receiptWords(useLanguage())
     useBackButton(onClose)
     useEffect(() => {
         const onKey = (event: KeyboardEvent): void => {
@@ -80,13 +81,13 @@ function ReceiptViewer({ url, onClose }: { url: string; onClose(): void }): Reac
             className="fixed inset-0 z-viewer flex animate-fade-in flex-col bg-black/90"
             role="dialog"
             aria-modal
-            aria-label={t.receipt.title}
+            aria-label={receipt.title}
         >
             <div className="flex justify-end p-3">
                 <button
                     type="button"
                     onClick={onClose}
-                    aria-label={t.receipt.close}
+                    aria-label={receipt.close}
                     className="tap grid h-11 w-11 place-items-center rounded-full bg-white/15 text-white"
                 >
                     <CloseIcon size={22} />
@@ -95,7 +96,7 @@ function ReceiptViewer({ url, onClose }: { url: string; onClose(): void }): Reac
             <div className="min-h-0 flex-1 overflow-auto px-3 pb-6">
                 <img
                     src={url}
-                    alt={t.receipt.title}
+                    alt={receipt.title}
                     // A screenshot is a tall phone screen: its room is kept while it loads.
                     className="mx-auto aspect-[9/19] w-full max-w-md bg-tg-secondary object-contain"
                 />
@@ -116,7 +117,7 @@ export function ReceiptThumb({
     /** The owner's money check: big enough to read the sum without opening it. */
     large?: boolean
 }): React.JSX.Element | null {
-    const t = useT()
+    const receipt = receiptWords(useLanguage())
     const loaded = useReceiptUrl(orderId, sentAt)
     const [open, setOpen] = useState(false)
     if (!sentAt) {
@@ -129,7 +130,7 @@ export function ReceiptThumb({
         return (
             <span className="flex h-24 w-20 shrink-0 flex-col items-center justify-center gap-1 rounded-control bg-tg-secondary px-1 text-center text-xs text-tg-subtitle">
                 <ReceiptIcon size={20} />
-                {loaded.state === "expired" ? t.receipt.expired : t.receipt.loadFailed}
+                {loaded.state === "expired" ? receipt.expired : receipt.loadFailed}
             </span>
         )
     }
@@ -141,7 +142,7 @@ export function ReceiptThumb({
                     haptic.tap()
                     setOpen(true)
                 }}
-                aria-label={t.receipt.open}
+                aria-label={receipt.open}
                 className={cn("tap flex shrink-0 flex-col items-center gap-1", large && "w-full")}
             >
                 {/* Whole, never cropped: the sum and the card digits may sit anywhere on it. */}
@@ -154,7 +155,7 @@ export function ReceiptThumb({
                     <img src={loaded.url} alt="" className="h-full w-full object-contain" />
                 </span>
                 <span className="whitespace-nowrap text-xs font-semibold text-brand">
-                    {t.receipt.zoom}
+                    {receipt.zoom}
                 </span>
             </button>
             {open ? <ReceiptViewer url={loaded.url} onClose={(): void => setOpen(false)} /> : null}
