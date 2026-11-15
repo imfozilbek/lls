@@ -34,6 +34,7 @@ import {
     courierReviewKeyboard,
     formatNetworkOffer,
     formatNewOrderForOwner,
+    formatNoteForCustomer,
     formatOrderForCourier,
     formatOrderForOwner,
     formatMoney,
@@ -125,7 +126,7 @@ export class Notifier {
                     token,
                     ownerId,
                     text,
-                    { keyboard: this.ownerKeyboard(business, order, reader) },
+                    { keyboard: await this.ownerKeyboard(business, order, reader) },
                 )
                 await this.services.orders.setMessageId(order.id, "owner", messageId)
             },
@@ -142,8 +143,13 @@ export class Notifier {
     async askForTransfer(business: Business, order: OrderDTO): Promise<void> {
         // The shop's number under the first message: the customer can call from the chat.
         const phone = await shopCallPhone(business, this.services.customers)
+        // The delivery the customer pays to the carrier is said before they pay for the goods.
         const withPhone = (t: BotTexts, text: string): string =>
-            phone ? `${text}\n${fill(t.shopPhone, { phone: formatPhone(phone.number) })}` : text
+            [
+                text,
+                ...(order.customerPaysCarrier ? [t.carrierFeeCustomer] : []),
+                ...(phone ? [fill(t.shopPhone, { phone: formatPhone(phone.number) })] : []),
+            ].join("\n")
         if (order.payment.method === PaymentMethod.CASH) {
             const token = await this.shopToken(business.id)
             await this.tellCustomer(token, business, order, (t, language) =>
@@ -294,8 +300,11 @@ export class Notifier {
         ])
     }
 
-    /** After a status change: refresh the owner's and the courier's cards, tell the customer. */
-    async orderChanged(business: Business, order: OrderDTO): Promise<void> {
+    /**
+     * After a status change: refresh the owner's and the courier's cards, tell the customer. A
+     * dispatcher's «Jo'natdim» brings its note along (`note`).
+     */
+    async orderChanged(business: Business, order: OrderDTO, note?: string): Promise<void> {
         const token = await this.shopToken(business.id)
         const messages = await this.services.orders.getMessageIds(order.id)
         const ownerId = business.ownerTelegramId.value
@@ -318,7 +327,25 @@ export class Notifier {
                           order,
                           `${textsFor(owner.language).cancelledByCustomer}: #${order.number}`,
                       )
-                    : this.notifyCustomer(token, business, order),
+                    : this.notifyCustomer(token, business, order, note),
+        ])
+    }
+
+    /** «Izoh qo'shish»: the customer gets the note, the owner's and the courier's cards show it. */
+    async deliveryNoteAdded(business: Business, order: OrderDTO): Promise<void> {
+        const note = order.deliveryNotes.at(-1)
+        if (!note) {
+            return
+        }
+        const token = await this.shopToken(business.id)
+        const messages = await this.services.orders.getMessageIds(order.id)
+        await everyOne([
+            (): Promise<void> =>
+                this.tellCustomer(token, business, order, (_t, language) =>
+                    formatNoteForCustomer(order, note.text, { language, type: business.type }),
+                ),
+            (): Promise<void> => this.orderChangedForOwner(token, business, order),
+            (): Promise<void> => this.refreshCourierCard(business, order, messages.courier),
         ])
     }
 
@@ -944,7 +971,7 @@ export class Notifier {
             async () => {
                 const sent = await this.upsertCard(token, ownerId, messageId, {
                     text,
-                    keyboard: this.ownerKeyboard(business, order, owner),
+                    keyboard: await this.ownerKeyboard(business, order, owner),
                 })
                 if (sent !== null) {
                     await this.services.orders.setMessageId(order.id, "owner", sent)
@@ -975,13 +1002,15 @@ export class Notifier {
         const chatId = courier.telegramId.value
         const reader = await this.readerFor(chatId, business)
         const shopPhone = await shopCallPhone(business, this.services.customers)
+        const orderUrl = courierAppUrl(this.services.env.COURIER_APP_ORIGIN, order.id)
         const sent = await this.upsertCard(token, chatId, messageId, {
             text: formatOrderForCourier(order, reader, {
                 name: business.name,
                 phone: shopPhone?.number,
+                address: business.address,
             }),
             keyboard: withAppButton(
-                courierKeyboard(order, reader),
+                courierKeyboard(order, reader, orderUrl),
                 this.courierAppButton(textsFor(reader.language), undefined, order.id),
             ),
         })
@@ -989,7 +1018,8 @@ export class Notifier {
             await this.services.orders.setMessageId(order.id, "courier", sent)
         }
         if (messageId !== null && order.status === OrderStatus.READY) {
-            const ping = fill(textsFor(reader.language).courierReady, {
+            const words = textsFor(reader.language)
+            const ping = fill(order.dispatcher ? words.dispatcherReady : words.courierReady, {
                 n: order.number,
                 shop: escapeHtml(business.name),
             })
@@ -1034,9 +1064,10 @@ export class Notifier {
         token: string,
         business: Business,
         order: OrderDTO,
+        note?: string,
     ): Promise<void> {
         await this.tellCustomer(token, business, order, (_t, language) =>
-            formatStatusForCustomer(order, { language, type: business.type }),
+            formatStatusForCustomer(order, { language, type: business.type }, note),
         )
     }
 
@@ -1076,11 +1107,25 @@ export class Notifier {
         })
     }
 
-    /** The owner's order card: the next step and cancel, then the order in the app. */
-    private ownerKeyboard(business: Business, order: OrderDTO, reader: Reader): InlineKeyboard {
+    /**
+     * The owner's order card: the next step and cancel, then the order in the app. Nobody on the
+     * order yet in a shop with couriers: «Kuryerga topshirish» in the app instead of the step.
+     */
+    private async ownerKeyboard(
+        business: Business,
+        order: OrderDTO,
+        reader: Reader,
+    ): Promise<InlineKeyboard> {
         const t = textsFor(reader.language, reader.type)
         const url = shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value, order.id)
-        return withAppButton(orderKeyboard(order, reader), appButton(t.openOrder, url))
+        // Asked only while the choice is open: most cards never read the couriers.
+        const choose =
+            order.needsCourierChoice &&
+            (await this.services.couriers.listByBusiness(business.id)).some((c) => c.isActive)
+        return withAppButton(
+            orderKeyboard(order, reader, choose ? url : undefined),
+            appButton(t.openOrder, url),
+        )
     }
 
     /** A line to the owner about an order, from the shop bot, with the order in the app. */

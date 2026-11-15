@@ -1,4 +1,4 @@
-import { BusinessType, Language, OrderStatus, Unit } from "@zumda/core"
+import { BusinessType, Language, OrderStatus, SendWay, Unit } from "@zumda/core"
 
 type StatusTexts = Partial<Record<OrderStatus, string>>
 
@@ -236,6 +236,35 @@ const BASE = {
         } as StatusTexts,
         courierWait: "⏳ Buyurtma tayyor bo'lganda xabar beramiz.",
         courierReady: "📦 {shop}: #{n} buyurtma tayyor, olib keting.",
+        // A dispatcher (owner's decision, November 2026): sends the order on, writes to the customer.
+        dispatcherWait:
+            "⏳ Do'kon qadoqlamoqda: tayyor bo'lganda xabar beramiz. Mijozga izohni hozir ham yozish mumkin.",
+        dispatcherReady: "📦 {shop}: #{n} buyurtma tayyor, jo'nating.",
+        dispatcherSend: "📮 Jo'natdim",
+        pickupFrom: "🏪 Qayerdan: {place}",
+        dispatcherLine: "📮 Dispetcher: {name}",
+        dispatcherPhone: "📞 Dispetcher: {phone}",
+        /** How the dispatcher sent it, as the owner's card says it. */
+        sendWays: {
+            [SendWay.SELF]: "dispetcherning o'zi olib bormoqda",
+            [SendWay.TAXI]: "taksi bilan",
+            [SendWay.POST]: "pochta orqali",
+            [SendWay.OTHER]: "boshqa yo'l bilan",
+        } satisfies Record<SendWay, string>,
+        sentLine: "🚚 Jo'natildi: {way}",
+        /** «Jo'natdim» to the customer; the dispatcher's own trip says who brings it. */
+        sentCustomer: {
+            [SendWay.SELF]: "🚚 #{n} buyurtmangizni {courier} olib kelmoqda.",
+            [SendWay.TAXI]: "🚕 #{n} buyurtmangiz taksi bilan jo'natildi.",
+            [SendWay.POST]: "📮 #{n} buyurtmangiz pochta orqali jo'natildi.",
+            [SendWay.OTHER]: "🚚 #{n} buyurtmangiz jo'natildi.",
+        } satisfies Record<SendWay, string>,
+        noteLine: "📝 {text}",
+        noteCustomer: "📝 #{n} buyurtma: {text}",
+        /** «Yetkazish haqini mijoz o'zi to'laydi»: nothing of it is in the total. */
+        deliveryApart: "alohida, mijoz yetkazuvchiga o'zi to'laydi",
+        carrierFeeCustomer: "💵 Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz.",
+        chooseCourier: "🛵 Kuryerga topshirish",
         payment: {
             unpaid: "💳 Kartaga o'tkazma kutilmoqda",
             sent: "💳 Mijoz o'tkazdim dedi, kartani tekshiring",
