@@ -52,6 +52,7 @@ import {
 } from "./OptionsEditor.js"
 import { ProductPreview } from "./ProductPreview.js"
 import { allOf, asksAge, togglePick, usedCategories } from "./category-picks.js"
+import { parseStock, stockText, stockUnit } from "./stock-input.js"
 import { onSaleNow } from "./stopped.js"
 import { useOwner } from "./store.js"
 
@@ -105,6 +106,10 @@ interface Draft {
     options: OptionsDraft
     /** Add-ons people usually take with the catalog product picked: offered, never added. */
     suggestedAddons?: string[]
+    /** «Qoldiqni hisoblash»: the shop counts what is left (owner's decision, November 2026). */
+    counted: boolean
+    /** What is left as typed: pieces, or kg with a comma (`stock-input.ts`). */
+    stock: string
 }
 
 /** A new product starts with the first unit and category that fit the shop, so it rarely needs a tap. */
@@ -123,6 +128,8 @@ function newDraft(type: BusinessType | undefined): Draft {
         isAvailable: true,
         photo: null,
         options: NO_OPTIONS,
+        counted: false,
+        stock: "",
     }
 }
 
@@ -146,6 +153,8 @@ function draftOf(product: ProductDTO | undefined, type: BusinessType | undefined
         isAvailable: onSaleNow(product),
         photo: null,
         options: optionsDraftOf(product.options),
+        counted: product.stock !== undefined,
+        stock: stockText(product.stock, product.unit),
     }
 }
 
@@ -196,8 +205,14 @@ function optionsFor(draft: Draft): ProductOptionsProps | null {
     return optionsBody(options)
 }
 
+/** The count to send: base units when counted, null when not. */
+function stockOf(draft: Draft): number | null {
+    return draft.counted ? parseStock(draft.stock, draft.unit) : null
+}
+
 async function saveFields(product: ProductDTO | undefined, draft: Draft): Promise<ProductDTO> {
     const options = optionsFor(draft)
+    const stock = stockOf(draft)
     const input: ProductInput = {
         name: draft.name.trim(),
         description: draft.description.trim() || undefined,
@@ -210,7 +225,8 @@ async function saveFields(product: ProductDTO | undefined, draft: Draft): Promis
         ...(isWeightUnit(draft.unit) ? { step: draft.step } : {}),
     }
     if (!product) {
-        return api.owner.createProduct(options ? { ...input, options } : input)
+        const fresh = stock === null ? input : { ...input, stock }
+        return api.owner.createProduct(options ? { ...fresh, options } : fresh)
     }
     return api.owner.updateProduct(product.id, {
         ...input,
@@ -219,6 +235,8 @@ async function saveFields(product: ProductDTO | undefined, draft: Draft): Promis
         description: input.description ?? null,
         // Sent only when changed: showing a product again also clears today's stop-list mark.
         ...(draft.isAvailable !== onSaleNow(product) ? { isAvailable: draft.isAvailable } : {}),
+        // Only a new count: orders change it meanwhile, an old number must never come back.
+        ...(stock !== (product.stock ?? null) ? { stock } : {}),
     })
 }
 
@@ -672,6 +690,54 @@ function PriceField({
     )
 }
 
+/**
+ * «Qoldiqni hisoblash» (owner's decision, November 2026): each order takes from the count, a
+ * cancel gives it back; at zero the customer sees the product and cannot add it.
+ */
+function StockField({
+    draft,
+    patch,
+    error,
+}: {
+    draft: Draft
+    patch(change: Partial<Draft>): void
+    error: boolean
+}): React.JSX.Element {
+    const t = useT()
+    const p = t.owner.product
+    return (
+        <div className="flex flex-col gap-3">
+            <label className="flex items-center justify-between gap-3 rounded-control bg-tg-secondary px-4 py-3">
+                <span>
+                    <span className="block font-medium">{p.stockCount}</span>
+                    <span className="block text-sm text-tg-hint">{p.stockHint}</span>
+                </span>
+                <Switch
+                    checked={draft.counted}
+                    onChange={(counted): void => patch({ counted })}
+                    label={p.stockCount}
+                />
+            </label>
+            {draft.counted ? (
+                <Field
+                    label={fill(p.stockField, { unit: stockUnit(draft.unit, t.units) })}
+                    htmlFor="product-stock"
+                    hint={error ? <span className="text-tg-destructive">{p.needStock}</span> : null}
+                >
+                    <TextInput
+                        id="product-stock"
+                        inputMode={draft.unit === "kg" ? "decimal" : "numeric"}
+                        autoComplete="off"
+                        value={draft.stock}
+                        aria-invalid={error}
+                        onChange={(event): void => patch({ stock: event.target.value })}
+                    />
+                </Field>
+            ) : null}
+        </div>
+    )
+}
+
 /** After a catalog pick the form renders first, then the price takes the keyboard. */
 const FOCUS_DELAY_MS = 80
 
@@ -703,14 +769,17 @@ function fromTemplate(draft: Draft, template: Template): Draft {
 }
 
 /** What is missing, in the order the owner fills the form; null when it can be saved. */
-function missing(draft: Draft): "name" | "variants" | "price" | null {
+function missing(draft: Draft): "name" | "variants" | "price" | "stock" | null {
     if (draft.name.trim().length === 0) {
         return "name"
     }
     if (!optionsValid(draft.options)) {
         return "variants"
     }
-    return hasVariants(draft.options) || (draft.price ?? 0) > 0 ? null : "price"
+    if (!hasVariants(draft.options) && (draft.price ?? 0) <= 0) {
+        return "price"
+    }
+    return draft.counted && parseStock(draft.stock, draft.unit) === null ? "stock" : null
 }
 
 /** Never a dead button: a tap says what is missing and marks the field. */
@@ -735,7 +804,15 @@ function useSaveAction(input: {
             }
             haptic.error()
             onMissing()
-            toast({ name: p.needName, variants: p.needVariants, price: p.needPrice }[gap], "error")
+            toast(
+                {
+                    name: p.needName,
+                    variants: p.needVariants,
+                    price: p.needPrice,
+                    stock: p.needStock,
+                }[gap],
+                "error",
+            )
         },
         loading: saving,
     }
@@ -779,7 +856,10 @@ function useEditorState(initial: ProductDTO | undefined): {
     const shopType = useSession((state) => state.shop?.type)
     const copy = useCopy(initial)
     const [start, setStart] = useState<Draft>(() =>
-        copy ? { ...draftOf(copy, shopType), isAvailable: true } : draftOf(initial, shopType),
+        // A copy is another product: counted like the original, its own count still to type.
+        copy
+            ? { ...draftOf(copy, shopType), isAvailable: true, stock: "" }
+            : draftOf(initial, shopType),
     )
     const [draft, setDraft] = useState<Draft>(start)
     return {
@@ -1119,6 +1199,7 @@ function EditorFields({
             )}
             {isBottleUnit(draft.unit) ? <DepositOffer /> : null}
             {picked ? null : options}
+            <StockField draft={draft} patch={patch} error={gap === "stock"} />
             <Description
                 value={draft.description}
                 onChange={(description): void => patch({ description })}

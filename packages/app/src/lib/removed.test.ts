@@ -21,6 +21,13 @@ describe("removedText", () => {
         )
     })
 
+    it("a counted product that ran out says so", () => {
+        const gone = { ...named("kubik", "Kubik"), soldOut: true } as ProductDTO
+        expect(removedText(t, ["kubik"], [gone], [gone])).toBe(
+            "«Kubik» tugab qoldi: savatdan olib tashladik.",
+        )
+    })
+
     it("without the names: how many", () => {
         expect(removedText(t, ["x", "y"], [], [])).toBe(
             "Savatdagi 2 ta mahsulot endi yo'q yoki o'zgardi, ularni olib tashladik.",

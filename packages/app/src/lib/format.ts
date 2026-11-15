@@ -72,6 +72,21 @@ export function formatQuantity(
 }
 
 /**
+ * How much, the way a sentence says it: «12 ta» (`pieces` is the dictionary's «{n} ta»), «1,5 kg»,
+ * «3 qadoq».
+ */
+export function amountText(
+    quantity: number,
+    unit: string,
+    units: Record<string, string>,
+    pieces: string,
+): string {
+    return COUNTED.has(unit)
+        ? pieces.replace("{n}", String(quantity))
+        : formatQuantity(quantity, unit, units)
+}
+
+/**
  * The quantity before a line's name: «2×» for pieces and portions, but «1 qadoq», «1,5 kg»
  * where the unit already says how much («1 qadoq×» reads as a typo).
  */

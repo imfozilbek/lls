@@ -13,7 +13,7 @@ import {
 import { ApiError, api, currentShopVia, loadCatalog, scopedKey } from "../lib/api.js"
 import { remember } from "../lib/cache.js"
 import { cn } from "../lib/cn.js"
-import { formatMoney, kmText } from "../lib/format.js"
+import { amountText, formatMoney, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { removedText } from "../lib/removed.js"
 import { takesOrdersNow } from "../lib/shop-ready.js"
@@ -120,6 +120,7 @@ function PhoneRow(): React.JSX.Element {
 /** Codes that mean the cart or the shop changed under the customer: what they see is reloaded. */
 const CATALOG_CHANGED = new Set([
     "PRODUCT_NOT_AVAILABLE",
+    "OUT_OF_STOCK",
     "OPTION_UNAVAILABLE",
     "VARIANT_REQUIRED",
     "ENTITY_NOT_FOUND",
@@ -165,6 +166,27 @@ function refreshAfterRefusal(code: string, t: Dictionary): void {
 /** At checkout «not found» is a product that left the shop, not a list to refresh. */
 function refusalText(t: Dictionary, code: string): string {
     return code === "ENTITY_NOT_FOUND" ? t.checkout.itemGone : errorText(t, code)
+}
+
+/**
+ * Less of a counted product is left than the cart holds: the cart comes down to it at once, by
+ * name. Run out entirely, the catalog read again takes it out (`soldOutNamed`).
+ */
+function stockShortText(t: Dictionary, error: ApiError): string | null {
+    const productId = error.details?.["productId"]
+    const left = error.details?.["left"]
+    const product = useSession.getState().catalog.find((p) => p.id === productId)
+    if (error.code !== "OUT_OF_STOCK" || typeof left !== "number" || !product) {
+        return null
+    }
+    if (left < product.step) {
+        return null
+    }
+    useCart.getState().fitStock(product.id, left, product.step)
+    return fill(t.checkout.onlyLeft, {
+        name: product.name,
+        left: amountText(left, product.unit, t.units, t.shop.pieces),
+    })
 }
 
 /**
@@ -260,7 +282,11 @@ function usePlaceOrder(
         } catch (error) {
             haptic.error()
             const code = error instanceof ApiError ? error.code : "generic"
-            toast(refusalText(t, code), "error")
+            const short = error instanceof ApiError ? stockShortText(t, error) : null
+            // A product that ran out is named by the catalog read again.
+            if (short || code !== "OUT_OF_STOCK") {
+                toast(short ?? refusalText(t, code), "error")
+            }
             refreshAfterRefusal(code, t)
         } finally {
             inFlight.current = false

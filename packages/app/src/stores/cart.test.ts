@@ -4,6 +4,7 @@ import {
     MAX_STEPS,
     deliveryFee,
     fitQuantity,
+    fittedToStock,
     lineKey,
     lineTotal,
     pickPrice,
@@ -256,5 +257,33 @@ describe("variants and add-ons in the cart", () => {
         const cart = summarize({ "latte~xl~": 1 }, [latte()])
         expect(cart.lines).toHaveLength(0)
         expect(cart.unavailable).toHaveLength(1)
+    })
+})
+
+describe("the shop's stock in the cart (owner's decision, November 2026)", () => {
+    beforeEach(() => {
+        vi.stubGlobal("localStorage", memoryStorage())
+        useCart.getState().load("osh")
+    })
+
+    it("a product that ran out is never ordered, refilled or kept", () => {
+        const gone = { ...product("kubik", 90_000), stock: undefined, soldOut: true } as ProductDTO
+        const summary = summarize({ kubik: 1, p2: 2 }, [gone, product("p2", 5_000)])
+        expect(summary.lines.map((l) => l.key)).toEqual(["p2"])
+        expect(summary.unavailable.map((l) => l.key)).toEqual(["kubik"])
+
+        const cart = useCart.getState()
+        expect(cart.refill([{ productId: "kubik", quantity: 1 }], [gone])).toBe(1)
+        cart.setQuantity("kubik", 2)
+        expect(useCart.getState().prune([gone])).toEqual(["kubik"])
+        expect(useCart.getState().lines).toEqual({})
+    })
+
+    it("less is left than the cart holds: its lines come down to it, the first kept first", () => {
+        const lines = { "shirt~s~": 2, "shirt~m~": 2, p2: 3 }
+        expect(fittedToStock(lines, "shirt", 3, 1)).toEqual({ "shirt~s~": 2, "shirt~m~": 1, p2: 3 })
+        expect(fittedToStock(lines, "shirt", 1, 1)).toEqual({ "shirt~s~": 1, p2: 3 })
+        // Weight: only whole steps (500 g) of what is left.
+        expect(fittedToStock({ rice: 2_000 }, "rice", 1_200, 500)).toEqual({ rice: 1_000 })
     })
 })
