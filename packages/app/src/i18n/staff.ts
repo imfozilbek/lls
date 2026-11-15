@@ -118,7 +118,7 @@ export const staffUz = {
         fromMessage: "Xabardagi buyurtma",
         /** A short order card opens with this. */
         details: "Batafsil",
-        detailsHide: "Yopish",
+        detailsHide: "Kamroq ko'rsatish",
         stagesLabel: "Buyurtma holati",
         hideFocused: "Yopish",
         tabs: {
@@ -537,7 +537,7 @@ export const staffUz = {
     courier: {
         title: "Yetkazishlarim",
         details: "Batafsil",
-        detailsHide: "Yopish",
+        detailsHide: "Kamroq ko'rsatish",
         settings: "Sozlamalar",
         active: "Hozir",
         doneToday: "Bugun yetkazilgan",

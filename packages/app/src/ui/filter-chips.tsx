@@ -48,14 +48,8 @@ export function FilterChips<T extends string>({
                     >
                         {option.label}
                         {option.count === undefined ? null : (
-                            <span
-                                className={cn(
-                                    "tabular-nums",
-                                    on ? "text-brand-ink/80" : "text-tg-subtitle",
-                                )}
-                            >
-                                {option.count}
-                            </span>
+                            // The label's own color (AA on both): the weight sets it apart.
+                            <span className="font-normal tabular-nums">{option.count}</span>
                         )}
                     </button>
                 )

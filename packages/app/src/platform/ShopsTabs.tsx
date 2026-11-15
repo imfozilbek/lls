@@ -328,18 +328,21 @@ function ShowcaseBlock({
 function LiveShopCard({
     shop,
     focused,
+    open,
+    onToggle,
     onDone,
 }: {
     shop: PlatformShopDTO
     focused: boolean
+    /** Kept by the list: a row stays open when a save re-draws it (a demo gets a new key). */
+    open: boolean
+    onToggle(): void
     onDone(): void
 }): React.JSX.Element {
     const t = useT()
     const ref = useFocus(focused)
     const { busy, run } = useBusy()
     const live = shop.status === BusinessStatus.ACTIVE
-    // A short row by default: the one a message opened is open.
-    const [open, setOpen] = useState(focused)
     const reconnect = (): Promise<void> =>
         run("reconnect", async () => {
             botToast(t, await adminApi.reconnect(shop.id), t.platform.reconnected)
@@ -371,7 +374,7 @@ function LiveShopCard({
                 aria-expanded={open}
                 onClick={(): void => {
                     haptic.tap()
-                    setOpen(!open)
+                    onToggle()
                 }}
                 className="tap -m-1 flex flex-col gap-2 rounded-control p-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
             >
@@ -636,6 +639,18 @@ function ShopsBody({
     onReload(): void
 }): React.JSX.Element {
     const t = useT().platform
+    // A short row by default: the one a message opened is open.
+    const [openIds, setOpenIds] = useState<ReadonlySet<string>>(
+        () => new Set(focusId ? [focusId] : []),
+    )
+    const toggle = (id: string): void =>
+        setOpenIds((ids) => {
+            const next = new Set(ids)
+            if (!next.delete(id)) {
+                next.add(id)
+            }
+            return next
+        })
     if (shops === null || found === undefined) {
         return <ListState error={error} onRetry={onReload} />
     }
@@ -653,6 +668,8 @@ function ShopsBody({
                     key={`${shop.id}:${shop.demo}`}
                     shop={shop}
                     focused={shop.id === focusId}
+                    open={openIds.has(shop.id)}
+                    onToggle={(): void => toggle(shop.id)}
                     onDone={onReload}
                 />
             ))}

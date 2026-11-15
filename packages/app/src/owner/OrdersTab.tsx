@@ -693,7 +693,6 @@ function CardDetails({
                 <CompactAddress order={order} shop={shopPlace} />
                 <CourierLine order={order} />
                 {live ? <CourierAction order={order} actions={actions} /> : null}
-                <TripSlot order={order} />
             </div>
         </div>
     )
@@ -824,6 +823,8 @@ function OrderCard({
             ) : (
                 <CourierShort order={order} />
             )}
+            {/* «Shu yo'nalishda yana N ta» stays in sight: it is how trips are found. */}
+            <TripSlot order={order} />
             {live ? (
                 <div className="mt-3 flex flex-col">
                     <MainStep
