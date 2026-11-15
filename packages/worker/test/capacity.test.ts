@@ -11,13 +11,14 @@ import {
     ADMIN,
     CUSTOMER,
     OWNER,
+    PIN,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
     createActiveShop,
     hireCourier,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
-    PIN,
 } from "./helpers.js"
 import { countingDb } from "./rows-read.js"
 
@@ -100,6 +101,7 @@ async function seed(): Promise<{
         json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12", location: PIN },
     })
     const { id: orderId } = (await placed.json()) as { id: string }
+    await sendReceipt(customer, orderId)
     await owner(`/api/owner/orders/${orderId}/payment`, {
         method: "PATCH",
         json: { action: "paid" },
@@ -120,6 +122,8 @@ async function seed(): Promise<{
         updated_at: `${now} - n.i * 48 * ${MINUTE_MS}`,
         paid_at: `${now} - n.i * 48 * ${MINUTE_MS}`,
         delivered_at: `${now} - n.i * 48 * ${MINUTE_MS}`,
+        // Every real screenshot is its own file: one hash per order, as in life.
+        receipt_hash: "printf('%064d', n.i)",
     }
     await clone("orders", "t.id = ?", [orderId], HISTORY, history)
     await clone("order_items", "t.order_id = ?", [orderId], HISTORY, {
@@ -129,6 +133,7 @@ async function seed(): Promise<{
         id: "'o' || n.i",
         number: "100 + n.i",
         status: "'preparing'",
+        receipt_hash: "printf('o%063d', n.i)",
     })
     await clone("order_items", "t.order_id = ?", [orderId], OPEN_ORDERS, {
         order_id: "'o' || n.i",

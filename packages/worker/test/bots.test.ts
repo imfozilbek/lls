@@ -5,13 +5,14 @@ import {
     ADMIN,
     CUSTOMER,
     OWNER,
+    PIN,
     SHOP_BOT,
     SHOP_BOT_TOKEN,
     STRANGER,
-    createActiveShop,
-    testClient,
     TEST_CARD,
-    PIN,
+    createActiveShop,
+    sendReceipt,
+    testClient,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -459,13 +460,13 @@ describe("shop bot", () => {
         const still = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
         expect(still?.status).toBe("pending")
 
-        // «Pul keldi» asks first: the sum and the card to check in the bank app.
+        // The customer's screenshot, then «Pul keldi» asks first: the sum and the card.
+        await sendReceipt(client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug }), order.id)
         await shopUpdate({ callback_query: { id: "cb-q", from: OWNER, data: `p:${order.id}` } })
         const question = client.telegram.sent.at(-1)
         expect(question?.chatId).toBe(OWNER.id)
         expect(question?.html).toContain("keldimi")
         expect(question?.html).toContain("•••• 1111")
-        expect(question?.html).toContain("o'tkazganini hali bildirmagan")
         expect(question?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
             `pc:${order.id}`,
         )
@@ -535,6 +536,7 @@ describe("shop bot", () => {
 
     it("«O'zim yetkazaman» from the chat brings «Tayyor» back, the customer hears nothing", async () => {
         const order = await placeOrder()
+        await sendReceipt(client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug }), order.id)
         await shopUpdate({ callback_query: { id: "cb-p", from: OWNER, data: `pc:${order.id}` } })
         const told = client.telegram.sent.length
         await shopUpdate({ callback_query: { id: "cb-m", from: OWNER, data: `m:${order.id}` } })
@@ -553,6 +555,7 @@ describe("shop bot", () => {
 
     it("a failed answer to the button still updates the order and the owner card", async () => {
         const order = await placeOrder()
+        await sendReceipt(client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug }), order.id)
         client.telegram.failReplies = true
         const response = await shopUpdate({
             callback_query: { id: "cb-1", from: OWNER, data: `pc:${order.id}` },

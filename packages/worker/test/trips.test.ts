@@ -16,6 +16,7 @@ import {
     STRANGER,
     createActiveShop,
     hireCourier,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
 } from "./helpers.js"
@@ -68,6 +69,7 @@ describe("trips: several orders one way, one courier", () => {
         })
         expect(placed.status).toBe(201)
         const order = await json<Order>(placed)
+        await sendReceipt(as(CUSTOMER), order.id)
         const paid = await as(OWNER)(`/api/owner/orders/${order.id}/payment`, {
             method: "PATCH",
             json: { action: "paid" },
