@@ -74,8 +74,8 @@ const BASE = {
         } as StatusTexts,
         customerStatus: {
             [OrderStatus.ACCEPTED]: "✅ #{n} buyurtmangiz qabul qilindi.",
-            // Accepting starts the order: the customer hears it once.
-            [OrderStatus.PREPARING]: "✅ #{n} buyurtmangiz qabul qilindi va yig'ilmoqda.",
+            // Collecting is a step of its own (owner's decision, November 2026).
+            [OrderStatus.PREPARING]: "📦 #{n} buyurtmangiz hozir yig'ilmoqda.",
             [OrderStatus.READY]: "📦 #{n} buyurtmangiz tayyor.",
             [OrderStatus.PICKED_UP]: "🚚 #{n} buyurtmangiz yo'lda. Tez orada yetib boradi!",
             [OrderStatus.DELIVERED]: "🏁 #{n} buyurtmangiz yetkazildi. Rahmat!",
@@ -364,7 +364,7 @@ const FOOD: Record<Language, Partial<BotTexts>> = {
         actions: { ...BASE.uz.actions, [OrderStatus.PREPARING]: "👨‍🍳 Tayyorlashni boshlash" },
         customerStatus: {
             ...BASE.uz.customerStatus,
-            [OrderStatus.PREPARING]: "✅ #{n} buyurtmangiz qabul qilindi va tayyorlanmoqda.",
+            [OrderStatus.PREPARING]: "👨‍🍳 #{n} buyurtmangiz tayyorlanmoqda.",
             [OrderStatus.DELIVERED]: "🏁 #{n} buyurtmangiz yetkazildi. Yoqimli ishtaha!",
         },
         shopWelcome:
@@ -380,6 +380,7 @@ const SERVICE: Record<Language, Partial<BotTexts>> = {
         actions: { ...BASE.uz.actions, [OrderStatus.PREPARING]: "🧰 Bajarishni boshlash" },
         customerStatus: {
             ...BASE.uz.customerStatus,
+            // A service starts the moment it is accepted: the customer hears it once.
             [OrderStatus.PREPARING]: "✅ #{n} buyurtmangiz qabul qilindi va bajarilmoqda.",
             [OrderStatus.DELIVERED]: "🏁 #{n} buyurtmangiz bajarildi. Rahmat!",
         },

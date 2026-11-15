@@ -52,6 +52,34 @@ function orderOf(items: Array<Partial<OrderDTO["items"][number]>>): OrderDTO {
     } as unknown as OrderDTO
 }
 
+describe("the customer's messages about the shop's steps", () => {
+    const paid = (status: OrderStatus): OrderDTO => ({
+        ...orderOf([{ name: "Osh" }]),
+        status,
+        payment: { method: "card_transfer", status: PaymentStatus.PAID } as OrderDTO["payment"],
+    })
+    const say = (status: OrderStatus, type: BusinessType): string | null =>
+        formatStatusForCustomer(paid(status), { language: Language.UZ, type })
+
+    it("accepted, then collected: two messages, the money seen once (owner's decision)", () => {
+        expect(say(OrderStatus.ACCEPTED, BusinessType.GROCERY)).toBe(
+            "✅ #7 buyurtmangiz qabul qilindi.\n💳 To'lovingiz keldi.",
+        )
+        expect(say(OrderStatus.PREPARING, BusinessType.GROCERY)).toBe(
+            "📦 #7 buyurtmangiz hozir yig'ilmoqda.",
+        )
+        expect(say(OrderStatus.PREPARING, BusinessType.FOOD)).toBe(
+            "👨‍🍳 #7 buyurtmangiz tayyorlanmoqda.",
+        )
+    })
+
+    it("a service starts the moment it is accepted: one message", () => {
+        expect(say(OrderStatus.PREPARING, BusinessType.SERVICE)).toBe(
+            "✅ #7 buyurtmangiz qabul qilindi va bajarilmoqda.\n💳 To'lovingiz keldi.",
+        )
+    })
+})
+
 describe("the owner's order card", () => {
     it("says each unit in words: kilograms, grams, metres, hours; pieces are counted", () => {
         const card = formatOrderForOwner(

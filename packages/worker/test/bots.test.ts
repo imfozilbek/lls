@@ -527,7 +527,10 @@ describe("shop bot", () => {
         expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual(
             expect.objectContaining({ callback_data: `m:${order.id}` }),
         )
-        expect(client.telegram.sent.at(-1)?.html).toContain("tayyorlanmoqda")
+        const started = client.telegram.sent.at(-1)?.html
+        expect(started).toContain(`#${order.number} buyurtmangiz tayyorlanmoqda`)
+        // The money was told with «qabul qilindi»: once.
+        expect(started).not.toContain("To'lovingiz keldi")
     })
 
     it("«Yo'q, kelmadi» under the screenshot: unpaid again, the customer sends it again", async () => {
