@@ -1,4 +1,5 @@
 import { OrderStatus, PaymentStatus, cardSystemOf } from "@zumda/core"
+import { useState } from "react"
 
 import { fill, useLanguage, useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
@@ -7,6 +8,7 @@ import { haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
 
 import { AlertIcon, CardIcon, CashIcon, CopyIcon, ShieldIcon } from "./icons.js"
+import { PayAppsSheet, groupCard } from "./pay-apps-sheet.js"
 import { Button } from "./primitives.js"
 
 import type { OrderDTO } from "@zumda/core"
@@ -87,12 +89,11 @@ export function PaymentLine({
     )
 }
 
-/** "1234567812345678" → "1234 5678 1234 5678". */
-function groupCard(number: string): string {
-    return number.replace(/(\d{4})(?=\d)/g, "$1 ")
-}
-
-/** The shop's card, with a copy button: the customer pastes it into their bank app. */
+/**
+ * The shop's card with «Raqamni nusxalash»: the number goes to the clipboard and the bank apps
+ * open in a sheet with the sum to type (owner's decision, November 2026). A demo card only copies:
+ * nobody transfers to it.
+ */
 export function CardBlock({
     card,
     total,
@@ -112,16 +113,24 @@ export function CardBlock({
     const t = useT()
     const language = useLanguage()
     const system = cardSystemOf(card.number)
-    /** The bank app wants both: the card number and the exact sum, digits only. */
-    const copy = async (text: string, done: string, shown: string): Promise<void> => {
+    /** The sheet of bank apps; `copied: false` when the phone gave no clipboard. */
+    const [apps, setApps] = useState<{ copied: boolean } | null>(null)
+    const copy = async (): Promise<void> => {
+        let copied = true
         try {
-            await navigator.clipboard.writeText(text)
+            await navigator.clipboard.writeText(card.number)
             haptic.success()
-            toast(done, "success")
         } catch {
-            // No clipboard here: the value in a toast, to copy by hand.
+            copied = false
             haptic.error()
-            toast(shown)
+        }
+        if (!demo) {
+            setApps({ copied })
+        } else if (copied) {
+            toast(t.pay.copied, "success")
+        } else {
+            // No clipboard here: the number in a toast, to copy by hand.
+            toast(groupCard(card.number))
         }
     }
     return (
@@ -152,33 +161,27 @@ export function CardBlock({
                     {fill(t.pay.cardOwner, { shop: shopName })}
                 </p>
             ) : null}
-            <div className="mt-3 grid grid-cols-2 gap-2">
-                <Button
-                    variant="surface"
-                    icon={<CopyIcon size={18} />}
-                    aria-label={t.pay.copy}
-                    onClick={(): void =>
-                        void copy(card.number, t.pay.copied, groupCard(card.number))
-                    }
-                >
-                    {t.pay.copyShort}
-                </Button>
-                <Button
-                    variant="surface"
-                    icon={<CopyIcon size={18} />}
-                    aria-label={t.pay.copySum}
-                    onClick={(): void =>
-                        void copy(String(total), t.pay.sumCopied, formatMoney(total, language))
-                    }
-                >
-                    {t.pay.copySumShort}
-                </Button>
-            </div>
+            <Button
+                variant="surface"
+                className="mt-3 w-full"
+                icon={<CopyIcon size={18} />}
+                onClick={(): void => void copy()}
+            >
+                {t.pay.copy}
+            </Button>
             <p className="mt-3 text-sm text-tg-subtitle">
                 {fill(again ? t.pay.transferNoteAgain : t.pay.transferNote, {
                     sum: formatMoney(total, language),
                 })}
             </p>
+            {apps ? (
+                <PayAppsSheet
+                    card={card.number}
+                    total={total}
+                    copied={apps.copied}
+                    onClose={(): void => setApps(null)}
+                />
+            ) : null}
         </div>
     )
 }
