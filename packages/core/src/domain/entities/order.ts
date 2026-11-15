@@ -216,6 +216,20 @@ export class Order {
     get items(): readonly OrderItem[] {
         return this.props.items
     }
+
+    /**
+     * What this order took from the shop's counted stock, per product (base units): a cancel
+     * gives it back (owner's decision, November 2026).
+     */
+    stockTaken(): { productId: string; quantity: number }[] {
+        const taken = new Map<string, number>()
+        for (const item of this.props.items) {
+            if (item.fromStock) {
+                taken.set(item.productId, (taken.get(item.productId) ?? 0) + item.quantity)
+            }
+        }
+        return [...taken].map(([productId, quantity]) => ({ productId, quantity }))
+    }
     get subtotal(): Money {
         return this.props.subtotal
     }

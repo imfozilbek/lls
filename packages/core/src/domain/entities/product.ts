@@ -26,6 +26,8 @@ const MAX_STEPS_PER_LINE = 99
 /** Weight steps: 10 g to 10 kg, or a single gram for goods priced per gram (saffron). */
 const MIN_WEIGHT_STEP = 10
 const MAX_WEIGHT_STEP = 10_000
+/** The most a shop may count of one product, in base units: ten million pieces, or 10 t. */
+const MAX_STOCK = 10_000_000
 
 export interface ProductProps {
     id: string
@@ -50,6 +52,11 @@ export interface ProductProps {
     position: number
     /** Variants (one is picked, each with its price) and add-ons; none for most products. */
     options?: ProductOptions
+    /**
+     * What is left, when the owner counts it (owner's decision, November 2026), in the order's
+     * base units: pieces, or grams for weight units. Absent: not counted, sold as before.
+     */
+    stock?: number
     createdAt: Date
     updatedAt: Date
 }
@@ -68,6 +75,8 @@ export interface CreateProductProps {
     returnable?: boolean
     position?: number
     options?: ProductOptionsProps | null
+    /** null or absent: not counted. */
+    stock?: number | null
 }
 
 export interface ProductPatch {
@@ -85,6 +94,8 @@ export interface ProductPatch {
     position?: number
     /** null drops every variant and add-on. */
     options?: ProductOptionsProps | null
+    /** A new count of what is left; null stops counting. */
+    stock?: number | null
 }
 
 /** Weight items sell in gram steps (500 g, 100 g, 1 g by default); everything else by one. */
@@ -150,7 +161,19 @@ function validPrice(amount: number): Money {
     return Money.of(requireInteger("price", amount, 1, MAX_PRICE))
 }
 
+function validStock(input: number | null | undefined): number | undefined {
+    return input === null || input === undefined
+        ? undefined
+        : requireInteger("stock", input, 0, MAX_STOCK)
+}
+
 export class Product {
+    /**
+     * The owner set the count in this change: only then is it written over the stored one, which
+     * the orders change meanwhile (`stock = stock - ?`). A plain edit never brings an old count back.
+     */
+    private stockSet = false
+
     private constructor(private props: ProductProps) {}
 
     static create(input: CreateProductProps): Product {
@@ -158,7 +181,7 @@ export class Product {
         const unit = requireOneOf("unit", input.unit, UNITS)
         const options = validOptions(unit, input.options)
         const category = requireOneOf("category", input.category, CATEGORIES)
-        return new Product({
+        const product = new Product({
             id: input.id,
             businessId: input.businessId,
             name: requireText("name", input.name, NAME_MAX),
@@ -174,9 +197,12 @@ export class Product {
             returnable: input.returnable ?? false,
             position: requireInteger("position", input.position ?? 0, 0, MAX_POSITION),
             options,
+            stock: validStock(input.stock),
             createdAt: now,
             updatedAt: now,
         })
+        product.stockSet = product.tracksStock
+        return product
     }
 
     static reconstitute(props: ProductProps): Product {
@@ -240,6 +266,24 @@ export class Product {
     get options(): ProductOptions | undefined {
         return this.props.options
     }
+    /** What is left in base units, when the owner counts it. */
+    get stock(): number | undefined {
+        return this.props.stock
+    }
+    get tracksStock(): boolean {
+        return this.props.stock !== undefined
+    }
+    /**
+     * Counted and less than one selling step left: the customer still sees it, but cannot add it
+     * (owner's decision, November 2026).
+     */
+    get soldOut(): boolean {
+        return this.props.stock !== undefined && this.props.stock < this.props.step
+    }
+    /** The owner gave a new count in this change (see `stockSet`). */
+    get stockChanged(): boolean {
+        return this.stockSet
+    }
     get createdAt(): Date {
         return this.props.createdAt
     }
@@ -255,6 +299,24 @@ export class Product {
     isAvailableAt(now: Date): boolean {
         const until = this.props.unavailableUntil
         return this.props.isAvailable && (until === undefined || now >= until)
+    }
+
+    /**
+     * Orders took (`delta` < 0) or gave back what is counted. The database does it in one
+     * statement (`stock = stock + ?`); this is the same for a copy kept in memory.
+     */
+    changeStockBy(delta: number): void {
+        if (this.props.stock !== undefined) {
+            this.props.stock = Math.max(0, this.props.stock + delta)
+        }
+    }
+
+    /** Everything ordered of it in one order (base units) must be left, when it is counted. */
+    assertInStock(quantity: number): void {
+        const left = this.props.stock
+        if (left !== undefined && quantity > left) {
+            throw BusinessRuleViolationError.outOfStock(this.props.id, left)
+        }
     }
 
     /** Checks an ordered quantity (base units) against the selling step. */
@@ -297,6 +359,10 @@ export class Product {
             this.props.position = requireInteger("position", patch.position, 0, MAX_POSITION)
         }
         this.applyOptions(patch)
+        if (patch.stock !== undefined) {
+            this.props.stock = validStock(patch.stock)
+            this.stockSet = true
+        }
         this.touch()
     }
 

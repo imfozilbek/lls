@@ -238,6 +238,18 @@ export class BusinessRuleViolationError extends DomainError {
      * «Pul keldi» before the customer's screenshot (owner's decision, November 2026): the owner
      * checks the money only after «Chekni yuklash» and «O'tkazdim».
      */
+    /**
+     * More of a counted product than is left (owner's decision, November 2026): `left` in base
+     * units, so the cart can lower its line.
+     */
+    static outOfStock(productId: string, left: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "OUT_OF_STOCK",
+            "Not that much of the product is left",
+            { productId, left },
+        )
+    }
+
     static receiptNotSent(): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "RECEIPT_NOT_SENT",

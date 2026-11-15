@@ -30,6 +30,8 @@ export interface OrderItemProps {
     quantity: number
     /** The variant and add-ons picked, when the product has them; `unitPrice` already holds them. */
     options?: ChosenOptions
+    /** The line took its quantity from the product's counted stock: a cancel gives it back. */
+    fromStock?: boolean
 }
 
 /**
@@ -44,6 +46,7 @@ export class OrderItem {
     readonly unitPrice: Money
     readonly quantity: number
     readonly options?: ChosenOptions
+    readonly fromStock: boolean
 
     private constructor(props: OrderItemProps) {
         this.productId = props.productId
@@ -53,6 +56,7 @@ export class OrderItem {
         this.unitPrice = props.unitPrice
         this.quantity = props.quantity
         this.options = props.options
+        this.fromStock = props.fromStock === true
     }
 
     static create(input: OrderItemProps): OrderItem {

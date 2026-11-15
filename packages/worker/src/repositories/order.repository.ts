@@ -37,6 +37,7 @@ import type {
     DeliveryNote,
     MoneyTotals,
     NetworkShare,
+    OrderInsert,
     OrderRepository,
     Page,
     PageRequest,
@@ -583,7 +584,7 @@ export class D1OrderRepository implements OrderRepository {
         return row?.next ?? 1
     }
 
-    async insert(order: Order): Promise<boolean> {
+    async insert(order: Order): Promise<OrderInsert> {
         const values = orderValues(order)
         const statements = [
             this.db
@@ -613,10 +614,10 @@ export class D1OrderRepository implements OrderRepository {
             await this.db.batch(statements)
             written.set(order, mutableValues(order))
             versions.remember(order, order.updatedAt.getTime())
-            return true
+            return "placed"
         } catch (error) {
             if (isUniqueViolation(error)) {
-                return false
+                return "number_taken"
             }
             throw error
         }

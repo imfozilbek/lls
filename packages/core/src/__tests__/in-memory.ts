@@ -29,7 +29,11 @@ import type {
     PhoneAskRecipients,
     PhoneAskSender,
 } from "../application/ports/phone-asks.js"
-import type { MoneyTotals, OrderRepository } from "../application/ports/order-repository.js"
+import type {
+    MoneyTotals,
+    OrderInsert,
+    OrderRepository,
+} from "../application/ports/order-repository.js"
 import type { ReceiptStore, ReceiptUpload } from "../application/ports/receipt-store.js"
 import type { RoutePlanner, TripRepository } from "../application/ports/trip-repository.js"
 import type {
@@ -275,8 +279,17 @@ export class InMemoryOrders implements OrderRepository {
     /** Simulate another courier pressing «Беру» first this many times. */
     claimRaces = 0
 
-    /** Districts live on the shops: network queries look them up here. */
-    constructor(private readonly businesses?: InMemoryBusinesses) {}
+    /** Orders that gave their stock back on cancel: once each. */
+    private readonly restocked = new Set<string>()
+
+    /**
+     * Districts live on the shops: network queries look them up here. With `products`, orders
+     * take and give back counted stock, as the database does.
+     */
+    constructor(
+        private readonly businesses?: InMemoryBusinesses,
+        private readonly products?: InMemoryProducts,
+    ) {}
 
     private districtOf(order: Order): string | undefined {
         return this.businesses?.items.get(order.businessId)?.districtId
@@ -291,15 +304,32 @@ export class InMemoryOrders implements OrderRepository {
             .map((o) => o.number)
         return Math.max(0, ...numbers) + 1
     }
-    async insert(order: Order): Promise<boolean> {
+    async insert(order: Order): Promise<OrderInsert> {
         if (this.collisions > 0) {
             this.collisions--
-            return false
+            return "number_taken"
+        }
+        const taken = order.stockTaken()
+        const short = taken.some(({ productId, quantity }) => {
+            const stock = this.products?.items.get(productId)?.stock
+            return stock !== undefined && stock < quantity
+        })
+        if (short) {
+            return "out_of_stock"
+        }
+        for (const { productId, quantity } of taken) {
+            this.products?.items.get(productId)?.changeStockBy(-quantity)
         }
         this.items.set(order.id, order)
-        return true
+        return "placed"
     }
     async save(order: Order): Promise<void> {
+        if (order.status === OrderStatus.CANCELLED && !this.restocked.has(order.id)) {
+            this.restocked.add(order.id)
+            for (const { productId, quantity } of order.stockTaken()) {
+                this.products?.items.get(productId)?.changeStockBy(quantity)
+            }
+        }
         this.items.set(order.id, order)
     }
     async listByBusiness(
