@@ -153,6 +153,23 @@ export const staffUz = {
             "Bugun ishlamaydi deb belgilangan: bossangiz, bugunga qaytariladi va tayinlanadi",
         assign: "Kuryer tayinlash",
         reassign: "Boshqa kuryer",
+        // Owner's decision, November 2026: a shop with couriers hands the order on first.
+        handOver: "Kuryerga topshirish",
+        deliverMyself: "O'zim yetkazaman",
+        deliverMyselfHint: "Kuryersiz: qadamlarni o'zingiz bosasiz",
+        dispatcher: "Dispetcher",
+        dispatcherSends: "Dispetcher jo'natadi va mijozga yozadi",
+        dispatcherDelivers: "Yetkazilganini dispetcher belgilaydi",
+        markDelivered: "Yetkazildi deb belgilash",
+        markDeliveredConfirm:
+            "Dispetcher hali «Yetkazildi» demadi. Buyurtma yetib borganini bilsangiz, belgilang.",
+        cashNotForDispatcher: "naqd buyurtma dispetcherga berilmaydi",
+        sentVia: {
+            self: "Dispetcherning o'zi olib bormoqda",
+            taxi: "Taksi bilan jo'natildi",
+            post: "Pochta orqali jo'natildi",
+            other: "Boshqa yo'l bilan jo'natildi",
+        },
         noCouriers: "Hali kuryer yo'q: o'zingiz yetkazasiz yoki kuryer taklif qilasiz.",
         inviteCourier: "Kuryer taklif qilish",
         toNetwork: "Tuman tarmog'i kuryeri",
@@ -343,6 +360,7 @@ export const staffUz = {
             linkGroup: "Havola, QR-kod va vitrina",
             summary: {
                 free: "Bepul yetkazish",
+                carrier: "Yetkazish haqini mijoz to'laydi",
                 radius: "{km} km gacha",
                 everyDay: "Har kuni",
                 allDay: "kecha-kunduz",
@@ -363,6 +381,9 @@ export const staffUz = {
             minOrder: "Minimal buyurtma",
             radius: "Yetkazish radiusi, km",
             radiusHint: "Bo'sh qoldirsangiz, masofa cheklanmaydi.",
+            customerPaysCarrier: "Yetkazish haqini mijoz o'zi to'laydi",
+            customerPaysCarrierHint:
+                "Taksi yoki pochtaga: narxi buyurtmaga qo'shilmaydi, mijoz «Yetkazish haqi alohida»ni ko'radi.",
             radiusNone: "Cheklovsiz",
             currentColor: "Hozirgi rang",
             colorNames: ["Yashil", "Firuza", "Ko'k", "Binafsha", "Malina", "Olovrang", "Tilla"],
@@ -401,6 +422,9 @@ export const staffUz = {
             workDays: "Ish kunlari",
             offToday: "Bugun ishlamaydi",
             worksToday: "Bugun ishlaydi",
+            dispatcher: "Dispetcher",
+            dispatcherHint:
+                "O'zi olib bormaydi: taksi, pochta yoki boshqa yo'l bilan jo'natadi va mijozga izoh yozadi.",
             onShift: "Smenada",
             notOnShift: "Smenada emas",
             invite: "Kuryerni taklif qilish",
