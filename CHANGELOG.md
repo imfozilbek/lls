@@ -7,6 +7,15 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Up to three photos a product
+- The owner adds up to three photos in the product's form (owner's decision, November 2026): a
+  tile each, the first is «Asosiy» (the menu, the showcase and the catalog show it), a tap makes
+  another the main one or takes it away. «Saqlash» sends only the difference; a retry after a weak
+  network never sends a photo twice.
+- The customer swipes through the photos in the product's sheet, with a dot for each.
+- A product deleted, a photo taken away and «Namunani tozalash» delete the files from the storage
+  (a demo's owner photos used to stay there for good).
+
 ### The shop's stock: counted where the owner wants, «Tugagan» at zero
 - The owner switches on «Qoldiqni hisoblash» for a product and writes how many are left
   (owner's decisions, November 2026): one number for every variant, kg with a comma. The catalog

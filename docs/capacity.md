@@ -142,7 +142,7 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 |------|-----:|--------|
 | The map: the current file and the one before (`map-data.mjs` removes the rest) | ~550 MB | no |
 | Fonts and icons of the map | a few MB | no |
-| Product photos (10 shops × 100 × ~80 KB) and logos, posters | ~100 MB | with the catalogs only |
+| Product photos (10 shops × 100 × up to 3 × ~80 KB) and logos, posters | ~100-250 MB | with the catalogs only |
 | Transfer screenshots (`zumda-receipts`): 300 a day × ~150 KB (1 280 px) × 30 days | ~1.35 GB | no: R2 deletes each after 30 days |
 | **Total** | **~2 GB** | |
 
