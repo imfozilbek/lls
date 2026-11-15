@@ -119,7 +119,7 @@ export const staffUz = {
         /** A short order card opens with this. */
         details: "Batafsil",
         detailsHide: "Yopish",
-        stagesLabel: "Buyurtma bosqichi",
+        stagesLabel: "Buyurtma holati",
         hideFocused: "Yopish",
         tabs: {
             orders: "Buyurtmalar",
@@ -452,7 +452,7 @@ export const staffUz = {
             removeCourier: "Kuryerni o'chirasizmi?",
             features: "Do'kon imkoniyatlari",
             featureNames: {
-                reorder: "«Takrorlash» tugmasi",
+                reorder: "Qayta buyurtma",
                 bottleDeposit: "Idish qaytarish va garov",
                 weightItems: "Tortib sotish (kg)",
                 stopList: "«Bugun yo'q» belgisi",

@@ -699,6 +699,25 @@ function CardDetails({
     )
 }
 
+/** Who is on it, in a short card: one line (the open card has the phone and the notes). */
+function CourierShort({ order }: { order: OrderDTO }): React.JSX.Element | null {
+    const t = useT()
+    const who = order.waitingForNetwork
+        ? t.owner.networkSearching
+        : order.courierName
+          ? `${order.dispatcher ? t.owner.dispatcher : t.owner.courier}: ${order.courierName}`
+          : null
+    if (!who) {
+        return null
+    }
+    return (
+        <p className="mt-1 flex items-center gap-2 text-sm text-tg-subtitle">
+            <ScooterIcon size={16} className="shrink-0 text-brand" />
+            <span className="truncate">{who}</span>
+        </p>
+    )
+}
+
 /** A transfer order before the money: its badge says so already. */
 function awaitsTransfer(order: OrderDTO): boolean {
     return (
@@ -800,7 +819,11 @@ function OrderCard({
             </p>
             {/* Not yet transferred: the badge already says it, once is enough. Cash says so. */}
             {awaitsTransfer(order) ? null : <PaymentLine order={order} forOwner className="mt-1" />}
-            {open ? <CardDetails order={order} actions={actions} /> : null}
+            {open ? (
+                <CardDetails order={order} actions={actions} />
+            ) : (
+                <CourierShort order={order} />
+            )}
             {live ? (
                 <div className="mt-3 flex flex-col">
                     <MainStep
