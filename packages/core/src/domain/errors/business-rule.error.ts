@@ -250,6 +250,15 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    /** A product keeps at most this many photos (owner's decision, November 2026). */
+    static tooManyPhotos(max: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "TOO_MANY_PHOTOS",
+            `A product keeps at most ${max} photos`,
+            { max },
+        )
+    }
+
     static receiptNotSent(): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "RECEIPT_NOT_SENT",

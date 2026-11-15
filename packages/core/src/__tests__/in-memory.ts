@@ -211,6 +211,11 @@ export class InMemoryProducts implements ProductRepository {
     async delete(id: string): Promise<void> {
         this.items.delete(id)
     }
+    async photoKeysOf(businessId: string): Promise<string[]> {
+        return [...this.items.values()]
+            .filter((product) => product.businessId === businessId)
+            .flatMap((product) => product.photos)
+    }
     async replaceAll(businessId: string, products: readonly Product[]): Promise<void> {
         for (const product of [...this.items.values()]) {
             if (product.businessId === businessId) {

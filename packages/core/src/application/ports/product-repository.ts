@@ -40,4 +40,6 @@ export interface ProductRepository {
     delete(id: string): Promise<void>
     /** Every product of the shop gives way to these, in one transaction (a demo starts again). */
     replaceAll(businessId: string, products: readonly Product[]): Promise<void>
+    /** Every photo of the shop's products: the storage deletes them when a demo starts again. */
+    photoKeysOf(businessId: string): Promise<string[]>
 }

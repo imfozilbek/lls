@@ -163,6 +163,41 @@ export class UpdateProductUseCase {
     }
 }
 
+/** One change to a product's photos: one more, one less, or a new order (the first is main). */
+export type PhotoChange = { add: string } | { remove: string } | { order: readonly string[] }
+
+export interface ChangeProductPhotosInput {
+    actorTelegramId: number
+    businessId: string
+    productId: string
+    change: PhotoChange
+}
+
+/**
+ * Up to three photos (owner's decision, November 2026): the main one shows in the menu, the
+ * showcase and the catalog; the customer swipes through all of them in the product's sheet.
+ */
+export class ChangeProductPhotosUseCase {
+    constructor(
+        private readonly businesses: BusinessRepository,
+        private readonly products: ProductRepository,
+    ) {}
+
+    async execute(input: ChangeProductPhotosInput): Promise<ProductDTO> {
+        const product = await requireOwnedProduct(this.businesses, this.products, input)
+        const { change } = input
+        if ("add" in change) {
+            product.addPhoto(change.add)
+        } else if ("remove" in change) {
+            product.removePhoto(change.remove)
+        } else {
+            product.reorderPhotos(change.order)
+        }
+        await this.products.save(product)
+        return toProductDTO(product)
+    }
+}
+
 export interface DeleteProductInput {
     actorTelegramId: number
     businessId: string

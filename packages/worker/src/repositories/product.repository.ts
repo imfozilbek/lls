@@ -126,6 +126,18 @@ function wordsOf(text: string): string[] {
     return [...new Set(text.split(" ").filter((word) => word.length > 0))]
 }
 
+/** The shop's photos, main and more: a demo's are deleted when it starts again (rare). */
+export const PHOTOS_OF = `SELECT image_key, more_images FROM products
+    WHERE business_id = ? AND image_key IS NOT NULL`
+
+/** More photos as stored: a JSON array of R2 keys; anything else reads as none. */
+function moreImagesOf(json: string): string[] {
+    const parsed: unknown = JSON.parse(json)
+    return Array.isArray(parsed)
+        ? parsed.filter((key): key is string => typeof key === "string")
+        : []
+}
+
 function toProduct(row: ProductRow): Product {
     return Product.reconstitute({
         id: row.id,
@@ -336,6 +348,17 @@ export class D1ProductRepository implements ProductRepository {
         await this.db.batch([
             this.db.prepare("DELETE FROM product_words WHERE product_id = ?").bind(id),
             this.db.prepare("DELETE FROM products WHERE id = ?").bind(id),
+        ])
+    }
+
+    async photoKeysOf(businessId: string): Promise<string[]> {
+        const { results } = await this.db
+            .prepare(PHOTOS_OF)
+            .bind(businessId)
+            .all<{ image_key: string; more_images: string | null }>()
+        return results.flatMap((row) => [
+            row.image_key,
+            ...(row.more_images === null ? [] : moreImagesOf(row.more_images)),
         ])
     }
 

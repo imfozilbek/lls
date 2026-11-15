@@ -2,6 +2,7 @@ import { AGES, isAge } from "../enums/age.js"
 import { CATEGORIES, MAX_CATEGORIES } from "../enums/category.js"
 import { UNITS, Unit, defaultStep, isWeightUnit } from "../enums/unit.js"
 import { BusinessRuleViolationError } from "../errors/business-rule.error.js"
+import { EntityNotFoundError } from "../errors/not-found.error.js"
 import { ValidationError } from "../errors/validation.error.js"
 import { optionalText, requireInteger, requireOneOf, requireText } from "../shared/guards.js"
 import { searchText } from "../shared/search-text.js"
@@ -28,6 +29,8 @@ const MIN_WEIGHT_STEP = 10
 const MAX_WEIGHT_STEP = 10_000
 /** The most a shop may count of one product, in base units: ten million pieces, or 10 t. */
 const MAX_STOCK = 10_000_000
+/** Photos of one product (owner's decision, November 2026): the main one and two more. */
+export const MAX_PHOTOS = 3
 
 export interface ProductProps {
     id: string
@@ -43,7 +46,10 @@ export interface ProductProps {
     moreCategories?: Category[]
     /** The child's age it is for, from this many years (children's goods). */
     ageFrom?: Age
+    /** The main photo: the menu, the showcase and the owner's catalog show it. */
     imageKey?: string
+    /** Up to two more photos, after the main one, for the product's own sheet. */
+    moreImageKeys?: string[]
     isAvailable: boolean
     /** Stop-list: hidden until this moment (the next local midnight), then back on sale. */
     unavailableUntil?: Date
@@ -257,6 +263,13 @@ export class Product {
     get imageKey(): string | undefined {
         return this.props.imageKey
     }
+    get moreImageKeys(): string[] {
+        return this.props.moreImageKeys ?? []
+    }
+    /** Every photo, the main one first. */
+    get photos(): string[] {
+        return this.props.imageKey ? [this.props.imageKey, ...this.moreImageKeys] : []
+    }
     get isAvailable(): boolean {
         return this.props.isAvailable
     }
@@ -434,9 +447,56 @@ export class Product {
         this.touch()
     }
 
-    setImage(imageKey: string | null): void {
-        this.props.imageKey = imageKey ?? undefined
+    /**
+     * A new main photo, or none: then the next photo, if any, becomes the main one. Returns the
+     * main photo it replaced, for the storage to delete.
+     */
+    setImage(imageKey: string | null): string | undefined {
+        const previous = this.props.imageKey
+        if (imageKey !== null) {
+            this.props.imageKey = imageKey
+        } else {
+            this.setPhotos(this.moreImageKeys)
+        }
         this.touch()
+        return previous
+    }
+
+    /** One more photo: the main one when there is none, after the others otherwise. */
+    addPhoto(key: string): void {
+        if (this.photos.includes(key)) {
+            return
+        }
+        if (this.photos.length >= MAX_PHOTOS) {
+            throw BusinessRuleViolationError.tooManyPhotos(MAX_PHOTOS)
+        }
+        this.setPhotos([...this.photos, key])
+        this.touch()
+    }
+
+    /** Takes one photo away; the next one becomes the main photo when it was the main one. */
+    removePhoto(key: string): void {
+        if (!this.photos.includes(key)) {
+            throw EntityNotFoundError.photo(key)
+        }
+        this.setPhotos(this.photos.filter((photo) => photo !== key))
+        this.touch()
+    }
+
+    /** The same photos in a new order: the first is the main one. */
+    reorderPhotos(keys: readonly string[]): void {
+        const now = [...this.photos].sort()
+        if (keys.length !== now.length || [...keys].sort().some((key, i) => key !== now[i])) {
+            throw ValidationError.fromField("keys", "Must be this product's photos", keys.join(","))
+        }
+        this.setPhotos([...keys])
+        this.touch()
+    }
+
+    private setPhotos(keys: readonly string[]): void {
+        const [main, ...more] = keys
+        this.props.imageKey = main
+        this.props.moreImageKeys = more.length > 0 ? more : undefined
     }
 
     private touch(): void {
