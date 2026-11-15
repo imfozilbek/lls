@@ -25,11 +25,12 @@ import {
     CUSTOMER_TG,
     NOON_MONDAY_UZ,
     OWNER_TG,
+    PIN,
     STRANGER_TG,
     makeBusiness,
     makeCustomer,
     makeProduct,
-    PIN,
+    receiptSent,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -321,6 +322,7 @@ describe("order use cases", () => {
                     to: OrderStatus.ACCEPTED,
                 }),
             ).rejects.toThrow(BusinessRuleViolationError)
+            await receiptSent(orders, orderId)
             const accepted = await new ConfirmPaymentUseCase({
                 businesses,
                 orders,
@@ -357,6 +359,7 @@ describe("order use cases", () => {
             expect(byCustomer.cancelledBy).toBe("customer")
 
             const second = (await placeOrder.execute(input())).id
+            await receiptSent(orders, second)
             await new ConfirmPaymentUseCase({
                 businesses,
                 orders,

@@ -129,6 +129,7 @@ describe("money: transfer before the shop starts, report", () => {
     /** Paid and accepted; the courier takes it; kitchen steps; picked up and delivered. */
     async function deliver(order: OrderDTO): Promise<OrderDTO> {
         const advance = new AdvanceOrderUseCase(access())
+        await sent(order)
         await confirm(order)
         await new AssignCourierUseCase({ businesses, couriers, orders, clock }).execute({
             ...ids(order),
@@ -287,9 +288,14 @@ describe("money: transfer before the shop starts, report", () => {
         await expect(sent(await place(), OWNER_TG)).rejects.toThrow(ForbiddenError)
     })
 
-    it("the owner may confirm a transfer the customer did not announce", async () => {
-        const accepted = await confirm(await place())
-        expect(accepted).toMatchObject({ status: OrderStatus.PREPARING })
+    it("«Pul keldi» waits for the customer's screenshot, and again after «Pul kelmadi»", async () => {
+        const order = await place()
+        await expect(confirm(order)).rejects.toMatchObject({ rule: "RECEIPT_NOT_SENT" })
+        await sent(order)
+        await new RejectTransferUseCase(money()).execute(ids(order))
+        await expect(confirm(order)).rejects.toMatchObject({ rule: "RECEIPT_NOT_SENT" })
+        await sent(order)
+        expect(await confirm(order)).toMatchObject({ status: OrderStatus.PREPARING })
     })
 
     it("delivered: one «Доставил», the courier carries no money; the report adds up", async () => {
@@ -319,6 +325,7 @@ describe("money: transfer before the shop starts, report", () => {
 
     it("a paid order that is cancelled is owed back until the owner refunds it", async () => {
         const order = await place()
+        await sent(order)
         await confirm(order)
         await new CancelOrderUseCase(access()).execute({
             telegramId: OWNER_TG,

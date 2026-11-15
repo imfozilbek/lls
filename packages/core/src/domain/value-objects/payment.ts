@@ -199,12 +199,16 @@ export class Payment {
         })
     }
 
-    /** The owner saw the transfer arrive. Money for a cancelled order is owed back at once. */
+    /**
+     * The owner saw the transfer arrive. Only after the customer sent its screenshot (owner's
+     * decision, November 2026): a transfer with no receipt waits for the customer. Money for a
+     * cancelled order is owed back at once.
+     */
     confirm(at: Date, orderCancelled: boolean): Payment {
-        if (
-            this.props.status !== PaymentStatus.UNPAID &&
-            this.props.status !== PaymentStatus.AWAITING
-        ) {
+        if (this.props.status === PaymentStatus.UNPAID) {
+            throw BusinessRuleViolationError.receiptNotSent()
+        }
+        if (this.props.status !== PaymentStatus.AWAITING) {
             throw BusinessRuleViolationError.paymentNotConfirmable(this.props.status)
         }
         return new Payment({

@@ -21,7 +21,7 @@ import { Location } from "../../../domain/value-objects/location.js"
 import { Money } from "../../../domain/value-objects/money.js"
 import { Phone } from "../../../domain/value-objects/phone.js"
 import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
-import { makeBusiness, makeCourier } from "../../fixtures.js"
+import { makeBusiness, makeCourier, withReceipt } from "../../fixtures.js"
 
 const NOW = new Date()
 const GULISTAN = Location.create(40.4897, 68.7842)
@@ -67,7 +67,7 @@ function placed(): Order {
 
 function accepted(): Order {
     const order = placed()
-    order.confirmPaymentAndStart()
+    withReceipt(order).confirmPaymentAndStart()
     return order
 }
 
