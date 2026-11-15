@@ -200,12 +200,19 @@ export const staffUz = {
         onSale: "Sotuvda",
         addPhotos:
             "{n} ta mahsulotda rasm yo'q. Rasmli mahsulot yaxshiroq sotiladi: chapdagi katakni bosib rasm tanlang.",
+        catalogFilterLabel: "Mahsulot holati",
+        catalogFilters: {
+            all: "Hammasi",
+            onSale: "Sotuvda",
+            today: "Bugun yo'q",
+            hidden: "Yashirilgan",
+            noPhoto: "Rasmsiz",
+        },
         offSale: "Sotilmaydi",
         offTitle: "Sotuvdan olish",
         stopToday: "Faqat bugunga",
         stopTodayHint: "Ertaga o'zi qaytadi",
         hideForGood: "Butunlay yashirish",
-        moreFor: "Sotuvdan olish: {name}",
         stoppedTodayToast: "{name} bugunga sotuvdan olindi. Ertaga o'zi qaytadi.",
         product: {
             new: "Yangi mahsulot",
