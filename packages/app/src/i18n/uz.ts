@@ -82,7 +82,7 @@ export const uz = {
         NO_PAYOUT_CARD: "Do'kon tez orada buyurtma qabul qila boshlaydi.",
         NO_SHOP_PHONE: "Do'kon tez orada buyurtma qabul qila boshlaydi.",
         COURIER_PHONE_REQUIRED: "Kuryer hali raqamini yubormagan: raqam kelgach tasdiqlang.",
-        RECEIPT_REQUIRED: "O'tkazma chekining rasmini yuklang.",
+        RECEIPT_REQUIRED: "O'tkazma chekining skrinshotini yuboring.",
         RECEIPT_EXPIRED: "Chek 30 kun saqlanadi, bu chek o'chirilgan.",
         REMIND_TOO_SOON: "Do'konga yaqinda eslatildi. Birozdan keyin qayta urinib ko'ring.",
         PAYMENT_METHOD_UNAVAILABLE:
@@ -320,7 +320,7 @@ export const uz = {
         closedUntil: "Do'kon hozir yopiq, {when} ochiladi. Savat saqlanib turadi.",
         unavailable: "Tugagan",
         clear: "Savatni tozalash",
-        clearAsk: "Savatdagi hamma mahsulotlar o'chirilsinmi?",
+        clearAsk: "Savat tozalansinmi? Hamma mahsulotlar olib tashlanadi.",
     },
     checkout: {
         title: "Buyurtma",

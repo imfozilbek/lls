@@ -43,7 +43,7 @@ export const staffUz = {
         SEND_WAY_REQUIRED: "Bu buyurtmani dispetcher jo'natadi: qanday jo'natilganini u yozadi.",
         NOT_A_DISPATCHER_ORDER: "Bu buyurtma dispetcherda emas. Ro'yxat yangilandi.",
         NOTES_CLOSED: "Buyurtma yakunlangan: endi izoh qo'shib bo'lmaydi.",
-        TOO_MANY_NOTES: "Bitta buyurtmaga 20 tagacha izoh yoziladi.",
+        TOO_MANY_NOTES: "Bitta buyurtmaga 20 tadan ortiq izoh yozib bo'lmaydi.",
         NOT_OWN_COURIER: "Faqat do'konning o'z kuryeri dispetcher bo'la oladi.",
         NOT_FOR_TRIP:
             "Buyurtmalardan biri allaqachon boshqa yo'lda yoki tarmoqda. Ro'yxat yangilandi.",
@@ -317,7 +317,7 @@ export const staffUz = {
             cashReceived: "Pulni oldim",
             cashConfirm: "{name} sizga #{n} buyurtma uchun {sum} berdimi?",
             cashTaken: "Pul do'konda",
-            inProgress: "Yana {n} ta buyurtma jarayonda: yetkazilgach tushumga qo'shiladi",
+            inProgress: "Yana {n} ta buyurtma yetkazilmagan: yetkazilgach tushumga qo'shiladi",
             goods: "Tovarlar",
             delivery: "Yetkazish",
             deposits: "Idish garovi",
@@ -371,7 +371,7 @@ export const staffUz = {
             unsavedLeave: "O'zgarishlar saqlanmagan. Saqlamasdan chiqasizmi?",
             acceptingOff: "Buyurtmalar to'xtatilgan: mijozlar hozir buyurtma bera olmaydi.",
             acceptingOffAsk:
-                "Buyurtmalar to'xtatilsinmi? Qayta yoqmaguningizcha mijozlar buyurtma bera olmaydi.",
+                "Buyurtmalar to'xtatilsinmi? Siz qayta yoqmaguncha mijozlar buyurtma bera olmaydi.",
             acceptingOffYes: "To'xtatish",
             acceptingOn: "Yoqish",
             acceptingBackOn: "Buyurtmalar yana qabul qilinmoqda",
@@ -528,7 +528,7 @@ export const staffUz = {
             saved: "Saqlandi",
             showcase: "Zumda vitrinasi",
             showcaseOn:
-                "Do'koningiz Zumda botidagi qidiruvda. Vitrina orqali sotuvdan komissiya: {rate}%.",
+                "Do'koningiz Zumda Shop qidiruvida bor. Vitrina orqali sotilgan tovarlardan komissiya: {rate}%.",
             showcaseOff:
                 "Do'koningiz Zumda vitrinasida emas. Qo'shilish uchun Zumda bilan bog'laning.",
         },
@@ -563,7 +563,7 @@ export const staffUz = {
         // A dispatcher (owner's decision, November 2026): sends the parcel on, writes the customer.
         dispatcher: "Dispetcher",
         dispatcherWait:
-            "Do'kon qadoqlamoqda: tayyor bo'lganda «Jo'natdim»ni bosasiz. Izohni hozir ham yozish mumkin.",
+            "Do'kon buyurtmani tayyorlayapti: tayyor bo'lganda «Jo'natdim»ni bosasiz. Izohni hozir ham yozish mumkin.",
         send: "Jo'natdim",
         sendTitle: "#{n}: qanday jo'natdingiz?",
         ways: {
