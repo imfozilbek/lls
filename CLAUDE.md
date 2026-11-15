@@ -347,6 +347,17 @@ cover each one's whole process; what exactly comes from the meeting with them.
   guessed category replaces it, later taps add and remove; the shop's own categories come right
   after the name's guess. The storefront's tabs: the ages first (two or more), then every
   category a product stands in (`shop/menu-chips.ts`); a card shows «3+».
+- **The shop's stock (owner's decisions, November 2026):** the owner counts what is left of a
+  product only where they want it («Qoldiqni hisoblash» in its form; `products.stock`, base units:
+  pieces, or grams; NULL: not counted, sold as before). One number for the whole product: every
+  variant takes from it. An order takes it when it is placed, in the same `db.batch` as the order
+  (`STOCK_TAKE_SQL`; the column's CHECK never lets it below zero, so two customers never get the
+  last piece: the second hears `OUT_OF_STOCK` with what is left); a cancel gives back what the
+  lines took (`order_items.from_stock`, once). A product save writes the count only when the owner
+  gave a new one. Below one selling step left the product is «Tugagan»: the customer sees it as it
+  is (storefront, sheet, showcase) and cannot add it; the cart drops it, or brings a line down to
+  what is left («… faqat 1 ta qoldi»). The customer never sees the number; the owner's catalog
+  says «12 ta qoldi» and has the chip «Tugagan».
 - Add a feature only when a real client asks for it.
 - Design stage 1 so stages 2–3 need no rewrite:
   - multi-tenant: `business_id` in every business-owned table
@@ -551,14 +562,14 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | Entity | Key Fields |
 |--------|------------|
 | Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order, customer_pays_carrier), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
-| Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy; the main one), more_categories (up to two more, storefront only), age_from (0, 1, 3, 5, 7, 12: children's goods), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17) |
+| Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy; the main one), more_categories (up to two more, storefront only), age_from (0, 1, 3, 5, 7, 12: children's goods), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17), stock (what is left in base units when the owner counts it; NULL: not counted) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
 | District | id, name, region (one of the 14 viloyats), center (lat, lng), radius, wait_minutes: a circle of the delivery network |
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until, dispatcher (sends orders on by a taxi or the post, writes notes): the person's link to one shop (`network`: took a network order of it) |
 | Trip | id, business_id, courier_id, route (JSON line), distance_m, duration_s: several orders of one shop one way; stops are `orders.trip_id` + `trip_stop` |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), service fee (rate + amount; plan) |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces (metres, hours...), or
@@ -1185,6 +1196,8 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Grocery: weight items (kg steps); spices by 100 g («× 300 g» in the message); stop-list for today
 - [ ] Toys: a toy in «Mantiqiy o'yinlar» and «Kitoblar» with «3+»; a fourth category refused; the
       storefront's tabs «0+», «3+» and the categories, each toy under each of its tabs
+- [ ] Stock: «Qoldiqni hisoblash» 2 → two ordered → «Tugagan» on the storefront, no «+» → the
+      cancel brings «+» back; two customers and the last piece: one order; «faqat 1 ta qoldi»
 - [ ] Each order stores channel + commission (0 for own bot)
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow
