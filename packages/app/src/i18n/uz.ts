@@ -104,6 +104,8 @@ export const uz = {
         soldOut: "Tugagan",
         /** «12 ta»: pieces in a sentence. */
         pieces: "{n} ta",
+        /** One of a product's photos, for a screen reader. */
+        photoOf: "{n}-rasm",
         unpaidOrder: "Buyurtma #{n}: {sum} o'tkazing",
         map: "Xarita",
         call: "Qo'ng'iroq",

@@ -6,10 +6,10 @@ import { haptic } from "../lib/telegram.js"
 import { useCart } from "../stores/cart.js"
 import { PlusIcon } from "../ui/icons.js"
 import { Button, Spinner, Stepper } from "../ui/primitives.js"
-import { ProductImage } from "../ui/product-image.js"
 import { Sheet } from "../ui/sheet.js"
 
 import { AgeBadge } from "./age-badge.js"
+import { ProductGallery } from "./product-gallery.js"
 import { hasOptions } from "./product-options.js"
 
 import type { ProductDTO } from "@zumda/core"
@@ -36,14 +36,7 @@ export function ProductSheet({
     return (
         <Sheet title={product.name} onClose={onClose}>
             <div className="flex flex-col gap-3">
-                {product.imageKey ? (
-                    <ProductImage
-                        imageKey={product.imageKey}
-                        category={product.category}
-                        alt={product.name}
-                        className="aspect-[4/3] w-full rounded-tile"
-                    />
-                ) : null}
+                <ProductGallery product={product} />
                 {product.description ? (
                     <p className="whitespace-pre-line text-tg-subtitle">{product.description}</p>
                 ) : null}

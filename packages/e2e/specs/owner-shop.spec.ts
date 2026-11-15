@@ -64,7 +64,7 @@ test("catalog: add a product with a photo; customers see it at once", async ({ p
         mimeType: "image/png",
         buffer: pngImage(400),
     })
-    await expect(page.getByRole("button", { name: "Almashtirish" })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Rasm 1: Asosiy" })).toBeVisible()
     await page.getByLabel("Narxi").fill("30000")
     await expect(page.getByLabel("Narxi")).toHaveValue("30 000")
     await page.getByRole("button", { name: "Taomlar", exact: true }).click()

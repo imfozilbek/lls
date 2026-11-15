@@ -19,7 +19,10 @@ export interface ProductDTO {
     moreCategories?: Category[]
     /** The child's age it is for, from this many years («3+»); absent when not given. */
     ageFrom?: Age
+    /** The main photo. */
     imageKey?: string
+    /** Up to two more photos for the product's sheet; absent when none. */
+    moreImageKeys?: string[]
     isAvailable: boolean
     /** On today's stop-list until this moment (ISO); back on sale after it. */
     unavailableUntil?: string
@@ -50,6 +53,7 @@ export function toProductDTO(product: Product, audience: ProductAudience = "owne
         ...(product.moreCategories.length > 0 ? { moreCategories: product.moreCategories } : {}),
         ...(product.ageFrom === undefined ? {} : { ageFrom: product.ageFrom }),
         imageKey: product.imageKey,
+        ...(product.moreImageKeys.length > 0 ? { moreImageKeys: product.moreImageKeys } : {}),
         isAvailable: product.isAvailable,
         unavailableUntil: product.unavailableUntil?.toISOString(),
         returnable: product.returnable,

@@ -164,6 +164,18 @@ export const productsBody = z.object({
         .max(MAX_PRODUCTS_AT_ONCE),
 })
 
+/** A product photo's R2 key, as `storeImage` makes it. */
+const photoKey = z
+    .string()
+    .max(200)
+    .regex(/^shops\/[\w-]+\/products\/[\w-]+\.(webp|jpg|png)$/)
+
+/** «Rasmni o'chirish»: which photo. */
+export const photoQuery = z.object({ key: photoKey })
+
+/** «Asosiy qilish»: the product's photos in their new order, the first is the main one. */
+export const photosOrderBody = z.object({ keys: z.array(photoKey).min(1).max(3) })
+
 export const productPatchBody = productBody.partial().extend({
     description: z.string().trim().max(500).nullable().optional(),
     moreCategories: z.array(z.enum(CATEGORIES)).max(2).nullable().optional(),

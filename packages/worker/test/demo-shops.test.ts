@@ -154,9 +154,15 @@ describe("demo shops («Namuna»): made in «Platforma», never real", () => {
         expect(network.status).toBe(422)
         expect(await json(network)).toMatchObject({ error: { code: "NO_DISTRICT" } })
 
-        // «Namunani tozalash»: the orders are gone, the sample's catalog is back.
+        // «Namunani tozalash»: the orders are gone, the sample's catalog is back, and the photos
+        // the owner gave its products leave the storage (the sample has none).
         await env.DB.prepare("DELETE FROM products WHERE business_id = ? AND name = ?")
             .bind(shop.id, "Lag'mon")
+            .run()
+        const photo = `shops/${shop.id}/products/owner-photo.webp`
+        await env.BUCKET.put(photo, new Uint8Array([1, 2, 3]))
+        await env.DB.prepare("UPDATE products SET image_key = ? WHERE id = ?")
+            .bind(photo, product?.id)
             .run()
         const reset = await admin()(`/api/admin/shops/${shop.id}/demo/reset`, { method: "POST" })
         expect(reset.status).toBe(200)
@@ -166,5 +172,6 @@ describe("demo shops («Namuna»): made in «Platforma», never real", () => {
         expect(
             await count("SELECT COUNT(*) AS n FROM products WHERE business_id = ?", shop.id),
         ).toBe(demoTemplate("food").products.length)
+        expect(await env.BUCKET.get(photo)).toBeNull()
     })
 })

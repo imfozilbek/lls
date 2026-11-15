@@ -1,5 +1,12 @@
 import { zValidator } from "@hono/zod-validator"
-import { BusinessStatus, EntityNotFoundError, OrderStatus, toShopOwnerDTO } from "@zumda/core"
+import {
+    BusinessRuleViolationError,
+    BusinessStatus,
+    EntityNotFoundError,
+    MAX_PHOTOS,
+    OrderStatus,
+    toShopOwnerDTO,
+} from "@zumda/core"
 import { Hono } from "hono"
 
 import { requireOwner, shopOf } from "../auth.js"
@@ -20,6 +27,8 @@ import {
     idParam,
     ownerOrderBody,
     ownerOrdersQuery,
+    photoQuery,
+    photosOrderBody,
     productBody,
     productsBody,
     productPatchBody,
@@ -430,9 +439,75 @@ export const ownerRoutes = new Hono<AppEnv>()
             businessId: shopOf(c).id,
             productId: c.req.valid("param").id,
         })
-        await deleteImage(c.env.BUCKET, deleted.imageKey)
+        for (const key of [deleted.imageKey, ...(deleted.moreImageKeys ?? [])]) {
+            await deleteImage(c.env.BUCKET, key)
+        }
         return c.body(null, 204)
     })
+
+    /** One more photo, up to three (owner's decision, November 2026): the first is the main. */
+    .post("/products/:id/images", zValidator("param", idParam, onInvalid), async (c) => {
+        const business = shopOf(c)
+        const { useCases, products } = c.get("services")
+        const productId = c.req.valid("param").id
+        const product = await products.findById(productId)
+        if (!product?.belongsTo(business.id)) {
+            throw EntityNotFoundError.product(productId)
+        }
+        // Refused before the file is stored: nothing to delete again.
+        if (product.photos.length >= MAX_PHOTOS) {
+            throw BusinessRuleViolationError.tooManyPhotos(MAX_PHOTOS)
+        }
+        const key = await storeImage(
+            c.env.BUCKET,
+            `shops/${business.id}/products`,
+            c.req.header("Content-Type"),
+            await readImageBody(c.req.raw),
+        )
+        const saved = await withStoredImage(c.env.BUCKET, key, () =>
+            useCases.changeProductPhotos.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: business.id,
+                productId,
+                change: { add: key },
+            }),
+        )
+        return c.json(saved, 201)
+    })
+
+    /** «Rasmni o'chirish»: one photo away; the next becomes the main one when it was. */
+    .delete(
+        "/products/:id/images",
+        zValidator("param", idParam, onInvalid),
+        zValidator("query", photoQuery, onInvalid),
+        async (c) => {
+            const { key } = c.req.valid("query")
+            const product = await c.get("services").useCases.changeProductPhotos.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: shopOf(c).id,
+                productId: c.req.valid("param").id,
+                change: { remove: key },
+            })
+            await deleteImage(c.env.BUCKET, key)
+            return c.json(product)
+        },
+    )
+
+    /** «Asosiy qilish»: the same photos in a new order, the first is the main one. */
+    .patch(
+        "/products/:id/images",
+        zValidator("param", idParam, onInvalid),
+        zValidator("json", photosOrderBody, onInvalid),
+        async (c) => {
+            const product = await c.get("services").useCases.changeProductPhotos.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: shopOf(c).id,
+                productId: c.req.valid("param").id,
+                change: { order: c.req.valid("json").keys },
+            })
+            return c.json(product)
+        },
+    )
 
     .put("/products/:id/image", zValidator("param", idParam, onInvalid), async (c) => {
         const business = shopOf(c)

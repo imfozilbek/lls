@@ -46,4 +46,9 @@ export class EntityNotFoundError extends DomainError {
     static order(id: string): EntityNotFoundError {
         return new EntityNotFoundError("Order", id)
     }
+
+    /** A photo key that is not this product's. */
+    static photo(key: string): EntityNotFoundError {
+        return new EntityNotFoundError("Photo", key)
+    }
 }

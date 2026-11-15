@@ -358,6 +358,15 @@ cover each one's whole process; what exactly comes from the meeting with them.
   is (storefront, sheet, showcase) and cannot add it; the cart drops it, or brings a line down to
   what is left («… faqat 1 ta qoldi»). The customer never sees the number; the owner's catalog
   says «12 ta qoldi» and has the chip «Tugagan».
+- **Up to three photos a product (owner's decision, November 2026):** `image_key` is the main one
+  (the menu, the showcase, the catalog, the photo nudge), `products.more_images` up to two more
+  (`MAX_PHOTOS`). In the form a tile each, the first marked «Asosiy»; a tap offers «Asosiy
+  qilish» and «Rasmni o'chirish», «Rasm qo'shish» while there is room; «Saqlash» sends the
+  difference step by step (`owner/photos.ts`: removed, new ones in order, then the order), and a
+  retry never sends a photo twice. Routes: `POST`, `DELETE ?key=`, `PATCH /products/:id/images`
+  (`TOO_MANY_PHOTOS` refused before the file is stored). The customer swipes through them in the
+  product's sheet, a dot each (`shop/product-gallery.tsx`, `data-no-gesture`). A deleted product,
+  a removed photo and «Namunani tozalash» delete the files from R2.
 - Add a feature only when a real client asks for it.
 - Design stage 1 so stages 2–3 need no rewrite:
   - multi-tenant: `business_id` in every business-owned table
@@ -562,7 +571,7 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | Entity | Key Fields |
 |--------|------------|
 | Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order, customer_pays_carrier), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
-| Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy; the main one), more_categories (up to two more, storefront only), age_from (0, 1, 3, 5, 7, 12: children's goods), image_key, is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17), stock (what is left in base units when the owner counts it; NULL: not counted) |
+| Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy; the main one), more_categories (up to two more, storefront only), age_from (0, 1, 3, 5, 7, 12: children's goods), image_key (the main photo), more_images (up to two more), is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17), stock (what is left in base units when the owner counts it; NULL: not counted) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
 | District | id, name, region (one of the 14 viloyats), center (lat, lng), radius, wait_minutes: a circle of the delivery network |
@@ -1198,6 +1207,8 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       storefront's tabs «0+», «3+» and the categories, each toy under each of its tabs
 - [ ] Stock: «Qoldiqni hisoblash» 2 → two ordered → «Tugagan» on the storefront, no «+» → the
       cancel brings «+» back; two customers and the last piece: one order; «faqat 1 ta qoldi»
+- [ ] Photos: three in the form, the third «Asosiy qilish», a fourth has no place; one taken away;
+      the customer swipes through them in the sheet, the menu shows the main one
 - [ ] Each order stores channel + commission (0 for own bot)
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow
