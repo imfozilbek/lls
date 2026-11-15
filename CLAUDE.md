@@ -791,9 +791,12 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   out-of-zone order is never paid and refunded; the storefront says «{km} km gacha yetkazamiz»
 - Phone: Telegram "share contact" button, never typed by hand
 - Payment: the shop's choice. Transfer: checkout tells the sum, the order screen shows the card
-  with a copy button; the customer transfers after placing, presses «Chekni yuklash» and, with the
-  screenshot picked, «O'tkazdim»; the owner confirms by hand («Pul keldi», asked once more), then
-  the shop starts. Cash: checkout and the order screen say the sum to give the courier. «Ikkalasi»:
+  with «Raqamni nusxalash», which copies the number and opens the bank apps (owner's decision,
+  November 2026: Click, Payme, Uzum Bank, Paynet, `lib/pay-apps.ts`, each at an address the app
+  claims for itself; none takes a card or a sum prefilled, so the sum is shown in the sheet, never
+  copied; a demo card only copies); the customer transfers after placing, presses «Chekni
+  yuklash» and, with the screenshot picked, «O'tkazdim»; the owner confirms by hand («Pul keldi»,
+  asked once more), then the shop starts. Cash: checkout and the order screen say the sum to give the courier. «Ikkalasi»:
   checkout asks which one (the card first, then the way the customer paid last; the pick is kept
   in the draft)
 
@@ -1214,6 +1217,8 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Cancel flow
 - [ ] Uzbek texts only (no Cyrillic in any dictionary); light app in a dark Telegram
 - [ ] Many cards: add, switch the payment card, old orders keep their card
+- [ ] Bank apps: «Raqamni nusxalash» → the sheet with the sum and Click, Payme, Uzum Bank,
+      Paynet → each opens its app on a real Android and iPhone (Click on its transfers)
 - [ ] Empty states handling
 
 ## Release Checklist
