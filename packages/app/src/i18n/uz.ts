@@ -393,11 +393,12 @@ export const uz = {
         copyShort: "Raqam",
         copySumShort: "Summa",
         sumCopied: "Summa nusxalandi",
-        transferNote: "{sum} ni shu kartaga o'tkazing va «O'tkazdim» ni bosing.",
-        transferNoteAgain: "{sum} shu kartaga o'tganini tekshiring va chekni qayta yuboring.",
+        transferNote: "{sum} ni shu kartaga o'tkazing, chekni yuklang va «O'tkazdim» ni bosing.",
+        transferNoteAgain: "{sum} shu kartaga o'tganini tekshiring va chekni qayta yuklang.",
         beforeCooking:
             "Faqat do'kon kartasiga o'tkazma. Buyurtma bering va summani o'tkazing. Pul kelishi bilan do'kon boshlaydi.",
-        sent: "O'tkazdim",
+        /** The order's main button: the screenshot first, «O'tkazdim» comes after it. */
+        upload: "Chekni yuklash",
         ownerAwaiting: "Chek yuborildi",
         afterOrder: "Buyurtmadan keyin do'kon kartasiga {sum} o'tkazasiz",
         afterOrderHint:
@@ -417,8 +418,8 @@ export const uz = {
         checkingLate: "Do'kon odatdagidan kechikmoqda. Pastda do'konga eslating.",
         rejectedTitle: "Do'kon pulni hali ko'rmadi",
         rejectedText:
-            "Bank ilovangizda pul shu kartaga o'tganini tekshiring va chekni qayta yuboring.",
-        resend: "Chekni qayta yuborish",
+            "Bank ilovangizda pul shu kartaga o'tganini tekshiring va chekni qayta yuklang.",
+        resend: "Chekni qayta yuklash",
         replace: "Boshqa chek yuborish",
         sentAt: "Chek {time} da yuborildi",
         status: {

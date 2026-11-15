@@ -168,6 +168,8 @@ export const staffUz = {
         dispatcherSends: "Dispetcher jo'natadi va mijozga yozadi",
         dispatcherDelivers: "Yetkazilganini dispetcher belgilaydi",
         courierDelivers: "Kuryer yetkazmoqda",
+        /** A transfer with no screenshot: the customer acts first (owner's decision, November 2026). */
+        waitReceipt: "Mijoz pulni o'tkazib, chekni yuklashi kerak",
         markDelivered: "Yetkazildi deb belgilash",
         markDeliveredCourierConfirm:
             "Kuryer hali «Yetkazdim» demadi. Buyurtma yetib borganini bilsangiz, belgilang.",
@@ -349,7 +351,6 @@ export const staffUz = {
             title: "{sum} keldimi?",
             toCard: "{card} kartangizga",
             hint: "Bank ilovangizni oching va pul kelganini ko'ring. Chek dalil emas: pul kartada bo'lishi kerak.",
-            noReceipt: "Mijoz o'tkazganini hali bildirmagan, chek yo'q.",
             reusedHere: "Bu chek avval #{n} buyurtmada yuborilgan.",
             reusedElsewhere: "Bu chek boshqa do'kon buyurtmasida ham yuborilgan.",
             rejectedBefore: "Bu mijozning {count} ta o'tkazmasi avval topilmagan.",

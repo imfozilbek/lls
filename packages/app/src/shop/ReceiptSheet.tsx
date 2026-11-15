@@ -101,8 +101,9 @@ function ReceiptPicker({
 }
 
 /**
- * «O'tkazdim» with the proof: the customer picks the bank app's screenshot, sees it, and sends it.
- * The owner gets it in the chat next to the sum and checks the card, not the picture.
+ * «Chekni yuklash», then «O'tkazdim» (owner's decision, November 2026): the customer picks the
+ * bank app's screenshot and sees it; only then does «O'tkazdim» open and send it. The owner gets it
+ * in the chat next to the sum and checks the card, not the picture.
  */
 export function ReceiptSheet({
     order,
@@ -158,7 +159,7 @@ export function ReceiptSheet({
                     loading={sending}
                     onClick={(): void => void send()}
                 >
-                    {receipt.send}
+                    {receipt.confirm}
                 </Button>
             }
         >

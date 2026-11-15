@@ -19,9 +19,6 @@ export function paymentWarnings(order: OrderDTO, t: Dictionary): string[] {
     const c = t.owner.check
     const receipt = order.payment.receipt
     const lines: string[] = []
-    if (order.payment.status === PaymentStatus.UNPAID) {
-        lines.push(c.noReceipt)
-    }
     if (receipt?.reusedFrom !== undefined) {
         lines.push(
             receipt.reusedFrom > 0

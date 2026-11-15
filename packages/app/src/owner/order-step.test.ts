@@ -17,10 +17,12 @@ function order(fields: Record<string, unknown>): OrderDTO {
 }
 
 describe("the owner's main button", () => {
-    it("a transfer waits for the money; a cash order is accepted at once", () => {
+    it("a transfer waits for the screenshot, then the money; a cash order is accepted at once", () => {
         const pending = { status: "pending", nextStatus: "accepted" }
         const unpaid = { method: "card_transfer", status: "unpaid" }
-        expect(ownerStep(order({ ...pending, payment: unpaid }))).toEqual({ kind: "money" })
+        expect(ownerStep(order({ ...pending, payment: unpaid }))).toEqual({ kind: "receipt" })
+        const sent = { method: "card_transfer", status: "awaiting" }
+        expect(ownerStep(order({ ...pending, payment: sent }))).toEqual({ kind: "money" })
         const cash = { method: "cash", status: "unpaid" }
         expect(ownerStep(order({ ...pending, payment: cash }))).toEqual({
             kind: "step",

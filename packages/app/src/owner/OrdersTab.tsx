@@ -310,9 +310,11 @@ function CancelSheet({
     )
 }
 
-/** The one main thing to do now: the money, «Kuryerga topshirish», a step, or the dispatcher's. */
+/**
+ * The one main thing to do now: the money, «Kuryerga topshirish», a step; or what the owner waits
+ * for (the customer's screenshot, the courier, the dispatcher).
+ */
 function MainStep({
-    order,
     step,
     busy,
     alone,
@@ -320,7 +322,6 @@ function MainStep({
     onSheet,
     onSelf,
 }: {
-    order: OrderDTO
     step: OwnerStep | null
     busy: boolean
     /** The shop has no courier: «O'zim yetkazaman» is the only answer, one tap. */
@@ -333,12 +334,8 @@ function MainStep({
     const actions = t.owner.actions as Record<string, string>
     switch (step?.kind) {
         case "money":
-            // No screenshot yet: possible, but not the main thing to do.
             return (
                 <Button
-                    variant={
-                        order.payment.status === PaymentStatus.AWAITING ? "primary" : "surface"
-                    }
                     disabled={busy}
                     icon={<CardIcon size={18} />}
                     onClick={(): void => onSheet("pay")}
@@ -366,16 +363,13 @@ function MainStep({
                     {actions[step.to] ?? step.to}
                 </Button>
             )
+        case "receipt":
         case "dispatcher":
         case "courier":
             return (
                 <p className="flex items-center gap-2 rounded-control bg-tg-bg px-3 py-2.5 text-sm text-tg-subtitle">
                     <ClockIcon size={18} className="shrink-0 text-brand" />
-                    {step.kind === "courier"
-                        ? t.owner.courierDelivers
-                        : step.to === OrderStatus.PICKED_UP
-                          ? t.owner.dispatcherSends
-                          : t.owner.dispatcherDelivers}
+                    {waitingText(step, t)}
                 </p>
             )
         default:
@@ -698,6 +692,20 @@ function CardDetails({
     )
 }
 
+/** What the owner waits for when the next step is someone else's. */
+function waitingText(
+    step: Extract<OwnerStep, { kind: "receipt" | "dispatcher" | "courier" }>,
+    t: Dictionary,
+): string {
+    if (step.kind === "receipt") {
+        return t.owner.waitReceipt
+    }
+    if (step.kind === "courier") {
+        return t.owner.courierDelivers
+    }
+    return step.to === OrderStatus.PICKED_UP ? t.owner.dispatcherSends : t.owner.dispatcherDelivers
+}
+
 /** Who is on it, in a short card: one line (the open card has the phone and the notes). */
 function CourierShort({ order }: { order: OrderDTO }): React.JSX.Element | null {
     const t = useT()
@@ -828,7 +836,6 @@ function OrderCard({
             {live ? (
                 <div className="mt-3 flex flex-col">
                     <MainStep
-                        order={order}
                         step={actions.step}
                         busy={actions.busy}
                         alone={actions.alone}
