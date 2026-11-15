@@ -400,10 +400,14 @@ export const uz = {
         cardTitle: "Do'kon kartasi",
         copy: "Raqamni nusxalash",
         copied: "Karta raqami nusxalandi",
-        copySum: "Summani nusxalash",
-        copyShort: "Raqam",
-        copySumShort: "Summa",
-        sumCopied: "Summa nusxalandi",
+        /** The sheet's title when the phone gave no clipboard: the number to copy by hand. */
+        cardNumber: "Karta raqami",
+        /** The bank apps after «Raqamni nusxalash»: the sum to type, then where to pay from. */
+        apps: {
+            sum: "O'tkaziladigan summa",
+            how: "Ilovani oching, karta raqamini qo'ying va summani kiriting.",
+            other: "Boshqa bank ilovasida ham o'tkazishingiz mumkin.",
+        },
         transferNote: "{sum} ni shu kartaga o'tkazing, chekni yuklang va «O'tkazdim» ni bosing.",
         transferNoteAgain: "{sum} shu kartaga o'tganini tekshiring va chekni qayta yuklang.",
         beforeCooking:

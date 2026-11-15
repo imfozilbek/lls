@@ -547,3 +547,16 @@ export function openTelegramLink(url: string): void {
         window.open(url, "_blank", "noopener")
     }
 }
+
+/**
+ * A link outside Telegram (a bank app's own address): Telegram hands it to the app that claims
+ * it, or to the browser; in a plain browser a new tab.
+ */
+export function openOutside(url: string): void {
+    const app = webApp()
+    if (app?.openLink) {
+        app.openLink(url)
+    } else {
+        window.open(url, "_blank", "noopener")
+    }
+}

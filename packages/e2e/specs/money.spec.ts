@@ -86,7 +86,7 @@ test("checkout tells the sum; the order screen gives the card; Â«Chekni yuklashÂ
 }) => {
     await context.grantPermissions(["clipboard-read", "clipboard-write"])
     await shopChat(FOOD).shareContact(PEOPLE.customer, "+998901234567")
-    await openApp(page, { user: PEOPLE.customer, shop: FOOD })
+    const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD })
     await page.getByRole("button", { name: "Qo'shish: To'y oshi" }).click()
     await toCart(page)
     await fillAddress(page, "Mustaqillik 5")
@@ -104,9 +104,21 @@ test("checkout tells the sum; the order screen gives the card; Â«Chekni yuklashÂ
     // The card on the order screen, and in the bot too.
     await expect(page.getByText(CARD)).toBeVisible()
     await expect(page.getByText("RUSTAM KARIMOV")).toBeVisible()
+    // One copy button: the sum is shown, not copied (owner's decision, November 2026).
+    await expect(page.getByRole("button", { name: "Summani nusxalash" })).toHaveCount(0)
     await page.getByRole("button", { name: "Raqamni nusxalash" }).click()
-    await expect(page.getByText("Karta raqami nusxalandi")).toBeVisible()
     expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("8600123456789012")
+    // Then the bank apps, with the sum to type; a tap opens the app at its own address.
+    const apps = page.getByRole("dialog", { name: "Karta raqami nusxalandi" })
+    await expect(apps.getByText("O'tkaziladigan summa")).toBeVisible()
+    await expect(apps.getByText(/^55\s000\sso'm$/)).toBeVisible()
+    for (const name of ["Click", "Payme", "Uzum Bank", "Paynet"]) {
+        await expect(apps.getByRole("button", { name, exact: true })).toBeVisible()
+    }
+    await apps.getByRole("button", { name: "Click", exact: true }).click()
+    await expect(apps).toHaveCount(0)
+    const opened = (await app.calls()).filter((call) => call.method === "openLink")
+    expect(opened.map((call) => call.args[0])).toEqual(["https://my.click.uz/app/transfers"])
     const toPay = await waitForMessage(PEOPLE.customer.id, "o'tkazing", placed)
     expect(toPay.text).toContain(CARD)
     expect(toPay.text).toMatch(/55\s000/)

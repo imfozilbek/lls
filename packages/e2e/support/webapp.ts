@@ -283,8 +283,7 @@ function installTelegramStub(config: StubConfig): void {
         }
     const mainButton = button()
     const backButton = button()
-    // Defined beside the stub and put in the page before it (`openApp`); `__tg.fire` plays
-    // Telegram's own events (activated, deactivated) in a test.
+    // Put in the page before the stub (`openApp`); `__tg.fire` plays activated, deactivated.
     const native = (window as unknown as { __nativeFeel: typeof nativeFeel }).__nativeFeel(record)
     const webApp = {
         initData: config.initData,
@@ -334,6 +333,7 @@ function installTelegramStub(config: StubConfig): void {
             (callback as (id: string) => void)(config.confirm ? "yes" : "no"),
         ),
         openTelegramLink: record("openTelegramLink"),
+        openLink: record("openLink"), // a bank app's address: recorded, never followed
         downloadFile: record("downloadFile"),
         ...native.api,
     }

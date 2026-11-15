@@ -230,6 +230,12 @@ export function ProductPreview({
     const [busy, setBusy] = useState(false)
     const units = t.units as Record<string, string>
     const main = photos[0]
+    // The list as it is now: a photo picked while the last one is still being compressed joins
+    // it, never the list of an older render (which would drop the other photo).
+    const latest = useRef(photos)
+    useEffect(() => {
+        latest.current = photos
+    }, [photos])
 
     const pick = async (file: File | undefined): Promise<void> => {
         if (!file) {
@@ -238,7 +244,9 @@ export function ProductPreview({
         setBusy(true)
         try {
             const blob = await compressImage(file)
-            onPhotos([...photos, { blob, id: crypto.randomUUID() }].slice(0, MAX_PHOTOS))
+            const next = [...latest.current, { blob, id: crypto.randomUUID() }]
+            latest.current = next.slice(0, MAX_PHOTOS)
+            onPhotos(latest.current)
         } catch {
             toast(p.photoFailed, "error")
         } finally {

@@ -7,6 +7,14 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### «Raqamni nusxalash» opens the customer's bank app
+- Under the shop's card one button, «Raqamni nusxalash» (owner's decision, November 2026): it
+  copies the number and opens a sheet with the sum to type, large and not copied, and Click,
+  Payme, Uzum Bank and Paynet with their icons. A tap opens the app at an address the app itself
+  claims (Click right on its transfers). None of them takes a card or a sum prefilled.
+- «Summani nusxalash» is gone: the sum is in the sheet and in the line under the card.
+- A demo shop's test card only copies.
+
 ### Up to three photos a product
 - The owner adds up to three photos in the product's form (owner's decision, November 2026): a
   tile each, the first is «Asosiy» (the menu, the showcase and the catalog show it), a tap makes

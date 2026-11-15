@@ -254,7 +254,10 @@ test("an admin who never pressed Start in Zumda | Platforma gets the card from Z
     const since = await lastSeq()
     const fourth = "777100203:NEW-e2e-onboarding-token-efghijklmn" // secret-scan: fake
     await openAndApply(FOURTH_OWNER, fourth, "To'rtinchi")
-    const card = await waitForMessage(PEOPLE.admin.id, "To'rtinchi", since)
+    // The stand logs the refused try from Zumda | Platforma too: wait for the copy that carries
+    // the note, not for the first message that names the shop.
+    const card = await waitForMessage(PEOPLE.admin.id, "sizga yoza olmadi", since)
+    expect(card.text).toContain("To'rtinchi")
     expect(card.token).toBe(businessBot().token)
     expect(card.text).toContain(`@${adminBot().username} sizga yoza olmadi`)
     // «Tasdiqlash» still works from here; the app is reached through Zumda | Platforma.
