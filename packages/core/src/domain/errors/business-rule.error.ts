@@ -319,8 +319,8 @@ export class BusinessRuleViolationError extends DomainError {
     }
 
     /**
-     * A shop with couriers hands the order to one (or the owner takes it himself) before it is
-     * ready and sent (owner's decision, November 2026): no order leaves without someone on it.
+     * The order goes to a courier (or the owner says «O'zim yetkazaman») before it is ready and
+     * sent (owner's decision, November 2026): no order leaves without someone on it.
      */
     static courierNotChosen(orderId: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(

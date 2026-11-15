@@ -1,6 +1,7 @@
 import { CourierProfile } from "../../../domain/entities/courier-profile.js"
 import { Courier, CourierInvite } from "../../../domain/entities/courier.js"
 import { CourierStatus } from "../../../domain/enums/courier-status.js"
+import { OrderStatus } from "../../../domain/enums/order-status.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ForbiddenError } from "../../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../../domain/errors/not-found.error.js"
@@ -275,6 +276,43 @@ export class AssignCourierUseCase {
             throw EntityNotFoundError.order(input.orderId)
         }
         order.assignCourier(courier, this.deps.clock.now())
+        await orders.save(order)
+        return toOrderDTO(order)
+    }
+}
+
+/** Accepting starts the order (`Order.acceptAndStart`): these are the steps right after it. */
+const JUST_ACCEPTED: readonly OrderStatus[] = [OrderStatus.ACCEPTED, OrderStatus.PREPARING]
+
+export class AutoAssignOnlyCourierUseCase {
+    constructor(private readonly deps: CourierDeps) {}
+
+    /**
+     * Right after the shop accepts an order: a shop with one courier gives it to that courier by
+     * itself (owner's decision, November 2026: the owner may still give it to someone else or
+     * take it). Two or more: the owner picks one. Only when that courier can take it now (on
+     * shift, a working day, a phone; a dispatcher never gets cash); otherwise the owner chooses.
+     * Null: nothing was assigned.
+     */
+    async execute(input: { orderId: string }): Promise<OrderDTO | null> {
+        const { couriers, orders } = this.deps
+        const order = await orders.findById(input.orderId)
+        if (!order || !JUST_ACCEPTED.includes(order.status) || !order.needsCourierChoice()) {
+            return null
+        }
+        const active = (await couriers.listByBusiness(order.businessId)).filter((c) => c.isActive)
+        const only = active.length === 1 ? active[0] : undefined
+        if (!only) {
+            return null
+        }
+        try {
+            order.assignCourier(only, this.deps.clock.now())
+        } catch (error) {
+            if (error instanceof BusinessRuleViolationError) {
+                return null
+            }
+            throw error
+        }
         await orders.save(order)
         return toOrderDTO(order)
     }

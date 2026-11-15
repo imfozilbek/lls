@@ -313,8 +313,8 @@ export class Order {
     }
 
     /**
-     * Nobody is on it yet: no courier, no «O'zim yetkazaman», no network asked. A shop with
-     * couriers chooses before «Tayyor» (`assertCourierChosen`).
+     * Nobody is on it yet: no courier, no «O'zim yetkazaman», no network asked. The owner chooses
+     * before «Tayyor» (`assertCourierChosen`).
      */
     needsCourierChoice(): boolean {
         return (
@@ -326,9 +326,10 @@ export class Order {
     }
 
     /**
-     * «Tayyor» and «Jo'natish» wait for the courier choice in a shop that has couriers (owner's
-     * decision, November 2026): an order went on without anyone on it, and no courier saw it.
-     * The use case knows whether the shop has couriers; a shop without any delivers itself.
+     * «Tayyor» and «Jo'natish» wait for the courier choice (owner's decision, November 2026): an
+     * order went on without anyone on it, and no courier saw it. The shop's only courier is
+     * chosen by itself when the order is accepted (`AutoAssignOnlyCourierUseCase`); with two or
+     * more the owner picks one; with none the owner says «O'zim yetkazaman».
      */
     assertCourierChosen(to: OrderStatus): void {
         const leavesTheShop = to === OrderStatus.READY || to === OrderStatus.PICKED_UP

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest"
 
 import {
     AssignCourierUseCase,
+    AutoAssignOnlyCourierUseCase,
     CreateCourierInviteUseCase,
     DeliverMyselfUseCase,
     JoinAsCourierUseCase,
@@ -229,11 +230,64 @@ describe("a dispatcher sends the shop's orders on and keeps the customer told", 
         expect((await advance(order, OrderStatus.DELIVERED)).status).toBe(OrderStatus.DELIVERED)
     })
 
-    it("a shop without couriers goes on as before: the owner delivers", async () => {
+    it("a shop without couriers: the owner says «O'zim yetkazaman» before «Tayyor»", async () => {
         const order = await paidOrder()
         expect(order.needsCourierChoice).toBe(true)
+        await expect(advance(order, OrderStatus.READY)).rejects.toMatchObject({
+            rule: "COURIER_NOT_CHOSEN",
+        })
+        expect(await new AutoAssignOnlyCourierUseCase(deps()).execute({ orderId: order.id })).toBe(
+            null,
+        )
+        await new DeliverMyselfUseCase(deps()).execute(ids(order))
         await advance(order, OrderStatus.READY)
         expect((await advance(order, OrderStatus.PICKED_UP)).status).toBe(OrderStatus.PICKED_UP)
+    })
+
+    it("the shop's only courier is chosen by itself once the order is accepted", async () => {
+        const courierId = await hire()
+        const order = await paidOrder()
+        const auto = new AutoAssignOnlyCourierUseCase(deps())
+        const assigned = await auto.execute({ orderId: order.id })
+        expect(assigned).toMatchObject({ courierId, needsCourierChoice: false })
+        // Once on it, nothing more to choose: a second call changes nothing.
+        expect(await auto.execute({ orderId: order.id })).toBeNull()
+        await advance(order, OrderStatus.READY)
+        expect((await orders.findById(order.id))?.status).toBe(OrderStatus.READY)
+    })
+
+    it("the only courier off shift, or a dispatcher and cash: the owner chooses", async () => {
+        await hire()
+        await new SetShiftUseCase(deps()).execute({ telegramId: DISPATCHER_TG, onShift: false })
+        const order = await paidOrder()
+        const auto = new AutoAssignOnlyCourierUseCase(deps())
+        expect(await auto.execute({ orderId: order.id })).toBeNull()
+        expect((await orders.findById(order.id))?.courierId).toBeUndefined()
+        // A pending order is not the shop's to give yet.
+        expect(await auto.execute({ orderId: "nope" })).toBeNull()
+    })
+
+    it("two couriers: the owner always picks one", async () => {
+        await hire()
+        const second = await new CreateCourierInviteUseCase(deps()).execute({
+            actorTelegramId: OWNER_TG,
+            businessId: "biz-1",
+        })
+        const joined = await new JoinAsCourierUseCase(deps()).execute({
+            code: second.code,
+            user: { id: 6006, firstName: "Bobur" },
+        })
+        await courierSharesPhone(couriers, 6006)
+        await new ReviewCourierUseCase(deps()).execute({
+            actorTelegramId: OWNER_TG,
+            businessId: "biz-1",
+            courierId: joined.courier.id,
+            approve: true,
+        })
+        const order = await paidOrder()
+        expect(await new AutoAssignOnlyCourierUseCase(deps()).execute({ orderId: order.id })).toBe(
+            null,
+        )
     })
 
     it("a delivery the customer pays to the carrier: no fee, and no network", async () => {

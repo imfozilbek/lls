@@ -114,12 +114,9 @@ export class AdvanceOrderUseCase {
         if (mover.role === "customer") {
             throw ForbiddenError.notOwner(order.businessId)
         }
-        // Nobody on it yet: a shop with couriers chooses one before «Tayyor» (asked only then).
-        if (mover.role === "owner" && order.needsCourierChoice()) {
-            const couriers = await this.deps.couriers.listByBusiness(order.businessId)
-            if (couriers.some((courier) => courier.isActive)) {
-                order.assertCourierChosen(input.to)
-            }
+        // Nobody on it yet: a courier, «O'zim yetkazaman» or the network before «Tayyor».
+        if (mover.role === "owner") {
+            order.assertCourierChosen(input.to)
         }
         // Accepting starts the order at once: one tap less on every order.
         if (input.to === OrderStatus.ACCEPTED) {
