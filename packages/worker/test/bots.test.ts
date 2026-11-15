@@ -11,6 +11,7 @@ import {
     createActiveShop,
     testClient,
     TEST_CARD,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -359,7 +360,12 @@ describe("shop bot", () => {
         const customer = client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug })
         const response = await customer("/api/orders", {
             method: "POST",
-            json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12", landmark: "Maktab" },
+            json: {
+                items: [{ productId, quantity: 2 }],
+                address: "Navoiy 12",
+                landmark: "Maktab",
+                location: PIN,
+            },
         })
         expect(response.status).toBe(201)
         return (await response.json()) as { id: string; number: number }

@@ -28,6 +28,7 @@ import {
     CUSTOMER_TG,
     NOON_MONDAY_UZ,
     OWNER_TG,
+    PIN,
     STRANGER_TG,
     courierSharesPhone,
     makeBusiness,
@@ -116,6 +117,7 @@ describe("a dispatcher sends the shop's orders on and keeps the customer told", 
             businessId: "biz-1",
             items: [{ productId: "prod-1", quantity: 1 }],
             address: "Qarshi, Navoiy 12",
+            location: PIN,
         })
         return new ConfirmPaymentUseCase(deps()).execute(ids(order))
     }

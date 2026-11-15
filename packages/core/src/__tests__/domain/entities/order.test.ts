@@ -303,6 +303,14 @@ describe("Order and couriers", () => {
         expect(order.payment.cashCourierId).toBeUndefined()
     })
 
+    it("an older order without a pin never joins a trip", () => {
+        const order = readyOrder()
+        order.assignCourier(courier(), NOW)
+        expect(() => order.joinTrip("trip-1", 1)).toThrow(
+            expect.objectContaining({ details: expect.objectContaining({ why: "no_location" }) }),
+        )
+    })
+
     it("another courier cannot touch the order", () => {
         const order = readyOrder()
         order.assignCourier(courier(), NOW)

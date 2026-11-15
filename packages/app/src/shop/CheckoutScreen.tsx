@@ -32,7 +32,6 @@ import {
     AddressSummary,
     CHECKOUT_ADDRESS,
     addressComplete,
-    needsPin,
     outsideZone,
 } from "./checkout-address.js"
 
@@ -482,7 +481,7 @@ function customerStep(
         return { id: CHECKOUT_PHONE, text: t.checkout.needPhone }
     }
     const hasPin = delivery.location !== null
-    if (needsPin(shop) && !hasPin) {
+    if (!hasPin) {
         return { id: CHECKOUT_ADDRESS, text: t.checkout.needPin }
     }
     const radius = shop?.delivery.radiusMeters

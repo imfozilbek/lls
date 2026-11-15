@@ -443,17 +443,18 @@ export class Business {
     }
 
     /**
-     * A shop with a radius and its own location takes orders only from inside it, so the
-     * customer's pin is required there: without it an out-of-zone order would be paid, then
+     * Every order carries the customer's pin (owner's decision, November 2026): whoever delivers
+     * it, a courier or a dispatcher's taxi, knows where to. A shop with a radius and its own
+     * location takes orders only from inside it: an out-of-zone order would be paid, then
      * refunded. A shop without a radius (or without a location) delivers anywhere.
      */
     assertDeliversTo(destination: Location | undefined): void {
         const { radiusMeters } = this.props.delivery
-        if (radiusMeters === undefined || !this.props.location) {
-            return
-        }
         if (!destination) {
             throw BusinessRuleViolationError.locationRequired(radiusMeters)
+        }
+        if (radiusMeters === undefined || !this.props.location) {
+            return
         }
         const distance = this.props.location.distanceTo(destination)
         if (distance > radiusMeters) {

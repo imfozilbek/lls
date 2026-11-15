@@ -36,6 +36,7 @@ import {
     makeCustomer,
     makeProduct,
     courierSharesPhone,
+    PIN,
 } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -92,6 +93,7 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
             businessId: "biz-1",
             items: [{ productId: "prod-1", quantity: 2 }],
             address: "Navoiy 12",
+            location: PIN,
             paymentMethod,
         })
 

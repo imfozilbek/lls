@@ -5,7 +5,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, STAND_PIN, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import { lastSeq, waitForMessage } from "../support/telegram.js"
 import { bottomButton, fillAddress, openApp, openSettings, toCart } from "../support/webapp.js"
 
@@ -180,6 +180,7 @@ test("card only: cash is refused", async () => {
         json: {
             items: [{ productId: P1, quantity: 1 }],
             address: "Navoiy 12",
+            location: STAND_PIN,
             paymentMethod: "cash",
         },
     })

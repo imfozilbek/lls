@@ -10,6 +10,7 @@ import {
     createActiveShop,
     testClient,
     TEST_CARD,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -118,7 +119,7 @@ describe("a shop owner cannot borrow other shops' customers", () => {
         )
         const order = await forgedInB(CUSTOMER)("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: product.id, quantity: 1 }], address: "x" },
+            json: { items: [{ productId: product.id, quantity: 1 }], address: "x", location: PIN },
         })
         expect(order.status).toBe(422)
         expect(await json(order)).toMatchObject({ error: { code: "PHONE_REQUIRED" } })

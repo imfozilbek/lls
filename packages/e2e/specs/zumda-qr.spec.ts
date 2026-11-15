@@ -7,7 +7,7 @@ import { expect, test } from "@playwright/test"
 import jsQR from "jsqr"
 import { PNG } from "pngjs"
 
-import { FOOD, PEOPLE, WATER, apiAs, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, STAND_PIN, WATER, apiAs, resetStand } from "../support/stand.js"
 import { callsOf, lastSeq, platformChat } from "../support/telegram.js"
 import { openApp, openSettings } from "../support/webapp.js"
 
@@ -61,7 +61,11 @@ test("scanned: Zumda Shop opens on the shop, Back shows the others, the order is
         shop: FOOD,
         via: "marketplace",
         method: "POST",
-        json: { items: [{ productId: "dev-food-p1", quantity: 1 }], address: "Navoiy 7" },
+        json: {
+            items: [{ productId: "dev-food-p1", quantity: 1 }],
+            address: "Navoiy 7",
+            location: STAND_PIN,
+        },
     })
     expect(placed.status).toBe(201)
     expect(await placed.json()).toMatchObject({ channel: "marketplace" })

@@ -69,7 +69,7 @@ export const uz = {
         MIN_ORDER_NOT_REACHED: "Buyurtma minimal summadan kam.",
         OUTSIDE_DELIVERY_ZONE:
             "Bu joy do'kon yetkazadigan hududdan tashqarida: yaqinroq manzil tanlang.",
-        LOCATION_REQUIRED: "Joylashuvni yuboring: do'kon faqat ma'lum masofagacha yetkazadi.",
+        LOCATION_REQUIRED: "Xaritada uyingizni belgilang: buyurtma shu joyga yetkaziladi.",
         PHONE_REQUIRED: "Telefon raqamingizni yuboring.",
         ORDER_CANNOT_BE_CANCELLED: "Do'kon buyurtmani allaqachon qabul qildi.",
         CONFLICT: "Hozir bo'lmadi, qayta urinib ko'ring.",

@@ -17,6 +17,7 @@ import {
     hireCourier,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 import { countingDb } from "./rows-read.js"
 
@@ -96,7 +97,7 @@ async function seed(): Promise<{
     await sharePhoneWithShops(CUSTOMER.id)
     const placed = await customer("/api/orders", {
         method: "POST",
-        json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12" },
+        json: { items: [{ productId, quantity: 2 }], address: "Navoiy 12", location: PIN },
     })
     const { id: orderId } = (await placed.json()) as { id: string }
     await owner(`/api/owner/orders/${orderId}/payment`, {
@@ -209,7 +210,7 @@ describe("rows read per request, on six months of history", () => {
             counter.take()
             const placed = await customer("/api/orders", {
                 method: "POST",
-                json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12" },
+                json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12", location: PIN },
             })
             const { id } = (await placed.json()) as { id: string }
             const step = async (call: () => Promise<Response>): Promise<void> => {

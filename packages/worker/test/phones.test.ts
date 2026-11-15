@@ -11,6 +11,7 @@ import {
     hireCourier,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -54,7 +55,11 @@ describe("phones: everyone on an order can call each other", () => {
         await sharePhoneWithShops(CUSTOMER.id)
         const response = await customer()("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: product.id, quantity: 2 }], address: "Navoiy 12" },
+            json: {
+                items: [{ productId: product.id, quantity: 2 }],
+                address: "Navoiy 12",
+                location: PIN,
+            },
         })
         expect(response.status).toBe(201)
         return json<Order>(response)
@@ -232,7 +237,7 @@ describe("no phone, no orders (owner's decision, October 2026)", () => {
         const order = await json<Order>(
             await customer()("/api/orders", {
                 method: "POST",
-                json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12" },
+                json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12", location: PIN },
             }),
         )
         await owner()(`/api/owner/orders/${order.id}/payment`, {
@@ -278,7 +283,7 @@ describe("no phone, no orders (owner's decision, October 2026)", () => {
         await sharePhoneWithShops(CUSTOMER.id)
         const refused = await customer()("/api/orders", {
             method: "POST",
-            json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12" },
+            json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12", location: PIN },
         })
         expect(refused.status).toBe(422)
         expect(await json(refused)).toMatchObject({ error: { code: "NO_SHOP_PHONE" } })

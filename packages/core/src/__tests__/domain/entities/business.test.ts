@@ -125,6 +125,15 @@ describe("Business", () => {
         expect(() => business.assertDeliversTo(undefined)).toThrow(/delivery location/)
     })
 
+    it("asks every order for the pin, a shop without a radius too, and takes it from anywhere", () => {
+        const anywhere = makeBusiness()
+        expect(() => anywhere.assertDeliversTo(undefined)).toThrow(BusinessRuleViolationError)
+        expect(() => anywhere.assertDeliversTo(undefined)).toThrow(
+            expect.objectContaining({ rule: "LOCATION_REQUIRED" }),
+        )
+        expect(() => anywhere.assertDeliversTo(Location.create(39.6, 66.9))).not.toThrow()
+    })
+
     it("a delivery the customer pays to the carrier asks no fee of the shop", () => {
         const business = makeBusiness({
             delivery: { fee: Money.of(10_000), freeFrom: Money.of(100_000) },

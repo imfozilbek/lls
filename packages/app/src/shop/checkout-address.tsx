@@ -20,11 +20,6 @@ export type Delivery = Draft
 
 export const CHECKOUT_ADDRESS = "checkout-address"
 
-/** A shop that delivers within a radius takes orders only with the pin (`LOCATION_REQUIRED`). */
-export function needsPin(shop: Shop | null): boolean {
-    return shop?.delivery.radiusMeters !== undefined
-}
-
 /** The pin lies beyond the shop's delivery radius: the Worker would refuse the order. */
 export function outsideZone(shop: Shop | null, location: Point | null): boolean {
     const radius = shop?.delivery.radiusMeters
@@ -34,11 +29,14 @@ export function outsideZone(shop: Shop | null, location: Point | null): boolean 
     return metersBetween(shop.location, location) > radius
 }
 
-/** Everything a courier needs is there: the place named, the pin where the shop needs it. */
+/**
+ * Everything a courier needs is there: the place named and the pin, which every order carries
+ * (owner's decision, November 2026: `LOCATION_REQUIRED`).
+ */
 export function addressComplete(delivery: Delivery, shop: Shop | null): boolean {
     const hasPin = delivery.location !== null
     const named = delivery.address.trim() !== "" || (hasPin && delivery.landmark.trim() !== "")
-    return named && (hasPin || !needsPin(shop)) && !outsideZone(shop, delivery.location)
+    return named && hasPin && !outsideZone(shop, delivery.location)
 }
 
 /** The shop's own pin on the checkout map, when it has a place. */

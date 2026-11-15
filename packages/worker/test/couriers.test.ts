@@ -13,6 +13,7 @@ import {
     hireCourier,
     sharePhoneWithShops,
     testClient,
+    PIN,
 } from "./helpers.js"
 
 import type { TestClient } from "./helpers.js"
@@ -75,7 +76,7 @@ describe("shop couriers, verticals and channels", () => {
         await sharePhoneWithShops(CUSTOMER.id)
         const response = await customer("/api/orders", {
             method: "POST",
-            json: { items, address: "Navoiy 12", ...extra },
+            json: { items, address: "Navoiy 12", location: PIN, ...extra },
         })
         expect(response.status).toBe(201)
         return json(response)
@@ -506,7 +507,11 @@ describe("shop couriers, verticals and channels", () => {
         expect(order).toMatchObject({ subtotal: 18_000 })
         const bad = await as(CUSTOMER)("/api/orders", {
             method: "POST",
-            json: { items: [{ productId: tomato, quantity: 700 }], address: "Navoiy 12" },
+            json: {
+                items: [{ productId: tomato, quantity: 700 }],
+                address: "Navoiy 12",
+                location: PIN,
+            },
         })
         expect(bad.status).toBe(400)
 
