@@ -205,6 +205,7 @@ export class Business {
             workingHours: WorkingHours.alwaysOpen(),
             features: [...DEFAULT_FEATURES[input.type]],
             acceptingOrders: true,
+            networkDelivery: false,
             bottleDeposit: Money.zero(),
             createdAt: now,
             updatedAt: now,
@@ -324,8 +325,12 @@ export class Business {
     get districtId(): string | undefined {
         return this.props.districtId
     }
+    /**
+     * «Tuman tarmog'idan foydalanish» (owner's decision, November 2026): off until the owner turns
+     * it on; off, the shop's orders never go to the network, by themselves or by hand.
+     */
     get networkDelivery(): boolean {
-        return !this.isDemo() && (this.props.networkDelivery ?? true)
+        return !this.isDemo() && this.props.networkDelivery === true
     }
     get demoAt(): Date | undefined {
         return this.props.demoAt

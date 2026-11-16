@@ -125,8 +125,15 @@ describe("district network", () => {
                 owner: OTHER_OWNER,
             })
         ).slug
-        await foodOwner()("/api/owner/shop", { method: "PATCH", json: { location: GULISTAN } })
-        await waterOwner()("/api/owner/shop", { method: "PATCH", json: { location: YANGIYER } })
+        // «Tuman tarmog'idan foydalanish» is off for a new shop: these two use it.
+        await foodOwner()("/api/owner/shop", {
+            method: "PATCH",
+            json: { location: GULISTAN, networkDelivery: true },
+        })
+        await waterOwner()("/api/owner/shop", {
+            method: "PATCH",
+            json: { location: YANGIYER, networkDelivery: true },
+        })
         const district = await setDistrict({
             name: "Guliston",
             region: "sirdaryo",
@@ -314,11 +321,20 @@ describe("district network", () => {
         expect(stored?.courier_name).toBe("Otabek")
     })
 
-    it("network off: the order stays with the shop; by hand it still goes", async () => {
+    it("network off: nothing goes there, by itself or by hand; back on, by hand it goes", async () => {
         await foodOwner()("/api/owner/shop", { method: "PATCH", json: { networkDelivery: false } })
         const order = await placeAndAccept()
         expect(order.waitingForNetwork).toBe(false)
         expect(offersTo(BOBUR.id)).toEqual([])
+        const refused = await foodOwner()(`/api/owner/orders/${order.id}/network`, {
+            method: "PUT",
+        })
+        expect(refused.status).toBe(422)
+        expect(await json<{ error: { code: string } }>(refused)).toMatchObject({
+            error: { code: "NETWORK_OFF" },
+        })
+        expect(offersTo(BOBUR.id)).toEqual([])
+        await foodOwner()("/api/owner/shop", { method: "PATCH", json: { networkDelivery: true } })
         const handed = await foodOwner()(`/api/owner/orders/${order.id}/network`, { method: "PUT" })
         expect(await json<Order>(handed)).toMatchObject({ waitingForNetwork: true })
         expect(offersTo(BOBUR.id)).toHaveLength(1)

@@ -152,7 +152,8 @@ describe("demo shops («Namuna»): made in «Platforma», never real", () => {
             { method: "PUT" },
         )
         expect(network.status).toBe(422)
-        expect(await json(network)).toMatchObject({ error: { code: "NO_DISTRICT" } })
+        // A demo never uses the network: the switch is off for it, whatever was set.
+        expect(await json(network)).toMatchObject({ error: { code: "NETWORK_OFF" } })
 
         // «Namunani tozalash»: the orders are gone, the sample's catalog is back, and the photos
         // the owner gave its products leave the storage (the sample has none).

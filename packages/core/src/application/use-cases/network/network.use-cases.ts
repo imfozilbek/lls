@@ -289,6 +289,9 @@ export class RequestNetworkCourierUseCase {
             input.businessId,
             input.actorTelegramId,
         )
+        if (!business.networkDelivery) {
+            throw BusinessRuleViolationError.networkOff(business.id)
+        }
         const order = await requireShopOrder(this.deps.orders, input.orderId, business.id)
         return requestNetwork(this.deps, order, business)
     }
