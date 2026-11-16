@@ -296,6 +296,16 @@ const BASE = {
         payByCash:
             "🧾 #{n} buyurtma rasmiylashtirildi.\nTo'lov naqd: kuryerga {sum} berasiz. Do'kon qabul qilishi bilan xabar beramiz.",
         paidAccept: "💳 Pul keldi, qabul qilish",
+        // The customer's live message (owner's decision, November 2026): one per order.
+        transferTo: "Shu kartaga {sum} o'tkazing, keyin chekni yuklang:",
+        transferSentCustomer: "Chek yuborildi. Do'kon pul kelganini tekshiryapti.",
+        refundedCustomer: "↩️ #{n}: do'kon sizga {sum} qaytarib berdi.",
+        copyCard: "📋 Karta raqamini nusxalash",
+        uploadReceipt: "🧾 Chekni yuklash",
+        /** The courier's card: what a taxi driver needs, in one tap. */
+        copyAddress: "📋 Manzil va telefonni nusxalash",
+        /** Under «… ishga tushdi!»: the shop's bot link for the owner's customers. */
+        copyLink: "📋 Havolani nusxalash",
         nothingToCollect: "✅ Oldindan to'langan, mijozdan pul olmang",
         transferSentOwner: "💳 Mijoz #{n} buyurtma uchun {sum} o'tkazdi. Kartani tekshiring.",
         receiptCaption:
