@@ -189,6 +189,24 @@ describe("order use cases", () => {
                 input({ items: [{ productId: "prod-1", quantity: 6 }] }),
             )
             expect(order.deliveryFee).toBe(0)
+            // The shop's «… dan bepul» promised it: the order says «bepul».
+            expect(order.deliveryFree).toBe(true)
+            const below = await placeOrder.execute(input())
+            expect(below.deliveryFree).toBe(false)
+        })
+
+        it("a price the owner never chose adds nothing and promises nothing", async () => {
+            await businesses.save(makeBusiness({ delivery: { fee: Money.zero() } }))
+            const order = await placeOrder.execute(input())
+            expect(order).toMatchObject({ deliveryFee: 0, deliveryFree: false, total: 70_000 })
+        })
+
+        it("a service adds no delivery fee, whatever was stored", async () => {
+            await businesses.save(
+                makeBusiness({ type: BusinessType.SERVICE, delivery: { fee: Money.of(10_000) } }),
+            )
+            const order = await placeOrder.execute(input())
+            expect(order).toMatchObject({ deliveryFee: 0, deliveryFree: false, total: 70_000 })
         })
 
         it("rejects foreign, unknown and unavailable products", async () => {

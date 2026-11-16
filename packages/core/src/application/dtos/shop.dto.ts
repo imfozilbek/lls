@@ -1,4 +1,5 @@
 import { BotSource } from "../../domain/enums/bot-source.js"
+import { DeliveryPrice } from "../../domain/enums/delivery-price.js"
 
 import type { Business } from "../../domain/entities/business.js"
 import type { Customer } from "../../domain/entities/customer.js"
@@ -39,8 +40,10 @@ export interface ShopPublicDTO {
         minOrder?: number
         /** Set with the shop's location: orders come only from inside it, with the pin. */
         radiusMeters?: number
-        /** The customer pays the carrier (a taxi, the post): «Yetkazish haqi alohida». */
+        /** The customer pays the carrier (a taxi, the post): the price is told later. */
         customerPaysCarrier: boolean
+        /** How the customer pays for delivery: the one thing every screen says about it. */
+        price: DeliveryPrice
     }
     workingHours: WeeklySchedule | null
     acceptingOrders: boolean
@@ -113,6 +116,9 @@ export function toShopPublicDTO(
     } = {},
 ): ShopPublicDTO {
     const { fee, freeFrom, minOrder } = business.delivery
+    const price = business.deliveryPrice
+    // Only a shop that asks a fee has one: a service or a price told later shows none.
+    const charges = price === DeliveryPrice.FEE
     return {
         id: business.id,
         slug: business.slug.value,
@@ -125,11 +131,12 @@ export function toShopPublicDTO(
         contactPhone: business.contactPhone?.number,
         callPhone: options.callPhone?.number,
         delivery: {
-            fee: fee.amount,
-            freeFrom: freeFrom?.amount,
+            fee: charges ? fee.amount : 0,
+            freeFrom: charges ? freeFrom?.amount : undefined,
             minOrder: minOrder?.amount,
             radiusMeters: business.location ? business.delivery.radiusMeters : undefined,
-            customerPaysCarrier: business.delivery.customerPaysCarrier === true,
+            customerPaysCarrier: price === DeliveryPrice.LATER,
+            price,
         },
         workingHours: business.workingHours.toJSON(),
         acceptingOrders: business.acceptingOrders,
