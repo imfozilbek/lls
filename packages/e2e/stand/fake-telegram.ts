@@ -173,6 +173,7 @@ const fail = (status: number, description: string): [number, unknown] => [
 const ALWAYS_OK = new Set([
     "editMessageText",
     "deleteMessage",
+    "editMessageReplyMarkup",
     "answerCallbackQuery",
     "setChatMenuButton",
     "setMyCommands",

@@ -134,8 +134,9 @@ describe("a dispatcher sends the order on and keeps the customer told", () => {
         expect(assigned?.html).toContain("Qarshi, Navoiy 12")
         expect((await step(order, "ready")).status).toBe(200)
 
-        // The bot card's step opens the app: the way and the note are asked there.
-        const ready = client.telegram.edited.filter((m) => m.chatId === DISPATCHER.id).at(-1)
+        // The bot card's step opens the app: the way and the note are asked there. «Tayyor»
+        // brings the card again, with a sound.
+        const ready = client.telegram.sent.filter((m) => m.chatId === DISPATCHER.id).at(-1)
         const send = ready?.options?.keyboard?.inline_keyboard[0]?.[0]
         expect(send?.text).toBe("📮 Jo'natdim")
         expect(send?.web_app?.url).toContain(order.id)

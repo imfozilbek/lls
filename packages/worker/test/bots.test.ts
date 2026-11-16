@@ -570,8 +570,21 @@ describe("shop bot", () => {
             question?.options?.keyboard?.inline_keyboard.flat().map((b) => b.callback_data),
         ).toContain(`pn:${order.id}`)
 
-        await shopUpdate({ callback_query: { id: "cb-n", from: OWNER, data: `pn:${order.id}` } })
+        // Answered on the question: the question goes from the chat.
+        await shopUpdate({
+            callback_query: {
+                id: "cb-n",
+                from: OWNER,
+                data: `pn:${order.id}`,
+                message: { message_id: 41, chat: { id: OWNER.id } },
+            },
+        })
         expect(client.telegram.answered).toContain("cb-n")
+        expect(client.telegram.removed).toContainEqual({
+            token: SHOP_BOT_TOKEN,
+            chatId: OWNER.id,
+            messageId: 41,
+        })
         const row = await env.DB.prepare(
             "SELECT status, payment_status, transfer_rejections FROM orders",
         ).first()
@@ -587,7 +600,21 @@ describe("shop bot", () => {
     it("«O'zim yetkazaman» from the chat brings «Tayyor» back, the customer hears nothing", async () => {
         const order = await placeOrder()
         await sendReceipt(client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug }), order.id)
-        await shopUpdate({ callback_query: { id: "cb-p", from: OWNER, data: `pc:${order.id}` } })
+        // Answered under the screenshot: the picture stays, its buttons go.
+        await shopUpdate({
+            callback_query: {
+                id: "cb-p",
+                from: OWNER,
+                data: `pc:${order.id}`,
+                message: { message_id: 42, chat: { id: OWNER.id }, photo: [{ file_id: "f" }] },
+            },
+        })
+        expect(client.telegram.cleared).toContainEqual({
+            token: SHOP_BOT_TOKEN,
+            chatId: OWNER.id,
+            messageId: 42,
+        })
+        expect(client.telegram.removed.some((m) => m.messageId === 42)).toBe(false)
         await shopUpdate({
             callback_query: { id: "cb-a", from: OWNER, data: `a:${order.id}:preparing` },
         })

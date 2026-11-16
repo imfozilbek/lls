@@ -212,8 +212,6 @@ const BASE = {
         networkItems: "📦 Pozitsiyalar: {n}",
         networkDistance: "📍 Mijozgacha ≈ {km} km",
         takeOrder: "🙋 Olaman",
-        networkTaken: "✅ {shop}: #{n} buyurtmani boshqa kuryer oldi.",
-        networkYours: "🎉 {shop}: #{n} buyurtma sizniki, karta pastda.",
         networkRequestedOwner:
             "🔎 Bo'sh kuryeringiz yo'q: #{n} buyurtma tuman tarmog'iga berildi. Kim olsa, xabar beramiz.",
         networkClaimedOwner: "🚚 #{n} buyurtmani tuman tarmog'i kuryeri olib boradi: {name}",
@@ -237,11 +235,9 @@ const BASE = {
             [OrderStatus.DELIVERED]: "🏁 Yetkazdim",
         } as StatusTexts,
         courierWait: "⏳ Buyurtma tayyor bo'lganda xabar beramiz.",
-        courierReady: "📦 {shop}: #{n} buyurtma tayyor, olib keting.",
         // A dispatcher (owner's decision, November 2026): sends the order on, writes to the customer.
         dispatcherWait:
             "⏳ Do'kon buyurtmani tayyorlayapti: tayyor bo'lganda xabar beramiz. Mijozga izohni hozir ham yozish mumkin.",
-        dispatcherReady: "📦 {shop}: #{n} buyurtma tayyor, jo'nating.",
         dispatcherSend: "📮 Jo'natdim",
         pickupFrom: "🏪 Qayerdan: {place}",
         dispatcherLine: "📮 Dispetcher: {name}",

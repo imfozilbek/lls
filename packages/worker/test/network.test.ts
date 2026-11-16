@@ -251,18 +251,16 @@ describe("district network", () => {
         const winner = first?.status === 200 ? BOBUR : OTABEK
         const other = winner === BOBUR ? OTABEK : BOBUR
 
-        const edits = client.telegram.edited.filter((m) => m.token === env.COURIER_BOT_TOKEN)
-        expect(edits.filter((m) => m.chatId === winner.id).at(-1)?.html).toContain("sizniki")
-        expect(edits.filter((m) => m.chatId === other.id).at(-1)?.html).toContain(
-            "boshqa kuryer oldi",
-        )
+        // The offers go from both chats: the winner gets the card, the other had nothing to do.
+        const removed = client.telegram.removed.filter((m) => m.token === env.COURIER_BOT_TOKEN)
+        expect(removed.map((m) => m.chatId).sort()).toEqual([winner.id, other.id].sort())
         const card = client.telegram.sent.filter((m) => m.chatId === winner.id).at(-1)
         expect(card?.html).toContain("Navoiy 12")
-        expect(
-            client.telegram.sent.some(
-                (m) => m.chatId === OWNER.id && m.html.includes(winner.first_name),
-            ),
-        ).toBe(true)
+        // The owner's card shows it; the line about it comes quietly, answering the card.
+        const claimed = client.telegram.sent.find(
+            (m) => m.chatId === OWNER.id && m.html.includes(winner.first_name),
+        )
+        expect(claimed?.options).toMatchObject({ silent: true, replyTo: expect.any(Number) })
         // The winner's number came with the claim: the shop and the customer can call them.
         const taken = await json<Order>(await foodOwner()(`/api/orders/${order.id}`))
         expect(taken).toMatchObject({
@@ -353,9 +351,7 @@ describe("district network", () => {
             method: "PUT",
             json: { courierId: own },
         })
-        expect(client.telegram.edited.filter((m) => m.chatId === BOBUR.id).at(-1)?.html).toContain(
-            "boshqa kuryer oldi",
-        )
+        expect(client.telegram.removed.some((m) => m.chatId === BOBUR.id)).toBe(true)
         expect(
             (
                 await json<{ data: unknown[] }>(

@@ -138,6 +138,11 @@ export interface TelegramGateway {
      * already, or older than Telegram allows (48 hours): nothing happens.
      */
     deleteMessage(token: string, chatId: number, messageId: number): Promise<void>
+    /**
+     * Takes the buttons off a message that stays (the screenshot once its question is answered).
+     * Gone already, or without buttons: nothing happens.
+     */
+    clearButtons(token: string, chatId: number, messageId: number): Promise<void>
     answerCallback(token: string, callbackQueryId: string, text?: string): Promise<void>
     /**
      * Managed Bots: a button the user presses inside the Mini App (`WebApp.requestChat(id)`) to
@@ -243,6 +248,9 @@ async function readApiResponse<T>(response: Response): Promise<ApiResponse<T>> {
 /** Telegram's answers when a message cannot be deleted: already gone, or too old. */
 const CANNOT_DELETE = /message to delete not found|message can't be deleted/i
 
+/** Telegram's answers when there are no buttons to take off: gone, or already plain. */
+const NOTHING_TO_CLEAR = /message to edit not found|message is not modified/i
+
 /** Escapes text for Telegram HTML parse mode. */
 export function escapeHtml(text: string): string {
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -280,6 +288,20 @@ export class HttpTelegramGateway implements TelegramGateway {
             ...sendExtras(options),
         })
         return { messageId: message.message_id }
+    }
+
+    async clearButtons(token: string, chatId: number, messageId: number): Promise<void> {
+        try {
+            await this.call(token, "editMessageReplyMarkup", {
+                chat_id: chatId,
+                message_id: messageId,
+                reply_markup: { inline_keyboard: [] },
+            })
+        } catch (error) {
+            if (!(error instanceof TelegramApiError) || !NOTHING_TO_CLEAR.test(error.description)) {
+                throw error
+            }
+        }
     }
 
     async deleteMessage(token: string, chatId: number, messageId: number): Promise<void> {

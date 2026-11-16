@@ -165,15 +165,11 @@ describe("the customer's live message", () => {
         await setStatus(order.id, "ready")
         expect(toCustomer().sent).toHaveLength(2)
         expect(toCustomer().edited.at(-1)?.html).toContain("tayyor")
-        // The courier's «tayyor, olib keting» answers their card.
-        const courierCard = await env.DB.prepare(
-            "SELECT courier_message_id FROM orders WHERE id = ?",
-        )
-            .bind(order.id)
-            .first<{ courier_message_id: number }>()
-        const ping = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
-        expect(ping?.html).toContain("tayyor, olib keting")
-        expect(ping?.options?.replyTo).toBe(courierCard?.courier_message_id)
+        // The courier's card comes again on «Tayyor», with a sound; the one before goes.
+        const ready = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
+        expect(ready?.html.split("\n")[0]).toContain("📦 Tayyor")
+        expect(ready?.options?.silent).toBe(false)
+        expect(client.telegram.removed.some((m) => m.chatId === COURIER.id)).toBe(true)
 
         // On the way and delivered ring; each time one message stays.
         const courier = client.as(COURIER, { courierBot: true })

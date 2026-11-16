@@ -314,14 +314,15 @@ describe("shop couriers, verticals and channels", () => {
 
         await setStatus(order.id, "preparing")
         await setStatus(order.id, "ready")
-        const edited = client.telegram.edited.filter((m) => m.chatId === COURIER.id).at(-1)
-        expect(edited?.token).toBe(env.COURIER_BOT_TOKEN)
-        expect(edited?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
+        // «Tayyor» is what the courier waits for: the card comes again with a sound and the one
+        // before goes; no ping is left under it.
+        const ready = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
+        expect(ready?.token).toBe(env.COURIER_BOT_TOKEN)
+        expect(ready?.html.split("\n")[0]).toBe("<b>Osh Markaz · #1</b> · 📦 Tayyor")
+        expect(ready?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
             `a:${String(order.id)}:picked_up`,
         )
-        expect(
-            client.telegram.sent.some((m) => m.chatId === COURIER.id && m.html.includes("tayyor")),
-        ).toBe(true)
+        expect(client.telegram.removed.at(-1)?.chatId).toBe(COURIER.id)
 
         const picked = await courierApp()(`/api/courier/orders/${String(order.id)}`, {
             method: "PATCH",

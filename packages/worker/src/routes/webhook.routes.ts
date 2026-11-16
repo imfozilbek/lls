@@ -164,12 +164,34 @@ async function handleOrderCallback(
         } else {
             await notifyOwnerStep(services, business, step.order, step.request)
         }
+        await closeAnsweredQuestion(services, token, action, callback)
     } finally {
         await services.telegram.answerCallback(token, callback.id, texts.callbackDone)
     }
     // A stop cancelled from the chat leaves the trip's way, as from the app.
     if (order.tripId && order.status === OrderStatus.CANCELLED) {
         await services.useCases.refreshTripRoute.execute({ tripId: order.tripId })
+    }
+}
+
+/**
+ * «Ha, … keldi» or «Yo'q, kelmadi» answered: the question goes from the chat, and the
+ * screenshot stays without its buttons (nothing left to press on either).
+ */
+async function closeAnsweredQuestion(
+    services: Services,
+    token: string,
+    action: OrderCallback,
+    callback: Callback,
+): Promise<void> {
+    const message = callback.message
+    if (!message || (action.kind !== "paid" && action.kind !== "notPaid")) {
+        return
+    }
+    if (message.photo) {
+        await services.telegram.clearButtons(token, message.chat.id, message.message_id)
+    } else {
+        await services.telegram.deleteMessage(token, message.chat.id, message.message_id)
     }
 }
 

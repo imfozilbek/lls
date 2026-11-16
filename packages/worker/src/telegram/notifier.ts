@@ -251,7 +251,7 @@ export class Notifier {
             token,
             lines.join("\n"),
             confirmPaidKeyboard(order, t, sum),
-            order.id,
+            { orderId: order.id },
         )
     }
 
@@ -340,6 +340,8 @@ export class Notifier {
         business: Business,
         order: OrderDTO,
         previousCourierId: string | undefined,
+        /** One of a trip's orders: its card comes quietly, the trip's message rings once. */
+        inTrip = false,
     ): Promise<void> {
         const token = await this.shopToken(business.id)
         const { courier: oldMessage } = await this.services.orders.getMessageIds(order.id)
@@ -350,7 +352,7 @@ export class Notifier {
                 previousCourierId && previousCourierId !== order.courierId
                     ? this.tellPreviousCourier(business, order, previousCourierId, oldMessage)
                     : Promise.resolve(),
-            (): Promise<void> => this.refreshCourierCard(business, order, null),
+            (): Promise<void> => this.refreshCourierCard(business, order, null, inTrip),
             (): Promise<void> => this.orderChangedForOwner(token, business, order),
             // The shop's own courier took it: the network's offers are no longer open.
             (): Promise<void> => this.closeNetworkOffers(business, order),
@@ -401,7 +403,7 @@ export class Notifier {
         const cards = trip.orders.map(
             (order): (() => Promise<void>) =>
                 (): Promise<void> =>
-                    this.courierAssigned(business, order, previousCouriers.get(order.id)),
+                    this.courierAssigned(business, order, previousCouriers.get(order.id), true),
         )
         await everyOne([...cards, (): Promise<void> => this.tripMessage(business, trip)])
     }
@@ -446,6 +448,7 @@ export class Notifier {
                     business,
                     order,
                     fill(t.networkRequestedOwner, { n: order.number }),
+                    true,
                 ),
             async (): Promise<void> => {
                 const people = await this.services.useCases.freeNetworkCouriers.execute({
@@ -517,7 +520,7 @@ export class Notifier {
         const ownerId = business.ownerTelegramId.value
         const t = textsFor(await this.languageOf(ownerId), business.type)
         await everyOne([
-            (): Promise<void> => this.closeNetworkOffers(business, order, claim.courierTelegramId),
+            (): Promise<void> => this.closeNetworkOffers(business, order),
             (): Promise<void> => this.refreshCourierCard(business, order, null),
             (): Promise<void> => this.orderChangedForOwner(token, business, order),
             (): Promise<void> =>
@@ -529,35 +532,26 @@ export class Notifier {
                         n: order.number,
                         name: escapeHtml(order.courierName ?? ""),
                     }),
+                    true,
                 ),
         ])
     }
 
     /** Edits the open offers of an order once, then forgets them. */
-    private async closeNetworkOffers(
-        business: Business,
-        order: OrderDTO,
-        winner?: number,
-    ): Promise<void> {
+    private async closeNetworkOffers(_business: Business, order: OrderDTO): Promise<void> {
         const offers = await this.services.networkOffers.list(order.id)
         if (offers.length === 0) {
             return
         }
         await this.services.networkOffers.clear(order.id)
-        const shop = escapeHtml(business.name)
-        // Each offer on its own: one deleted message must not leave the others saying «Беру».
+        // The offers go from every chat: the one who took it gets the card, the others had
+        // nothing to do with it. Each on its own: one failure must not leave another «Olaman».
         await everyOne(
             offers.map((offer) => async (): Promise<void> => {
-                const t = textsFor(await this.languageOf(offer.telegramId))
-                const text = fill(offer.telegramId === winner ? t.networkYours : t.networkTaken, {
-                    n: order.number,
-                    shop,
-                })
-                await this.services.telegram.editMessage(
+                await this.services.telegram.deleteMessage(
                     this.services.env.COURIER_BOT_TOKEN,
                     offer.telegramId,
                     offer.messageId,
-                    text,
                 )
             }),
         )
@@ -1014,13 +1008,16 @@ export class Notifier {
     }
 
     /**
-     * Sends or edits the courier's card in the Zumda courier bot. A card edit makes no sound, so
-     * "ready" also pings.
+     * Sends or edits the courier's card in the Zumda courier bot. «Tayyor» is what the courier
+     * waits for: the card comes again with a sound and the one before goes, instead of a ping
+     * under it that stays in the chat. A trip's cards come quietly (`quiet`): its own message
+     * rings once.
      */
     private async refreshCourierCard(
         business: Business,
         order: OrderDTO,
         messageId: number | null,
+        quiet = false,
     ): Promise<void> {
         const token = this.services.env.COURIER_BOT_TOKEN
         if (!order.courierId) {
@@ -1034,7 +1031,7 @@ export class Notifier {
         const reader = await this.readerFor(chatId, business)
         const shopPhone = await shopCallPhone(business, this.services.customers)
         const orderUrl = courierAppUrl(this.services.env.COURIER_APP_ORIGIN, order.id)
-        const sent = await this.upsertCard(token, chatId, messageId, {
+        const card = {
             text: formatOrderForCourier(
                 order,
                 reader,
@@ -1045,21 +1042,17 @@ export class Notifier {
                 courierKeyboard(order, reader, orderUrl),
                 this.courierAppButton(textsFor(reader.language), undefined, order.id),
             ),
-        })
+            silent: quiet,
+        }
+        const ready = messageId !== null && order.status === OrderStatus.READY
+        const sent = ready
+            ? (await this.services.telegram.sendMessage(token, chatId, card.text, card)).messageId
+            : await this.upsertCard(token, chatId, messageId, card)
         if (sent !== null) {
             await this.services.orders.setMessageId(order.id, "courier", sent)
         }
-        if (messageId !== null && order.status === OrderStatus.READY) {
-            const words = textsFor(reader.language)
-            const ping = fill(order.dispatcher ? words.dispatcherReady : words.courierReady, {
-                n: order.number,
-                shop: escapeHtml(business.name),
-            })
-            const t = textsFor(reader.language)
-            await this.services.telegram.sendMessage(token, chatId, ping, {
-                keyboard: { inline_keyboard: [[this.courierAppButton(t, undefined, order.id)]] },
-                replyTo: sent ?? messageId,
-            })
+        if (ready && messageId !== null) {
+            await this.services.telegram.deleteMessage(token, chatId, messageId)
         }
     }
 
@@ -1068,7 +1061,7 @@ export class Notifier {
         token: string,
         chatId: number,
         messageId: number | null,
-        card: { text: string; keyboard: InlineKeyboard },
+        card: { text: string; keyboard: InlineKeyboard; silent?: boolean },
     ): Promise<number | null> {
         const telegram = this.services.telegram
         if (messageId !== null) {
@@ -1089,6 +1082,7 @@ export class Notifier {
         }
         const sent = await telegram.sendMessage(token, chatId, card.text, {
             keyboard: card.keyboard,
+            silent: card.silent,
         })
         return sent.messageId
     }
@@ -1177,17 +1171,24 @@ export class Notifier {
         )
     }
 
-    /** A line to the owner about an order, from the shop bot, with the order in the app. */
+    /**
+     * A line to the owner about an order, from the shop bot, with the order in the app. What the
+     * card already shows and needs nothing from the owner comes quietly (`silent`).
+     */
     private async toOwner(
         token: string,
         business: Business,
         order: OrderDTO,
         text: string,
+        silent = false,
     ): Promise<void> {
         const ownerId = business.ownerTelegramId.value
         const t = textsFor(await this.languageOf(ownerId), business.type)
         const url = shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value, order.id)
-        await this.textToOwner(business, token, text, appKeyboard(t.openOrder, url), order.id)
+        await this.textToOwner(business, token, text, appKeyboard(t.openOrder, url), {
+            orderId: order.id,
+            silent,
+        })
     }
 
     /** A text for the owner from the shop's bot, or through Zumda | Business with the note. */
@@ -1197,11 +1198,12 @@ export class Notifier {
         text: string,
         keyboard: InlineKeyboard,
         /**
-         * About this order: the Zumda | Business button opens it, and in the shop's bot the line
-         * answers the order's card (the quote is the context).
+         * About this order (`orderId`): the Zumda | Business button opens it, and in the shop's
+         * bot the line answers the order's card (the quote is the context). `silent`: no sound.
          */
-        orderId?: string,
+        about: { orderId?: string; silent?: boolean } = {},
     ): Promise<OwnerDelivery> {
+        const { orderId, silent } = about
         const replyTo = orderId ? await this.ownerCardInShopBot(orderId) : undefined
         return this.reachOwner(
             business,
@@ -1210,7 +1212,7 @@ export class Notifier {
                     token,
                     business.ownerTelegramId.value,
                     text,
-                    { keyboard, replyTo },
+                    { keyboard, replyTo, silent },
                 )
             },
             (note) => this.noteToOwner(business, note, text),

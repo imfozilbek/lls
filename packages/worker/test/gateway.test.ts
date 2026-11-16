@@ -124,6 +124,30 @@ describe("HttpTelegramGateway", () => {
         ).rejects.toBeInstanceOf(TelegramApiError)
     })
 
+    it("takes the buttons off a message that stays; one gone or already plain is no failure", async () => {
+        const { fetcher, calls } = fakeFetch(true)
+        await new HttpTelegramGateway(fetcher).clearButtons("t", 1, 42)
+        expect(calls[0]?.url).toBe("https://api.telegram.org/bott/editMessageReplyMarkup")
+        expect(calls[0]?.body).toEqual({
+            chat_id: 1,
+            message_id: 42,
+            reply_markup: { inline_keyboard: [] },
+        })
+        const refusing = (description: string): typeof fetch =>
+            (async () =>
+                new Response(JSON.stringify({ ok: false, description }), {
+                    status: 400,
+                })) as typeof fetch
+        for (const description of [
+            "Bad Request: message is not modified: specified new message content and reply markup are exactly the same",
+            "Bad Request: message to edit not found",
+        ]) {
+            await expect(
+                new HttpTelegramGateway(refusing(description)).clearButtons("t", 1, 42),
+            ).resolves.toBeUndefined()
+        }
+    })
+
     it("sends a picture by URL with an HTML caption and buttons", async () => {
         const { fetcher, calls } = fakeFetch({ message_id: 7 })
         const keyboard = { inline_keyboard: [[{ text: "Open", web_app: { url: "https://a" } }]] }
