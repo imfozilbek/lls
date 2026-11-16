@@ -165,6 +165,18 @@ cover each one's whole process; what exactly comes from the meeting with them.
   (asked once more; `cash_received_at`). The courier sees «Do'konga topshirasiz: {sum}» per shop
   until then. No change (qaytim) field: the customer writes it in the comment. Transfer steps on a
   cash order are refused (`NOT_A_TRANSFER`).
+- **«Yo'q»: a line the shop did not have** (owner's decision, November 2026). Until «Tayyor» (in
+  «Yig'ish kerak» or while collecting) the owner's open card has «Yo'q» on each line but the last
+  (`LAST_LINE`: cancel instead; `LINE_NOT_REMOVABLE` after «Tayyor»). The sheet «Mahsulot
+  qolmaganmi?» shows the new sum and, for a paid transfer, «Mijozga {sum} qaytarasiz»;
+  «Bugun sotuvdan olib qo'yish» (on) stops the product until midnight and a counted stock goes
+  to 0. The line stays in the order, marked (`order_items.removed_at`): the owner sees «yo'q
+  edi», the customer «Do'konda yo'q edi». The goods and the commission go down; the delivery fee
+  stays as it was; the bottle deposit never grows; weight is never re-priced. A paid transfer
+  owes the difference (`orders.refund_owed`): «{sum} qaytarish kerak» with «Qaytardim» on the
+  card and in «Pul» → «Mijozlarga qaytarish»; a cancel after it owes everything paid. Cash: the
+  courier takes the new sum. The customer hears «#{n}: {item} do'konda yo'q ekan, …» with the new
+  sum and the money. A line taken out gives no stock back on a cancel.
 - **«Yetkazish haqini mijoz o'zi to'laydi»** (owner's decision, November 2026): a shop that sends
   by a taxi or the post switches it on in «Yetkazib berish». The customer pays the carrier; the
   order adds no delivery fee (the shop's fee and «dan bepul» step aside, a snapshot
@@ -578,7 +590,7 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until, dispatcher (sends orders on by a taxi or the post, writes notes): the person's link to one shop (`network`: took a network order of it) |
 | Trip | id, business_id, courier_id, route (JSON line), distance_m, duration_s: several orders of one shop one way; stops are `orders.trip_id` + `trip_stop` |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), service fee (rate + amount; plan) |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock, `removed_at`: «Yo'q»), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; refund_owed: owed back for lines taken out with «Yo'q»; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces (metres, hours...), or
@@ -1220,6 +1232,9 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow
 - [ ] Uzbek texts only (no Cyrillic in any dictionary); light app in a dark Telegram
+- [ ] «Yo'q»: a paid two-line order → «Yo'q» on one with «Bugun sotuvdan olib qo'yish» → the
+      sum down, «… qaytarish kerak», the customer told and seeing «Do'konda yo'q edi», the product
+      off sale today → «Qaytardim»; no «Yo'q» on the last line; a cash courier sees the new sum
 - [ ] Collecting: «Pul keldi» → the order under «Yig'ish kerak», the customer hears «qabul
       qilindi» → «Yig'ishni boshlash» → «hozir yig'ilmoqda» → «Tayyor»; a service accepts and
       starts in one tap («qabul qilindi va bajarilmoqda»)

@@ -22,7 +22,7 @@ that Zumda fits its share on a busy day, line by line, and how each number was f
 |------|-------------------:|--------------:|------------:|----------:|------|
 | Worker requests | 100 000 / day | 35 000 | ~33 700 | ~41 000 | typical yes; heavy: see "Levers" |
 | D1 rows read | 5 000 000 / day | 1 500 000 | ~0.6 M | ~1.1 M | yes, also after 6 months |
-| D1 rows written | 100 000 / day | 20 000 | ~15 900 | ~19 600 | yes, heavy close to the share |
+| D1 rows written | 100 000 / day | 20 000 | ~16 000 | ~19 800 | yes, heavy close to the share |
 | R2 storage | 10 GB | 4 GB | ~2 GB | ~2.3 GB | yes, and it stops growing |
 | Cron triggers | 5 / account | 0-1 | 0 | 0 | yes |
 
@@ -132,9 +132,10 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 | «Ro'yxat bilan qo'shish»: a new shop's list, once (50 × ~15; reads: the shop's names, one covering index) | rare, at most 5 a minute | 0 | 750 |
 | Couriers' shifts, network offers | | 500 | 1 000 |
 | Counted stock: a placed order with a counted product, a cancel giving it back (one product row each; `stock` is in no index) | ~50 orders × ~1.5 | 75 | 300 |
+| «Yo'q»: the order row (sums, `refund_owed` in its partial index), the line, the product stopped today | ~10 a day × ~10 (heavy ~20) | 100 | 200 |
 | A dispatcher's «Jo'natdim» and notes (one order row each: only the changed columns, `updated_at` re-indexed) | ~20 orders × ~3 × ~4 | 240 | 500 |
 | Bot message ids, alerts, sessions | 300 × 2 × 2 + ~200 | 1 400 | 1 700 |
-| **Total** | | **~15 900** | **~19 600** |
+| **Total** | | **~16 000** | **~19 800** |
 
 ## R2 storage
 

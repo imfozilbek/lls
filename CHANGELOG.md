@@ -7,6 +7,18 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### «Yo'q»: a line the shop did not have
+- Until «Tayyor» the owner's open card has «Yo'q» on each line but the last (owner's decision,
+  November 2026). The sheet «Mahsulot qolmaganmi?» shows the new sum and what goes back to the
+  customer; «Bugun sotuvdan olib qo'yish» (on by default) stops the product until midnight and a
+  counted stock goes to 0.
+- The goods and the commission go down; the delivery fee stays as it was; the bottle deposit
+  never grows. A paid transfer owes the difference: «… qaytarish kerak» with «Qaytardim» on the
+  card and in «Pul» → «Mijozlarga qaytarish». A cash courier takes the new sum.
+- The customer hears «#7: Somsa do'konda yo'q ekan, buyurtmadan olib tashlandi. Yangi summa: …»
+  with the money, and sees the line struck through: «Do'konda yo'q edi».
+- Migration `0029`: `order_items.removed_at`, `orders.refund_owed` and its partial index.
+
 ### Collecting is a step of its own
 - «Qabul qilish» and «Pul keldi» accept the order, and it waits under «Yig'ish kerak»
   («Tayyorlash kerak» for food) until the owner presses «Yig'ishni boshlash» (owner's decision,
