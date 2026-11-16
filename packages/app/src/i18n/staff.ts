@@ -658,7 +658,8 @@ export const staffUz = {
         cashToHand: "Do'konga topshirasiz: {sum}",
         notPaidYet: "Hali to'lanmagan, do'kon xabar beradi",
         shift: "Smenadaman",
-        shiftHint: "Do'konlar faqat smenadagi kuryerga buyurtma beradi. Smena yarim tungacha.",
+        shiftHint:
+            "Do'konlar faqat smenadagi kuryerga buyurtma beradi. Ish tugagach, uni o'chirib qo'ying.",
         shops: "Do'konlarim",
         dayOff: "Bugun dam olish",
         worksToday: "Bugun ishlaysiz",

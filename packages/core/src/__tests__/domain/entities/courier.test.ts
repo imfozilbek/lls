@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { COURIER_INVITE_TTL_MS, Courier, CourierInvite } from "../../../domain/entities/courier.js"
-import { CourierProfile } from "../../../domain/entities/courier-profile.js"
+import { CourierProfile, SHIFT_OPEN_END } from "../../../domain/entities/courier-profile.js"
 import { CourierStatus } from "../../../domain/enums/courier-status.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../../domain/errors/conflict.error.js"
@@ -13,6 +13,7 @@ import { TelegramId } from "../../../domain/value-objects/telegram-id.js"
 const NOW = new Date("2026-09-25T09:00:00Z")
 const TOMORROW = new Date("2026-09-26T09:00:00Z")
 const LATE_TONIGHT = new Date("2026-09-25T18:59:00Z")
+const NEXT_WEEK = new Date("2026-10-02T09:00:00Z")
 
 function profile(): CourierProfile {
     return CourierProfile.create({ telegramId: TelegramId.create(5005), name: " Jasur ", now: NOW })
@@ -35,16 +36,27 @@ describe("CourierProfile", () => {
         expect(() => person.setVehicle("x".repeat(41), NOW)).toThrow(ValidationError)
     })
 
-    it("a shift lasts until the end of the local day", () => {
+    it("a shift holds until the courier switches it off, past midnight", () => {
         const person = profile()
         expect(person.isOnShift(NOW)).toBe(false)
         person.startShift(NOW)
-        expect(person.isOnShift(LATE_TONIGHT)).toBe(true)
-        // Midnight in Tashkent: a forgotten shift never carries over.
-        expect(person.isOnShift(TOMORROW)).toBe(false)
-        person.startShift(NOW)
+        expect(person.shiftUntil).toEqual(SHIFT_OPEN_END)
+        expect(person.isOnShift(TOMORROW)).toBe(true)
+        expect(person.isOnShift(NEXT_WEEK)).toBe(true)
         person.endShift(NOW)
         expect(person.isOnShift(NOW)).toBe(false)
+    })
+
+    it("a shift started before ends at its old midnight", () => {
+        const person = CourierProfile.reconstitute({
+            telegramId: TelegramId.create(5005),
+            name: "Jasur",
+            shiftUntil: new Date("2026-09-25T19:00:00Z"),
+            createdAt: NOW,
+            updatedAt: NOW,
+        })
+        expect(person.isOnShift(NOW)).toBe(true)
+        expect(person.isOnShift(TOMORROW)).toBe(false)
     })
 })
 

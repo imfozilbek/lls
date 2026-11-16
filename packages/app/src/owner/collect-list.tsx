@@ -7,9 +7,11 @@ import { quantityMark } from "../lib/format.js"
 import { confirm, haptic } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 import { CheckIcon } from "../ui/icons.js"
+import { LinePhoto, useProductSheet, useProductsById } from "../ui/line-photo.js"
 
 import { MissingButton, RemovedLines, canTakeOut } from "./missing-line.js"
 import { togglePicked, usePicked } from "./picked.js"
+import { useOwner } from "./store.js"
 
 import type { OrderDTO, OrderItemDTO } from "@zumda/core"
 
@@ -109,16 +111,20 @@ function CollectLine({
     item,
     ticks,
     picked,
+    photo,
     onMissing,
 }: {
     order: OrderDTO
     item: OrderItemDTO
     ticks: boolean
     picked: boolean
+    /** The product's photo, its own button beside the tick (a button never holds a button). */
+    photo: React.ReactNode
     onMissing?: () => void
 }): React.JSX.Element {
     return (
         <li className="flex items-start gap-1">
+            <span className="mt-0.5">{photo}</span>
             {ticks ? (
                 <button
                     type="button"
@@ -128,13 +134,13 @@ function CollectLine({
                         haptic.tap()
                         togglePicked(order.id, item.line)
                     }}
-                    className="tap -mx-2 flex min-h-11 flex-1 items-start gap-3 rounded-control px-2 py-2.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                    className="tap -mr-2 flex min-h-11 flex-1 items-start gap-3 rounded-control px-2 py-2.5 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
                 >
                     <TickBox on={picked} />
                     <LineText item={item} done={picked} />
                 </button>
             ) : (
-                <div className="flex min-h-11 flex-1 items-start gap-3 py-2.5">
+                <div className="flex min-h-11 flex-1 items-start gap-3 py-2.5 pl-2">
                     <LineText item={item} done={false} />
                 </div>
             )}
@@ -204,6 +210,8 @@ export function CollectList({
     const picked = usePicked(order.id)
     const ticks = ticksOn(order, type)
     const missing = canTakeOut(order)
+    const products = useProductsById(useOwner((state) => state.products))
+    const productSheet = useProductSheet()
     const done = ticks ? order.items.filter((item) => picked.has(item.line)).length : 0
     // The quantities as wide as the longest of this order («2 qadoq»): the names stand in a column.
     const widest = Math.max(
@@ -220,12 +228,20 @@ export function CollectList({
                         item={item}
                         ticks={ticks}
                         picked={ticks && picked.has(item.line)}
+                        photo={
+                            <LinePhoto
+                                item={item}
+                                product={products.get(item.productId)}
+                                onOpen={productSheet.open}
+                            />
+                        }
                         onMissing={missing ? (): void => onMissing(item) : undefined}
                     />
                 ))}
             </ul>
             <RemovedLines order={order} />
             {order.comment ? <CustomerAsk text={order.comment} /> : null}
+            {productSheet.sheet}
         </div>
     )
 }

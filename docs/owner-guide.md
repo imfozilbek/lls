@@ -259,7 +259,7 @@ Click/Payme yo'q: pul to'g'ridan-to'g'ri sizga.
 
 1. Do'kondan olingan havolani oching → **Zumda kuryer boti** → **Start** → **📱 Raqamni yuborish**.
 2. Do'kon tasdiqlashini kuting: bot yozadi.
-3. Ishga chiqqanda **🚚 Yetkazishlarim** → **Smenadaman** ni yoqing. Smena yarim tunda tugaydi.
+3. Ishga chiqqanda **🚚 Yetkazishlarim** → **Smenadaman** ni yoqing. Ish tugagach, uni o'chirib qo'ying.
 4. Buyurtma kartasi botga keladi. Tayyor bo'lganda **🚚 Oldim**, eshik oldida: **🏁 Yetkazdim**.
 5. Kartada **«Oldindan to'langan, mijozdan pul olmang»** bo'lsa, pul olmang. **«Mijozdan …
    naqd oling»** bo'lsa, shu summani oling va **Pulni oldim, yetkazdim** ni bosing. Bu pulni

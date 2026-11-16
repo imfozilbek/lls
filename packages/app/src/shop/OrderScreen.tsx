@@ -24,6 +24,7 @@ import {
     ScooterIcon,
     WifiOffIcon,
 } from "../ui/icons.js"
+import { useProductsById } from "../ui/line-photo.js"
 import { OrderMap } from "../ui/maps.js"
 import { OrderItems } from "../ui/order-items.js"
 import { StatusHero, StatusTimeline } from "../ui/order-status.js"
@@ -555,6 +556,8 @@ function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
     const language = useLanguage()
     const words = deliveryWords(language)
     const shopPlace = useSession((state) => state.shop?.location)
+    // The shop's products on sale: a line's photo opens its product.
+    const products = useProductsById(useSession((state) => state.catalog))
     return (
         <>
             <div className="flex items-baseline justify-between px-1">
@@ -601,7 +604,7 @@ function OrderDetails({ order }: { order: OrderDTO }): React.JSX.Element {
             <Calls order={order} />
 
             <Section title={t.order.items}>
-                <OrderItems order={order} />
+                <OrderItems order={order} products={products} />
             </Section>
             <Section title={t.order.address}>
                 {/* A finished order needs no map: the address says where it went. */}

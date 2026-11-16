@@ -5,6 +5,7 @@
  */
 import { expect, test } from "@playwright/test"
 
+import { pngImage } from "../support/images.js"
 import {
     GROCERY,
     PEOPLE,
@@ -215,4 +216,72 @@ test("a service lists its lines while it is done, with nothing to tick", async (
     const one = card(page, order.number)
     await expect(one.getByText("Soat 17 dan keyin")).toBeVisible()
     await expect(one.getByRole("checkbox")).toHaveCount(0)
+})
+
+test("a line's photo opens its product, for the owner while collecting and for the customer", async ({
+    page,
+}) => {
+    const [milk, other] = (await fourLines()).slice(0, 2)
+    if (!milk || !other) {
+        throw new Error("the stand's grocery has fewer than two plain products")
+    }
+    const photo = await apiAs(PEOPLE.groceryOwner, `/owner/products/${milk.productId}/images`, {
+        shop: GROCERY,
+        method: "POST",
+        png: pngImage(256, [21, 128, 61]),
+    })
+    expect(photo.ok).toBe(true)
+    const order = await placeOrder(PEOPLE.customer, GROCERY, [
+        { productId: milk.productId, quantity: milk.quantity },
+        { productId: other.productId, quantity: other.quantity },
+    ])
+    await pay(PEOPLE.groceryOwner, GROCERY, order.id)
+    const self = await apiAs(PEOPLE.groceryOwner, `/owner/orders/${order.id}/courier`, {
+        shop: GROCERY,
+        method: "PUT",
+        json: { self: true },
+    })
+    expect(self.status).toBe(200)
+
+    // The owner: the photo beside each line opens the product; the sheet closes as any other.
+    await openApp(page, { user: PEOPLE.groceryOwner, shop: GROCERY, confirm: false })
+    await ownerStage(page, /^Yig'ish kerak/)
+    const queued = card(page, order.number)
+    const view = `${milk.name}: Mahsulotni ko'rish`
+    await queued.getByRole("button", { name: view }).click()
+    const sheet = page.getByRole("dialog", { name: milk.name })
+    await expect(sheet.getByRole("img").first()).toBeVisible()
+    await page.screenshot({ path: "test-results/line-photo-owner-sheet.png" })
+    await page.keyboard.press("Escape")
+    await expect(sheet).toBeHidden()
+
+    // Collecting: the ticks and «Yo'q» work as before, the photo still opens the product.
+    await queued.getByRole("button", { name: "Yig'ishni boshlash", exact: true }).click()
+    await page
+        .getByRole("group", { name: "Buyurtma holati" })
+        .getByRole("button", { name: /^Yig'ilmoqda/ })
+        .click()
+    const collecting = card(page, order.number)
+    const ticks = collecting.getByRole("checkbox")
+    await expect(ticks).toHaveCount(2)
+    await ticks.nth(0).click()
+    await expect(collecting).toContainText("Yig'ildi: 1 / 2")
+    await expect(collecting.getByRole("button", { name: `Yo'q: ${milk.name}` })).toBeVisible()
+    await page.screenshot({ path: "test-results/line-photo-owner-collecting.png" })
+    await collecting.getByRole("button", { name: view }).click()
+    await expect(page.getByRole("dialog", { name: milk.name })).toBeVisible()
+    await page.keyboard.press("Escape")
+    await expect(ticks.nth(0)).toHaveAttribute("aria-checked", "true")
+
+    // The customer: the same photo on the order screen opens the product.
+    await openApp(page, {
+        user: PEOPLE.customer,
+        shop: GROCERY,
+        query: `?shop=${GROCERY}&order=${order.id}`,
+    })
+    await page.getByRole("button", { name: view }).click()
+    await expect(page.getByRole("dialog", { name: milk.name })).toBeVisible()
+    await page.screenshot({ path: "test-results/line-photo-customer-sheet.png" })
+    await page.keyboard.press("Escape")
+    await page.screenshot({ path: "test-results/line-photo-customer-order.png", fullPage: true })
 })
