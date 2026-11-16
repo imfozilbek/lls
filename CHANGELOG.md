@@ -7,6 +7,21 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Three asks of a toy shop's owner
+- **Payme first** among the bank apps after «Raqamni nusxalash»: Payme, Click, Uzum Bank,
+  Paynet.
+- **An order line shows its product.**
+  - The owner's card (while collecting and after) and the customer's order start each line with
+    the product's photo.
+  - A tap opens the product read-only: photos, price, description.
+  - The ticks and «Yo'q» work as before.
+  - The photo comes from the products the app already holds, so it costs no query; a deleted
+    product shows its category's picture and opens nothing.
+- **«Smenadaman» holds until the courier switches it off** (owner's decision). It ended at
+  midnight, so a courier had to switch it on every day, and until then the shop's only courier
+  did not get orders by themselves. Migration `0032_shift_holds.sql` keeps the couriers on shift
+  now on shift.
+
 ### «Skrinshotni tanlash» opens the gallery on Android
 - On a Galaxy S25+ (Android 17, Telegram 13.2.2) a tap on the receipt tile did nothing: the
   gallery never opened, so the customer could not send the screenshot and the owner could not

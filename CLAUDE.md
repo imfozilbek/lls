@@ -259,7 +259,9 @@ cover each one's whole process; what exactly comes from the meeting with them.
   pending/active/removed, working days, "not today").
 - **Done:** only a business invites a courier: an invite from "Мой магазин" → the person accepts
   it in the courier bot → the business approves (bot button or app) and switches the courier on or
-  off by day (like the menu's stop-list). The courier marks "on shift" himself (until midnight).
+  off by day (like the menu's stop-list). The courier marks "on shift" themselves; it holds until
+  they switch it off (owner's decision, November 2026: it ended at midnight, and a courier had to
+  switch it on every day; `SHIFT_OPEN_END`, migration `0032`).
   An order goes only to a courier who is approved, works today, is on shift and gave a phone
   (owner's decision, October 2026: `no_phone`; a network courier without one gets no offer). The
   owner approves only someone who sent a phone (`COURIER_PHONE_REQUIRED`); the courier bot asks
@@ -843,7 +845,8 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 - Phone: Telegram "share contact" button, never typed by hand
 - Payment: the shop's choice. Transfer: checkout tells the sum, the order screen shows the card
   with «Raqamni nusxalash», which copies the number and opens the bank apps (owner's decision,
-  November 2026: Click, Payme, Uzum Bank, Paynet, `lib/pay-apps.ts`, each at an address the app
+  November 2026: Payme first at a shop owner's ask, then Click, Uzum Bank, Paynet,
+  `lib/pay-apps.ts`, each at an address the app
   claims for itself; none takes a card or a sum prefilled, so the sum is shown in the sheet, never
   copied; a demo card only copies); the customer transfers after placing, presses «Chekni
   yuklash» and, with the screenshot picked, «O'tkazdim»; the owner confirms by hand («Pul keldi»,
@@ -1039,6 +1042,10 @@ console.log            // Use logger
   collected lists every line). A list that
   spans states gets chips with counts (`ui/filter-chips.tsx`): orders by stage, the catalog by
   state, «Bizneslar» by marks. A label names what the button does, never a near thing.
+- **An order line shows its product (a shop owner's ask, November 2026):** the owner's card and
+  the customer's order start each line with the product's photo (`ui/line-photo.tsx`, found by id
+  in the products the app already holds: no query); a tap opens it read-only
+  (`ui/product-info-sheet.tsx`, lazy). The photo is its own button beside the tick, never in it.
 - **Living Uzbek (owner's decision, November 2026):** a new or changed string goes through the
   Prizma corpus check (`tools/native/native_check.py` of `imfozilbek/data-driven-approach`,
   27 M words of public Uzbek channels; Gemini's variants too when its key is set); a variant is
@@ -1288,8 +1295,12 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       the ticks still there → «Tayyor bo'ldi» asks «7 ta mahsulot hali belgilanmagan» → all ticked,
       «Hammasi yig'ildi», «Tayyor» without a question; a service: the list, no ticks
 - [ ] Many cards: add, switch the payment card, old orders keep their card
-- [ ] Bank apps: «Raqamni nusxalash» → the sheet with the sum and Click, Payme, Uzum Bank,
+- [ ] Bank apps: «Raqamni nusxalash» → the sheet with the sum and Payme, Click, Uzum Bank,
       Paynet → each opens its app on a real Android and iPhone (Click on its transfers)
+- [ ] Order line photos: the owner's card and the customer's order show each line's product
+      photo; a tap opens the product (photos, price, description); ticks and «Yo'q» as before;
+      a deleted product shows its category's picture and opens nothing
+- [ ] Shift: «Smenadaman» on today is still on tomorrow, off only when switched off
 - [ ] Empty states handling
 
 ## Release Checklist
