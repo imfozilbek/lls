@@ -207,6 +207,14 @@ export const staffUz = {
             was: "yo'q edi",
             owed: "{sum} qaytarish kerak",
         },
+        /** Collecting by ticks (owner's decision, November 2026): kept on this phone. */
+        picking: {
+            counter: "Yig'ildi: {done} / {all}",
+            allDone: "Hammasi yig'ildi",
+            comment: "Mijozning iltimosi",
+            readyAsk: "{n} ta mahsulot hali belgilanmagan. Buyurtma tayyormi?",
+            readyYes: "Ha, tayyor",
+        },
         age: "{n} daqiqa kutmoqda",
         networkWaited: "{n} daqiqadan beri qidirilmoqda.",
         networkLate: "Hech kim olmasa, o'zingiz yetkazing.",
