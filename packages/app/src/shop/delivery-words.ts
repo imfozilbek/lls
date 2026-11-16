@@ -8,9 +8,9 @@ import { Language, SendWay } from "@zumda/core"
  */
 const WORDS = {
     [Language.UZ]: {
-        /** «Yetkazish: alohida» in the totals. */
-        apart: "alohida",
-        apartHint: "Yetkazish haqini yetkazuvchiga (taksi, pochta) o'zingiz to'laysiz.",
+        /** The totals' delivery line when the price comes after the order (paid to the carrier). */
+        apart: "keyin aytiladi",
+        apartHint: "Masofaga qarab, jo'natilganda aytiladi. Uni yetkazuvchiga o'zingiz to'laysiz.",
         dispatcher: "Dispetcher: {name}",
         callDispatcher: "Dispetcherga qo'ng'iroq",
         sentVia: {

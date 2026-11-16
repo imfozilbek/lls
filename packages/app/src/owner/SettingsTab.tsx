@@ -394,7 +394,7 @@ function ShopLink({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
 /** «Bepul yetkazish», the fee, or that the customer pays the carrier. */
 function deliveryPrice(s: Settings, shop: ShopOwnerDTO, language: Language): string {
     if (shop.delivery.customerPaysCarrier) {
-        return s.summary.carrier
+        return s.summary.later
     }
     const { fee } = shop.delivery
     return fee > 0 ? formatMoney(fee, language) : s.summary.free

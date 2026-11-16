@@ -26,13 +26,14 @@ export const FOOD_STAFF = (base: StaffDictionary): Overrides<StaffDictionary> =>
     courier: { ...base.courier, waitReady: "Taom tayyorlanmoqda, tayyor bo'lganda xabar keladi" },
 })
 
-/** A service: «Xizmatlar», "being done". */
+/** A service: «Xizmatlar», "being done", and a service area instead of delivery. */
 export const SERVICE_STAFF = (base: StaffDictionary): Overrides<StaffDictionary> => ({
     owner: {
         ...base.owner,
         tabs: { ...base.owner.tabs, menu: "Xizmatlar" },
         actions: { ...base.owner.actions, preparing: "Bajarishni boshlash" },
         queueBadge: "Bajarish kerak",
+        settings: { ...base.owner.settings, delivery: "Xizmat hududi" },
         menuEmpty: "Xizmatlar yo'q",
         menuEmptyText: "Birinchi xizmatni qo'shing: mijozlar uni darhol ko'radi.",
     },

@@ -116,7 +116,7 @@ export const uz = {
         opensSoon: "Tez orada ochiladi: katalogni hozir ko'rib chiqing",
         deliveryFee: "Yetkazish {sum}",
         deliveryFree: "Bepul yetkazish",
-        deliveryApart: "Yetkazish haqi alohida",
+        deliveryApart: "Yetkazib berish narxi keyin aytiladi",
         freeFrom: "{sum}dan bepul",
         minOrder: "Minimal {sum}",
         radius: "{km} km gacha yetkazamiz",
@@ -412,14 +412,12 @@ export const uz = {
         },
         transferNote: "{sum} ni shu kartaga o'tkazing, chekni yuklang va «O'tkazdim» ni bosing.",
         transferNoteAgain: "{sum} shu kartaga o'tganini tekshiring va chekni qayta yuklang.",
-        beforeCooking:
-            "Faqat do'kon kartasiga o'tkazma. Buyurtma bering va summani o'tkazing. Pul kelishi bilan do'kon boshlaydi.",
         /** The order's main button: the screenshot first, «O'tkazdim» comes after it. */
         upload: "Chekni yuklash",
         ownerAwaiting: "Chek yuborildi",
         afterOrder: "Buyurtmadan keyin do'kon kartasiga {sum} o'tkazasiz",
         afterOrderHint:
-            "Karta raqami buyurtma berilgach ko'rinadi. Pul kelishi bilan do'kon boshlaydi.",
+            "Karta raqami buyurtma berilgach ko'rinadi. Pul kelishi bilan do'kon buyurtmani qabul qiladi.",
         waitingTitle: "O'tkazma kutilmoqda",
         waitingSum: "Quyidagi kartaga {sum} o'tkazing.",
         checkingTitle: "Do'kon pulni tekshirmoqda",
