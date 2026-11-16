@@ -3,9 +3,9 @@ import { createRoot } from "react-dom/client"
 
 import { App, initialLanguage } from "./App.js"
 import { dictionaryFor, useLanguageStore } from "./i18n/index.js"
+import { unlockSoundOnFirstTouch } from "./lib/audio.js"
 import { listenForCrashes } from "./lib/crashes.js"
 import { setUpKeyboard } from "./lib/keyboard.js"
-import { unlockSoundOnFirstTouch } from "./lib/sound.js"
 import {
     paintLightFrame,
     readLaunchParams,

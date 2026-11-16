@@ -148,7 +148,7 @@ describe("Business", () => {
         expect(business.delivery.freeFrom).toBeUndefined()
         expect(business.deliveryFeeFor(Money.of(10_000)).amount).toBe(0)
         business.updateDelivery({ fee: Money.of(15_000) })
-        expect(business.delivery.customerPaysCarrier).toBeUndefined()
+        expect(business.delivery.customerPaysCarrier).toBe(false)
         expect(business.deliveryFeeFor(Money.of(10_000)).amount).toBe(15_000)
     })
 

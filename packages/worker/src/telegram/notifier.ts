@@ -143,11 +143,11 @@ export class Notifier {
     async askForTransfer(business: Business, order: OrderDTO): Promise<void> {
         // The shop's number under the first message: the customer can call from the chat.
         const phone = await shopCallPhone(business, this.services.customers)
-        // The delivery the customer pays to the carrier is said before they pay for the goods.
+        // The delivery price comes when it is sent, paid to the carrier: said before they pay.
         const withPhone = (t: BotTexts, text: string): string =>
             [
                 text,
-                ...(order.customerPaysCarrier ? [t.carrierFeeCustomer] : []),
+                ...(order.customerPaysCarrier ? [t.carrierPriceLater] : []),
                 ...(phone ? [fill(t.shopPhone, { phone: formatPhone(phone.number) })] : []),
             ].join("\n")
         if (order.payment.method === PaymentMethod.CASH) {

@@ -1,4 +1,5 @@
 import { fill, useLanguage, useT } from "../i18n/index.js"
+import { orderDelivery } from "../lib/delivery-price.js"
 import { formatMoney, quantityMark } from "../lib/format.js"
 import { deliveryWords } from "../shop/delivery-words.js"
 
@@ -8,6 +9,7 @@ import type { OrderDTO } from "@zumda/core"
 export function OrderItems({ order }: { order: OrderDTO }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
+    const delivery = orderDelivery(order)
     return (
         <div className="rounded-tile bg-tg-secondary p-4">
             <ul className="flex flex-col gap-2">
@@ -49,16 +51,18 @@ export function OrderItems({ order }: { order: OrderDTO }): React.JSX.Element {
                 </ul>
             ) : null}
             <div className="my-3 h-px bg-tg-separator" />
-            <div className="flex justify-between text-tg-subtitle">
-                <span>{t.cart.delivery}</span>
-                <span className="tabular-nums">
-                    {order.customerPaysCarrier
-                        ? deliveryWords(language).apart
-                        : order.deliveryFee === 0
-                          ? t.common.free
-                          : formatMoney(order.deliveryFee, language)}
-                </span>
-            </div>
+            {delivery === null ? null : (
+                <div className="flex justify-between text-tg-subtitle">
+                    <span>{t.cart.delivery}</span>
+                    <span className="tabular-nums">
+                        {delivery === "later"
+                            ? deliveryWords(language).apart
+                            : delivery === "free"
+                              ? t.common.free
+                              : formatMoney(delivery, language)}
+                    </span>
+                </div>
+            )}
             {order.depositTotal > 0 ? (
                 <div className="mt-1 flex justify-between text-tg-subtitle">
                     <span>{t.cart.deposit}</span>

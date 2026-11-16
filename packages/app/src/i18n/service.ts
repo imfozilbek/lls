@@ -1,4 +1,3 @@
-import type { StaffDictionary } from "./staff.js"
 import type { uz } from "./uz.js"
 
 type Dictionary = typeof uz
@@ -9,11 +8,33 @@ type Overrides<D> = {
 
 /** Words that differ for services: a list of services, "being done", "done". */
 export const SERVICE_UZ = (base: Dictionary): Overrides<Dictionary> => ({
+    // A service delivers nothing (owner's decision, November 2026): the place is where the work
+    // is done, and the money is paid after it.
+    map: { ...base.map, outsideZone: "Bu yer xizmat hududidan tashqarida ({km} km gacha)" },
+    errors: {
+        ...base.errors,
+        OUTSIDE_DELIVERY_ZONE:
+            "Bu joy do'kon xizmat ko'rsatadigan hududdan tashqarida: yaqinroq manzil tanlang.",
+        LOCATION_REQUIRED: "Xaritada manzilni belgilang: xizmat shu joyda ko'rsatiladi.",
+    },
     shop: {
         ...base.shop,
         emptyTitle: "Xizmatlar hali yo'q",
         emptyText: "Do'kon tez orada xizmatlarni qo'shadi.",
         search: "Xizmatlardan qidirish",
+        radius: "{km} km gacha xizmat ko'rsatamiz",
+    },
+    checkout: {
+        ...base.checkout,
+        pinRequired: "Majburiy: do'kon {km} km gacha xizmat ko'rsatadi.",
+    },
+    pay: {
+        ...base.pay,
+        cashChoice: "Naqd pul",
+        cashToCourier: "Ishdan keyin {sum} naqd to'laysiz",
+        cashOrder: "Naqd: ishdan keyin {sum} berasiz",
+        cashExact: "To'lov ish bajarilgach olinadi.",
+        cashStatus: { ...base.pay.cashStatus, unpaid: "Ishdan keyin to'lanadi" },
     },
     cart: {
         ...base.cart,
@@ -31,17 +52,4 @@ export const SERVICE_UZ = (base: Dictionary): Overrides<Dictionary> => ({
             delivered: "Bajarildi. Rahmat!",
         },
     },
-})
-
-/** The same kind of words for the owner and the courier (lazy, with `staff.ts`). */
-export const SERVICE_STAFF = (base: StaffDictionary): Overrides<StaffDictionary> => ({
-    owner: {
-        ...base.owner,
-        tabs: { ...base.owner.tabs, menu: "Xizmatlar" },
-        actions: { ...base.owner.actions, preparing: "Bajarishni boshlash" },
-        queueBadge: "Bajarish kerak",
-        menuEmpty: "Xizmatlar yo'q",
-        menuEmptyText: "Birinchi xizmatni qo'shing: mijozlar uni darhol ko'radi.",
-    },
-    courier: { ...base.courier, waitReady: "Buyurtma bajarilmoqda, tayyor bo'lganda xabar keladi" },
 })

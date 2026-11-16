@@ -1,4 +1,3 @@
-import type { StaffDictionary } from "./staff.js"
 import type { uz } from "./uz.js"
 
 type Dictionary = typeof uz
@@ -25,22 +24,4 @@ export const FOOD_UZ = (base: Dictionary): Overrides<Dictionary> => ({
             delivered: "Yoqimli ishtaha!",
         },
     },
-})
-
-/** The same kind of words for the owner and the courier (lazy, with `staff.ts`). */
-export const FOOD_STAFF = (base: StaffDictionary): Overrides<StaffDictionary> => ({
-    owner: {
-        ...base.owner,
-        tabs: { ...base.owner.tabs, menu: "Menyu" },
-        actions: { ...base.owner.actions, preparing: "Tayyorlashni boshlash" },
-        queueBadge: "Tayyorlash kerak",
-        picking: {
-            ...base.owner.picking,
-            counter: "Tayyor: {done} / {all}",
-            allDone: "Hammasi tayyor",
-        },
-        menuEmpty: "Menyu bo'sh",
-        menuEmptyText: "Birinchi taomni qo'shing: mijozlar uni darhol ko'radi.",
-    },
-    courier: { ...base.courier, waitReady: "Taom tayyorlanmoqda, tayyor bo'lganda xabar keladi" },
 })

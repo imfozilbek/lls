@@ -126,7 +126,7 @@ jobs:
             matrix:
                 specs:
                     - owner-orders.spec.ts smoke.spec.ts security.spec.ts crashes.spec.ts collect.spec.ts missing.spec.ts
-                    - owner-shop.spec.ts map.spec.ts owner-bot.spec.ts
+                    - owner-shop.spec.ts map.spec.ts owner-bot.spec.ts delivery-price.spec.ts
                     - money.spec.ts cash.spec.ts phones.spec.ts stock.spec.ts photos.spec.ts
                     - visual.spec.ts demo-shops.spec.ts demo-prod.spec.ts
                     - customer-shop.spec.ts gestures.spec.ts sound.spec.ts

@@ -71,6 +71,8 @@ export interface OrderDTO {
     deliveryNotes: DeliveryNoteDTO[]
     /** The customer pays the carrier (a taxi, the post) for the delivery, outside the total. */
     customerPaysCarrier: boolean
+    /** The shop promised free delivery: only then is a delivery fee of 0 «bepul». */
+    deliveryFree: boolean
     address: string
     landmark?: string
     location?: LocationDTO
@@ -180,6 +182,7 @@ export function toOrderDTO(order: Order): OrderDTO {
             text: note.text,
         })),
         customerPaysCarrier: order.customerPaysCarrier,
+        deliveryFree: order.deliveryFree,
         address: order.address,
         landmark: order.landmark,
         location: toLocationDTO(order.location),

@@ -18,12 +18,14 @@ import { UpdateShopUseCase } from "../../application/use-cases/shop/update-shop.
 import { BotSource } from "../../domain/enums/bot-source.js"
 import { BusinessStatus } from "../../domain/enums/business-status.js"
 import { BusinessType } from "../../domain/enums/business-type.js"
+import { DeliveryPrice } from "../../domain/enums/delivery-price.js"
 import { Region } from "../../domain/enums/region.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../domain/errors/conflict.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
 import { EntityNotFoundError } from "../../domain/errors/not-found.error.js"
 import { ValidationError } from "../../domain/errors/validation.error.js"
+import { Money } from "../../domain/value-objects/money.js"
 import { Location } from "../../domain/value-objects/location.js"
 import { NOON_MONDAY_UZ, OWNER_TG, STRANGER_TG, TEST_CARD, makeBusiness } from "../fixtures.js"
 import {
@@ -84,6 +86,7 @@ describe("shop use cases", () => {
                 freeFrom: 150_000,
                 minOrder: undefined,
                 customerPaysCarrier: false,
+                price: DeliveryPrice.FEE,
             })
             expect(shop.location).toEqual({ latitude: 41.32, longitude: 69.23 })
             expect(shop.botUsername).toBe("Osh_Markaz_bot")
@@ -363,6 +366,35 @@ describe("shop use cases", () => {
     })
 
     describe("UpdateShop", () => {
+        it("the owner chooses how delivery is paid, and a fee of 0 is no price", async () => {
+            await businesses.save(makeBusiness({ delivery: { fee: Money.zero() } }))
+            const update = new UpdateShopUseCase(businesses, clock)
+            const base = { fee: 0, freeFrom: null, minOrder: null, radiusMeters: null }
+            await expect(
+                update.execute({
+                    actorTelegramId: OWNER_TG,
+                    businessId: "biz-1",
+                    patch: { delivery: { ...base, price: DeliveryPrice.FEE } },
+                }),
+            ).rejects.toThrow(ValidationError)
+            const free = await update.execute({
+                actorTelegramId: OWNER_TG,
+                businessId: "biz-1",
+                patch: { delivery: { ...base, price: DeliveryPrice.FREE } },
+            })
+            expect(free.delivery).toMatchObject({ fee: 0, price: DeliveryPrice.FREE })
+            const later = await update.execute({
+                actorTelegramId: OWNER_TG,
+                businessId: "biz-1",
+                patch: { delivery: { ...base, fee: 9_000, price: DeliveryPrice.LATER } },
+            })
+            expect(later.delivery).toMatchObject({
+                fee: 0,
+                customerPaysCarrier: true,
+                price: DeliveryPrice.LATER,
+            })
+        })
+
         it("owner updates settings", async () => {
             await businesses.save(makeBusiness())
             const shop = await new UpdateShopUseCase(businesses, clock).execute({
@@ -388,6 +420,7 @@ describe("shop use cases", () => {
                 minOrder: 30_000,
                 radiusMeters: 4_000,
                 customerPaysCarrier: false,
+                price: DeliveryPrice.FEE,
             })
             expect(shop.deliveryRadiusMeters).toBe(4_000)
             expect(shop.workingHours).toEqual({ mon: { open: "10:00", close: "22:00" } })

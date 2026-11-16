@@ -213,6 +213,7 @@ export class PlaceOrderUseCase {
                 paymentMethod,
                 paymentCard: business.payoutCard,
                 customerPaysCarrier: business.delivery.customerPaysCarrier === true,
+                deliveryFree: business.deliversFreeFor(subtotal),
             })
             const placed = await this.settle(await orders.insert(order), {
                 order,

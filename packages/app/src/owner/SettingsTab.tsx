@@ -1,4 +1,11 @@
-import { FEATURES, Feature, Phone, formatPhone } from "@zumda/core"
+import {
+    DeliveryPrice,
+    FEATURES,
+    Feature,
+    Phone,
+    formatPhone,
+    isDeliveryPriceChoice,
+} from "@zumda/core"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
@@ -36,6 +43,7 @@ import { PaymentCardsSection } from "./PaymentCardsSection.js"
 import { PaymentOptionsSection } from "./PaymentOptionsSection.js"
 import { PosterSection } from "./PosterSection.js"
 import { ShareOwnPhone } from "./ShareOwnPhone.js"
+import { DeliveryPriceChoices } from "./delivery-price.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 import { useOwner } from "./store.js"
 import { saveTick, useTick } from "./ticks.js"
@@ -60,8 +68,8 @@ interface Form {
     minOrder: number | null
     /** Delivery radius in whole km; empty = no limit. */
     radiusKm: number | null
-    /** «Yetkazish haqini mijoz o'zi to'laydi»: the fee is the carrier's, not in the order. */
-    customerPaysCarrier: boolean
+    /** How the customer pays for delivery: chosen by the owner; `unset` until then. */
+    price: DeliveryPrice
     hours: Hours
     features: Feature[]
     bottleDeposit: number | null
@@ -101,7 +109,7 @@ function formOf(shop: ShopOwnerDTO): Form {
         radiusKm: shop.deliveryRadiusMeters
             ? Math.round(shop.deliveryRadiusMeters / METERS_PER_KM)
             : null,
-        customerPaysCarrier: shop.delivery.customerPaysCarrier,
+        price: shop.delivery.price,
         hours: hoursOf(shop.workingHours),
         features: [...shop.features],
         bottleDeposit: shop.bottleDeposit || null,
@@ -116,12 +124,14 @@ function patchOf(form: Form): ShopPatch {
         location: form.location,
         contactPhone: form.contactPhone.trim() || null,
         delivery: {
-            // Paid to the carrier: the shop asks no fee of its own (the server says the same).
-            fee: form.customerPaysCarrier ? 0 : (form.fee ?? 0),
-            freeFrom: form.customerPaysCarrier ? null : form.freeFrom,
+            // Only «Narxi bor» asks a fee and its «… dan bepul» (the server says the same).
+            fee: form.price === DeliveryPrice.FEE ? (form.fee ?? 0) : 0,
+            freeFrom: form.price === DeliveryPrice.FEE ? form.freeFrom : null,
             minOrder: form.minOrder,
             radiusMeters: form.radiusKm ? form.radiusKm * METERS_PER_KM : null,
-            customerPaysCarrier: form.customerPaysCarrier,
+            customerPaysCarrier: form.price === DeliveryPrice.LATER,
+            // Sent only once the owner chose: a save of other fields never chooses for them.
+            ...(isDeliveryPriceChoice(form.price) ? { price: form.price } : {}),
         },
         workingHours: scheduleOf(form.hours),
         // Canonical order, so ticking a box off and on again leaves the form clean.
@@ -131,7 +141,7 @@ function patchOf(form: Form): ShopPatch {
 }
 
 /** Keeps the storefront (and the brand color) in sync with what the owner just saved. */
-export function sectionId(section: ReadySection | "delivery"): string {
+export function sectionId(section: ReadySection): string {
     return `ready-${section}`
 }
 
@@ -391,13 +401,20 @@ function ShopLink({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
     )
 }
 
-/** «Bepul yetkazish», the fee, or that the customer pays the carrier. */
-function deliveryPrice(s: Settings, shop: ShopOwnerDTO, language: Language): string {
-    if (shop.delivery.customerPaysCarrier) {
-        return s.summary.carrier
+/** The fee, «Bepul yetkazish», «Narxi keyin aytiladi», «Tanlanmagan»; nothing for a service. */
+function deliveryPrice(s: Settings, shop: ShopOwnerDTO, language: Language): string | null {
+    switch (shop.delivery.price) {
+        case DeliveryPrice.FEE:
+            return formatMoney(shop.delivery.fee, language)
+        case DeliveryPrice.FREE:
+            return s.summary.free
+        case DeliveryPrice.LATER:
+            return s.summary.later
+        case DeliveryPrice.UNSET:
+            return s.summary.unset
+        default:
+            return null
     }
-    const { fee } = shop.delivery
-    return fee > 0 ? formatMoney(fee, language) : s.summary.free
 }
 
 function DeliveryFields({
@@ -408,9 +425,19 @@ function DeliveryFields({
     patch(change: Partial<Form>): void
 }): React.JSX.Element {
     const s = useT().owner.settings
+    const couriers = useOwner((state) => state.couriers)
+    const dispatcher = couriers?.some((c) => c.status === "active" && c.dispatcher) === true
     return (
         <Section id={sectionId("delivery")}>
-            {form.customerPaysCarrier ? null : (
+            {/* A service delivers nothing: only its area and its minimum. */}
+            {form.price === DeliveryPrice.NONE ? null : (
+                <DeliveryPriceChoices
+                    value={form.price}
+                    dispatcher={dispatcher}
+                    onChange={(price): void => patch({ price })}
+                />
+            )}
+            {form.price !== DeliveryPrice.FEE ? null : (
                 <>
                     <Field label={s.fee} htmlFor="fee">
                         <MoneyInput
@@ -451,19 +478,6 @@ function DeliveryFields({
                     }}
                 />
             </Field>
-            {/* Owner's decision, November 2026: a taxi or the post, paid by the customer. The
-                rare case comes after the usual price, not before it. */}
-            <div className="flex items-center gap-3">
-                <div className="flex-1">
-                    <p className="font-semibold">{s.customerPaysCarrier}</p>
-                    <p className="text-sm text-tg-subtitle">{s.customerPaysCarrierHint}</p>
-                </div>
-                <Switch
-                    checked={form.customerPaysCarrier}
-                    onChange={(customerPaysCarrier): void => patch({ customerPaysCarrier })}
-                    label={s.customerPaysCarrier}
-                />
-            </div>
         </Section>
     )
 }
@@ -706,6 +720,7 @@ const READY_GROUP: Record<ReadySection, SettingsGroup> = {
     phone: "shop",
     card: "card",
     location: "location",
+    delivery: "delivery",
     hours: "hours",
     courier: "courier",
 }
@@ -789,6 +804,8 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
             ]
                 .filter(Boolean)
                 .join(" · "),
+            // Customers see no delivery price until the owner chooses one.
+            warn: shop.delivery.price === DeliveryPrice.UNSET,
         },
         hours: { text: hoursSummary(s, hoursOf(shop.workingHours)) },
         location: shop.location
@@ -890,7 +907,9 @@ function useSettingsForm(
               ? s.needOpenDay
               : !isPhoneText(form.contactPhone)
                 ? s.contactPhoneBad
-                : null
+                : form.price === DeliveryPrice.FEE && !form.fee
+                  ? s.price.feeNeeded
+                  : null
 
     const save = async (): Promise<void> => {
         setSaving(true)

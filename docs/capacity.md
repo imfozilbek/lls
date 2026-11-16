@@ -88,6 +88,9 @@ A repeated check of the same address is preflighted once per cache period (`Acce
 is one day; browsers cap it: Chromium at 2 hours). Every new address (another order, another
 page) needs its own preflight, which is why they are a large share.
 
+The delivery price (November 2026) adds no request and no read: one more column on a settings save
+and on an order, in no index.
+
 The ticks while collecting (November 2026) are kept on the owner's phone: no request and no row.
 On the server they would add about 900 requests and 300 preflights a day, and 900 rows written.
 

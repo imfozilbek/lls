@@ -1,4 +1,4 @@
-import { BusinessStatus, OwnerChat } from "@zumda/core"
+import { BusinessStatus, DeliveryPrice, OwnerChat } from "@zumda/core"
 import { useEffect, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
@@ -138,6 +138,8 @@ function itemsOf(
         hasHours: boolean
         products: number
         hasLogo: boolean
+        /** The owner chose how delivery is paid; `null`: a service, nothing to choose. */
+        priced: boolean | null
         delivers: boolean
         /** Someone accepted the invite and waits for the owner's tap. */
         waiting: string | null
@@ -172,6 +174,18 @@ function itemsOf(
             hint: t.locationHint,
             done: state.located,
         },
+        // Owner's decision, November 2026: until then customers see nothing about delivery.
+        ...(state.priced === null
+            ? []
+            : [
+                  {
+                      id: "delivery" as const,
+                      icon: <ScooterIcon size={20} />,
+                      title: t.deliveryPrice,
+                      hint: t.deliveryPriceHint,
+                      done: state.priced,
+                  },
+              ]),
         {
             id: "hours",
             icon: <ClockIcon size={20} />,
@@ -221,6 +235,10 @@ function readyState(
         hasHours: shop.workingHours !== null || known.ticks.hours,
         products: known.products.length,
         hasLogo: shop.logoKey !== undefined,
+        priced:
+            shop.delivery.price === DeliveryPrice.NONE
+                ? null
+                : shop.delivery.price !== DeliveryPrice.UNSET,
         hasPhone: phoneReady(shop),
         delivers: known.ticks.selfDelivery || known.couriers.some((courier) => courier.isActive),
         waiting: known.couriers.find((courier) => courier.status === "pending")?.name ?? null,

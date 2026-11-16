@@ -13,6 +13,7 @@ import {
 import { ApiError, api, currentShopVia, loadCatalog, scopedKey } from "../lib/api.js"
 import { remember } from "../lib/cache.js"
 import { cn } from "../lib/cn.js"
+import { cartDelivery } from "../lib/delivery-price.js"
 import { amountText, formatMoney, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { removedText } from "../lib/removed.js"
@@ -449,17 +450,23 @@ function PaymentSection({
     )
 }
 
-/** The delivery line of the totals: the fee, «bepul», or «alohida» (paid to the carrier). */
-function deliveryValue(
+/**
+ * The delivery line of the totals: the fee, «bepul» when the shop promised it, «keyin aytiladi»
+ * (paid to the carrier), or no line at all when the shop never chose a price or is a service.
+ */
+function deliveryRow(
     shop: Shop | null,
     fee: number,
     t: Dictionary,
     language: Language,
-): number | string {
-    if (shop?.delivery.customerPaysCarrier) {
-        return deliveryWords(language).apart
+): [string, number | string][] {
+    const shown = shop ? cartDelivery(shop.delivery, fee) : fee
+    if (shown === null) {
+        return []
     }
-    return fee === 0 ? t.common.free : fee
+    const value =
+        shown === "free" ? t.common.free : shown === "later" ? deliveryWords(language).apart : shown
+    return [[t.cart.delivery, value]]
 }
 
 function Totals({ rows }: { rows: [string, number | string, boolean?][] }): React.JSX.Element {
@@ -838,7 +845,7 @@ export function CheckoutScreen(): React.JSX.Element {
             <Totals
                 rows={[
                     [t.cart.subtotal, cart.subtotal],
-                    [t.cart.delivery, deliveryValue(shop, fee, t, language)],
+                    ...deliveryRow(shop, fee, t, language),
                     ...(bottles.deposit > 0
                         ? [[t.cart.deposit, bottles.deposit] as [string, number]]
                         : []),

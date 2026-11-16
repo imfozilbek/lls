@@ -3,6 +3,7 @@ import { launchOutdated, webApp } from "./telegram.js"
 
 import type { Shop } from "../stores/session.js"
 import type {
+    DeliveryPriceChoice,
     ProductOptionsProps,
     DemoTemplateKey,
     BusinessStatus,
@@ -335,8 +336,10 @@ export type ShopPatch = Partial<{
         freeFrom?: number | null
         minOrder?: number | null
         radiusMeters?: number | null
-        /** «Yetkazish haqini mijoz o'zi to'laydi»: the customer pays the carrier. */
+        /** The customer pays the carrier: «Narxi keyin aytiladi». */
         customerPaysCarrier?: boolean
+        /** The owner's choice of how delivery is paid; left out: the choice made stays. */
+        price?: DeliveryPriceChoice
     }
     workingHours: Record<string, { open: string; close: string }> | null
     acceptingOrders: boolean

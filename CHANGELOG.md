@@ -7,6 +7,33 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The delivery price is the owner's choice
+- A shop no longer tells customers «bepul» because nobody set a fee (owner's decision, November
+  2026). An application stored a fee of 0, and every screen read 0 as free delivery: four of the
+  seven live shops promised it without saying so.
+- «Ishga tayyor» asks «Yetkazib berish narxi» after «Joylashuv», and «Yetkazib berish» offers
+  three cards instead of a switch:
+  - «Bepul»;
+  - «Narxi bor»: a price above 0 («Narxini kiriting» otherwise) and its «… dan bepul»;
+  - «Narxi keyin aytiladi»: by the distance, paid to the carrier. It comes first for a shop
+    with a dispatcher.
+- Until the owner chooses, the storefront, the showcase, the cart, the order and the bot say
+  nothing about delivery. Orders are taken as before.
+- «bepul» is said only when promised: the shop's «Bepul», or its «… dan bepul» reached. The
+  order keeps it (`orders.delivery_free`).
+- «Narxi keyin aytiladi»: the dispatcher's «Jo'natdim» needs the price in the note, on any way.
+- A service delivers nothing: no delivery word for its customer («{km} km gacha xizmat
+  ko'rsatamiz», cash «Ishdan keyin to'lanadi»), no fee charged, its settings group is «Xizmat
+  hududi», and the owner's card says «Bajarildi».
+- «Pul kelishi bilan do'kon boshlaydi» now reads «… do'kon buyurtmani qabul qiladi»: after
+  collecting became its own step, the money accepts the order and collecting starts later.
+- Migration `0030_delivery_price.sql`, additive:
+  - `businesses.delivery_price_set`, set at once for the shops that ask a fee or let the customer
+    pay the carrier;
+  - `orders.delivery_free`.
+- The customer's first download is 99.39 KB, down from 99.78 with all of the above in it: the
+  staff's words by kind and the Zumda bell now load with the screens that use them (0.8 KB).
+
 ### Collecting from the whole list
 - In «Yig'ish kerak» and «Yig'ilmoqda» the owner's card lists every line, with no «Batafsil» or
   «Yana N ta» (owner's decision, November 2026). The quantity stands large in its own column, as

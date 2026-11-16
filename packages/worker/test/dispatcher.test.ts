@@ -296,22 +296,43 @@ describe("a dispatcher sends the order on and keeps the customer told", () => {
         })
     })
 
-    it("a delivery the customer pays to the carrier: no fee, said in the first message", async () => {
+    it("«Narxi keyin aytiladi»: no fee, said first, the price comes with «Jo'natdim»", async () => {
+        await owner()(`/api/owner/couriers/${courierId}`, {
+            method: "PATCH",
+            json: { dispatcher: true },
+        })
         const saved = await owner()("/api/owner/shop", {
             method: "PATCH",
-            json: { delivery: { fee: 10_000, customerPaysCarrier: true } },
+            json: { delivery: { fee: 10_000, price: "later" } },
         })
         expect(saved.status).toBe(200)
-        const shop = await json<{ delivery: { fee: number; customerPaysCarrier: boolean } }>(
+        const shop = await json<{ delivery: { fee: number; price: string } }>(
             await client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug })("/api/shop"),
         )
-        expect(shop.delivery).toMatchObject({ fee: 0, customerPaysCarrier: true })
+        expect(shop.delivery).toMatchObject({ fee: 0, customerPaysCarrier: true, price: "later" })
         const told = client.telegram.sent.length
         const order = await placePaidOrder()
         expect(order).toMatchObject({ deliveryFee: 0, customerPaysCarrier: true })
         const first = client.telegram.sent.slice(told).find((m) => m.chatId === CUSTOMER.id)
-        expect(first?.html).toContain("Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz")
+        expect(first?.html).toContain("Yetkazib berish narxi jo'natilganda aytiladi")
         const card = client.telegram.sent.slice(told).find((m) => m.chatId === OWNER.id)
-        expect(card?.html).toContain("alohida, mijoz yetkazuvchiga o'zi to'laydi")
+        expect(card?.html).toContain("keyin aytiladi, mijoz yetkazuvchiga o'zi to'laydi")
+
+        // The dispatcher tells the price: «Jo'natdim» without it is refused, whatever the way.
+        expect((await step(order, "ready")).status).toBe(200)
+        const bare = await dispatcherApp()(`/api/courier/orders/${order.id}/send`, {
+            method: "POST",
+            json: { via: "taxi" },
+        })
+        expect(bare.status).toBe(400)
+        const before = client.telegram.sent.length
+        const sent = await dispatcherApp()(`/api/courier/orders/${order.id}/send`, {
+            method: "POST",
+            json: { via: "taxi", note: "Taksi, 25 000 so'm" },
+        })
+        expect(sent.status).toBe(200)
+        const news = client.telegram.sent.slice(before).find((m) => m.chatId === CUSTOMER.id)
+        expect(news?.html).toContain("Taksi, 25 000 so'm")
+        expect(news?.html).toContain("Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz")
     })
 })

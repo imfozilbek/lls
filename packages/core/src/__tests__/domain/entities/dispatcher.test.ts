@@ -52,8 +52,8 @@ function dispatcher(id = "courier-1"): Courier {
 }
 
 /** Paid, handed to the shop's dispatcher, packed by the owner. */
-function readyWithDispatcher(): Order {
-    const order = place()
+function readyWithDispatcher(extra: Partial<PlaceOrderProps> = {}): Order {
+    const order = place(extra)
     withReceipt(order).confirmPaymentAndAccept(true)
     order.assignCourier(dispatcher(), NOW)
     order.advanceTo(OrderStatus.READY)
@@ -133,6 +133,15 @@ describe("An order with the shop's dispatcher", () => {
         expect(other.status).toBe(OrderStatus.READY)
         other.send("courier-1", SendWay.OTHER, "Qo'shni olib ketdi", NOW)
         expect(other.sentVia).toBe(SendWay.OTHER)
+    })
+
+    it("a parcel whose price comes later goes with the price in the note (any way)", () => {
+        const order = readyWithDispatcher({ customerPaysCarrier: true, deliveryFee: Money.zero() })
+        expect(() => order.send("courier-1", SendWay.POST, undefined, NOW)).toThrow(ValidationError)
+        expect(() => order.send("courier-1", SendWay.SELF, "   ", NOW)).toThrow(ValidationError)
+        order.send("courier-1", SendWay.TAXI, "Taksi, 25 000 so'm", NOW)
+        expect(order.status).toBe(OrderStatus.PICKED_UP)
+        expect(order.deliveryNotes.map((note) => note.text)).toEqual(["Taksi, 25 000 so'm"])
     })
 
     it("only after the owner packed it, and only by its own dispatcher", () => {

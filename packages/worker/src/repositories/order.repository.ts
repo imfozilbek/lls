@@ -98,6 +98,7 @@ interface OrderRow {
     delivery_notes: string | null
     customer_pays_carrier: number
     refund_owed: number
+    delivery_free: number
 }
 
 interface ItemRow {
@@ -125,7 +126,7 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     delivery_fee_to, payment_card_number, payment_card_holder, receipt_key, receipt_hash,
     receipt_at, receipt_reused_from, customer_rejections, transfer_rejections,
     transfer_reminded_at, cash_received_at, trip_id, trip_stop, dispatcher, owner_delivers,
-    sent_via, delivery_notes, customer_pays_carrier, refund_owed`
+    sent_via, delivery_notes, customer_pays_carrier, refund_owed, delivery_free`
 
 /** A cash order whose money a courier still holds. */
 const WITH_COURIER = `payment_method = 'cash' AND payment_status = 'paid'
@@ -400,6 +401,7 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         sentVia: row.sent_via === null ? undefined : oneOf(row.sent_via, SEND_WAYS, "sent_via"),
         deliveryNotes: notesOf(row.delivery_notes),
         customerPaysCarrier: row.customer_pays_carrier === 1,
+        deliveryFree: row.delivery_free === 1,
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -496,6 +498,7 @@ function orderValues(order: Order): (string | number | null)[] {
         ...dispatchValues(order),
         flag(order.customerPaysCarrier),
         order.payment.refundOwed.amount,
+        flag(order.deliveryFree),
     ]
 }
 

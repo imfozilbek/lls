@@ -101,6 +101,17 @@ function useSubmit(
     return { busy, submit }
 }
 
+/** What the note is for: the delivery price, who took it for «Boshqa», or what the customer reads. */
+function sendNoteHint(
+    c: ReturnType<typeof useT>["courier"],
+    state: { priceLater: boolean; needsNote: boolean },
+): string {
+    if (state.priceLater) {
+        return c.priceNeeded
+    }
+    return state.needsNote ? c.noteNeeded : c.noteHint
+}
+
 /** «Jo'natdim»: how it went (a taxi, the post, the dispatcher themself, someone else) and a note. */
 function SendSheet(props: SheetProps): React.JSX.Element {
     const { order, onClose } = props
@@ -111,7 +122,10 @@ function SendSheet(props: SheetProps): React.JSX.Element {
     const { busy, submit } = useSubmit(props, fill(c.sentToast, { n: order.number }))
     // Something typed is never lost to a swipe.
     useClosingGuard(note.trim().length > 0)
-    const needsNote = way === SendWay.OTHER && note.trim().length === 0
+    // «Narxi keyin aytiladi»: the shop promised the price now, so the note carries it.
+    const priceLater = order.customerPaysCarrier
+    const empty = note.trim().length === 0
+    const needsNote = empty && (priceLater || way === SendWay.OTHER)
     const send = (): void => {
         if (way === null) {
             return
@@ -154,15 +168,15 @@ function SendSheet(props: SheetProps): React.JSX.Element {
                 ))}
             </div>
             <Field
-                label={c.noteLabel}
+                label={priceLater ? c.priceLabel : c.noteLabel}
                 htmlFor="send-note"
-                hint={needsNote ? c.noteNeeded : c.noteHint}
+                hint={sendNoteHint(c, { priceLater, needsNote })}
             >
                 <TextArea
                     id="send-note"
                     value={note}
                     maxLength={DELIVERY_NOTE_MAX}
-                    placeholder={c.notePlaceholder}
+                    placeholder={priceLater ? c.pricePlaceholder : c.notePlaceholder}
                     onChange={(e): void => setNote(e.target.value)}
                 />
             </Field>

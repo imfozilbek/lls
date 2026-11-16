@@ -109,6 +109,11 @@ export interface OrderProps {
     deliveryNotes?: readonly DeliveryNote[]
     /** The customer pays the carrier for the delivery, outside the total: a snapshot. */
     customerPaysCarrier?: boolean
+    /**
+     * The shop promised this order free delivery (its «Bepul», or «… dan bepul» reached): only
+     * then is the delivery «bepul»; a price never chosen says nothing. A snapshot.
+     */
+    deliveryFree?: boolean
     createdAt: Date
     updatedAt: Date
 }
@@ -134,8 +139,10 @@ export interface PlaceOrderProps {
     paymentMethod?: PaymentMethod
     /** The shop's payment card shown to the customer: kept with the order. */
     paymentCard?: PayoutCard
-    /** The shop's «Yetkazish haqini mijoz o'zi to'laydi» when the order was placed. */
+    /** The shop's «Narxi keyin aytiladi» when the order was placed: paid to the carrier. */
     customerPaysCarrier?: boolean
+    /** The shop promised free delivery for it (`Business.deliversFreeFor`). */
+    deliveryFree?: boolean
 }
 
 export function subtotalOf(items: readonly OrderItem[]): Money {
@@ -189,6 +196,10 @@ export class Order {
                 input.paymentCard,
             ),
             customerPaysCarrier: input.customerPaysCarrier === true,
+            deliveryFree:
+                input.customerPaysCarrier !== true &&
+                input.deliveryFree === true &&
+                deliveryFee.isZero(),
             createdAt: now,
             updatedAt: now,
         })
@@ -339,6 +350,9 @@ export class Order {
     get customerPaysCarrier(): boolean {
         return this.props.customerPaysCarrier === true
     }
+    get deliveryFree(): boolean {
+        return this.props.deliveryFree === true
+    }
 
     /** Handed to the shop's dispatcher, who sends it on and writes to the customer. */
     isWithDispatcher(): boolean {
@@ -429,14 +443,18 @@ export class Order {
     }
 
     /**
-     * «Jo'natdim»: the dispatcher sent the order on, by `way`, with an optional note for the
-     * customer (a note is required for «Boshqa»: it says who took it).
+     * «Jo'natdim»: the dispatcher sent the order on, by `way`, with a note for the customer. The
+     * note is required for «Boshqa» (who took it) and when the customer pays the carrier (the
+     * delivery price, told now as the shop promised: «Narxi keyin aytiladi»).
      */
     send(courierId: string, way: SendWay, note: string | undefined, now: Date): void {
         if (!this.isWithDispatcher()) {
             throw BusinessRuleViolationError.notADispatcherOrder(this.props.id)
         }
         const text = optionalText("note", note, DELIVERY_NOTE_MAX)
+        if (text === undefined && this.customerPaysCarrier) {
+            throw ValidationError.fromField("note", "Say the delivery price", note)
+        }
         if (way === SendWay.OTHER && text === undefined) {
             throw ValidationError.fromField("note", "Say who took it", note)
         }

@@ -2,6 +2,7 @@ import { BotSource } from "../enums/bot-source.js"
 import { DEFAULT_FEATURES } from "../enums/business-profile.js"
 import { BusinessStatus } from "../enums/business-status.js"
 import { BusinessType } from "../enums/business-type.js"
+import { DeliveryPrice } from "../enums/delivery-price.js"
 import { Feature } from "../enums/feature.js"
 import { OrderChannel } from "../enums/order-channel.js"
 import { OwnerChat } from "../enums/owner-chat.js"
@@ -13,6 +14,7 @@ import { BrandColor } from "../value-objects/brand-color.js"
 import { Money } from "../value-objects/money.js"
 import { WorkingHours } from "../value-objects/working-hours.js"
 
+import type { DeliveryPriceChoice } from "../enums/delivery-price.js"
 import type { Location } from "../value-objects/location.js"
 import type { PayoutCard } from "../value-objects/payout-card.js"
 import type { Phone } from "../value-objects/phone.js"
@@ -42,6 +44,12 @@ export interface DeliverySettings {
      * the carrier (a taxi, the post) for the delivery; nothing of it is in the order's total.
      */
     customerPaysCarrier?: boolean
+    /**
+     * The owner chose how delivery is paid (owner's decision, November 2026): until then the fee
+     * is 0 only because nobody said otherwise, and the customer is told nothing, never «bepul».
+     * A fee above 0 or the customer paying the carrier is a choice by itself.
+     */
+    priceChosen?: boolean
 }
 
 /** The shop's deal with Zumda for sales through the marketplace channel. */
@@ -140,9 +148,37 @@ function validateDelivery(delivery: DeliverySettings): DeliverySettings {
     }
     // Paid to the carrier: the shop asks no fee of its own, so no "free from" either.
     if (delivery.customerPaysCarrier) {
-        return { ...delivery, fee: Money.zero(), freeFrom: undefined, customerPaysCarrier: true }
+        return {
+            ...delivery,
+            fee: Money.zero(),
+            freeFrom: undefined,
+            customerPaysCarrier: true,
+            priceChosen: true,
+        }
     }
-    return { ...delivery }
+    const priceChosen = delivery.priceChosen === true || !delivery.fee.isZero()
+    return { ...delivery, customerPaysCarrier: false, priceChosen }
+}
+
+/** The settings as the owner's choice of price makes them: the other fields as given. */
+function withPrice(delivery: DeliverySettings, price: DeliveryPriceChoice): DeliverySettings {
+    switch (price) {
+        case DeliveryPrice.FREE:
+            return {
+                ...delivery,
+                fee: Money.zero(),
+                freeFrom: undefined,
+                customerPaysCarrier: false,
+                priceChosen: true,
+            }
+        case DeliveryPrice.FEE:
+            if (delivery.fee.isZero()) {
+                throw ValidationError.fromField("delivery.fee", "A price is needed", 0)
+            }
+            return { ...delivery, customerPaysCarrier: false, priceChosen: true }
+        case DeliveryPrice.LATER:
+            return { ...delivery, customerPaysCarrier: true, priceChosen: true }
+    }
 }
 
 export class Business {
@@ -228,6 +264,20 @@ export class Business {
     }
     get delivery(): DeliverySettings {
         return { ...this.props.delivery }
+    }
+    /** How the customer pays for delivery: what every screen and message says about it. */
+    get deliveryPrice(): DeliveryPrice {
+        const { fee, customerPaysCarrier, priceChosen } = this.props.delivery
+        if (this.props.type === BusinessType.SERVICE) {
+            return DeliveryPrice.NONE
+        }
+        if (customerPaysCarrier) {
+            return DeliveryPrice.LATER
+        }
+        if (!fee.isZero()) {
+            return DeliveryPrice.FEE
+        }
+        return priceChosen ? DeliveryPrice.FREE : DeliveryPrice.UNSET
     }
     get workingHours(): WorkingHours {
         return this.props.workingHours
@@ -470,12 +520,29 @@ export class Business {
         }
     }
 
+    /** Added to the order: only a shop that asks a fee, below its «… dan bepul». */
     deliveryFeeFor(subtotal: Money): Money {
-        const { fee, freeFrom, customerPaysCarrier } = this.props.delivery
-        if (customerPaysCarrier || (freeFrom && subtotal.isAtLeast(freeFrom))) {
+        const { fee, freeFrom } = this.props.delivery
+        if (
+            this.deliveryPrice !== DeliveryPrice.FEE ||
+            (freeFrom && subtotal.isAtLeast(freeFrom))
+        ) {
             return Money.zero()
         }
         return fee
+    }
+
+    /**
+     * The shop promised this order free delivery: «Bepul», or its «… dan bepul» reached. Only
+     * then does the order say «bepul»; a price not chosen yet says nothing.
+     */
+    deliversFreeFor(subtotal: Money): boolean {
+        const price = this.deliveryPrice
+        if (price === DeliveryPrice.FREE) {
+            return true
+        }
+        const { freeFrom } = this.props.delivery
+        return price === DeliveryPrice.FEE && freeFrom !== undefined && subtotal.isAtLeast(freeFrom)
     }
 
     updateProfile(patch: ProfilePatch): void {
@@ -500,8 +567,15 @@ export class Business {
         this.touch()
     }
 
-    updateDelivery(delivery: DeliverySettings): void {
-        this.props.delivery = validateDelivery(delivery)
+    /**
+     * New delivery settings. `price` is the owner's choice of how delivery is paid; without it the
+     * choice already made stays (a settings save sends every field, chosen or not).
+     */
+    updateDelivery(delivery: DeliverySettings, price?: DeliveryPriceChoice): void {
+        const chosen = this.props.delivery.priceChosen === true || delivery.priceChosen === true
+        this.props.delivery = validateDelivery(
+            price ? withPrice(delivery, price) : { ...delivery, priceChosen: chosen },
+        )
         this.touch()
     }
 

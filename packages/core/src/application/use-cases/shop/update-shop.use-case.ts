@@ -11,6 +11,7 @@ import { districtIdFor } from "../network/network.use-cases.js"
 import { requireOwnedBusiness } from "../shared.js"
 
 import type { Business, ProfilePatch } from "../../../domain/entities/business.js"
+import type { DeliveryPriceChoice } from "../../../domain/enums/delivery-price.js"
 import type { WeeklySchedule } from "../../../domain/value-objects/working-hours.js"
 import type { LocationDTO, ShopOwnerDTO } from "../../dtos/shop.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
@@ -30,8 +31,10 @@ export interface ShopSettingsPatch {
         freeFrom?: number | null
         minOrder?: number | null
         radiusMeters?: number | null
-        /** «Yetkazish haqini mijoz o'zi to'laydi»; left out: as it was. */
+        /** The customer pays the carrier; left out: as it was. */
         customerPaysCarrier?: boolean
+        /** The owner's choice of how delivery is paid; left out: the choice made before stays. */
+        price?: DeliveryPriceChoice
     }
     /** `null` = always open. */
     workingHours?: WeeklySchedule | null
@@ -78,14 +81,17 @@ export class UpdateShopUseCase {
 function applyPatch(business: Business, patch: ShopSettingsPatch): void {
     business.updateProfile(toProfilePatch(patch))
     if (patch.delivery) {
-        business.updateDelivery({
-            fee: Money.of(patch.delivery.fee),
-            freeFrom: Money.optional(patch.delivery.freeFrom),
-            minOrder: Money.optional(patch.delivery.minOrder),
-            radiusMeters: patch.delivery.radiusMeters ?? undefined,
-            customerPaysCarrier:
-                patch.delivery.customerPaysCarrier ?? business.delivery.customerPaysCarrier,
-        })
+        business.updateDelivery(
+            {
+                fee: Money.of(patch.delivery.fee),
+                freeFrom: Money.optional(patch.delivery.freeFrom),
+                minOrder: Money.optional(patch.delivery.minOrder),
+                radiusMeters: patch.delivery.radiusMeters ?? undefined,
+                customerPaysCarrier:
+                    patch.delivery.customerPaysCarrier ?? business.delivery.customerPaysCarrier,
+            },
+            patch.delivery.price,
+        )
     }
     if (patch.workingHours !== undefined) {
         business.setWorkingHours(WorkingHours.fromJSON(patch.workingHours))

@@ -4,6 +4,7 @@
  * same on every phone. «order» (a new order for the shop or the courier) rings it twice; «status»
  * (the customer's order moved) once, softer.
  */
+import { audio } from "./audio.js"
 import { isAppActive } from "./telegram.js"
 
 export type ZumdaSound = "order" | "status"
@@ -50,36 +51,6 @@ const MOTIF_S = 1.06
 const BREATH_S = 0.25
 
 const SOUND_KEY = "zumda:sound"
-
-let context: AudioContext | null = null
-
-function audio(): AudioContext | null {
-    if (context) {
-        return context
-    }
-    const Ctor = window.AudioContext as typeof AudioContext | undefined
-    if (!Ctor) {
-        return null
-    }
-    context = new Ctor()
-    return context
-}
-
-/**
- * Phones play sound only after a touch: the first tap anywhere wakes the audio, so a new order
- * later in the shift can ring. Once, at start.
- */
-export function unlockSoundOnFirstTouch(): void {
-    const wake = (): void => {
-        void audio()
-            ?.resume()
-            .catch(() => undefined)
-        window.removeEventListener("pointerdown", wake)
-        window.removeEventListener("touchend", wake)
-    }
-    window.addEventListener("pointerdown", wake)
-    window.addEventListener("touchend", wake)
-}
 
 /** The shop's and the courier's switch («Ovoz»), on unless turned off on this phone. */
 export function soundEnabled(): boolean {
