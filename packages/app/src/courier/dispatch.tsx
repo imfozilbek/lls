@@ -6,10 +6,10 @@ import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { useClosingGuard } from "../lib/main-button.js"
 import { haptic } from "../lib/telegram.js"
-import { yandexRouteUrl } from "../lib/trips.js"
 import { toast } from "../stores/toast.js"
 import { PinIcon, StoreIcon } from "../ui/icons.js"
 import { Button, Field, TextArea } from "../ui/primitives.js"
+import { RouteButton } from "../ui/route-button.js"
 import { Sheet } from "../ui/sheet.js"
 
 import type { CourierOrderDTO, OrderDTO } from "@zumda/core"
@@ -226,20 +226,9 @@ const BEFORE_SENT: readonly OrderStatus[] = [
     OrderStatus.READY,
 ]
 
-function RouteLink({ href, label }: { href: string; label: string }): React.JSX.Element {
-    return (
-        <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(): void => haptic.tap()}
-            className="tap flex h-11 shrink-0 items-center gap-1.5 rounded-control bg-tg-secondary px-3 font-semibold text-brand"
-        >
-            <PinIcon size={18} />
-            {label}
-        </a>
-    )
-}
+/** The look of «Do'konga yo'l» and «Mijozga yo'l» beside the place. */
+const ROUTE_CHIP =
+    "tap flex h-11 shrink-0 items-center gap-1.5 rounded-control bg-tg-secondary px-3 font-semibold text-brand"
 
 /**
  * Where from and where to, on every step: a dispatcher tells a taxi both, a rider sees where
@@ -262,7 +251,11 @@ export function RouteBlock({ order }: { order: CourierOrderDTO }): React.JSX.Ele
                     <p className="font-medium">{order.shopAddress ?? order.shopName}</p>
                 </div>
                 {atShop && order.shopLocation ? (
-                    <RouteLink href={yandexRouteUrl([order.shopLocation])} label={c.toShop} />
+                    <RouteButton
+                        stops={[order.shopLocation]}
+                        label={c.toShop}
+                        className={ROUTE_CHIP}
+                    />
                 ) : null}
             </div>
             <div className="flex items-center gap-3">
@@ -274,7 +267,11 @@ export function RouteBlock({ order }: { order: CourierOrderDTO }): React.JSX.Ele
                     {order.comment ? <p className="mt-1 italic">«{order.comment}»</p> : null}
                 </div>
                 {order.location ? (
-                    <RouteLink href={yandexRouteUrl([order.location])} label={c.toCustomer} />
+                    <RouteButton
+                        stops={[order.location]}
+                        label={c.toCustomer}
+                        className={ROUTE_CHIP}
+                    />
                 ) : null}
             </div>
         </div>

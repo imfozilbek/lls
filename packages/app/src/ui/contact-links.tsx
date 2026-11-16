@@ -3,10 +3,10 @@ import { formatPhone, mapUrl } from "@zumda/core"
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
 import { callLink, haptic } from "../lib/telegram.js"
-import { yandexRouteUrl } from "../lib/trips.js"
 
 import { PhoneIcon, PinIcon } from "./icons.js"
 import { OrderMapButton } from "./maps.js"
+import { RouteButton } from "./route-button.js"
 
 import type { OrderDTO } from "@zumda/core"
 
@@ -53,9 +53,9 @@ export function ContactLinks({
     route?: boolean
 }): React.JSX.Element | null {
     const t = useT()
-    // The way to the door from where the courier is now, like a trip's: not just a point.
-    const map = route && order.location ? yandexRouteUrl([order.location]) : null
-    if (!order.customerPhone && !order.shopPhone && !map) {
+    // The way to the door from where the courier is now, in the courier's own app.
+    const door = route ? order.location : undefined
+    if (!order.customerPhone && !order.shopPhone && !door) {
         return null
     }
     return (
@@ -70,12 +70,7 @@ export function ContactLinks({
             {order.shopPhone ? (
                 <CallLink phone={order.shopPhone} label={t.courier.callShop} className="bg-tg-bg" />
             ) : null}
-            {map ? (
-                <a href={map} target="_blank" rel="noopener noreferrer" className={LINK}>
-                    <PinIcon size={18} className="text-brand" />
-                    {t.courier.route}
-                </a>
-            ) : null}
+            {door ? <RouteButton stops={[door]} label={t.courier.route} className={LINK} /> : null}
         </div>
     )
 }

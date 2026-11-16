@@ -79,7 +79,6 @@ export const staffUz = {
         way: "{km} km · {min} daqiqa",
         pickUpAll: "Hammasini oldim",
         notReady: "Hammasi tayyor bo'lganda olasiz: {ready}/{total} tayyor",
-        navigator: "Yandex Navigatorda ochish",
         next: "Keyingi",
         done: "Yetkazildi",
         chooseTwo: "Kamida 2 ta buyurtmani belgilang",

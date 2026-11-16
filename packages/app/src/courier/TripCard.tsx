@@ -5,11 +5,12 @@ import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
-import { isStopDone, tripOrders, yandexRouteUrl } from "../lib/trips.js"
+import { isStopDone, tripOrders } from "../lib/trips.js"
 import { toast } from "../stores/toast.js"
 import { CallLink } from "../ui/contact-links.js"
-import { CheckIcon, ChevronIcon, PinIcon, ScooterIcon, StoreIcon } from "../ui/icons.js"
+import { CheckIcon, ChevronIcon, ScooterIcon, StoreIcon } from "../ui/icons.js"
 import { Button } from "../ui/primitives.js"
+import { RouteButton } from "../ui/route-button.js"
 import { TripMap, TripWay } from "../ui/trip-map.js"
 
 import type { CourierOrderDTO, OrderDTO, TripDTO } from "@zumda/core"
@@ -74,8 +75,9 @@ function PickUpAll({
 }
 
 /**
- * All the stops still to go, in order, in Yandex Navigator (or Yandex Maps), by car. Before the
- * pickup the way starts at the shop: the courier goes there first.
+ * All the stops still to go, in order, in the courier's own app (owner's decision, November 2026:
+ * only the apps that take several stops). Before the pickup the way starts at the shop: the
+ * courier goes there first.
  */
 function NavigatorLink({
     stops,
@@ -91,26 +93,18 @@ function NavigatorLink({
         ...(atShop && shop ? [shop] : []),
         ...left.flatMap((o) => (o.location ? [o.location] : [])),
     ]
-    if (points.length === 0) {
-        return null
-    }
     return (
-        <a
-            href={yandexRouteUrl(points)}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(): void => haptic.tap()}
+        <RouteButton
+            stops={points}
+            label={t.courier.route}
             className="tap flex h-12 items-center justify-center gap-2 rounded-control bg-tg-bg font-semibold"
-        >
-            <PinIcon size={18} className="text-brand" />
-            {t.trip.navigator}
-        </a>
+        />
     )
 }
 
 /**
  * Several orders of one shop going one way, for the courier: the way on the map with the stops
- * numbered, «Hammasini oldim», Yandex Navigator through every stop, then each stop delivered on
+ * numbered, «Hammasini oldim», the courier's own app through every stop, then each stop delivered on
  * its own (`renderStop`: the address, the money, «Yetkazdim»).
  */
 export function TripCard({

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="uz">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+        <meta name="robots" content="noindex" />
+        <title>Yandex Navigator</title>
+        <style>
+            :root {
+                color-scheme: light;
+            }
+            body {
+                margin: 0;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: #ffffff;
+                color: #111827;
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    Roboto,
+                    sans-serif;
+            }
+            main {
+                width: 100%;
+                max-width: 360px;
+                padding: 24px 16px;
+                text-align: center;
+            }
+            img {
+                width: 72px;
+                height: 72px;
+                border-radius: 18px;
+                box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+            }
+            h1 {
+                margin: 16px 0 8px;
+                font-size: 1.25rem;
+            }
+            p {
+                margin: 0 0 20px;
+                color: #4b5563;
+                line-height: 1.4;
+            }
+            a {
+                display: block;
+                padding: 14px 16px;
+                border-radius: 14px;
+                background: #15803d;
+                color: #ffffff;
+                font-weight: 600;
+                text-decoration: none;
+                transition: transform 150ms cubic-bezier(0.25, 1, 0.5, 1);
+            }
+            a:active {
+                transform: scale(0.97);
+            }
+            a:focus-visible {
+                outline: 2px solid #14532d;
+                outline-offset: 2px;
+            }
+        </style>
+    </head>
+    <body>
+        <!--
+            The courier bot's «Yandex Navigator» link (owner's decision, November 2026): a Telegram
+            message takes only https links, and Yandex Navigator opens only by its own scheme. This
+            page hands the route over: «?to=LAT,LON», stops on the way as «&via=LAT,LON».
+        -->
+        <main>
+            <img src="../nav-apps/navigator.webp" alt="" width="72" height="72" />
+            <h1>Yandex Navigator</h1>
+            <p id="hint">Yandex Navigator ochilmasa, pastdagi tugmani bosing.</p>
+            <a id="open" href="#">Yandex Navigatorni ochish</a>
+        </main>
+        <script>
+            ;(function () {
+                var params = new URLSearchParams(window.location.search)
+                function point(value) {
+                    var parts = (value || "").split(",")
+                    var lat = Number(parts[0])
+                    var lon = Number(parts[1])
+                    if (parts.length !== 2 || !isFinite(lat) || !isFinite(lon)) {
+                        return null
+                    }
+                    if (Math.abs(lat) > 90 || Math.abs(lon) > 180) {
+                        return null
+                    }
+                    return { lat: lat.toFixed(6), lon: lon.toFixed(6) }
+                }
+                var to = point(params.get("to"))
+                var via = params.getAll("via").map(point)
+                var link = document.getElementById("open")
+                if (!to || via.indexOf(null) !== -1) {
+                    document.getElementById("hint").textContent = "Manzil topilmadi."
+                    link.style.display = "none"
+                    return
+                }
+                var query = []
+                via.forEach(function (stop, index) {
+                    query.push("lat_via_" + index + "=" + stop.lat)
+                    query.push("lon_via_" + index + "=" + stop.lon)
+                })
+                query.push("lat_to=" + to.lat, "lon_to=" + to.lon)
+                var url = "yandexnavi://build_route_on_map?" + query.join("&")
+                link.setAttribute("href", url)
+                // After the page has drawn: if the phone does not hand it over, the button stays.
+                window.addEventListener("load", function () {
+                    window.location.href = url
+                })
+            })()
+        </script>
+    </body>
+</html>
