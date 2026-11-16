@@ -140,27 +140,38 @@ test("Otabek delivers in the app with one «Доставил»; the money is alr
     expect(list.map((c) => c.name)).toEqual(["Jasur"])
 })
 
-test("the owner: the network switch, «Доставщик сети района», and who brings it", async ({
+test("the owner: one network switch, nothing to the network while off, and who brings it", async ({
     page,
 }) => {
     await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
     await openSettings(page, "Kuryerlar")
-    const network = page.getByRole("switch", {
-        name: "Kuryerlarim band bo'lsa, tuman tarmog'iga berish",
-    })
+    const network = page.getByRole("switch", { name: "Tuman tarmog'idan foydalanish" })
     await expect(network).toHaveAttribute("aria-checked", "true")
     await network.click()
     await expect(network).toHaveAttribute("aria-checked", "false")
 
-    // Switched off: an accepted order stays with the shop.
-    const since = await lastSeq()
+    // Switched off: an accepted order stays with the shop, and nothing offers the network.
     const order = await placeAndAccept()
     expect(order.waitingForNetwork).toBe(false)
-
-    // By hand, from the order: nobody is on it, so it is the main button.
     await page.getByRole("tab", { name: "Buyurtmalar" }).click()
     const card = page.getByRole("listitem").filter({ hasText: `Buyurtma #${order.number}` })
+    await card.getByRole("button", { name: "Kuryerga topshirish" }).click()
+    const sheet = page.getByRole("dialog")
+    await expect(sheet.getByRole("button", { name: /O'zim yetkazaman/ })).toBeVisible()
+    await expect(sheet.getByRole("button", { name: /Tuman tarmog'i kuryeri/ })).toHaveCount(0)
+    await page.keyboard.press("Escape")
+    await expect(sheet).toBeHidden()
+    const refused = await owner(`/owner/orders/${order.id}/network`, undefined, "PUT")
+    expect(refused.status).toBe(422)
+    expect(await refused.json()).toMatchObject({ error: { code: "NETWORK_OFF" } })
+
+    // Back on: by hand, from the order, nobody is on it, so it is the main button.
+    await openSettings(page, "Kuryerlar")
+    await network.click()
+    await expect(network).toHaveAttribute("aria-checked", "true")
+    const since = await lastSeq()
+    await page.getByRole("tab", { name: "Buyurtmalar" }).click()
     await card.getByRole("button", { name: "Kuryerga topshirish" }).click()
     await page
         .getByRole("dialog")
@@ -182,10 +193,6 @@ test("the owner: the network switch, «Доставщик сети района�
                 .some((m) => m.text.includes(`#${order.number}`)),
         )
         .toBe(true)
-
-    await openSettings(page, "Kuryerlar")
-    await network.click()
-    await expect(network).toHaveAttribute("aria-checked", "true")
 })
 
 test("the courier's app: «Заказы рядом» with «Беру», and leaving the network", async ({ page }) => {

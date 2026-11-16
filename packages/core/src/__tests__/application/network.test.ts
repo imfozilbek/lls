@@ -131,6 +131,10 @@ describe("district network", () => {
         water.updateProfile({ location: Location.create(YANGIYER.latitude, YANGIYER.longitude) })
         const far = makeBusiness({ id: "biz-3" })
         far.updateProfile({ location: Location.create(TASHKENT.latitude, TASHKENT.longitude) })
+        // «Tuman tarmog'idan foydalanish» is off for a new shop: these use it.
+        for (const shop of [food, water, far]) {
+            shop.setNetworkDelivery(true)
+        }
         await Promise.all([food, water, far].map((shop) => businesses.save(shop)))
         const set = await new SetDistrictUseCase(deps(), [ADMIN_TG]).execute({
             actorTelegramId: ADMIN_TG,
@@ -236,6 +240,25 @@ describe("district network", () => {
             expect(await auto.execute({ orderId: (await place("o-2", "biz-2")).id })).toBeNull()
 
             expect(await auto.execute({ orderId: (await place("o-3", "biz-3")).id })).toBeNull()
+        })
+
+        it("a shop that switched the network off: nothing goes there, by itself or by hand", async () => {
+            const shop = await businesses.findById("biz-1")
+            shop?.setNetworkDelivery(false)
+            if (shop) {
+                await businesses.save(shop)
+            }
+            const order = await place("o-1")
+            expect(await new AutoRequestNetworkUseCase(deps()).execute({ orderId: order.id })).toBe(
+                null,
+            )
+            await expect(
+                new RequestNetworkCourierUseCase(deps()).execute({
+                    actorTelegramId: OWNER_TG,
+                    businessId: "biz-1",
+                    orderId: order.id,
+                }),
+            ).rejects.toThrow(expect.objectContaining({ rule: "NETWORK_OFF" }))
         })
 
         it("the owner hands an order over by hand; a shop outside every district cannot", async () => {

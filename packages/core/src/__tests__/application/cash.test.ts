@@ -259,6 +259,11 @@ describe("cash: the shop chooses, the courier collects, the owner takes it per o
     })
 
     it("a cash order never goes to the district network", async () => {
+        const shop = await businesses.findById("biz-1")
+        shop?.setNetworkDelivery(true)
+        if (shop) {
+            await businesses.save(shop)
+        }
         await setOptions(PaymentOptions.CASH)
         const order = await place()
         await advance(order, OrderStatus.ACCEPTED)

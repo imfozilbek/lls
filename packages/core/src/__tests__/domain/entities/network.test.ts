@@ -146,14 +146,17 @@ describe("network consent and shop settings", () => {
         expect(profile.networkOfferedAt).toEqual(NOW)
     })
 
-    it("a shop sends to the network unless the owner switched it off; its district is set", () => {
+    it("a shop uses the network only once the owner turns it on; its district is set", () => {
         const shop = makeBusiness()
-        expect(shop.networkDelivery).toBe(true)
-        expect(shop.districtId).toBeUndefined()
-        shop.setNetworkDelivery(false)
-        shop.setDistrict("d-Guliston")
+        // Owner's decision, November 2026: off until the owner chooses it.
         expect(shop.networkDelivery).toBe(false)
+        expect(shop.districtId).toBeUndefined()
+        shop.setNetworkDelivery(true)
+        shop.setDistrict("d-Guliston")
+        expect(shop.networkDelivery).toBe(true)
         expect(shop.districtId).toBe("d-Guliston")
+        shop.setNetworkDelivery(false)
+        expect(shop.networkDelivery).toBe(false)
     })
 
     it("a network link moves its orders of that shop but is not the shop's courier", () => {

@@ -24,8 +24,10 @@ export const customerRoutes = new Hono<AppEnv>()
         const shop = await c
             .get("services")
             .useCases.getShopBySlug.execute(shopOf(c).slug.value, user.id)
-        // Lets the app show "Мой магазин" or "Мои доставки" without exposing anyone's id.
-        return c.json({ ...shop, viewerRole: role })
+        // Lets the app show "Мой магазин" or "Мои доставки" without exposing anyone's id. The
+        // owner also learns whether the shop uses the district network (the order's courier sheet).
+        const owner = role === "owner" ? { networkDelivery: shopOf(c).networkDelivery } : {}
+        return c.json({ ...shop, viewerRole: role, ...owner })
     })
 
     .get("/shop/products", zValidator("query", productsQuery, onInvalid), async (c) => {

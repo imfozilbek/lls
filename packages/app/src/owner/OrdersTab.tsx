@@ -183,6 +183,8 @@ function CourierSheet(props: CardProps & { onClose(): void }): React.JSX.Element
     }, [loadCouriers])
     const { pending, assign } = useAssign(props, onClose)
     const cash = order.payment.method === "cash"
+    // «Tuman tarmog'idan foydalanish» off: the network is not offered at all.
+    const usesNetwork = useSession((state) => state.shop?.networkDelivery === true)
 
     return (
         <Sheet title={t.owner.assign} onClose={pending ? (): void => undefined : onClose}>
@@ -220,7 +222,8 @@ function CourierSheet(props: CardProps & { onClose(): void }): React.JSX.Element
             )}
             {/* A network courier carries no money: a cash order, or one whose delivery the
                 customer pays to the carrier, goes only with the shop's own. */}
-            {order.waitingForNetwork ||
+            {!usesNetwork ||
+            order.waitingForNetwork ||
             order.courierId ||
             cash ||
             order.customerPaysCarrier ? null : (

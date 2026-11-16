@@ -7,6 +7,17 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The shop chooses whether to use the district network
+- One switch, «Tuman tarmog'idan foydalanish», in «Sozlamalar» → «Kuryerlar» (owner's decision,
+  November 2026). On: the network takes an order when the shop's own couriers are busy, and the
+  owner may hand one over by hand. Off: nothing goes there. The «Tuman tarmog'i kuryeri» option is
+  not shown, and the server refuses it (`NETWORK_OFF`).
+- Before, the switch stopped only the handover by itself; by hand the network was always there.
+- Off by default: a new shop starts without the network.
+- Migration `0031_network_off.sql` turns it off for every shop (owner's decision); an order
+  already waiting for a network courier stays as it is.
+- The «Kuryerlar» summary says «Tuman tarmog'iga ulangan» or «Tuman tarmog'i o'chirilgan».
+
 ### The delivery price is the owner's choice
 - A shop no longer tells customers «bepul» because nobody set a fee (owner's decision, November
   2026). An application stored a fee of 0, and every screen read 0 as free delivery: four of the

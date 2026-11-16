@@ -817,12 +817,15 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
             waiting > 0
                 ? { text: fill(s.summary.couriersWaiting, { n: String(waiting) }), warn: true }
                 : {
-                      text:
+                      // The team, and whether the district network may carry the shop's orders.
+                      text: [
                           team === undefined
                               ? s.summary.couriersHint
                               : team > 0
                                 ? fill(s.summary.couriers, { n: String(team) })
                                 : s.summary.noCouriers,
+                          shop.networkDelivery ? s.summary.networkOn : s.summary.networkOff,
+                      ].join(" · "),
                   },
         link: { text: `t.me/${shop.botUsername}` },
     }

@@ -299,8 +299,14 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - **Done:** when the shop accepts an order and none of its own couriers can take it now, the
   order goes to the free network couriers of the district (in the network, on shift, carrying no
   other network order): «Новый заказ рядом» without the customer, «Беру»; the first press wins
-  (one conditional UPDATE). The shop switch «Если мои заняты, отдавать сети района» is **on by
-  default** (owner's decision); the owner may also hand an order over by hand. Only transfer
+  (one conditional UPDATE). **The shop chooses** (owner's decision, November 2026): one switch
+  «Tuman tarmog'idan foydalanish» in «Kuryerlar» (`network_delivery`), **off by default** and
+  turned off for every shop once (migration `0031`). On, the network takes an order when the
+  shop's own couriers are busy, and the owner may also hand one over by hand («Tuman tarmog'i
+  kuryeri»); off, nothing goes there, by itself or by hand (`NETWORK_OFF`, the option is not
+  shown; the owner learns the switch with `GET /api/shop`). An order already waiting for the
+  network stays as it is. The «Kuryerlar» summary says «Tuman tarmog'iga ulangan» or «Tuman
+  tarmog'i o'chirilgan». Only transfer
   orders go to the network: the customer paid that point's card before cooking, so the network
   courier carries no money; a cash order never goes there. Nobody took it in
   `wait` minutes (default 10):
@@ -602,7 +608,7 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order, customer_pays_carrier, delivery_price_set: the owner chose the price), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery (on by default) |
+| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order, customer_pays_carrier, delivery_price_set: the owner chose the price), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery («Tuman tarmog'idan foydalanish», off by default) |
 | Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy; the main one), more_categories (up to two more, storefront only), age_from (0, 1, 3, 5, 7, 12: children's goods), image_key (the main photo), more_images (up to two more), is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17), stock (what is left in base units when the owner counts it; NULL: not counted) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
@@ -1239,8 +1245,10 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       without a phone is not approved, gets no order and sends it from «Raqamni yuborish»
 - [ ] «Raqam so'rash»: «Bizneslar» → «Raqamsiz» → «Raqam so'rash» → «Bugun so'raldi»; the owner
       presses «📱 Raqamimni yuborish» in Zumda | Business and the shop takes orders again
-- [ ] District delivery: invite → accept in the courier bot → join the network → an order of a
-      point without couriers taken by a network courier → paid before cooking, no cash
+- [ ] District delivery: invite → accept in the courier bot → join the network → «Tuman
+      tarmog'idan foydalanish» on in «Kuryerlar» → an order of a point without couriers taken by a
+      network courier → paid before cooking, no cash; switched off, the order stays with the shop
+      and «Tuman tarmog'i kuryeri» is not offered
 - [ ] Water (a grocery store with the bottle deposit): empty bottles + deposit; reorder
 - [ ] Service: «Xizmatlar», «Bajarilmoqda», «Bajarildi»
 - [ ] Zumda | Business in a browser: sign in with Telegram, manage a business, sign out

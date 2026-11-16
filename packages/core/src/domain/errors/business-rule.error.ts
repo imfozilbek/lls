@@ -171,6 +171,15 @@ export class BusinessRuleViolationError extends DomainError {
     }
 
     /** The shop's location is in no district of the delivery network. */
+    /** «Tuman tarmog'idan foydalanish» is off: the shop's orders never go to the network. */
+    static networkOff(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NETWORK_OFF",
+            "The shop does not use the district network",
+            { businessId },
+        )
+    }
+
     static noDistrict(businessId: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "NO_DISTRICT",
