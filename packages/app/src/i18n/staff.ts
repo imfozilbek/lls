@@ -455,9 +455,6 @@ export const staffUz = {
             minOrder: "Minimal buyurtma",
             radius: "Yetkazish radiusi, km",
             radiusHint: "Bo'sh qoldirsangiz, masofa cheklanmaydi.",
-            customerPaysCarrier: "Yetkazish haqini mijoz o'zi to'laydi",
-            customerPaysCarrierHint:
-                "Taksi yoki pochtaga: narxi buyurtmaga qo'shilmaydi, mijoz «Yetkazish haqi alohida»ni ko'radi.",
             radiusNone: "Cheklovsiz",
             currentColor: "Hozirgi rang",
             colorNames: ["Yashil", "Firuza", "Ko'k", "Binafsha", "Malina", "Olovrang", "Tilla"],

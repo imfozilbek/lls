@@ -16,6 +16,7 @@ import { create } from "zustand"
 import { fill, useLanguage, useT } from "../i18n/index.js"
 import { api } from "../lib/api.js"
 import { cn } from "../lib/cn.js"
+import { deliveryFact, shopDelivery } from "../lib/delivery-price.js"
 import { formatMoney, formatQuantity, kmText } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { opensWhen } from "../lib/opening.js"
@@ -90,13 +91,13 @@ function closedStatus(t: Dictionary, shop: Shop): string {
 function shopFacts(shop: Shop, t: Dictionary, language: Language): string[] {
     const { delivery } = shop
     const money = (amount: number): string => formatMoney(amount, language)
-    const facts = [
-        delivery.customerPaysCarrier
-            ? t.shop.deliveryApart
-            : delivery.fee === 0
-              ? t.shop.deliveryFree
-              : fill(t.shop.deliveryFee, { sum: money(delivery.fee) }),
-    ]
+    // Only what the shop said: nothing about delivery until the owner chose its price.
+    const price = deliveryFact(shopDelivery(delivery), {
+        free: t.shop.deliveryFree,
+        later: t.shop.deliveryApart,
+        fee: (sum) => fill(t.shop.deliveryFee, { sum: money(sum) }),
+    })
+    const facts = price ? [price] : []
     if (delivery.freeFrom && delivery.fee > 0) {
         facts.push(fill(t.shop.freeFrom, { sum: money(delivery.freeFrom) }))
     }

@@ -7,6 +7,7 @@ import { loadShowcaseOrder } from "../lib/address-book.js"
 import { ApiError, api, imageUrl } from "../lib/api.js"
 import { ZUMDA_NAME, readableInk } from "../lib/brand.js"
 import { cn } from "../lib/cn.js"
+import { deliveryFact, shopDelivery } from "../lib/delivery-price.js"
 import { formatMoney, hexToRgbChannels } from "../lib/format.js"
 import { useMainAction } from "../lib/main-button.js"
 import { usePagedList } from "../lib/paged.js"
@@ -182,11 +183,12 @@ function ShopRow({
     const t = useT()
     const language = useLanguage()
     const types = t.showcase.types as Record<string, string>
-    const fee = shop.delivery.customerPaysCarrier
-        ? t.shop.deliveryApart
-        : shop.delivery.fee === 0
-          ? t.shop.deliveryFree
-          : fill(t.shop.deliveryFee, { sum: formatMoney(shop.delivery.fee, language) })
+    // The card's own shop decides: a service or a price never chosen says nothing.
+    const fee = deliveryFact(shopDelivery(shop.delivery), {
+        free: t.shop.deliveryFree,
+        later: t.shop.deliveryApart,
+        fee: (sum) => fill(t.shop.deliveryFee, { sum: formatMoney(sum, language) }),
+    })
     return (
         <li className="animate-rise" style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}>
             <button
@@ -212,7 +214,9 @@ function ShopRow({
                             {shop.isOpen ? t.shop.open : t.shop.closed}
                         </span>
                     </span>
-                    <span className="block truncate text-sm text-tg-subtitle">{fee}</span>
+                    {fee ? (
+                        <span className="block truncate text-sm text-tg-subtitle">{fee}</span>
+                    ) : null}
                 </span>
                 <ChevronIcon size={18} className="shrink-0 text-tg-hint" />
             </button>
