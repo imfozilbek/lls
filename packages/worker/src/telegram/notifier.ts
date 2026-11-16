@@ -33,6 +33,7 @@ import {
     courierReviewKeyboard,
     formatNetworkOffer,
     formatNewOrderForOwner,
+    formatLineRemovedForCustomer,
     formatNoteForCustomer,
     formatOrderForCourier,
     formatOrderForOwner,
@@ -341,6 +342,23 @@ export class Notifier {
             (): Promise<void> =>
                 this.tellCustomer(token, business, order, (_t, language) =>
                     formatNoteForCustomer(order, note.text, { language, type: business.type }),
+                ),
+            (): Promise<void> => this.orderChangedForOwner(token, business, order),
+            (): Promise<void> => this.refreshCourierCard(business, order, messages.courier),
+        ])
+    }
+
+    /**
+     * «Yo'q»: the customer hears what left the order and the new sum; the owner's and the
+     * courier's cards show it (a cash courier takes the new sum).
+     */
+    async lineRemoved(business: Business, order: OrderDTO, item: string): Promise<void> {
+        const token = await this.shopToken(business.id)
+        const messages = await this.services.orders.getMessageIds(order.id)
+        await everyOne([
+            (): Promise<void> =>
+                this.tellCustomer(token, business, order, (_t, language) =>
+                    formatLineRemovedForCustomer(order, item, { language, type: business.type }),
                 ),
             (): Promise<void> => this.orderChangedForOwner(token, business, order),
             (): Promise<void> => this.refreshCourierCard(business, order, messages.courier),

@@ -11,8 +11,8 @@ export function OrderItems({ order }: { order: OrderDTO }): React.JSX.Element {
     return (
         <div className="rounded-tile bg-tg-secondary p-4">
             <ul className="flex flex-col gap-2">
-                {order.items.map((item, line) => (
-                    <li key={line} className="flex gap-3">
+                {order.items.map((item) => (
+                    <li key={item.line} className="flex gap-3">
                         <span className="shrink-0 font-semibold tabular-nums text-tg-hint">
                             {quantityMark(item.quantity, item.unit, t.units)}
                         </span>
@@ -30,6 +30,24 @@ export function OrderItems({ order }: { order: OrderDTO }): React.JSX.Element {
                     </li>
                 ))}
             </ul>
+            {order.removedItems?.length ? (
+                <ul className="mt-2 flex flex-col gap-1 text-tg-hint">
+                    {order.removedItems.map((item) => (
+                        <li key={item.line} className="flex gap-3">
+                            <span className="shrink-0 font-semibold tabular-nums line-through">
+                                {quantityMark(item.quantity, item.unit, t.units)}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                                <span className="line-through">{item.name}</span>
+                                <span className="block text-sm">{t.order.missingItem}</span>
+                            </span>
+                            <span className="shrink-0 tabular-nums line-through">
+                                {formatMoney(item.total, language)}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            ) : null}
             <div className="my-3 h-px bg-tg-separator" />
             <div className="flex justify-between text-tg-subtitle">
                 <span>{t.cart.delivery}</span>

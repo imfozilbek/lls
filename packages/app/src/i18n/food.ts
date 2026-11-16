@@ -34,6 +34,11 @@ export const FOOD_STAFF = (base: StaffDictionary): Overrides<StaffDictionary> =>
         tabs: { ...base.owner.tabs, menu: "Menyu" },
         actions: { ...base.owner.actions, preparing: "Tayyorlashni boshlash" },
         queueBadge: "Tayyorlash kerak",
+        picking: {
+            ...base.owner.picking,
+            counter: "Tayyor: {done} / {all}",
+            allDone: "Hammasi tayyor",
+        },
         menuEmpty: "Menyu bo'sh",
         menuEmptyText: "Birinchi taomni qo'shing: mijozlar uni darhol ko'radi.",
     },

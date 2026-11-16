@@ -65,6 +65,7 @@ import {
     UpdateCustomerUseCase,
     UpdateProductUseCase,
     ChangeProductPhotosUseCase,
+    RemoveOrderLineUseCase,
     UpdateShopUseCase,
     AutoRequestNetworkUseCase,
     ClaimNetworkOrderUseCase,
@@ -126,6 +127,7 @@ export interface UseCases {
     createProducts: CreateProductsUseCase
     updateProduct: UpdateProductUseCase
     changeProductPhotos: ChangeProductPhotosUseCase
+    removeOrderLine: RemoveOrderLineUseCase
     deleteProduct: DeleteProductUseCase
     listProducts: ListProductsUseCase
     resolveCustomer: ResolveCustomerUseCase
@@ -365,6 +367,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             createProducts: new CreateProductsUseCase(businesses, products),
             updateProduct: new UpdateProductUseCase(businesses, products, clock),
             changeProductPhotos: new ChangeProductPhotosUseCase(businesses, products),
+            removeOrderLine: new RemoveOrderLineUseCase({ businesses, orders, products, clock }),
             deleteProduct: new DeleteProductUseCase(businesses, products),
             listProducts: new ListProductsUseCase(businesses, products, clock),
             resolveCustomer: new ResolveCustomerUseCase(customers),

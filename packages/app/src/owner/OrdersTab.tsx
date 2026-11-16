@@ -53,6 +53,8 @@ import { BottomSpacer } from "../ui/shell.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import { PaymentCheckSheet } from "./PaymentCheck.js"
+import { CollectList, isCollecting, useOwnerStep } from "./collect-list.js"
+import { MissingLineSheet, RefundOwed, RemovedLines } from "./missing-line.js"
 import { shownStages, stageCounts, stageOf } from "./order-stage.js"
 import { ownerStep } from "./order-step.js"
 import { useOwner } from "./store.js"
@@ -62,7 +64,7 @@ import type { OrderStage } from "./order-stage.js"
 import type { OwnerStep } from "./order-step.js"
 import type { Dictionary } from "../i18n/index.js"
 import type { PagedList } from "../lib/paged.js"
-import type { CourierDTO, OrderDTO } from "@zumda/core"
+import type { CourierDTO, OrderDTO, OrderItemDTO } from "@zumda/core"
 
 type Filter = "active" | "done"
 
@@ -578,6 +580,7 @@ function needsCheck(order: OrderDTO): boolean {
 /** A long order shows its first lines and «+N ta»: a tap shows the rest. */
 const SHOWN_ITEMS = 3
 
+/** An open card's lines once it is collected (before, the whole list is the card's). */
 function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
     const t = useT()
     const [all, setAll] = useState(false)
@@ -585,8 +588,8 @@ function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
     const shown = all || hidden <= 1 ? order.items : order.items.slice(0, SHOWN_ITEMS)
     return (
         <ul className="mt-2 flex flex-col gap-0.5">
-            {shown.map((item, line) => (
-                <li key={line} className="flex gap-2">
+            {shown.map((item) => (
+                <li key={item.line} className="flex items-baseline gap-2">
                     <span className="shrink-0 font-semibold tabular-nums">
                         {quantityMark(item.quantity, item.unit, t.units)}
                     </span>
@@ -684,7 +687,7 @@ function CardDetails({
                 </p>
             ) : null}
             <div className="mt-3 flex flex-col gap-2 border-t border-tg-separator pt-3 text-sm">
-                <CompactAddress order={order} shop={shopPlace} />
+                <CompactAddress order={order} shop={shopPlace} withComment={!isCollecting(order)} />
                 <CourierLine order={order} />
                 {live ? <CourierAction order={order} actions={actions} /> : null}
             </div>
@@ -807,7 +810,9 @@ function OrderCard({
     const t = useT()
     const language = useLanguage()
     const [open, setOpen] = useState(startOpen || needsCheck(order))
+    const [missing, setMissing] = useState<OrderItemDTO | null>(null)
     const actions = useCardActions({ order, onChange, onStale })
+    const step = useOwnerStep(order, actions.act)
     const live = !isFinalStatus(order.status)
     return (
         <li
@@ -819,13 +824,23 @@ function OrderCard({
             data-needs-check={needsCheck(order) || undefined}
         >
             <CardHead order={order} />
-            {open ? <CardItems order={order} /> : <ItemsLine order={order} />}
+            {isCollecting(order) ? (
+                <CollectList order={order} onMissing={setMissing} />
+            ) : open ? (
+                <>
+                    <CardItems order={order} />
+                    <RemovedLines order={order} />
+                </>
+            ) : (
+                <ItemsLine order={order} />
+            )}
             <p className="mt-1.5 flex justify-between font-semibold">
                 <span>{t.cart.total}</span>
                 <span className="tabular-nums">{formatMoney(order.total, language)}</span>
             </p>
             {/* Not yet transferred: the badge already says it, once is enough. Cash says so. */}
             {awaitsTransfer(order) ? null : <PaymentLine order={order} forOwner className="mt-1" />}
+            <RefundOwed order={order} act={actions.act} />
             {open ? (
                 <CardDetails order={order} actions={actions} />
             ) : (
@@ -839,9 +854,7 @@ function OrderCard({
                         step={actions.step}
                         busy={actions.busy}
                         alone={actions.alone}
-                        onStep={(to): void =>
-                            void actions.act(() => api.owner.setStatus(order.id, to))
-                        }
+                        onStep={step}
                         onSheet={actions.open}
                         onSelf={(): void =>
                             void actions.act(() => api.owner.deliverMyself(order.id))
@@ -857,6 +870,14 @@ function OrderCard({
                 onCancel={(): void => actions.open("cancel")}
             />
             {actions.sheets}
+            {missing ? (
+                <MissingLineSheet
+                    order={order}
+                    item={missing}
+                    act={actions.act}
+                    onClose={(): void => setMissing(null)}
+                />
+            ) : null}
         </li>
     )
 }

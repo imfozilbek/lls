@@ -297,6 +297,24 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    /** «Yo'q» only until «Tayyor»: in the queue or while the order is collected. */
+    static lineNotRemovable(orderId: string, status: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "LINE_NOT_REMOVABLE",
+            "A line can be taken out only before the order is ready",
+            { orderId, status },
+        )
+    }
+
+    /** The order's last line: «Bekor qilish» instead. */
+    static lastLine(orderId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "LAST_LINE",
+            "The last line cannot be taken out: cancel the order instead",
+            { orderId },
+        )
+    }
+
     static paymentNotRefundable(status: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "PAYMENT_NOT_REFUNDABLE",

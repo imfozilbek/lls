@@ -47,6 +47,11 @@ export class EntityNotFoundError extends DomainError {
         return new EntityNotFoundError("Order", id)
     }
 
+    /** No such line in the order, or it was taken out already. */
+    static orderLine(orderId: string, line: number): EntityNotFoundError {
+        return new EntityNotFoundError("OrderLine", `${orderId}:${line}`)
+    }
+
     /** A photo key that is not this product's. */
     static photo(key: string): EntityNotFoundError {
         return new EntityNotFoundError("Photo", key)

@@ -13,6 +13,7 @@ import { ordersCsv } from "../src/http/csv.js"
 import {
     courierKeyboard,
     formatOrderForCourier,
+    formatLineRemovedForCustomer,
     formatOrderForOwner,
     formatStatusForCustomer,
     orderKeyboard,
@@ -76,6 +77,33 @@ describe("the customer's messages about the shop's steps", () => {
     it("a service starts the moment it is accepted: one message", () => {
         expect(say(OrderStatus.PREPARING, BusinessType.SERVICE)).toBe(
             "✅ #7 buyurtmangiz qabul qilindi va bajarilmoqda.\n💳 To'lovingiz keldi.",
+        )
+    })
+})
+
+describe("«Yo'q»: a line the shop did not have", () => {
+    const reader = { language: Language.UZ, type: BusinessType.FOOD }
+    const missing = (method: "card_transfer" | "cash", refundOwed?: number): OrderDTO => ({
+        ...orderOf([{ name: "Osh" }]),
+        status: OrderStatus.PREPARING,
+        total: 80_000,
+        removedItems: orderOf([{ name: "Somsa" }]).items.map((item) => ({ ...item, line: 1 })),
+        payment: { method, status: PaymentStatus.PAID, refundOwed } as OrderDTO["payment"],
+    })
+
+    it("the owner's card names it and the money owed back", () => {
+        const card = formatOrderForOwner(missing("card_transfer", 8_000), reader)
+        expect(card).toContain("❌ Somsa: yo'q")
+        expect(card).toContain("💸 8 000 so'm qaytarish kerak")
+    })
+
+    it("the customer hears the new sum, and the money: owed back, or what to give", () => {
+        expect(formatLineRemovedForCustomer(missing("card_transfer", 8_000), "Somsa", reader)).toBe(
+            "#7: Somsa do'konda yo'q ekan, buyurtmadan olib tashlandi. Yangi summa: 80 000 so'm." +
+                "\nDo'kon sizga 8 000 so'm qaytaradi.",
+        )
+        expect(formatLineRemovedForCustomer(missing("cash"), "Somsa", reader)).toContain(
+            "Kuryerga 80 000 so'm berasiz.",
         )
     })
 })

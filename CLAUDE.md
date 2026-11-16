@@ -165,6 +165,18 @@ cover each one's whole process; what exactly comes from the meeting with them.
   (asked once more; `cash_received_at`). The courier sees «Do'konga topshirasiz: {sum}» per shop
   until then. No change (qaytim) field: the customer writes it in the comment. Transfer steps on a
   cash order are refused (`NOT_A_TRANSFER`).
+- **«Yo'q»: a line the shop did not have** (owner's decision, November 2026). Until «Tayyor» (in
+  «Yig'ish kerak» or while collecting) the owner's card has «Yo'q» on each line but the last
+  (`LAST_LINE`: cancel instead; `LINE_NOT_REMOVABLE` after «Tayyor»). The sheet «Mahsulot
+  qolmaganmi?» shows the new sum and, for a paid transfer, «Mijozga {sum} qaytarasiz»;
+  «Bugun sotuvdan olib qo'yish» (on) stops the product until midnight and a counted stock goes
+  to 0. The line stays in the order, marked (`order_items.removed_at`): the owner sees «yo'q
+  edi», the customer «Do'konda yo'q edi». The goods and the commission go down; the delivery fee
+  stays as it was; the bottle deposit never grows; weight is never re-priced. A paid transfer
+  owes the difference (`orders.refund_owed`): «{sum} qaytarish kerak» with «Qaytardim» on the
+  card and in «Pul» → «Mijozlarga qaytarish»; a cancel after it owes everything paid. Cash: the
+  courier takes the new sum. The customer hears «#{n}: {item} do'konda yo'q ekan, …» with the new
+  sum and the money. A line taken out gives no stock back on a cancel.
 - **«Yetkazish haqini mijoz o'zi to'laydi»** (owner's decision, November 2026): a shop that sends
   by a taxi or the post switches it on in «Yetkazib berish». The customer pays the carrier; the
   order adds no delivery fee (the shop's fee and «dan bepul» step aside, a snapshot
@@ -578,7 +590,7 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until, dispatcher (sends orders on by a taxi or the post, writes notes): the person's link to one shop (`network`: took a network order of it) |
 | Trip | id, business_id, courier_id, route (JSON line), distance_m, duration_s: several orders of one shop one way; stops are `orders.trip_id` + `trip_stop` |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), service fee (rate + amount; plan) |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock, `removed_at`: «Yo'q»), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; refund_owed: owed back for lines taken out with «Yo'q»; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces (metres, hours...), or
@@ -600,6 +612,15 @@ cancelled  cancelled  cancelled  cancelled  cancelled
   («tayyorlanmoqda»). A service starts the moment it is accepted (`Business.startsOnAccept`: one
   tap, one message «qabul qilindi va bajarilmoqda»). The shop's only courier and the district
   network are asked right after the accept, as before.
+- **The whole list while collecting** (owner's decision, November 2026): in «Yig'ish kerak» and
+  «Yig'ilmoqda» the owner's card lists every line (the quantity in its own column as wide as the
+  order's longest, the variant under the name, «Yo'q» at the end) and the customer's comment whole
+  («Mijozning iltimosi»); the other stages stay short. Once collecting started each line is a
+  tick («Yig'ildi: 2 / 5», «Hammasi yig'ildi»; food: «Tayyor»), kept on this phone like the ticks
+  of «Ishga tayyor» (`owner/picked.ts`, two days): on the server each tick would cost a request
+  and a row written. Another phone, or the other bot's app, does not see them. «Tayyor bo'ldi»
+  with lines left asks once («{n} ta mahsulot hali belgilanmagan»), only while the ticks are in
+  use. A service has no ticks.
 - A transfer order: `pending → accepted` only when paid: the owner's «Pul keldi, qabul qilish»
   confirms the transfer and accepts it in one step (`Order.advanceTo` refuses an unpaid accept).
   A cash order is accepted at once and becomes paid on `delivered`.
@@ -988,7 +1009,8 @@ console.log            // Use logger
 - Personality: custom icons and empty states with character (no stock illustrations)
 - **Short lists (owner's decision, November 2026):** a card in a long list shows who, what, how
   much and the one next step; «Batafsil» opens the rest (the owner's orders, the courier's
-  deliveries, «Platforma» shops; the one to do now, or a bot message's, is open). A list that
+  deliveries, «Platforma» shops; the one to do now, or a bot message's, is open; an order being
+  collected lists every line). A list that
   spans states gets chips with counts (`ui/filter-chips.tsx`): orders by stage, the catalog by
   state, «Bizneslar» by marks. A label names what the button does, never a near thing.
 - **Living Uzbek (owner's decision, November 2026):** a new or changed string goes through the
@@ -1220,9 +1242,16 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow
 - [ ] Uzbek texts only (no Cyrillic in any dictionary); light app in a dark Telegram
+- [ ] «Yo'q»: a paid two-line order → «Yo'q» on one with «Bugun sotuvdan olib qo'yish» → the
+      sum down, «… qaytarish kerak», the customer told and seeing «Do'konda yo'q edi», the product
+      off sale today → «Qaytardim»; no «Yo'q» on the last line; a cash courier sees the new sum
 - [ ] Collecting: «Pul keldi» → the order under «Yig'ish kerak», the customer hears «qabul
       qilindi» → «Yig'ishni boshlash» → «hozir yig'ilmoqda» → «Tayyor»; a service accepts and
       starts in one tap («qabul qilindi va bajarilmoqda»)
+- [ ] Collecting list: a 9-line order with a comment → every line and «Mijozning iltimosi» under
+      «Yig'ish kerak» → «Yig'ishni boshlash» → ticks «Yig'ildi: 2 / 9» → the app closed and opened,
+      the ticks still there → «Tayyor bo'ldi» asks «7 ta mahsulot hali belgilanmagan» → all ticked,
+      «Hammasi yig'ildi», «Tayyor» without a question; a service: the list, no ticks
 - [ ] Many cards: add, switch the payment card, old orders keep their card
 - [ ] Bank apps: «Raqamni nusxalash» → the sheet with the sum and Click, Payme, Uzum Bank,
       Paynet → each opens its app on a real Android and iPhone (Click on its transfers)

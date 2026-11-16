@@ -7,6 +7,30 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Collecting from the whole list
+- In «Yig'ish kerak» and «Yig'ilmoqda» the owner's card lists every line, with no «Batafsil» or
+  «Yana N ta» (owner's decision, November 2026). The quantity stands large in its own column, as
+  wide as the order's longest («2 qadoq»), with the variant under the name. The customer's comment
+  comes whole under the lines as «Mijozning iltimosi». The other stages stay short.
+- Once collecting started, each line is a tick: «Yig'ildi: 2 / 5» over a thin bar, then «Hammasi
+  yig'ildi» (food: «Tayyor: 2 / 5», «Hammasi tayyor»). The ticks are kept on this phone for two
+  days and outlive a closed app; they cost no request and no row. A service has no ticks.
+- «Tayyor bo'ldi» with lines left asks once: «2 ta mahsulot hali belgilanmagan. Buyurtma
+  tayyormi?». An owner who never ticks is never asked.
+- «Yo'q» on a line is grey: the red stays on the sheet's button.
+
+### «Yo'q»: a line the shop did not have
+- Until «Tayyor» the owner's card has «Yo'q» on each line but the last (owner's decision,
+  November 2026). The sheet «Mahsulot qolmaganmi?» shows the new sum and what goes back to the
+  customer; «Bugun sotuvdan olib qo'yish» (on by default) stops the product until midnight and a
+  counted stock goes to 0.
+- The goods and the commission go down; the delivery fee stays as it was; the bottle deposit
+  never grows. A paid transfer owes the difference: «… qaytarish kerak» with «Qaytardim» on the
+  card and in «Pul» → «Mijozlarga qaytarish». A cash courier takes the new sum.
+- The customer hears «#7: Somsa do'konda yo'q ekan, buyurtmadan olib tashlandi. Yangi summa: …»
+  with the money, and sees the line struck through: «Do'konda yo'q edi».
+- Migration `0029`: `order_items.removed_at`, `orders.refund_owed` and its partial index.
+
 ### Collecting is a step of its own
 - «Qabul qilish» and «Pul keldi» accept the order, and it waits under «Yig'ish kerak»
   («Tayyorlash kerak» for food) until the owner presses «Yig'ishni boshlash» (owner's decision,

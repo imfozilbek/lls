@@ -62,6 +62,7 @@ export function PaymentLine({
     className?: string
 }): React.JSX.Element | null {
     const t = useT()
+    const language = useLanguage()
     const status = order.payment.status
     // A cancelled order nobody paid for has no money story to tell.
     if (order.status === OrderStatus.CANCELLED && status === PaymentStatus.UNPAID) {
@@ -77,6 +78,9 @@ export function PaymentLine({
                       : t.pay.status[status],
               tone: toneOf(status),
           }
+    // Paid for lines the shop did not have («Yo'q»): the customer sees it is coming back. The
+    // owner's card has its own «… qaytarish kerak» with «Qaytardim».
+    const owed = forOwner || status !== PaymentStatus.PAID ? undefined : order.payment.refundOwed
     return (
         <p className={cn("flex items-center gap-2 text-sm", className)}>
             <span className={tone}>{cash ? <CashIcon size={18} /> : <CardIcon size={18} />}</span>
@@ -84,6 +88,11 @@ export function PaymentLine({
                 {cash ? t.pay.cash : t.pay.card}
                 <span className="text-tg-hint"> · </span>
                 <span className="font-semibold">{label}</span>
+                {owed ? (
+                    <span className="block font-semibold text-tg-text">
+                        {fill(t.pay.owedBack, { sum: formatMoney(owed, language) })}
+                    </span>
+                ) : null}
             </span>
         </p>
     )
