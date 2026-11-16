@@ -153,7 +153,7 @@ bo'lsa, buyurtma kartasida **Shu yo'nalishda yana 2 ta** chiqadi. Bosing:
    Tartibni **↑ ↓** bilan o'zgartirasiz, keraksiz buyurtmaning belgisini olib tashlaysiz.
 2. Kuryerni tanlang va **Tayinlash** ni bosing. Kuryerga bitta xabar boradi: «3 ta buyurtma
    bir yo'nalishda, shu tartibda: #12 → #14 → #15».
-3. Kuryer hammasi tayyor bo'lganda **Hammasini oldim**, keyin **Yandex Navigatorda ochish**
+3. Kuryer hammasi tayyor bo'lganda **Hammasini oldim**, keyin **Yo'lni ochish**
    (yo'l hamma manzillar orqali, tartib bilan) va har bir eshik oldida **Yetkazdim** ni bosadi.
 4. Kartadagi **Yo'l · 1-manzil · 1/3 yetkazildi** ni bosing: xaritada yetkazilganlari kulrang,
    keyingisi katta. Yetkazilmaganlarining tartibini shu yerda ham o'zgartirasiz.
@@ -261,6 +261,8 @@ Click/Payme yo'q: pul to'g'ridan-to'g'ri sizga.
 2. Do'kon tasdiqlashini kuting: bot yozadi.
 3. Ishga chiqqanda **🚚 Yetkazishlarim** → **Smenadaman** ni yoqing. Ish tugagach, uni o'chirib qo'ying.
 4. Buyurtma kartasi botga keladi. Tayyor bo'lganda **🚚 Oldim**, eshik oldida: **🏁 Yetkazdim**.
+   **Mijozga yo'l** ni bosing va navigatoringizni tanlang: Yandex Navigator, Yandex Go, Google
+   Maps, 2GIS yoki Yandex Maps.
 5. Kartada **«Oldindan to'langan, mijozdan pul olmang»** bo'lsa, pul olmang. **«Mijozdan …
    naqd oling»** bo'lsa, shu summani oling va **Pulni oldim, yetkazdim** ni bosing. Bu pulni
    do'konga topshirasiz: **Yetkazishlarim** da do'kon yonida «Do'konga topshirasiz: …» turadi.

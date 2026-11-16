@@ -7,6 +7,18 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The route in the courier's own navigation app
+- «Do'konga yo'l», «Mijozga yo'l» and «Yo'lni ochish» opened Yandex Maps only. Now they open a
+  sheet of apps: Yandex Navigator, Yandex Go, Google Maps, 2GIS, Yandex Maps, with the app picked
+  last first, kept on this phone (owner's decision).
+- A trip offers the apps that take several stops: Yandex Navigator, Google Maps, Yandex Maps.
+- An owner who delivers the order themselves («O'zim yetkazaman») gets «Mijozga yo'l» on the open card.
+- The courier bot's card: «🗺 Xaritada ochish» (a pin) became «🧭 Yo'l: …» with the five apps.
+  A message takes only https links, so Navigator goes through the courier app's static page
+  `/navi/`, which opens it and keeps a button. The owner's card keeps its pin.
+- Each https link is one the app claims for itself (its association files); Navigator opens by
+  its own scheme. Opening each one from Telegram is checked on a real Android and iPhone.
+
 ### Three asks of a toy shop's owner
 - **Payme first** among the bank apps after «Raqamni nusxalash»: Payme, Click, Uzum Bank,
   Paynet.
