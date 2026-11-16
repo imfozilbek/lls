@@ -172,6 +172,7 @@ const fail = (status: number, description: string): [number, unknown] => [
 /** Calls that only change a setting: Telegram answers `true`. */
 const ALWAYS_OK = new Set([
     "editMessageText",
+    "deleteMessage",
     "answerCallbackQuery",
     "setChatMenuButton",
     "setMyCommands",

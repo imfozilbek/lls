@@ -152,6 +152,12 @@ export class FakeTelegram implements TelegramGateway {
         }
         this.edited.push({ token, chatId, html, options, messageId })
     }
+    /** Messages the bots removed themselves (the customer's replaced live message). */
+    readonly removed: { token: string; chatId: number; messageId: number }[] = []
+    async deleteMessage(token: string, chatId: number, messageId: number): Promise<void> {
+        this.removed.push({ token, chatId, messageId })
+        this.deletedMessages.add(messageId)
+    }
     async sendPhoto(
         token: string,
         chatId: number,
