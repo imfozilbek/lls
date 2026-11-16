@@ -36,6 +36,7 @@ import {
     ScooterIcon,
     WifiOffIcon,
 } from "../ui/icons.js"
+import { LinePhoto, useProductSheet, useProductsById } from "../ui/line-photo.js"
 import { LoadMore } from "../ui/load-more.js"
 import { OrderBadge } from "../ui/order-status.js"
 import { PaymentLine } from "../ui/payment.js"
@@ -587,38 +588,48 @@ const SHOWN_ITEMS = 3
 function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
     const t = useT()
     const [all, setAll] = useState(false)
+    const products = useProductsById(useOwner((state) => state.products))
+    const productSheet = useProductSheet()
     const hidden = order.items.length - SHOWN_ITEMS
     const shown = all || hidden <= 1 ? order.items : order.items.slice(0, SHOWN_ITEMS)
     return (
-        <ul className="mt-2 flex flex-col gap-0.5">
-            {shown.map((item) => (
-                <li key={item.line} className="flex items-baseline gap-2">
-                    <span className="shrink-0 font-semibold tabular-nums">
-                        {quantityMark(item.quantity, item.unit, t.units)}
-                    </span>
-                    <span className="flex-1">
-                        {item.name}
-                        {item.options ? (
-                            <span className="text-tg-subtitle"> ({item.options.label})</span>
-                        ) : null}
-                    </span>
-                </li>
-            ))}
-            {shown.length < order.items.length ? (
-                <li>
-                    <button
-                        type="button"
-                        onClick={(): void => {
-                            haptic.tap()
-                            setAll(true)
-                        }}
-                        className="tap -ml-1 min-h-11 rounded-control px-1 text-sm font-semibold text-brand"
-                    >
-                        {fill(t.owner.moreItems, { n: hidden })}
-                    </button>
-                </li>
-            ) : null}
-        </ul>
+        <>
+            <ul className="mt-2 flex flex-col gap-1.5">
+                {shown.map((item) => (
+                    <li key={item.line} className="flex items-center gap-2">
+                        <LinePhoto
+                            item={item}
+                            product={products.get(item.productId)}
+                            onOpen={productSheet.open}
+                        />
+                        <span className="shrink-0 font-semibold tabular-nums">
+                            {quantityMark(item.quantity, item.unit, t.units)}
+                        </span>
+                        <span className="flex-1">
+                            {item.name}
+                            {item.options ? (
+                                <span className="text-tg-subtitle"> ({item.options.label})</span>
+                            ) : null}
+                        </span>
+                    </li>
+                ))}
+                {shown.length < order.items.length ? (
+                    <li>
+                        <button
+                            type="button"
+                            onClick={(): void => {
+                                haptic.tap()
+                                setAll(true)
+                            }}
+                            className="tap -ml-1 min-h-11 rounded-control px-1 text-sm font-semibold text-brand"
+                        >
+                            {fill(t.owner.moreItems, { n: hidden })}
+                        </button>
+                    </li>
+                ) : null}
+            </ul>
+            {productSheet.sheet}
+        </>
     )
 }
 
