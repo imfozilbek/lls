@@ -70,15 +70,6 @@ export function tripLine(
     return shop ? [shop, ...points] : points
 }
 
-/**
- * Yandex Navigator (or Yandex Maps) with every stop still to go, in order, from where the
- * courier is now: `rtext=~a~b~c` (an empty start is "my place"), by car.
- */
-export function yandexRouteUrl(stops: readonly Point[]): string {
-    const points = stops.map((p) => `${p.latitude.toFixed(6)},${p.longitude.toFixed(6)}`)
-    return `https://yandex.uz/maps/?rtext=~${points.join("~")}&rtt=auto`
-}
-
 /** Delivered or cancelled: the stop is behind. */
 export function isStopDone(order: OrderDTO): boolean {
     return order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED

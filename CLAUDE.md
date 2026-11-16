@@ -338,9 +338,20 @@ cover each one's whole process; what exactly comes from the meeting with them.
   along the roads comes from OpenRouteService (`api.heigit.org/openrouteservice`; key from
   account.heigit.org in `ORS_API_KEY`, optional; without it the app
   draws straight lines), computed on creating and reordering, stored in D1 (`trips`). The
-  courier: one card per trip, «Hammasini oldim» once all are ready, «Yandex Navigatorda ochish»
-  through every stop still to go, «Yetkazdim» per stop; the bot sends one trip message. A trip
+  courier: one card per trip, «Hammasini oldim» once all are ready, «Yo'lni ochish» through
+  every stop still to go (the apps that take several stops: Yandex Navigator, Google Maps, Yandex
+  Maps), «Yetkazdim» per stop; the bot sends one trip message. A trip
   is over when all its orders are; a cancelled order leaves its way. Network orders stay single.
+- **The route in the courier's own app (owner's decision, November 2026):** «Do'konga yo'l»,
+  «Mijozga yo'l», «Yo'lni ochish» (a trip and its stops) and the owner's «Mijozga yo'l» on «O'zim
+  yetkazaman» open a sheet of navigation apps: Yandex Navigator, Yandex Go, Google Maps, 2GIS,
+  Yandex Maps (`lib/nav-apps.ts`, links built in core `route-links.ts`; icons from the App Store
+  in `public/nav-apps/`). The one picked last stands first (`zumda:nav-app`, on this phone); an
+  app that cannot take several stops is not offered. An https link goes through `openLink`
+  (Telegram hands it to the app that claims it); Navigator opens by its own scheme. The courier
+  bot's card has the same five as «🧭 Yo'l: …» links; a message takes only https, so Navigator
+  goes through the courier app's static page `/navi/?to=LAT,LON` (`public/navi/index.html`),
+  which hands the route over and keeps a button. The route starts where the phone is.
 - **Zumda's own map (owner's decision, October 2026):** OpenStreetMap of Uzbekistan from the
   Protomaps build (mirror `data.source.coop/protomaps/openstreetmap/v4.pmtiles`), cut by
   `go-pmtiles` (`scripts/map-data.mjs`, workflow «Map»: by hand and monthly) into R2
@@ -796,7 +807,7 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   (`shops/<id>/poster-<hash>.png`, public) and downloads in the app («Yuklab olish»:
   `WebApp.downloadFile`, a link in a browser).
 - Courier assigned → order card from the Zumda courier bot, titled with the shop's name (where
-  from: the shop's address; address, landmark, map, the customer's and the shop's phones,
+  from: the shop's address; address, landmark, «🧭 Yo'l» in five apps, the customer's and the shop's phones,
   «Оплачено заранее: денег не брать» or for cash «Mijozdan {sum} naqd oling», empty bottles) with
   "Забрал", then one "Доставил" («Pulni oldim, yetkazdim» for cash). A dispatcher's card: «📮
   Jo'natdim» opens the app (the way and the note), then «Yetkazildi»; the last notes are on it.
@@ -874,7 +885,8 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 - Network courier: approved by a point → «Да, для района» in the Zumda courier bot → "on shift" →
   «Новый заказ рядом» → «Беру» → full card → Picked up → Delivered
 - Trip: owner «Shu yo'nalishda yana N ta» → «Bir yo'nalish» (order, courier) → «Tayinlash» →
-  courier «Hammasini oldim» → «Yandex Navigatorda ochish» → «Yetkazdim» stop by stop
+  courier «Hammasini oldim» → «Yo'lni ochish» (Navigator, Google Maps, Yandex Maps) → «Yetkazdim»
+  stop by stop
 
 ## Security (MANDATORY)
 
@@ -1301,6 +1313,10 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       photo; a tap opens the product (photos, price, description); ticks and «Yo'q» as before;
       a deleted product shows its category's picture and opens nothing
 - [ ] Shift: «Smenadaman» on today is still on tomorrow, off only when switched off
+- [ ] Route apps: «Mijozga yo'l» → Yandex Navigator, Yandex Go, Google Maps, 2GIS, Yandex Maps →
+      each opens on the route on a real Android and iPhone; the one picked comes first next time;
+      a trip offers three; the courier bot's «🧭 Yo'l» links open the same (Navigator through
+      `/navi/`); the owner's «Mijozga yo'l» on «O'zim yetkazaman»
 - [ ] Empty states handling
 
 ## Release Checklist

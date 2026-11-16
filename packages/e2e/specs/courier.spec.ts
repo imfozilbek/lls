@@ -112,7 +112,12 @@ test("the card comes from the courier bot with the shop's name; no buttons until
     // Paid to the shop's card before cooking: nothing to take at the door.
     expect(card.text).toContain("Oldindan to'langan, mijozdan pul olmang")
     expect(card.text).toContain("bozor yonida")
-    expect(card.text).toContain("yandex")
+    // The way in five apps; Navigator through the app's page (a message takes only https).
+    expect(card.text).toContain("🧭 Yo'l: ")
+    for (const name of ["Yandex Navigator", "Yandex Go", "Google Maps", "2GIS", "Yandex Maps"]) {
+        expect(card.text).toContain(`>${name}</a>`)
+    }
+    expect(card.text).toContain('href="http://localhost:5173/navi/?to=38.976000,66.686000"')
     expect(card.buttons.filter((b) => b.callback_data)).toHaveLength(0)
     expect(card.text).toContain("Buyurtma tayyor bo'lganda xabar beramiz")
     // Accepting started it: «Tayyor» is the shop's last step.
@@ -141,9 +146,30 @@ test("ready → «Забрал» in the courier bot → «Доставил» in 
     expect(told.text).toContain("Jasur")
     expect(told.text).toContain("📞 Kuryer: +998 90 111 22 33")
 
-    await openApp(page, { user: PEOPLE.courier, courierBot: true })
+    const app = await openApp(page, { user: PEOPLE.courier, courierBot: true })
     await expect(page.getByRole("heading", { name: "Yetkazishlarim" })).toBeVisible()
     await expect(page.getByText("Oldindan to'langan, pul olmang")).toBeVisible()
+
+    // «Mijozga yo'l»: the courier's own app; the one picked last comes first next time.
+    await page.getByRole("button", { name: "Mijozga yo'l" }).first().click()
+    const apps = page.getByRole("dialog", { name: "Yo'lni ochish" }).getByRole("listitem")
+    await expect(apps).toHaveText([
+        "Yandex Navigator",
+        "Yandex Go",
+        "Google Maps",
+        "2GIS",
+        "Yandex Maps",
+    ])
+    await apps.getByRole("button", { name: "Google Maps" }).click()
+    const opened = (await app.calls()).filter((c) => c.method === "openLink").at(-1)
+    expect(opened?.args[0]).toBe(
+        "https://www.google.com/maps/dir/?api=1&destination=38.976000%2C66.686000&travelmode=driving",
+    )
+    await page.getByRole("button", { name: "Mijozga yo'l" }).first().click()
+    await expect(apps.first()).toHaveText("Google Maps")
+    await page.keyboard.press("Escape")
+    await expect(apps).toHaveCount(0)
+
     const before = await lastSeq()
     // One «Доставил»: the money is already the shop's, nobody asks how it was paid.
     await page.getByRole("button", { name: "Yetkazdim", exact: true }).click()

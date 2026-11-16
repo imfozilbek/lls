@@ -49,6 +49,7 @@ import {
     Spinner,
     TextInput,
 } from "../ui/primitives.js"
+import { RouteButton } from "../ui/route-button.js"
 import { Sheet, SheetOption } from "../ui/sheet.js"
 import { BottomSpacer } from "../ui/shell.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
@@ -702,6 +703,14 @@ function CardDetails({
             ) : null}
             <div className="mt-3 flex flex-col gap-2 border-t border-tg-separator pt-3 text-sm">
                 <CompactAddress order={order} shop={shopPlace} withComment={!isCollecting(order)} />
+                {/* «O'zim yetkazaman»: the way to the door in the owner's own app. */}
+                {live && order.ownerDelivers && order.location ? (
+                    <RouteButton
+                        stops={[order.location]}
+                        label={t.courier.toCustomer}
+                        className="tap flex h-11 items-center justify-center gap-2 rounded-control bg-tg-bg font-semibold"
+                    />
+                ) : null}
                 <CourierLine order={order} />
                 {live ? <CourierAction order={order} actions={actions} /> : null}
             </div>

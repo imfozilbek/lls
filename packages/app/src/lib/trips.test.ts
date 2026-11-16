@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { canJoinTrip, sameWayOrders, suggestedOrder, tripLine, yandexRouteUrl } from "./trips.js"
+import { canJoinTrip, sameWayOrders, suggestedOrder, tripLine } from "./trips.js"
 
 import type { OrderDTO, TripDTO } from "@zumda/core"
 
@@ -41,11 +41,5 @@ describe("trips in the app", () => {
         expect(tripLine(null, SHOP, stops)).toEqual([SHOP, north(1), north(2)])
         const trip = { route: { line: [SHOP], distanceMeters: 1, durationSeconds: 1 } } as TripDTO
         expect(tripLine(trip, SHOP, stops)).toEqual([SHOP])
-    })
-
-    it("opens Yandex with the stops in order, from where the courier is", () => {
-        expect(yandexRouteUrl([north(1), north(2)])).toBe(
-            `https://yandex.uz/maps/?rtext=~${north(1).latitude.toFixed(6)},66.683100~${north(2).latitude.toFixed(6)},66.683100&rtt=auto`,
-        )
     })
 })

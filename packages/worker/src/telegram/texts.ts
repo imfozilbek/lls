@@ -19,6 +19,8 @@ const BASE = {
         landmark: "mo'ljal",
         moreItems: "… va yana {n} ta",
         map: "Xaritada ochish",
+        /** «🧭 Yo'l: Yandex Navigator · Yandex Go · …» on the courier's card. */
+        route: "Yo'l",
         status: "Holat",
         courier: "Kuryer",
         bottlesBack: "Bo'sh idish qaytaradi: {n} ta",

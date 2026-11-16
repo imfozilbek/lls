@@ -166,6 +166,12 @@ test("«O'zim yetkazaman» takes it back from the dispatcher: the old steps retu
     await expect(sheet.getByRole("button", { name: /Jasur · Dispetcher/ })).toBeVisible()
     await sheet.getByRole("button", { name: /O'zim yetkazaman/ }).click()
     await expect(mine.getByText("Dispetcher: Jasur")).toHaveCount(0)
+    // The owner goes himself: the way to the door in his own app.
+    await mine.getByRole("button", { name: "Mijozga yo'l" }).click()
+    await expect(
+        page.getByRole("dialog", { name: "Yo'lni ochish" }).getByRole("listitem"),
+    ).toHaveCount(5)
+    await page.keyboard.press("Escape")
     await mine.getByRole("button", { name: "Tayyor bo'ldi" }).click()
     await expect(mine.getByRole("button", { name: "Jo'natish" })).toBeVisible()
 })

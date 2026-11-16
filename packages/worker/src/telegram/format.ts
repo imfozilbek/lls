@@ -6,8 +6,12 @@ import {
     PaymentStatus,
     Unit,
     formatPhone,
+    googleMapsUrl,
     isWeightUnit,
     mapUrl,
+    twoGisUrl,
+    yandexGoUrl,
+    yandexMapsUrl,
 } from "@zumda/core"
 
 import { appButton } from "./app-links.js"
@@ -74,15 +78,41 @@ function itemLines(order: OrderDTO, t: BotTexts, language: Language): string[] {
     return hidden > 0 ? [...shown, fill(t.moreItems, { n: hidden })] : shown
 }
 
-function addressLines(order: OrderDTO, t: BotTexts): string[] {
+/** The owner's card: the customer's place on Yandex Maps. */
+function pinLine(order: OrderDTO, t: BotTexts): string | null {
+    return order.location ? `🗺 <a href="${mapUrl(order.location)}">${t.map}</a>` : null
+}
+
+/**
+ * The courier's card: the way to the customer in each navigation app (owner's decision, November
+ * 2026). A message takes only https links, so Navigator goes through the app's `/navi/` page.
+ */
+function routeLine(order: OrderDTO, t: BotTexts, naviPage: string): string | null {
+    const to = order.location
+    if (!to) {
+        return null
+    }
+    const stops = [to]
+    const links: [string, string | null][] = [
+        ["Yandex Navigator", `${naviPage}?to=${to.latitude.toFixed(6)},${to.longitude.toFixed(6)}`],
+        ["Yandex Go", yandexGoUrl(stops)],
+        ["Google Maps", googleMapsUrl(stops)],
+        ["2GIS", twoGisUrl(stops)],
+        ["Yandex Maps", yandexMapsUrl(stops)],
+    ]
+    const shown = links.flatMap(([name, url]) => (url ? [`<a href="${url}">${name}</a>`] : []))
+    return `🧭 ${t.route}: ${shown.join(" · ")}`
+}
+
+function addressLines(order: OrderDTO, t: BotTexts, mapLine: string | null): string[] {
     const phone = order.customerPhone ? `, ${formatPhone(order.customerPhone)}` : ""
     const landmark = order.landmark ? ` (${t.landmark}: ${escapeHtml(order.landmark)})` : ""
     const lines = [
         `👤 ${escapeHtml(order.customerName)}${phone}`,
         `📍 ${escapeHtml(order.address)}${landmark}`,
     ]
-    if (order.location) {
-        lines.push(`🗺 <a href="${mapUrl(order.location)}">${t.map}</a>`)
+    if (mapLine) {
+        lines.push(mapLine)
     }
     if (order.comment) {
         lines.push(`💬 ${escapeHtml(order.comment)}`)
@@ -180,7 +210,7 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
     if (order.bottlesReturned > 0) {
         lines.push(fill(t.bottlesBack, { n: order.bottlesReturned }))
     }
-    lines.push("", ...addressLines(order, t))
+    lines.push("", ...addressLines(order, t, pinLine(order, t)))
     lines.push(...courierLines(order, t))
     lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
     if (order.channel === OrderChannel.MARKETPLACE) {
@@ -248,6 +278,8 @@ export function formatOrderForCourier(
     order: OrderDTO,
     reader: Reader,
     shop: { name: string; phone?: string; address?: string },
+    /** The courier app's `/navi/` page, which hands the route to Yandex Navigator. */
+    links: { naviPage: string },
 ): string {
     const { language } = reader
     const t = textsFor(language, reader.type)
@@ -263,7 +295,7 @@ export function formatOrderForCourier(
     }
     // Where from and where to, on every step: a dispatcher tells a taxi both.
     lines.push("", fill(t.pickupFrom, { place: escapeHtml(shop.address ?? shop.name) }))
-    lines.push(...addressLines(order, t))
+    lines.push(...addressLines(order, t, routeLine(order, t, links.naviPage)))
     if (shop.phone) {
         lines.push(fill(t.shopPhone, { phone: formatPhone(shop.phone) }))
     }
