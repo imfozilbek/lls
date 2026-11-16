@@ -794,9 +794,15 @@ etish» from the shop bot (`k:<courierId>:approve|decline`) or approves in "Мо
   the customer's «Chekni yuklash» blue. One tap copies (`copy_text`): the card number for the
   customer, «Manzil va telefonni nusxalash» for the courier (a taxi), the bot's link after
   approval. A line about an order answers its card (`reply_parameters`): the screenshot (its sum
-  over the picture), the payment question, a customer's cancel, the network's news, «tayyor,
-  olib keting». Not used: rich messages, tables and widgets (Bot API 10.x, 2026: older phones in
-  the regions do not show them), reactions, pinning.
+  over the picture), the payment question, a customer's cancel, the network's news. Not used:
+  rich messages, tables and widgets (Bot API 10.x, 2026: older phones in the regions do not show
+  them), reactions, pinning.
+- **No noise** (owner's decision, November 2026): what is done leaves the chat, what needs
+  nothing comes quietly. «Tayyor» brings the courier's card again with a sound and deletes the
+  one before (no ping under it); a network order taken (or given to the shop's own courier)
+  deletes every offer; an answered «Pul keldi» question is deleted, the screenshot keeps the
+  picture without its buttons; a trip's cards come quietly and its message rings once; the
+  owner's lines that the network asked or took an order come quietly (the card shows it).
 - **The customer's one live message per order** (owner's decision, November 2026,
   `orders.customer_message_id`): the step, the money, the place, whom to call (the shop; the
   courier on the way), the dispatcher's last notes, the lines and the total folded. What they
@@ -834,6 +840,7 @@ etish» from the shop bot (`k:<courierId>:approve|decline`) or approves in "Мо
   "Забрал", then one "Доставил" («Pulni oldim, yetkazdim» for cash), and «Manzil va telefonni
   nusxalash» on every live step. A dispatcher's card: «📮
   Jo'natdim» opens the app (the way and the note), then «Yetkazildi»; the last notes are on it.
+  «Tayyor» renews the card with a sound (no separate ping).
 - A dispatcher's «Jo'natdim» → the customer hears how it went («taksi bilan», «pochta orqali»…),
   with the note, «Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz» when the customer pays the
   carrier, and the dispatcher's phone; each further note renews the customer's message («📝 #7

@@ -34,6 +34,10 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **A new courier reaches the owner once there is someone to approve**: the name and the phone
   together, after the phone came.
 - After approval, «📋 Havolani nusxalash» copies the bot's link for the owner's customers.
+- **Less noise.** «Tayyor» brings the courier's card again with a sound and deletes the old one
+  (no ping left under it); a network order taken deletes every offer instead of «boshqa kuryer
+  oldi»; an answered «Pul keldi» question is deleted and the screenshot loses its buttons; a
+  trip's cards come quietly, its message rings once; the owner's network lines come quietly.
 - Migration `0033`: `orders.customer_message_id`, `orders.owner_message_via`.
 - Not used: rich messages, tables and widgets of Bot API 10.x (older phones in the regions do not
   show them), reactions, pinning.
