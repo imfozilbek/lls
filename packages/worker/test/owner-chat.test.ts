@@ -123,9 +123,9 @@ describe("the shop's bot cannot write to its owner", () => {
             const keys = message.options?.keyboard?.inline_keyboard.flat() ?? []
             expect(keys.some((b) => b.callback_data !== undefined)).toBe(false)
         }
-        expect(toOwner.some((m) => m.html.includes("Yangi buyurtma"))).toBe(true)
+        expect(toOwner.some((m) => m.html.includes("🆕 Yangi · <b>#1"))).toBe(true)
         // The app button opens this business on this order, not the list of businesses.
-        const card = toOwner.find((m) => m.html.includes("Yangi buyurtma"))
+        const card = toOwner.find((m) => m.html.includes("🆕 Yangi · <b>#1"))
         const app = card?.options?.keyboard?.inline_keyboard.flat().find((b) => b.web_app)
         expect(app?.web_app?.url).toBe(
             `https://business.zumda.test/?mode=business&shop=${slug}&order=${orderId}`,

@@ -9,7 +9,6 @@ type StatusTexts = Partial<Record<OrderStatus, string>>
 const BASE = {
     [Language.UZ]: {
         currency: "so'm",
-        newOrder: "🆕 Yangi buyurtma",
         demoOrder: "🧪 Namuna buyurtma: haqiqiy emas, pul o'tkazilmaydi",
         order: "Buyurtma",
         delivery: "Yetkazib berish",
@@ -21,7 +20,6 @@ const BASE = {
         map: "Xaritada ochish",
         /** «🧭 Yo'l: Yandex Navigator · Yandex Go · …» on the courier's card. */
         route: "Yo'l",
-        status: "Holat",
         courier: "Kuryer",
         bottlesBack: "Bo'sh idish qaytaradi: {n} ta",
         cancelledByCustomer: "❌ Mijoz buyurtmani bekor qildi",

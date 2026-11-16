@@ -281,11 +281,17 @@ describe("shop couriers, verticals and channels", () => {
         expect(card?.token).toBe(env.COURIER_BOT_TOKEN)
         expect(card?.html).toContain("Osh Markaz")
         expect(card?.html).toContain("Navoiy 12")
-        expect(card?.html).toContain("70 000")
+        // What to take, without prices: the money is its own line.
+        expect(card?.html).toContain("<blockquote expandable>Osh × 2 porsiya</blockquote>")
+        expect(card?.html).not.toContain("70 000")
         // Paid to the shop's card before cooking: nothing to take at the door.
         expect(card?.html).toContain("mijozdan pul olmang")
-        // Nothing to press yet, only the way into the courier screen, on this order.
+        // Nothing to press yet: the place to copy, and the way into the courier screen.
         expect(card?.options?.keyboard?.inline_keyboard.flat()).toEqual([
+            {
+                text: "📋 Manzil va telefonni nusxalash",
+                copy_text: { text: "Navoiy 12, Aziz Karimov, +998 90 123 45 67" },
+            },
             {
                 text: "📱 Ilovada ochish",
                 web_app: { url: `https://delivery.zumda.test/?mode=courier&order=${order.id}` },
@@ -468,7 +474,7 @@ describe("shop couriers, verticals and channels", () => {
             (m) => m.chatId === second.id && m.html.includes("#1"),
         )
         // Bobur's Telegram is in Russian; the product speaks Uzbek only.
-        expect(toBobur?.html).toContain("Yetkazib berish")
+        expect(toBobur?.html).toContain("Qayerdan")
         const removed = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
         expect(removed?.token).toBe(env.COURIER_BOT_TOKEN)
         expect(removed?.html).toContain("#1")

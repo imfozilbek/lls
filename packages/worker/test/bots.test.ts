@@ -477,6 +477,7 @@ describe("shop bot", () => {
         expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual({
             text: "💳 Pul keldi, qabul qilish",
             callback_data: `p:${order.id}`,
+            style: "success",
         })
         await shopUpdate({ callback_query: { id: "cb-q", from: OWNER, data: `p:${order.id}` } })
         const question = client.telegram.sent.at(-1)
@@ -497,6 +498,7 @@ describe("shop bot", () => {
         expect(edited?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual({
             text: "👨‍🍳 Tayyorlashni boshlash",
             callback_data: `a:${order.id}:preparing`,
+            style: "success",
         })
         expect(edited?.html).toContain("O'tkazma bilan to'langan")
         const toCustomer = client.telegram.sent.at(-1)

@@ -347,8 +347,9 @@ describe("money: transfer before the shop starts, report, files", () => {
         })
         const card = client.telegram.edited.filter((m) => m.chatId === COURIER.id).at(-1)
         const buttons = card?.options?.keyboard?.inline_keyboard.flat() ?? []
-        expect(buttons.map((b) => b.callback_data ?? b.web_app?.url)).toEqual([
+        expect(buttons.map((b) => b.callback_data ?? b.copy_text?.text ?? b.web_app?.url)).toEqual([
             `a:${order.id}:delivered`,
+            "Navoiy 12, Aziz Karimov, +998 90 123 45 67",
             `https://delivery.zumda.test/?mode=courier&order=${order.id}`,
         ])
         expect(card?.html).toContain("mijozdan pul olmang")
