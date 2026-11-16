@@ -166,7 +166,7 @@ cover each one's whole process; what exactly comes from the meeting with them.
   until then. No change (qaytim) field: the customer writes it in the comment. Transfer steps on a
   cash order are refused (`NOT_A_TRANSFER`).
 - **«Yo'q»: a line the shop did not have** (owner's decision, November 2026). Until «Tayyor» (in
-  «Yig'ish kerak» or while collecting) the owner's open card has «Yo'q» on each line but the last
+  «Yig'ish kerak» or while collecting) the owner's card has «Yo'q» on each line but the last
   (`LAST_LINE`: cancel instead; `LINE_NOT_REMOVABLE` after «Tayyor»). The sheet «Mahsulot
   qolmaganmi?» shows the new sum and, for a paid transfer, «Mijozga {sum} qaytarasiz»;
   «Bugun sotuvdan olib qo'yish» (on) stops the product until midnight and a counted stock goes
@@ -612,6 +612,15 @@ cancelled  cancelled  cancelled  cancelled  cancelled
   («tayyorlanmoqda»). A service starts the moment it is accepted (`Business.startsOnAccept`: one
   tap, one message «qabul qilindi va bajarilmoqda»). The shop's only courier and the district
   network are asked right after the accept, as before.
+- **The whole list while collecting** (owner's decision, November 2026): in «Yig'ish kerak» and
+  «Yig'ilmoqda» the owner's card lists every line (the quantity in its own column as wide as the
+  order's longest, the variant under the name, «Yo'q» at the end) and the customer's comment whole
+  («Mijozning iltimosi»); the other stages stay short. Once collecting started each line is a
+  tick («Yig'ildi: 2 / 5», «Hammasi yig'ildi»; food: «Tayyor»), kept on this phone like the ticks
+  of «Ishga tayyor» (`owner/picked.ts`, two days): on the server each tick would cost a request
+  and a row written. Another phone, or the other bot's app, does not see them. «Tayyor bo'ldi»
+  with lines left asks once («{n} ta mahsulot hali belgilanmagan»), only while the ticks are in
+  use. A service has no ticks.
 - A transfer order: `pending → accepted` only when paid: the owner's «Pul keldi, qabul qilish»
   confirms the transfer and accepts it in one step (`Order.advanceTo` refuses an unpaid accept).
   A cash order is accepted at once and becomes paid on `delivered`.
@@ -1000,7 +1009,8 @@ console.log            // Use logger
 - Personality: custom icons and empty states with character (no stock illustrations)
 - **Short lists (owner's decision, November 2026):** a card in a long list shows who, what, how
   much and the one next step; «Batafsil» opens the rest (the owner's orders, the courier's
-  deliveries, «Platforma» shops; the one to do now, or a bot message's, is open). A list that
+  deliveries, «Platforma» shops; the one to do now, or a bot message's, is open; an order being
+  collected lists every line). A list that
   spans states gets chips with counts (`ui/filter-chips.tsx`): orders by stage, the catalog by
   state, «Bizneslar» by marks. A label names what the button does, never a near thing.
 - **Living Uzbek (owner's decision, November 2026):** a new or changed string goes through the
@@ -1238,6 +1248,10 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Collecting: «Pul keldi» → the order under «Yig'ish kerak», the customer hears «qabul
       qilindi» → «Yig'ishni boshlash» → «hozir yig'ilmoqda» → «Tayyor»; a service accepts and
       starts in one tap («qabul qilindi va bajarilmoqda»)
+- [ ] Collecting list: a 9-line order with a comment → every line and «Mijozning iltimosi» under
+      «Yig'ish kerak» → «Yig'ishni boshlash» → ticks «Yig'ildi: 2 / 9» → the app closed and opened,
+      the ticks still there → «Tayyor bo'ldi» asks «7 ta mahsulot hali belgilanmagan» → all ticked,
+      «Hammasi yig'ildi», «Tayyor» without a question; a service: the list, no ticks
 - [ ] Many cards: add, switch the payment card, old orders keep their card
 - [ ] Bank apps: «Raqamni nusxalash» → the sheet with the sum and Click, Payme, Uzum Bank,
       Paynet → each opens its app on a real Android and iPhone (Click on its transfers)
