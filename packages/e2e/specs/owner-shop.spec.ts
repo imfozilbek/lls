@@ -35,13 +35,14 @@ test("«Ishga tayyor»: a shop open around the clock ticks «Ish vaqti» with on
         await folded.click()
     }
     const ready = page.getByRole("region", { name: "Ishga tayyor" })
-    const doneBefore = Number(/(\d+)\/7/.exec((await ready.textContent()) ?? "")?.[1])
+    const [, done, all] = /(\d+)\/(\d+)/.exec((await ready.textContent()) ?? "") ?? []
+    const doneBefore = Number(done)
     await ready.getByRole("button", { name: "Kecha-kunduz ochiqmiz" }).click()
     // One step closer; the last required one makes the whole card go away.
-    if (doneBefore + 1 === 7) {
+    if (doneBefore + 1 === Number(all)) {
         await expect(ready).toHaveCount(0)
     } else {
-        await expect(ready).toContainText(`${doneBefore + 1}/7`)
+        await expect(ready).toContainText(`${doneBefore + 1}/${all}`)
     }
 })
 

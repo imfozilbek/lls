@@ -61,7 +61,15 @@ test("a price never chosen: no «bepul» on the storefront, in the cart, the ord
 test("«Ishga tayyor» asks for the price; «Bepul» is then said everywhere", async ({ page }) => {
     await openApp(page, { user: PEOPLE.groceryOwner, shop: GROCERY })
     await page.getByRole("button", { name: "Mening do'konim" }).click()
-    await page.getByRole("button", { name: /Yetkazib berish narxi/ }).click()
+    // An order is waiting, so the card is folded on its next step: open it, then the step.
+    await expect(page.getByText("Buyurtma #1", { exact: true })).toBeVisible()
+    const folded = page.getByRole("button", { expanded: false }).filter({ hasText: "Ishga tayyor" })
+    await expect(folded).toContainText("Yetkazib berish narxi")
+    await folded.click()
+    await page
+        .getByRole("region", { name: "Ishga tayyor" })
+        .getByRole("button", { name: /Yetkazib berish narxi/ })
+        .click()
     await expect(page.getByRole("heading", { name: "Yetkazib berish", level: 1 })).toBeVisible()
     const choices = page.getByRole("radiogroup", { name: "Yetkazib berish narxi" })
     await expect(page.getByText("Hali tanlanmagan, mijozlar buni ko'rmaydi")).toBeVisible()
