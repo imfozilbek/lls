@@ -8,7 +8,7 @@ import { expect, test } from "@playwright/test"
 import { courierBot } from "../stand/config.js"
 import { runSql } from "../stand/seed.js"
 import { FOOD, PEOPLE, apiAs, payAndStart, placeOrder, resetStand } from "../support/stand.js"
-import { courierChat, lastSeq, messagesTo, waitForMessage } from "../support/telegram.js"
+import { callsOf, courierChat, lastSeq, messagesTo, waitForMessage } from "../support/telegram.js"
 import { appQueryOf, openApp, openOrderCard, openSettings } from "../support/webapp.js"
 
 import type { PlacedOrder } from "../support/stand.js"
@@ -81,7 +81,7 @@ test("no free courier of its own: the order goes to the network, without the cus
     expect(jasur.filter((m) => m.text.includes(`#${order.number}`))).toEqual([])
 })
 
-test("the first «Беру» wins; the second hears it is taken; the owner learns who brings it", async () => {
+test("the first «Беру» wins; the other offer goes; the owner learns who brings it", async () => {
     const since = await lastSeq()
     const order = await placeAndAccept()
     const otabek = await offerFor(PEOPLE.networkCourier.id, order, since)
@@ -89,7 +89,14 @@ test("the first «Беру» wins; the second hears it is taken; the owner learn
 
     await courierChat().press(PEOPLE.networkCourier, otabek.data, 1)
     await courierChat().press(PEOPLE.networkCourier2, `n:${order.id}`, 1)
-    await waitForMessage(PEOPLE.networkCourier2.id, "boshqa kuryer oldi", since)
+    // Taken: the offer goes from the other courier's chat (nothing to do with it any more).
+    await expect
+        .poll(async () =>
+            (await callsOf("deleteMessage", since)).some(
+                (c) => Number(c.body["chat_id"]) === PEOPLE.networkCourier2.id,
+            ),
+        )
+        .toBe(true)
     const card = await waitForMessage(PEOPLE.networkCourier.id, "Navoiy 12", since)
     expect(card.text).toContain("Osh Markaz")
     expect(card.text).toContain("bozor yonida")
