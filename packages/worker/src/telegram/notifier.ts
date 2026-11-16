@@ -128,7 +128,10 @@ export class Notifier {
                 )
                 await this.services.orders.setMessageId(order.id, "owner", messageId)
             },
-            (note) => this.noteToOwner(business, note, text),
+            async (note) => {
+                const card = await this.noteToOwner(business, note, text)
+                await this.services.orders.setMessageId(order.id, "owner", card, "business")
+            },
             order.id,
         )
     }
@@ -171,11 +174,14 @@ export class Notifier {
             ...receiptWarnings(order, t),
         ].join("\n")
         const url = shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value, order.id)
+        // The sum over the picture, answering the order's card: the owner reads what to check.
         const options = {
             keyboard: withAppButton(
                 confirmPaidKeyboard(order, t, sum),
                 appButton(t.openOrder, url),
             ),
+            replyTo: await this.ownerCardInShopBot(order.id),
+            captionAbove: true,
         }
         const file = {
             name: `chek-${order.number}.${receipt.contentType.split("/")[1] ?? "jpg"}`,
@@ -210,7 +216,7 @@ export class Notifier {
                         ownerId,
                         file,
                         `${note.text}\n\n${caption}`,
-                        { keyboard: note.keyboard },
+                        { keyboard: note.keyboard, captionAbove: true },
                     )
                 } catch (error) {
                     if (!(error instanceof TelegramApiError) || isRecipientProblem(error)) {
@@ -946,24 +952,48 @@ export class Notifier {
         business: Business,
         order: OrderDTO,
     ): Promise<void> {
-        const { owner: messageId } = await this.services.orders.getMessageIds(order.id)
+        const { owner: messageId, ownerVia } = await this.services.orders.getMessageIds(order.id)
         const ownerId = business.ownerTelegramId.value
         const owner = await this.readerFor(ownerId, business)
         const text = formatOrderForOwner(order, owner)
+        const businessBot = this.services.env.BUSINESS_BOT_TOKEN
         await this.reachOwner(
             business,
             async () => {
-                const sent = await this.upsertCard(token, ownerId, messageId, {
+                // A card in Zumda | Business is not this bot's to edit: a new one comes here.
+                const here = ownerVia === "shop" ? messageId : null
+                const sent = await this.upsertCard(token, ownerId, here, {
                     text,
                     keyboard: await this.ownerKeyboard(business, order, owner),
                 })
                 if (sent !== null) {
                     await this.services.orders.setMessageId(order.id, "owner", sent)
                 }
+                // The shop's bot writes again: the old card in Zumda | Business goes.
+                if (ownerVia === "business" && messageId !== null) {
+                    await this.services.telegram.deleteMessage(businessBot, ownerId, messageId)
+                }
             },
-            (note) => this.noteToOwner(business, note, text),
+            async (note) => {
+                // The shop's bot may not write: the card in Zumda | Business is edited there, one
+                // card per order, not a new copy on every step.
+                const there = ownerVia === "business" ? messageId : null
+                const sent = await this.upsertCard(businessBot, ownerId, there, {
+                    text: `${note.text}\n\n${text}`,
+                    keyboard: note.keyboard,
+                })
+                if (sent !== null) {
+                    await this.services.orders.setMessageId(order.id, "owner", sent, "business")
+                }
+            },
             order.id,
         )
+    }
+
+    /** The owner's card when it is in the shop's bot: a line about the order answers it. */
+    private async ownerCardInShopBot(orderId: string): Promise<number | undefined> {
+        const { owner, ownerVia } = await this.services.orders.getMessageIds(orderId)
+        return ownerVia === "shop" && owner !== null ? owner : undefined
     }
 
     /**
@@ -1011,6 +1041,7 @@ export class Notifier {
             const t = textsFor(reader.language)
             await this.services.telegram.sendMessage(token, chatId, ping, {
                 keyboard: { inline_keyboard: [[this.courierAppButton(t, undefined, order.id)]] },
+                replyTo: sent ?? messageId,
             })
         }
     }
@@ -1148,9 +1179,13 @@ export class Notifier {
         token: string,
         text: string,
         keyboard: InlineKeyboard,
-        /** About this order: the Zumda | Business button opens it. */
+        /**
+         * About this order: the Zumda | Business button opens it, and in the shop's bot the line
+         * answers the order's card (the quote is the context).
+         */
         orderId?: string,
     ): Promise<OwnerDelivery> {
+        const replyTo = orderId ? await this.ownerCardInShopBot(orderId) : undefined
         return this.reachOwner(
             business,
             async () => {
@@ -1158,7 +1193,7 @@ export class Notifier {
                     token,
                     business.ownerTelegramId.value,
                     text,
-                    { keyboard },
+                    { keyboard, replyTo },
                 )
             },
             (note) => this.noteToOwner(business, note, text),
@@ -1234,13 +1269,15 @@ export class Notifier {
         }
     }
 
-    private async noteToOwner(business: Business, note: OwnerNote, text: string): Promise<void> {
-        await this.services.telegram.sendMessage(
+    /** Through Zumda | Business with the note on top; the id of the message sent. */
+    private async noteToOwner(business: Business, note: OwnerNote, text: string): Promise<number> {
+        const sent = await this.services.telegram.sendMessage(
             this.services.env.BUSINESS_BOT_TOKEN,
             business.ownerTelegramId.value,
             `${note.text}\n\n${text}`,
             { keyboard: note.keyboard },
         )
+        return sent.messageId
     }
 
     private courierAppButton(t: BotTexts, label = t.openInApp, orderId?: string): InlineButton {

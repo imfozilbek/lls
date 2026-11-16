@@ -138,6 +138,56 @@ describe("the shop's bot cannot write to its owner", () => {
         ).toBe(true)
     })
 
+    it("the card in Zumda | Business is edited there; after Start the shop's bot takes it over", async () => {
+        const product = await as(OWNER)("/api/owner/products", {
+            method: "POST",
+            json: { name: "Osh", price: 35_000, unit: "portion", category: "meals" },
+        })
+        const { id: productId } = (await product.json()) as { id: string }
+        await as(CUSTOMER)("/api/me")
+        await sharePhoneWithShops(CUSTOMER.id)
+        // Cash: accepted at once, the card moves without a screenshot.
+        await as(OWNER)("/api/owner/shop", { method: "PATCH", json: { paymentOptions: "cash" } })
+        const order = (await (
+            await as(CUSTOMER)("/api/orders", {
+                method: "POST",
+                json: { items: [{ productId, quantity: 1 }], address: "Navoiy 12", location: PIN },
+            })
+        ).json()) as { id: string }
+        const viaBusiness = (): { html: string; messageId?: number }[] => [
+            ...client.telegram.sent.filter(
+                (m) => m.chatId === OWNER.id && m.token === env.BUSINESS_BOT_TOKEN,
+            ),
+        ]
+        const card = viaBusiness().find((m) => m.html.includes("🆕 Yangi · <b>#1"))
+        expect(card).toBeDefined()
+        const before = viaBusiness().length
+
+        // Accepted and started: the same card changes in Zumda | Business, nothing new comes.
+        const step = (status: string): Promise<Response> =>
+            as(OWNER)(`/api/owner/orders/${order.id}`, { method: "PATCH", json: { status } })
+        await step("accepted")
+        expect(viaBusiness()).toHaveLength(before)
+        const edit = client.telegram.edited.filter((m) => m.chatId === OWNER.id).at(-1)
+        expect(edit?.token).toBe(env.BUSINESS_BOT_TOKEN)
+        expect(edit?.html).toContain("sizga yoza olmadi")
+        expect(edit?.html).toContain("✅ Qabul qilindi · <b>#1")
+        const businessCard = edit?.messageId
+
+        // Start in the shop's bot: the next step brings the card there, the old one goes.
+        client.telegram.notStarted.clear()
+        await pressStart()
+        await step("preparing")
+        const fresh = client.telegram.sent.filter((m) => m.chatId === OWNER.id).at(-1)
+        expect(fresh?.token).toBe(SHOP_BOT_TOKEN)
+        expect(fresh?.html).toContain("Tayyorlanmoqda · <b>#1")
+        expect(client.telegram.removed).toContainEqual({
+            token: env.BUSINESS_BOT_TOKEN,
+            chatId: OWNER.id,
+            messageId: businessCard,
+        })
+    })
+
     it("bot-check asks Telegram quietly and keeps the answer", async () => {
         const check = async (): Promise<string> => {
             const response = await as(OWNER)("/api/owner/shop/bot-check", { method: "POST" })

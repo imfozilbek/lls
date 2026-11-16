@@ -142,6 +142,16 @@ describe("the customer's live message", () => {
             "Chek yuborildi. Do'kon pul kelganini tekshiryapti.",
         )
 
+        // The owner's picture answers the order's card, the sum over it.
+        const ownerCard = await env.DB.prepare("SELECT owner_message_id FROM orders WHERE id = ?")
+            .bind(order.id)
+            .first<{ owner_message_id: number }>()
+        const photo = client.telegram.photoFiles.at(-1)
+        expect(photo?.options).toMatchObject({
+            replyTo: ownerCard?.owner_message_id,
+            captionAbove: true,
+        })
+
         // «Pul keldi»: a new message with a sound, the old one goes.
         await payment(order.id, "paid")
         const accepted = toCustomer()
@@ -155,6 +165,15 @@ describe("the customer's live message", () => {
         await setStatus(order.id, "ready")
         expect(toCustomer().sent).toHaveLength(2)
         expect(toCustomer().edited.at(-1)?.html).toContain("tayyor")
+        // The courier's «tayyor, olib keting» answers their card.
+        const courierCard = await env.DB.prepare(
+            "SELECT courier_message_id FROM orders WHERE id = ?",
+        )
+            .bind(order.id)
+            .first<{ courier_message_id: number }>()
+        const ping = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
+        expect(ping?.html).toContain("tayyor, olib keting")
+        expect(ping?.options?.replyTo).toBe(courierCard?.courier_message_id)
 
         // On the way and delivered ring; each time one message stays.
         const courier = client.as(COURIER, { courierBot: true })
