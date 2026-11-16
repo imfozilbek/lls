@@ -9,7 +9,6 @@ type StatusTexts = Partial<Record<OrderStatus, string>>
 const BASE = {
     [Language.UZ]: {
         currency: "so'm",
-        newOrder: "🆕 Yangi buyurtma",
         demoOrder: "🧪 Namuna buyurtma: haqiqiy emas, pul o'tkazilmaydi",
         order: "Buyurtma",
         delivery: "Yetkazib berish",
@@ -21,7 +20,6 @@ const BASE = {
         map: "Xaritada ochish",
         /** «🧭 Yo'l: Yandex Navigator · Yandex Go · …» on the courier's card. */
         route: "Yo'l",
-        status: "Holat",
         courier: "Kuryer",
         bottlesBack: "Bo'sh idish qaytaradi: {n} ta",
         cancelledByCustomer: "❌ Mijoz buyurtmani bekor qildi",
@@ -214,8 +212,6 @@ const BASE = {
         networkItems: "📦 Pozitsiyalar: {n}",
         networkDistance: "📍 Mijozgacha ≈ {km} km",
         takeOrder: "🙋 Olaman",
-        networkTaken: "✅ {shop}: #{n} buyurtmani boshqa kuryer oldi.",
-        networkYours: "🎉 {shop}: #{n} buyurtma sizniki, karta pastda.",
         networkRequestedOwner:
             "🔎 Bo'sh kuryeringiz yo'q: #{n} buyurtma tuman tarmog'iga berildi. Kim olsa, xabar beramiz.",
         networkClaimedOwner: "🚚 #{n} buyurtmani tuman tarmog'i kuryeri olib boradi: {name}",
@@ -239,11 +235,9 @@ const BASE = {
             [OrderStatus.DELIVERED]: "🏁 Yetkazdim",
         } as StatusTexts,
         courierWait: "⏳ Buyurtma tayyor bo'lganda xabar beramiz.",
-        courierReady: "📦 {shop}: #{n} buyurtma tayyor, olib keting.",
         // A dispatcher (owner's decision, November 2026): sends the order on, writes to the customer.
         dispatcherWait:
             "⏳ Do'kon buyurtmani tayyorlayapti: tayyor bo'lganda xabar beramiz. Mijozga izohni hozir ham yozish mumkin.",
-        dispatcherReady: "📦 {shop}: #{n} buyurtma tayyor, jo'nating.",
         dispatcherSend: "📮 Jo'natdim",
         pickupFrom: "🏪 Qayerdan: {place}",
         dispatcherLine: "📮 Dispetcher: {name}",
@@ -296,6 +290,16 @@ const BASE = {
         payByCash:
             "🧾 #{n} buyurtma rasmiylashtirildi.\nTo'lov naqd: kuryerga {sum} berasiz. Do'kon qabul qilishi bilan xabar beramiz.",
         paidAccept: "💳 Pul keldi, qabul qilish",
+        // The customer's live message (owner's decision, November 2026): one per order.
+        transferTo: "Shu kartaga {sum} o'tkazing, keyin chekni yuklang:",
+        transferSentCustomer: "Chek yuborildi. Do'kon pul kelganini tekshiryapti.",
+        refundedCustomer: "↩️ #{n}: do'kon sizga {sum} qaytarib berdi.",
+        copyCard: "📋 Karta raqamini nusxalash",
+        uploadReceipt: "🧾 Chekni yuklash",
+        /** The courier's card: what a taxi driver needs, in one tap. */
+        copyAddress: "📋 Manzil va telefonni nusxalash",
+        /** Under «… ishga tushdi!»: the shop's bot link for the owner's customers. */
+        copyLink: "📋 Havolani nusxalash",
         nothingToCollect: "✅ Oldindan to'langan, mijozdan pul olmang",
         transferSentOwner: "💳 Mijoz #{n} buyurtma uchun {sum} o'tkazdi. Kartani tekshiring.",
         receiptCaption:
@@ -311,8 +315,8 @@ const BASE = {
         transferRejectedCustomer:
             "Do'kon #{n} buyurtma uchun pulni topmadi. Kartangizdan o'tganini tekshiring va chekni qayta yuboring.",
         transferRejectedOwner: "#{n}: «Pul kelmadi» belgilandi. Mijozdan chekni qayta so'radik.",
-        payByTransfer:
-            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n{system}<code>{card}</code> ({holder})\nKeyin ilovada chekni yuklang va «O'tkazdim» ni bosing. Pul kelishi bilan do'kon buyurtmani qabul qiladi.",
+        /** The customer's live message, first line of a new order. */
+        placed: "🧾 #{n} buyurtma rasmiylashtirildi.",
         /** A card's system before its number; Zumda does not know every card (then nothing). */
         cardSystems: {
             humo: "Humo",

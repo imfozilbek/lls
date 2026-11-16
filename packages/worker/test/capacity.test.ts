@@ -251,8 +251,9 @@ describe("rows read per request, on six months of history", () => {
                 )
             }
             const rows = counter.take()
-            // Measured 102 read, 42 written (docs/capacity.md: about 300 such orders a day;
-            // «Yig'ishni boshlash» is a step of its own). A save writes only what changed: every
+            // Measured 115 read, 46 written (docs/capacity.md: about 300 such orders a day;
+            // «Yig'ishni boshlash» is a step of its own; the customer's live message reads its id
+            // on each step and writes it on each new message). A save writes only what changed: every
             // column on each step cost twice the writes.
             expect(rows.read).toBeLessThanOrEqual(150)
             expect(rows.written).toBeLessThanOrEqual(60)

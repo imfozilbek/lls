@@ -7,6 +7,41 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Short, structured bot messages
+- **The customer's one live message per order** (owner's decision).
+  - What the customer waits for comes as a new message with a sound, and the one before is
+    deleted: placed, accepted, on the way, delivered, cancelled, money not found, a line missing,
+    a dispatcher's note.
+  - The shop's own work (collecting, ready) and the screenshot just sent change it quietly.
+  - It always has the place, the shop's phone (and the courier's on the way), the last notes, and
+    the lines with the total in a folding quote.
+  - A transfer to make: «📋 Karta raqamini nusxalash» copies the number, «🧾 Chekni yuklash»
+    opens the order.
+  - «Qaytardim» now tells the customer: «↩️ #12: do'kon sizga … qaytarib berdi».
+- **The owner's and the courier's cards start with what they are.**
+  - The owner's: «🆕 Yangi · #12 · 96 000 so'm»; the courier's: «Osh Markaz · #12 · ✅ Qabul
+    qilindi». No «Yangi buyurtma» on top, no «Holat:», no blank lines.
+  - The order's lines fold in a quote that opens on a tap; the courier's have no prices.
+  - The courier's card: the shop's phone on «Qayerdan», «📋 Manzil va telefonni nusxalash» for a
+    taxi.
+- **Buttons have colours**: the step to make is green, cancel and refusals red, «Chekni
+  yuklash» blue. An older Telegram shows plain buttons.
+- **A line about an order answers its card**: the screenshot (its sum over the picture), the
+  payment question, a customer's cancel, the network's news, «tayyor, olib keting».
+- **An owner who never pressed Start in the shop's bot** keeps one card per order in Zumda |
+  Business, edited on each step, instead of a new copy every time; after Start the shop's bot
+  takes it over.
+- **A new courier reaches the owner once there is someone to approve**: the name and the phone
+  together, after the phone came.
+- After approval, «📋 Havolani nusxalash» copies the bot's link for the owner's customers.
+- **Less noise.** «Tayyor» brings the courier's card again with a sound and deletes the old one
+  (no ping left under it); a network order taken deletes every offer instead of «boshqa kuryer
+  oldi»; an answered «Pul keldi» question is deleted and the screenshot loses its buttons; a
+  trip's cards come quietly, its message rings once; the owner's network lines come quietly.
+- Migration `0033`: `orders.customer_message_id`, `orders.owner_message_via`.
+- Not used: rich messages, tables and widgets of Bot API 10.x (older phones in the regions do not
+  show them), reactions, pinning.
+
 ### The route in the courier's own navigation app
 - «Do'konga yo'l», «Mijozga yo'l» and «Yo'lni ochish» opened Yandex Maps only. Now they open a
   sheet of apps: Yandex Navigator, Yandex Go, Google Maps, 2GIS, Yandex Maps, with the app picked

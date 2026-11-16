@@ -1,4 +1,4 @@
-import { DomainError, Phone, TRUSTED_SCOPE, languageFromTelegram } from "@zumda/core"
+import { DomainError, Phone, TRUSTED_SCOPE, languageFromTelegram, toCourierDTO } from "@zumda/core"
 
 import { notifyNetworkClaim } from "../network-flow.js"
 import { appKeyboard, courierAppUrl } from "../telegram/app-links.js"
@@ -58,7 +58,10 @@ async function acceptInvite(
             // Opened another invite of a shop they already deliver for: nothing to approve.
             return
         }
-        await new Notifier(services).courierJoined(joined.business, joined.courier)
+        // The owner hears of a courier once there is someone to approve: with the phone.
+        if (!joined.needsPhone) {
+            await new Notifier(services).courierJoined(joined.business, joined.courier)
+        }
     } catch (error) {
         if (!(error instanceof DomainError)) {
             throw error
@@ -85,6 +88,17 @@ async function savePhone(services: Services, message: IncomingMessage, t: BotTex
         t.phoneSaved,
         { removeKeyboard: true },
     )
+    // Now they can be approved: each shop waiting for them hears it, name and phone together.
+    const waiting = (await services.couriers.listByPerson(from.id)).filter((l) => l.isPending)
+    for (const link of waiting) {
+        const business = await services.businesses.findById(link.businessId)
+        if (business) {
+            await new Notifier(services).courierJoined(
+                business,
+                toCourierDTO(link, services.clock.now()),
+            )
+        }
+    }
 }
 
 /** Plain `/start`: the shops they deliver for and the button to the courier screen. */

@@ -172,7 +172,7 @@ describe("phones: everyone on an order can call each other", () => {
         )
         expect(card?.token).toBe(env.COURIER_BOT_TOKEN)
         expect(card?.html).toContain("+998 90 123 45 67")
-        expect(card?.html).toContain("📞 Do'kon: +998 90 123 45 01")
+        expect(card?.html).toContain("🏪 Qayerdan: Chorsu · +998 90 123 45 01")
         const home = await json<{ orders: { shopPhone?: string; customerPhone?: string }[] }>(
             await courier()("/api/courier/home"),
         )

@@ -132,20 +132,21 @@ describe("shop couriers, verticals and channels", () => {
         await client.courierBot({
             message: { from: COURIER, chat: { id: COURIER.id }, text: `/start ${code}` },
         })
-        const [waiting, toOwner] = client.telegram.sent.slice(-2)
-        // The courier hears from the Zumda courier bot; the owner from their own shop bot.
+        // The courier hears from the Zumda courier bot and is asked for the phone.
+        const waiting = client.telegram.sent.at(-1)
         expect(waiting).toMatchObject({ chatId: COURIER.id, token: env.COURIER_BOT_TOKEN })
         expect(waiting?.options?.askContact).toBeTruthy()
-        expect(toOwner).toMatchObject({ chatId: OWNER.id, token: SHOP_BOT_TOKEN })
-        expect(toOwner?.html).toContain("Jasur")
-        const approveButton = toOwner?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data
-        expect(approveButton).toMatch(/^k:.+:approve$/)
+        // The owner hears of a courier once there is someone to approve: with the phone.
+        expect(
+            client.telegram.sent.some((m) => m.chatId === OWNER.id && m.html.includes("Jasur")),
+        ).toBe(false)
 
         // Waiting for approval: listed for the owner, no courier screen yet.
         const [pending] = await json<{ id: string; status: string }[]>(
             await as(OWNER)("/api/owner/couriers"),
         )
         expect(pending?.status).toBe("pending")
+        const approveButton = `k:${pending?.id ?? ""}:approve`
         expect((await courierApp()("/api/courier/home")).status).toBe(403)
 
         // A broken number is the person's mistake: 200, or Telegram resends it for hours.
@@ -158,7 +159,7 @@ describe("shop couriers, verticals and channels", () => {
         })
         expect(broken.status).toBe(200)
 
-        // No phone yet: the owner's button says why, and the courier keeps waiting.
+        // No phone yet: an approval (an old button) says why, and the courier keeps waiting.
         await botUpdate({
             callback_query: {
                 id: "cb-early",
@@ -190,7 +191,20 @@ describe("shop couriers, verticals and channels", () => {
                 contact: { phone_number: "+998901112233", user_id: COURIER.id },
             },
         })
-        expect(client.telegram.sent.at(-1)?.options?.removeKeyboard).toBe(true)
+        const saved = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
+        expect(saved?.options?.removeKeyboard).toBe(true)
+        // Now the owner hears it from their own shop bot: the name, the phone, the buttons.
+        const toOwner = client.telegram.sent.at(-1)
+        expect(toOwner).toMatchObject({ chatId: OWNER.id, token: SHOP_BOT_TOKEN })
+        expect(toOwner?.html).toContain("Jasur")
+        expect(toOwner?.html).toContain("📞 Kuryer: +998 90 111 22 33")
+        expect(toOwner?.options?.keyboard?.inline_keyboard[0]?.map((b) => b.style)).toEqual([
+            "success",
+            "danger",
+        ])
+        expect(toOwner?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
+            approveButton,
+        )
 
         // A stranger pressing the owner's button gets nothing.
         await botUpdate({
@@ -281,11 +295,17 @@ describe("shop couriers, verticals and channels", () => {
         expect(card?.token).toBe(env.COURIER_BOT_TOKEN)
         expect(card?.html).toContain("Osh Markaz")
         expect(card?.html).toContain("Navoiy 12")
-        expect(card?.html).toContain("70 000")
+        // What to take, without prices: the money is its own line.
+        expect(card?.html).toContain("<blockquote expandable>Osh × 2 porsiya</blockquote>")
+        expect(card?.html).not.toContain("70 000")
         // Paid to the shop's card before cooking: nothing to take at the door.
         expect(card?.html).toContain("mijozdan pul olmang")
-        // Nothing to press yet, only the way into the courier screen, on this order.
+        // Nothing to press yet: the place to copy, and the way into the courier screen.
         expect(card?.options?.keyboard?.inline_keyboard.flat()).toEqual([
+            {
+                text: "📋 Manzil va telefonni nusxalash",
+                copy_text: { text: "Navoiy 12, Aziz Karimov, +998 90 123 45 67" },
+            },
             {
                 text: "📱 Ilovada ochish",
                 web_app: { url: `https://delivery.zumda.test/?mode=courier&order=${order.id}` },
@@ -294,14 +314,15 @@ describe("shop couriers, verticals and channels", () => {
 
         await setStatus(order.id, "preparing")
         await setStatus(order.id, "ready")
-        const edited = client.telegram.edited.filter((m) => m.chatId === COURIER.id).at(-1)
-        expect(edited?.token).toBe(env.COURIER_BOT_TOKEN)
-        expect(edited?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
+        // «Tayyor» is what the courier waits for: the card comes again with a sound and the one
+        // before goes; no ping is left under it.
+        const ready = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
+        expect(ready?.token).toBe(env.COURIER_BOT_TOKEN)
+        expect(ready?.html.split("\n")[0]).toBe("<b>Osh Markaz · #1</b> · 📦 Tayyor")
+        expect(ready?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
             `a:${String(order.id)}:picked_up`,
         )
-        expect(
-            client.telegram.sent.some((m) => m.chatId === COURIER.id && m.html.includes("tayyor")),
-        ).toBe(true)
+        expect(client.telegram.removed.at(-1)?.chatId).toBe(COURIER.id)
 
         const picked = await courierApp()(`/api/courier/orders/${String(order.id)}`, {
             method: "PATCH",
@@ -468,7 +489,7 @@ describe("shop couriers, verticals and channels", () => {
             (m) => m.chatId === second.id && m.html.includes("#1"),
         )
         // Bobur's Telegram is in Russian; the product speaks Uzbek only.
-        expect(toBobur?.html).toContain("Yetkazib berish")
+        expect(toBobur?.html).toContain("Qayerdan")
         const removed = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
         expect(removed?.token).toBe(env.COURIER_BOT_TOKEN)
         expect(removed?.html).toContain("#1")
@@ -581,12 +602,15 @@ describe("shop couriers, verticals and channels", () => {
         const order = await placeOrder([{ productId: osh, quantity: 2 }])
         await setStatus(order.id, "accepted")
         await setStatus(order.id, "preparing")
-        expect(client.telegram.sent.at(-1)?.html).toContain("tayyorlanmoqda")
+        // The shop's own work: the customer's one message changes quietly.
+        const toCustomer = (): string | undefined =>
+            client.telegram.edited.filter((m) => m.chatId === CUSTOMER.id).at(-1)?.html
+        expect(toCustomer()).toContain("tayyorlanmoqda")
 
         await env.DB.prepare("UPDATE businesses SET type = 'grocery'").run()
         const second = await placeOrder([{ productId: osh, quantity: 2 }])
         await setStatus(second.id, "accepted")
         await setStatus(second.id, "preparing")
-        expect(client.telegram.sent.at(-1)?.html).toContain("yig'ilmoqda")
+        expect(toCustomer()).toContain("yig'ilmoqda")
     })
 })

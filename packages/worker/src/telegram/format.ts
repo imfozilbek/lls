@@ -1,6 +1,7 @@
 import {
     BusinessType,
     OrderChannel,
+    cardSystemOf,
     OrderStatus,
     PaymentMethod,
     PaymentStatus,
@@ -78,9 +79,46 @@ function itemLines(order: OrderDTO, t: BotTexts, language: Language): string[] {
     return hidden > 0 ? [...shown, fill(t.moreItems, { n: hidden })] : shown
 }
 
-/** The owner's card: the customer's place on Yandex Maps. */
-function pinLine(order: OrderDTO, t: BotTexts): string | null {
-    return order.location ? `🗺 <a href="${mapUrl(order.location)}">${t.map}</a>` : null
+/** What to take, without prices: the courier carries it, the money is on its own line. */
+function itemNames(order: OrderDTO, t: BotTexts): string[] {
+    const shown = order.items
+        .slice(0, MAX_CARD_ITEMS)
+        .map((item) => `${itemName(item)} ${quantityLabel(item, t)}`)
+    const hidden = order.items.length - shown.length
+    return hidden > 0 ? [...shown, fill(t.moreItems, { n: hidden })] : shown
+}
+
+/**
+ * The order's lines in a quote that folds (Bot API 7.4): a short order shows whole, a long one
+ * opens on a tap, and the card stays short. With prices, the delivery and the deposit come too,
+ * and the total when the message has none above.
+ */
+export function itemsQuote(
+    order: OrderDTO,
+    reader: Reader,
+    options: { prices: boolean; total: boolean },
+): string {
+    const { language } = reader
+    const t = textsFor(language, reader.type)
+    const lines = options.prices ? itemLines(order, t, language) : itemNames(order, t)
+    if (options.prices) {
+        const delivery = deliveryText(order, t, language)
+        if (delivery) {
+            lines.push(`${t.delivery}: ${delivery}`)
+        }
+        if (order.depositTotal > 0) {
+            lines.push(`${t.deposit}: ${formatMoney(order.depositTotal, language)}`)
+        }
+        if (options.total) {
+            lines.push(`<b>${t.total}: ${formatMoney(order.total, language)}</b>`)
+        }
+    }
+    return `<blockquote expandable>${lines.join("\n")}</blockquote>`
+}
+
+/** The owner's card: the customer's place on Yandex Maps, at the end of the address line. */
+function pinLink(order: OrderDTO, t: BotTexts): string | null {
+    return order.location ? `<a href="${mapUrl(order.location)}">${t.map}</a>` : null
 }
 
 /**
@@ -104,15 +142,20 @@ function routeLine(order: OrderDTO, t: BotTexts, naviPage: string): string | nul
     return `🧭 ${t.route}: ${shown.join(" · ")}`
 }
 
-function addressLines(order: OrderDTO, t: BotTexts, mapLine: string | null): string[] {
+function addressLines(
+    order: OrderDTO,
+    t: BotTexts,
+    place: { link?: string | null; route?: string | null },
+): string[] {
     const phone = order.customerPhone ? `, ${formatPhone(order.customerPhone)}` : ""
     const landmark = order.landmark ? ` (${t.landmark}: ${escapeHtml(order.landmark)})` : ""
+    const link = place.link ? ` · ${place.link}` : ""
     const lines = [
         `👤 ${escapeHtml(order.customerName)}${phone}`,
-        `📍 ${escapeHtml(order.address)}${landmark}`,
+        `📍 ${escapeHtml(order.address)}${landmark}${link}`,
     ]
-    if (mapLine) {
-        lines.push(mapLine)
+    if (place.route) {
+        lines.push(place.route)
     }
     if (order.comment) {
         lines.push(`💬 ${escapeHtml(order.comment)}`)
@@ -187,32 +230,24 @@ function courierLines(order: OrderDTO, t: BotTexts): string[] {
     return [order.viaNetwork ? fill(t.networkCourier, { name }) : `🚚 ${t.courier}: ${name}`]
 }
 
-/** The owner's order card: items, totals, customer, address, courier, current status. */
+/**
+ * The owner's order card: the step, the number and the sum first (the line a notification
+ * shows), then the money, the customer, the place, who carries it; the lines fold at the end.
+ */
 export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
     const { language } = reader
     const t = textsFor(language, reader.type)
     const lines = [
         ...(reader.demo ? [t.demoOrder] : []),
-        `<b>${t.order} #${order.number}</b>`,
-        "",
-        ...itemLines(order, t, language),
+        `${t.statusNames[order.status]} · <b>#${order.number} · ${formatMoney(order.total, language)}</b>`,
+        paymentLine(order, t),
+        ...missingLines(order, t, language),
     ]
-    const delivery = deliveryText(order, t, language)
-    if (delivery) {
-        lines.push(`${t.delivery}: ${delivery}`)
-    }
-    if (order.depositTotal > 0) {
-        lines.push(`${t.deposit}: ${formatMoney(order.depositTotal, language)}`)
-    }
-    lines.push(`<b>${t.total}: ${formatMoney(order.total, language)}</b>`)
-    lines.push(paymentLine(order, t))
-    lines.push(...missingLines(order, t, language))
     if (order.bottlesReturned > 0) {
         lines.push(fill(t.bottlesBack, { n: order.bottlesReturned }))
     }
-    lines.push("", ...addressLines(order, t, pinLine(order, t)))
+    lines.push(...addressLines(order, t, { link: pinLink(order, t) }))
     lines.push(...courierLines(order, t))
-    lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
     if (order.channel === OrderChannel.MARKETPLACE) {
         const sum = formatMoney(order.commission, language)
         lines.push(fill(t.showcaseOrder, { rate: formatRate(order.commissionBps), sum }))
@@ -220,6 +255,7 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
     if (order.cancelReason) {
         lines.push(`${t.reason}: ${escapeHtml(order.cancelReason)}`)
     }
+    lines.push(itemsQuote(order, reader, { prices: true, total: false }))
     return lines.join("\n")
 }
 
@@ -264,8 +300,9 @@ export function formatRate(bps: number): string {
     return String(bps / BPS_PER_PERCENT).replace(".", ",")
 }
 
+/** A new order is the card itself: its first line says «🆕 Yangi · #12 · 96 000 so'm». */
 export function formatNewOrderForOwner(order: OrderDTO, reader: Reader): string {
-    return `${textsFor(reader.language).newOrder}\n\n${formatOrderForOwner(order, reader)}`
+    return formatOrderForOwner(order, reader)
 }
 
 /**
@@ -284,22 +321,16 @@ export function formatOrderForCourier(
     const { language } = reader
     const t = textsFor(language, reader.type)
     const lines = [
-        `<b>${t.courierCard} · ${escapeHtml(shop.name)} · ${t.order} #${order.number}</b>`,
-        "",
-        ...itemLines(order, t, language),
-        "",
+        `<b>${escapeHtml(shop.name)} · #${order.number}</b> · ${t.statusNames[order.status]}`,
         courierMoneyLine(order, t, language),
     ]
     if (order.bottlesReturned > 0) {
         lines.push(fill(t.bottlesToCollect, { n: order.bottlesReturned }))
     }
     // Where from and where to, on every step: a dispatcher tells a taxi both.
-    lines.push("", fill(t.pickupFrom, { place: escapeHtml(shop.address ?? shop.name) }))
-    lines.push(...addressLines(order, t, routeLine(order, t, links.naviPage)))
-    if (shop.phone) {
-        lines.push(fill(t.shopPhone, { phone: formatPhone(shop.phone) }))
-    }
-    lines.push("", `${t.status}: <b>${t.statusNames[order.status]}</b>`)
+    const shopPhone = shop.phone ? ` · ${formatPhone(shop.phone)}` : ""
+    lines.push(fill(t.pickupFrom, { place: escapeHtml(shop.address ?? shop.name) + shopPhone }))
+    lines.push(...addressLines(order, t, { route: routeLine(order, t, links.naviPage) }))
     if (order.sentVia) {
         lines.push(fill(t.sentLine, { way: t.sendWays[order.sentVia] }))
     }
@@ -307,6 +338,7 @@ export function formatOrderForCourier(
     if (order.status === OrderStatus.ACCEPTED || order.status === OrderStatus.PREPARING) {
         lines.push(order.dispatcher ? t.dispatcherWait : t.courierWait)
     }
+    lines.push(itemsQuote(order, reader, { prices: false, total: false }))
     return lines.join("\n")
 }
 
@@ -386,6 +418,204 @@ function transferLine(order: OrderDTO, t: BotTexts, type: BusinessType): string 
         : ""
 }
 
+/**
+ * What the customer's live message says first (owner's decision, November 2026): the order's
+ * step, or what just happened to it.
+ */
+export type CustomerEvent =
+    | { kind: "status"; note?: string }
+    | { kind: "note"; text: string }
+    | { kind: "lineRemoved"; item: string }
+    | { kind: "transferRejected" }
+    | { kind: "refunded"; sum: number }
+
+/**
+ * Whether a step reaches the customer with a sound: what they wait for rings, the shop's own work
+ * (collecting, ready) and the screenshot they just sent change the message quietly.
+ */
+export function customerStepRings(order: OrderDTO, type: BusinessType): boolean {
+    switch (order.status) {
+        case OrderStatus.PENDING:
+            return order.payment.status === PaymentStatus.UNPAID
+        case OrderStatus.PREPARING:
+            // A service starts the moment it is accepted: «qabul qilindi va bajarilmoqda».
+            return type === BusinessType.SERVICE
+        case OrderStatus.READY:
+            return false
+        default:
+            return true
+    }
+}
+
+/**
+ * The customer's one message about an order: what happened, the money, the place and whom to
+ * call, the notes; the lines, the delivery and the total fold at the end.
+ */
+export function formatCustomerCard(
+    order: OrderDTO,
+    reader: Reader,
+    event: CustomerEvent,
+    shopPhone?: string,
+): string {
+    const t = textsFor(reader.language, reader.type)
+    return [
+        ...customerHeadline(order, reader, event, t),
+        ...customerDetails(order, reader, event, shopPhone),
+        itemsQuote(order, reader, { prices: true, total: true }),
+    ].join("\n")
+}
+
+function customerHeadline(
+    order: OrderDTO,
+    reader: Reader,
+    event: CustomerEvent,
+    t: BotTexts,
+): string[] {
+    const step = t.statusNames[order.status]
+    switch (event.kind) {
+        case "note":
+            return [formatNoteForCustomer(order, event.text, reader), step]
+        case "lineRemoved":
+            return [formatLineRemovedForCustomer(order, event.item, reader), step]
+        case "transferRejected":
+            return [fill(t.transferRejectedCustomer, { n: order.number }), ...cardLines(order, t)]
+        case "refunded": {
+            const sum = formatMoney(event.sum, reader.language)
+            return [fill(t.refundedCustomer, { n: order.number, sum }), step]
+        }
+        case "status":
+            return order.status === OrderStatus.PENDING
+                ? placedLines(order, reader, t)
+                : [formatStatusForCustomer(order, reader, event.note) ?? step]
+    }
+}
+
+/** A new order: how to pay it, or that the screenshot is with the shop. */
+function placedLines(order: OrderDTO, reader: Reader, t: BotTexts): string[] {
+    const sum = `<b>${formatMoney(order.total, reader.language)}</b>`
+    if (order.payment.method === PaymentMethod.CASH) {
+        return [fill(t.payByCash, { n: order.number, sum })]
+    }
+    const head = fill(t.placed, { n: order.number })
+    if (order.payment.status === PaymentStatus.AWAITING) {
+        return [head, t.transferSentCustomer]
+    }
+    return [head, fill(t.transferTo, { sum }), ...cardLines(order, t)]
+}
+
+/** The card this order was shown, grouped by four, with its system when Zumda knows it. */
+function cardLines(order: OrderDTO, t: BotTexts): string[] {
+    const card = order.payment.card
+    if (!card) {
+        return []
+    }
+    const system = cardSystemOf(card.number)
+    const number = card.number.replace(/(\d{4})(?=\d)/g, "$1 ")
+    const name = system ? `${t.cardSystems[system]} ` : ""
+    return [`${name}<code>${number}</code> (${escapeHtml(card.holder)})`]
+}
+
+/**
+ * Under the first line: the cash still to give, the carrier's price to come, the notes, the
+ * place, and whom to call (the courier on the way, always the shop).
+ */
+function customerDetails(
+    order: OrderDTO,
+    reader: Reader,
+    event: CustomerEvent,
+    shopPhone: string | undefined,
+): string[] {
+    const t = textsFor(reader.language, reader.type)
+    const landmark = order.landmark ? ` (${t.landmark}: ${escapeHtml(order.landmark)})` : ""
+    return [
+        ...moneyAhead(order, reader, event, t),
+        ...customerNotes(order, event, t),
+        `📍 ${escapeHtml(order.address)}${landmark}`,
+        ...whomToCall(order, event, t, shopPhone),
+    ]
+}
+
+/** What the customer still pays: the cash for the courier, the carrier's price to come. */
+function moneyAhead(order: OrderDTO, reader: Reader, event: CustomerEvent, t: BotTexts): string[] {
+    if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {
+        return []
+    }
+    const lines: string[] = []
+    // A new cash order says it in its first line, and «Yo'q» says the new sum itself.
+    const cashToGive =
+        order.payment.method === PaymentMethod.CASH &&
+        order.payment.status !== PaymentStatus.PAID &&
+        order.status !== OrderStatus.PENDING &&
+        event.kind !== "lineRemoved"
+    if (cashToGive) {
+        const sum = formatMoney(order.total, reader.language)
+        lines.push(`💵 ${fill(t.lineRemovedCash, { sum })}`)
+    }
+    if (order.customerPaysCarrier && order.status !== OrderStatus.PICKED_UP) {
+        lines.push(t.carrierPriceLater)
+    }
+    return lines
+}
+
+/** The dispatcher's last notes; the one the first line just said is not said twice. */
+function customerNotes(order: OrderDTO, event: CustomerEvent, t: BotTexts): string[] {
+    const said = event.kind === "note" ? event.text : event.kind === "status" ? event.note : null
+    return order.deliveryNotes
+        .filter((note) => note.text !== said)
+        .slice(-CARD_NOTES)
+        .map((note) => fill(t.noteLine, { text: escapeHtml(note.text) }))
+}
+
+/** The courier once on the way (unless the first line named them), and always the shop. */
+function whomToCall(
+    order: OrderDTO,
+    event: CustomerEvent,
+    t: BotTexts,
+    shopPhone: string | undefined,
+): string[] {
+    const lines: string[] = []
+    const courierSaid =
+        event.kind === "status" &&
+        order.status === OrderStatus.PICKED_UP &&
+        order.courierName !== undefined
+    const courierLeft =
+        order.status === OrderStatus.PICKED_UP || order.status === OrderStatus.DELIVERED
+    if (order.courierPhone && courierLeft && !courierSaid) {
+        const template = order.dispatcher ? t.dispatcherPhone : t.courierPhone
+        lines.push(fill(template, { phone: formatPhone(order.courierPhone) }))
+    }
+    if (shopPhone) {
+        lines.push(fill(t.shopPhone, { phone: formatPhone(shopPhone) }))
+    }
+    return lines
+}
+
+/**
+ * Under the customer's message: while a transfer is to be made, the card number to copy and
+ * «Chekni yuklash»; after it, the order in the app.
+ */
+export function customerKeyboard(
+    order: OrderDTO,
+    reader: Reader,
+    orderUrl: string,
+): InlineKeyboard {
+    const t = textsFor(reader.language, reader.type)
+    const card = order.payment.card
+    const toPay =
+        order.status === OrderStatus.PENDING &&
+        order.payment.method === PaymentMethod.CARD_TRANSFER &&
+        order.payment.status === PaymentStatus.UNPAID
+    if (!toPay || !card) {
+        return { inline_keyboard: [[appButton(t.openOrder, orderUrl)]] }
+    }
+    return {
+        inline_keyboard: [
+            [{ text: t.copyCard, copy_text: { text: card.number.replace(/\D/g, "") } }],
+            [{ ...appButton(t.uploadReceipt, orderUrl), style: "primary" }],
+        ],
+    }
+}
+
 // Callback data (≤ 64 bytes): "a:<orderId>:<status>" advance, "x:<orderId>" cancel,
 // "p:<orderId>" «Деньги пришли, принять» (asks first), "pc:<orderId>" yes, the money is here,
 // "pn:<orderId>" «Pul kelmadi», "m:<orderId>" «O'zim yetkazaman».
@@ -450,15 +680,17 @@ export function orderKeyboard(
     if (!next) {
         return { inline_keyboard: [] }
     }
-    const cancel: InlineButton[] = [{ text: t.cancel, callback_data: `x:${order.id}` }]
+    const cancel: InlineButton[] = [
+        { text: t.cancel, callback_data: `x:${order.id}`, style: "danger" },
+    ]
     const leavesTheShop = next === OrderStatus.READY || next === OrderStatus.PICKED_UP
     if (order.dispatcher && (next === OrderStatus.PICKED_UP || next === OrderStatus.DELIVERED)) {
         return { inline_keyboard: [cancel] }
     }
     if (choice && order.needsCourierChoice && leavesTheShop) {
-        const who = choice.shopHasCouriers
-            ? appButton(t.chooseCourier, choice.url)
-            : { text: t.deliverMyself, callback_data: `m:${order.id}` }
+        const who: InlineButton = choice.shopHasCouriers
+            ? { ...appButton(t.chooseCourier, choice.url), style: "success" }
+            : { text: t.deliverMyself, callback_data: `m:${order.id}`, style: "success" }
         return { inline_keyboard: [[who], cancel] }
     }
     const money = moneyStep(order, next, t)
@@ -468,6 +700,7 @@ export function orderKeyboard(
     const step: InlineButton = money ?? {
         text: t.actions[next] ?? next,
         callback_data: `a:${order.id}:${next}`,
+        style: "success",
     }
     return { inline_keyboard: [[step], cancel] }
 }
@@ -487,7 +720,7 @@ function moneyStep(order: OrderDTO, next: OrderStatus, t: BotTexts): InlineButto
     if (order.payment.status === PaymentStatus.UNPAID) {
         return "wait"
     }
-    return { text: t.paidAccept, callback_data: `p:${order.id}` }
+    return { text: t.paidAccept, callback_data: `p:${order.id}`, style: "success" }
 }
 
 /**
@@ -497,8 +730,14 @@ function moneyStep(order: OrderDTO, next: OrderStatus, t: BotTexts): InlineButto
 export function confirmPaidKeyboard(order: OrderDTO, t: BotTexts, sum: string): InlineKeyboard {
     return {
         inline_keyboard: [
-            [{ text: fill(t.confirmPaidYes, { sum }), callback_data: `pc:${order.id}` }],
-            [{ text: t.confirmPaidNo, callback_data: `pn:${order.id}` }],
+            [
+                {
+                    text: fill(t.confirmPaidYes, { sum }),
+                    callback_data: `pc:${order.id}`,
+                    style: "success",
+                },
+            ],
+            [{ text: t.confirmPaidNo, callback_data: `pn:${order.id}`, style: "danger" }],
         ],
     }
 }
@@ -537,22 +776,43 @@ function isPaid(order: OrderDTO): boolean {
  */
 export function courierKeyboard(order: OrderDTO, reader: Reader, sendUrl?: string): InlineKeyboard {
     const t = textsFor(reader.language, reader.type)
+    const copy = copyAddressButton(order, t)
+    const rows = (step: InlineButton | null): InlineKeyboard => ({
+        inline_keyboard: [...(step ? [[step]] : []), ...(copy ? [[copy]] : [])],
+    })
     if (order.dispatcher && order.status === OrderStatus.READY) {
-        return { inline_keyboard: sendUrl ? [[appButton(t.dispatcherSend, sendUrl)]] : [] }
+        return rows(sendUrl ? { ...appButton(t.dispatcherSend, sendUrl), style: "success" } : null)
     }
     const next =
         order.status === OrderStatus.READY || order.status === OrderStatus.PICKED_UP
             ? order.nextStatus
             : null
     if (!next) {
-        return { inline_keyboard: [] }
+        return rows(null)
     }
     const cash =
         next === OrderStatus.DELIVERED &&
         order.payment.method === PaymentMethod.CASH &&
         order.payment.status !== PaymentStatus.PAID
     const text = cash ? t.cashDelivered : (t.courierActions[next] ?? next)
-    return { inline_keyboard: [[{ text, callback_data: `a:${order.id}:${next}` }]] }
+    return rows({ text, callback_data: `a:${order.id}:${next}`, style: "success" })
+}
+
+/** Bot API: a copied text is at most 256 characters. */
+const COPY_TEXT_MAX = 256
+
+/**
+ * «Manzil va telefonni nusxalash»: the place and whom to call in one tap, for a taxi driver or a
+ * navigation app. Gone once the order is done.
+ */
+function copyAddressButton(order: OrderDTO, t: BotTexts): InlineButton | null {
+    if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {
+        return null
+    }
+    const landmark = order.landmark ? ` (${t.landmark}: ${order.landmark})` : ""
+    const phone = order.customerPhone ? `, ${formatPhone(order.customerPhone)}` : ""
+    const text = `${order.address}${landmark}, ${order.customerName}${phone}`
+    return { text: t.copyAddress, copy_text: { text: text.slice(0, COPY_TEXT_MAX) } }
 }
 
 // Platform admin review: "r:<businessId>:approve" / "r:<businessId>:reject".
@@ -571,8 +831,16 @@ export function courierReviewKeyboard(courierId: string, t: BotTexts): InlineKey
     return {
         inline_keyboard: [
             [
-                { text: t.approveCourier, callback_data: `k:${courierId}:approve` },
-                { text: t.declineCourier, callback_data: `k:${courierId}:decline` },
+                {
+                    text: t.approveCourier,
+                    callback_data: `k:${courierId}:approve`,
+                    style: "success",
+                },
+                {
+                    text: t.declineCourier,
+                    callback_data: `k:${courierId}:decline`,
+                    style: "danger",
+                },
             ],
         ],
     }
@@ -618,7 +886,9 @@ export function formatNetworkOffer(offer: NetworkOrderDTO, language: Language): 
 
 /** «Беру» under a network offer: "n:<orderId>". */
 export function networkOfferKeyboard(orderId: string, t: BotTexts): InlineKeyboard {
-    return { inline_keyboard: [[{ text: t.takeOrder, callback_data: `n:${orderId}` }]] }
+    return {
+        inline_keyboard: [[{ text: t.takeOrder, callback_data: `n:${orderId}`, style: "success" }]],
+    }
 }
 
 /** The one-time offer to join the district network: "net:join" / "net:skip". */
@@ -626,7 +896,7 @@ export function networkInviteKeyboard(t: BotTexts): InlineKeyboard {
     return {
         inline_keyboard: [
             [
-                { text: t.joinNetwork, callback_data: "net:join" },
+                { text: t.joinNetwork, callback_data: "net:join", style: "success" },
                 { text: t.skipNetwork, callback_data: "net:skip" },
             ],
         ],

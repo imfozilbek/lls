@@ -22,7 +22,7 @@ that Zumda fits its share on a busy day, line by line, and how each number was f
 |------|-------------------:|--------------:|------------:|----------:|------|
 | Worker requests | 100 000 / day | 35 000 | ~33 700 | ~41 000 | typical yes; heavy: see "Levers" |
 | D1 rows read | 5 000 000 / day | 1 500 000 | ~0.6 M | ~1.1 M | yes, also after 6 months |
-| D1 rows written | 100 000 / day | 20 000 | ~16 000 | ~19 800 | yes, heavy close to the share |
+| D1 rows written | 100 000 / day | 20 000 | ~16 700 | ~20 400 | typical yes; heavy at the share |
 | R2 storage | 10 GB | 4 GB | ~2 GB | ~2.3 GB | yes, and it stops growing |
 | Cron triggers | 5 / account | 0-1 | 0 | 0 | yes |
 
@@ -54,7 +54,7 @@ Rows read per request (authentication included):
 | Owner: «Pul» this month | 285 at day 5, ~1 700 at day 30 | opening «Pul» with the month |
 | Courier: home | 166 (30 finished today, 11 open; +1 per shop of the day without its own number) | every 45 s while visible |
 | Showcase: a search | 10 | after a pause in typing; two letters match a whole word only, a prefix from three |
-| One order, placing to delivered (7 calls: «Yig'ishni boshlash» is a step of its own) | 102 read, 42 written | 300 a day |
+| One order, placing to delivered (7 calls: «Yig'ishni boshlash» is a step of its own; the customer's live message reads its id on each step and writes it 4 times) | 115 read, 46 written | 300 a day |
 
 What the measurement found and fixed on the way (before, on the same data):
 
@@ -106,7 +106,7 @@ On the server they would add about 900 requests and 300 preflights a day, and 90
 | What | Calculation | Typical | Heavy |
 |------|-------------|--------:|------:|
 | Customers opening a shop | 1 000 × ~97 (me, shop, menu 1.5 pages) | 97 000 | 97 000 |
-| Orders placed to delivered | 300 × 102 | 30 600 | 30 600 |
+| Orders placed to delivered | 300 × 115 | 34 500 | 34 500 |
 | Order-screen checks | 300 × 20 × 5 | 30 000 | 30 000 |
 | My orders | 300 × 83 | 25 000 | 25 000 |
 | Owners: version checks | 3 600 × 18 (heavy 10 800) | 65 000 | 194 000 |
@@ -132,7 +132,7 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 
 | What | Calculation | Typical | Heavy |
 |------|-------------|--------:|------:|
-| Orders (accept and «Yig'ishni boshlash» are two steps since November 2026) | 300 × 42 | 12 600 | 12 600 |
+| Orders (accept and «Yig'ishni boshlash» are two steps since November 2026; the measured 46 has the bots' message ids: the owner's and the courier's card once each, the customer's live message 4 times: placed, accepted, on the way, delivered) | 300 × 46 | 13 800 | 13 800 |
 | Customers (new ones, phone shares) | ~50 × 6 | 300 | 600 |
 | Products saved (row + search words + indexes) | 10 shops × 10 × ~15 | 1 500 | 3 000 |
 | «Ro'yxat bilan qo'shish»: a new shop's list, once (50 × ~15; reads: the shop's names, one covering index) | rare, at most 5 a minute | 0 | 750 |
@@ -140,8 +140,13 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 | Counted stock: a placed order with a counted product, a cancel giving it back (one product row each; `stock` is in no index) | ~50 orders × ~1.5 | 75 | 300 |
 | «Yo'q»: the order row (sums, `refund_owed` in its partial index), the line, the product stopped today | ~10 a day × ~10 (heavy ~20) | 100 | 200 |
 | A dispatcher's «Jo'natdim» and notes (one order row each: only the changed columns, `updated_at` re-indexed) | ~20 orders × ~3 × ~4 | 240 | 500 |
-| Bot message ids, alerts, sessions | 300 × 2 × 2 + ~200 | 1 400 | 1 700 |
-| **Total** | | **~16 000** | **~19 800** |
+| Alerts, sessions (the orders' message ids are in the line above, measured) | ~200 | 200 | 200 |
+| **Total** | | **~16 700** | **~20 400** |
+
+The heavy day reaches the share (~20 400 of 20 000, the account's limit is 100 000): the
+customer's live message added 4 rows an order (+1 200 a day). The account's sensor in
+`imfozilbek/dream-infra` watches the real total; measure the writes again before adding more to
+an order's way.
 
 ## R2 storage
 

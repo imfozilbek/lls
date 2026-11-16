@@ -73,6 +73,81 @@ describe("HttpTelegramGateway", () => {
         })
     })
 
+    it("a message answers a card, may come silently, and its buttons keep colour and copy", async () => {
+        const { fetcher, calls } = fakeFetch({ message_id: 43 })
+        const keyboard = {
+            inline_keyboard: [
+                [{ text: "Pul keldi", callback_data: "p:1", style: "success" as const }],
+                [{ text: "Karta", copy_text: { text: "4111111111111111" } }],
+            ],
+        }
+        await new HttpTelegramGateway(fetcher).sendMessage("t", 1, "Tayyor", {
+            keyboard,
+            replyTo: 42,
+            silent: true,
+        })
+        expect(calls[0]?.body).toMatchObject({
+            reply_parameters: { message_id: 42, allow_sending_without_reply: true },
+            disable_notification: true,
+            reply_markup: keyboard,
+        })
+        // Without them, neither goes.
+        await new HttpTelegramGateway(fetcher).sendMessage("t", 1, "Hi")
+        expect(calls[1]?.body).not.toHaveProperty("reply_parameters")
+        expect(calls[1]?.body).not.toHaveProperty("disable_notification")
+    })
+
+    it("deletes the bot's own message; one already gone or too old is no failure", async () => {
+        const { fetcher, calls } = fakeFetch(true)
+        await new HttpTelegramGateway(fetcher).deleteMessage("t", 1, 42)
+        expect(calls[0]?.url).toBe("https://api.telegram.org/bott/deleteMessage")
+        expect(calls[0]?.body).toEqual({ chat_id: 1, message_id: 42 })
+        const refusing = (description: string): typeof fetch =>
+            (async () =>
+                new Response(JSON.stringify({ ok: false, description }), {
+                    status: 400,
+                })) as typeof fetch
+        await expect(
+            new HttpTelegramGateway(
+                refusing("Bad Request: message to delete not found"),
+            ).deleteMessage("t", 1, 42),
+        ).resolves.toBeUndefined()
+        await expect(
+            new HttpTelegramGateway(
+                refusing("Bad Request: message can't be deleted"),
+            ).deleteMessage("t", 1, 42),
+        ).resolves.toBeUndefined()
+        await expect(
+            new HttpTelegramGateway(
+                refusing("Forbidden: bot was blocked by the user"),
+            ).deleteMessage("t", 1, 42),
+        ).rejects.toBeInstanceOf(TelegramApiError)
+    })
+
+    it("takes the buttons off a message that stays; one gone or already plain is no failure", async () => {
+        const { fetcher, calls } = fakeFetch(true)
+        await new HttpTelegramGateway(fetcher).clearButtons("t", 1, 42)
+        expect(calls[0]?.url).toBe("https://api.telegram.org/bott/editMessageReplyMarkup")
+        expect(calls[0]?.body).toEqual({
+            chat_id: 1,
+            message_id: 42,
+            reply_markup: { inline_keyboard: [] },
+        })
+        const refusing = (description: string): typeof fetch =>
+            (async () =>
+                new Response(JSON.stringify({ ok: false, description }), {
+                    status: 400,
+                })) as typeof fetch
+        for (const description of [
+            "Bad Request: message is not modified: specified new message content and reply markup are exactly the same",
+            "Bad Request: message to edit not found",
+        ]) {
+            await expect(
+                new HttpTelegramGateway(refusing(description)).clearButtons("t", 1, 42),
+            ).resolves.toBeUndefined()
+        }
+    })
+
     it("sends a picture by URL with an HTML caption and buttons", async () => {
         const { fetcher, calls } = fakeFetch({ message_id: 7 })
         const keyboard = { inline_keyboard: [[{ text: "Open", web_app: { url: "https://a" } }]] }

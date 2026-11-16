@@ -134,8 +134,9 @@ describe("a dispatcher sends the order on and keeps the customer told", () => {
         expect(assigned?.html).toContain("Qarshi, Navoiy 12")
         expect((await step(order, "ready")).status).toBe(200)
 
-        // The bot card's step opens the app: the way and the note are asked there.
-        const ready = client.telegram.edited.filter((m) => m.chatId === DISPATCHER.id).at(-1)
+        // The bot card's step opens the app: the way and the note are asked there. «Tayyor»
+        // brings the card again, with a sound.
+        const ready = client.telegram.sent.filter((m) => m.chatId === DISPATCHER.id).at(-1)
         const send = ready?.options?.keyboard?.inline_keyboard[0]?.[0]
         expect(send?.text).toBe("📮 Jo'natdim")
         expect(send?.web_app?.url).toContain(order.id)
@@ -182,10 +183,17 @@ describe("a dispatcher sends the order on and keeps the customer told", () => {
         })
         expect(noted.status).toBe(201)
         expect((await json<Order>(noted)).deliveryNotes).toHaveLength(2)
+        // The note rings as the customer's new message, the one before goes.
         const note = client.telegram.sent.slice(noteSent).find((m) => m.chatId === CUSTOMER.id)
-        expect(note?.html).toBe(
+        const lines = note?.html.split("\n") ?? []
+        expect(lines.slice(0, 2)).toEqual([
             `📝 #${order.number} buyurtma: Qarshiga yetdi, ertaga olib boriladi`,
-        )
+            "🚚 Yo'lda",
+        ])
+        // The earlier note stays on it; the new one is not said twice.
+        expect(lines).toContain("📝 Trek: UZ123456")
+        expect(lines.filter((l) => l.includes("Qarshiga yetdi"))).toHaveLength(1)
+        expect(client.telegram.removed.at(-1)?.chatId).toBe(CUSTOMER.id)
 
         const done = await dispatcherApp()(`/api/courier/orders/${order.id}`, {
             method: "PATCH",

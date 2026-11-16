@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest"
 import { ordersCsv } from "../src/http/csv.js"
 import {
     courierKeyboard,
+    formatNewOrderForOwner,
     formatOrderForCourier,
     formatLineRemovedForCustomer,
     formatOrderForOwner,
@@ -243,14 +244,25 @@ describe("a dispatcher's order in the bots", () => {
         expect(card).toContain("🏪 Qayerdan: Bozor 1")
         expect(card).toContain("📝 Taksi &lt;chaqirildi&gt;")
         expect(card).toContain("Do'kon buyurtmani tayyorlayapti")
-        expect(courierKeyboard(preparing, reader, "https://d/x").inline_keyboard).toEqual([])
+        // Before it is packed: only the place and the phone to copy for the taxi.
+        const copy = [
+            {
+                text: "📋 Manzil va telefonni nusxalash",
+                copy_text: { text: "Navoiy 12, Aziz" },
+            },
+        ]
+        expect(courierKeyboard(preparing, reader, "https://d/x").inline_keyboard).toEqual([copy])
         const ready = withDispatcher({
             status: OrderStatus.READY,
             nextStatus: OrderStatus.PICKED_UP,
         })
         expect(courierKeyboard(ready, reader, "https://d/x").inline_keyboard).toEqual([
-            [{ text: "📮 Jo'natdim", web_app: { url: "https://d/x" } }],
+            [{ text: "📮 Jo'natdim", web_app: { url: "https://d/x" }, style: "success" }],
+            copy,
         ])
+        // Done: nothing to copy.
+        const done = withDispatcher({ status: OrderStatus.DELIVERED, nextStatus: undefined })
+        expect(courierKeyboard(done, reader, "https://d/x").inline_keyboard).toEqual([])
     })
 
     it("the courier's card opens the route in five apps; the owner's keeps the pin", () => {
@@ -279,8 +291,11 @@ describe("a dispatcher's order in the bots", () => {
         expect(links[0]?.[1]).toBe("https://d/navi/?to=38.971200,66.690400")
         expect(card).not.toContain("Xaritada ochish")
 
+        // The owner's map is at the end of the address line.
         const owner = formatOrderForOwner(placed, reader)
-        expect(owner).toContain('🗺 <a href="https://yandex.uz/maps/?pt=66.6904,38.9712')
+        expect(owner).toContain(
+            '📍 Navoiy 12 · <a href="https://yandex.uz/maps/?pt=66.6904,38.9712',
+        )
         expect(owner).not.toContain("🧭")
     })
 
@@ -301,12 +316,12 @@ describe("a dispatcher's order in the bots", () => {
         })
         const choice = { url: "https://app/o", shopHasCouriers: true }
         expect(orderKeyboard(open, reader, choice).inline_keyboard[0]).toEqual([
-            { text: "🛵 Kuryerga topshirish", web_app: { url: "https://app/o" } },
+            { text: "🛵 Kuryerga topshirish", web_app: { url: "https://app/o" }, style: "success" },
         ])
         // A shop without couriers: «O'zim yetkazaman» right in the chat, never «Tayyor» first.
         const alone = orderKeyboard(open, reader, { ...choice, shopHasCouriers: false })
         expect(alone.inline_keyboard[0]).toEqual([
-            { text: "🙋 O'zim yetkazaman", callback_data: "m:o-1" },
+            { text: "🙋 O'zim yetkazaman", callback_data: "m:o-1", style: "success" },
         ])
         expect(parseOrderCallback("m:o-1")).toEqual({ kind: "deliverMyself", orderId: "o-1" })
         const owner = formatOrderForOwner(
@@ -315,6 +330,54 @@ describe("a dispatcher's order in the bots", () => {
         )
         expect(owner).toContain("📮 Dispetcher: Dilshod, +998 90 111 22 33")
         expect(owner).toContain("🚚 Jo'natildi: pochta orqali")
+    })
+})
+
+describe("compact cards: the step and the sum first, the lines fold", () => {
+    const reader = { language: Language.UZ, type: BusinessType.FOOD }
+    const order = {
+        ...orderOf([
+            { name: "Osh", unit: Unit.PORTION, quantity: 2, total: 70_000 },
+            { name: "Somsa", unit: Unit.PIECE, quantity: 2, total: 16_000 },
+        ]),
+        deliveryFee: 10_000,
+        total: 96_000,
+        customerPhone: "+998901234567",
+        landmark: "Maktab yonida",
+        deliveryNotes: [],
+    } as OrderDTO
+
+    it("the owner's card opens with what it is, and keeps the lines in a folding quote", () => {
+        const card = formatOrderForOwner(order, reader)
+        const lines = card.split("\n")
+        expect(lines[0]).toBe("🆕 Yangi · <b>#7 · 96 000 so'm</b>")
+        expect(lines[1]).toBe("💳 Kartaga o'tkazma va chek kutilmoqda")
+        expect(card).toContain("👤 Aziz, +998 90 123 45 67")
+        expect(card).toContain("📍 Navoiy 12 (mo'ljal: Maktab yonida)")
+        expect(card).toContain(
+            "<blockquote expandable>Osh × 2 porsiya: 70 000 so'm\nSomsa × 2: 16 000 so'm\n" +
+                "Yetkazib berish: 10 000 so'm</blockquote>",
+        )
+        // Nothing said twice: no «Yangi buyurtma» on top, no «Holat:», no blank lines.
+        expect(formatNewOrderForOwner(order, reader)).toBe(card)
+        expect(card).not.toContain("Holat")
+        expect(lines).not.toContain("")
+    })
+
+    it("the courier's card names the shop and the step, and lists what to take without prices", () => {
+        const card = formatOrderForCourier(
+            { ...order, status: OrderStatus.ACCEPTED },
+            reader,
+            { name: "Osh Markaz", phone: "+998901234501", address: "Bozor 1" },
+            { naviPage: "https://d/navi/" },
+        )
+        const lines = card.split("\n")
+        expect(lines[0]).toBe("<b>Osh Markaz · #7</b> · ✅ Qabul qilindi")
+        expect(lines[1]).toBe("💳 Kartaga o'tkazma va chek kutilmoqda")
+        expect(card).toContain("🏪 Qayerdan: Bozor 1 · +998 90 123 45 01")
+        expect(card).toContain("<blockquote expandable>Osh × 2 porsiya\nSomsa × 2</blockquote>")
+        expect(card).not.toContain("so'm\n")
+        expect(lines).not.toContain("")
     })
 })
 

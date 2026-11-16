@@ -450,7 +450,20 @@ describe("shop bot", () => {
         expect(toPay?.chatId).toBe(CUSTOMER.id)
         expect(toPay?.html).toContain("4111 1111 1111 1111")
         expect(toPay?.html).toContain("Rustam Karimov")
-        expect(toPay?.html).toContain("chekni yuklang va «O'tkazdim» ni bosing")
+        expect(toPay?.html).toContain(
+            "Shu kartaga <b>80 000 so'm</b> o'tkazing, keyin chekni yuklang:",
+        )
+        // The card number in one tap, and the screenshot in the app.
+        expect(toPay?.options?.keyboard?.inline_keyboard).toEqual([
+            [{ text: "📋 Karta raqamini nusxalash", copy_text: { text: "4111111111111111" } }],
+            [
+                {
+                    text: "🧾 Chekni yuklash",
+                    web_app: { url: expect.stringContaining(`&order=${order.id}`) },
+                    style: "primary",
+                },
+            ],
+        ])
 
         // An old card's «Pul keldi» before the screenshot: one line, nothing asked or moved.
         const quiet = client.telegram.sent.length
@@ -474,9 +487,13 @@ describe("shop bot", () => {
 
         // The customer's screenshot: the owner's card gets «Pul keldi», which asks first.
         await sendReceipt(client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug }), order.id)
-        expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual({
+        expect(
+            client.telegram.edited.filter((m) => m.chatId === OWNER.id).at(-1)?.options?.keyboard
+                ?.inline_keyboard[0]?.[0],
+        ).toEqual({
             text: "💳 Pul keldi, qabul qilish",
             callback_data: `p:${order.id}`,
+            style: "success",
         })
         await shopUpdate({ callback_query: { id: "cb-q", from: OWNER, data: `p:${order.id}` } })
         const question = client.telegram.sent.at(-1)
@@ -491,12 +508,13 @@ describe("shop bot", () => {
 
         await shopUpdate({ callback_query: { id: "cb-1", from: OWNER, data: `pc:${order.id}` } })
         expect(client.telegram.answered).toContain("cb-1")
-        const edited = client.telegram.edited.at(-1)
+        const edited = client.telegram.edited.filter((m) => m.chatId === OWNER.id).at(-1)
         expect(edited?.messageId).toBeGreaterThan(0)
         // Accepted: it waits until the owner starts it (owner's decision, November 2026).
         expect(edited?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual({
             text: "👨‍🍳 Tayyorlashni boshlash",
             callback_data: `a:${order.id}:preparing`,
+            style: "success",
         })
         expect(edited?.html).toContain("O'tkazma bilan to'langan")
         const toCustomer = client.telegram.sent.at(-1)
@@ -519,15 +537,17 @@ describe("shop bot", () => {
         const row = await env.DB.prepare("SELECT status, payment_status FROM orders").first()
         expect(row).toEqual({ status: "accepted", payment_status: "paid" })
 
-        // «Tayyorlashni boshlash»: the customer hears it is being made; no courier in the shop,
+        // «Tayyorlashni boshlash»: the customer sees it is being made; no courier in the shop,
         // so «O'zim yetkazaman» comes before «Tayyor».
         await shopUpdate({
             callback_query: { id: "cb-3", from: OWNER, data: `a:${order.id}:preparing` },
         })
-        expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual(
-            expect.objectContaining({ callback_data: `m:${order.id}` }),
-        )
-        const started = client.telegram.sent.at(-1)?.html
+        expect(
+            client.telegram.edited.filter((m) => m.chatId === OWNER.id).at(-1)?.options?.keyboard
+                ?.inline_keyboard[0]?.[0],
+        ).toEqual(expect.objectContaining({ callback_data: `m:${order.id}` }))
+        // The shop's own work: the customer's one message changes quietly.
+        const started = client.telegram.edited.filter((m) => m.chatId === CUSTOMER.id).at(-1)?.html
         expect(started).toContain(`#${order.number} buyurtmangiz tayyorlanmoqda`)
         // The money was told with «qabul qilindi»: once.
         expect(started).not.toContain("To'lovingiz keldi")
@@ -550,8 +570,21 @@ describe("shop bot", () => {
             question?.options?.keyboard?.inline_keyboard.flat().map((b) => b.callback_data),
         ).toContain(`pn:${order.id}`)
 
-        await shopUpdate({ callback_query: { id: "cb-n", from: OWNER, data: `pn:${order.id}` } })
+        // Answered on the question: the question goes from the chat.
+        await shopUpdate({
+            callback_query: {
+                id: "cb-n",
+                from: OWNER,
+                data: `pn:${order.id}`,
+                message: { message_id: 41, chat: { id: OWNER.id } },
+            },
+        })
         expect(client.telegram.answered).toContain("cb-n")
+        expect(client.telegram.removed).toContainEqual({
+            token: SHOP_BOT_TOKEN,
+            chatId: OWNER.id,
+            messageId: 41,
+        })
         const row = await env.DB.prepare(
             "SELECT status, payment_status, transfer_rejections FROM orders",
         ).first()
@@ -567,7 +600,21 @@ describe("shop bot", () => {
     it("«O'zim yetkazaman» from the chat brings «Tayyor» back, the customer hears nothing", async () => {
         const order = await placeOrder()
         await sendReceipt(client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug }), order.id)
-        await shopUpdate({ callback_query: { id: "cb-p", from: OWNER, data: `pc:${order.id}` } })
+        // Answered under the screenshot: the picture stays, its buttons go.
+        await shopUpdate({
+            callback_query: {
+                id: "cb-p",
+                from: OWNER,
+                data: `pc:${order.id}`,
+                message: { message_id: 42, chat: { id: OWNER.id }, photo: [{ file_id: "f" }] },
+            },
+        })
+        expect(client.telegram.cleared).toContainEqual({
+            token: SHOP_BOT_TOKEN,
+            chatId: OWNER.id,
+            messageId: 42,
+        })
+        expect(client.telegram.removed.some((m) => m.messageId === 42)).toBe(false)
         await shopUpdate({
             callback_query: { id: "cb-a", from: OWNER, data: `a:${order.id}:preparing` },
         })
@@ -576,7 +623,7 @@ describe("shop bot", () => {
         expect(client.telegram.answered).toContain("cb-m")
         const row = await env.DB.prepare("SELECT owner_delivers FROM orders").first()
         expect(row).toEqual({ owner_delivers: 1 })
-        const card = client.telegram.edited.at(-1)
+        const card = client.telegram.edited.filter((m) => m.chatId === OWNER.id).at(-1)
         expect(card?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
             `a:${order.id}:ready`,
         )
@@ -596,9 +643,10 @@ describe("shop bot", () => {
         expect(response.status).toBe(200)
         const row = await env.DB.prepare("SELECT status FROM orders").first<{ status: string }>()
         expect(row?.status).toBe("accepted")
-        expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual(
-            expect.objectContaining({ callback_data: `a:${order.id}:preparing` }),
-        )
+        expect(
+            client.telegram.edited.filter((m) => m.chatId === OWNER.id).at(-1)?.options?.keyboard
+                ?.inline_keyboard[0]?.[0],
+        ).toEqual(expect.objectContaining({ callback_data: `a:${order.id}:preparing` }))
     })
 
     it("buttons pressed by someone else change nothing", async () => {
@@ -623,7 +671,12 @@ describe("shop bot", () => {
             .first<{ status: string; cancelled_by: string }>()
         expect(row).toEqual({ status: "cancelled", cancelled_by: "owner" })
         // A finished order keeps only the way into the app.
-        expect(client.telegram.edited.at(-1)?.options?.keyboard?.inline_keyboard.flat()).toEqual([
+        expect(
+            client.telegram.edited
+                .filter((m) => m.chatId === OWNER.id)
+                .at(-1)
+                ?.options?.keyboard?.inline_keyboard.flat(),
+        ).toEqual([
             {
                 text: "📱 Buyurtmani ochish",
                 web_app: { url: `https://zumda-app.pages.dev/?shop=${slug}&order=${first.id}` },

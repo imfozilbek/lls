@@ -19,11 +19,20 @@ export function telegramApiBase(configured: string | undefined): string {
     }
 }
 
+/**
+ * A button's colour (Bot API 9.4): the step to make is green, a refusal is red, the customer's
+ * one thing to do is blue. An older Telegram shows a plain button.
+ */
+export type ButtonStyle = "success" | "danger" | "primary"
+
 export interface InlineButton {
     text: string
     callback_data?: string
     url?: string
     web_app?: { url: string }
+    /** One tap copies this text (Bot API 7.11): a card number, an address, a link. */
+    copy_text?: { text: string }
+    style?: ButtonStyle
 }
 
 export interface InlineKeyboard {
@@ -38,6 +47,28 @@ export interface MessageOptions {
     askContactOr?: string
     /** Hides a reply keyboard shown before (after the contact arrived). */
     removeKeyboard?: boolean
+    /** Answers this earlier message of the chat (its card): the quote carries the context. */
+    replyTo?: number
+    /** Arrives without a sound: nothing to do about it now. */
+    silent?: boolean
+    /** A photo's caption over the picture: the sum is read first. */
+    captionAbove?: boolean
+}
+
+/** What every send takes besides its text: the message answered, the silence. */
+function sendExtras(options: MessageOptions): Record<string, unknown> {
+    return {
+        ...(options.replyTo === undefined
+            ? {}
+            : {
+                  reply_parameters: {
+                      message_id: options.replyTo,
+                      // The card may be gone (deleted by the person): the message still goes.
+                      allow_sending_without_reply: true,
+                  },
+              }),
+        ...(options.silent ? { disable_notification: true } : {}),
+    }
 }
 
 function replyMarkup(options: MessageOptions): unknown {
@@ -102,6 +133,16 @@ export interface TelegramGateway {
         html: string,
         options?: MessageOptions,
     ): Promise<void>
+    /**
+     * Removes the bot's own earlier message (the customer's live message is replaced). Gone
+     * already, or older than Telegram allows (48 hours): nothing happens.
+     */
+    deleteMessage(token: string, chatId: number, messageId: number): Promise<void>
+    /**
+     * Takes the buttons off a message that stays (the screenshot once its question is answered).
+     * Gone already, or without buttons: nothing happens.
+     */
+    clearButtons(token: string, chatId: number, messageId: number): Promise<void>
     answerCallback(token: string, callbackQueryId: string, text?: string): Promise<void>
     /**
      * Managed Bots: a button the user presses inside the Mini App (`WebApp.requestChat(id)`) to
@@ -204,6 +245,12 @@ async function readApiResponse<T>(response: Response): Promise<ApiResponse<T>> {
     }
 }
 
+/** Telegram's answers when a message cannot be deleted: already gone, or too old. */
+const CANNOT_DELETE = /message to delete not found|message can't be deleted/i
+
+/** Telegram's answers when there are no buttons to take off: gone, or already plain. */
+const NOTHING_TO_CLEAR = /message to edit not found|message is not modified/i
+
 /** Escapes text for Telegram HTML parse mode. */
 export function escapeHtml(text: string): string {
     return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -238,8 +285,33 @@ export class HttpTelegramGateway implements TelegramGateway {
             parse_mode: "HTML",
             link_preview_options: { is_disabled: true },
             reply_markup: replyMarkup(options),
+            ...sendExtras(options),
         })
         return { messageId: message.message_id }
+    }
+
+    async clearButtons(token: string, chatId: number, messageId: number): Promise<void> {
+        try {
+            await this.call(token, "editMessageReplyMarkup", {
+                chat_id: chatId,
+                message_id: messageId,
+                reply_markup: { inline_keyboard: [] },
+            })
+        } catch (error) {
+            if (!(error instanceof TelegramApiError) || !NOTHING_TO_CLEAR.test(error.description)) {
+                throw error
+            }
+        }
+    }
+
+    async deleteMessage(token: string, chatId: number, messageId: number): Promise<void> {
+        try {
+            await this.call(token, "deleteMessage", { chat_id: chatId, message_id: messageId })
+        } catch (error) {
+            if (!(error instanceof TelegramApiError) || !CANNOT_DELETE.test(error.description)) {
+                throw error
+            }
+        }
     }
 
     async editMessage(
@@ -375,6 +447,12 @@ export class HttpTelegramGateway implements TelegramGateway {
         form.set("parse_mode", "HTML")
         if (options?.keyboard) {
             form.set("reply_markup", JSON.stringify(options.keyboard))
+        }
+        if (options?.captionAbove) {
+            form.set("show_caption_above_media", "true")
+        }
+        for (const [key, value] of Object.entries(sendExtras(options ?? {}))) {
+            form.set(key, typeof value === "string" ? value : JSON.stringify(value))
         }
         await this.send(token, "sendPhoto", { body: form })
     }

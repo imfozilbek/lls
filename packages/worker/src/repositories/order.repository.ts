@@ -116,7 +116,24 @@ interface ItemRow {
 }
 
 /** Who gets a Telegram card for an order; each card is edited in place on status changes. */
-export type OrderCardHolder = "owner" | "courier"
+export type OrderCardHolder = "owner" | "courier" | "customer"
+
+/** The bot that holds the owner's card: the shop's own, or Zumda | Business instead. */
+export type OwnerCardBot = "shop" | "business"
+
+/** The Telegram messages of an order: the owner's and the courier's cards, the customer's one. */
+export interface OrderMessages {
+    owner: number | null
+    ownerVia: OwnerCardBot
+    courier: number | null
+    customer: number | null
+}
+
+const MESSAGE_COLUMNS: Record<OrderCardHolder, string> = {
+    owner: "owner_message_id",
+    courier: "courier_message_id",
+    customer: "customer_message_id",
+}
 
 const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal, delivery_fee,
     deposit_total, bottles_returned, total, commission_bps, commission, courier_id, courier_name,
@@ -972,23 +989,50 @@ export class D1OrderRepository implements OrderRepository {
         )
     }
 
-    /** Telegram message id of an order card, to edit it on status change. */
-    async setMessageId(orderId: string, holder: OrderCardHolder, messageId: number): Promise<void> {
-        const column = holder === "owner" ? "owner_message_id" : "courier_message_id"
+    /**
+     * Telegram message id of an order card, to edit it on status change. The owner's card says
+     * which bot holds it (`via`): an edit goes to that bot.
+     */
+    async setMessageId(
+        orderId: string,
+        holder: OrderCardHolder,
+        messageId: number,
+        via: OwnerCardBot = "shop",
+    ): Promise<void> {
+        if (holder === "owner") {
+            await this.db
+                .prepare(
+                    "UPDATE orders SET owner_message_id = ?, owner_message_via = ? WHERE id = ?",
+                )
+                .bind(messageId, via, orderId)
+                .run()
+            return
+        }
         await this.db
-            .prepare(`UPDATE orders SET ${column} = ? WHERE id = ?`)
+            .prepare(`UPDATE orders SET ${MESSAGE_COLUMNS[holder]} = ? WHERE id = ?`)
             .bind(messageId, orderId)
             .run()
     }
 
-    async getMessageIds(
-        orderId: string,
-    ): Promise<{ owner: number | null; courier: number | null }> {
+    async getMessageIds(orderId: string): Promise<OrderMessages> {
         const row = await this.db
-            .prepare("SELECT owner_message_id, courier_message_id FROM orders WHERE id = ?")
+            .prepare(
+                `SELECT owner_message_id, owner_message_via, courier_message_id, customer_message_id
+                 FROM orders WHERE id = ?`,
+            )
             .bind(orderId)
-            .first<{ owner_message_id: number | null; courier_message_id: number | null }>()
-        return { owner: row?.owner_message_id ?? null, courier: row?.courier_message_id ?? null }
+            .first<{
+                owner_message_id: number | null
+                owner_message_via: string | null
+                courier_message_id: number | null
+                customer_message_id: number | null
+            }>()
+        return {
+            owner: row?.owner_message_id ?? null,
+            ownerVia: row?.owner_message_via === "business" ? "business" : "shop",
+            courier: row?.courier_message_id ?? null,
+            customer: row?.customer_message_id ?? null,
+        }
     }
 
     private async list(

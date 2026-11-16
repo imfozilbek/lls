@@ -15,7 +15,14 @@ import {
     placeOrder,
     resetStand,
 } from "../support/stand.js"
-import { courierChat, lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
+import {
+    callsOf,
+    courierChat,
+    lastSeq,
+    messagesTo,
+    shopChat,
+    waitForMessage,
+} from "../support/telegram.js"
 import { openApp, signInitData, openSettings } from "../support/webapp.js"
 
 import type { PlacedOrder } from "../support/stand.js"
@@ -77,16 +84,19 @@ async function invite(shop: string, person: TgUser): Promise<string> {
         await apiAs(ownerUser, "/owner/couriers/invites", { shop, method: "POST" })
     ).json()) as { link: string }
     expect(created.link).toContain(`t.me/${courierBot().username}?start=c_`)
-    const since = await lastSeq()
     await courierChat().send(person, `/start ${created.link.split("start=")[1] ?? ""}`)
-    const ask = await waitForMessage(
-        ownerUser.id,
-        `${person.first_name} kuryer bo'lish taklifini qabul qildi`,
-        since,
-    )
-    const approve = ask.buttons.find((b) => b.callback_data?.endsWith(":approve"))
-    expect(approve?.text).toBe("✅ Tasdiqlash")
-    return approve?.callback_data?.split(":")[1] ?? ""
+    // Pending in the owner's list; the owner's bot asks once the phone is there.
+    let id = ""
+    await expect
+        .poll(async () => {
+            const couriers = (await (
+                await apiAs(ownerUser, "/owner/couriers", { shop })
+            ).json()) as { id: string; name: string; status: string }[]
+            id = couriers.find((c) => c.name === person.first_name)?.id ?? ""
+            return id
+        })
+        .not.toBe("")
+    return id
 }
 
 async function approve(shop: string, courierId: string): Promise<Response> {
@@ -120,11 +130,25 @@ test("the card comes from the courier bot with the shop's name; no buttons until
     expect(card.text).toContain('href="http://localhost:5173/navi/?to=38.976000,66.686000"')
     expect(card.buttons.filter((b) => b.callback_data)).toHaveLength(0)
     expect(card.text).toContain("Buyurtma tayyor bo'lganda xabar beramiz")
-    // Accepting started it: «Tayyor» is the shop's last step.
+    // «Tayyor»: the card comes again with a sound and the old one goes (no ping under it).
+    const beforeReady = await lastSeq()
     expect((await owner(order.id, { status: "ready" })).status).toBe(200)
-    const ping = await waitForMessage(PEOPLE.courier.id, `#${order.number} buyurtma tayyor`, since)
-    expect(ping.token).toBe(courierBot().token)
-    expect(ping.text).toContain("Osh Markaz")
+    const ready = await waitForMessage(
+        PEOPLE.courier.id,
+        `<b>Osh Markaz · #${order.number}</b> · 📦 Tayyor`,
+        beforeReady,
+    )
+    expect(ready.method).toBe("sendMessage")
+    expect(ready.buttons.find((b) => b.callback_data?.endsWith(":picked_up"))?.style).toBe(
+        "success",
+    )
+    await expect
+        .poll(async () =>
+            (await callsOf("deleteMessage", beforeReady)).some(
+                (c) => Number(c.body["chat_id"]) === PEOPLE.courier.id,
+            ),
+        )
+        .toBe(true)
 })
 
 test("ready → «Забрал» in the courier bot → «Доставил» in the app; the customer is told", async ({
@@ -132,11 +156,12 @@ test("ready → «Забрал» in the courier bot → «Доставил» in 
 }) => {
     const order = (await home(PEOPLE.courier)).orders.find((o) => o.status === "ready")
     expect(order?.shopName).toBe("Osh Markaz")
-    const edited = (await messagesTo(PEOPLE.courier.id))
-        .filter((m) => m.method === "editMessageText")
-        .at(-1)
-    expect(edited?.token).toBe(courierBot().token)
-    const picked = edited?.buttons.find((b) => b.callback_data?.endsWith(":picked_up"))
+    // The card that came on «Tayyor» carries «Oldim».
+    const card = (await messagesTo(PEOPLE.courier.id)).findLast((m) =>
+        m.buttons.some((b) => b.callback_data?.endsWith(":picked_up")),
+    )
+    expect(card?.token).toBe(courierBot().token)
+    const picked = card?.buttons.find((b) => b.callback_data?.endsWith(":picked_up"))
     expect(picked?.text).toBe("🚚 Oldim")
 
     const since = await lastSeq()
@@ -237,6 +262,16 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
     await courierChat().shareContact(PEOPLE.newCourier, "+998907776655", PEOPLE.stranger.id)
     await courierChat().shareContact(PEOPLE.newCourier, "+998907776655")
     await waitForMessage(PEOPLE.newCourier.id, /raqamingiz/i, since)
+    // Now there is someone to approve: the owner hears it, the name and the phone together.
+    const ask = await waitForMessage(
+        PEOPLE.foodOwner.id,
+        "Bobur kuryer bo'lish taklifini qabul qildi",
+        since,
+    )
+    expect(ask.text).toContain("📞 Kuryer: +998 90 777 66 55")
+    const approveButton = ask.buttons.find((b) => b.callback_data?.endsWith(":approve"))
+    expect(approveButton).toMatchObject({ text: "✅ Tasdiqlash", style: "success" })
+    expect(approveButton?.callback_data).toBe(`k:${id}:approve`)
 
     // Not approved yet: cannot get an order, sees no deliveries.
     const order = await placeOrder(PEOPLE.customer, FOOD, [
@@ -254,12 +289,9 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
     await expect(page.getByText("Siz hali kuryer emassiz")).toBeVisible()
     await expect(page.getByText(/Havolani ochgan bo'lsangiz, tasdiqlashni kuting/)).toBeVisible()
 
-    // The owner presses «Подтвердить» in the shop bot.
-    const ask = (await messagesTo(PEOPLE.foodOwner.id, since)).findLast((m) =>
-        m.text.includes("Bobur"),
-    )
+    // The owner presses «Tasdiqlash» in the shop bot.
     const before = await lastSeq()
-    await shopChat(FOOD).press(PEOPLE.foodOwner, ask?.buttons[0]?.callback_data ?? "", 1)
+    await shopChat(FOOD).press(PEOPLE.foodOwner, approveButton?.callback_data ?? "", 1)
     const welcome = await waitForMessage(
         PEOPLE.newCourier.id,
         "sizni kuryer sifatida tasdiqladi",

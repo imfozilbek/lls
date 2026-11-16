@@ -41,7 +41,12 @@ const updateSchema = z.object({
             from: userSchema,
             data: z.string().optional(),
             message: z
-                .object({ message_id: z.number().int(), chat: z.object({ id: z.number().int() }) })
+                .object({
+                    message_id: z.number().int(),
+                    chat: z.object({ id: z.number().int() }),
+                    /** A picture message (the screenshot): it stays, only its buttons go. */
+                    photo: z.array(z.unknown()).optional(),
+                })
                 .optional(),
         })
         .optional(),
