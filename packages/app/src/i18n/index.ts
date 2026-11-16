@@ -3,8 +3,8 @@ import { create } from "zustand"
 
 import { useSession } from "../stores/session.js"
 
-import { FOOD_STAFF, FOOD_UZ } from "./food.js"
-import { SERVICE_STAFF, SERVICE_UZ } from "./service.js"
+import { FOOD_UZ } from "./food.js"
+import { SERVICE_UZ } from "./service.js"
 import { uz } from "./uz.js"
 
 import type { StaffDictionary } from "./staff.js"
@@ -26,19 +26,22 @@ const OVERLAYS: Partial<Record<BusinessType, Overlay<Base>>> = {
     [BusinessType.FOOD]: FOOD_UZ as Overlay<Base>,
     [BusinessType.SERVICE]: SERVICE_UZ as Overlay<Base>,
 }
-const STAFF_OVERLAYS: Partial<Record<BusinessType, Overlay<StaffDictionary>>> = {
-    [BusinessType.FOOD]: FOOD_STAFF as Overlay<StaffDictionary>,
-    [BusinessType.SERVICE]: SERVICE_STAFF as Overlay<StaffDictionary>,
-}
+export type StaffOverlays = Partial<Record<BusinessType, Overlay<StaffDictionary>>>
 
 /** The staff's words, once a staff chunk has loaded them (`staff-register.ts`). */
 let staffWords: Record<Language, StaffDictionary> | null = null
+/** The staff's words by kind of business: they come with the staff chunk, never before. */
+let staffOverlays: StaffOverlays = {}
 /** One object per language and kind, so `useT()` stays stable between renders. */
 const built = new Map<string, Dictionary>()
 
 /** Called by the owner, courier, application and «Platforma» chunks before they render. */
-export function registerStaff(words: Record<Language, StaffDictionary>): void {
+export function registerStaff(
+    words: Record<Language, StaffDictionary>,
+    overlays: StaffOverlays = {},
+): void {
     staffWords = words
+    staffOverlays = overlays
     built.clear()
 }
 
@@ -88,7 +91,7 @@ export function dictionaryFor(language: Language, type?: BusinessType): Dictiona
     const base = BASE[language]
     const overlay = type ? OVERLAYS[type] : undefined
     const staff = staffWords?.[language]
-    const staffOverlay = type ? STAFF_OVERLAYS[type] : undefined
+    const staffOverlay = type ? staffOverlays[type] : undefined
     // Before a staff chunk loads, only the customer's words exist; staff screens never render then.
     const dictionary = {
         ...base,
