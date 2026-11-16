@@ -132,20 +132,21 @@ describe("shop couriers, verticals and channels", () => {
         await client.courierBot({
             message: { from: COURIER, chat: { id: COURIER.id }, text: `/start ${code}` },
         })
-        const [waiting, toOwner] = client.telegram.sent.slice(-2)
-        // The courier hears from the Zumda courier bot; the owner from their own shop bot.
+        // The courier hears from the Zumda courier bot and is asked for the phone.
+        const waiting = client.telegram.sent.at(-1)
         expect(waiting).toMatchObject({ chatId: COURIER.id, token: env.COURIER_BOT_TOKEN })
         expect(waiting?.options?.askContact).toBeTruthy()
-        expect(toOwner).toMatchObject({ chatId: OWNER.id, token: SHOP_BOT_TOKEN })
-        expect(toOwner?.html).toContain("Jasur")
-        const approveButton = toOwner?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data
-        expect(approveButton).toMatch(/^k:.+:approve$/)
+        // The owner hears of a courier once there is someone to approve: with the phone.
+        expect(
+            client.telegram.sent.some((m) => m.chatId === OWNER.id && m.html.includes("Jasur")),
+        ).toBe(false)
 
         // Waiting for approval: listed for the owner, no courier screen yet.
         const [pending] = await json<{ id: string; status: string }[]>(
             await as(OWNER)("/api/owner/couriers"),
         )
         expect(pending?.status).toBe("pending")
+        const approveButton = `k:${pending?.id ?? ""}:approve`
         expect((await courierApp()("/api/courier/home")).status).toBe(403)
 
         // A broken number is the person's mistake: 200, or Telegram resends it for hours.
@@ -158,7 +159,7 @@ describe("shop couriers, verticals and channels", () => {
         })
         expect(broken.status).toBe(200)
 
-        // No phone yet: the owner's button says why, and the courier keeps waiting.
+        // No phone yet: an approval (an old button) says why, and the courier keeps waiting.
         await botUpdate({
             callback_query: {
                 id: "cb-early",
@@ -190,7 +191,20 @@ describe("shop couriers, verticals and channels", () => {
                 contact: { phone_number: "+998901112233", user_id: COURIER.id },
             },
         })
-        expect(client.telegram.sent.at(-1)?.options?.removeKeyboard).toBe(true)
+        const saved = client.telegram.sent.filter((m) => m.chatId === COURIER.id).at(-1)
+        expect(saved?.options?.removeKeyboard).toBe(true)
+        // Now the owner hears it from their own shop bot: the name, the phone, the buttons.
+        const toOwner = client.telegram.sent.at(-1)
+        expect(toOwner).toMatchObject({ chatId: OWNER.id, token: SHOP_BOT_TOKEN })
+        expect(toOwner?.html).toContain("Jasur")
+        expect(toOwner?.html).toContain("📞 Kuryer: +998 90 111 22 33")
+        expect(toOwner?.options?.keyboard?.inline_keyboard[0]?.map((b) => b.style)).toEqual([
+            "success",
+            "danger",
+        ])
+        expect(toOwner?.options?.keyboard?.inline_keyboard[0]?.[0]?.callback_data).toBe(
+            approveButton,
+        )
 
         // A stranger pressing the owner's button gets nothing.
         await botUpdate({

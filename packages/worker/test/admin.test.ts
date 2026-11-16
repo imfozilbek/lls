@@ -113,7 +113,12 @@ describe("«Platforma»: the admins' own bot, Zumda | Platforma (/api/admin)", (
         })
         const toOwner = client.telegram.sent.filter((m) => m.chatId === OWNER.id).at(-1)
         expect(toOwner?.html).toContain("ishga tushdi")
-        expect(toOwner?.options?.keyboard?.inline_keyboard[0]?.[0]?.web_app?.url).toBe(
+        // The bot's link to copy for the customers, then «Mening bizneslarim».
+        expect(toOwner?.options?.keyboard?.inline_keyboard[0]?.[0]).toEqual({
+            text: "📋 Havolani nusxalash",
+            copy_text: { text: "https://t.me/osh_markaz_bot" },
+        })
+        expect(toOwner?.options?.keyboard?.inline_keyboard[1]?.[0]?.web_app?.url).toBe(
             "https://business.zumda.test/?mode=business",
         )
         // Approving twice is a business rule, not a crash.

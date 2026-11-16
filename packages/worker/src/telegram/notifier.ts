@@ -5,6 +5,7 @@ import {
     OrderChannel,
     OrderStatus,
     OwnerChat,
+    formatPhone,
     shopCallPhone,
     toNetworkOrderDTO,
 } from "@zumda/core"
@@ -661,7 +662,11 @@ export class Notifier {
         const token = await this.shopToken(business.id)
         const ownerId = business.ownerTelegramId.value
         const t = textsFor(await this.languageOf(ownerId), business.type)
-        const text = fill(t.courierJoinedOwner, { name: escapeHtml(courier.name) })
+        // Who it is and the number: the owner approves someone they can call.
+        const text = [
+            fill(t.courierJoinedOwner, { name: escapeHtml(courier.name) }),
+            ...(courier.phone ? [fill(t.courierPhone, { phone: formatPhone(courier.phone) })] : []),
+        ].join("\n")
         await this.textToOwner(
             business,
             token,
@@ -789,8 +794,12 @@ export class Notifier {
             keyboard: {
                 inline_keyboard: [
                     [
-                        { text: t.approve, callback_data: `r:${shop.id}:approve` },
-                        { text: t.reject, callback_data: `r:${shop.id}:reject` },
+                        {
+                            text: t.approve,
+                            callback_data: `r:${shop.id}:approve`,
+                            style: "success",
+                        },
+                        { text: t.reject, callback_data: `r:${shop.id}:reject`, style: "danger" },
                     ],
                     [appButton(t.openApplication, url)],
                 ],
@@ -941,7 +950,15 @@ export class Notifier {
                 ]
                     .filter((line) => line !== null)
                     .join(""),
-                { keyboard: this.businessesKeyboard(texts) },
+                {
+                    // The link for the owner's customers, in one tap.
+                    keyboard: {
+                        inline_keyboard: [
+                            [{ text: texts.copyLink, copy_text: { text: link } }],
+                            ...this.businessesKeyboard(texts).inline_keyboard,
+                        ],
+                    },
+                },
             )
             .catch(afterConnect)
         await this.shopBotDescriptions(shop).catch(afterConnect)
