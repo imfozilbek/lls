@@ -36,6 +36,14 @@ export function courierAppUrl(appOrigin: string, orderId?: string): string {
 }
 
 /**
+ * The courier app's page that hands a route to Yandex Navigator: a message takes only https
+ * links, and Navigator opens only by its own scheme (`public/navi/index.html`).
+ */
+export function naviPageUrl(appOrigin: string): string {
+    return `${appOrigin}/navi/`
+}
+
+/**
  * «Mening bizneslarim»: the owner's businesses, opened from Zumda | Business; with `shop`, right
  * on that business's owner section (and on the order, when the message is about one).
  */

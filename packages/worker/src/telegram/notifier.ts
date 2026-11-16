@@ -20,6 +20,7 @@ import {
     appKeyboard,
     businessAppUrl,
     courierAppUrl,
+    naviPageUrl,
     platformAppUrl,
     shopAppUrl,
     shopBotStartUrl,
@@ -1020,11 +1021,12 @@ export class Notifier {
         const shopPhone = await shopCallPhone(business, this.services.customers)
         const orderUrl = courierAppUrl(this.services.env.COURIER_APP_ORIGIN, order.id)
         const sent = await this.upsertCard(token, chatId, messageId, {
-            text: formatOrderForCourier(order, reader, {
-                name: business.name,
-                phone: shopPhone?.number,
-                address: business.address,
-            }),
+            text: formatOrderForCourier(
+                order,
+                reader,
+                { name: business.name, phone: shopPhone?.number, address: business.address },
+                { naviPage: naviPageUrl(this.services.env.COURIER_APP_ORIGIN) },
+            ),
             keyboard: withAppButton(
                 courierKeyboard(order, reader, orderUrl),
                 this.courierAppButton(textsFor(reader.language), undefined, order.id),

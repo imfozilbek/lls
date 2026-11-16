@@ -234,7 +234,12 @@ describe("a dispatcher's order in the bots", () => {
             status: OrderStatus.PREPARING,
             deliveryNotes: [{ at: "2026-11-15T10:00:00.000Z", text: "Taksi <chaqirildi>" }],
         })
-        const card = formatOrderForCourier(preparing, reader, { name: "ABC", address: "Bozor 1" })
+        const card = formatOrderForCourier(
+            preparing,
+            reader,
+            { name: "ABC", address: "Bozor 1" },
+            { naviPage: "https://d/navi/" },
+        )
         expect(card).toContain("🏪 Qayerdan: Bozor 1")
         expect(card).toContain("📝 Taksi &lt;chaqirildi&gt;")
         expect(card).toContain("Do'kon buyurtmani tayyorlayapti")
@@ -246,6 +251,37 @@ describe("a dispatcher's order in the bots", () => {
         expect(courierKeyboard(ready, reader, "https://d/x").inline_keyboard).toEqual([
             [{ text: "📮 Jo'natdim", web_app: { url: "https://d/x" } }],
         ])
+    })
+
+    it("the courier's card opens the route in five apps; the owner's keeps the pin", () => {
+        const placed = withDispatcher({
+            status: OrderStatus.PREPARING,
+            location: { latitude: 38.9712, longitude: 66.6904 },
+        })
+        const card = formatOrderForCourier(
+            placed,
+            reader,
+            { name: "ABC", address: "Bozor 1" },
+            { naviPage: "https://d/navi/" },
+        )
+        const line = card.split("\n").find((l) => l.startsWith("🧭 Yo'l: "))
+        expect(line).toBeDefined()
+        const links = [...(line ?? "").matchAll(/<a href="([^"]+)">([^<]+)<\/a>/g)]
+        expect(links.map((m) => m[2])).toEqual([
+            "Yandex Navigator",
+            "Yandex Go",
+            "Google Maps",
+            "2GIS",
+            "Yandex Maps",
+        ])
+        // A message takes only https links: Navigator goes through the app's page.
+        expect(links.every((m) => m[1]?.startsWith("https://"))).toBe(true)
+        expect(links[0]?.[1]).toBe("https://d/navi/?to=38.971200,66.690400")
+        expect(card).not.toContain("Xaritada ochish")
+
+        const owner = formatOrderForOwner(placed, reader)
+        expect(owner).toContain('🗺 <a href="https://yandex.uz/maps/?pt=66.6904,38.9712')
+        expect(owner).not.toContain("🧭")
     })
 
     it("the owner's card: no dispatcher's step; an order nobody is on goes to the app", () => {
