@@ -1,5 +1,4 @@
 import { optionalText, requireText } from "../shared/guards.js"
-import { addDays, startOfLocalDay } from "../shared/time.js"
 
 import type { Phone } from "../value-objects/phone.js"
 import type { TelegramId } from "../value-objects/telegram-id.js"
@@ -8,13 +7,20 @@ import type { TelegramId } from "../value-objects/telegram-id.js"
 const NAME_MAX = 100
 const VEHICLE_MAX = 40
 
+/**
+ * «Smenadaman» holds until the courier switches it off (owner's decision, November 2026: a
+ * courier had to switch it on every day): the farthest moment a date can name. A shift started
+ * before ends at its old midnight.
+ */
+export const SHIFT_OPEN_END = new Date(8_640_000_000_000_000)
+
 export interface CourierProfileProps {
     telegramId: TelegramId
     name: string
     phone?: Phone
     /** "Damas", "Nexia", "moto": what the courier drives. */
     vehicle?: string
-    /** On shift until this moment: the end of the local day the shift started. */
+    /** On shift until this moment: `SHIFT_OPEN_END` until the courier switches it off. */
     shiftUntil?: Date
     /** Delivers for other shops of the district too. Only the courier sets it. */
     inNetwork?: boolean
@@ -82,9 +88,9 @@ export class CourierProfile {
         this.props.updatedAt = now
     }
 
-    /** "Я на смене": for today only, so a forgotten shift never carries over to tomorrow. */
+    /** «Smenadaman»: on shift until the courier switches it off. */
     startShift(now: Date): void {
-        this.props.shiftUntil = addDays(startOfLocalDay(now), 1)
+        this.props.shiftUntil = SHIFT_OPEN_END
         this.props.updatedAt = now
     }
 
