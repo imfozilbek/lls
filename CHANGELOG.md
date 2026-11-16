@@ -7,6 +7,14 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### «Skrinshotni tanlash» opens the gallery on Android
+- On a Galaxy S25+ (Android 17, Telegram 13.2.2) a tap on the receipt tile did nothing: the
+  gallery never opened, so the customer could not send the screenshot and the owner could not
+  press «Pul keldi». The tile was a label tied to the file field; the product photo and logo
+  buttons, which click the field themselves, opened the gallery on the same phone.
+- The receipt tile, «Boshqa rasm» and the quick product photo in the catalog are now buttons
+  that click a hidden file field, the same way as the photo and logo buttons.
+
 ### The shop chooses whether to use the district network
 - One switch, «Tuman tarmog'idan foydalanish», in «Sozlamalar» → «Kuryerlar» (owner's decision,
   November 2026). On: the network takes an order when the shop's own couriers are busy, and the

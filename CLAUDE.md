@@ -1055,7 +1055,9 @@ console.log            // Use logger
   stay 16px (iOS zooms below) with the dark caret (`index.css`). Nothing waits forever: every
   request has a deadline (`lib/deadline.ts`; 20 s reads, 30 s writes, 120 s files; a read that
   broke before any answer goes once more, a write never), a pull lets go after 25 s, a timer
-  tick never starts while the last one waits.
+  tick never starts while the last one waits. A file is picked by a button that clicks a
+  hidden `<input type="file">`, never by a label tied to it: in Telegram for Android 17 a label
+  did not open the gallery (November 2026).
 
 ## Skills Usage (MANDATORY)
 

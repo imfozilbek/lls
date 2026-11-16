@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { errorText, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
@@ -18,10 +18,14 @@ interface Picked {
     url: string
 }
 
-const FOCUS_RING =
-    "peer-focus-visible:outline peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-brand"
+const PRESSED =
+    "tap focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
 
-/** The big dashed tile to pick the screenshot, then its preview with «Boshqa rasm». */
+/**
+ * The big dashed tile to pick the screenshot, then its preview with «Boshqa rasm».
+ * A button clicks the hidden file field, as the product photo and the logo do: in Telegram for
+ * Android 17 a label tied to the field did not open the gallery (November 2026), a button does.
+ */
 function ReceiptPicker({
     picked,
     onPicked,
@@ -30,7 +34,7 @@ function ReceiptPicker({
     onPicked(picked: Picked): void
 }): React.JSX.Element {
     const receipt = receiptWords(useLanguage())
-    const inputId = useId()
+    const input = useRef<HTMLInputElement>(null)
     const [reading, setReading] = useState(false)
 
     const pick = async (file: File | undefined): Promise<void> => {
@@ -49,14 +53,17 @@ function ReceiptPicker({
             setReading(false)
         }
     }
+    const open = (): void => {
+        haptic.tap()
+        input.current?.click()
+    }
 
-    // Right before its label: the label shows the keyboard focus of the hidden input.
-    const input = (
+    const field = (
         <input
-            id={inputId}
+            ref={input}
             type="file"
             accept="image/*"
-            className="peer sr-only"
+            className="hidden"
             onChange={(event): void => {
                 void pick(event.target.files?.[0])
                 // The same file picked again still fires a change.
@@ -72,22 +79,25 @@ function ReceiptPicker({
                     alt={receipt.title}
                     className="h-[36vh] w-auto max-w-full rounded-control bg-tg-secondary object-contain ring-1 ring-black/5"
                 />
-                {input}
-                <label
-                    htmlFor={inputId}
-                    className={`tap inline-flex min-h-11 cursor-pointer items-center rounded-control px-4 font-semibold text-brand ${FOCUS_RING}`}
+                {field}
+                <button
+                    type="button"
+                    onClick={open}
+                    className={`inline-flex min-h-11 items-center rounded-control px-4 font-semibold text-brand ${PRESSED}`}
                 >
                     {receipt.change}
-                </label>
+                </button>
             </div>
         )
     }
     return (
         <div className="flex flex-col">
-            {input}
-            <label
-                htmlFor={inputId}
-                className={`tap flex h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-tile border-2 border-dashed border-brand/40 bg-brand/5 font-semibold text-tg-text ${FOCUS_RING}`}
+            {field}
+            <button
+                type="button"
+                onClick={open}
+                disabled={reading}
+                className={`flex h-40 flex-col items-center justify-center gap-2 rounded-tile border-2 border-dashed border-brand/40 bg-brand/5 font-semibold text-tg-text ${PRESSED}`}
             >
                 {reading ? (
                     <Spinner className="h-6 w-6 text-brand" />
@@ -95,7 +105,7 @@ function ReceiptPicker({
                     <ReceiptIcon size={32} className="text-brand" />
                 )}
                 {receipt.pick}
-            </label>
+            </button>
         </div>
     )
 }
