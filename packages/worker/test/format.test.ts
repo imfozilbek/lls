@@ -281,3 +281,41 @@ describe("a dispatcher's order in the bots", () => {
         expect(owner).toContain("🚚 Jo'natildi: pochta orqali")
     })
 })
+
+describe("the delivery line says only what the shop promised (owner's decision, November 2026)", () => {
+    const reader = { language: Language.UZ, type: BusinessType.STORE }
+    const order = (extra: Partial<OrderDTO>): OrderDTO => ({
+        ...orderOf([{ name: "Lego" }]),
+        deliveryFree: false,
+        customerPaysCarrier: false,
+        ...extra,
+    })
+
+    it("the fee, «bepul» when promised, «keyin aytiladi», or no line at all", () => {
+        expect(formatOrderForOwner(order({ deliveryFee: 10_000 }), reader)).toContain(
+            "Yetkazib berish: 10 000 so'm",
+        )
+        expect(formatOrderForOwner(order({ deliveryFree: true }), reader)).toContain(
+            "Yetkazib berish: bepul",
+        )
+        expect(formatOrderForOwner(order({ customerPaysCarrier: true }), reader)).toContain(
+            "Yetkazib berish: keyin aytiladi, mijoz yetkazuvchiga o'zi to'laydi",
+        )
+        // A price never chosen: nothing about delivery, never «bepul».
+        expect(formatOrderForOwner(order({}), reader)).not.toContain("Yetkazib berish")
+    })
+
+    it("a service says nothing about delivery, and cash is paid after the work", () => {
+        const service = { language: Language.UZ, type: BusinessType.SERVICE }
+        const cash = order({
+            payment: { method: "cash", status: PaymentStatus.UNPAID } as OrderDTO["payment"],
+        })
+        const card = formatOrderForOwner(cash, service)
+        expect(card).not.toContain("Yetkazib berish")
+        expect(card).toContain("💵 Naqd: ishdan keyin olinadi")
+        expect(card).not.toMatch(/yetkaz/i)
+        expect(textsFor(Language.UZ, BusinessType.SERVICE).shopBotDescription).not.toMatch(
+            /olib kelamiz/,
+        )
+    })
+})

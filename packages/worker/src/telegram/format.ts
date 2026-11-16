@@ -116,12 +116,18 @@ export function paymentLine(order: OrderDTO, t: BotTexts): string {
     }
 }
 
-/** «bepul», the fee, or «alohida» when the customer pays the carrier (a taxi, the post). */
-function deliveryText(order: OrderDTO, t: BotTexts, language: Language): string {
+/**
+ * The fee, «bepul» when the shop promised it, or «keyin aytiladi» when the customer pays the
+ * carrier. Nothing when the shop never chose a price, or for a service: no line at all.
+ */
+function deliveryText(order: OrderDTO, t: BotTexts, language: Language): string | null {
     if (order.customerPaysCarrier) {
         return t.deliveryApart
     }
-    return order.deliveryFee === 0 ? t.free : formatMoney(order.deliveryFee, language)
+    if (order.deliveryFee > 0) {
+        return formatMoney(order.deliveryFee, language)
+    }
+    return order.deliveryFree ? t.free : null
 }
 
 /** The dispatcher's last notes on a card: the newest are what matters, the app has them all. */
@@ -161,7 +167,10 @@ export function formatOrderForOwner(order: OrderDTO, reader: Reader): string {
         "",
         ...itemLines(order, t, language),
     ]
-    lines.push(`${t.delivery}: ${deliveryText(order, t, language)}`)
+    const delivery = deliveryText(order, t, language)
+    if (delivery) {
+        lines.push(`${t.delivery}: ${delivery}`)
+    }
     if (order.depositTotal > 0) {
         lines.push(`${t.deposit}: ${formatMoney(order.depositTotal, language)}`)
     }

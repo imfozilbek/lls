@@ -272,7 +272,10 @@ const BASE = {
         lineRemovedOwner: "❌ {item}: yo'q",
         refundOwedOwner: "💸 {sum} qaytarish kerak",
         /** «Yetkazish haqini mijoz o'zi to'laydi»: nothing of it is in the total. */
-        deliveryApart: "alohida, mijoz yetkazuvchiga o'zi to'laydi",
+        deliveryApart: "keyin aytiladi, mijoz yetkazuvchiga o'zi to'laydi",
+        /** The first message about the order: the price comes when it is sent. */
+        carrierPriceLater:
+            "💵 Yetkazib berish narxi jo'natilganda aytiladi, uni yetkazuvchiga o'zingiz to'laysiz.",
         carrierFeeCustomer: "💵 Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz.",
         chooseCourier: "🛵 Kuryerga topshirish",
         deliverMyself: "🙋 O'zim yetkazaman",
@@ -307,7 +310,7 @@ const BASE = {
             "Do'kon #{n} buyurtma uchun pulni topmadi. Kartangizdan o'tganini tekshiring va chekni qayta yuboring.",
         transferRejectedOwner: "#{n}: «Pul kelmadi» belgilandi. Mijozdan chekni qayta so'radik.",
         payByTransfer:
-            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n{system}<code>{card}</code> ({holder})\nKeyin ilovada chekni yuklang va «O'tkazdim» ni bosing. Pul kelishi bilan do'kon boshlaydi.",
+            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n{system}<code>{card}</code> ({holder})\nKeyin ilovada chekni yuklang va «O'tkazdim» ni bosing. Pul kelishi bilan do'kon buyurtmani qabul qiladi.",
         /** A card's system before its number; Zumda does not know every card (then nothing). */
         cardSystems: {
             humo: "Humo",
@@ -384,8 +387,23 @@ const FOOD: Record<Language, Partial<BotTexts>> = {
 /** Services are done, not cooked or collected; and they are «Xizmatlar», not a catalog. */
 const SERVICE: Record<Language, Partial<BotTexts>> = {
     [Language.UZ]: {
-        statusNames: { ...BASE.uz.statusNames, [OrderStatus.PREPARING]: "🧰 Bajarilmoqda" },
-        actions: { ...BASE.uz.actions, [OrderStatus.PREPARING]: "🧰 Bajarishni boshlash" },
+        statusNames: {
+            ...BASE.uz.statusNames,
+            [OrderStatus.PREPARING]: "🧰 Bajarilmoqda",
+            [OrderStatus.DELIVERED]: "🏁 Bajarildi",
+        },
+        actions: {
+            ...BASE.uz.actions,
+            [OrderStatus.PREPARING]: "🧰 Bajarishni boshlash",
+            [OrderStatus.DELIVERED]: "🏁 Bajarildi",
+        },
+        // A service delivers nothing (owner's decision, November 2026): cash is paid after the work.
+        payment: { ...BASE.uz.payment, cashUnpaid: "💵 Naqd: ishdan keyin olinadi" },
+        payByCash:
+            "🧾 #{n} buyurtma rasmiylashtirildi.\nTo'lov naqd: ishdan keyin {sum} berasiz. Do'kon qabul qilishi bilan xabar beramiz.",
+        lineRemovedCash: "Ishdan keyin {sum} berasiz.",
+        shopBotDescription:
+            "{shop}: buyurtmalarni shu yerda qabul qilamiz.\nPastdagi «{openMenu}» tugmasini bosing: xizmatni tanlang va buyurtma bering.\n\nZumda asosida ishlaydi · zumda.shop",
         customerStatus: {
             ...BASE.uz.customerStatus,
             // A service starts the moment it is accepted: the customer hears it once.

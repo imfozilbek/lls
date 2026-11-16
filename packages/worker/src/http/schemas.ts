@@ -24,6 +24,7 @@ import {
     isAge,
     WEEKDAYS,
     DELIVERY_NOTE_MAX,
+    DELIVERY_PRICE_CHOICES,
     SEND_WAYS,
 } from "@zumda/core"
 import { z } from "zod"
@@ -291,8 +292,10 @@ export const shopPatchBody = z.object({
             freeFrom: optionalMoney,
             minOrder: optionalMoney,
             radiusMeters: z.number().int().min(1).max(100_000).nullable().optional(),
-            /** «Yetkazish haqini mijoz o'zi to'laydi»; left out: as it was. */
+            /** The customer pays the carrier; left out: as it was. */
             customerPaysCarrier: z.boolean().optional(),
+            /** The owner's choice of how delivery is paid; left out: the choice made stays. */
+            price: z.enum(DELIVERY_PRICE_CHOICES).optional(),
         })
         .optional(),
     workingHours: z.partialRecord(z.enum(WEEKDAYS), timeRange).nullable().optional(),
