@@ -15,7 +15,14 @@ import {
     placeOrder,
     resetStand,
 } from "../support/stand.js"
-import { courierChat, lastSeq, messagesTo, shopChat, waitForMessage } from "../support/telegram.js"
+import {
+    callsOf,
+    courierChat,
+    lastSeq,
+    messagesTo,
+    shopChat,
+    waitForMessage,
+} from "../support/telegram.js"
 import { openApp, signInitData, openSettings } from "../support/webapp.js"
 
 import type { PlacedOrder } from "../support/stand.js"
@@ -123,11 +130,25 @@ test("the card comes from the courier bot with the shop's name; no buttons until
     expect(card.text).toContain('href="http://localhost:5173/navi/?to=38.976000,66.686000"')
     expect(card.buttons.filter((b) => b.callback_data)).toHaveLength(0)
     expect(card.text).toContain("Buyurtma tayyor bo'lganda xabar beramiz")
-    // Accepting started it: «Tayyor» is the shop's last step.
+    // «Tayyor»: the card comes again with a sound and the old one goes (no ping under it).
+    const beforeReady = await lastSeq()
     expect((await owner(order.id, { status: "ready" })).status).toBe(200)
-    const ping = await waitForMessage(PEOPLE.courier.id, `#${order.number} buyurtma tayyor`, since)
-    expect(ping.token).toBe(courierBot().token)
-    expect(ping.text).toContain("Osh Markaz")
+    const ready = await waitForMessage(
+        PEOPLE.courier.id,
+        `<b>Osh Markaz · #${order.number}</b> · 📦 Tayyor`,
+        beforeReady,
+    )
+    expect(ready.method).toBe("sendMessage")
+    expect(ready.buttons.find((b) => b.callback_data?.endsWith(":picked_up"))?.style).toBe(
+        "success",
+    )
+    await expect
+        .poll(async () =>
+            (await callsOf("deleteMessage", beforeReady)).some(
+                (c) => Number(c.body["chat_id"]) === PEOPLE.courier.id,
+            ),
+        )
+        .toBe(true)
 })
 
 test("ready → «Забрал» in the courier bot → «Доставил» in the app; the customer is told", async ({
@@ -135,11 +156,12 @@ test("ready → «Забрал» in the courier bot → «Доставил» in 
 }) => {
     const order = (await home(PEOPLE.courier)).orders.find((o) => o.status === "ready")
     expect(order?.shopName).toBe("Osh Markaz")
-    const edited = (await messagesTo(PEOPLE.courier.id))
-        .filter((m) => m.method === "editMessageText")
-        .at(-1)
-    expect(edited?.token).toBe(courierBot().token)
-    const picked = edited?.buttons.find((b) => b.callback_data?.endsWith(":picked_up"))
+    // The card that came on «Tayyor» carries «Oldim».
+    const card = (await messagesTo(PEOPLE.courier.id)).findLast((m) =>
+        m.buttons.some((b) => b.callback_data?.endsWith(":picked_up")),
+    )
+    expect(card?.token).toBe(courierBot().token)
+    const picked = card?.buttons.find((b) => b.callback_data?.endsWith(":picked_up"))
     expect(picked?.text).toBe("🚚 Oldim")
 
     const since = await lastSeq()

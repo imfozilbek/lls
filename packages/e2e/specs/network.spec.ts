@@ -195,9 +195,9 @@ test("the owner: one network switch, nothing to the network while off, and who b
     await expect(card).toContainText("Kuryer: Jasur")
     await expect
         .poll(async () =>
-            (await messagesTo(PEOPLE.networkCourier2.id, since))
-                .filter((m) => m.method === "editMessageText")
-                .some((m) => m.text.includes(`#${order.number}`)),
+            (await callsOf("deleteMessage", since)).some(
+                (c) => Number(c.body["chat_id"]) === PEOPLE.networkCourier2.id,
+            ),
         )
         .toBe(true)
 })
