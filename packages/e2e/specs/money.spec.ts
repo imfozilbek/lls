@@ -31,7 +31,7 @@ import {
 import { bottomButton, fillAddress, openApp, openSettings, toCart } from "../support/webapp.js"
 
 import type { RecordedFile } from "../stand/fake-telegram.js"
-import type { Page } from "@playwright/test"
+import type { Locator, Page } from "@playwright/test"
 
 const COURIER_ID = "dev-food-courier"
 const CARD = "8600 1234 5678 9012"
@@ -79,6 +79,16 @@ test.beforeAll(resetStand)
 /** The «Pul keldi» sheet: the sum, the card, the screenshot and any warning, then yes or no. */
 const checkSheet = (page: Page): ReturnType<Page["locator"]> =>
     page.getByRole("dialog").filter({ hasText: "keldimi?" })
+
+/**
+ * A finger on «Skrinshotni tanlash» opens the phone's gallery: a button that clicks the file
+ * field (a label tied to it did not open the gallery in Telegram for Android).
+ */
+async function pickByTap(page: Page, sheet: Locator, buffer: Buffer): Promise<void> {
+    const chooser = page.waitForEvent("filechooser")
+    await sheet.getByRole("button", { name: "Skrinshotni tanlash" }).tap()
+    await (await chooser).setFiles({ name: "chek.png", mimeType: "image/png", buffer })
+}
 
 test("checkout tells the sum; the order screen gives the card; «Chekni yuklash», then «O'tkazdim»", async ({
     page,
@@ -135,11 +145,7 @@ test("checkout tells the sum; the order screen gives the card; «Chekni yuklash�
     await page.getByRole("button", { name: "Chekni yuklash" }).click()
     const sheet = page.getByRole("dialog").filter({ hasText: "O'tkazma cheki" })
     await expect(sheet.getByRole("button", { name: "O'tkazdim" })).toBeDisabled()
-    await sheet.locator('input[type="file"]').setInputFiles({
-        name: "chek.png",
-        mimeType: "image/png",
-        buffer: pngImage(240, [240, 240, 240]),
-    })
+    await pickByTap(page, sheet, pngImage(240, [240, 240, 240]))
     await expect(sheet.getByRole("img", { name: "O'tkazma cheki" })).toBeVisible()
     await sheet.getByRole("button", { name: "O'tkazdim" }).click()
     await expect(sheet).toBeHidden()
