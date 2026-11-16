@@ -299,7 +299,6 @@ test("couriers: invite to the courier bot, approve in the app, days, remove", as
     const since = await lastSeq()
     await courierChat().send(PEOPLE.newCourier, `/start ${link.split("start=")[1] ?? ""}`)
     await waitForMessage(PEOPLE.newCourier.id, "egasi sizni tasdiqlashini kuting", since)
-    await waitForMessage(PEOPLE.foodOwner.id, "Bobur kuryer bo'lish taklifini qabul qildi", since)
 
     // The same link does not work twice.
     await courierChat().send(PEOPLE.stranger, `/start ${link.split("start=")[1] ?? ""}`)
@@ -315,6 +314,13 @@ test("couriers: invite to the courier bot, approve in the app, days, remove", as
     await expect(pending.getByRole("button", { name: "Tasdiqlash" })).toBeDisabled()
     await expect(pending.getByText("Kuryer raqamini yuborgach tasdiqlay olasiz")).toBeVisible()
     await courierChat().shareContact(PEOPLE.newCourier, "+998901114004")
+    // The owner hears it once there is someone to approve: the name and the phone together.
+    const ask = await waitForMessage(
+        PEOPLE.foodOwner.id,
+        "Bobur kuryer bo'lish taklifini qabul qildi",
+        since,
+    )
+    expect(ask.text).toContain("📞 Kuryer: +998 90 111 40 04")
     await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")))
     const before = await lastSeq()
     await pending.getByRole("button", { name: "Tasdiqlash" }).click()

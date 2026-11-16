@@ -33,6 +33,9 @@ export interface Button {
     callback_data?: string
     url?: string
     web_app?: { url: string }
+    /** One tap copies this text (the card number, the courier's address). */
+    copy_text?: { text: string }
+    style?: "success" | "danger" | "primary"
 }
 
 /** A message a bot sent or edited. */

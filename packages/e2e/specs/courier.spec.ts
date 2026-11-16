@@ -77,16 +77,19 @@ async function invite(shop: string, person: TgUser): Promise<string> {
         await apiAs(ownerUser, "/owner/couriers/invites", { shop, method: "POST" })
     ).json()) as { link: string }
     expect(created.link).toContain(`t.me/${courierBot().username}?start=c_`)
-    const since = await lastSeq()
     await courierChat().send(person, `/start ${created.link.split("start=")[1] ?? ""}`)
-    const ask = await waitForMessage(
-        ownerUser.id,
-        `${person.first_name} kuryer bo'lish taklifini qabul qildi`,
-        since,
-    )
-    const approve = ask.buttons.find((b) => b.callback_data?.endsWith(":approve"))
-    expect(approve?.text).toBe("✅ Tasdiqlash")
-    return approve?.callback_data?.split(":")[1] ?? ""
+    // Pending in the owner's list; the owner's bot asks once the phone is there.
+    let id = ""
+    await expect
+        .poll(async () => {
+            const couriers = (await (
+                await apiAs(ownerUser, "/owner/couriers", { shop })
+            ).json()) as { id: string; name: string; status: string }[]
+            id = couriers.find((c) => c.name === person.first_name)?.id ?? ""
+            return id
+        })
+        .not.toBe("")
+    return id
 }
 
 async function approve(shop: string, courierId: string): Promise<Response> {
@@ -237,6 +240,16 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
     await courierChat().shareContact(PEOPLE.newCourier, "+998907776655", PEOPLE.stranger.id)
     await courierChat().shareContact(PEOPLE.newCourier, "+998907776655")
     await waitForMessage(PEOPLE.newCourier.id, /raqamingiz/i, since)
+    // Now there is someone to approve: the owner hears it, the name and the phone together.
+    const ask = await waitForMessage(
+        PEOPLE.foodOwner.id,
+        "Bobur kuryer bo'lish taklifini qabul qildi",
+        since,
+    )
+    expect(ask.text).toContain("📞 Kuryer: +998 90 777 66 55")
+    const approveButton = ask.buttons.find((b) => b.callback_data?.endsWith(":approve"))
+    expect(approveButton).toMatchObject({ text: "✅ Tasdiqlash", style: "success" })
+    expect(approveButton?.callback_data).toBe(`k:${id}:approve`)
 
     // Not approved yet: cannot get an order, sees no deliveries.
     const order = await placeOrder(PEOPLE.customer, FOOD, [
@@ -254,12 +267,9 @@ test("an invite in the courier bot: phone asked, waits for the owner, the owner 
     await expect(page.getByText("Siz hali kuryer emassiz")).toBeVisible()
     await expect(page.getByText(/Havolani ochgan bo'lsangiz, tasdiqlashni kuting/)).toBeVisible()
 
-    // The owner presses «Подтвердить» in the shop bot.
-    const ask = (await messagesTo(PEOPLE.foodOwner.id, since)).findLast((m) =>
-        m.text.includes("Bobur"),
-    )
+    // The owner presses «Tasdiqlash» in the shop bot.
     const before = await lastSeq()
-    await shopChat(FOOD).press(PEOPLE.foodOwner, ask?.buttons[0]?.callback_data ?? "", 1)
+    await shopChat(FOOD).press(PEOPLE.foodOwner, approveButton?.callback_data ?? "", 1)
     const welcome = await waitForMessage(
         PEOPLE.newCourier.id,
         "sizni kuryer sifatida tasdiqladi",
