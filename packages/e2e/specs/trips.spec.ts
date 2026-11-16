@@ -108,18 +108,21 @@ test("the owner gives three orders one way to one courier, in Zumda's order", as
 })
 
 test("the courier sees the way, takes all at once, delivers stop by stop", async ({ page }) => {
-    await openApp(page, { user: PEOPLE.courier, shop: FOOD, courierBot: true })
+    const app = await openApp(page, { user: PEOPLE.courier, shop: FOOD, courierBot: true })
     const trip = page.getByRole("listitem", { name: "Bir yo'nalish" })
     await expect(trip.getByRole("heading", { name: "3 ta buyurtma bir yo'nalishda" })).toBeVisible()
     const takeAll = trip.getByRole("button", { name: "Hammasini oldim" })
     await expect(takeAll).toBeDisabled()
     await expect(trip.getByText("Hammasi tayyor bo'lganda olasiz: 0/3 tayyor")).toBeVisible()
 
-    // Yandex Navigator from the shop (nothing picked up yet) through every stop, in order.
-    const link = await trip
-        .getByRole("link", { name: "Yandex Navigatorda ochish" })
-        .getAttribute("href")
-    const route = new URL(link ?? "").searchParams.get("rtext") ?? ""
+    // «Yo'lni ochish»: only the apps that take several stops; Yandex Maps from the shop (nothing
+    // picked up yet) through every stop, in order.
+    await trip.getByRole("button", { name: "Yo'lni ochish" }).first().click()
+    const apps = page.getByRole("dialog", { name: "Yo'lni ochish" }).getByRole("listitem")
+    await expect(apps).toHaveText(["Yandex Navigator", "Google Maps", "Yandex Maps"])
+    await apps.getByRole("button", { name: "Yandex Maps" }).click()
+    const link = (await app.calls()).filter((c) => c.method === "openLink").at(-1)?.args[0]
+    const route = new URL(String(link)).searchParams.get("rtext") ?? ""
     expect(route.split("~").map((p) => p.split(",")[0]?.slice(0, 7))).toEqual([
         "",
         ...[SHOP, north(0.5), north(1.5), north(1)].map((p) => p.latitude.toFixed(6).slice(0, 7)),
