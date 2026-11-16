@@ -462,6 +462,8 @@ export const uz = {
         bottlesBack: "Qaytariladigan bo'sh idish: {n} ta",
         /** A line the shop did not have («Yo'q»): out of the order, shown struck through. */
         missingItem: "Do'konda yo'q edi",
+        /** A line's photo opens its product: «{name}: Mahsulotni ko'rish». */
+        viewProduct: "{name}: Mahsulotni ko'rish",
         reorder: "Takrorlash",
         paidStage: "To'landi",
         itemsCount: "{n} xil mahsulot",
