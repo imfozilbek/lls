@@ -5,9 +5,6 @@ import {
     OrderChannel,
     OrderStatus,
     OwnerChat,
-    PaymentMethod,
-    cardSystemOf,
-    formatPhone,
     shopCallPhone,
     toNetworkOrderDTO,
 } from "@zumda/core"
@@ -33,14 +30,14 @@ import {
     courierKeyboard,
     courierReviewKeyboard,
     formatNetworkOffer,
+    customerKeyboard,
+    customerStepRings,
+    formatCustomerCard,
     formatNewOrderForOwner,
-    formatLineRemovedForCustomer,
-    formatNoteForCustomer,
     formatOrderForCourier,
     formatOrderForOwner,
     formatMoney,
     formatRate,
-    formatStatusForCustomer,
     networkInviteKeyboard,
     networkOfferKeyboard,
     orderKeyboard,
@@ -51,7 +48,7 @@ import { refreshManagedBotToken } from "./managed-token.js"
 import { fill, textsFor } from "./texts.js"
 
 import type { PlatformTarget } from "./app-links.js"
-import type { Reader } from "./format.js"
+import type { CustomerEvent, Reader } from "./format.js"
 import type { InlineButton, InlineKeyboard, OutgoingFile } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
 import type { Services } from "../services.js"
@@ -137,52 +134,12 @@ export class Notifier {
     }
 
     /**
-     * Right after checkout: the card and the sum, so the customer can transfer from the chat, or
-     * the sum to have ready for the courier. Sent on its own: a failed owner card never keeps the
-     * customer from paying.
+     * Right after checkout: the customer's live message starts, with the card and the sum to
+     * transfer, or the sum to have ready for the courier. Sent on its own: a failed owner card
+     * never keeps the customer from paying.
      */
     async askForTransfer(business: Business, order: OrderDTO): Promise<void> {
-        // The shop's number under the first message: the customer can call from the chat.
-        const phone = await shopCallPhone(business, this.services.customers)
-        // The delivery price comes when it is sent, paid to the carrier: said before they pay.
-        const withPhone = (t: BotTexts, text: string): string =>
-            [
-                text,
-                ...(order.customerPaysCarrier ? [t.carrierPriceLater] : []),
-                ...(phone ? [fill(t.shopPhone, { phone: formatPhone(phone.number) })] : []),
-            ].join("\n")
-        if (order.payment.method === PaymentMethod.CASH) {
-            const token = await this.shopToken(business.id)
-            await this.tellCustomer(token, business, order, (t, language) =>
-                withPhone(
-                    t,
-                    fill(t.payByCash, {
-                        n: order.number,
-                        sum: `<b>${formatMoney(order.total, language)}</b>`,
-                    }),
-                ),
-            )
-            return
-        }
-        // The card this order was shown: the owner may have switched the payment card since.
-        const card = order.payment.card
-        if (!card) {
-            return
-        }
-        const token = await this.shopToken(business.id)
-        const system = cardSystemOf(card.number)
-        await this.tellCustomer(token, business, order, (t, language) =>
-            withPhone(
-                t,
-                fill(t.payByTransfer, {
-                    n: order.number,
-                    sum: `<b>${formatMoney(order.total, language)}</b>`,
-                    system: system ? `${t.cardSystems[system]} ` : "",
-                    card: card.number.replace(/(\d{4})(?=\d)/g, "$1 "),
-                    holder: escapeHtml(card.holder),
-                }),
-            ),
-        )
+        await this.customerCard(business, order, { kind: "status" }, true)
     }
 
     /** «Я перевёл»: the owner's card shows it, and a ping says to check the card. */
@@ -196,7 +153,10 @@ export class Notifier {
         receipt: { bytes: Uint8Array; contentType: string },
     ): Promise<void> {
         const token = await this.shopToken(business.id)
-        await this.orderChangedForOwner(token, business, order)
+        await everyOne([
+            (): Promise<void> => this.orderChangedForOwner(token, business, order),
+            (): Promise<void> => this.customerCard(business, order, { kind: "status" }, false),
+        ])
         const ownerId = business.ownerTelegramId.value
         const reader = await this.readerFor(ownerId, business)
         const t = textsFor(reader.language, business.type)
@@ -294,9 +254,7 @@ export class Notifier {
         await everyOne([
             (): Promise<void> => this.orderChangedForOwner(token, business, order),
             (): Promise<void> =>
-                this.tellCustomer(token, business, order, (t) =>
-                    fill(t.transferRejectedCustomer, { n: order.number }),
-                ),
+                this.customerCard(business, order, { kind: "transferRejected" }, true),
         ])
     }
 
@@ -319,6 +277,7 @@ export class Notifier {
                 cancelled || !order.waitingForNetwork
                     ? this.closeNetworkOffers(business, order)
                     : Promise.resolve(),
+            // The customer who cancelled sees it quietly; the owner hears it.
             (): Promise<void> =>
                 cancelled && order.cancelledBy === "customer"
                     ? this.toOwner(
@@ -327,7 +286,14 @@ export class Notifier {
                           order,
                           `${textsFor(owner.language).cancelledByCustomer}: #${order.number}`,
                       )
-                    : this.notifyCustomer(token, business, order, note),
+                    : Promise.resolve(),
+            (): Promise<void> =>
+                this.customerCard(
+                    business,
+                    order,
+                    { kind: "status", note },
+                    order.cancelledBy !== "customer" && customerStepRings(order, business.type),
+                ),
         ])
     }
 
@@ -341,9 +307,7 @@ export class Notifier {
         const messages = await this.services.orders.getMessageIds(order.id)
         await everyOne([
             (): Promise<void> =>
-                this.tellCustomer(token, business, order, (_t, language) =>
-                    formatNoteForCustomer(order, note.text, { language, type: business.type }),
-                ),
+                this.customerCard(business, order, { kind: "note", text: note.text }, true),
             (): Promise<void> => this.orderChangedForOwner(token, business, order),
             (): Promise<void> => this.refreshCourierCard(business, order, messages.courier),
         ])
@@ -358,9 +322,7 @@ export class Notifier {
         const messages = await this.services.orders.getMessageIds(order.id)
         await everyOne([
             (): Promise<void> =>
-                this.tellCustomer(token, business, order, (_t, language) =>
-                    formatLineRemovedForCustomer(order, item, { language, type: business.type }),
-                ),
+                this.customerCard(business, order, { kind: "lineRemoved", item }, true),
             (): Promise<void> => this.orderChangedForOwner(token, business, order),
             (): Promise<void> => this.refreshCourierCard(business, order, messages.courier),
         ])
@@ -625,12 +587,17 @@ export class Notifier {
     }
 
     /** A transfer for a cancelled order arrived (owed back), or the money went back. */
-    async paymentChanged(business: Business, order: OrderDTO): Promise<void> {
+    /** «Qaytardim»: the cards show it, and the customer hears what came back (`refunded`). */
+    async paymentChanged(business: Business, order: OrderDTO, refunded = 0): Promise<void> {
         const token = await this.shopToken(business.id)
         const messages = await this.services.orders.getMessageIds(order.id)
         await everyOne([
             (): Promise<void> => this.orderChangedForOwner(token, business, order),
             (): Promise<void> => this.refreshCourierCard(business, order, messages.courier),
+            (): Promise<void> =>
+                refunded > 0
+                    ? this.customerCard(business, order, { kind: "refunded", sum: refunded }, true)
+                    : Promise.resolve(),
         ])
     }
 
@@ -1078,51 +1045,66 @@ export class Notifier {
         return sent.messageId
     }
 
-    private async notifyCustomer(
-        token: string,
+    /**
+     * The customer's one live message about the order (owner's decision, November 2026). What
+     * they wait for (`ring`) comes as a new message with a sound and the one before goes; the
+     * shop's own work edits it quietly. A showcase customer hears from Zumda | Shop, the shop
+     * named first; a demo shop's message says it is not real.
+     */
+    private async customerCard(
         business: Business,
         order: OrderDTO,
-        note?: string,
-    ): Promise<void> {
-        await this.tellCustomer(token, business, order, (_t, language) =>
-            formatStatusForCustomer(order, { language, type: business.type }, note),
-        )
-    }
-
-    /** Writes the customer in their language; a showcase customer hears from the Zumda bot. */
-    private async tellCustomer(
-        token: string,
-        business: Business,
-        order: OrderDTO,
-        compose: (t: BotTexts, language: Language) => string | null,
+        event: CustomerEvent,
+        ring: boolean,
     ): Promise<void> {
         const customer = await this.services.customers.findById(order.customerId)
         if (!customer) {
             return
         }
-        const composed = compose(textsFor(customer.language, business.type), customer.language)
-        if (!composed) {
-            return
-        }
+        const reader = { language: customer.language, type: business.type }
         const t = textsFor(customer.language, business.type)
-        // A demo shop's every message says it: nobody takes a demo order for a real one.
-        const text = business.isDemo() ? `${t.demoOrder}\n${composed}` : composed
+        const phone = await shopCallPhone(business, this.services.customers)
+        const showcase = order.channel === OrderChannel.MARKETPLACE
         const origin = this.services.env.APP_ORIGIN
         const slug = business.slug.value
-        // A showcase customer started only the Zumda bot, so the Zumda bot writes, naming the shop.
-        if (order.channel === OrderChannel.MARKETPLACE) {
-            const shop = `<b>${escapeHtml(business.name)}</b>`
-            await this.services.telegram.sendMessage(
-                this.services.env.PLATFORM_BOT_TOKEN,
-                customer.telegramId.value,
-                `${shop}\n${text}`,
-                { keyboard: appKeyboard(t.openOrder, showcaseOrderUrl(origin, slug, order.id)) },
-            )
-            return
+        const card = formatCustomerCard(order, reader, event, phone?.number)
+        const text = [
+            ...(business.isDemo() ? [t.demoOrder] : []),
+            ...(showcase ? [`<b>${escapeHtml(business.name)}</b>`] : []),
+            card,
+        ].join("\n")
+        const keyboard = customerKeyboard(
+            order,
+            reader,
+            showcase
+                ? showcaseOrderUrl(origin, slug, order.id)
+                : shopAppUrl(origin, slug, order.id),
+        )
+        const token = showcase
+            ? this.services.env.PLATFORM_BOT_TOKEN
+            : await this.shopToken(business.id)
+        const chatId = customer.telegramId.value
+        const { customer: previous } = await this.services.orders.getMessageIds(order.id)
+        const telegram = this.services.telegram
+        if (!ring && previous !== null) {
+            try {
+                await telegram.editMessage(token, chatId, previous, text, { keyboard })
+                return
+            } catch (error) {
+                if (unchanged(error)) {
+                    return
+                }
+                if (!cardIsGone(error)) {
+                    throw error
+                }
+                // The customer deleted it: a fresh one, quietly.
+            }
         }
-        await this.services.telegram.sendMessage(token, customer.telegramId.value, text, {
-            keyboard: appKeyboard(t.openOrder, shopAppUrl(origin, slug, order.id)),
-        })
+        const sent = await telegram.sendMessage(token, chatId, text, { keyboard, silent: !ring })
+        await this.services.orders.setMessageId(order.id, "customer", sent.messageId)
+        if (previous !== null && previous !== sent.messageId) {
+            await telegram.deleteMessage(token, chatId, previous)
+        }
     }
 
     /**

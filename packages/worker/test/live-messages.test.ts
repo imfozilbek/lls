@@ -10,6 +10,8 @@ import {
     SHOP_BOT,
     SHOP_BOT_TOKEN,
     createActiveShop,
+    hireCourier,
+    sendReceipt,
     sharePhoneWithShops,
     testClient,
 } from "./helpers.js"
@@ -72,3 +74,135 @@ describe("the messages of an order in D1", () => {
         expect(await orders.getMessageIds(orderId)).toMatchObject({ owner: 504, ownerVia: "shop" })
     })
 })
+
+const COURIER = { id: 5005, first_name: "Jasur", language_code: "uz" }
+
+/** The customer's one live message per order (owner's decision, November 2026). */
+describe("the customer's live message", () => {
+    let client: TestClient
+    let slug: string
+    let productId: string
+
+    const as = (user: object): ReturnType<TestClient["as"]> =>
+        client.as(user, { botToken: SHOP_BOT_TOKEN, shop: slug })
+    const toCustomer = (): { sent: SentLike[]; edited: SentLike[]; removed: number[] } => ({
+        sent: client.telegram.sent.filter((m) => m.chatId === CUSTOMER.id),
+        edited: client.telegram.edited.filter((m) => m.chatId === CUSTOMER.id),
+        removed: client.telegram.removed
+            .filter((m) => m.chatId === CUSTOMER.id)
+            .map((m) => m.messageId),
+    })
+    const place = async (): Promise<{ id: string; number: number }> =>
+        json(
+            await as(CUSTOMER)("/api/orders", {
+                method: "POST",
+                json: {
+                    items: [{ productId, quantity: 2 }],
+                    address: "Navoiy 12",
+                    landmark: "Maktab",
+                    location: PIN,
+                },
+            }),
+        )
+    const setStatus = (id: string, status: string): Promise<Response> =>
+        as(OWNER)(`/api/owner/orders/${id}`, { method: "PATCH", json: { status } })
+    const payment = (id: string, action: string): Promise<Response> =>
+        as(OWNER)(`/api/owner/orders/${id}/payment`, { method: "PATCH", json: { action } })
+
+    beforeEach(async () => {
+        client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
+        slug = (await createActiveShop(client)).slug
+        const product = await json<{ id: string }>(
+            await as(OWNER)("/api/owner/products", {
+                method: "POST",
+                json: { name: "Osh", price: 35_000, unit: "portion", category: "meals" },
+            }),
+        )
+        productId = product.id
+        await as(CUSTOMER)("/api/me")
+        await sharePhoneWithShops(CUSTOMER.id)
+    })
+
+    it("one message for the whole way: what they wait for rings, the shop's work is quiet", async () => {
+        await hireCourier(client, { slug }, COURIER)
+        const order = await place()
+        const placed = toCustomer().sent
+        expect(placed).toHaveLength(1)
+        expect(placed[0]?.options?.silent).toBe(false)
+        expect(placed[0]?.html.split("\n")[0]).toBe(
+            `🧾 #${order.number} buyurtma rasmiylashtirildi.`,
+        )
+        expect(placed[0]?.html).toContain("📍 Navoiy 12 (mo'ljal: Maktab)")
+        expect(placed[0]?.html).toContain("<blockquote expandable>Osh × 2 porsiya: 70 000 so'm")
+
+        // The screenshot: the same message, quietly.
+        await sendReceipt(as(CUSTOMER), order.id)
+        expect(toCustomer().sent).toHaveLength(1)
+        expect(toCustomer().edited.at(-1)?.html).toContain(
+            "Chek yuborildi. Do'kon pul kelganini tekshiryapti.",
+        )
+
+        // «Pul keldi»: a new message with a sound, the old one goes.
+        await payment(order.id, "paid")
+        const accepted = toCustomer()
+        expect(accepted.sent).toHaveLength(2)
+        expect(accepted.sent[1]?.html).toContain("qabul qilindi")
+        expect(accepted.sent[1]?.options?.silent).toBe(false)
+        expect(accepted.removed).toHaveLength(1)
+
+        // Collecting and ready: quiet edits of that message.
+        await setStatus(order.id, "preparing")
+        await setStatus(order.id, "ready")
+        expect(toCustomer().sent).toHaveLength(2)
+        expect(toCustomer().edited.at(-1)?.html).toContain("tayyor")
+
+        // On the way and delivered ring; each time one message stays.
+        const courier = client.as(COURIER, { courierBot: true })
+        for (const status of ["picked_up", "delivered"]) {
+            await courier(`/api/courier/orders/${order.id}`, {
+                method: "PATCH",
+                json: { status },
+            })
+        }
+        const done = toCustomer()
+        expect(done.sent).toHaveLength(4)
+        expect(done.sent[2]?.html).toContain("📞 Kuryer: +998 90 111 22 33")
+        expect(done.sent[3]?.html).toContain("yetkazildi")
+        expect(done.removed).toHaveLength(3)
+        // Every message but the last was removed: the chat keeps one per order.
+        const kept = await env.DB.prepare("SELECT customer_message_id FROM orders WHERE id = ?")
+            .bind(order.id)
+            .first<{ customer_message_id: number }>()
+        expect(done.removed).not.toContain(kept?.customer_message_id)
+    })
+
+    it("the customer who cancels sees it quietly; the owner hears it", async () => {
+        const order = await place()
+        await as(CUSTOMER)(`/api/orders/${order.id}`, {
+            method: "PATCH",
+            json: { status: "cancelled" },
+        })
+        expect(toCustomer().sent).toHaveLength(1)
+        expect(toCustomer().edited.at(-1)?.html).toContain("bekor qilindi")
+        const owner = client.telegram.sent.filter((m) => m.chatId === OWNER.id).at(-1)
+        expect(owner?.html).toContain("Mijoz buyurtmani bekor qildi")
+    })
+
+    it("«Qaytardim» tells the customer what came back", async () => {
+        const order = await place()
+        await sendReceipt(as(CUSTOMER), order.id)
+        await payment(order.id, "paid")
+        await setStatus(order.id, "cancelled")
+        await payment(order.id, "refunded")
+        const last = toCustomer().sent.at(-1)
+        expect(last?.html.split("\n")[0]).toBe(
+            `↩️ #${order.number}: do'kon sizga 80 000 so'm qaytarib berdi.`,
+        )
+        expect(last?.options?.silent).toBe(false)
+    })
+})
+
+interface SentLike {
+    html: string
+    options?: { silent?: boolean }
+}

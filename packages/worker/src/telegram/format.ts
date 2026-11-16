@@ -1,6 +1,7 @@
 import {
     BusinessType,
     OrderChannel,
+    cardSystemOf,
     OrderStatus,
     PaymentMethod,
     PaymentStatus,
@@ -415,6 +416,204 @@ function transferLine(order: OrderDTO, t: BotTexts, type: BusinessType): string 
         order.payment.status === PaymentStatus.PAID
         ? `\n${t.transferArrived}`
         : ""
+}
+
+/**
+ * What the customer's live message says first (owner's decision, November 2026): the order's
+ * step, or what just happened to it.
+ */
+export type CustomerEvent =
+    | { kind: "status"; note?: string }
+    | { kind: "note"; text: string }
+    | { kind: "lineRemoved"; item: string }
+    | { kind: "transferRejected" }
+    | { kind: "refunded"; sum: number }
+
+/**
+ * Whether a step reaches the customer with a sound: what they wait for rings, the shop's own work
+ * (collecting, ready) and the screenshot they just sent change the message quietly.
+ */
+export function customerStepRings(order: OrderDTO, type: BusinessType): boolean {
+    switch (order.status) {
+        case OrderStatus.PENDING:
+            return order.payment.status === PaymentStatus.UNPAID
+        case OrderStatus.PREPARING:
+            // A service starts the moment it is accepted: «qabul qilindi va bajarilmoqda».
+            return type === BusinessType.SERVICE
+        case OrderStatus.READY:
+            return false
+        default:
+            return true
+    }
+}
+
+/**
+ * The customer's one message about an order: what happened, the money, the place and whom to
+ * call, the notes; the lines, the delivery and the total fold at the end.
+ */
+export function formatCustomerCard(
+    order: OrderDTO,
+    reader: Reader,
+    event: CustomerEvent,
+    shopPhone?: string,
+): string {
+    const t = textsFor(reader.language, reader.type)
+    return [
+        ...customerHeadline(order, reader, event, t),
+        ...customerDetails(order, reader, event, shopPhone),
+        itemsQuote(order, reader, { prices: true, total: true }),
+    ].join("\n")
+}
+
+function customerHeadline(
+    order: OrderDTO,
+    reader: Reader,
+    event: CustomerEvent,
+    t: BotTexts,
+): string[] {
+    const step = t.statusNames[order.status]
+    switch (event.kind) {
+        case "note":
+            return [formatNoteForCustomer(order, event.text, reader), step]
+        case "lineRemoved":
+            return [formatLineRemovedForCustomer(order, event.item, reader), step]
+        case "transferRejected":
+            return [fill(t.transferRejectedCustomer, { n: order.number }), ...cardLines(order, t)]
+        case "refunded": {
+            const sum = formatMoney(event.sum, reader.language)
+            return [fill(t.refundedCustomer, { n: order.number, sum }), step]
+        }
+        case "status":
+            return order.status === OrderStatus.PENDING
+                ? placedLines(order, reader, t)
+                : [formatStatusForCustomer(order, reader, event.note) ?? step]
+    }
+}
+
+/** A new order: how to pay it, or that the screenshot is with the shop. */
+function placedLines(order: OrderDTO, reader: Reader, t: BotTexts): string[] {
+    const sum = `<b>${formatMoney(order.total, reader.language)}</b>`
+    if (order.payment.method === PaymentMethod.CASH) {
+        return [fill(t.payByCash, { n: order.number, sum })]
+    }
+    const head = fill(t.placed, { n: order.number })
+    if (order.payment.status === PaymentStatus.AWAITING) {
+        return [head, t.transferSentCustomer]
+    }
+    return [head, fill(t.transferTo, { sum }), ...cardLines(order, t)]
+}
+
+/** The card this order was shown, grouped by four, with its system when Zumda knows it. */
+function cardLines(order: OrderDTO, t: BotTexts): string[] {
+    const card = order.payment.card
+    if (!card) {
+        return []
+    }
+    const system = cardSystemOf(card.number)
+    const number = card.number.replace(/(\d{4})(?=\d)/g, "$1 ")
+    const name = system ? `${t.cardSystems[system]} ` : ""
+    return [`${name}<code>${number}</code> (${escapeHtml(card.holder)})`]
+}
+
+/**
+ * Under the first line: the cash still to give, the carrier's price to come, the notes, the
+ * place, and whom to call (the courier on the way, always the shop).
+ */
+function customerDetails(
+    order: OrderDTO,
+    reader: Reader,
+    event: CustomerEvent,
+    shopPhone: string | undefined,
+): string[] {
+    const t = textsFor(reader.language, reader.type)
+    const landmark = order.landmark ? ` (${t.landmark}: ${escapeHtml(order.landmark)})` : ""
+    return [
+        ...moneyAhead(order, reader, event, t),
+        ...customerNotes(order, event, t),
+        `📍 ${escapeHtml(order.address)}${landmark}`,
+        ...whomToCall(order, event, t, shopPhone),
+    ]
+}
+
+/** What the customer still pays: the cash for the courier, the carrier's price to come. */
+function moneyAhead(order: OrderDTO, reader: Reader, event: CustomerEvent, t: BotTexts): string[] {
+    if (order.status === OrderStatus.DELIVERED || order.status === OrderStatus.CANCELLED) {
+        return []
+    }
+    const lines: string[] = []
+    // A new cash order says it in its first line, and «Yo'q» says the new sum itself.
+    const cashToGive =
+        order.payment.method === PaymentMethod.CASH &&
+        order.payment.status !== PaymentStatus.PAID &&
+        order.status !== OrderStatus.PENDING &&
+        event.kind !== "lineRemoved"
+    if (cashToGive) {
+        const sum = formatMoney(order.total, reader.language)
+        lines.push(`💵 ${fill(t.lineRemovedCash, { sum })}`)
+    }
+    if (order.customerPaysCarrier && order.status !== OrderStatus.PICKED_UP) {
+        lines.push(t.carrierPriceLater)
+    }
+    return lines
+}
+
+/** The dispatcher's last notes; the one the first line just said is not said twice. */
+function customerNotes(order: OrderDTO, event: CustomerEvent, t: BotTexts): string[] {
+    const said = event.kind === "note" ? event.text : event.kind === "status" ? event.note : null
+    return order.deliveryNotes
+        .filter((note) => note.text !== said)
+        .slice(-CARD_NOTES)
+        .map((note) => fill(t.noteLine, { text: escapeHtml(note.text) }))
+}
+
+/** The courier once on the way (unless the first line named them), and always the shop. */
+function whomToCall(
+    order: OrderDTO,
+    event: CustomerEvent,
+    t: BotTexts,
+    shopPhone: string | undefined,
+): string[] {
+    const lines: string[] = []
+    const courierSaid =
+        event.kind === "status" &&
+        order.status === OrderStatus.PICKED_UP &&
+        order.courierName !== undefined
+    const courierLeft =
+        order.status === OrderStatus.PICKED_UP || order.status === OrderStatus.DELIVERED
+    if (order.courierPhone && courierLeft && !courierSaid) {
+        const template = order.dispatcher ? t.dispatcherPhone : t.courierPhone
+        lines.push(fill(template, { phone: formatPhone(order.courierPhone) }))
+    }
+    if (shopPhone) {
+        lines.push(fill(t.shopPhone, { phone: formatPhone(shopPhone) }))
+    }
+    return lines
+}
+
+/**
+ * Under the customer's message: while a transfer is to be made, the card number to copy and
+ * «Chekni yuklash»; after it, the order in the app.
+ */
+export function customerKeyboard(
+    order: OrderDTO,
+    reader: Reader,
+    orderUrl: string,
+): InlineKeyboard {
+    const t = textsFor(reader.language, reader.type)
+    const card = order.payment.card
+    const toPay =
+        order.status === OrderStatus.PENDING &&
+        order.payment.method === PaymentMethod.CARD_TRANSFER &&
+        order.payment.status === PaymentStatus.UNPAID
+    if (!toPay || !card) {
+        return { inline_keyboard: [[appButton(t.openOrder, orderUrl)]] }
+    }
+    return {
+        inline_keyboard: [
+            [{ text: t.copyCard, copy_text: { text: card.number.replace(/\D/g, "") } }],
+            [{ ...appButton(t.uploadReceipt, orderUrl), style: "primary" }],
+        ],
+    }
 }
 
 // Callback data (≤ 64 bytes): "a:<orderId>:<status>" advance, "x:<orderId>" cancel,

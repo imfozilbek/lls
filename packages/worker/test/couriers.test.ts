@@ -587,12 +587,15 @@ describe("shop couriers, verticals and channels", () => {
         const order = await placeOrder([{ productId: osh, quantity: 2 }])
         await setStatus(order.id, "accepted")
         await setStatus(order.id, "preparing")
-        expect(client.telegram.sent.at(-1)?.html).toContain("tayyorlanmoqda")
+        // The shop's own work: the customer's one message changes quietly.
+        const toCustomer = (): string | undefined =>
+            client.telegram.edited.filter((m) => m.chatId === CUSTOMER.id).at(-1)?.html
+        expect(toCustomer()).toContain("tayyorlanmoqda")
 
         await env.DB.prepare("UPDATE businesses SET type = 'grocery'").run()
         const second = await placeOrder([{ productId: osh, quantity: 2 }])
         await setStatus(second.id, "accepted")
         await setStatus(second.id, "preparing")
-        expect(client.telegram.sent.at(-1)?.html).toContain("yig'ilmoqda")
+        expect(toCustomer()).toContain("yig'ilmoqda")
     })
 })

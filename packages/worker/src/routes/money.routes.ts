@@ -92,11 +92,14 @@ export const moneyRoutes = new Hono<AppEnv>()
                 return c.json(await services.useCases.receiveCourierCash.execute(ids))
             }
             if (c.req.valid("json").action === "refunded") {
+                // What goes back, read before «Qaytardim» clears it: the customer hears the sum.
+                const before = await services.orders.findById(ids.orderId)
                 const order = await services.useCases.markRefunded.execute(ids)
+                const refunded = before ? before.payment.owedBack(before.total).amount : 0
                 inBackground(
                     c.executionCtx,
                     services,
-                    new Notifier(services).paymentChanged(business, order),
+                    new Notifier(services).paymentChanged(business, order, refunded),
                 )
                 return c.json(order)
             }

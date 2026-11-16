@@ -319,8 +319,8 @@ const BASE = {
         transferRejectedCustomer:
             "Do'kon #{n} buyurtma uchun pulni topmadi. Kartangizdan o'tganini tekshiring va chekni qayta yuboring.",
         transferRejectedOwner: "#{n}: «Pul kelmadi» belgilandi. Mijozdan chekni qayta so'radik.",
-        payByTransfer:
-            "🧾 #{n} buyurtma rasmiylashtirildi.\nKartaga {sum} o'tkazing:\n{system}<code>{card}</code> ({holder})\nKeyin ilovada chekni yuklang va «O'tkazdim» ni bosing. Pul kelishi bilan do'kon buyurtmani qabul qiladi.",
+        /** The customer's live message, first line of a new order. */
+        placed: "🧾 #{n} buyurtma rasmiylashtirildi.",
         /** A card's system before its number; Zumda does not know every card (then nothing). */
         cardSystems: {
             humo: "Humo",
