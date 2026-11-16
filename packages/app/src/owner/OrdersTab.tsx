@@ -1048,7 +1048,10 @@ function useOrdersView(
 
 type StageFilter = OrderStage | "all"
 
-/** «Hammasi · Yangi · Yig'ilmoqda · Tayyor · Yo'lda» with counts, when the queue spans stages. */
+/**
+ * «Hammasi · Yangi · Yig'ish kerak · Yig'ilmoqda · Tayyor · Yo'lda» with counts, when the queue
+ * spans stages.
+ */
 function StageChips({
     orders,
     value,
@@ -1067,6 +1070,7 @@ function StageChips({
     // The badge's own words: the chip and the card say the same.
     const names: Record<OrderStage, string> = {
         new: t.owner.newBadge,
+        queue: t.owner.queueBadge,
         work: t.order.steps.preparing,
         ready: t.order.steps.ready,
         road: t.order.steps.picked_up,

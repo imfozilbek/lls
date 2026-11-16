@@ -6,7 +6,7 @@
 import { expect, test } from "@playwright/test"
 
 import { adminBot, businessBot } from "../stand/config.js"
-import { FOOD, PEOPLE, apiAs, placeOrder, resetStand, payAndAccept } from "../support/stand.js"
+import { FOOD, PEOPLE, apiAs, placeOrder, resetStand, payAndStart } from "../support/stand.js"
 import {
     adminChat,
     callsOf,
@@ -289,7 +289,7 @@ test("a customer who blocked the bot is not an alert", async () => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [
         { productId: "dev-food-p1", quantity: 1 },
     ])
-    await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)
+    await payAndStart(PEOPLE.foodOwner, FOOD, order.id)
     await new Promise((resolve) => setTimeout(resolve, 1500))
     const alerts = await messagesTo(PEOPLE.admin.id, since)
     expect(alerts.filter((m) => m.text.includes("🚨"))).toHaveLength(0)

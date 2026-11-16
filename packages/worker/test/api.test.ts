@@ -455,8 +455,13 @@ describe("inside a shop", () => {
             method: "PATCH",
             json: { action: "paid" },
         })
-        // Paid, accepted and started in the one tap: «Tayyor» is next.
-        expect(await json(accepted)).toMatchObject({ status: "preparing", nextStatus: "ready" })
+        // Paid and accepted in the one tap; it waits in «Yig'ish kerak».
+        expect(await json(accepted)).toMatchObject({ status: "accepted", nextStatus: "preparing" })
+        const started = await asOwner()(`/api/owner/orders/${order.id}`, {
+            method: "PATCH",
+            json: { status: "preparing" },
+        })
+        expect(await json(started)).toMatchObject({ status: "preparing", nextStatus: "ready" })
 
         const skip = await asOwner()(`/api/owner/orders/${order.id}`, {
             method: "PATCH",

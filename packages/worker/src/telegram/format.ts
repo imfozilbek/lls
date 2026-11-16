@@ -1,4 +1,5 @@
 import {
+    BusinessType,
     OrderChannel,
     OrderStatus,
     PaymentMethod,
@@ -15,7 +16,7 @@ import { fill, textsFor } from "./texts.js"
 
 import type { InlineButton, InlineKeyboard } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
-import type { BusinessType, Language, NetworkOrderDTO, OrderDTO, OrderItemDTO } from "@zumda/core"
+import type { Language, NetworkOrderDTO, OrderDTO, OrderItemDTO } from "@zumda/core"
 
 /** Who reads a message: their language and the kind of shop the order is from. */
 export interface Reader {
@@ -258,7 +259,7 @@ export function formatStatusForCustomer(
         return null
     }
     const text = fill(template, { n: order.number, courier: escapeHtml(order.courierName ?? "") })
-    const lines = [text + transferLine(order, t)]
+    const lines = [text + transferLine(order, t, reader.type)]
     if (onTheWay) {
         lines.push(...onTheWayLines(order, t, note))
     }
@@ -294,10 +295,15 @@ export function formatNoteForCustomer(order: OrderDTO, text: string, reader: Rea
     return fill(t.noteCustomer, { n: order.number, text: escapeHtml(text) })
 }
 
-/** «To'lovingiz keldi» once the shop took a transfer order: the customer's money is seen. */
-function transferLine(order: OrderDTO, t: BotTexts): string {
-    const started = order.status === OrderStatus.ACCEPTED || order.status === OrderStatus.PREPARING
-    return started &&
+/**
+ * «To'lovingiz keldi» on the message that the shop took a transfer order, once: «qabul qilindi»,
+ * or a service's «qabul qilindi va bajarilmoqda» (it starts the moment it is accepted).
+ */
+function transferLine(order: OrderDTO, t: BotTexts, type: BusinessType): string {
+    const accepted =
+        order.status === OrderStatus.ACCEPTED ||
+        (order.status === OrderStatus.PREPARING && type === BusinessType.SERVICE)
+    return accepted &&
         order.payment.method === PaymentMethod.CARD_TRANSFER &&
         order.payment.status === PaymentStatus.PAID
         ? `\n${t.transferArrived}`

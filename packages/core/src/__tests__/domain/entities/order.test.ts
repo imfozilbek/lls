@@ -53,7 +53,7 @@ function courier(businessId = "biz-1", id = "courier-1"): Courier {
 
 function readyOrder(): Order {
     const order = placeOrder()
-    withReceipt(order).confirmPaymentAndStart()
+    withReceipt(order).confirmPaymentAndAccept(true)
     order.advanceTo(OrderStatus.READY)
     return order
 }
@@ -143,11 +143,11 @@ describe("Order", () => {
         expect(order.payment.status).toBe(PaymentStatus.AWAITING)
         expect(() => order.advanceTo(OrderStatus.ACCEPTED)).toThrow(BusinessRuleViolationError)
         // Paid, accepted and started in the one tap.
-        order.confirmPaymentAndStart()
+        order.confirmPaymentAndAccept(true)
         expect(order.status).toBe(OrderStatus.PREPARING)
         expect(order.payment.isPaid()).toBe(true)
         // Confirmed twice: nothing more to confirm.
-        expect(() => order.confirmPaymentAndStart()).toThrow(BusinessRuleViolationError)
+        expect(() => order.confirmPaymentAndAccept(true)).toThrow(BusinessRuleViolationError)
     })
 
     it("a transfer that arrives after the cancel is owed back, and the order stays cancelled", () => {
@@ -155,7 +155,7 @@ describe("Order", () => {
         order.markTransferSent(RECEIPT)
         order.cancel("customer")
         expect(order.payment.status).toBe(PaymentStatus.AWAITING)
-        order.confirmPaymentAndStart()
+        order.confirmPaymentAndAccept(true)
         expect(order.status).toBe(OrderStatus.CANCELLED)
         expect(order.payment.status).toBe(PaymentStatus.REFUND_DUE)
         order.markRefunded()
@@ -164,18 +164,30 @@ describe("Order", () => {
 
     it("cancelling a paid order owes the money back", () => {
         const order = placeOrder()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.cancel("owner", "Tugab qoldi")
         expect(order.payment.status).toBe(PaymentStatus.REFUND_DUE)
     })
 
-    it("accepting starts the order: one tap, both steps of the table", () => {
+    it("accepting waits to be collected; a service starts at once", () => {
+        // Owner's decision, November 2026: «Qabul qilish», then «Yig'ishni boshlash».
         const order = placeOrder([item()], { paymentMethod: PaymentMethod.CASH })
-        order.acceptAndStart()
-        expect(order.status).toBe(OrderStatus.PREPARING)
+        order.accept({ role: "owner" })
+        expect(order.status).toBe(OrderStatus.ACCEPTED)
+        expect(order.nextStatus()).toBe(OrderStatus.PREPARING)
+        order.advanceTo(OrderStatus.PREPARING)
+        expect(order.nextStatus()).toBe(OrderStatus.READY)
+        // A service has nothing to collect: both steps in the one tap.
+        const service = placeOrder([item()], { paymentMethod: PaymentMethod.CASH })
+        service.accept({ role: "owner" }, true)
+        expect(service.status).toBe(OrderStatus.PREPARING)
+        // «Pul keldi» takes a transfer the same way.
+        const paid = placeOrder()
+        withReceipt(paid).confirmPaymentAndAccept()
+        expect(paid.status).toBe(OrderStatus.ACCEPTED)
         // A courier never accepts.
         const other = placeOrder([item()], { paymentMethod: PaymentMethod.CASH })
-        expect(() => other.acceptAndStart({ role: "courier", courierId: "courier-1" })).toThrow(
+        expect(() => other.accept({ role: "courier", courierId: "courier-1" }, true)).toThrow(
             ForbiddenError,
         )
         expect(other.status).toBe(OrderStatus.PENDING)
@@ -195,13 +207,13 @@ describe("Order", () => {
         expect(pending.cancelReason).toBe("Adashdim")
 
         const accepted = placeOrder()
-        withReceipt(accepted).confirmPaymentAndStart()
+        withReceipt(accepted).confirmPaymentAndAccept(true)
         expect(() => accepted.cancel("customer")).toThrow(BusinessRuleViolationError)
     })
 
     it("owner can cancel any active order, but not a final one", () => {
         const order = placeOrder()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.cancel("owner", "Tugab qoldi")
         expect(order.cancelledBy).toBe("owner")
         expect(() => order.cancel("owner")).toThrow(InvalidOrderTransitionError)
@@ -243,7 +255,7 @@ describe("Order and couriers", () => {
     it("the owner assigns a courier of the shop between accepted and ready", () => {
         const order = placeOrder()
         expect(() => order.assignCourier(courier(), NOW)).toThrow(BusinessRuleViolationError)
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.assignCourier(courier(), NOW)
         expect(order.courierName).toBe("Jasur")
         order.assignCourier(courier("biz-1", "courier-2"), NOW)
@@ -291,7 +303,7 @@ describe("Order and couriers", () => {
 
     it("the assigned courier moves only the delivery part", () => {
         const order = placeOrder()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.assignCourier(courier(), NOW)
         const me = { role: "courier", courierId: "courier-1" } as const
         expect(() => order.advanceTo(OrderStatus.READY, me)).toThrow(ForbiddenError)

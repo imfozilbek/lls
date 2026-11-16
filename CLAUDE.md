@@ -150,9 +150,9 @@ cover each one's whole process; what exactly comes from the meeting with them.
   for a way the shop does not take). Every order stores its method (`card_transfer` | `cash`).
 - **Transfer: paid to the shop's card before the shop starts.** The order is placed unpaid → the
   customer transfers, presses «Chekni yuklash», picks the screenshot, and only then «O'tkazdim»
-  opens and sends it → the owner sees the money and presses «Pul keldi, qabul qilish» (paid,
-  accepted and started in one tap). A transfer order is never accepted unpaid
-  (`PAYMENT_REQUIRED`). **«Pul keldi» waits for the screenshot** (owner's decision, November
+  opens and sends it → the owner sees the money and presses «Pul keldi, qabul qilish» (paid and
+  accepted in one tap; collecting is the owner's next step). A transfer order is never accepted
+  unpaid (`PAYMENT_REQUIRED`). **«Pul keldi» waits for the screenshot** (owner's decision, November
   2026): before it the owner's card and bot message carry no «Pul keldi», only a quiet «Mijoz pulni
   o'tkazib, chekni yuklashi kerak», and the server refuses it (`RECEIPT_NOT_SENT`, also after «Pul
   kelmadi»). An order paid without «O'tkazdim» waits for the customer.
@@ -592,13 +592,17 @@ pending → accepted → preparing → ready → picked_up → delivered
 cancelled  cancelled  cancelled  cancelled  cancelled
 ```
 - `pending → ready` = shop part. `picked_up → delivered` = delivery part.
-- **Accepting starts the order** (owner's decision, October 2026): «Qabul qilish» and «Pul keldi»
-  make `pending → accepted → preparing` in one action (`Order.acceptAndStart`: two steps of the
-  one table), and the customer hears once «qabul qilindi va yig'ilmoqda». The district network is
-  asked right after it, as before.
-- A transfer order: `pending → accepted` only when paid: the owner's «Деньги пришли, принять»
-  confirms the transfer and accepts and starts it in one step (`Order.advanceTo` refuses an unpaid
-  accept). A cash order is accepted at once and becomes paid on `delivered`.
+- **Collecting is a step of its own** (owner's decision, November 2026; it replaces October's
+  «accepting starts the order»): «Qabul qilish» and «Pul keldi» make `pending → accepted`
+  (`Order.accept`), the order waits in «Yig'ish kerak» («Tayyorlash kerak» for food), and the
+  owner's «Yig'ishni boshlash» («Tayyorlashni boshlash») makes `accepted → preparing`. The customer
+  hears «qabul qilindi» (with «To'lovingiz keldi» for a transfer), then «hozir yig'ilmoqda»
+  («tayyorlanmoqda»). A service starts the moment it is accepted (`Business.startsOnAccept`: one
+  tap, one message «qabul qilindi va bajarilmoqda»). The shop's only courier and the district
+  network are asked right after the accept, as before.
+- A transfer order: `pending → accepted` only when paid: the owner's «Pul keldi, qabul qilish»
+  confirms the transfer and accepts it in one step (`Order.advanceTo` refuses an unpaid accept).
+  A cash order is accepted at once and becomes paid on `delivered`.
 - The door is the courier's (owner's decision, November 2026): on the way with a courier the
   owner's card says «Kuryer yetkazmoqda»; a quiet «Yetkazildi deb belgilash» (asked once more)
   stays for a courier who went silent.
@@ -728,7 +732,7 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   screenshot → the owner gets the picture, the sum, the card tail, warnings and «Ha, … keldi» /
   «Yo'q, kelmadi», and the card gets «Pul keldi, qabul qilish» (an old card's button before the
   screenshot answers one line). After that the owner's button is the **next allowed status**
-  («Tayyor»: accepting already started it).
+  («Yig'ishni boshlash», then «Tayyor»).
 - Every bot message about an order opens the app on it: the shop's bot `?shop=&order=`, the
   Zumda | Business fallback `?mode=business&shop=&order=`, Zumda | Kuryer `?mode=courier&order=`
   (its card scrolls into view).
@@ -807,9 +811,9 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   pay the courier)
 - Showcase customer: Zumda bot → Search → Shop → «Savat» → Order → Track
 - Owner: New order message → the customer's screenshot → the transfer on the card → «Pul keldi,
-  qabul qilish» (started at once;
-  the only courier gets it by itself) → «Kuryerga topshirish» or «O'zim yetkazaman» when nobody
-  is on it → «Tayyor»; catalog, couriers and the card in "Мой магазин"
+  qabul qilish» (the only courier gets it by itself) → «Yig'ish kerak» → «Yig'ishni boshlash» →
+  «Kuryerga topshirish» or «O'zim yetkazaman» when nobody is on it → «Tayyor»; catalog, couriers
+  and the card in "Мой магазин"
 - Courier: Invite link → Zumda courier bot → phone → approved → "on shift" → assigned order card →
   «Buyurtmani oldim» → «Yetkazdim» (cash: takes the sum, «Pulni oldim, yetkazdim», hands it to the
   owner). With one step to make, it is on Telegram's own button too («#12 · Yetkazdim»)
@@ -1216,6 +1220,9 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Service fee: a "Сервис" line in the cart, order and messages; 0 at rate 0; monthly per-shop report
 - [ ] Cancel flow
 - [ ] Uzbek texts only (no Cyrillic in any dictionary); light app in a dark Telegram
+- [ ] Collecting: «Pul keldi» → the order under «Yig'ish kerak», the customer hears «qabul
+      qilindi» → «Yig'ishni boshlash» → «hozir yig'ilmoqda» → «Tayyor»; a service accepts and
+      starts in one tap («qabul qilindi va bajarilmoqda»)
 - [ ] Many cards: add, switch the payment card, old orders keep their card
 - [ ] Bank apps: «Raqamni nusxalash» → the sheet with the sum and Click, Payme, Uzum Bank,
       Paynet → each opens its app on a real Android and iPhone (Click on its transfers)

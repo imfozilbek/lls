@@ -12,7 +12,7 @@ import {
     STAND_PIN,
     WATER,
     apiAs,
-    payAndAccept,
+    payAndStart,
     placeOrder,
     resetStand,
 } from "../support/stand.js"
@@ -75,7 +75,7 @@ test("another customer's order is not found; another shop's order neither", asyn
         404,
     )
     // Another shop's owner cannot touch it either.
-    const foreign = await payAndAccept(PEOPLE.groceryOwner, GROCERY, order.id)
+    const foreign = await payAndStart(PEOPLE.groceryOwner, GROCERY, order.id)
     expect(foreign.status).toBe(404)
 })
 

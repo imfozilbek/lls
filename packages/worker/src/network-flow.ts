@@ -6,8 +6,8 @@ import type { Services } from "./services.js"
 import type { Business, NetworkClaim, NetworkRequest, OrderDTO } from "@zumda/core"
 
 /**
- * After the owner's step: an order the shop just accepted (and so started, in the same tap)
- * goes to the shop's only courier by itself (owner's decision, November 2026), else to the
+ * After the owner's step: an order the shop just accepted (it waits to be collected, a service
+ * starts at once) goes to the shop's only courier by itself (owner's decision, November 2026), else to the
  * district network when no courier of its own is free. `accepted`: the step was «Qabul qilish»
  * or «Pul keldi». Returns the order as it is now, and the request if one was made. The courier
  * gets the order's card with the owner's step (`Notifier.orderChanged`).
@@ -51,8 +51,8 @@ export async function notifyOwnerStep(
 }
 
 /**
- * After «Pul keldi»: a new order was accepted and started in the same tap and reaches everyone
- * like any owner step. A transfer for a cancelled order only changes the cards (owed back).
+ * After «Pul keldi»: a new order was accepted in the same tap and reaches everyone like any
+ * owner step. A transfer for a cancelled order only changes the cards (owed back).
  */
 export async function notifyPaymentConfirmed(
     services: Services,

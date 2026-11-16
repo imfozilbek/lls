@@ -11,7 +11,7 @@ import {
     PEOPLE,
     WATER,
     apiAs,
-    payAndAccept,
+    payAndStart,
     placeOrder,
     resetStand,
 } from "../support/stand.js"
@@ -32,9 +32,9 @@ async function owner(orderId: string, json: object, path = "", shop = FOOD): Pro
     })
 }
 
-/** «Деньги пришли, принять»: the shop starts only after the transfer. */
+/** «Pul keldi», then «Yig'ishni boshlash»: the shop starts only after the transfer. */
 async function accept(orderId: string, shop = FOOD): Promise<Response> {
-    return payAndAccept(shop === FOOD ? PEOPLE.foodOwner : PEOPLE.waterOwner, shop, orderId)
+    return payAndStart(shop === FOOD ? PEOPLE.foodOwner : PEOPLE.waterOwner, shop, orderId)
 }
 
 async function courierApi(

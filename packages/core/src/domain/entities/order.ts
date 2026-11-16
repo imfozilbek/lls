@@ -509,20 +509,22 @@ export class Order {
     }
 
     /**
-     * «Qabul qilish»: the shop takes the order and starts it in the same tap (owner's decision,
-     * October 2026): accepted, then preparing, two steps of the one table. The customer hears
-     * once that the order is being made.
+     * «Qabul qilish»: the shop takes the order. Collecting it is a step of its own (owner's
+     * decision, November 2026): the order waits in «Yig'ish kerak» until «Yig'ishni boshlash».
+     * A service starts at once (`startNow`): there is nothing to collect.
      */
-    acceptAndStart(by: OrderMover = OWNER): void {
+    accept(by: OrderMover = OWNER, startNow = false): void {
         this.advanceTo(OrderStatus.ACCEPTED, by)
-        this.advanceTo(OrderStatus.PREPARING, by)
+        if (startNow) {
+            this.advanceTo(OrderStatus.PREPARING, by)
+        }
     }
 
-    /** «Pul keldi»: the transfer arrived and the shop starts it, in one tap. */
-    confirmPaymentAndStart(): void {
+    /** «Pul keldi»: the transfer arrived and the shop takes the order in the same tap. */
+    confirmPaymentAndAccept(startNow = false): void {
         this.confirmPayment()
         if (this.props.status === OrderStatus.PENDING) {
-            this.acceptAndStart()
+            this.accept(OWNER, startNow)
         }
     }
 

@@ -84,7 +84,7 @@ describe("district network", () => {
             location: Location.create(40.5, 68.79),
             customerName: "Aziz",
         })
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         await orders.save(order)
         return order
     }
@@ -518,7 +518,7 @@ describe("district network", () => {
             address: "Navoiy 12",
             customerName: "Aziz",
         })
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.requestNetwork(now)
         await orders.save(order)
         const [listed] = await new ListNetworkOrdersUseCase(deps()).execute({

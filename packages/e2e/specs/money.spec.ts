@@ -15,7 +15,7 @@ import {
     PEOPLE,
     STAND_PIN,
     apiAs,
-    payAndAccept,
+    payAndStart,
     placeOrder,
     resetStand,
     sendReceipt,
@@ -206,8 +206,8 @@ test("not paid, not started: «Pul keldi» waits for the customer's screenshot",
     await expect(confirm.getByRole("button", { name: "Yo'q, pul kelmadi" })).toBeVisible()
     await confirm.getByRole("button", { name: /^Ha, 55\s000/ }).click()
     await expect(card).toContainText("To'langan")
-    // Accepted and started in the same tap: «Tayyor bo'ldi» is next.
-    await expect(card.getByRole("button", { name: "Tayyor bo'ldi" })).toBeVisible()
+    // Accepted: «Tayyorlashni boshlash» is next (owner's decision, November 2026).
+    await expect(card.getByRole("button", { name: "Tayyorlashni boshlash" })).toBeVisible()
 })
 
 test("«Pul kelmadi»: the customer sends again; a screenshot seen before warns the owner", async ({
@@ -329,11 +329,12 @@ test("from the bot: «Pul keldi» asks first, then one «Доставил» for 
             const read = await apiAs(PEOPLE.customer, `/orders/${order.id}`, { shop: FOOD })
             return ((await read.json()) as { status: string }).status
         })
-        .toBe("preparing")
+        .toBe("accepted")
 
     expect(
         (await owner(`/owner/orders/${order.id}/courier`, { courierId: COURIER_ID }, "PUT")).status,
     ).toBe(200)
+    expect((await owner(`/owner/orders/${order.id}`, { status: "preparing" })).status).toBe(200)
     expect((await owner(`/owner/orders/${order.id}`, { status: "ready" })).status).toBe(200)
     const picked = await apiAs(PEOPLE.courier, `/courier/orders/${order.id}`, {
         courierBot: true,
@@ -360,7 +361,7 @@ test("from the bot: «Pul keldi» asks first, then one «Доставил» for 
 
 test("a paid order cancelled: owed back until «Вернул»", async ({ page }) => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
-    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await owner(`/owner/orders/${order.id}`, { status: "cancelled" })
     await openMoney(page)
     const refunds = block(page, "Mijozlarga qaytarish")

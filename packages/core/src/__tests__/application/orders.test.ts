@@ -12,6 +12,7 @@ import { ConfirmPaymentUseCase } from "../../application/use-cases/money/money.u
 import { PlaceOrderUseCase } from "../../application/use-cases/order/place-order.use-case.js"
 import { Product } from "../../domain/entities/product.js"
 import { OrderChannel } from "../../domain/enums/order-channel.js"
+import { BusinessType } from "../../domain/enums/business-type.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
 import { Unit } from "../../domain/enums/unit.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
@@ -328,9 +329,9 @@ describe("order use cases", () => {
                 orders,
                 clock: fixedClock(NOON_MONDAY_UZ),
             }).execute({ businessId: "biz-1", actorTelegramId: OWNER_TG, orderId })
-            // Accepted and started in the one tap: «Tayyor» is next.
-            expect(accepted.status).toBe(OrderStatus.PREPARING)
-            expect(accepted.nextStatus).toBe(OrderStatus.READY)
+            // Accepted, and waiting to be collected (owner's decision, November 2026).
+            expect(accepted.status).toBe(OrderStatus.ACCEPTED)
+            expect(accepted.nextStatus).toBe(OrderStatus.PREPARING)
             await expect(
                 advance.execute({
                     businessId: "biz-1",
@@ -347,6 +348,27 @@ describe("order use cases", () => {
                     to: OrderStatus.PREPARING,
                 }),
             ).rejects.toThrow(ForbiddenError)
+            // «Yig'ishni boshlash»: then «Tayyor» is next.
+            const started = await advance.execute({
+                businessId: "biz-1",
+                actorTelegramId: OWNER_TG,
+                orderId,
+                to: OrderStatus.PREPARING,
+            })
+            expect(started.status).toBe(OrderStatus.PREPARING)
+            expect(started.nextStatus).toBe(OrderStatus.READY)
+        })
+
+        it("a service starts at once: there is nothing to collect", async () => {
+            await businesses.save(makeBusiness({ type: BusinessType.SERVICE }))
+            await receiptSent(orders, orderId)
+            const accepted = await new ConfirmPaymentUseCase({
+                businesses,
+                orders,
+                clock: fixedClock(NOON_MONDAY_UZ),
+            }).execute({ businessId: "biz-1", actorTelegramId: OWNER_TG, orderId })
+            expect(accepted.status).toBe(OrderStatus.PREPARING)
+            expect(accepted.nextStatus).toBe(OrderStatus.READY)
         })
 
         it("customer cancels while pending; owner cancels later", async () => {

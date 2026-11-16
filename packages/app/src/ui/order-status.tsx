@@ -84,6 +84,17 @@ export function StatusBadge({
 }
 
 /**
+ * The shop's own words where the customer's would mislead it: «Yuborildi» is a new order to take,
+ * «Qabul qilindi» is an order still to collect (the chip says the same).
+ */
+function ownerLabel(order: OrderDTO, t: Dictionary): string | undefined {
+    if (order.status === OrderStatus.PENDING) {
+        return t.owner.newBadge
+    }
+    return order.status === OrderStatus.ACCEPTED ? t.owner.queueBadge : undefined
+}
+
+/**
  * In a list, a new order is about its money: «O'tkazma kutilmoqda», then «Tekshirilmoqda» (the
  * owner reads «Tekshiring»). After that, the order's own step.
  */
@@ -99,9 +110,12 @@ export function OrderBadge({
     // A cash order is paid at the door: nothing about money while it waits for the shop.
     const moneyAside = payment === PaymentStatus.PAID || order.payment.method === "cash"
     if (order.status !== OrderStatus.PENDING || moneyAside) {
-        // «Yuborildi» is the customer's word: for the shop it is a new order to take.
-        const fresh = forOwner && order.status === OrderStatus.PENDING
-        return <StatusBadge status={order.status} label={fresh ? t.owner.newBadge : undefined} />
+        return (
+            <StatusBadge
+                status={order.status}
+                label={forOwner ? ownerLabel(order, t) : undefined}
+            />
+        )
     }
     return <MoneyBadge awaiting={payment === PaymentStatus.AWAITING} forOwner={forOwner} />
 }
@@ -205,8 +219,13 @@ const STAGES: readonly { key: OrderStatus; covers: readonly OrderStatus[] }[] = 
 
 type StageState = "done" | "current" | "todo"
 
-function stageState(index: number, current: number, status: OrderStatus): StageState {
+export function stageState(index: number, current: number, status: OrderStatus): StageState {
     if (status === OrderStatus.CANCELLED) {
+        return "todo"
+    }
+    // Accepted, not started yet (owner's decision, November 2026): the first stage is done and
+    // the work is next, not under way.
+    if (status === OrderStatus.ACCEPTED && index === current) {
         return "todo"
     }
     // Delivered is the end: its own stage counts as done, not as waiting.

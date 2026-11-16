@@ -5,7 +5,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, apiAs, payAndStart, placeOrder, resetStand } from "../support/stand.js"
 import { pullDown } from "../support/touch.js"
 import { openApp, openSettings } from "../support/webapp.js"
 
@@ -65,7 +65,7 @@ test("the customer hears it once, softly, when the shop accepts", async ({ page 
     await page.getByRole("button", { name: new RegExp(`Buyurtma #${order.number}`) }).click()
     await expect(page.getByRole("heading", { name: `Buyurtma #${order.number}` })).toBeVisible()
     expect(await app.zums()).toBe(0)
-    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await pullDown(page)
     await expect(page.getByText("Buyurtmangiz tayyorlanmoqda")).toBeVisible()
     await expect.poll(() => app.zums()).toBe(1)
@@ -77,7 +77,7 @@ test("the courier hears a new delivery", async ({ page }) => {
     await page.waitForTimeout(500)
     const before = await app.zums()
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
-    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     const assigned = await apiAs(PEOPLE.foodOwner, `/owner/orders/${order.id}/courier`, {
         shop: FOOD,
         method: "PUT",

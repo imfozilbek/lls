@@ -7,6 +7,7 @@ import { toOrderDTO } from "../../dtos/order.dto.js"
 import { emptyPage, mapPage, normalizePage } from "../../dtos/pagination.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
+import type { Business } from "../../../domain/entities/business.js"
 import type { Order, OrderMover } from "../../../domain/entities/order.js"
 import type { SendWay } from "../../../domain/enums/send-way.js"
 import type { OrderDTO } from "../../dtos/order.dto.js"
@@ -40,25 +41,36 @@ async function requireOrder(
     return order
 }
 
-/** Who is asking: the shop owner, the courier the order is assigned to, the customer, or nobody. */
+/**
+ * Who is asking, and the shop they ask in: the shop owner, the courier the order is assigned to,
+ * the customer, or nobody.
+ */
+async function participantIn(
+    deps: OrderAccessDeps,
+    order: Order,
+    telegramId: number,
+): Promise<{ participant: Participant; business: Business }> {
+    const business = await requireBusiness(deps.businesses, order.businessId)
+    if (business.isOwnedBy(telegramId)) {
+        return { participant: { role: "owner" }, business }
+    }
+    const courier = await deps.couriers.findByTelegramId(order.businessId, telegramId)
+    if (courier?.deliversFor(order.businessId) && order.isAssignedTo(courier.id)) {
+        return { participant: { role: "courier", courierId: courier.id }, business }
+    }
+    const customer = await deps.customers.findByTelegramId(telegramId)
+    if (customer && order.isPlacedBy(customer.id)) {
+        return { participant: { role: "customer" }, business }
+    }
+    throw ForbiddenError.notOrderParticipant(order.id)
+}
+
 async function participantOf(
     deps: OrderAccessDeps,
     order: Order,
     telegramId: number,
 ): Promise<Participant> {
-    const business = await requireBusiness(deps.businesses, order.businessId)
-    if (business.isOwnedBy(telegramId)) {
-        return { role: "owner" }
-    }
-    const courier = await deps.couriers.findByTelegramId(order.businessId, telegramId)
-    if (courier?.deliversFor(order.businessId) && order.isAssignedTo(courier.id)) {
-        return { role: "courier", courierId: courier.id }
-    }
-    const customer = await deps.customers.findByTelegramId(telegramId)
-    if (customer && order.isPlacedBy(customer.id)) {
-        return { role: "customer" }
-    }
-    throw ForbiddenError.notOrderParticipant(order.id)
+    return (await participantIn(deps, order, telegramId)).participant
 }
 
 export class GetOrderUseCase {
@@ -110,7 +122,11 @@ export class AdvanceOrderUseCase {
         to: OrderStatus
     }): Promise<OrderDTO> {
         const order = await requireOrder(this.deps.orders, input.orderId, input.businessId)
-        const mover = await participantOf(this.deps, order, input.actorTelegramId)
+        const { participant: mover, business } = await participantIn(
+            this.deps,
+            order,
+            input.actorTelegramId,
+        )
         if (mover.role === "customer") {
             throw ForbiddenError.notOwner(order.businessId)
         }
@@ -118,9 +134,9 @@ export class AdvanceOrderUseCase {
         if (mover.role === "owner") {
             order.assertCourierChosen(input.to)
         }
-        // Accepting starts the order at once: one tap less on every order.
+        // Accepted orders wait to be collected; a service starts at once.
         if (input.to === OrderStatus.ACCEPTED) {
-            order.acceptAndStart(mover)
+            order.accept(mover, business.startsOnAccept)
         } else {
             order.advanceTo(input.to, mover)
         }

@@ -238,19 +238,22 @@ describe("rows read per request, on six months of history", () => {
             await step(() =>
                 owner(`/api/owner/orders/${id}/courier`, { method: "PUT", json: { courierId } }),
             )
-            // «Pul keldi» accepted and started it: «Tayyor» is the shop's last step.
-            await step(() =>
-                owner(`/api/owner/orders/${id}`, { method: "PATCH", json: { status: "ready" } }),
-            )
+            // «Pul keldi» accepted it; «Yig'ishni boshlash», then «Tayyor» (owner's decision,
+            // November 2026: collecting is a step of its own).
+            for (const status of ["preparing", "ready"]) {
+                await step(() =>
+                    owner(`/api/owner/orders/${id}`, { method: "PATCH", json: { status } }),
+                )
+            }
             for (const status of ["picked_up", "delivered"]) {
                 await step(() =>
                     courier(`/api/courier/orders/${id}`, { method: "PATCH", json: { status } }),
                 )
             }
             const rows = counter.take()
-            // Measured 81 read, 36 written (docs/capacity.md: about 300 such orders a day; accepting
-            // starts the order, one step less). A save writes only what changed: every column on
-            // each step cost twice the writes.
+            // Measured 102 read, 42 written (docs/capacity.md: about 300 such orders a day;
+            // «Yig'ishni boshlash» is a step of its own). A save writes only what changed: every
+            // column on each step cost twice the writes.
             expect(rows.read).toBeLessThanOrEqual(150)
             expect(rows.written).toBeLessThanOrEqual(60)
         },

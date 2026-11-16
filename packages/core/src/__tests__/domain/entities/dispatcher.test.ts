@@ -54,7 +54,7 @@ function dispatcher(id = "courier-1"): Courier {
 /** Paid, handed to the shop's dispatcher, packed by the owner. */
 function readyWithDispatcher(): Order {
     const order = place()
-    withReceipt(order).confirmPaymentAndStart()
+    withReceipt(order).confirmPaymentAndAccept(true)
     order.assignCourier(dispatcher(), NOW)
     order.advanceTo(OrderStatus.READY)
     return order
@@ -91,7 +91,7 @@ describe("A dispatcher courier", () => {
 describe("An order with the shop's dispatcher", () => {
     it("keeps that its courier is a dispatcher, like the name and the phone", () => {
         const order = place()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.assignCourier(dispatcher(), NOW)
         expect(order.isWithDispatcher()).toBe(true)
         // Given to a rider instead: a plain courier order again.
@@ -101,7 +101,7 @@ describe("An order with the shop's dispatcher", () => {
 
     it("a cash order never goes to a dispatcher: no money passes through a stranger", () => {
         const order = place({ paymentMethod: PaymentMethod.CASH })
-        order.acceptAndStart()
+        order.accept({ role: "owner" }, true)
         expect(() => order.assignCourier(dispatcher(), NOW)).toThrow(
             expect.objectContaining({ rule: "CASH_NOT_FOR_DISPATCHER" }),
         )
@@ -137,7 +137,7 @@ describe("An order with the shop's dispatcher", () => {
 
     it("only after the owner packed it, and only by its own dispatcher", () => {
         const order = place()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.assignCourier(dispatcher(), NOW)
         expect(() => order.send("courier-1", SendWay.TAXI, undefined, NOW)).toThrow()
         expect(order.sentVia).toBeUndefined()
@@ -148,7 +148,7 @@ describe("An order with the shop's dispatcher", () => {
 
     it("a rider's order has no «Jo'natdim» and no notes", () => {
         const order = place()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.assignCourier(makeCourier({ now: NOW }), NOW)
         order.advanceTo(OrderStatus.READY)
         expect(() => order.send("courier-1", SendWay.TAXI, undefined, NOW)).toThrow(
@@ -163,7 +163,7 @@ describe("An order with the shop's dispatcher", () => {
 
     it("the dispatcher writes from the moment they have it until it is delivered", () => {
         const order = place()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.assignCourier(dispatcher(), NOW)
         order.addDeliveryNote("courier-1", "Taksi chaqirildi, 20 daqiqada", NOW)
         expect(() => order.addDeliveryNote("courier-2", "Men ham", NOW)).toThrow(ForbiddenError)
@@ -251,7 +251,7 @@ describe("An order with the shop's dispatcher", () => {
 describe("The courier choice before the order goes on", () => {
     it("nobody on it: «Tayyor» and «Jo'natish» wait in a shop with couriers", () => {
         const order = place()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         expect(order.needsCourierChoice()).toBe(true)
         expect(() => order.assertCourierChosen(OrderStatus.READY)).toThrow(
             expect.objectContaining({ rule: "COURIER_NOT_CHOSEN" }),
@@ -269,7 +269,7 @@ describe("The courier choice before the order goes on", () => {
 
     it("«O'zim yetkazaman»: the owner takes it, a courier who had it is let go", () => {
         const order = place()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.assignCourier(dispatcher(), NOW)
         order.deliverMyself()
         expect(order.ownerDelivers).toBe(true)
@@ -286,7 +286,7 @@ describe("The courier choice before the order goes on", () => {
 
     it("a courier after «O'zim yetkazaman» takes it over again", () => {
         const order = place()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.deliverMyself()
         order.assignCourier(makeCourier({ now: NOW }), NOW)
         expect(order.ownerDelivers).toBe(false)
@@ -295,7 +295,7 @@ describe("The courier choice before the order goes on", () => {
 
     it("the network looking for a courier counts as chosen", () => {
         const order = place()
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         order.deliverMyself()
         order.requestNetwork(NOW)
         expect(order.ownerDelivers).toBe(false)
@@ -315,7 +315,7 @@ describe("A delivery the customer pays to the carrier", () => {
 
     it("never goes to the district network: a network courier carries no money", () => {
         const order = place({ customerPaysCarrier: true })
-        withReceipt(order).confirmPaymentAndStart()
+        withReceipt(order).confirmPaymentAndAccept(true)
         expect(() => order.requestNetwork(NOW)).toThrow(
             expect.objectContaining({ rule: "CARRIER_NOT_FOR_NETWORK" }),
         )

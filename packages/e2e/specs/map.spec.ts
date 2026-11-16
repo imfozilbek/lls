@@ -3,7 +3,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, apiAs, payAndStart, placeOrder, resetStand } from "../support/stand.js"
 import { openApp, toCart } from "../support/webapp.js"
 
 import type { Locator, Page } from "@playwright/test"
@@ -29,7 +29,7 @@ async function assignedOrder(): Promise<string> {
             location: CUSTOMER_PLACE,
         },
     )
-    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     const assigned = await apiAs(PEOPLE.foodOwner, `/owner/orders/${order.id}/courier`, {
         shop: FOOD,
         method: "PUT",

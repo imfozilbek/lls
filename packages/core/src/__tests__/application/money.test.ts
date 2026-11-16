@@ -131,6 +131,7 @@ describe("money: transfer before the shop starts, report", () => {
         const advance = new AdvanceOrderUseCase(access())
         await sent(order)
         await confirm(order)
+        await advance.execute({ ...ids(order), to: OrderStatus.PREPARING })
         await new AssignCourierUseCase({ businesses, couriers, orders, clock }).execute({
             ...ids(order),
             courierId,
@@ -215,9 +216,9 @@ describe("money: transfer before the shop starts, report", () => {
         expect(today.awaiting.map((o) => o.id)).toEqual([order.id])
 
         await expect(confirm(order, STRANGER_TG)).rejects.toThrow(ForbiddenError)
-        // Paid, accepted and started in the one tap.
+        // Paid and accepted in the one tap; collecting waits for the owner.
         const accepted = await confirm(order)
-        expect(accepted.status).toBe(OrderStatus.PREPARING)
+        expect(accepted.status).toBe(OrderStatus.ACCEPTED)
         expect(accepted.payment).toMatchObject({ status: PaymentStatus.PAID })
         expect(accepted.payment.method).toBe(PaymentMethod.CARD_TRANSFER)
         today = await report()
@@ -295,7 +296,7 @@ describe("money: transfer before the shop starts, report", () => {
         await new RejectTransferUseCase(money()).execute(ids(order))
         await expect(confirm(order)).rejects.toMatchObject({ rule: "RECEIPT_NOT_SENT" })
         await sent(order)
-        expect(await confirm(order)).toMatchObject({ status: OrderStatus.PREPARING })
+        expect(await confirm(order)).toMatchObject({ status: OrderStatus.ACCEPTED })
     })
 
     it("delivered: one «Доставил», the courier carries no money; the report adds up", async () => {

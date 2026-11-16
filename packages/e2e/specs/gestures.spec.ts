@@ -5,7 +5,7 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, apiAs, payAndAccept, placeOrder, resetStand } from "../support/stand.js"
+import { FOOD, PEOPLE, apiAs, payAndStart, placeOrder, resetStand } from "../support/stand.js"
 import { drag, pullDown, swipeLeft, swipeRight } from "../support/touch.js"
 import { bottomButton, fillAddress, openApp, openOrderCard, toCart } from "../support/webapp.js"
 
@@ -43,7 +43,7 @@ test("pull down on the order screen refreshes it in place, without a skeleton", 
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
     const app = await openOrder(page, order.number)
     await expect(page.getByText("O'tkazma kutilmoqda").first()).toBeVisible()
-    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await pullDown(page)
     await expect(page.getByText("Buyurtmangiz tayyorlanmoqda")).toBeVisible()
     await expect(page.locator(".skeleton")).toHaveCount(0)
@@ -59,7 +59,7 @@ test("a pull over a dead connection lets go with a word; the next pull works", a
     await expect(page.getByText("O'tkazma kutilmoqda").first()).toBeVisible()
     // The connection died while the app was in the background: no answer, no error, nothing.
     await page.route("**/api/orders/*", () => undefined)
-    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await pullDown(page)
     await expect(page.getByTestId("pull-indicator")).toBeVisible()
     // Before the deadline the spinner stayed there until the app was opened again.
@@ -76,7 +76,7 @@ test("a pull over a dead connection lets go with a word; the next pull works", a
 test("coming back to the app refreshes the order at once", async ({ page }) => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
     const app = await openOrder(page, order.number)
-    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     await app.fire("deactivated")
     await app.fire("activated")
     await expect(page.getByText("Buyurtmangiz tayyorlanmoqda")).toBeVisible()
@@ -159,7 +159,7 @@ test("cancelling asks in Uzbek with a red button; a swipe right closes a sheet",
 
 test("after a delivered order, the shop's icon may go to the home screen", async ({ page }) => {
     const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
-    expect((await payAndAccept(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
+    expect((await payAndStart(PEOPLE.foodOwner, FOOD, order.id)).status).toBe(200)
     for (const status of ["ready", "picked_up", "delivered"]) {
         expect((await owner(`/owner/orders/${order.id}`, { status })).status).toBe(200)
     }

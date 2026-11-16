@@ -132,6 +132,14 @@ function useCourierStep(
     return { step, label, busy, go }
 }
 
+/** While the shop has the order: taken and not started yet, or being made; a dispatcher's own. */
+function waitingWords(order: OrderDTO, t: Dictionary): string {
+    if (order.dispatcher) {
+        return t.courier.dispatcherWait
+    }
+    return order.status === OrderStatus.ACCEPTED ? t.courier.waitAccepted : t.courier.waitReady
+}
+
 function StepButton({
     order,
     onChange,
@@ -147,7 +155,7 @@ function StepButton({
         return (
             <p className="flex items-center gap-2 rounded-control bg-tg-bg p-3 text-sm text-tg-hint">
                 <ClockIcon size={18} className="shrink-0" />
-                {order.dispatcher ? t.courier.dispatcherWait : t.courier.waitReady}
+                {waitingWords(order, t)}
             </p>
         )
     }

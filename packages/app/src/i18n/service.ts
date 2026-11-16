@@ -39,6 +39,7 @@ export const SERVICE_STAFF = (base: StaffDictionary): Overrides<StaffDictionary>
         ...base.owner,
         tabs: { ...base.owner.tabs, menu: "Xizmatlar" },
         actions: { ...base.owner.actions, preparing: "Bajarishni boshlash" },
+        queueBadge: "Bajarish kerak",
         menuEmpty: "Xizmatlar yo'q",
         menuEmptyText: "Birinchi xizmatni qo'shing: mijozlar uni darhol ko'radi.",
     },
