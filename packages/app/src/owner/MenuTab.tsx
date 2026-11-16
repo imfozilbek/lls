@@ -1,5 +1,5 @@
 import { Feature, searchWords } from "@zumda/core"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
@@ -65,6 +65,7 @@ function QuickPhoto({ product }: { product: ProductDTO }): React.JSX.Element {
     const p = t.owner.product
     const upsert = useOwner((state) => state.upsert)
     const [busy, setBusy] = useState(false)
+    const input = useRef<HTMLInputElement>(null)
     const upload = async (file: File | undefined): Promise<void> => {
         if (!file) {
             return
@@ -82,26 +83,36 @@ function QuickPhoto({ product }: { product: ProductDTO }): React.JSX.Element {
             setBusy(false)
         }
     }
+    // A button clicks the hidden file field: in Telegram for Android 17 a label around the field
+    // did not open the gallery (November 2026), a button does.
     return (
-        <label
-            aria-label={`${p.addPhoto}: ${product.name}`}
-            className={cn(
-                "tap grid h-14 w-14 shrink-0 cursor-pointer place-items-center rounded-control border-[1.5px] border-dashed border-brand bg-brand/10 text-brand",
-                busy && "animate-pulse",
-            )}
-        >
-            <ImageIcon size={22} />
+        <>
+            <button
+                type="button"
+                aria-label={`${p.addPhoto}: ${product.name}`}
+                disabled={busy}
+                onClick={(): void => {
+                    haptic.tap()
+                    input.current?.click()
+                }}
+                className={cn(
+                    "tap grid h-14 w-14 shrink-0 place-items-center rounded-control border-[1.5px] border-dashed border-brand bg-brand/10 text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+                    busy && "animate-pulse",
+                )}
+            >
+                <ImageIcon size={22} />
+            </button>
             <input
+                ref={input}
                 type="file"
                 accept="image/*"
-                className="sr-only"
-                disabled={busy}
+                className="hidden"
                 onChange={(e): void => {
                     void upload(e.target.files?.[0])
                     e.target.value = ""
                 }}
             />
-        </label>
+        </>
     )
 }
 
