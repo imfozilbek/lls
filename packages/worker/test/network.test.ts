@@ -321,6 +321,15 @@ describe("district network", () => {
         expect(stored?.courier_name).toBe("Otabek")
     })
 
+    it("the owner's storefront call says whether the shop uses the network; a customer's never", async () => {
+        const asOwner = await json<{ networkDelivery?: boolean }>(await foodOwner()("/api/shop"))
+        expect(asOwner.networkDelivery).toBe(true)
+        const customer = client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: food })
+        expect(await json<object>(await customer("/api/shop"))).not.toHaveProperty(
+            "networkDelivery",
+        )
+    })
+
     it("network off: nothing goes there, by itself or by hand; back on, by hand it goes", async () => {
         await foodOwner()("/api/owner/shop", { method: "PATCH", json: { networkDelivery: false } })
         const order = await placeAndAccept()
