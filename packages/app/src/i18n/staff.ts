@@ -8,6 +8,7 @@ export const staffUz = {
         ORDER_NOT_ASSIGNABLE: "Yo'lga chiqqan buyurtmaga kuryer tayinlab bo'lmaydi.",
         COURIER_NOT_AVAILABLE: "Bu kuryer hozir buyurtma ola olmaydi.",
         NETWORK_ORDER_TAKEN: "Bu buyurtmani boshqa kuryer allaqachon oldi.",
+        NETWORK_OFF: "Tuman tarmog'i o'chirilgan. Uni sozlamalarda yoqish mumkin.",
         NO_DISTRICT: "Do'koningiz hali Zumda tarmog'i tumanlaridan tashqarida.",
         INVITE_USED: "Bu taklif havolasi allaqachon ishlatilgan.",
         INVITE_EXPIRED: "Taklif havolasi eskirgan. Yangisini yarating.",
@@ -435,6 +436,8 @@ export const staffUz = {
                 noCouriers: "Hali kuryer yo'q",
                 couriersHint: "Taklif qilish va tasdiqlash",
                 couriersWaiting: "{n} ta kuryer tasdiqlashni kutmoqda",
+                networkOn: "Tuman tarmog'iga ulangan",
+                networkOff: "Tuman tarmog'i o'chirilgan",
             },
             delivery: "Yetkazib berish",
             /** How the customer pays for delivery (owner's decision, November 2026). */
@@ -478,9 +481,9 @@ export const staffUz = {
             setLocation: "Joylashuvni yangilash",
             couriers: "Kuryerlar",
             networkTitle: "Tuman tarmog'i",
-            networkSwitch: "Kuryerlarim band bo'lsa, tuman tarmog'iga berish",
+            networkSwitch: "Tuman tarmog'idan foydalanish",
             networkHint:
-                "Buyurtmani tumanning bo'sh kuryeri olib boradi. Unga faqat oldindan to'langan buyurtma beriladi: kuryer pul olmaydi.",
+                "Kuryerlaringiz band bo'lsa, buyurtmani tumanning bo'sh kuryeri olib boradi. Unga faqat oldindan to'langan buyurtma beriladi: kuryer pul olmaydi. O'chiq bo'lsa, buyurtmalaringiz tarmoqqa berilmaydi.",
             notInDistrict:
                 "Do'koningiz hali Zumda tarmog'i tumanlaridan tashqarida: do'kon joylashuvini kiriting.",
             couriersHint:
