@@ -105,10 +105,13 @@ const ICON_LINK =
 export function CompactAddress({
     order,
     shop,
+    withComment = true,
 }: {
     order: OrderDTO
     /** The shop's place: the map shows where it goes from. */
     shop?: { latitude: number; longitude: number } | null
+    /** False while it is collected: the comment stands whole under the lines already. */
+    withComment?: boolean
 }): React.JSX.Element {
     const t = useT()
     const map = order.location ? mapUrl(order.location) : null
@@ -125,7 +128,7 @@ export function CompactAddress({
                             <span className="text-tg-hint"> · {order.landmark}</span>
                         ) : null}
                     </p>
-                    {order.comment ? (
+                    {withComment && order.comment ? (
                         <p className="line-clamp-2 italic">«{order.comment}»</p>
                     ) : null}
                 </div>

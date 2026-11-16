@@ -122,7 +122,7 @@ export function MissingButton({
                 haptic.tap()
                 onPress()
             }}
-            className="tap -my-2 min-h-11 shrink-0 rounded-control px-2 text-sm font-semibold text-tg-destructive focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+            className="tap -my-2 min-h-11 shrink-0 rounded-control px-2 text-sm font-semibold text-tg-subtitle focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
         >
             {m.button}
         </button>

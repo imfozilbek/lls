@@ -53,13 +53,8 @@ import { BottomSpacer } from "../ui/shell.js"
 import { ZumdaMark } from "../ui/zumda-mark.js"
 
 import { PaymentCheckSheet } from "./PaymentCheck.js"
-import {
-    MissingButton,
-    MissingLineSheet,
-    RefundOwed,
-    RemovedLines,
-    canTakeOut,
-} from "./missing-line.js"
+import { CollectList, isCollecting, useOwnerStep } from "./collect-list.js"
+import { MissingLineSheet, RefundOwed, RemovedLines } from "./missing-line.js"
 import { shownStages, stageCounts, stageOf } from "./order-stage.js"
 import { ownerStep } from "./order-step.js"
 import { useOwner } from "./store.js"
@@ -585,19 +580,12 @@ function needsCheck(order: OrderDTO): boolean {
 /** A long order shows its first lines and «+N ta»: a tap shows the rest. */
 const SHOWN_ITEMS = 3
 
-function CardItems({
-    order,
-    onMissing,
-}: {
-    order: OrderDTO
-    /** «Yo'q» on a line, while it may still be taken out. */
-    onMissing(item: OrderItemDTO): void
-}): React.JSX.Element {
+/** An open card's lines once it is collected (before, the whole list is the card's). */
+function CardItems({ order }: { order: OrderDTO }): React.JSX.Element {
     const t = useT()
     const [all, setAll] = useState(false)
     const hidden = order.items.length - SHOWN_ITEMS
     const shown = all || hidden <= 1 ? order.items : order.items.slice(0, SHOWN_ITEMS)
-    const missing = canTakeOut(order)
     return (
         <ul className="mt-2 flex flex-col gap-0.5">
             {shown.map((item) => (
@@ -611,9 +599,6 @@ function CardItems({
                             <span className="text-tg-subtitle"> ({item.options.label})</span>
                         ) : null}
                     </span>
-                    {missing ? (
-                        <MissingButton item={item} onPress={(): void => onMissing(item)} />
-                    ) : null}
                 </li>
             ))}
             {shown.length < order.items.length ? (
@@ -702,7 +687,7 @@ function CardDetails({
                 </p>
             ) : null}
             <div className="mt-3 flex flex-col gap-2 border-t border-tg-separator pt-3 text-sm">
-                <CompactAddress order={order} shop={shopPlace} />
+                <CompactAddress order={order} shop={shopPlace} withComment={!isCollecting(order)} />
                 <CourierLine order={order} />
                 {live ? <CourierAction order={order} actions={actions} /> : null}
             </div>
@@ -827,6 +812,7 @@ function OrderCard({
     const [open, setOpen] = useState(startOpen || needsCheck(order))
     const [missing, setMissing] = useState<OrderItemDTO | null>(null)
     const actions = useCardActions({ order, onChange, onStale })
+    const step = useOwnerStep(order, actions.act)
     const live = !isFinalStatus(order.status)
     return (
         <li
@@ -838,9 +824,11 @@ function OrderCard({
             data-needs-check={needsCheck(order) || undefined}
         >
             <CardHead order={order} />
-            {open ? (
+            {isCollecting(order) ? (
+                <CollectList order={order} onMissing={setMissing} />
+            ) : open ? (
                 <>
-                    <CardItems order={order} onMissing={setMissing} />
+                    <CardItems order={order} />
                     <RemovedLines order={order} />
                 </>
             ) : (
@@ -866,9 +854,7 @@ function OrderCard({
                         step={actions.step}
                         busy={actions.busy}
                         alone={actions.alone}
-                        onStep={(to): void =>
-                            void actions.act(() => api.owner.setStatus(order.id, to))
-                        }
+                        onStep={step}
                         onSheet={actions.open}
                         onSelf={(): void =>
                             void actions.act(() => api.owner.deliverMyself(order.id))

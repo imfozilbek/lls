@@ -131,6 +131,8 @@ const config: Config = {
                     to: { opacity: "1", transform: "none" },
                 },
                 "screen-in": { from: { opacity: "0.6" }, to: { opacity: "1" } },
+                // A tick draws itself: the check's stroke (about 20 units long) runs in.
+                tick: { from: { strokeDashoffset: "20" }, to: { strokeDashoffset: "0" } },
             },
             animation: {
                 rise: "rise 240ms cubic-bezier(0.16, 1, 0.3, 1) both",
@@ -140,6 +142,7 @@ const config: Config = {
                 ring: "ring 1.8s cubic-bezier(0.25, 1, 0.5, 1) infinite",
                 "sheet-in": "sheet-in 260ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 "fade-in": "fade-in 200ms ease-out both",
+                tick: "tick 160ms cubic-bezier(0.25, 1, 0.5, 1) both",
                 "screen-forward": "screen-forward 220ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 "screen-back": "screen-back 220ms cubic-bezier(0.16, 1, 0.3, 1) both",
                 "screen-in": "screen-in 180ms ease-out both",
