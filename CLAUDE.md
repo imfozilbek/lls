@@ -781,14 +781,34 @@ ochish» to its own bot (`GET /api/showcase/shops/:slug/bot`, active shops only)
 
 **Courier invite:** the owner creates a one-time link `t.me/<courier_bot>?start=c_<code>` (48 h).
 `/start c_<code>` in the Zumda courier bot (webhook `/tg/courier`) makes the sender a **pending**
-courier of that shop and asks for the phone; the owner gets "Подтвердить / Отклонить" from the
-shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин".
+courier of that shop and asks for the phone; once the phone came (owner's decision, November
+2026: someone to approve, the name and the phone together) the owner gets «Tasdiqlash / Rad
+etish» from the shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин".
 
 **Notifications (no WebSockets):**
-- New order → message to the owner «💳 Kartaga o'tkazma va chek kutilmoqda» with only «Bekor
-  qilish» (no «Pul keldi» before the screenshot); the customer gets the shop's card, the sum and
-  «chekni yuklang va «O'tkazdim» ni bosing». A cash order: «💵 Naqd: kuryer yetkazganda oladi»
-  with «Qabul qilish»; the customer gets the sum to give the courier. «O'tkazdim» with the
+- **Compact messages (owner's decision, November 2026):** the first line says what it is (the
+  owner's card «🆕 Yangi · #12 · 96 000 so'm», the courier's «Osh Markaz · #12 · ✅ Qabul
+  qilindi»): what a notification shows. One fact a line, no «Holat:», no blank lines; the order's
+  lines fold in an expandable quote (`itemsQuote`, Bot API 7.4; the courier's without prices).
+  Buttons have colours (Bot API 9.4 `style`): the step to make green, cancel and refusals red,
+  the customer's «Chekni yuklash» blue. One tap copies (`copy_text`): the card number for the
+  customer, «Manzil va telefonni nusxalash» for the courier (a taxi), the bot's link after
+  approval. A line about an order answers its card (`reply_parameters`): the screenshot (its sum
+  over the picture), the payment question, a customer's cancel, the network's news, «tayyor,
+  olib keting». Not used: rich messages, tables and widgets (Bot API 10.x, 2026: older phones in
+  the regions do not show them), reactions, pinning.
+- **The customer's one live message per order** (owner's decision, November 2026,
+  `orders.customer_message_id`): the step, the money, the place, whom to call (the shop; the
+  courier on the way), the dispatcher's last notes, the lines and the total folded. What they
+  wait for comes as a new message with a sound and the one before is deleted (placed, accepted,
+  on the way, delivered, cancelled, money not found, a line missing, a note, money back:
+  «↩️ #12: do'kon sizga … qaytarib berdi»); the shop's own work (collecting, ready), the
+  screenshot just sent and their own cancel edit it quietly (`customerStepRings`). A transfer
+  to make: «📋 Karta raqamini nusxalash» and «🧾 Chekni yuklash».
+- New order → the owner's card «💳 Kartaga o'tkazma va chek kutilmoqda» with only «Bekor
+  qilish» (no «Pul keldi» before the screenshot); the customer's message has the shop's card and
+  the sum («Shu kartaga … o'tkazing, keyin chekni yuklang»). A cash order: «💵 Naqd: kuryer
+  yetkazganda oladi» with «Qabul qilish»; the customer's message has the sum to give the courier. «O'tkazdim» with the
   screenshot → the owner gets the picture, the sum, the card tail, warnings and «Ha, … keldi» /
   «Yo'q, kelmadi», and the card gets «Pul keldi, qabul qilish» (an old card's button before the
   screenshot answers one line). After that the owner's button is the **next allowed status**
@@ -800,7 +820,9 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
   opened; Telegram lets a bot write first only after Start): every message and file for the owner
   (orders, the transfer, couriers, the CSV, the QR poster) goes through Zumda | Business instead,
   with «@bot sizga yoza olmadi … Start bosing» and link buttons only (an action button would
-  reach the wrong bot). `businesses.owner_chat_open_at` / `owner_chat_closed_at` keep what Zumda
+  reach the wrong bot). The order's card is one message there, edited on each step
+  (`orders.owner_message_via` = `business`); after Start the shop's bot takes it over and the
+  old one is deleted. `businesses.owner_chat_open_at` / `owner_chat_closed_at` keep what Zumda
   last saw (`ownerChat`: open / closed / unknown); the owner's Start in the shop's bot opens it.
   «Ishga tayyor» asks «Botingizni oching» (`POST /api/owner/shop/bot-check`: "typing…", nothing
   in the chat); «Platforma» marks such a shop. The QR poster is also kept in R2
@@ -809,18 +831,20 @@ shop bot (`k:<courierId>:approve|decline`) or approves in "Мой магазин
 - Courier assigned → order card from the Zumda courier bot, titled with the shop's name (where
   from: the shop's address; address, landmark, «🧭 Yo'l» in five apps, the customer's and the shop's phones,
   «Оплачено заранее: денег не брать» or for cash «Mijozdan {sum} naqd oling», empty bottles) with
-  "Забрал", then one "Доставил" («Pulni oldim, yetkazdim» for cash). A dispatcher's card: «📮
+  "Забрал", then one "Доставил" («Pulni oldim, yetkazdim» for cash), and «Manzil va telefonni
+  nusxalash» on every live step. A dispatcher's card: «📮
   Jo'natdim» opens the app (the way and the note), then «Yetkazildi»; the last notes are on it.
 - A dispatcher's «Jo'natdim» → the customer hears how it went («taksi bilan», «pochta orqali»…),
   with the note, «Yetkazish haqini yetkazuvchiga o'zingiz to'laysiz» when the customer pays the
-  carrier, and the dispatcher's phone; each further note comes on its own («📝 #7 buyurtma: …»).
+  carrier, and the dispatcher's phone; each further note renews the customer's message («📝 #7
+  buyurtma: …» first).
 - **The Zumda sound** (owner's choice, October 2026: «Zum-da», `lib/sound.ts`, synthesized): while
   the Mini App is open, news rings it: the shop (new order, «O'tkazdim») and the courier (new
   delivery, ready to pick up, network order nearby) twice, the customer once and softly (the
   order moved). `useRingOnNews` compares with the last look; «Zumda ovozi» turns it off for the
   shop and the courier. Bot messages keep Telegram's own sound (a bot cannot set one).
-- Status change → message to the customer (on the way: the courier's name and phone). Showcase
-  orders: the Zumda bot writes to the customer (with the shop name); the owner still gets messages
+- Status change → the customer's live message (on the way: the courier's name and phone).
+  Showcase orders: Zumda | Shop holds it (the shop's name first); the owner still gets messages
   from the shop bot.
 - **One person the bot cannot reach never stops the others' messages.** A message to many (the
   network's couriers, the admins, late orders) goes to each on its own (`toEach`), and the steps
@@ -1313,6 +1337,12 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       photo; a tap opens the product (photos, price, description); ticks and «Yo'q» as before;
       a deleted product shows its category's picture and opens nothing
 - [ ] Shift: «Smenadaman» on today is still on tomorrow, off only when switched off
+- [ ] Compact messages: a transfer order → the customer has one message («📋 Karta raqamini
+      nusxalash» copies the number, «🧾 Chekni yuklash») → «Chek yuborildi» quietly → «Pul keldi»
+      replaces it with a sound → collecting and ready quietly → on the way and delivered replace
+      it; the owner's and the courier's cards start with the step and the sum, the lines fold
+      and open on a tap; green and red buttons; «tayyor, olib keting» answers the courier's card;
+      a new courier reaches the owner only with the phone
 - [ ] Route apps: «Mijozga yo'l» → Yandex Navigator, Yandex Go, Google Maps, 2GIS, Yandex Maps →
       each opens on the route on a real Android and iPhone; the one picked comes first next time;
       a trip offers three; the courier bot's «🧭 Yo'l» links open the same (Navigator through
