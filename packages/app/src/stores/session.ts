@@ -5,7 +5,8 @@ import type { CustomerDTO, ProductDTO, ShopPublicDTO } from "@zumda/core"
 /** The viewer's role in this shop, decided by the server from verified Telegram data. */
 export type ViewerRole = "owner" | "customer"
 
-export type Shop = ShopPublicDTO & { viewerRole: ViewerRole }
+/** `networkDelivery`: the owner's only («Tuman tarmog'idan foydalanish»), never a customer's. */
+export type Shop = ShopPublicDTO & { viewerRole: ViewerRole; networkDelivery?: boolean }
 
 interface SessionState {
     shop: Shop | null
