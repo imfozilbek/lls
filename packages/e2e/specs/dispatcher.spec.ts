@@ -29,7 +29,7 @@ function card(page: Page, number: number): ReturnType<Page["locator"]> {
         .first()
 }
 
-test("the owner makes the courier a dispatcher and lets the customer pay the carrier", async ({
+test("the owner makes the courier a dispatcher; the delivery price comes after the order", async ({
     page,
 }) => {
     await openApp(page, { user: PEOPLE.storeOwner, shop: STORE })
@@ -42,22 +42,28 @@ test("the owner makes the courier a dispatcher and lets the customer pay the car
 
     await settingsBack(page)
     await openGroup(page, "Yetkazib berish")
-    await page.getByRole("switch", { name: "Yetkazish haqini mijoz o'zi to'laydi" }).click()
-    // The fee is the carrier's now: the shop's own price steps aside.
+    // With a dispatcher, «Narxi keyin aytiladi» comes first and says why.
+    const choices = page.getByRole("radiogroup", { name: "Yetkazib berish narxi" })
+    await expect(choices.getByRole("radio").first()).toContainText("Narxi keyin aytiladi")
+    await expect(
+        choices.getByText("Dispetcheringiz taksi yoki pochta bilan jo'natadi"),
+    ).toBeVisible()
+    await choices.getByRole("radio", { name: /Narxi keyin aytiladi/ }).click()
+    // The price is the carrier's now: the shop's own fee steps aside.
     await expect(page.getByLabel("Yetkazish narxi")).toHaveCount(0)
     await bottomButton(page).click()
     await expect(page.getByText("Saqlandi").first()).toBeVisible()
     await settingsBack(page)
     await expect(
-        page.getByRole("button", { name: /Yetkazib berish\s*Yetkazish haqini mijoz to'laydi/ }),
+        page.getByRole("button", { name: /Yetkazib berish\s*Narxi keyin aytiladi/ }),
     ).toBeVisible()
 })
 
-test("the storefront says the delivery is paid apart; the order adds nothing for it", async ({
+test("the storefront says the price comes later; the order adds nothing for it", async ({
     page,
 }) => {
     await openApp(page, { user: PEOPLE.customer, shop: STORE })
-    await expect(page.getByText("Yetkazish haqi alohida")).toBeVisible()
+    await expect(page.getByText("Yetkazib berish narxi keyin aytiladi")).toBeVisible()
     await expect(page.getByText("Bepul yetkazish")).toHaveCount(0)
     order = await placeOrder(PEOPLE.customer, STORE, [{ productId: "dev-store-p1", quantity: 1 }])
     expect(order).toMatchObject({ deliveryFee: 0, customerPaysCarrier: true })
@@ -99,7 +105,10 @@ test("the dispatcher sees where from and where to, sends it by post with the tra
     const send = sheet.getByRole("button", { name: "Jo'natdim", exact: true })
     await expect(send).toBeDisabled()
     await sheet.getByRole("radio", { name: "Pochta" }).click()
-    await sheet.getByRole("textbox", { name: "Mijozga izoh" }).fill("Trek: UZ123456")
+    // The shop promised the price after the order: the note carries it, so it is required.
+    await expect(sheet.getByText("Mijozga yetkazib berish narxini yozing")).toBeVisible()
+    await expect(send).toBeDisabled()
+    await sheet.getByRole("textbox", { name: "Yetkazib berish narxi" }).fill("Trek: UZ123456")
     await send.click()
     await expect(page.getByText(`#${order.number} jo'natildi: mijozga xabar ketdi`)).toBeVisible()
     await expect(mine.getByText("Pochta orqali jo'natildi")).toBeVisible()
@@ -132,7 +141,7 @@ test("the customer follows the parcel on the order screen; the dispatcher closes
     await expect(notes.locator("li").first()).toContainText("Qarshiga yetdi")
     await expect(notes).toContainText("Trek: UZ123456")
     await expect(page.getByRole("link", { name: /Dispetcherga qo'ng'iroq/ })).toBeVisible()
-    await expect(page.getByText("alohida", { exact: true })).toBeVisible()
+    await expect(page.getByText("keyin aytiladi", { exact: true })).toBeVisible()
 
     const delivered = await apiAs(PEOPLE.courier, `/courier/orders/${order.id}`, {
         courierBot: true,
