@@ -14,7 +14,7 @@ import {
     isBottleUnit,
     isWeightUnit,
 } from "@zumda/core"
-import { useEffect, useState } from "react"
+import { Suspense, lazy, useEffect, useState } from "react"
 
 import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, api } from "../lib/api.js"
@@ -26,6 +26,7 @@ import { confirm, haptic } from "../lib/telegram.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
+import { SheetLoading } from "../ui/boundary.js"
 import { CheckIcon, CopyIcon, ListIcon, PlusIcon, SearchIcon, TrashIcon } from "../ui/icons.js"
 import {
     Button,
@@ -52,6 +53,7 @@ import {
 } from "./OptionsEditor.js"
 import { ProductPreview } from "./ProductPreview.js"
 import { allOf, asksAge, togglePick, usedCategories } from "./category-picks.js"
+import { MegaphoneIcon } from "./channel-icons.js"
 import { savePhotos, sentPhoto, slotsOf } from "./photos.js"
 import { parseStock, stockText, stockUnit } from "./stock-input.js"
 import { onSaleNow } from "./stopped.js"
@@ -282,14 +284,63 @@ function useCopy(product: ProductDTO | undefined): ProductDTO | undefined {
     return copy ?? undefined
 }
 
+/** «Kanalga joylash»: its own chunk, loaded on the tap. */
+const ChannelPostSheet = lazy(() =>
+    import("./ChannelPostSheet.js").then((m) => ({ default: m.ChannelPostSheet })),
+)
+
+/**
+ * «Kanalga joylash» posts the product as it is saved, and only one on sale: a tap says what is
+ * missing instead of a dead button.
+ */
+function ChannelPostButton({
+    product,
+    dirty,
+}: {
+    product: ProductDTO
+    dirty: boolean
+}): React.JSX.Element {
+    const t = useT()
+    const [open, setOpen] = useState(false)
+    const tap = (): void => {
+        const missing = dirty
+            ? t.owner.channel.post.saveFirst
+            : !onSaleNow(product)
+              ? errorText(t, "POST_PRODUCT_UNAVAILABLE")
+              : null
+        if (missing) {
+            haptic.error()
+            toast(missing, "error")
+            return
+        }
+        haptic.tap()
+        setOpen(true)
+    }
+    return (
+        <>
+            <Button variant="secondary" icon={<MegaphoneIcon size={18} />} onClick={tap}>
+                {t.owner.channel.post.button}
+            </Button>
+            {open ? (
+                <Suspense fallback={<SheetLoading />}>
+                    <ChannelPostSheet product={product} onClose={(): void => setOpen(false)} />
+                </Suspense>
+            ) : null}
+        </>
+    )
+}
+
 function ProductExtras({
     product,
     available,
+    dirty,
     onAvailable,
     onError,
 }: {
     product: ProductDTO
     available: boolean
+    /** Changes not saved yet: the post would not say them. */
+    dirty: boolean
     onAvailable(value: boolean): void
     onError(caught: unknown): void
 }): React.JSX.Element {
@@ -298,6 +349,7 @@ function ProductExtras({
     const push = useRouter((state) => state.push)
     const drop = useOwner((state) => state.drop)
     const copyProduct = useOwner((state) => state.copyProduct)
+    const demo = useSession((state) => state.shop?.demo === true)
     const remove = async (): Promise<void> => {
         const options = { yes: t.common.delete, destructive: true }
         if (!(await confirm(t.owner.product.deleteConfirm, options))) {
@@ -333,6 +385,7 @@ function ProductExtras({
             >
                 {t.owner.product.copy}
             </Button>
+            {demo ? null : <ChannelPostButton product={product} dirty={dirty} />}
             <Button
                 variant="danger"
                 icon={<TrashIcon size={18} />}
@@ -1116,6 +1169,7 @@ function EditorForm({ product: initial }: { product: ProductDTO | undefined }): 
                 <ProductExtras
                     product={product}
                     available={draft.isAvailable}
+                    dirty={dirty}
                     onAvailable={(isAvailable): void => patch({ isAvailable })}
                     onError={(caught): void =>
                         toast(

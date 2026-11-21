@@ -9,9 +9,10 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
-import { ApiError, api } from "../lib/api.js"
+import { ApiError, api, scopedKey } from "../lib/api.js"
 import { updateBotPhoto } from "../lib/bot-photo.js"
 import { BRAND_SWATCHES, applyBrand, readableInk } from "../lib/brand.js"
+import { cached } from "../lib/cache.js"
 import { cn } from "../lib/cn.js"
 import { formatMoney, hexToRgbChannels } from "../lib/format.js"
 import { compressImage } from "../lib/image.js"
@@ -37,6 +38,8 @@ import { BottomSpacer } from "../ui/shell.js"
 import { ShopLogo } from "../ui/shop-logo.js"
 import { SoundSwitch } from "../ui/sound-switch.js"
 
+import { AdLinks } from "./AdLinks.js"
+import { ChannelGroup } from "./ChannelGroup.js"
 import { CouriersSection, NetworkSection } from "./CouriersSection.js"
 import { HoursEditor } from "./HoursEditor.js"
 import { PaymentCardsSection } from "./PaymentCardsSection.js"
@@ -701,7 +704,15 @@ function ShopFields({
 
 /** The parts of «Sozlamalar»: the first screen lists them, a tap opens one. */
 type SettingsGroup =
-    "shop" | "delivery" | "hours" | "location" | "features" | "card" | "courier" | "link"
+    | "shop"
+    | "delivery"
+    | "hours"
+    | "location"
+    | "features"
+    | "card"
+    | "courier"
+    | "channel"
+    | "link"
 
 const GROUPS: SettingsGroup[] = [
     "shop",
@@ -711,6 +722,7 @@ const GROUPS: SettingsGroup[] = [
     "card",
     "courier",
     "features",
+    "channel",
     "link",
 ]
 
@@ -736,6 +748,7 @@ function groupTitle(s: Settings, group: SettingsGroup): string {
         features: s.features,
         card: s.paymentGroup,
         courier: s.couriers,
+        channel: s.channelGroup,
         link: s.linkGroup,
     }
     return titles[group]
@@ -772,6 +785,15 @@ function paymentSummary(s: Settings, shop: ShopOwnerDTO): { text: string; warn?:
     return {
         text: [s.summary.payment[shop.paymentOptions], tail].filter(Boolean).join(" · "),
     }
+}
+
+/** The channel seen this session, by name; before that, what the part is for. */
+function channelSummary(c: Dictionary["owner"]["channel"]): { text: string } {
+    const seen = cached<{ info: { title: string } | null }>(`state:${scopedKey("owner-channel")}`)
+    if (seen === undefined) {
+        return { text: c.hint }
+    }
+    return { text: seen.info ? seen.info.title : c.none }
 }
 
 /** One line under each part's name: what is set there now. */
@@ -827,6 +849,7 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
                           shop.networkDelivery ? s.summary.networkOn : s.summary.networkOff,
                       ].join(" · "),
                   },
+        channel: channelSummary(t.owner.channel),
         link: { text: `t.me/${shop.botUsername}` },
     }
 }
@@ -1005,6 +1028,8 @@ function GroupBody({
                     <NetworkSection shop={shop} onSaved={onSaved} />
                 </>
             )
+        case "channel":
+            return <ChannelGroup shop={shop} />
         case "link":
             return <LinkGroup shop={shop} />
     }
@@ -1018,6 +1043,7 @@ function LinkGroup({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
                 <ShopLink shop={shop} />
             </Section>
             <PosterSection shop={shop} />
+            {shop.demo ? null : <AdLinks />}
             <Section title={s.showcase}>
                 <p className="rounded-tile bg-tg-secondary p-4 text-sm text-tg-subtitle">
                     {shop.marketplace

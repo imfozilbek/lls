@@ -20,7 +20,7 @@ export const staffUz = {
         SHOP_NOT_REJECTED: "Ariza allaqachon qayta yuborilgan.",
         BOT_PHOTO_FAILED: "Telegram bot rasmini qabul qilmadi. Keyinroq qayta urinib ko'ring.",
         CHANNEL_SETUP_FAILED:
-            "Telegram hozir javob bermadi, kanal ulanmadi. Birozdan keyin qayta urinib ko'ring.",
+            "Telegram hozir javob bermadi, kanal bog'lanmadi. Birozdan keyin qayta urinib ko'ring.",
         CHANNEL_POST_FAILED:
             "Post kanalga joylanmadi: Telegram qabul qilmadi. Birozdan keyin qayta urinib ko'ring.",
         CARD_EXISTS: "Bu karta allaqachon qo'shilgan.",
@@ -65,10 +65,12 @@ export const staffUz = {
         BUSINESS_BOT_ONLY: "Bu bo'lim Zumda | Business botida ochiladi.",
         PLATFORM_ONLY: "Bu bo'lim Zumda | Business botida ochiladi.",
         DEMO_NOT_PROMOTED: "Namuna do'konda kanal va reklama havolalari bo'lmaydi.",
-        CHANNEL_NOT_CONNECTED: "Avval Telegram kanalingizni ulang: «Sozlamalar», «Telegram kanal».",
-        CHANNEL_NO_RIGHTS: "Bot kanalga post joylay olmayapti. Kanalni qayta ulang.",
+        CHANNEL_NOT_CONNECTED:
+            "Avval Telegram kanalingizni bog'lang: «Sozlamalar», «Telegram kanal».",
+        CHANNEL_NO_RIGHTS: "Bot kanalga post joylay olmayapti. Kanalni qayta bog'lang.",
         POST_PRODUCT_UNAVAILABLE: "Bu mahsulot hozir sotuvda emas: uni kanalga joylab bo'lmaydi.",
-        TOO_MANY_LINKS: "Reklama havolalari 50 tadan oshmaydi: avval keraksizini o'chiring.",
+        TOO_MANY_LINKS:
+            "Reklama uchun havolalar 50 tadan oshmaydi: avval keraksizini olib tashlang.",
         POST_NOT_DELETABLE: "Post o'chmadi. Uni kanalda o'zingiz o'chiring.",
     },
     trip: {
@@ -428,6 +430,7 @@ export const staffUz = {
             acceptingOn: "Yoqish",
             acceptingBackOn: "Buyurtmalar yana qabul qilinmoqda",
             linkGroup: "Havola, QR-kod va vitrina",
+            channelGroup: "Telegram kanal",
             summary: {
                 free: "Bepul yetkazish",
                 later: "Narxi keyin aytiladi",
@@ -596,6 +599,70 @@ export const staffUz = {
                 "Do'koningiz Zumda Shop qidiruvida bor. Vitrina orqali sotilgan tovarlardan komissiya: {rate}%.",
             showcaseOff:
                 "Do'koningiz Zumda vitrinasida emas. Qo'shilish uchun Zumda bilan bog'laning.",
+        },
+        /** The shop's own Telegram channel and its links (owner's decision, November 2026). */
+        channel: {
+            none: "Bog'lanmagan",
+            hint: "Kanalga post joylash",
+            intro: "Do'koningizning Telegram kanalini bog'lang: mahsulotni bir tugma bilan kanalga joylaysiz, post ostida «Buyurtma berish» tugmasi bo'ladi.",
+            connect: "Kanalni bog'lash",
+            connectHint:
+                "Telegram kanalingizni tanlashni so'raydi, keyin botingiz kanalga admin bo'lib qo'shiladi. Kerakli huquqlar o'zi belgilanadi.",
+            alreadyAdmin:
+                "Bot kanalda allaqachon admin bo'lsa, uni adminlikdan olib tashlab, qayta qo'shing.",
+            waiting:
+                "Telegramda kanalni tanlang va botni admin qiling. Bog'lanishi bilan shu yerda ko'rinadi.",
+            connected: "Kanal bog'landi",
+            subscribers: "{n} obunachi",
+            disconnect: "Kanalni ajratish",
+            disconnectConfirm:
+                "Kanalni ajratasizmi? Bot kanaldan chiqadi, postlar esa kanalda turaveradi.",
+            disconnected: "Kanal ajratildi",
+            posts: "Kanaldagi postlar",
+            noPosts: "Hozircha post yo'q. Mahsulot sahifasida «Kanalga joylash» tugmasini bosing.",
+            syncHint: "Nomi, narxi yoki yoshi o'zgarsa, postlar ham o'zi o'zgaradi.",
+            opens: "{n} kishi kirdi",
+            orders: "{n} ta buyurtma",
+            sales: "{n} ta yetkazildi",
+            noOpens: "Hali hech kim kirmadi",
+            openPost: "Postni ko'rish",
+            deletePost: "Postni o'chirish",
+            deletePostConfirm: "Postni kanaldan o'chirasizmi?",
+            postDeleted: "Post o'chirildi",
+            post: {
+                button: "Kanalga joylash",
+                text: "Post matni",
+                textHint: "Nomi, narxi va «Buyurtma berish» tugmasini Zumda o'zi qo'shadi.",
+                preview: "Kanalda shunday ko'rinadi",
+                publish: "Joylash",
+                published: "Post kanalga joylandi",
+                saveFirst: "Avval o'zgarishlarni saqlang.",
+                noChannel: "Kanal hali bog'lanmagan. Uni bog'lang, keyin shu yerda joylaysiz.",
+                photoFailed: "Rasm ochilmadi. Qayta urinib ko'ring.",
+                /** The post as the bot writes it (`worker/src/telegram/post-caption.ts`). */
+                priceFrom: "{price} dan",
+                ageLine: "👶 {age} yoshdan",
+                orderButton: "🛒 Buyurtma berish",
+            },
+            ads: {
+                title: "Reklama uchun havolalar",
+                hint: "Boshqa kanalda reklama berganda har biriga alohida havola bering: qaysi reklama qancha buyurtma olib kelganini shu yerda ko'rasiz.",
+                create: "Yangi havola",
+                name: "Nomi",
+                namePlaceholder: "Masalan: Super kids",
+                nameHint: "Masalan, reklama bergan kanalingiz nomini yozing.",
+                target: "Qayerga olib boradi",
+                wholeShop: "Hamma mahsulotlar",
+                oneProduct: "Bitta mahsulot",
+                pickProduct: "Mahsulotni tanlang",
+                created: "Havola tayyor. Nusxalang va reklama matniga qo'shing.",
+                remove: "Havolani olib tashlash",
+                removeConfirm:
+                    "Havolani olib tashlaysizmi? Uni bosgan odam do'konga kiraveradi, faqat endi hisoblanmaydi.",
+                empty: "Hozircha havola yo'q.",
+                needName: "Havolaga nom bering",
+                needProduct: "Qaysi mahsulotga olib borishini tanlang",
+            },
         },
         showcaseOrder: "Zumda vitrinasidan · komissiya {sum}",
     },
