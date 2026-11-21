@@ -615,12 +615,19 @@ function productAnchor(id: string): string {
     return `product-${id}`
 }
 
-/** Opened from the showcase on one product: bring it into view and make it glow once. */
+/**
+ * Opened on one product (a showcase tap, a channel post): bring it into view and make it glow
+ * once; a post's or an ad link's product opens up close too.
+ */
 function useFocusedProduct(catalog: readonly ProductDTO[]): void {
     const focusId = useSession((state) => state.focusProductId)
     useEffect(() => {
-        if (!focusId || !catalog.some((product) => product.id === focusId)) {
+        const product = focusId ? catalog.find((candidate) => candidate.id === focusId) : null
+        if (!focusId || !product) {
             return undefined
+        }
+        if (useSession.getState().focusOpen) {
+            useProductDetail.getState().show(product)
         }
         useSession.getState().focusProduct(null)
         const frame = window.requestAnimationFrame(() => {
