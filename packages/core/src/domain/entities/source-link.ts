@@ -15,8 +15,11 @@ export const SOURCE_LINK_KINDS: readonly SourceLinkKind[] = Object.values(Source
 
 /** «Super kids»: the ad's name, short enough for a row in the list. */
 export const LINK_LABEL_MAX = 40
-/** The owner's words in a post: Telegram's caption is 1024, the name and the price need room. */
-export const POST_TEXT_MAX = 900
+/**
+ * The owner's words in a post: Telegram's caption is 1024, and the name (up to 80), the price and
+ * the age need room around them.
+ */
+export const POST_TEXT_MAX = 850
 /** Live ad links of one shop. */
 export const MAX_AD_LINKS = 50
 /** A product's newest live posts edited when its name, price or age changes. */

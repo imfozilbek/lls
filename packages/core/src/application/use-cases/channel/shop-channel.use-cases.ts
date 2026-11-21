@@ -47,32 +47,29 @@ export class ConnectShopChannelUseCase {
 
     async execute(input: BotMadeChannelAdmin): Promise<ConnectOutcome> {
         const business = await requireBusiness(this.deps.businesses, input.businessId)
+        const before = await this.deps.channels.find(business.id)
+        const at = (connectedAt: Date): ShopChannel =>
+            ShopChannel.connect({
+                businessId: business.id,
+                chatId: input.chatId,
+                title: input.title,
+                ...(input.username === undefined ? {} : { username: input.username }),
+                connectedAt,
+            })
+        if (before?.isSameChat(input.chatId)) {
+            // The connected channel again (a new title, or an admin of it changed the bot's
+            // rights and it may still post): no news for the owner, and the bot stays.
+            const kept = at(before.connectedAt)
+            await this.deps.channels.save(kept)
+            return { kind: "unchanged", channel: kept }
+        }
         if (!business.isOwnedBy(input.actorTelegramId)) {
             return { kind: "refused", why: "notOwner" }
         }
         if (business.isDemo()) {
             return { kind: "refused", why: "demo" }
         }
-        const channel = ShopChannel.connect({
-            businessId: business.id,
-            chatId: input.chatId,
-            title: input.title,
-            ...(input.username === undefined ? {} : { username: input.username }),
-            connectedAt: input.now,
-        })
-        const before = await this.deps.channels.find(business.id)
-        if (before?.isSameChat(channel.chatId)) {
-            // The same channel again (a new title, or its rights given back): no news for the owner.
-            const kept = ShopChannel.connect({
-                businessId: business.id,
-                chatId: channel.chatId,
-                title: channel.title,
-                ...(channel.username === undefined ? {} : { username: channel.username }),
-                connectedAt: before.connectedAt,
-            })
-            await this.deps.channels.save(kept)
-            return { kind: "unchanged", channel: kept }
-        }
+        const channel = at(input.now)
         await this.deps.channels.save(channel)
         return { kind: "connected", channel, ...(before ? { replaced: before } : {}) }
     }

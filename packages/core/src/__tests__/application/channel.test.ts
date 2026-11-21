@@ -113,6 +113,12 @@ describe("the shop's channel and its links", () => {
             expect((await channels.find(shop.id))?.title).toBe("ABC o'yinchoqlar")
         })
 
+        it("another admin of the connected channel changing the bot's rights keeps it", async () => {
+            await connect()
+            expect((await connect({ actor: STRANGER_TG })).kind).toBe("unchanged")
+            expect((await channels.find(shop.id))?.chatId).toBe(CHAT)
+        })
+
         it("someone else, or a demo shop, is refused", async () => {
             expect(await connect({ actor: STRANGER_TG })).toEqual({
                 kind: "refused",
