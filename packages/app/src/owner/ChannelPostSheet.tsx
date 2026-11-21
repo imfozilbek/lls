@@ -137,7 +137,14 @@ export function ChannelPostSheet({
                     <Field
                         label={c.post.text}
                         htmlFor="post-text"
-                        hint={`${c.post.textHint} ${text.length} / ${POST_TEXT_MAX}`}
+                        hint={
+                            <span className="flex items-start justify-between gap-3">
+                                <span>{c.post.textHint}</span>
+                                <span className="shrink-0 tabular-nums">
+                                    {text.length} / {POST_TEXT_MAX}
+                                </span>
+                            </span>
+                        }
                     >
                         <TextArea
                             id="post-text"
