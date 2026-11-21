@@ -213,6 +213,10 @@ async function seedSql(tokenKey: string): Promise<string> {
         "DELETE FROM phone_asks;",
         "DELETE FROM managed_bots;",
         "DELETE FROM network_offers;",
+        // The shop's channel and its links (migration 0034): they point at the shops.
+        "DELETE FROM source_visits;",
+        "DELETE FROM source_links;",
+        "DELETE FROM shop_channels;",
         "DELETE FROM order_items;",
         "DELETE FROM cash_handovers;",
         "DELETE FROM orders;",
