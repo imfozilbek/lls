@@ -205,6 +205,18 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
   - **Zumda Shop uchun** (do'kon Zumda vitrinasida bo'lsa): mijoz do'koningizni Zumda Shop'da
     ochadi va u yerda boshqa do'konlarni ham ko'radi. Bunday buyurtma vitrina buyurtmasi:
     vitrina komissiyasi bilan. Do'kon vitrinadan chiqsa, QR mijozni botingizga yuboradi.
+- **Telegram kanal.** **Sozlamalar → Telegram kanal → Kanalni bog'lash**: Telegram kanalingizni
+  tanlashni so'raydi, keyin botingiz kanalga admin bo'lib qo'shiladi. Kerakli huquqlar o'zi
+  belgilanadi. Bog'lanishi bilan bot sizga yozadi.
+  - Mahsulot sahifasida **Kanalga joylash** tugmasini bosing, matn yozing va joylang. Post tagida
+    **Buyurtma berish** tugmasi chiqadi: uni bosgan odam darhol mahsulotni ko'radi.
+  - Nomi, narxi yoki yoshi o'zgarsa, postlar ham o'zi o'zgaradi.
+  - Har bir post uchun necha kishi kirdi, nechta buyurtma berildi, nechtasi yetkazildi va qancha
+    pulga ekanini ko'rasiz. Siz bosganingiz sanalmaydi.
+  - Bot kanalda allaqachon admin bo'lsa, uni adminlikdan olib tashlab, qayta qo'shing.
+- **Reklama uchun havolalar** (**Sozlamalar → Havola, QR-kod va vitrina**): boshqa kanalda
+  reklama berganda har biriga alohida havola bering: qaysi reklama qancha buyurtma olib kelganini
+  shu yerda ko'rasiz.
 - **Botingizda Start bosing.** Telegram bot sizga birinchi bo'lib yoza olmaydi: botni bir marta
   oching va Start bosing. Shungacha buyurtmalar va fayllar Zumda Business'ga keladi, «Ishga
   tayyor»da esa «Botingizni oching» qadami turadi.

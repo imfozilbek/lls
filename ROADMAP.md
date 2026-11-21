@@ -203,6 +203,16 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Add a list of products at once («Ro'yxat bilan qo'shish», up to 50)
 - [ ] On production: a pilot adds 10 products from the catalog and gets an order
 
+### M4s. The shop's own channel and ad links 🔨 (owner's decisions, November 2026; goal 20)
+- [x] «Telegram kanal»: connected from Telegram's own screen; someone else's or a demo's
+      channel refused; the bot removed: disconnected and told
+- [x] «Kanalga joylash» with «Buyurtma berish»; a new name, price or age edits the posts;
+      «Postni o'chirish»
+- [x] «Reklama uchun havolalar»: a named link to the shop or one product, up to 50
+- [x] A pressed link: the product's card, the storefront on the product; who came, ordered and
+      got it counted on the server (7 days, the owner never)
+- [ ] On production: a test channel from a real Android and iPhone; ABC bolajon's first post
+
 ### M4q. A Zumda Shop QR on the poster ✅ (owner's decisions, October 2026; goal 16)
 - [x] «Zumda Shop uchun» QR (`startapp=m_<slug>`) opens the shop inside Zumda Shop; showcase
       money; a shop that left the showcase sends the person to its own bot
