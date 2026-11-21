@@ -7,6 +7,18 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Every post of the shop's channel in Zumda
+- **A post the owner makes in Telegram** gets «🛒 Buyurtma berish» at once (owner's decision,
+  November 2026): to the one product its words name, or to the whole shop. The owner's words stay
+  as they are; «Mahsulotni tanlash» leads it elsewhere. A post with buttons already is left
+  alone; an album keeps its words without a button (Telegram shows none under an album).
+- **«Telegram kanal» lists every post**: Zumda's and the owner's own, with their first words,
+  where the button leads, «Tugmasi bor» or «Tugmasi yo'q», and what each brought.
+- **«Eski postlarni ham qo'shish»**: the bot reads the channel's past from its public page, ten
+  posts a request, and puts the button under each; it waits when Telegram asks and goes on where
+  it stopped. A private channel: only new posts.
+- A new price edits only Zumda's own posts; Zumda never deletes the owner's. Migration `0035`.
+
 ### The shop's own Telegram channel and ad links
 - **«Telegram kanal»** in «Sozlamalar» (owner's decisions, November 2026).
   - «Kanalni bog'lash» opens Telegram's own screen: the shop's bot becomes the channel's admin

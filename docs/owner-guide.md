@@ -210,7 +210,14 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
   belgilanadi. Bog'lanishi bilan bot sizga yozadi.
   - Mahsulot sahifasida **Kanalga joylash** tugmasini bosing, matn yozing va joylang. Post tagida
     **Buyurtma berish** tugmasi chiqadi: uni bosgan odam darhol mahsulotni ko'radi.
-  - Nomi, narxi yoki yoshi o'zgarsa, postlar ham o'zi o'zgaradi.
+  - Kanalga o'zingiz qo'ygan postlar ham Zumdaga tushadi: ularning ostiga ham **Buyurtma
+    berish** tugmasini bot o'zi qo'yadi. Matnda mahsulot nomi bo'lsa, tugma shu mahsulotga olib
+    boradi, bo'lmasa hamma mahsulotlarga. **Mahsulotni tanlash** bilan buni o'zgartirasiz.
+  - Bir nechta rasm bilan chiqqan post ostiga Telegram tugma qo'ymaydi.
+  - **Eski postlarni ham qo'shish**: bot kanaldagi oldingi postlarni o'zi o'qib chiqadi va ostiga
+    tugma qo'yadi. Yopiq kanalda buni qila olmaydi.
+  - Nomi, narxi yoki yoshi o'zgarsa, Zumda orqali joylangan postlar ham o'zi o'zgaradi, siz
+    yozgan postlar esa o'zgarmaydi.
   - Har bir post uchun necha kishi kirdi, nechta buyurtma berildi, nechtasi yetkazildi va qancha
     pulga ekanini ko'rasiz. Siz bosganingiz sanalmaydi.
   - Bot kanalda allaqachon admin bo'lsa, uni adminlikdan olib tashlab, qayta qo'shing.

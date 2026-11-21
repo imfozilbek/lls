@@ -211,7 +211,11 @@ Pilot: **food, water and grocery at the same time.**
 - [x] «Reklama uchun havolalar»: a named link to the shop or one product, up to 50
 - [x] A pressed link: the product's card, the storefront on the product; who came, ordered and
       got it counted on the server (7 days, the owner never)
-- [ ] On production: a test channel from a real Android and iPhone; ABC bolajon's first post
+- [x] Every post of the channel: the owner's own posts get «Buyurtma berish» at once (to the
+      product their words name, or the shop; «Mahsulotni tanlash»); the past read from the
+      channel's public page, ten posts a press (migration `0035`)
+- [ ] On production: a test channel from a real Android and iPhone; ABC bolajon's first post;
+      a button under an owner's own post; the past read to the first post
 
 ### M4q. A Zumda Shop QR on the poster ✅ (owner's decisions, October 2026; goal 16)
 - [x] «Zumda Shop uchun» QR (`startapp=m_<slug>`) opens the shop inside Zumda Shop; showcase
