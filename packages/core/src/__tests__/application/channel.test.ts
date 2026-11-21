@@ -137,7 +137,7 @@ describe("the shop's channel and its links", () => {
             expect(await channels.find(shop.id)).toBeNull()
         })
 
-        it("«Kanalni uzish» is the owner's only", async () => {
+        it("«Kanalni ajratish» is the owner's only", async () => {
             await connect()
             const disconnect = new DisconnectShopChannelUseCase(deps())
             await expect(

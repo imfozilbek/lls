@@ -156,7 +156,7 @@ describe("the shop's channel", () => {
 
         it("the owner made the bot an admin: connected, told, with its subscribers", async () => {
             await madeAdmin()
-            expect(toOwner().at(-1)).toContain("«ABC o'yinchoqlar»</b> kanali ulandi")
+            expect(toOwner().at(-1)).toContain("«ABC o'yinchoqlar»</b> kanali Zumdaga bog'landi")
             const channel = await json<{ channel: Record<string, unknown> }>(
                 await owner()("/api/owner/channel"),
             )
@@ -222,7 +222,7 @@ describe("the shop's channel", () => {
             )
             await madeAdmin()
             expect(client.telegram.left).toEqual([{ token: SHOP_BOT_TOKEN, chatId: CHAT }])
-            expect(toOwner().at(-1)).toContain("Namuna do'kon kanalga ulanmaydi")
+            expect(toOwner().at(-1)).toContain("Namuna do'kon kanalga bog'lanmaydi")
         })
 
         it("only the owner sees and changes it", async () => {

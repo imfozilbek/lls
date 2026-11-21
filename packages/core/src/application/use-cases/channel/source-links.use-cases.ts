@@ -112,7 +112,7 @@ export class PublishPostUseCase {
     }
 }
 
-/** «Havola yaratish»: a named link for an ad, to the whole shop or to one product. */
+/** «Yangi havola»: a named link for an ad, to the whole shop or to one product. */
 export class CreateAdLinkUseCase {
     constructor(private readonly deps: Omit<SourceLinkDeps, "channels">) {}
 

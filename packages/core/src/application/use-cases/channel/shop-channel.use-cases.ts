@@ -92,7 +92,7 @@ export class LoseShopChannelUseCase {
     }
 }
 
-/** «Kanalni uzish»: Zumda forgets the channel (the Worker then has the bot leave it). */
+/** «Kanalni ajratish»: Zumda forgets the channel (the Worker then has the bot leave it). */
 export class DisconnectShopChannelUseCase {
     constructor(private readonly deps: ChannelDeps) {}
 

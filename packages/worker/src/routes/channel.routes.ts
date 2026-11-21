@@ -63,7 +63,7 @@ export const channelRoutes = new Hono<AppEnv>()
     })
 
     /**
-     * «Kanalni ulash»: the shop's bot hears `my_chat_member` from now on (a shop connected before
+     * «Kanalni bog'lash»: the shop's bot hears `my_chat_member` from now on (a shop connected before
      * gets it here, no «Botni qayta ulash»), then the app opens Telegram's own screen.
      */
     .post("/channel/connect", async (c) => {
@@ -91,7 +91,7 @@ export const channelRoutes = new Hono<AppEnv>()
         return c.json({ url: startChannelUrl(business.bot.username) })
     })
 
-    /** «Kanalni uzish»: Zumda forgets it first, then the bot leaves (its echo changes nothing). */
+    /** «Kanalni ajratish»: Zumda forgets it first, then the bot leaves (its echo changes nothing). */
     .delete("/channel", async (c) => {
         const services = c.get("services")
         const business = shopOf(c)
@@ -153,7 +153,7 @@ export const channelRoutes = new Hono<AppEnv>()
         return c.json({ ...page, data: page.data.map((link) => withUrl(business, link)) })
     })
 
-    /** «Havola yaratish»: a named link for an ad (no channel needed). */
+    /** «Yangi havola»: a named link for an ad (no channel needed). */
     .post("/links", zValidator("json", adLinkBody, onInvalid), async (c) => {
         const services = c.get("services")
         const business = shopOf(c)

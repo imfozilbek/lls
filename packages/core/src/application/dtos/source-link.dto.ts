@@ -1,7 +1,7 @@
 import type { SourceLink, SourceLinkKind } from "../../domain/entities/source-link.js"
 import type { ShopChannel } from "../../domain/value-objects/shop-channel.js"
 
-/** A post or an ad link with what it brought, for «Telegram kanal» and «Reklama havolalari». */
+/** A post or an ad link with what it brought, for «Telegram kanal» and «Reklama uchun havolalar». */
 export interface SourceLinkDTO {
     id: string
     kind: SourceLinkKind

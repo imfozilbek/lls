@@ -371,12 +371,12 @@ const BASE = {
             "🗺 {shop}: {count} ta buyurtma bir yo'nalishda, shu tartibda: {stops}. Xarita va yo'l ilovada.",
         /** The shop's own channel (owner's decision, November 2026). */
         channelConnected:
-            "📣 {channel} kanali ulandi. Endi mahsulotni ilovadan bir tugma bilan kanalga joylaysiz.",
+            "📣 {channel} kanali Zumdaga bog'landi. Endi mahsulotni ilovada bir tugma bilan kanalga joylaysiz.",
         channelLost:
-            "📣 Bot endi {channel} kanaliga post joylay olmaydi. Kanalni ilovadan qayta ulang.",
+            "📣 Bot endi {channel} kanaliga post joylay olmaydi. Kanalni ilovada qayta bog'lang.",
         channelNotByOwner:
-            "📣 Botni {channel} kanaliga siz qo'shmadingiz, shuning uchun bot kanaldan chiqdi. Kanalni ilovadan o'zingiz ulang.",
-        channelDemo: "📣 Namuna do'kon kanalga ulanmaydi: bot {channel} kanalidan chiqdi.",
+            "📣 Botni {channel} kanaliga siz qo'shmadingiz, shuning uchun bot kanaldan chiqdi. Kanalni ilovada o'zingiz bog'lang.",
+        channelDemo: "📣 Namuna do'kon kanalga bog'lanmaydi: bot {channel} kanalidan chiqdi.",
         /** A post's button, and the product's card the bot sends when it is pressed. */
         orderButton: "🛒 Buyurtma berish",
         priceFrom: "{price} dan",

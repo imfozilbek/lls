@@ -432,12 +432,12 @@ export const channelPostQuery = z.object({
     text: z.string().max(POST_TEXT_MAX).optional(),
 })
 
-/** «Telegram kanal» (posts) and «Reklama havolalari» (ads): one page of live links. */
+/** «Telegram kanal» (posts) and «Reklama uchun havolalar» (ads): one page of live links. */
 export const sourceLinksQuery = pageQuery.extend({
     kind: z.enum(SOURCE_LINK_KINDS),
 })
 
-/** «Havola yaratish»: the ad's name, and the product it opens (the whole shop otherwise). */
+/** «Yangi havola»: the ad's name, and the product it opens (the whole shop otherwise). */
 export const adLinkBody = z.object({
     label: z.string().trim().min(1).max(LINK_LABEL_MAX),
     productId: z.string().min(1).max(64).optional(),

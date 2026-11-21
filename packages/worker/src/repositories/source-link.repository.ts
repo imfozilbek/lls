@@ -45,7 +45,7 @@ const LINK_COLUMNS = `id, business_id, kind, product_id, label, chat_id, message
 export const LINK_BY_ID_SQL = `SELECT ${LINK_COLUMNS} FROM source_links
     WHERE id = ? AND business_id = ?`
 
-/** «Telegram kanal» (posts of the channel of now) and «Reklama havolalari»: one page. */
+/** «Telegram kanal» (posts of the channel of now) and «Reklama uchun havolalar»: one page. */
 export const LIVE_LINKS_SQL = `SELECT ${LINK_COLUMNS} FROM source_links
     WHERE business_id = ? AND kind = ? AND deleted_at IS NULL
     ORDER BY created_at DESC LIMIT ? OFFSET ?`
