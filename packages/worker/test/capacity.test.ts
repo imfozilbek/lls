@@ -269,7 +269,7 @@ describe("rows read per request, on six months of history", () => {
                 .bind(linkId)
                 .first<{ orders: number; sales: number }>()
             expect(counted).toEqual({ orders: 1, sales: 1 })
-            // Measured 117 read, 48 written with the link (docs/capacity.md: about 300 such orders
+            // Measured 120 read, 49 written with the link (docs/capacity.md: about 300 such orders
             // a day; the link: its visit read once, its counters written twice;
             // «Yig'ishni boshlash» is a step of its own; the customer's live message reads its id
             // on each step and writes it on each new message). A save writes only what changed: every
@@ -336,7 +336,7 @@ describe("rows read per request, on six months of history", () => {
             })
             expect(pressed.status).toBe(200)
             const click = counter.take()
-            // Measured: the shop and its bot, the link, the visit, the product (docs/capacity.md).
+            // Measured 4 read, 2 written: the link, the visit (one upsert), the product (docs/capacity.md).
             expect(click.read).toBeLessThanOrEqual(15)
             expect(click.written).toBeLessThanOrEqual(4)
         },

@@ -179,7 +179,14 @@ const ALWAYS_OK = new Set([
     "setMyCommands",
     "setMyDescription",
     "setMyShortDescription",
+    "sendChatAction",
+    // The shop's channel: a post's new price, and the bot leaving a channel.
+    "editMessageCaption",
+    "leaveChat",
 ])
+
+/** Telegram's count of a channel's subscribers, shown on «Telegram kanal». */
+const CHANNEL_SUBSCRIBERS = 231
 
 /** Telegram takes a JPEG attached by name: anything else is a bad request. */
 function photoAnswer(call: BotCall): [number, unknown] {
@@ -224,6 +231,14 @@ function refused(state: State, bot: Bot, call: BotCall): [number, unknown] | nul
     return outage && state.broken.has(chatId) ? fail(500, "Internal Server Error") : null
 }
 
+/** A photo file (a channel post) comes back with Telegram's id of it, sent again later. */
+function sentPhoto(state: State, call: BotCall): [number, unknown] {
+    const id = state.nextMessageId++
+    const file = typeof call.body["photo"] === "object"
+    const photo = file ? { photo: [{ file_id: `file-${id}`, width: 1280, height: 1280 }] } : {}
+    return [200, { ok: true, result: { message_id: id, ...photo } }]
+}
+
 function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
     const refusal = refused(state, bot, call)
     if (refusal) {
@@ -232,13 +247,14 @@ function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
     switch (call.method) {
         case "getMe":
             return [200, { ok: true, result: { ...bot, is_bot: true } }]
-        case "sendMessage":
         case "sendPhoto":
+            return sentPhoto(state, call)
+        case "sendMessage":
         case "sendVideo":
         case "sendDocument":
             return [200, { ok: true, result: { message_id: state.nextMessageId++ } }]
-        case "sendChatAction":
-            return [200, { ok: true, result: true }]
+        case "getChatMemberCount":
+            return [200, { ok: true, result: CHANNEL_SUBSCRIBERS }]
         case "setWebhook":
             return state.failWebhooks ? fail(502, "Bad Gateway") : [200, { ok: true, result: true }]
         case "setMyProfilePhoto":
