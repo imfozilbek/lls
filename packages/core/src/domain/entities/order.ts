@@ -114,6 +114,8 @@ export interface OrderProps {
      * then is the delivery «bepul»; a price never chosen says nothing. A snapshot.
      */
     deliveryFree?: boolean
+    /** The post or ad link the customer pressed before it (`SourceLink`): a snapshot. */
+    sourceLinkId?: string
     createdAt: Date
     updatedAt: Date
 }
@@ -143,6 +145,8 @@ export interface PlaceOrderProps {
     customerPaysCarrier?: boolean
     /** The shop promised free delivery for it (`Business.deliversFreeFor`). */
     deliveryFree?: boolean
+    /** Set by the server from the customer's last link (`FindOrderSourceUseCase`). */
+    sourceLinkId?: string
 }
 
 export function subtotalOf(items: readonly OrderItem[]): Money {
@@ -200,6 +204,7 @@ export class Order {
                 input.customerPaysCarrier !== true &&
                 input.deliveryFree === true &&
                 deliveryFee.isZero(),
+            ...(input.sourceLinkId === undefined ? {} : { sourceLinkId: input.sourceLinkId }),
             createdAt: now,
             updatedAt: now,
         })
@@ -227,6 +232,10 @@ export class Order {
     }
     get channel(): OrderChannel {
         return this.props.channel
+    }
+
+    get sourceLinkId(): string | undefined {
+        return this.props.sourceLinkId
     }
     /** The lines the customer gets: a line the shop did not have («Yo'q») is not among them. */
     get items(): readonly OrderItem[] {

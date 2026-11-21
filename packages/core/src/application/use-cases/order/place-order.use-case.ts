@@ -52,6 +52,8 @@ export interface PlaceOrderInput {
     paymentMethod?: PaymentMethod
     /** Decided by the server from which bot opened the app; never sent by the client. */
     channel?: OrderChannel
+    /** The link the customer pressed last (`FindOrderSourceUseCase`); never sent by the client. */
+    sourceLinkId?: string
     /**
      * One id per checkout from the app: when the answer was lost on a weak network and the
      * customer taps again, the order already placed comes back instead of a second one.
@@ -214,6 +216,7 @@ export class PlaceOrderUseCase {
                 paymentCard: business.payoutCard,
                 customerPaysCarrier: business.delivery.customerPaysCarrier === true,
                 deliveryFree: business.deliversFreeFor(subtotal),
+                sourceLinkId: input.sourceLinkId,
             })
             const placed = await this.settle(await orders.insert(order), {
                 order,
