@@ -537,6 +537,15 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    /** A Zumda post names its product in its caption: only a post made in Telegram is relinked. */
+    static postNotRelinkable(linkId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "POST_NOT_RELINKABLE",
+            "Only a post made in the channel leads to another product",
+            { linkId },
+        )
+    }
+
     /** Telegram refused to delete the post: it stays, and so does its row. */
     static postNotDeletable(linkId: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(

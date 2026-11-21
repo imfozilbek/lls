@@ -152,6 +152,16 @@ export interface TelegramGateway {
      * Gone already, or without buttons: nothing happens.
      */
     clearButtons(token: string, chatId: number, messageId: number): Promise<void>
+    /**
+     * Puts these buttons under a message: «Buyurtma berish» under the owner's own post in the
+     * channel (a bot that may edit the channel's messages). Telegram's refusal is thrown.
+     */
+    setButtons(
+        token: string,
+        chatId: number,
+        messageId: number,
+        keyboard: InlineKeyboard,
+    ): Promise<void>
     answerCallback(token: string, callbackQueryId: string, text?: string): Promise<void>
     /**
      * Managed Bots: a button the user presses inside the Mini App (`WebApp.requestChat(id)`) to
@@ -286,8 +296,17 @@ const ALREADY_DELETED = /message to delete not found/i
 /** The bot is not in the chat any more: leaving changes nothing. */
 const NOT_A_MEMBER = /not a member|chat not found|kicked|Forbidden/i
 
-/** The updates a shop's bot gets: its chats, the buttons, and being made a channel's admin. */
-const SHOP_BOT_UPDATES = ["message", "callback_query", "my_chat_member"]
+/**
+ * The updates a shop's bot gets: its chats, the buttons, being made a channel's admin, and the
+ * channel's posts (each one gets «Buyurtma berish»).
+ */
+export const SHOP_BOT_UPDATES = ["message", "callback_query", "my_chat_member", "channel_post"]
+
+/**
+ * Grows with `SHOP_BOT_UPDATES`: a connected channel whose bot was registered with an older list
+ * is registered again (`shop_channels.updates_version`) when its owner opens «Telegram kanal».
+ */
+export const SHOP_BOT_UPDATES_VERSION = 1
 
 /** Escapes text for Telegram HTML parse mode. */
 export function escapeHtml(text: string): string {
@@ -340,6 +359,19 @@ export class HttpTelegramGateway implements TelegramGateway {
                 throw error
             }
         }
+    }
+
+    async setButtons(
+        token: string,
+        chatId: number,
+        messageId: number,
+        keyboard: InlineKeyboard,
+    ): Promise<void> {
+        await this.call(token, "editMessageReplyMarkup", {
+            chat_id: chatId,
+            message_id: messageId,
+            reply_markup: keyboard,
+        })
     }
 
     async deleteMessage(token: string, chatId: number, messageId: number): Promise<void> {

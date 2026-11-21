@@ -14,6 +14,7 @@ import { bool, flag, oneOf, optional, placeholders } from "./rows.js"
 import type {
     Age,
     Category,
+    NamedProduct,
     Page,
     PageRequest,
     ProductListQuery,
@@ -91,6 +92,9 @@ export const WORD_FILTER =
 
 /** Every name of a shop's products, read from the catalog index alone (`EXPLAIN` in query-plans). */
 export const NAMES_OF = "SELECT name FROM products WHERE business_id = ?"
+
+/** Every product's id and name: a channel post finds the one it names. */
+export const CATALOG_NAMES = "SELECT id, name FROM products WHERE business_id = ?"
 
 /**
  * A product standing in a category as its main one or a further one; binds: `inCategoryBinds`.
@@ -281,6 +285,14 @@ export class D1ProductRepository implements ProductRepository {
         // Only the catalog index is read (its `name` column): no product row is touched.
         const { results } = await this.db.prepare(NAMES_OF).bind(businessId).all<{ name: string }>()
         return results.map((row) => row.name)
+    }
+
+    async catalogNames(businessId: string): Promise<NamedProduct[]> {
+        const { results } = await this.db
+            .prepare(CATALOG_NAMES)
+            .bind(businessId)
+            .all<NamedProduct>()
+        return results.map((row) => ({ id: row.id, name: row.name }))
     }
 
     async save(product: Product): Promise<void> {

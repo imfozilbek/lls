@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest"
 import { Product } from "../../domain/entities/product.js"
 import {
     LINK_LABEL_MAX,
+    POST_PREVIEW_MAX,
     POST_TEXT_MAX,
     SourceLink,
     SourceLinkKind,
+    postPreviewOf,
 } from "../../domain/entities/source-link.js"
 import { Unit } from "../../domain/enums/unit.js"
 import { ValidationError } from "../../domain/errors/validation.error.js"
@@ -77,6 +79,29 @@ describe("a source link", () => {
         link.remove(new Date(NOW.getTime() + 1000))
         expect(link.isLive).toBe(false)
         expect(link.deletedAt).toEqual(NOW)
+    })
+
+    it("a post made in Telegram keeps one line of its text, and only it changes its product", () => {
+        const long = `${"Juda chiroyli o'yinchoq ".repeat(8)}\n\noxiri`
+        const post = SourceLink.channelPost({
+            businessId: "b",
+            ref: { chatId: -100, messageId: 7 },
+            text: long,
+            now: NOW,
+        })
+        expect(post.preview?.length).toBeLessThanOrEqual(POST_PREVIEW_MAX)
+        expect(post.preview?.endsWith("…")).toBe(true)
+        expect(post.preview).not.toContain("\n")
+        expect(postPreviewOf("   ")).toBeUndefined()
+        expect(post.hasButton).toBe(false)
+        post.buttonAttached(NOW)
+        expect(post.hasButton).toBe(true)
+        post.relink("p1")
+        expect(post.productId).toBe("p1")
+        const zumda = SourceLink.post({ businessId: "b", productId: "p1", postKey: "k", now: NOW })
+        expect(zumda.hasButton).toBe(true)
+        expect(() => zumda.relink("p2")).toThrow(ValidationError)
+        expect(() => zumda.buttonAttached(NOW)).toThrow(ValidationError)
     })
 })
 

@@ -15,6 +15,15 @@ export interface ShopChannelProps {
     /** The public username; a private channel has none. */
     username?: string
     connectedAt: Date
+    /**
+     * The set of updates the shop's bot was last registered for (`SHOP_BOT_UPDATES_VERSION` in
+     * the Worker): 0 until the bot hears the channel's own posts.
+     */
+    updatesVersion?: number
+    /** The older posts read so far: the next page is the one before this message. */
+    historyBefore?: number
+    /** Every older post was read. */
+    historyDoneAt?: Date
 }
 
 /**
@@ -68,6 +77,59 @@ export class ShopChannel {
         const id = String(this.props.chatId)
         const bare = id.startsWith(CHANNEL_ID_PREFIX) ? id.slice(CHANNEL_ID_PREFIX.length) : id
         return `https://t.me/c/${bare.replace("-", "")}/${messageId}`
+    }
+
+    get updatesVersion(): number {
+        return this.props.updatesVersion ?? 0
+    }
+
+    get historyBefore(): number | undefined {
+        return this.props.historyBefore
+    }
+
+    /** When the bot read the channel's past to its first post. */
+    get historyDoneAt(): Date | undefined {
+        return this.props.historyDoneAt
+    }
+
+    get historyDone(): boolean {
+        return this.props.historyDoneAt !== undefined
+    }
+
+    /** Only a public channel shows its older posts on its web page. */
+    get isPublic(): boolean {
+        return this.props.username !== undefined
+    }
+
+    /** The same channel, its bot registered for this set of updates. */
+    withUpdates(version: number): ShopChannel {
+        return new ShopChannel({ ...this.props, updatesVersion: version })
+    }
+
+    /** The same channel, its older posts read down to `before`, or all of them (`done`). */
+    withHistory(state: { before?: number; doneAt?: Date }): ShopChannel {
+        const { historyBefore: _b, historyDoneAt: _d, ...rest } = this.props
+        return new ShopChannel({
+            ...rest,
+            ...(state.before === undefined ? {} : { historyBefore: state.before }),
+            ...(state.doneAt === undefined ? {} : { historyDoneAt: state.doneAt }),
+        })
+    }
+
+    /** What survives a new title or a co-admin's change: the bot's updates and the history read. */
+    keepsStateOf(before: ShopChannel): ShopChannel {
+        return new ShopChannel({
+            ...this.props,
+            ...(before.props.updatesVersion === undefined
+                ? {}
+                : { updatesVersion: before.props.updatesVersion }),
+            ...(before.props.historyBefore === undefined
+                ? {}
+                : { historyBefore: before.props.historyBefore }),
+            ...(before.props.historyDoneAt === undefined
+                ? {}
+                : { historyDoneAt: before.props.historyDoneAt }),
+        })
     }
 
     /** Telegram's news is about this channel (not one the bot left before). */

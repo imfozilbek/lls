@@ -9,6 +9,7 @@ import type {
     BotDescriptions,
     ChannelPostRemoval,
     BotInfo,
+    InlineKeyboard,
     ManagedBotButton,
     MessageOptions,
     OutgoingFile,
@@ -17,7 +18,7 @@ import type {
     VideoLink,
 } from "../src/telegram/gateway.js"
 import type { LoginKeys } from "../src/telegram-login.js"
-import type { Clock, TransferReceipt } from "@zumda/core"
+import type { ChannelHistoryReader, Clock, TransferReceipt } from "@zumda/core"
 
 export const OWNER = { id: 1001, first_name: "Rustam", language_code: "uz" }
 export const CUSTOMER = { id: 2002, first_name: "Aziz", last_name: "Karimov", language_code: "ru" }
@@ -275,6 +276,23 @@ export class FakeTelegram implements TelegramGateway {
         this.refuseInChannel("editMessageCaption", chatId)
         this.captions.push({ token, chatId, messageId, html, options })
     }
+    /** Buttons put under the owner's own posts in the channel. */
+    readonly buttons: { chatId: number; messageId: number; keyboard: InlineKeyboard }[] = []
+    /** Telegram's answer to the next `setButtons` calls, one each (then it takes them). */
+    readonly buttonErrors: string[] = []
+    async setButtons(
+        _token: string,
+        chatId: number,
+        messageId: number,
+        keyboard: InlineKeyboard,
+    ): Promise<void> {
+        this.refuseInChannel("editMessageReplyMarkup", chatId)
+        const error = this.buttonErrors.shift()
+        if (error !== undefined) {
+            throw new TelegramApiError("editMessageReplyMarkup", error)
+        }
+        this.buttons.push({ chatId, messageId, keyboard })
+    }
     readonly channelRemovals: { token: string; chatId: number; messageId: number }[] = []
     /** Simulates Telegram not deleting a post. */
     refuseDelete = false
@@ -412,6 +430,8 @@ export function testClient(
         loginKeys?: LoginKeys
         /** Another D1 in front of the real one (e.g. one that counts rows read). */
         db?: D1Database
+        /** Public channels' pages (`t.me/s`). */
+        history?: ChannelHistoryReader
     } = {},
 ): TestClient {
     const telegram = new FakeTelegram({
@@ -425,6 +445,7 @@ export function testClient(
         telegram,
         clock: options.clock,
         loginKeys: options.loginKeys ?? ((): Promise<JsonWebKey[]> => Promise.resolve([])),
+        ...(options.history ? { history: options.history } : {}),
     })
 
     async function request(path: string, init: RequestInit = {}): Promise<Response> {

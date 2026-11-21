@@ -24,6 +24,7 @@ import { countingDb } from "./rows-read.js"
 
 import type { TestClient } from "./helpers.js"
 import type { RowsCounter } from "./rows-read.js"
+import type { ChannelHistoryReader, HistoryPage } from "@zumda/core"
 
 type Caller = ReturnType<TestClient["as"]>
 
@@ -65,7 +66,7 @@ async function clone(
 }
 
 /** A shop with a courier, a customer, six months of delivered orders and the day's open ones. */
-async function seed(): Promise<{
+async function seed(pages?: ChannelHistoryReader): Promise<{
     counter: RowsCounter
     client: TestClient
     owner: Caller
@@ -76,7 +77,11 @@ async function seed(): Promise<{
     courierId: string
 }> {
     const counter = countingDb(env.DB)
-    const client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT }, db: counter.db })
+    const client = testClient({
+        bots: { [SHOP_BOT_TOKEN]: SHOP_BOT },
+        db: counter.db,
+        ...(pages ? { history: pages } : {}),
+    })
     const shop = await createActiveShop(client)
     const owner = client.as(OWNER, { botToken: SHOP_BOT_TOKEN, shop: shop.slug })
     const customer = client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: shop.slug })
@@ -339,6 +344,69 @@ describe("rows read per request, on six months of history", () => {
             // Measured 4 read, 2 written: the link, the visit (one upsert), the product (docs/capacity.md).
             expect(click.read).toBeLessThanOrEqual(15)
             expect(click.written).toBeLessThanOrEqual(4)
+        },
+        SEED_TIMEOUT_MS,
+    )
+    it(
+        "every post of the channel: one post made in Telegram, one press of the past",
+        async () => {
+            // The channel's past: 40 posts on its pages, twenty a page, the newest first.
+            const history: ChannelHistoryReader = {
+                page: async (_username, before): Promise<HistoryPage> => {
+                    const ids = Array.from({ length: 40 }, (_, i) => 2000 - i).filter(
+                        (id) => before === undefined || id < before,
+                    )
+                    return {
+                        posts: ids.slice(0, 20).map((id) => ({
+                            messageId: id,
+                            text: `Post ${id}`,
+                            album: false,
+                        })),
+                        older: ids.length > 20,
+                    }
+                },
+            }
+            const { counter, client, owner } = await seed(history)
+            const business = await env.DB.prepare(
+                "SELECT id, webhook_secret FROM businesses",
+            ).first<{ id: string; webhook_secret: string }>()
+            await env.DB.prepare(
+                `INSERT INTO shop_channels (business_id, chat_id, title, username, connected_at,
+                    updates_version)
+                 VALUES (?, -1001, 'ABC', 'abc_kanal', 0, 1)`,
+            )
+                .bind(business?.id)
+                .run()
+            counter.take()
+            const posted = await client.request(`/tg/${SHOP_BOT.id}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Telegram-Bot-Api-Secret-Token": business?.webhook_secret ?? "",
+                },
+                body: JSON.stringify({
+                    update_id: 1,
+                    channel_post: {
+                        message_id: 3000,
+                        date: 1_795_000_000,
+                        chat: { id: -1001, type: "channel" },
+                        caption: "Yangi o'yinchoq keldi",
+                    },
+                }),
+            })
+            expect(posted.status).toBe(200)
+            const post = counter.take()
+            // Measured 42 read, 5 written: the shop's names for the guess (40 products here),
+            // the post written once with its indexes (docs/capacity.md).
+            expect(post.read).toBeLessThanOrEqual(60)
+            expect(post.written).toBeLessThanOrEqual(8)
+            const press = await owner("/api/owner/channel/history", { method: "POST" })
+            expect(await press.json()).toEqual({ kind: "more", added: 10 })
+            const batch = counter.take()
+            // Measured 63 read, 51 written: one page of the past, the shop's names once, ten posts
+            // written with their indexes, where it stopped.
+            expect(batch.read).toBeLessThanOrEqual(80)
+            expect(batch.written).toBeLessThanOrEqual(65)
         },
         SEED_TIMEOUT_MS,
     )

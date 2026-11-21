@@ -55,6 +55,22 @@ const updateSchema = z.object({
             }),
         })
         .optional(),
+    /**
+     * A post of a channel the shop's bot is an admin of (owner's decision, November 2026: every
+     * post of the shop's channel is in Zumda). Each photo of an album comes on its own, the words
+     * with one of them; a post with buttons already (Zumda's own, another bot's) keeps them.
+     */
+    channel_post: z
+        .object({
+            message_id: z.number().int(),
+            date: z.number().int(),
+            chat: z.object({ id: z.number().int(), type: z.string() }),
+            text: z.string().optional(),
+            caption: z.string().optional(),
+            media_group_id: z.string().optional(),
+            reply_markup: z.unknown().optional(),
+        })
+        .optional(),
     callback_query: z
         .object({
             id: z.string(),
@@ -77,6 +93,7 @@ export type Callback = NonNullable<Update["callback_query"]>
 export type IncomingMessage = NonNullable<Update["message"]>
 export type ManagedBotUpdate = NonNullable<Update["managed_bot"]>
 export type ChatMemberUpdate = NonNullable<Update["my_chat_member"]>
+export type ChannelPostUpdate = NonNullable<Update["channel_post"]>
 
 export function toTelegramUser(user: z.infer<typeof userSchema>): TelegramUser {
     return {

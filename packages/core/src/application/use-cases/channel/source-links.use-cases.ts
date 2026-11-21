@@ -205,6 +205,10 @@ export class DeleteSourceLinkUseCase {
         if (!link?.isLive) {
             throw EntityNotFoundError.sourceLink(input.linkId)
         }
+        if (link.isChannelPost) {
+            // The owner's own post: Zumda never deletes it (owner's decision, November 2026).
+            throw BusinessRuleViolationError.postNotDeletable(link.id)
+        }
         const channel = link.post ? await channels.find(input.businessId) : null
         if (link.post && channel?.isSameChat(link.post.chatId)) {
             if ((await publisher.remove(channel, link)) === "refused") {
@@ -293,7 +297,8 @@ export class SyncProductPostsUseCase {
             MAX_SYNCED_POSTS,
         )
         let edited = 0
-        for (const post of posts.filter((p) => p.postKey !== key)) {
+        // Only Zumda's own posts: the owner's words in Telegram are never written over.
+        for (const post of posts.filter((p) => p.isZumdaPost && p.postKey !== key)) {
             const outcome = await publisher.edit(channel, post, facts)
             if (outcome === "noRights") {
                 await channels.remove(input.businessId)

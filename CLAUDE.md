@@ -450,7 +450,21 @@ cover each one's whole process; what exactly comes from the meeting with them.
     link wins): each person counts once per link («kirdi»), the owner never; an order within 7
     days takes the link (`orders.source_link_id`, the client never sends it) and counts at once;
     the sale and its goods count on delivery. The counters live in the link's row: no `COUNT(*)`.
-  - Not in the Bot API, so not in Zumda: the channel's older posts, views, a post at a set time.
+  - **Every post of the channel is in Zumda** (owner's decisions, November 2026). A post the owner
+    makes in Telegram (`channel_post`) gets «Buyurtma berish» at once (`editMessageReplyMarkup`),
+    to the one product its words name (`guessPostProduct`: whole words, apostrophes folded, the
+    longer name wins) or to the whole shop; «Mahsulotni tanlash» leads it elsewhere
+    (`PATCH /api/owner/links/:id`). Its words are the owner's: never edited, never deleted by
+    Zumda (`origin = 'channel'`; a new price edits only `origin = 'zumda'`). A post with buttons
+    already is left alone; an album keeps its words without a button; Telegram refusing it:
+    «Tugmasi yo'q». One row a post (a unique index on the post; `ON CONFLICT DO NOTHING`).
+  - **«Eski postlarni ham qo'shish»**: Telegram gives a bot no history, so the bot reads the
+    channel's public page `t.me/s/<username>` (`HTMLRewriter`; `TELEGRAM_WEB_BASE` only on the
+    stand), ten posts a request (`HISTORY_BATCH`, the Worker's 50 subrequests), where it stopped
+    kept (`history_before`, `history_done_at`); the app waits out Telegram's «retry after». A
+    private channel: only new posts. A channel connected before hears its posts from the owner's
+    next look at «Telegram kanal» (`updates_version`, `SHOP_BOT_UPDATES_VERSION`).
+  - Not in the Bot API, so not in Zumda: views, a post at a set time.
 - Add a feature only when a real client asks for it.
 - Design stage 1 so stages 2–3 need no rewrite:
   - multi-tenant: `business_id` in every business-owned table
@@ -662,8 +676,8 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until, dispatcher (sends orders on by a taxi or the post, writes notes): the person's link to one shop (`network`: took a network order of it) |
 | Trip | id, business_id, courier_id, route (JSON line), distance_m, duration_s: several orders of one shop one way; stops are `orders.trip_id` + `trip_stop` |
-| ShopChannel | business_id (one a shop), chat_id, title, username, connected_at: the shop's Telegram channel, while its bot may post there |
-| SourceLink | id (the code of `s_<code>`), business_id, kind (post/ad), product_id (none: the whole shop), label (an ad's name), post (chat_id, message_id, photo_file_id), owner_text, post_key (name, price, age the post says), opens, orders, sales, revenue, created_at, deleted_at: a channel post or an ad link and what it brought |
+| ShopChannel | business_id (one a shop), chat_id, title, username, connected_at, updates_version (the bot's updates registered), history_before / history_done_at (the past read so far): the shop's Telegram channel, while its bot may post there |
+| SourceLink | id (the code of `s_<code>`), business_id, kind (post/ad), origin (zumda/channel: a post Zumda made or the owner's own), preview (the owner's post's first words), button_at (its «Buyurtma berish» put), product_id (none: the whole shop), label (an ad's name), post (chat_id, message_id, photo_file_id), owner_text, post_key (name, price, age the post says), opens, orders, sales, revenue, created_at, deleted_at: a channel post or an ad link and what it brought |
 | SourceVisit | (business_id, telegram_id), link_id, at: the last link a person pressed at a shop |
 | Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock, `removed_at`: «Yo'q»), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; refund_owed: owed back for lines taken out with «Yo'q»; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), delivery_free (the shop promised free delivery: snapshot), source_link_id (the post or ad link the customer came by, within 7 days: snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
@@ -774,8 +788,8 @@ opening (`launchSurelyOutdated`: a phone set to the wrong day is never locked ou
 
 **Bot webhook:**
 - Register with `setWebhook` + `secret_token`. Reject requests without a matching
-  `X-Telegram-Bot-Api-Secret-Token` header. A shop's bot hears `message`, `callback_query` and
-  `my_chat_member` (its channel).
+  `X-Telegram-Bot-Api-Secret-Token` header. A shop's bot hears `message`, `callback_query`,
+  `my_chat_member` and `channel_post` (its channel).
 - Button presses: user = `callback_query.from.id`. Check that this user owns the business.
 
 **Which token verifies initData:** Telegram signs initData with the token of the bot that opened
@@ -1398,6 +1412,9 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       kirdi · 1 ta buyurtma», after delivery its goods → a new price edits the post → «Postni
       o'chirish»; added by someone else or for a demo: the bot leaves; on a real Android and iPhone
 - [ ] Ad links: «Yangi havola» «Super kids» to one product → pressed: counted once, never the owner
+- [ ] Every post: a post made in Telegram naming a product → «Buyurtma berish» under it to that
+      product → «Mahsulotni tanlash» → «Hamma mahsulotlar»; an album: «Tugmasi yo'q»; «Eski
+      postlarni ham qo'shish» → «Eski postlarning hammasi qo'shildi»; on a real channel
 - [ ] Empty states handling
 
 ## Release Checklist

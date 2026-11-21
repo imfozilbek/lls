@@ -200,6 +200,11 @@ export class InMemoryProducts implements ProductRepository {
     async namesOf(businessId: string): Promise<string[]> {
         return [...this.items.values()].filter((p) => p.belongsTo(businessId)).map((p) => p.name)
     }
+    async catalogNames(businessId: string): Promise<{ id: string; name: string }[]> {
+        return [...this.items.values()]
+            .filter((p) => p.belongsTo(businessId))
+            .map((p) => ({ id: p.id, name: p.name }))
+    }
     async save(product: Product): Promise<void> {
         this.items.set(product.id, product)
     }

@@ -1,7 +1,11 @@
 import { SourceLink, SourceLinkKind } from "../domain/entities/source-link.js"
 
 import type {
+    AttachOutcome,
+    ChannelHistoryReader,
     ChannelPost,
+    HistoryPage,
+    HistoryPost,
     ChannelPublisher,
     EditOutcome,
     PublishOutcome,
@@ -19,11 +23,14 @@ function propsOf(link: SourceLink): SourceLinkProps {
         id: link.id,
         businessId: link.businessId,
         kind: link.kind,
+        origin: link.origin,
         productId: link.productId,
         label: link.label,
         post: link.post ? { ...link.post } : undefined,
         ownerText: link.ownerText,
         postKey: link.postKey,
+        preview: link.preview,
+        buttonAt: link.buttonAt,
         counts: link.counts,
         createdAt: link.createdAt,
         deletedAt: link.deletedAt,
@@ -64,6 +71,34 @@ export class InMemorySourceLinks implements SourceLinkRepository {
         }
         this.items.set(link.id, this.copy(link))
     }
+    async insertChannelPost(link: SourceLink): Promise<boolean> {
+        const post = link.post
+        const known = [...this.items.values()].some(
+            (l) => l.post?.chatId === post?.chatId && l.post?.messageId === post?.messageId,
+        )
+        if (known) {
+            return false
+        }
+        await this.insert(link)
+        return true
+    }
+    async knownPosts(chatId: number, messageIds: readonly number[]): Promise<Set<number>> {
+        return new Set(
+            [...this.items.values()]
+                .filter((l) => l.post?.chatId === chatId)
+                .map((l) => l.post?.messageId ?? 0)
+                .filter((id) => messageIds.includes(id)),
+        )
+    }
+    async findByPost(chatId: number, messageId: number): Promise<SourceLink | null> {
+        const link = [...this.items.values()].find(
+            (l) => l.post?.chatId === chatId && l.post.messageId === messageId,
+        )
+        return link ? this.copy(link) : null
+    }
+    async saveProduct(link: SourceLink): Promise<void> {
+        this.items.set(link.id, this.copy(link))
+    }
     async save(link: SourceLink): Promise<void> {
         this.items.set(link.id, this.copy(link))
     }
@@ -92,6 +127,7 @@ export class InMemorySourceLinks implements SourceLinkRepository {
         limit: number,
     ): Promise<SourceLink[]> {
         return this.live(businessId, SourceLinkKind.POST)
+            .filter((l) => l.isZumdaPost)
             .filter((l) => l.productId === productId && l.post?.chatId === chatId)
             .slice(0, limit)
             .map((l) => this.copy(l))
@@ -126,6 +162,9 @@ export class FakeChannelPublisher implements ChannelPublisher {
     publishAnswer: "posted" | "noRights" | "fail" = "posted"
     editAnswer: EditOutcome = "edited"
     removeAnswer: RemoveOutcome = "removed"
+    /** Answers to `attachButton`, one each call; then «attached». */
+    readonly attachAnswers: AttachOutcome[] = []
+    readonly attached: { linkId: string; messageId: number }[] = []
     private nextMessageId = 500
 
     async publish(channel: ShopChannel, post: ChannelPost): Promise<PublishOutcome> {
@@ -152,5 +191,35 @@ export class FakeChannelPublisher implements ChannelPublisher {
             this.removed.push(link.id)
         }
         return this.removeAnswer
+    }
+    async attachButton(_channel: ShopChannel, link: SourceLink): Promise<AttachOutcome> {
+        const answer = this.attachAnswers.shift() ?? { kind: "attached" }
+        if (answer.kind === "attached") {
+            this.attached.push({ linkId: link.id, messageId: link.post?.messageId ?? 0 })
+        }
+        return answer
+    }
+}
+
+/** A public channel's web page: its posts, newest first, `PAGE` a page as Telegram shows. */
+export class FakeChannelHistory implements ChannelHistoryReader {
+    static readonly PAGE = 20
+    posts: HistoryPost[] = []
+    /** The page cannot be read (a private channel, Telegram down). */
+    unreadable = false
+    readonly asked: (number | undefined)[] = []
+
+    async page(_username: string, before?: number): Promise<HistoryPage | null> {
+        this.asked.push(before)
+        if (this.unreadable) {
+            return null
+        }
+        const older = this.posts
+            .filter((post) => before === undefined || post.messageId < before)
+            .sort((a, b) => b.messageId - a.messageId)
+        return {
+            posts: older.slice(0, FakeChannelHistory.PAGE),
+            older: older.length > FakeChannelHistory.PAGE,
+        }
     }
 }

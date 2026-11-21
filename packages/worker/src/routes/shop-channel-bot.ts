@@ -2,6 +2,7 @@ import { postFactsOf } from "@zumda/core"
 
 import { isRecipientProblem } from "../alerts.js"
 import { appKeyboard, productAppUrl, shopAppUrl } from "../telegram/app-links.js"
+import { recordChannelPostUseCase } from "../telegram/channel-publisher.js"
 import { parseSourceStart } from "../telegram/format.js"
 import { TelegramApiError, escapeHtml } from "../telegram/gateway.js"
 import { Notifier } from "../telegram/notifier.js"
@@ -11,7 +12,7 @@ import { fill } from "../telegram/texts.js"
 import type { Services } from "../services.js"
 import type { InlineKeyboard, OutgoingFile } from "../telegram/gateway.js"
 import type { BotTexts } from "../telegram/texts.js"
-import type { ChatMemberUpdate } from "../telegram/updates.js"
+import type { ChannelPostUpdate, ChatMemberUpdate } from "../telegram/updates.js"
 import type { Business, Product, SourceLink } from "@zumda/core"
 
 /** Telegram's word for an admin; the bot may post only with `can_post_messages`. */
@@ -71,6 +72,42 @@ export async function handleChannelMembership(
     if (lost) {
         await notifier.channelNews(business, fill(t.channelLost, { channel: named(lost.title) }))
     }
+}
+
+const MS_PER_SECOND = 1000
+
+/** Buttons under a post already: Zumda's own post, or another bot's (they stay as they are). */
+function hasButtons(markup: unknown): boolean {
+    if (typeof markup !== "object" || markup === null || !("inline_keyboard" in markup)) {
+        return false
+    }
+    const rows = (markup as { inline_keyboard: unknown }).inline_keyboard
+    return Array.isArray(rows) && rows.length > 0
+}
+
+/**
+ * A post in a channel the shop's bot is an admin of (owner's decision, November 2026: every post
+ * of the shop's channel is in Zumda, with «Buyurtma berish» at once). Each photo of an album
+ * comes on its own: the one with the words stands for the album.
+ */
+export async function handleChannelPost(
+    services: Services,
+    business: Business,
+    post: ChannelPostUpdate,
+): Promise<void> {
+    if (post.chat.type !== "channel" || hasButtons(post.reply_markup)) {
+        return
+    }
+    const text = post.text ?? post.caption
+    await recordChannelPostUseCase(services, business).execute({
+        businessId: business.id,
+        chatId: post.chat.id,
+        messageId: post.message_id,
+        ...(text === undefined ? {} : { text }),
+        album: post.media_group_id !== undefined,
+        date: new Date(post.date * MS_PER_SECOND),
+        now: services.clock.now(),
+    })
 }
 
 /** The product's own photo from R2, for a link to it that has no post (an ad link). */

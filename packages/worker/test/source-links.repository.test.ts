@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers"
 import { beforeEach, describe, expect, it } from "vitest"
 
-import { ShopChannel, SourceLink, SourceLinkKind } from "@zumda/core"
+import { ShopChannel, SourceLink, SourceLinkKind, SourceLinkOrigin } from "@zumda/core"
 
 import {
     D1ShopChannelRepository,
@@ -54,12 +54,70 @@ describe("the shop's channel and its links in D1", () => {
         expect(await channels.find(businessId)).toBeNull()
     })
 
+    it("keeps what the bot heard and how far it read the channel's past", async () => {
+        const channel = ShopChannel.connect({
+            businessId,
+            chatId: CHAT,
+            title: "ABC",
+            username: "abc_kanal",
+            connectedAt: NOW,
+        })
+        await channels.save(channel.withUpdates(1).withHistory({ before: 571 }))
+        expect(await channels.find(businessId)).toMatchObject({
+            updatesVersion: 1,
+            historyBefore: 571,
+            historyDone: false,
+        })
+        await channels.save(channel.withHistory({ doneAt: at(5) }))
+        const done = await channels.find(businessId)
+        expect(done?.historyDoneAt).toEqual(at(5))
+        expect(done?.historyBefore).toBeUndefined()
+        expect(done?.updatesVersion).toBe(0)
+    })
+
+    it("a post made in Telegram: written once, found by its place, led elsewhere", async () => {
+        const made = (messageId: number, productId?: string): SourceLink =>
+            SourceLink.channelPost({
+                businessId,
+                ref: { chatId: CHAT, messageId },
+                ...(productId === undefined ? {} : { productId }),
+                text: "Fetr kitobcha keldi",
+                now: NOW,
+            })
+        const first = made(576, "p-1")
+        first.buttonAttached(at(1))
+        expect(await links.insertChannelPost(first)).toBe(true)
+        expect(await links.insertChannelPost(made(576))).toBe(false)
+        expect(await links.insertChannelPost(made(580))).toBe(true)
+        const read = await links.findByPost(CHAT, 576)
+        expect(read).toMatchObject({
+            id: first.id,
+            origin: SourceLinkOrigin.CHANNEL,
+            preview: "Fetr kitobcha keldi",
+            productId: "p-1",
+            buttonAt: at(1),
+            hasButton: true,
+        })
+        expect(await links.findByPost(-1009, 576)).toBeNull()
+        expect(await links.knownPosts(CHAT, [571, 576, 580])).toEqual(new Set([576, 580]))
+        expect(await links.knownPosts(CHAT, [])).toEqual(new Set())
+        if (read) {
+            read.relink(undefined)
+            await links.saveProduct(read)
+        }
+        expect((await links.findById(businessId, first.id))?.productId).toBeUndefined()
+        // Zumda's own post of the product is the only one a new price edits.
+        expect(await links.livePosts(businessId, "p-1", CHAT, 20)).toEqual([])
+    })
+
     it("writes a post with where it is, and reads it back", async () => {
         const written = post("p-1")
         await links.insert(written)
         const read = await links.findById(businessId, written.id)
         expect(read?.post).toEqual({ chatId: CHAT, messageId: 100, photoFileId: "file" })
         expect(read?.kind).toBe(SourceLinkKind.POST)
+        expect(read?.origin).toBe(SourceLinkOrigin.ZUMDA)
+        expect(read?.isZumdaPost).toBe(true)
         expect(read?.counts).toEqual({ opens: 0, orders: 0, sales: 0, revenue: 0 })
         expect(await links.findById("another-shop", written.id)).toBeNull()
     })

@@ -129,7 +129,7 @@ jobs:
                     - owner-shop.spec.ts map.spec.ts owner-bot.spec.ts delivery-price.spec.ts channel.spec.ts
                     - money.spec.ts cash.spec.ts phones.spec.ts stock.spec.ts photos.spec.ts
                     - visual.spec.ts demo-shops.spec.ts demo-prod.spec.ts
-                    - customer-shop.spec.ts gestures.spec.ts sound.spec.ts
+                    - customer-shop.spec.ts gestures.spec.ts sound.spec.ts channel-posts.spec.ts
                     - showcase.spec.ts managed-bots.spec.ts business-web.spec.ts platform.spec.ts zumda-qr.spec.ts variants.spec.ts
                     - customer-edges.spec.ts onboarding-admin.spec.ts units.spec.ts catalog.spec.ts bulk.spec.ts audit-fixes.spec.ts
                     - courier.spec.ts network.spec.ts trips.spec.ts toys.spec.ts dispatcher.spec.ts

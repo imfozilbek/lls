@@ -1,5 +1,6 @@
 import type { Product } from "../../domain/entities/product.js"
 import type { Category } from "../../domain/enums/category.js"
+import type { NamedProduct } from "../../domain/services/post-guess.js"
 import type { Page, PageRequest } from "../dtos/pagination.js"
 
 export interface ProductListQuery {
@@ -34,6 +35,8 @@ export interface ProductRepository {
     searchShowcase(search: ShowcaseSearch, page: PageRequest): Promise<Page<Product>>
     /** The names of every product of the shop (hidden ones too): to keep a list without twins. */
     namesOf(businessId: string): Promise<string[]>
+    /** Every product's id and name (hidden ones too): a channel post finds the one it names. */
+    catalogNames(businessId: string): Promise<NamedProduct[]>
     save(product: Product): Promise<void>
     /** Several new products at once, all or none (one transaction). */
     saveMany(products: readonly Product[]): Promise<void>

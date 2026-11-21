@@ -1,7 +1,9 @@
 import {
     DeleteSourceLinkUseCase,
+    ImportChannelHistoryUseCase,
     Language,
     PublishPostUseCase,
+    RecordChannelPostUseCase,
     SyncProductPostsUseCase,
 } from "@zumda/core"
 
@@ -13,6 +15,7 @@ import type { OutgoingFile } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
 import type { Services } from "../services.js"
 import type {
+    AttachOutcome,
     Business,
     ChannelPost,
     ChannelPublisher,
@@ -32,6 +35,41 @@ const NO_RIGHTS =
 const POST_GONE = /message to edit not found|MESSAGE_ID_INVALID/i
 /** The same words again: nothing to change, so nothing was wrong. */
 const UNCHANGED = /message is not modified/i
+/**
+ * The bot is out of the channel, or no longer its admin. Narrower than `NO_RIGHTS`: a button the
+ * bot may not put under someone's post («not enough rights») keeps the channel connected.
+ */
+const LEFT_CHANNEL =
+    /not a member|kicked|chat not found|need administrator rights|CHAT_ADMIN_REQUIRED/i
+/** Telegram asked to slow down: «Too Many Requests: retry after 35». */
+const RETRY_AFTER = /retry after (\d+)/i
+/** Telegram answered (and said no): anything else is a failure to reach it, tried again later. */
+const TELEGRAM_SAID_NO = /Bad Request|Forbidden|rights|REQUIRED|EXPIRED/i
+
+/** What Telegram's no to a button under the owner's post means. */
+function attachRefusal(error: unknown): AttachOutcome {
+    if (!(error instanceof TelegramApiError)) {
+        throw error
+    }
+    const text = error.description
+    const wait = RETRY_AFTER.exec(text)
+    if (wait) {
+        return { kind: "wait", seconds: Number(wait[1]) }
+    }
+    if (UNCHANGED.test(text)) {
+        return { kind: "attached" }
+    }
+    if (POST_GONE.test(text)) {
+        return { kind: "gone" }
+    }
+    if (LEFT_CHANNEL.test(text)) {
+        return { kind: "noRights" }
+    }
+    if (TELEGRAM_SAID_NO.test(text)) {
+        return { kind: "refused" }
+    }
+    throw error
+}
 
 function said(error: unknown, pattern: RegExp): boolean {
     return error instanceof TelegramApiError && pattern.test(error.description)
@@ -53,12 +91,19 @@ export class TelegramChannelPublisher implements ChannelPublisher {
         return textsFor(Language.UZ, this.business.type)
     }
 
-    private async token(): Promise<string> {
-        const credentials = await this.services.businesses.getBotCredentials(this.business.id)
-        if (!credentials) {
-            throw new Error(`No bot credentials for shop ${this.business.id}`)
-        }
-        return credentials.token
+    /** Read and decrypted once a request: the past's ten buttons need it ten times. */
+    private tokenOnce: Promise<string> | undefined
+
+    private token(): Promise<string> {
+        this.tokenOnce ??= this.services.businesses
+            .getBotCredentials(this.business.id)
+            .then((credentials) => {
+                if (!credentials) {
+                    throw new Error(`No bot credentials for shop ${this.business.id}`)
+                }
+                return credentials.token
+            })
+        return this.tokenOnce
     }
 
     private keyboard(linkId: string): ReturnType<typeof postKeyboard> {
@@ -136,6 +181,24 @@ export class TelegramChannelPublisher implements ChannelPublisher {
         }
     }
 
+    /** «Buyurtma berish» under a post the owner made in Telegram; their words stay. */
+    async attachButton(channel: ShopChannel, link: SourceLink): Promise<AttachOutcome> {
+        if (!link.post) {
+            return { kind: "gone" }
+        }
+        try {
+            await this.services.telegram.setButtons(
+                await this.token(),
+                channel.chatId,
+                link.post.messageId,
+                this.keyboard(link.id),
+            )
+            return { kind: "attached" }
+        } catch (error) {
+            return attachRefusal(error)
+        }
+    }
+
     async remove(channel: ShopChannel, link: SourceLink): Promise<RemoveOutcome> {
         if (!link.post) {
             return "removed"
@@ -179,6 +242,28 @@ export function deleteSourceLinkUseCase(
 ): DeleteSourceLinkUseCase {
     const publisher = new TelegramChannelPublisher(services, business)
     return new DeleteSourceLinkUseCase({ ...linkDeps(services), publisher })
+}
+
+/** A post the owner made in Telegram joins Zumda with «Buyurtma berish». */
+export function recordChannelPostUseCase(
+    services: Services,
+    business: Business,
+): RecordChannelPostUseCase {
+    const publisher = new TelegramChannelPublisher(services, business)
+    return new RecordChannelPostUseCase({ ...linkDeps(services), publisher })
+}
+
+/** «Eski postlarni qo'shish»: one page of the channel's past a request. */
+export function importChannelHistoryUseCase(
+    services: Services,
+    business: Business,
+): ImportChannelHistoryUseCase {
+    const publisher = new TelegramChannelPublisher(services, business)
+    return new ImportChannelHistoryUseCase({
+        ...linkDeps(services),
+        publisher,
+        history: services.history,
+    })
 }
 
 /** The product's name, price or age changed: its posts say it too (in the background). */

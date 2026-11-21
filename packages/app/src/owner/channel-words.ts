@@ -1,4 +1,4 @@
-import { Unit } from "@zumda/core"
+import { SourceLinkOrigin, Unit } from "@zumda/core"
 
 import { fill } from "../i18n/index.js"
 import { formatMoney } from "../lib/format.js"
@@ -22,6 +22,30 @@ export function linkCountsText(c: ChannelWords, link: SourceLinkDTO, language: L
         parts.push(`${sales}: ${formatMoney(link.revenue, language)}`)
     }
     return parts.join(" · ")
+}
+
+/** A post's lines in the list: what it is, who made it, where its button leads. */
+export interface PostLines {
+    title: string
+    source: string
+    /** The owner's own post: «Qayerga olib boradi: Fetr kitobcha» (or the whole shop). */
+    target?: string
+}
+
+/** Zumda's post is known by its product; the owner's own by its first words. */
+export function postLines(
+    c: ChannelWords,
+    post: SourceLinkDTO,
+    productName: string | undefined,
+): PostLines {
+    if (post.origin !== SourceLinkOrigin.CHANNEL) {
+        return { title: productName ?? c.post.button, source: c.fromZumda }
+    }
+    return {
+        title: post.preview ?? productName ?? c.noText,
+        source: c.fromTelegram,
+        target: `${c.ads.target}: ${productName ?? c.ads.wholeShop}`,
+    }
 }
 
 /** What the post says under the owner's words, as the shop's bot writes it. */

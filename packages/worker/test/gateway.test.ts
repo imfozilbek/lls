@@ -148,6 +148,22 @@ describe("HttpTelegramGateway", () => {
         }
     })
 
+    it("puts buttons under a post; Telegram's no is the caller's to read", async () => {
+        const { fetcher, calls } = fakeFetch(true)
+        const keyboard = { inline_keyboard: [[{ text: "Buyurtma", url: "https://t.me/b" }]] }
+        await new HttpTelegramGateway(fetcher).setButtons("t", -100, 42, keyboard)
+        expect(calls[0]?.url).toBe("https://api.telegram.org/bott/editMessageReplyMarkup")
+        expect(calls[0]?.body).toEqual({ chat_id: -100, message_id: 42, reply_markup: keyboard })
+        const refusing = (async () =>
+            new Response(
+                JSON.stringify({ ok: false, description: "Bad Request: message can't be edited" }),
+                { status: 400 },
+            )) as typeof fetch
+        await expect(
+            new HttpTelegramGateway(refusing).setButtons("t", -100, 42, keyboard),
+        ).rejects.toBeInstanceOf(TelegramApiError)
+    })
+
     it("sends a picture by URL with an HTML caption and buttons", async () => {
         const { fetcher, calls } = fakeFetch({ message_id: 7 })
         const keyboard = { inline_keyboard: [[{ text: "Open", web_app: { url: "https://a" } }]] }
@@ -222,7 +238,7 @@ describe("HttpTelegramGateway", () => {
             secret_token: "secret",
             url: "https://w.dev/tg/1",
             // Being made an admin of the shop's channel comes as `my_chat_member`.
-            allowed_updates: ["message", "callback_query", "my_chat_member"],
+            allowed_updates: ["message", "callback_query", "my_chat_member", "channel_post"],
         })
         expect(calls[3]?.body).toMatchObject({
             menu_button: { type: "web_app", web_app: { url: "https://app.dev/?shop=osh" } },

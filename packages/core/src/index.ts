@@ -53,6 +53,7 @@ export * from "./domain/entities/trip.js"
 
 // Domain - Services
 export * from "./domain/services/post-facts.js"
+export * from "./domain/services/post-guess.js"
 export * from "./domain/services/trip-planning.js"
 
 // Domain - Errors

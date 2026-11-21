@@ -1,5 +1,6 @@
 export * from "./channel/shop-channel.use-cases.js"
 export * from "./channel/source-links.use-cases.js"
+export * from "./channel/channel-posts.use-cases.js"
 export * from "./courier/courier.use-cases.js"
 export * from "./customer/customer.use-cases.js"
 export * from "./demo/demo.use-cases.js"
