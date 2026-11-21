@@ -99,6 +99,9 @@ async function main(): Promise<void> {
             `TELEGRAM_API_BASE:${FAKE_TELEGRAM_URL}`,
             "--var",
             `TELEGRAM_OAUTH_BASE:${FAKE_TELEGRAM_URL}`,
+            // A public channel's past (`t.me/s`), read by «Eski postlarni ham qo'shish».
+            "--var",
+            `TELEGRAM_WEB_BASE:${FAKE_TELEGRAM_URL}`,
             // Trips: the way along the "roads" of the fake OpenRouteService.
             "--var",
             "ORS_API_KEY:stand-ors-key",

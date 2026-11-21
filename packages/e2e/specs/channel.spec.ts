@@ -64,7 +64,9 @@ function codeOf(url: string | undefined): string {
 test("the owner connects the channel from Telegram's own screen", async ({ page }) => {
     const since = await lastSeq()
     const app = await ownerSettings(page, "Telegram kanal")
-    await expect(page.getByText("mahsulotni bir tugma bilan kanalga joylaysiz")).toBeVisible()
+    await expect(
+        page.getByText("kanaldagi har bir post ostida «Buyurtma berish» tugmasi bo'ladi"),
+    ).toBeVisible()
     await page.waitForTimeout(400) // entry animations, for the screenshot
     await page.screenshot({ path: "screenshots/channel-connect.png" })
     await page.getByRole("button", { name: "Kanalni bog'lash" }).click()

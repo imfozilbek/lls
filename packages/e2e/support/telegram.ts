@@ -76,6 +76,10 @@ export async function controlTelegram(control: {
     failWebhooks?: boolean
     /** The owner presses «Revoke token» in @BotFather for this managed bot. */
     revokeManagedBot?: number
+    /** Public channels' past, by username: what `t.me/s/<username>` shows. */
+    channelPages?: Record<string, { id: number; text?: string; album?: boolean }[]>
+    /** The next button under a channel's post: Telegram asks to wait this many seconds. */
+    buttonsRetryAfter?: number
 }): Promise<void> {
     await fetchOnce(`${FAKE_TELEGRAM_URL}/__control`, {
         method: "POST",
@@ -267,6 +271,29 @@ export function channelMembership(
                       }
                     : {}),
             },
+        },
+    })
+}
+
+/**
+ * A post the owner made in the channel, as Telegram brings it to the shop's bot (an album: each
+ * photo on its own, the words with one of them).
+ */
+export function channelPost(
+    slug: string,
+    channel: TgChannel,
+    post: { messageId: number; text?: string; caption?: string; albumId?: string; chatId?: number },
+): Promise<Response> {
+    const shop = shopBySlug(slug)
+    return postUpdate(`/tg/${shop.bot.id}`, shop.bot.webhookSecret, {
+        channel_post: {
+            message_id: post.messageId,
+            date: Math.floor(Date.now() / 1000),
+            chat: { ...channel, id: post.chatId ?? channel.id, type: "channel" },
+            sender_chat: { ...channel, type: "channel" },
+            ...(post.text === undefined ? {} : { text: post.text }),
+            ...(post.caption === undefined ? {} : { caption: post.caption, photo: [] }),
+            ...(post.albumId === undefined ? {} : { media_group_id: post.albumId }),
         },
     })
 }

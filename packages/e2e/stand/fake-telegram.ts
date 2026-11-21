@@ -8,10 +8,14 @@
  *   POST /ors/v2/directions/driving-car/geojson
  *                               a fake OpenRouteService: the way turns at right angles, like
  *                               streets (recorded as method "ors")
+ *   GET  /s/<username>          a public channel's web page (`t.me/s`), twenty posts a page, the
+ *                               oldest first (`?before=<id>`); a channel without pages: a 302
  *   GET  /__log                 every recorded call, oldest first
  *   POST /__reset               forget calls and failures
  *   POST /__control             { broken?: number[], blocked?: number[], failWebhooks?: boolean,
- *                                 revokeManagedBot?: number (the owner's «Revoke token») }
+ *                                 revokeManagedBot?: number (the owner's «Revoke token»),
+ *                                 channelPages?: { <username>: PagePost[] },
+ *                                 buttonsRetryAfter?: number (the next button in a channel: 429) }
  *
  * Files (sendDocument, setMyProfilePhoto) come as multipart: the call body keeps the text
  * fields, and the file as `{ name, contentType, size, base64 }` under its field name.
@@ -60,6 +64,75 @@ interface State {
     nextMessageId: number
     /** How many tokens each managed bot got so far. */
     managedTokens: Map<number, number>
+    /** Public channels' past, by username (lower case). */
+    channelPages: Map<string, PagePost[]>
+    /** The next `editMessageReplyMarkup` in a channel: «Too Many Requests: retry after N». */
+    buttonsRetryAfter: number | null
+}
+
+/** One post of a channel's past as its web page shows it. */
+export interface PagePost {
+    id: number
+    text?: string
+    album?: boolean
+}
+
+const CHANNEL_PAGE = 20
+
+/** `t.me/s/<username>` as Telegram writes it: the posts before `before`, the oldest first. */
+function channelPage(posts: readonly PagePost[], before: number | null): string {
+    const older = posts
+        .filter((post) => before === null || post.id < before)
+        .sort((a, b) => b.id - a.id)
+    const shown = older.slice(0, CHANNEL_PAGE).reverse()
+    const first = shown[0]
+    const more =
+        older.length > CHANNEL_PAGE && first
+            ? `<div class="tme_messages_more js-messages_more" data-before="${first.id}"></div>`
+            : ""
+    const items = shown.map((post) => {
+        const at = new Date(Date.UTC(2026, 10, 1, 9, post.id)).toISOString()
+        const album = post.album ? '<div class="tgme_widget_message_grouped_wrap"></div>' : ""
+        const text = post.text
+            ? `<div class="tgme_widget_message_text js-message_text"><div class="tgme_widget_message_text js-message_text">${post.text}</div></div>`
+            : ""
+        return `<div class="tgme_widget_message_wrap"><div class="tgme_widget_message js-widget_message" data-post="channel/${post.id}">${album}${text}<a class="tgme_widget_message_date"><time datetime="${at}">09:00</time></a></div></div>`
+    })
+    return `<!DOCTYPE html><html><body><section>${more}${items.join("\n")}</section></body></html>`
+}
+
+function serveChannelPage(state: State, url: URL, response: ServerResponse): void {
+    const username = decodeURIComponent(url.pathname.slice("/s/".length)).toLowerCase()
+    const posts = state.channelPages.get(username)
+    if (!posts) {
+        response.writeHead(302, { Location: `/${username}` })
+        response.end()
+        return
+    }
+    const before = Number(url.searchParams.get("before")) || null
+    response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
+    response.end(channelPage(posts, before))
+}
+
+/** Telegram asked to slow down once, for the next button under a channel's post. */
+function buttonsRefused(state: State, call: BotCall): [number, unknown] | null {
+    const wait = state.buttonsRetryAfter
+    if (call.method !== "editMessageReplyMarkup" || wait === null) {
+        return null
+    }
+    if (Number(call.body["chat_id"]) >= 0) {
+        return null
+    }
+    state.buttonsRetryAfter = null
+    return [
+        429,
+        {
+            ok: false,
+            error_code: 429,
+            description: `Too Many Requests: retry after ${wait}`,
+            parameters: { retry_after: wait },
+        },
+    ]
 }
 
 function knownBots(): Map<string, Bot> {
@@ -239,8 +312,13 @@ function sentPhoto(state: State, call: BotCall): [number, unknown] {
     return [200, { ok: true, result: { message_id: id, ...photo } }]
 }
 
+/** Whatever Telegram would refuse this call for: the person, an outage, a pause it asked for. */
+function refusalOf(state: State, bot: Bot, call: BotCall): [number, unknown] | null {
+    return refused(state, bot, call) ?? buttonsRefused(state, call)
+}
+
 function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
-    const refusal = refused(state, bot, call)
+    const refusal = refusalOf(state, bot, call)
     if (refusal) {
         return refusal
     }
@@ -325,6 +403,14 @@ function applyControl(state: State, body: Record<string, unknown>): void {
         (body["notStarted"] as string[] | undefined) ?? [...state.notStarted],
     )
     state.failWebhooks = (body["failWebhooks"] as boolean | undefined) ?? state.failWebhooks
+    const pages = body["channelPages"] as Record<string, PagePost[]> | undefined
+    for (const [username, posts] of Object.entries(pages ?? {})) {
+        state.channelPages.set(username.toLowerCase(), posts)
+    }
+    const wait = body["buttonsRetryAfter"] as number | undefined
+    if (wait !== undefined) {
+        state.buttonsRetryAfter = wait
+    }
     const revoked = body["revokeManagedBot"] as number | undefined
     if (revoked !== undefined) {
         rotateManagedToken(state, revoked)
@@ -347,6 +433,10 @@ async function handle(
         await serveOrs(state, request, response)
         return
     }
+    if (url.pathname.startsWith("/s/")) {
+        serveChannelPage(state, url, response)
+        return
+    }
     if (url.pathname === "/__log") {
         send(response, 200, state.calls)
         return
@@ -358,6 +448,8 @@ async function handle(
         state.notStarted.clear()
         state.failWebhooks = false
         state.managedTokens.clear()
+        state.channelPages.clear()
+        state.buttonsRetryAfter = null
         send(response, 200, { ok: true })
         return
     }
@@ -398,6 +490,8 @@ export function startFakeTelegram(port: number): Promise<Server> {
         failWebhooks: false,
         nextMessageId: 1000,
         managedTokens: new Map(),
+        channelPages: new Map(),
+        buttonsRetryAfter: null,
     }
     const server = createServer((request, response) => {
         handle(state, bots, request, response).catch((error: unknown) => {
