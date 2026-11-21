@@ -60,6 +60,12 @@ export const staffUz = {
         NOT_IN_SHOWCASE: "Do'kon hozir Zumda vitrinasida emas.",
         BUSINESS_BOT_ONLY: "Bu bo'lim Zumda | Business botida ochiladi.",
         PLATFORM_ONLY: "Bu bo'lim Zumda | Business botida ochiladi.",
+        DEMO_NOT_PROMOTED: "Namuna do'konda kanal va reklama havolalari bo'lmaydi.",
+        CHANNEL_NOT_CONNECTED: "Avval Telegram kanalingizni ulang: «Sozlamalar», «Telegram kanal».",
+        CHANNEL_NO_RIGHTS: "Bot kanalga post joylay olmayapti. Kanalni qayta ulang.",
+        POST_PRODUCT_UNAVAILABLE: "Bu mahsulot hozir sotuvda emas: uni kanalga joylab bo'lmaydi.",
+        TOO_MANY_LINKS: "Reklama havolalari 50 tadan oshmaydi: avval keraksizini o'chiring.",
+        POST_NOT_DELETABLE: "Post o'chmadi. Uni kanalda o'zingiz o'chiring.",
     },
     trip: {
         sameWay: "Shu yo'nalishda yana {n} ta",
