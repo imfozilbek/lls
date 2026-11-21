@@ -41,6 +41,7 @@ import {
     onInvalid,
 } from "../http/schemas.js"
 import { networkAfterStep, notifyOwnerStep, reportOverdueNetworkOrders } from "../network-flow.js"
+import { syncProductPosts } from "../telegram/channel-publisher.js"
 import { TelegramApiError } from "../telegram/gateway.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
 
@@ -65,6 +66,9 @@ export async function setShopBotPhoto(
         throw error
     }
 }
+
+/** A product's fields a channel post shows (`PostFacts`). */
+const POST_FACT_FIELDS = ["name", "price", "options", "unit", "ageFrom"] as const
 
 /** "Мой магазин": only the owner of the shop from `X-Shop`. */
 /** The trips orders just left (moved to a courier or another trip): their way is planned again. */
@@ -453,12 +457,22 @@ export const ownerRoutes = new Hono<AppEnv>()
         zValidator("param", idParam, onInvalid),
         zValidator("json", productPatchBody, onInvalid),
         async (c) => {
-            const product = await c.get("services").useCases.updateProduct.execute({
+            const services = c.get("services")
+            const patch = c.req.valid("json")
+            const product = await services.useCases.updateProduct.execute({
                 actorTelegramId: c.get("auth").user.id,
                 businessId: shopOf(c).id,
                 productId: c.req.valid("param").id,
-                patch: c.req.valid("json"),
+                patch,
             })
+            // What a channel post says of it may have changed: its posts say it too.
+            if (POST_FACT_FIELDS.some((field) => patch[field] !== undefined)) {
+                inBackground(
+                    c.executionCtx,
+                    services,
+                    syncProductPosts(services, shopOf(c), product.id),
+                )
+            }
             return c.json(product)
         },
     )

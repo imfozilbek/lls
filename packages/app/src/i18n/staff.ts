@@ -19,6 +19,10 @@ export const staffUz = {
         TELEGRAM_FAILED: "Telegram hozir javob bermadi. Birozdan keyin qayta urinib ko'ring.",
         SHOP_NOT_REJECTED: "Ariza allaqachon qayta yuborilgan.",
         BOT_PHOTO_FAILED: "Telegram bot rasmini qabul qilmadi. Keyinroq qayta urinib ko'ring.",
+        CHANNEL_SETUP_FAILED:
+            "Telegram hozir javob bermadi, kanal ulanmadi. Birozdan keyin qayta urinib ko'ring.",
+        CHANNEL_POST_FAILED:
+            "Post kanalga joylanmadi: Telegram qabul qilmadi. Birozdan keyin qayta urinib ko'ring.",
         CARD_EXISTS: "Bu karta allaqachon qo'shilgan.",
         PAYOUT_CARD_LIMIT: "Kartalar soni chegarasiga yetdi: avval keraksizini o'chiring.",
         PAYMENT_CARD_IN_USE: "Mijozlar shu kartaga to'laydi: avval boshqasini tanlang.",

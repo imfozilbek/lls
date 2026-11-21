@@ -14,6 +14,7 @@ import {
 import { appOrigins } from "./env.js"
 import { toErrorResponse } from "./http/errors.js"
 import { adminRoutes } from "./routes/admin.routes.js"
+import { channelRoutes } from "./routes/channel.routes.js"
 import { clientErrorRoutes } from "./routes/client-errors.routes.js"
 import { courierRoutes } from "./routes/courier.routes.js"
 import { customerRoutes } from "./routes/customer.routes.js"
@@ -106,6 +107,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         .route("/owner", ownerRoutes)
         .route("/owner", moneyRoutes)
         .route("/owner", payoutCardRoutes)
+        .route("/owner", channelRoutes)
         .route("/courier", courierRoutes)
         .route("/platform", platformRoutes)
         .route("/admin", adminRoutes)
