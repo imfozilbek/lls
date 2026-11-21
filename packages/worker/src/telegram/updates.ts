@@ -35,6 +35,26 @@ const updateSchema = z.object({
             bot: z.object({ id: z.number().int(), username: z.string().min(1) }),
         })
         .optional(),
+    /**
+     * The shop's bot was made an admin of a channel (`?startchannel`), lost its rights or was
+     * removed. A private chat's block and unblock come here too (ignored).
+     */
+    my_chat_member: z
+        .object({
+            chat: z.object({
+                id: z.number().int(),
+                type: z.string(),
+                title: z.string().optional(),
+                username: z.string().optional(),
+            }),
+            from: userSchema,
+            new_chat_member: z.object({
+                status: z.string(),
+                user: z.object({ id: z.number().int() }),
+                can_post_messages: z.boolean().optional(),
+            }),
+        })
+        .optional(),
     callback_query: z
         .object({
             id: z.string(),
@@ -56,6 +76,7 @@ export type Update = z.infer<typeof updateSchema>
 export type Callback = NonNullable<Update["callback_query"]>
 export type IncomingMessage = NonNullable<Update["message"]>
 export type ManagedBotUpdate = NonNullable<Update["managed_bot"]>
+export type ChatMemberUpdate = NonNullable<Update["my_chat_member"]>
 
 export function toTelegramUser(user: z.infer<typeof userSchema>): TelegramUser {
     return {

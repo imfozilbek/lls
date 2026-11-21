@@ -180,6 +180,12 @@ function readAdminTarget(value: string | null): AdminTarget | null {
     return shopId ? { shopId } : null
 }
 
+/** An id from the address, or none when it is not one (the address is anyone's to write). */
+function idParam(url: URL, name: string): string | null {
+    const value = url.searchParams.get(name)
+    return value !== null && ID.test(value) ? value : null
+}
+
 export interface LaunchParams {
     /** Shop slug from `?shop=` or `startapp=shop_<slug>`. */
     shop: string | null
@@ -193,6 +199,8 @@ export interface LaunchParams {
     platform: boolean
     /** `&order=<id>`: a bot message's «Buyurtmani ochish» opens this order. */
     order: string | null
+    /** `&product=<id>`: a channel post or an ad link opens the storefront on this product. */
+    product: string | null
     /** `&admin=…`: an admin's message opens «Platforma» on this. */
     admin: AdminTarget | null
 }
@@ -218,7 +226,8 @@ export function readLaunchParams(url: URL, app: WebApp | null): LaunchParams {
         platform:
             url.hostname.startsWith(PLATFORM_HOST_PREFIX) ||
             url.searchParams.get("mode") === "admin",
-        order: ID.test(url.searchParams.get("order") ?? "") ? url.searchParams.get("order") : null,
+        order: idParam(url, "order"),
+        product: idParam(url, "product"),
         admin: readAdminTarget(url.searchParams.get("admin")),
     }
 }

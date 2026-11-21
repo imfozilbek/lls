@@ -22,6 +22,10 @@ export class EntityNotFoundError extends DomainError {
         return new EntityNotFoundError("Product", id)
     }
 
+    static sourceLink(id: string): EntityNotFoundError {
+        return new EntityNotFoundError("SourceLink", id)
+    }
+
     static courier(id: string): EntityNotFoundError {
         return new EntityNotFoundError("Courier", id)
     }

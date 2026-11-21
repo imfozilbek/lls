@@ -57,5 +57,11 @@
             "namespace_id": "1004",
             "simple": { "limit": 5, "period": 60 },
         },
+        // «Kanalga joylash»: Telegram takes about 20 posts a minute in a channel.
+        {
+            "name": "POST_LIMITER",
+            "namespace_id": "1005",
+            "simple": { "limit": 10, "period": 60 },
+        },
     ],
 }

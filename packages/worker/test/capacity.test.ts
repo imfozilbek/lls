@@ -212,6 +212,18 @@ describe("rows read per request, on six months of history", () => {
         "one order from placing to delivered: rows read and written",
         async () => {
             const { counter, owner, customer, courier, productId, courierId } = await seed()
+            // The customer came by an ad link: the order counts for it, its sale on delivery.
+            const link = await owner("/api/owner/links", {
+                method: "POST",
+                json: { label: "Super kids" },
+            })
+            const { id: linkId } = (await link.json()) as { id: string }
+            await env.DB.prepare(
+                `INSERT INTO source_visits (business_id, telegram_id, link_id, at)
+                 SELECT id, ?, ?, ? FROM businesses`,
+            )
+                .bind(CUSTOMER.id, linkId, Date.now())
+                .run()
             counter.take()
             const placed = await customer("/api/orders", {
                 method: "POST",
@@ -251,12 +263,82 @@ describe("rows read per request, on six months of history", () => {
                 )
             }
             const rows = counter.take()
-            // Measured 115 read, 46 written (docs/capacity.md: about 300 such orders a day;
+            const counted = await env.DB.prepare(
+                "SELECT orders, sales FROM source_links WHERE id = ?",
+            )
+                .bind(linkId)
+                .first<{ orders: number; sales: number }>()
+            expect(counted).toEqual({ orders: 1, sales: 1 })
+            // Measured 120 read, 49 written with the link (docs/capacity.md: about 300 such orders
+            // a day; the link: its visit read once, its counters written twice;
             // «Yig'ishni boshlash» is a step of its own; the customer's live message reads its id
             // on each step and writes it on each new message). A save writes only what changed: every
             // column on each step cost twice the writes.
             expect(rows.read).toBeLessThanOrEqual(150)
             expect(rows.written).toBeLessThanOrEqual(60)
+        },
+        SEED_TIMEOUT_MS,
+    )
+    it(
+        "the shop's channel and its links: the screens, and one pressed link",
+        async () => {
+            const { counter, client, owner, productId } = await seed()
+            const business = await env.DB.prepare(
+                "SELECT id, webhook_secret FROM businesses",
+            ).first<{ id: string; webhook_secret: string }>()
+            await env.DB.prepare(
+                `INSERT INTO shop_channels (business_id, chat_id, title, connected_at)
+                 VALUES (?, -1001, 'ABC', 0)`,
+            )
+                .bind(business?.id)
+                .run()
+            const made = await owner("/api/owner/links", {
+                method: "POST",
+                json: { label: "Super kids", productId },
+            })
+            const { id: linkId } = (await made.json()) as { id: string }
+            // A year of posts and ad links: the lists read one page, never all of them.
+            await clone("source_links", "t.id = ?", [linkId], 500, {
+                id: "'l' || n.i",
+                kind: "CASE WHEN n.i % 2 = 0 THEN 'post' ELSE 'ad' END",
+                chat_id: "-1001",
+                message_id: "n.i",
+                created_at: "n.i",
+            })
+            const screens: [string, () => Promise<Response>, number][] = [
+                ["owner: the channel", () => owner("/api/owner/channel"), 10],
+                ["owner: posts, page 1", () => owner("/api/owner/links?kind=post"), 40],
+                ["owner: ad links, page 1", () => owner("/api/owner/links?kind=ad"), 40],
+            ]
+            for (const [name, call, limit] of screens) {
+                counter.take()
+                const response = await call()
+                expect(response.status, name).toBe(200)
+                expect(counter.take().read, name).toBeLessThanOrEqual(limit)
+            }
+            counter.take()
+            const pressed = await client.request(`/tg/${SHOP_BOT.id}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Telegram-Bot-Api-Secret-Token": business?.webhook_secret ?? "",
+                },
+                body: JSON.stringify({
+                    update_id: 1,
+                    message: {
+                        message_id: 1,
+                        from: CUSTOMER,
+                        chat: { id: CUSTOMER.id, type: "private" },
+                        date: 0,
+                        text: `/start s_${linkId}`,
+                    },
+                }),
+            })
+            expect(pressed.status).toBe(200)
+            const click = counter.take()
+            // Measured 4 read, 2 written: the link, the visit (one upsert), the product (docs/capacity.md).
+            expect(click.read).toBeLessThanOrEqual(15)
+            expect(click.written).toBeLessThanOrEqual(4)
         },
         SEED_TIMEOUT_MS,
     )

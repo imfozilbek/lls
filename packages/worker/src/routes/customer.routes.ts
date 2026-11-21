@@ -65,12 +65,20 @@ export const customerRoutes = new Hono<AppEnv>()
         const existed = body.clientOrderId
             ? (await services.orders.findById(body.clientOrderId)) !== null
             : false
+        const user = c.get("auth").user
+        // The post or ad link this person pressed last: known to the server, never sent.
+        const sourceLinkId = await services.useCases.findOrderSource.execute({
+            businessId: business.id,
+            telegramId: user.id,
+            now: services.clock.now(),
+        })
         const order = await services.useCases.placeOrder.execute({
             ...body,
-            user: c.get("auth").user,
+            user,
             businessId: business.id,
             // Fixed by the bot that signed the request: own bot = never commissioned.
             channel: c.get("auth").channel,
+            sourceLinkId,
         })
         // Only this customer's own order at this shop comes back by that id; someone else's id
         // makes a new order, which needs its messages like any other.

@@ -156,6 +156,7 @@ export const uz = {
         manage: "Mening do'konim",
         notFoundTitle: "Do'kon topilmadi",
         notFoundText: "Havolani tekshiring yoki do'konni uning Telegram botidan oching.",
+        productAway: "Bu mahsulot hozir sotuvda yo'q. Do'kondagi boshqa mahsulotlarni ko'ring.",
         outsideShowcaseTitle: "Bu do'kon hozir Zumda vitrinasida yo'q",
         outsideShowcaseText: "Buyurtmani do'konning o'z botida bering.",
         openShopBot: "Do'kon botini ochish",

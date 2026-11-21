@@ -102,7 +102,13 @@ function toMessage(call: BotCall): BotMessage {
     }
 }
 
-const MESSAGE_METHODS = ["sendMessage", "sendPhoto", "sendVideo", "editMessageText"]
+const MESSAGE_METHODS = [
+    "sendMessage",
+    "sendPhoto",
+    "sendVideo",
+    "editMessageText",
+    "editMessageCaption",
+]
 
 /** Messages (sent, sent with a picture, and edited) to one chat, oldest first. */
 export async function messagesTo(chatId: number, since = 0): Promise<BotMessage[]> {
@@ -224,6 +230,45 @@ function chat(path: string, secret: string): Chat {
                 },
             }),
     }
+}
+
+/** A Telegram channel the shop's bot may be made an admin of. */
+export interface TgChannel {
+    id: number
+    title: string
+    username?: string
+}
+
+/**
+ * Telegram tells the shop's bot that `from` changed its place in `channel`: made it an admin who
+ * may post («administrator»), or took that away («left», «member»).
+ */
+export function channelMembership(
+    slug: string,
+    from: TgUser,
+    channel: TgChannel,
+    status: "administrator" | "left" | "member",
+): Promise<Response> {
+    const shop = shopBySlug(slug)
+    return postUpdate(`/tg/${shop.bot.id}`, shop.bot.webhookSecret, {
+        my_chat_member: {
+            chat: { ...channel, type: "channel" },
+            from: { ...from, is_bot: false },
+            date: Math.floor(Date.now() / 1000),
+            old_chat_member: { status: "left", user: { id: shop.bot.id, is_bot: true } },
+            new_chat_member: {
+                status,
+                user: { id: shop.bot.id, is_bot: true },
+                ...(status === "administrator"
+                    ? {
+                          can_post_messages: true,
+                          can_edit_messages: true,
+                          can_delete_messages: true,
+                      }
+                    : {}),
+            },
+        },
+    })
 }
 
 export function shopChat(slug: string): Chat {

@@ -21,6 +21,27 @@ export function shopBotStartUrl(botUsername: string): string {
 /** The `/start` payload of `shopBotStartUrl`. */
 export const OWNER_START = "owner"
 
+/** A post's button or an ad link: the shop's bot, told which link was pressed. */
+export function sourceStartUrl(botUsername: string, code: string): string {
+    return `https://t.me/${botUsername}?start=${SOURCE_START}${code}`
+}
+
+/** The prefix of a source link's `/start` payload: `s_<code>`. */
+export const SOURCE_START = "s_"
+
+/**
+ * Telegram's own screen to make the shop's bot an admin of a channel the owner picks, with the
+ * rights already ticked: post, edit and delete its own posts (owner's decision, November 2026).
+ */
+export function startChannelUrl(botUsername: string): string {
+    return `https://t.me/${botUsername}?startchannel&admin=post_messages+edit_messages+delete_messages`
+}
+
+/** The storefront opened right on one product (the card the shop's bot sends for a link). */
+export function productAppUrl(appOrigin: string, slug: string, productId: string): string {
+    return `${shopAppUrl(appOrigin, slug)}&product=${encodeURIComponent(productId)}`
+}
+
 /** A showcase customer's order, opened from Zumda | Shop: the shop inside the showcase. */
 export function showcaseOrderUrl(appOrigin: string, slug: string, orderId: string): string {
     return `${showcaseAppUrl(appOrigin)}&shop=${encodeURIComponent(slug)}&order=${encodeURIComponent(orderId)}`

@@ -856,6 +856,11 @@ export function parseCourierReviewCallback(
     return { courierId, approve: decision === "approve" }
 }
 
+/** `/start s_<code>`: a post's button or an ad link of the shop was pressed. */
+export function parseSourceStart(text: string | undefined): string | null {
+    return /^\/start\s+s_([A-Za-z0-9_-]{11})\s*$/.exec(text ?? "")?.[1] ?? null
+}
+
 /** Invite payload of `/start c_<code>`, or null for a plain /start. */
 export function parseCourierInvite(text: string | undefined): string | null {
     const match = /^\/start\s+c_([A-Za-z0-9_-]{8,40})\s*$/.exec(text?.trim() ?? "")

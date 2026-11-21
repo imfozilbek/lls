@@ -1,5 +1,8 @@
 import {
     AGES,
+    LINK_LABEL_MAX,
+    POST_TEXT_MAX,
+    SOURCE_LINK_KINDS,
     BUSINESS_STATUSES,
     BUSINESS_TYPES,
     DEMO_TEMPLATES,
@@ -422,3 +425,20 @@ export const slugParam = z.object({ slug: z.string().regex(/^[a-z0-9][a-z0-9-]{1
 /** Which QR the poster carries: the shop's own bot, or Zumda Shop opening on the shop. */
 export const POSTER_KINDS = ["shop", "zumda"] as const
 export const posterQuery = z.object({ kind: z.enum(POSTER_KINDS).default("shop") })
+
+/** «Kanalga joylash»: the product and the owner's words; the photo is the JPEG body, if any. */
+export const channelPostQuery = z.object({
+    productId: z.string().min(1).max(64),
+    text: z.string().max(POST_TEXT_MAX).optional(),
+})
+
+/** «Telegram kanal» (posts) and «Reklama uchun havolalar» (ads): one page of live links. */
+export const sourceLinksQuery = pageQuery.extend({
+    kind: z.enum(SOURCE_LINK_KINDS),
+})
+
+/** «Yangi havola»: the ad's name, and the product it opens (the whole shop otherwise). */
+export const adLinkBody = z.object({
+    label: z.string().trim().min(1).max(LINK_LABEL_MAX),
+    productId: z.string().min(1).max(64).optional(),
+})

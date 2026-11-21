@@ -1191,6 +1191,24 @@ export class Notifier {
         })
     }
 
+    /**
+     * News about the shop's channel (connected, lost, refused): from the shop's bot, or through
+     * Zumda | Business with the note; the button opens the owner's shop.
+     */
+    async channelNews(business: Business, html: string): Promise<void> {
+        const token = await this.shopToken(business.id)
+        const t = textsFor(await this.languageOf(business.ownerTelegramId.value), business.type)
+        await this.textToOwner(
+            business,
+            token,
+            html,
+            appKeyboard(
+                t.openMyShop,
+                shopAppUrl(this.services.env.APP_ORIGIN, business.slug.value),
+            ),
+        )
+    }
+
     /** A text for the owner from the shop's bot, or through Zumda | Business with the note. */
     private async textToOwner(
         business: Business,

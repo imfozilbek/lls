@@ -317,10 +317,35 @@ function useOpenOrder(ready: boolean, orderId: string | undefined): void {
     }, [ready, orderId, done])
 }
 
+/**
+ * A channel post's or an ad link's «Mahsulotni ko'rish»: the storefront opens on the product, up
+ * close. A product the shop no longer sells says so; the owner, who opens the shop to work, never
+ * lands on a sheet. Once, when the shop and its catalog have loaded.
+ */
+function useOpenProduct(ready: boolean, productId: string | undefined): void {
+    const [done, setDone] = useState(false)
+    useEffect(() => {
+        if (!ready || !productId || done) {
+            return
+        }
+        setDone(true)
+        const session = useSession.getState()
+        if (session.shop?.viewerRole === "owner") {
+            return
+        }
+        if (session.catalog.some((product) => product.id === productId)) {
+            session.focusProduct(productId, true)
+        } else {
+            toast(dictionaryFor(useLanguageStore.getState().language).shop.productAway)
+        }
+    }, [ready, productId, done])
+}
+
 function ShopApp({
     slug,
     via,
     order,
+    product,
     onExit,
 }: {
     slug: string
@@ -328,6 +353,8 @@ function ShopApp({
     via?: ShopVia
     /** Opened from a bot message about this order. */
     order?: string
+    /** Opened from a channel post or an ad link on this product. */
+    product?: string
     /** Inside a Zumda bot: "back" on the first screen returns to the search or the list. */
     onExit?: () => void
 }): React.JSX.Element {
@@ -338,6 +365,7 @@ function ShopApp({
     const route = useCurrentRoute()
     useBackButton(depth > 1 ? back : (onExit ?? null))
     useOpenOrder(state.kind === "ready", order)
+    useOpenProduct(state.kind === "ready", product)
     usePrefetchScreens(state.kind === "ready")
     // The storefront's own pull: shop, profile and catalog again, the menu stays on screen.
     useRefresh(state.kind === "ready" ? refresh : null)
@@ -582,7 +610,13 @@ export function App({ launch }: { launch: LaunchParams }): React.JSX.Element {
     } else if (launch.market) {
         content = <ShowcaseApp shop={launch.shop} order={launch.order} />
     } else if (launch.shop) {
-        content = <ShopApp slug={launch.shop} order={launch.order ?? undefined} />
+        content = (
+            <ShopApp
+                slug={launch.shop}
+                order={launch.order ?? undefined}
+                product={launch.product ?? undefined}
+            />
+        )
     } else {
         content = <NotInTelegram />
     }

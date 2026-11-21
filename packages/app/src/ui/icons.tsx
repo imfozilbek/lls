@@ -1,9 +1,12 @@
 import type { ReactNode, SVGProps } from "react"
 
-type IconProps = SVGProps<SVGSVGElement> & { size?: number }
+export type IconProps = SVGProps<SVGSVGElement> & { size?: number }
 
-/** One hand-tuned 24px stroke set: rounded caps, 1.75 stroke, no fills. */
-function Icon({
+/**
+ * One hand-tuned 24px stroke set: rounded caps, 1.75 stroke, no fills. Exported for icons that
+ * only a lazy chunk draws: they live in that chunk, never in the first download.
+ */
+export function Icon({
     size = 22,
     children,
     ...props

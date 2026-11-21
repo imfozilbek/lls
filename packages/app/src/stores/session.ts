@@ -14,7 +14,9 @@ interface SessionState {
     catalog: ProductDTO[]
     /** A product tapped in the showcase: its shop opens on it, once. */
     focusProductId: string | null
-    focusProduct(id: string | null): void
+    /** A channel post or an ad link: the product opens up close too, not only in view. */
+    focusOpen: boolean
+    focusProduct(id: string | null, open?: boolean): void
     setShop(shop: Shop): void
     setMe(me: CustomerDTO): void
     setCatalog(catalog: ProductDTO[]): void
@@ -25,7 +27,8 @@ export const useSession = create<SessionState>((set) => ({
     me: null,
     catalog: [],
     focusProductId: null,
-    focusProduct: (id): void => set({ focusProductId: id }),
+    focusOpen: false,
+    focusProduct: (id, open = false): void => set({ focusProductId: id, focusOpen: open }),
     setShop: (shop): void => set({ shop }),
     setMe: (me): void => set({ me }),
     setCatalog: (catalog): void => set({ catalog }),

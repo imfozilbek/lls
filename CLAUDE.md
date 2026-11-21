@@ -418,6 +418,39 @@ cover each one's whole process; what exactly comes from the meeting with them.
   (`TOO_MANY_PHOTOS` refused before the file is stored). The customer swipes through them in the
   product's sheet, a dot each (`shop/product-gallery.tsx`, `data-no-gesture`). A deleted product,
   a removed photo and «Namunani tozalash» delete the files from R2.
+- **The shop's own Telegram channel and ad links (owner's decisions, November 2026; goal 20):**
+  a shop sells through its channel, and buys ads in others; Zumda posts, keeps the price true and
+  says what each post and link brought.
+  - **Connected from Telegram's own screen.** «Sozlamalar» → «Telegram kanal» → «Kanalni
+    bog'lash» registers the shop bot's webhook again (with `my_chat_member`: a shop connected
+    before needs no «Botni qayta ulash») and opens
+    `t.me/<bot>?startchannel&admin=post_messages+edit_messages+delete_messages`. The bot made an
+    admin who may post, by the owner, connects the channel (`shop_channels`, one a shop: a new one
+    replaces it and the bot leaves the old). Made one by anyone else, or for a demo shop, it
+    leaves at once and the owner hears why; removed, or without the right to post, the channel is
+    disconnected and the owner hears it. The echo of its own leaving changes nothing. «Kanalni
+    ajratish»: Zumda forgets it, then the bot leaves.
+  - **«Kanalga joylash»** in a saved product on sale (`POST_PRODUCT_UNAVAILABLE`): the owner's
+    words (the description first, up to 850 characters, `POST_TEXT_MAX`), the photo drawn again
+    as a JPEG by the app (a text post without one), the price («… dan» with variants) and the age,
+    and «🛒 Buyurtma berish» (`/start s_<code>` in the shop's bot). A new name, price or age edits
+    the last 20 posts of the product in the channel of now, in the background, keeping the
+    owner's words; the photo, the stock and «Sotuvda bor» change no post (owner's decision).
+    Zumda deletes only its own posts («Postni o'chirish», `POST_NOT_DELETABLE` when Telegram
+    refuses). 10 posts a minute a shop (`POST_LIMITER`). The bot lost its rights: the channel is
+    disconnected (`CHANNEL_NO_RIGHTS`).
+  - **Ad links** («Havola, QR-kod va vitrina» → «Reklama uchun havolalar»): a named link
+    `t.me/<bot>?start=s_<code>` to the whole shop or one product, up to 50 live
+    (`TOO_MANY_LINKS`); no channel needed. A demo shop has neither (`DEMO_NOT_PROMOTED`).
+  - **A pressed link**: the shop's bot answers with the product's card (the post's photo by its
+    Telegram id, else the catalog's photo, else text; «Hozircha tugagan» when sold out) and «🛍
+    Mahsulotni ko'rish», which opens the storefront on it (`&product=<id>`); a link to the whole
+    shop gets the greeting.
+  - **Who came from where, on the server** (`source_visits`, one row a person a shop, the last
+    link wins): each person counts once per link («kirdi»), the owner never; an order within 7
+    days takes the link (`orders.source_link_id`, the client never sends it) and counts at once;
+    the sale and its goods count on delivery. The counters live in the link's row: no `COUNT(*)`.
+  - Not in the Bot API, so not in Zumda: the channel's older posts, views, a post at a set time.
 - Add a feature only when a real client asks for it.
 - Design stage 1 so stages 2–3 need no rewrite:
   - multi-tenant: `business_id` in every business-owned table
@@ -629,7 +662,10 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | CourierProfile | id, telegram_id (global, unique), name, phone, vehicle, shift_until, in_network, network_offered_at: the person |
 | Courier | id, business_id, telegram_id, status (pending/active/removed/network), work_days, off_until, dispatcher (sends orders on by a taxi or the post, writes notes): the person's link to one shop (`network`: took a network order of it) |
 | Trip | id, business_id, courier_id, route (JSON line), distance_m, duration_s: several orders of one shop one way; stops are `orders.trip_id` + `trip_stop` |
-| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock, `removed_at`: «Yo'q»), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; refund_owed: owed back for lines taken out with «Yo'q»; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), delivery_free (the shop promised free delivery: snapshot), service fee (rate + amount; plan) |
+| ShopChannel | business_id (one a shop), chat_id, title, username, connected_at: the shop's Telegram channel, while its bot may post there |
+| SourceLink | id (the code of `s_<code>`), business_id, kind (post/ad), product_id (none: the whole shop), label (an ad's name), post (chat_id, message_id, photo_file_id), owner_text, post_key (name, price, age the post says), opens, orders, sales, revenue, created_at, deleted_at: a channel post or an ad link and what it brought |
+| SourceVisit | (business_id, telegram_id), link_id, at: the last link a person pressed at a shop |
+| Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock, `removed_at`: «Yo'q»), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; refund_owed: owed back for lines taken out with «Yo'q»; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), delivery_free (the shop promised free delivery: snapshot), source_link_id (the post or ad link the customer came by, within 7 days: snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
 **Money:** integer UZS. Never floats. Quantities are integers too: pieces (metres, hours...), or
@@ -738,7 +774,8 @@ opening (`launchSurelyOutdated`: a phone set to the wrong day is never locked ou
 
 **Bot webhook:**
 - Register with `setWebhook` + `secret_token`. Reject requests without a matching
-  `X-Telegram-Bot-Api-Secret-Token` header.
+  `X-Telegram-Bot-Api-Secret-Token` header. A shop's bot hears `message`, `callback_query` and
+  `my_chat_member` (its channel).
 - Button presses: user = `callback_query.from.id`. Check that this user owns the business.
 
 **Which token verifies initData:** Telegram signs initData with the token of the bot that opened
@@ -769,7 +806,8 @@ bot alerts the admins and never moves the shop. Telegram may not announce a toke
 → role `admin` (Zumda | Platforma), no shop; who of them is a platform admin, the admin routes
 check (`PLATFORM_ADMIN_IDS`).
 
-**Entry:** the shop bot's menu button opens `?shop=<slug>`. The Zumda courier bot opens
+**Entry:** the shop bot's menu button opens `?shop=<slug>` (a pressed post or ad link:
+`&product=<id>`, the storefront opens on it). The Zumda courier bot opens
 `?mode=courier` (all the courier's shops in one screen). «Mening bizneslarim»: Zumda | Business
 opens `?mode=business` (old buttons: `?mode=onboarding`). «Platforma»: Zumda | Platforma opens
 `?mode=admin` (platform.zumda.shop). Showcase: Zumda | Shop opens `?mode=market`. **A Zumda Shop QR** (goal 16, owner's decisions, October 2026): the poster may
@@ -1354,6 +1392,12 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       each opens on the route on a real Android and iPhone; the one picked comes first next time;
       a trip offers three; the courier bot's «🧭 Yo'l» links open the same (Navigator through
       `/navi/`); the owner's «Mijozga yo'l» on «O'zim yetkazaman»
+- [ ] Channel: «Kanalni bog'lash» → Telegram's screen → the bot an admin → «kanali Zumdaga
+      bog'landi» and the channel in «Telegram kanal» → «Kanalga joylash» posts with «Buyurtma
+      berish» → pressed: the card, «Mahsulotni ko'rish» opens the product → an order → «1 kishi
+      kirdi · 1 ta buyurtma», after delivery its goods → a new price edits the post → «Postni
+      o'chirish»; added by someone else or for a demo: the bot leaves; on a real Android and iPhone
+- [ ] Ad links: «Yangi havola» «Super kids» to one product → pressed: counted once, never the owner
 - [ ] Empty states handling
 
 ## Release Checklist

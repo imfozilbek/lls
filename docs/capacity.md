@@ -20,9 +20,9 @@ that Zumda fits its share on a busy day, line by line, and how each number was f
 
 | Line | Account free limit | Zumda's share | Typical day | Heavy day | Fits |
 |------|-------------------:|--------------:|------------:|----------:|------|
-| Worker requests | 100 000 / day | 35 000 | ~33 700 | ~41 000 | typical yes; heavy: see "Levers" |
+| Worker requests | 100 000 / day | 35 000 | ~33 900 | ~41 500 | typical yes; heavy: see "Levers" |
 | D1 rows read | 5 000 000 / day | 1 500 000 | ~0.6 M | ~1.1 M | yes, also after 6 months |
-| D1 rows written | 100 000 / day | 20 000 | ~16 700 | ~20 400 | typical yes; heavy at the share |
+| D1 rows written | 100 000 / day | 20 000 | ~17 400 | ~21 900 | typical yes; heavy ~10% over the share (the account has room: see below) |
 | R2 storage | 10 GB | 4 GB | ~2 GB | ~2.3 GB | yes, and it stops growing |
 | Cron triggers | 5 / account | 0-1 | 0 | 0 | yes |
 
@@ -54,7 +54,10 @@ Rows read per request (authentication included):
 | Owner: «Pul» this month | 285 at day 5, ~1 700 at day 30 | opening «Pul» with the month |
 | Courier: home | 166 (30 finished today, 11 open; +1 per shop of the day without its own number) | every 45 s while visible |
 | Showcase: a search | 10 | after a pause in typing; two letters match a whole word only, a prefix from three |
-| One order, placing to delivered (7 calls: «Yig'ishni boshlash» is a step of its own; the customer's live message reads its id on each step and writes it 4 times) | 115 read, 46 written | 300 a day |
+| One order, placing to delivered (7 calls: «Yig'ishni boshlash» is a step of its own; the customer's live message reads its id on each step and writes it 4 times) | 115 read, 46 written (120 and 49 when it came by a post or an ad link: the visit read, the link's two counters) | 300 a day |
+| Owner: «Telegram kanal» | 2 (and one Telegram call for the subscribers) | opening it |
+| Owner: the channel's posts, or the ad links, page 1 | 23 | opening the list |
+| A pressed post or ad link (`/start s_<code>`) | 4 read, 2 written (the link's count, the visit) | each press |
 
 What the measurement found and fixed on the way (before, on the same data):
 
@@ -78,11 +81,11 @@ Photos, logos and the map no longer reach the Worker: R2 serves them at `media.z
 | Owners: version checks | 10 × 2 h × 180 / h (heavy: 6 h) | 3 600 | 10 800 |
 | Owners: list reloads and actions | 300 orders × 7 changes + 300 × 7 actions | 4 200 | 4 200 |
 | Couriers | 15 × 3 h × 80 / h + 300 × 2 actions | 4 200 | 4 200 |
-| Bots (button presses, `/start`, contacts) | | 1 000 | 1 000 |
+| Bots (button presses, `/start`, contacts; pressed posts and ad links ~200, heavy 500) | | 1 200 | 1 500 |
 | Showcase searches | | 500 | 500 |
 | Mini App crash reports (`POST /api/client-errors`) | one per kind of crash a session, at most 5; no preflight (text/plain) | < 50 | < 200 |
 | CORS preflights (`OPTIONS`) | ~60% of the ~12 100 requests that are not repeated checks | 7 400 | 7 400 |
-| **Total** | | **~33 700** | **~41 000** |
+| **Total** | | **~33 900** | **~41 500** |
 
 A repeated check of the same address is preflighted once per cache period (`Access-Control-Max-Age`
 is one day; browsers cap it: Chromium at 2 hours). Every new address (another order, another
@@ -141,12 +144,17 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 | «Yo'q»: the order row (sums, `refund_owed` in its partial index), the line, the product stopped today | ~10 a day × ~10 (heavy ~20) | 100 | 200 |
 | A dispatcher's «Jo'natdim» and notes (one order row each: only the changed columns, `updated_at` re-indexed) | ~20 orders × ~3 × ~4 | 240 | 500 |
 | Alerts, sessions (the orders' message ids are in the line above, measured) | ~200 | 200 | 200 |
-| **Total** | | **~16 700** | **~20 400** |
+| Pressed posts and ad links (the link's count and the visit; a post: its row once, a price edit its key) | ~200 presses × 2 (heavy 500) | 400 | 1 000 |
+| Orders that came by a post or an ad link (the link's order and sale counters, measured +3) | ~100 × 3 (heavy 150) | 300 | 450 |
+| **Total** | | **~17 400** | **~21 900** |
 
-The heavy day reaches the share (~20 400 of 20 000, the account's limit is 100 000): the
-customer's live message added 4 rows an order (+1 200 a day). The account's sensor in
-`imfozilbek/dream-infra` watches the real total; measure the writes again before adding more to
-an order's way.
+The heavy day passes the share (~21 900 of 20 000, the account's limit is 100 000): the
+customer's live message added 4 rows an order (+1 200 a day), the shop's channel ~1 500 more
+(November 2026: presses and the orders they bring). The presses are a guess until a real channel
+runs; if they stay high, the visit's row is the lever (a repeat press by the same person adds no
+open but renews the visit: one row; a press within the same hour could skip it). The account's
+sensor in `imfozilbek/dream-infra` watches the real total; measure the writes again before adding
+more to an order's way.
 
 ## R2 storage
 

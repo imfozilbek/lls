@@ -28,12 +28,13 @@ import { sendWelcome, welcomePictureUrl, welcomeVideo } from "../telegram/welcom
 import { handleAdminMessage } from "./admin-bot.js"
 import { handleBusinessMessage, handleReviewCallback } from "./business-bot.js"
 import { handleCourierBotCallback, handleCourierBotMessage } from "./courier-bot.js"
+import { handleChannelMembership, handleSourceStart } from "./shop-channel-bot.js"
 
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
 import type { OrderCallback } from "../telegram/format.js"
 import type { BotTexts } from "../telegram/texts.js"
-import type { Callback, IncomingMessage } from "../telegram/updates.js"
+import type { Callback, IncomingMessage, Update } from "../telegram/updates.js"
 import type { Business, OrderDTO } from "@zumda/core"
 
 /** A shared contact: the customer's phone for this shop. */
@@ -78,6 +79,35 @@ async function ownerStarted(
     )
 }
 
+/** One update of a shop's bot: a message, its being made a channel's admin, a button. */
+async function handleShopUpdate(
+    services: Services,
+    business: Business,
+    token: string,
+    update: Update,
+): Promise<void> {
+    const message = update.message
+    if (message) {
+        await handleSafely(() => handleShopMessage(services, business, token, message))
+    }
+    const membership = update.my_chat_member
+    if (membership) {
+        const texts = textsFor(languageFromTelegram(membership.from.language_code), business.type)
+        await handleSafely(() =>
+            handleChannelMembership(services, business, token, membership, texts),
+        )
+    }
+    const callback = update.callback_query
+    const review = callback ? parseCourierReviewCallback(callback.data ?? "") : null
+    if (callback && review) {
+        await handleSafely(() =>
+            handleCourierReviewCallback(services, business, token, callback, review),
+        )
+    } else if (callback) {
+        await handleSafely(() => handleOrderCallback(services, business, token, callback))
+    }
+}
+
 async function handleShopMessage(
     services: Services,
     business: Business,
@@ -108,6 +138,10 @@ async function handleShopMessage(
     }
     if (!isStart(message.text)) {
         await services.telegram.sendMessage(token, message.chat.id, texts.onlyInApp, { keyboard })
+        return
+    }
+    const start = { token, chatId: message.chat.id, fromId: from.id, text: message.text }
+    if (await handleSourceStart(services, business, start, texts)) {
         return
     }
     if (from.id === business.ownerTelegramId.value) {
@@ -448,28 +482,8 @@ export const webhookRoutes = new Hono<AppEnv>()
             return c.json({ ok: false }, 401)
         }
         const update = await readUpdate(c.req.raw)
-        const message = update?.message
-        if (message) {
-            await handleSafely(() =>
-                handleShopMessage(services, business, credentials.token, message),
-            )
-        }
-        const callback = update?.callback_query
-        const review = callback ? parseCourierReviewCallback(callback.data ?? "") : null
-        if (callback && review) {
-            await handleSafely(() =>
-                handleCourierReviewCallback(
-                    services,
-                    business,
-                    credentials.token,
-                    callback,
-                    review,
-                ),
-            )
-        } else if (callback) {
-            await handleSafely(() =>
-                handleOrderCallback(services, business, credentials.token, callback),
-            )
+        if (update) {
+            await handleShopUpdate(services, business, credentials.token, update)
         }
         return c.json({ ok: true })
     })

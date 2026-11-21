@@ -99,6 +99,7 @@ interface OrderRow {
     customer_pays_carrier: number
     refund_owed: number
     delivery_free: number
+    source_link_id: string | null
 }
 
 interface ItemRow {
@@ -143,7 +144,7 @@ const COLUMNS = `id, business_id, number, customer_id, channel, status, subtotal
     delivery_fee_to, payment_card_number, payment_card_holder, receipt_key, receipt_hash,
     receipt_at, receipt_reused_from, customer_rejections, transfer_rejections,
     transfer_reminded_at, cash_received_at, trip_id, trip_stop, dispatcher, owner_delivers,
-    sent_via, delivery_notes, customer_pays_carrier, refund_owed, delivery_free`
+    sent_via, delivery_notes, customer_pays_carrier, refund_owed, delivery_free, source_link_id`
 
 /** A cash order whose money a courier still holds. */
 const WITH_COURIER = `payment_method = 'cash' AND payment_status = 'paid'
@@ -209,6 +210,18 @@ export const STOCK_TAKE_SQL = `UPDATE products SET stock = stock - ?
 export const STOCK_RETURN_SQL = `UPDATE products SET stock = stock + ?
     WHERE id = ? AND business_id = ? AND stock IS NOT NULL
       AND EXISTS (SELECT 1 FROM orders WHERE id = ? AND status = 'cancelled' AND updated_at = ?)`
+
+/** The order counts for the post or ad link the customer pressed last (in the insert's batch). */
+export const LINK_ORDER_SQL = `UPDATE source_links SET orders = orders + 1
+    WHERE id = ? AND business_id = ?`
+
+/**
+ * A delivered order counts as a sale of its link, with its goods: only when this very save
+ * delivered it (its status and the new version are in the row), so never twice.
+ */
+export const LINK_SALE_SQL = `UPDATE source_links SET sales = sales + 1, revenue = revenue + ?
+    WHERE id = ? AND business_id = ?
+      AND EXISTS (SELECT 1 FROM orders WHERE id = ? AND status = 'delivered' AND updated_at = ?)`
 
 /** SQLite's words when a product's stock would go below zero. */
 function isStockShortage(error: unknown): boolean {
@@ -419,6 +432,7 @@ function toOrder(row: OrderRow, items: ItemRow[]): Order {
         deliveryNotes: notesOf(row.delivery_notes),
         customerPaysCarrier: row.customer_pays_carrier === 1,
         deliveryFree: row.delivery_free === 1,
+        sourceLinkId: optional(row.source_link_id),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -516,7 +530,13 @@ function orderValues(order: Order): (string | number | null)[] {
         flag(order.customerPaysCarrier),
         order.payment.refundOwed.amount,
         flag(order.deliveryFree),
+        ...sourceValues(order),
     ]
+}
+
+/** The link the customer pressed last: a snapshot. */
+function sourceValues(order: Order): (string | null)[] {
+    return [order.sourceLinkId ?? null]
 }
 
 function cashValues(order: Order): (number | null)[] {
@@ -695,6 +715,9 @@ export class D1OrderRepository implements OrderRepository {
                 .map(({ productId, quantity }) =>
                     this.db.prepare(STOCK_TAKE_SQL).bind(quantity, productId, order.businessId),
                 ),
+            ...(order.sourceLinkId === undefined
+                ? []
+                : [this.db.prepare(LINK_ORDER_SQL).bind(order.sourceLinkId, order.businessId)]),
         ]
         try {
             await this.db.batch(statements)
@@ -721,6 +744,7 @@ export class D1OrderRepository implements OrderRepository {
         const also = [
             ...this.restockOnCancel(order, save.version),
             ...this.removedLines(order, save.version),
+            ...this.saleOfLink(order, save.version),
         ]
         const result =
             also.length === 0
@@ -748,6 +772,29 @@ export class D1OrderRepository implements OrderRepository {
                               .bind(item.removedAt.getTime(), order.id, line, order.id, version),
                       ],
             )
+    }
+
+    /** The link the order came from counts the sale when this save is the one that delivers it. */
+    private saleOfLink(order: Order, version: number): D1PreparedStatement[] {
+        const before = written.get(order)?.[MUTABLE_COLUMNS.indexOf("status")]
+        if (
+            order.sourceLinkId === undefined ||
+            order.status !== OrderStatus.DELIVERED ||
+            before === OrderStatus.DELIVERED
+        ) {
+            return []
+        }
+        return [
+            this.db
+                .prepare(LINK_SALE_SQL)
+                .bind(
+                    order.subtotal.amount,
+                    order.sourceLinkId,
+                    order.businessId,
+                    order.id,
+                    version,
+                ),
+        ]
     }
 
     /** The stock an order gives back when this save is the one that cancels it. */

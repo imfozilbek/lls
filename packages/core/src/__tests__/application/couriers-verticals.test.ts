@@ -456,6 +456,13 @@ describe("shop couriers and vertical features", () => {
             )
         })
 
+        it("keeps the link the customer pressed last, set by the server", async () => {
+            const order = await place({ sourceLinkId: "AbCdEfGhIjK" })
+            expect((await orders.findById(order.id))?.sourceLinkId).toBe("AbCdEfGhIjK")
+            const plain = await place()
+            expect((await orders.findById(plain.id))?.sourceLinkId).toBeUndefined()
+        })
+
         it("sells weight items in steps and prices them per kilogram", async () => {
             await products.save(
                 Product.create({

@@ -492,4 +492,57 @@ export class BusinessRuleViolationError extends DomainError {
             { ready, total },
         )
     }
+
+    /** A demo shop («Namuna») has no channel and no ad links: its orders are not real. */
+    static demoNotPromoted(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "DEMO_NOT_PROMOTED",
+            "A demo shop has no channel and no ad links",
+            { businessId },
+        )
+    }
+
+    /** «Kanalga joylash» before the shop's bot became an admin of the shop's channel. */
+    static channelNotConnected(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "CHANNEL_NOT_CONNECTED",
+            "The shop has no channel connected",
+            { businessId },
+        )
+    }
+
+    /** The bot may no longer post in the channel: the owner connects it again. */
+    static channelNoRights(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "CHANNEL_NO_RIGHTS",
+            "The shop's bot may not post in the channel",
+            { businessId },
+        )
+    }
+
+    /** A post is made only of a product on sale now: its button would lead nowhere. */
+    static postProductUnavailable(productId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "POST_PRODUCT_UNAVAILABLE",
+            `Product "${productId}" is not on sale`,
+            { productId },
+        )
+    }
+
+    static tooManyLinks(max: number): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "TOO_MANY_LINKS",
+            `A shop has at most ${max} ad links`,
+            { max },
+        )
+    }
+
+    /** Telegram refused to delete the post: it stays, and so does its row. */
+    static postNotDeletable(linkId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "POST_NOT_DELETABLE",
+            "Telegram did not delete the post",
+            { linkId },
+        )
+    }
 }

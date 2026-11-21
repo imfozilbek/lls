@@ -25,6 +25,7 @@ describe("readLaunchParams", () => {
             market: false,
             platform: false,
             order: null,
+            product: null,
             admin: null,
         })
     })
@@ -59,6 +60,7 @@ describe("readLaunchParams", () => {
                 market: false,
                 platform: false,
                 order: null,
+                product: null,
                 admin: null,
             })
         }
@@ -121,6 +123,11 @@ describe("readLaunchParams", () => {
         expect(at("shop_%3Cscript%3E")).toBeNull()
         const odd = readLaunchParams(new URL("https://x.dev/?shop=osh&order=%3Cx%3E"), null)
         expect(odd.order).toBeNull()
+        // A channel post's «Mahsulotni ko'rish» opens the storefront on its product.
+        const product = new URL("https://x.dev/?shop=osh&product=p-1")
+        expect(readLaunchParams(product, null)).toMatchObject({ shop: "osh", product: "p-1" })
+        const strange = new URL("https://x.dev/?shop=osh&product=%3Cx%3E")
+        expect(readLaunchParams(strange, null).product).toBeNull()
     })
 
     it("detects the courier mode opened from the shop bot", () => {
@@ -132,6 +139,7 @@ describe("readLaunchParams", () => {
             market: false,
             platform: false,
             order: null,
+            product: null,
             admin: null,
         })
     })

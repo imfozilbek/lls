@@ -7,6 +7,24 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The shop's own Telegram channel and ad links
+- **«Telegram kanal»** in «Sozlamalar» (owner's decisions, November 2026).
+  - «Kanalni bog'lash» opens Telegram's own screen: the shop's bot becomes the channel's admin
+    with the rights to post, edit and delete; the owner hears it from the bot.
+  - Someone else made the bot an admin, or the shop is a demo: the bot leaves and says why.
+  - The bot removed, or its right to post taken: the channel is disconnected and the owner told.
+- **«Kanalga joylash»** in a product: a preview as the channel will show it, the owner's words
+  (the description first), the photo, the price and the age, and «🛒 Buyurtma berish».
+  - A new name, price or age edits the posts; the photo, the stock and «Sotuvda bor» do not.
+  - «Postni o'chirish» deletes Zumda's own post in the channel.
+- **«Reklama uchun havolalar»**: a named link for each ad in another channel, to the whole shop
+  or to one product, copied in one tap.
+- **A pressed post or link**: the shop's bot sends the product's card with «🛍 Mahsulotni
+  ko'rish», and the storefront opens right on it.
+- **What each post and link brought**: «12 kishi kirdi · 2 ta buyurtma · 1 ta yetkazildi:
+  110 000 so'm». Counted on the server: each person once, never the owner; an order within 7
+  days; the sale on delivery. Migration `0034`.
+
 ### Short, structured bot messages
 - **The customer's one live message per order** (owner's decision).
   - What the customer waits for comes as a new message with a sound, and the one before is

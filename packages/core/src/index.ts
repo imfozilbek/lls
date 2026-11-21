@@ -28,6 +28,7 @@ export * from "./domain/value-objects/brand-color.js"
 export * from "./domain/value-objects/delivery-note.js"
 export * from "./domain/value-objects/location.js"
 export * from "./domain/value-objects/route-links.js"
+export * from "./domain/value-objects/shop-channel.js"
 export * from "./domain/value-objects/money.js"
 export * from "./domain/value-objects/product-options.js"
 export * from "./domain/value-objects/payment.js"
@@ -47,9 +48,11 @@ export * from "./domain/entities/district.js"
 export * from "./domain/entities/order.js"
 export * from "./domain/entities/order-item.js"
 export * from "./domain/entities/product.js"
+export * from "./domain/entities/source-link.js"
 export * from "./domain/entities/trip.js"
 
 // Domain - Services
+export * from "./domain/services/post-facts.js"
 export * from "./domain/services/trip-planning.js"
 
 // Domain - Errors

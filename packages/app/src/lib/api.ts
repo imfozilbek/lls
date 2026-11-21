@@ -252,7 +252,12 @@ function isOk(status: number): boolean {
     return status >= 200 && status < 300
 }
 
-async function request<T>(method: string, path: string, body?: BodyInit | object): Promise<T> {
+/** Exported for a lazy chunk's own calls (the shop's channel): they stay out of the first JS. */
+export async function request<T>(
+    method: string,
+    path: string,
+    body?: BodyInit | object,
+): Promise<T> {
     const headers = authHeaders()
     let payload: BodyInit | undefined
     if (body instanceof Blob) {
@@ -286,7 +291,7 @@ async function requestBlob(path: string): Promise<Blob> {
     throw refusal(result)
 }
 
-function query(params: Record<string, string | number | undefined>): string {
+export function query(params: Record<string, string | number | undefined>): string {
     const search = new URLSearchParams()
     for (const [key, value] of Object.entries(params)) {
         if (value !== undefined) {

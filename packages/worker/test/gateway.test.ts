@@ -218,7 +218,12 @@ describe("HttpTelegramGateway", () => {
             commands: [{ command: "start", description: "Boshlash" }],
         })
         expect(calls[0]?.body).toMatchObject({ reply_markup: { inline_keyboard: [] } })
-        expect(calls[2]?.body).toMatchObject({ secret_token: "secret", url: "https://w.dev/tg/1" })
+        expect(calls[2]?.body).toMatchObject({
+            secret_token: "secret",
+            url: "https://w.dev/tg/1",
+            // Being made an admin of the shop's channel comes as `my_chat_member`.
+            allowed_updates: ["message", "callback_query", "my_chat_member"],
+        })
         expect(calls[3]?.body).toMatchObject({
             menu_button: { type: "web_app", web_app: { url: "https://app.dev/?shop=osh" } },
         })
@@ -255,6 +260,73 @@ describe("HttpTelegramGateway", () => {
         expect(JSON.parse(String(fetcher.mock.calls[2]?.[1]?.body))).toEqual({
             short_description: "Short",
         })
+    })
+
+    it("a post in the channel: the photo's id comes back, the caption is edited with its buttons", async () => {
+        const answers: unknown[] = [
+            {
+                message_id: 501,
+                photo: [{ file_id: "small" }, { file_id: "large" }],
+            },
+            true,
+            3,
+        ]
+        const bodies: unknown[] = []
+        const urls: string[] = []
+        const fetcher = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+            urls.push(String(input).split("/").at(-1) ?? "")
+            bodies.push(init?.body instanceof FormData ? init.body : JSON.parse(String(init?.body)))
+            return Promise.resolve(
+                new Response(JSON.stringify({ ok: true, result: answers.shift() })),
+            )
+        })
+        const gateway = new HttpTelegramGateway(fetcher as typeof fetch)
+        const keyboard = {
+            inline_keyboard: [[{ text: "Buyurtma", url: "https://t.me/b?start=s_x" }]],
+        }
+        const file = { name: "p.jpg", contentType: "image/jpeg", bytes: new Uint8Array([1]) }
+        expect(await gateway.sendPhotoFile("t", -1001, file, "<b>Toy</b>", { keyboard })).toEqual({
+            messageId: 501,
+            photoFileId: "large",
+        })
+        await gateway.editCaption("t", -1001, 501, "<b>Toy</b>", { keyboard })
+        expect(await gateway.getChatMemberCount("t", -1001)).toBe(3)
+        expect(urls).toEqual(["sendPhoto", "editMessageCaption", "getChatMemberCount"])
+        expect(bodies[1]).toEqual({
+            chat_id: -1001,
+            message_id: 501,
+            caption: "<b>Toy</b>",
+            parse_mode: "HTML",
+            reply_markup: keyboard,
+        })
+    })
+
+    it("a post deleted already counts as removed; one Telegram keeps is refused", async () => {
+        const answering = (description: string | null): typeof fetch =>
+            (async () =>
+                new Response(
+                    JSON.stringify(
+                        description === null
+                            ? { ok: true, result: true }
+                            : { ok: false, description },
+                    ),
+                    { status: description === null ? 200 : 400 },
+                )) as typeof fetch
+        const remove = (description: string | null): Promise<string> =>
+            new HttpTelegramGateway(answering(description)).deleteChannelPost("t", -1001, 7)
+        expect(await remove(null)).toBe("removed")
+        expect(await remove("Bad Request: message to delete not found")).toBe("removed")
+        expect(await remove("Bad Request: message can't be deleted")).toBe("refused")
+        await expect(remove("Bad Gateway")).rejects.toBeInstanceOf(TelegramApiError)
+        // Leaving a channel the bot is no longer in changes nothing.
+        await expect(
+            new HttpTelegramGateway(
+                answering("Forbidden: bot is not a member of the channel chat"),
+            ).leaveChat("t", -1001),
+        ).resolves.toBeUndefined()
+        await expect(
+            new HttpTelegramGateway(answering("Bad Gateway")).leaveChat("t", -1001),
+        ).rejects.toBeInstanceOf(TelegramApiError)
     })
 
     it("throws TelegramApiError when Telegram says no", async () => {
