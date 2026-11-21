@@ -108,6 +108,15 @@ export interface OutgoingFile {
     bytes: Uint8Array
 }
 
+/** A picture sent: its message, and Telegram's id of the photo to send again without bytes. */
+export interface SentPhoto {
+    messageId: number
+    photoFileId?: string
+}
+
+/** `refused`: Telegram did not delete it (it stays where it is). */
+export type ChannelPostRemoval = "removed" | "refused"
+
 /** A video Telegram downloads by URL; its cover and size lay it out in the chat at once. */
 export interface VideoLink {
     url: string
@@ -157,7 +166,10 @@ export interface TelegramGateway {
     getManagedBotToken(token: string, botId: number): Promise<string>
     /** Revokes the managed bot's token and returns a new one. */
     replaceManagedBotToken(token: string, botId: number): Promise<string>
-    /** A picture by URL (Telegram downloads it) with an HTML caption: the bots' welcome. */
+    /**
+     * A picture by URL (Telegram downloads it) or by Telegram's own photo id, with an HTML
+     * caption: the bots' welcome, a product's card.
+     */
     sendPhoto(
         token: string,
         chatId: number,
@@ -173,14 +185,31 @@ export interface TelegramGateway {
         captionHtml: string,
         options?: MessageOptions,
     ): Promise<void>
-    /** A picture from bytes with an HTML caption and buttons: a transfer receipt for the owner. */
+    /**
+     * A picture from bytes with an HTML caption and buttons: a transfer receipt for the owner, a
+     * product's post in the shop's channel.
+     */
     sendPhotoFile(
         token: string,
         chatId: number,
         file: OutgoingFile,
         captionHtml: string,
         options?: MessageOptions,
+    ): Promise<SentPhoto>
+    /** A post's caption written again, with its buttons (an edit without them drops them). */
+    editCaption(
+        token: string,
+        chatId: number,
+        messageId: number,
+        captionHtml: string,
+        options?: MessageOptions,
     ): Promise<void>
+    /** Deletes a post of the bot's in a channel: gone already counts as removed. */
+    deleteChannelPost(token: string, chatId: number, messageId: number): Promise<ChannelPostRemoval>
+    /** The bot leaves a chat; not being there any more is fine. */
+    leaveChat(token: string, chatId: number): Promise<void>
+    /** People in a chat: a channel's subscribers. */
+    getChatMemberCount(token: string, chatId: number): Promise<number>
     /** A file in the chat: the owner's CSV report or the QR poster. */
     sendDocument(
         token: string,
@@ -250,6 +279,15 @@ const CANNOT_DELETE = /message to delete not found|message can't be deleted/i
 
 /** Telegram's answers when there are no buttons to take off: gone, or already plain. */
 const NOTHING_TO_CLEAR = /message to edit not found|message is not modified/i
+
+/** A post already deleted by someone: removed all the same. */
+const ALREADY_DELETED = /message to delete not found/i
+
+/** The bot is not in the chat any more: leaving changes nothing. */
+const NOT_A_MEMBER = /not a member|chat not found|kicked|Forbidden/i
+
+/** The updates a shop's bot gets: its chats, the buttons, and being made a channel's admin. */
+const SHOP_BOT_UPDATES = ["message", "callback_query", "my_chat_member"]
 
 /** Escapes text for Telegram HTML parse mode. */
 export function escapeHtml(text: string): string {
@@ -403,7 +441,7 @@ export class HttpTelegramGateway implements TelegramGateway {
         await this.call(token, "setWebhook", {
             url,
             secret_token: secretToken,
-            allowed_updates: ["message", "callback_query"],
+            allowed_updates: SHOP_BOT_UPDATES,
             // Never drop the queue: a reconnect must not lose a customer's contact or a press.
             drop_pending_updates: false,
         })
@@ -439,7 +477,7 @@ export class HttpTelegramGateway implements TelegramGateway {
         file: OutgoingFile,
         captionHtml: string,
         options?: MessageOptions,
-    ): Promise<void> {
+    ): Promise<SentPhoto> {
         const form = new FormData()
         form.set("chat_id", String(chatId))
         form.set("photo", new Blob([file.bytes], { type: file.contentType }), file.name)
@@ -454,7 +492,60 @@ export class HttpTelegramGateway implements TelegramGateway {
         for (const [key, value] of Object.entries(sendExtras(options ?? {}))) {
             form.set(key, typeof value === "string" ? value : JSON.stringify(value))
         }
-        await this.send(token, "sendPhoto", { body: form })
+        const sent = await this.send<{ message_id: number; photo?: { file_id: string }[] }>(
+            token,
+            "sendPhoto",
+            { body: form },
+        )
+        // The sizes come smallest first: the largest is the one to send again.
+        const fileId = sent.photo?.at(-1)?.file_id
+        return { messageId: sent.message_id, ...(fileId ? { photoFileId: fileId } : {}) }
+    }
+
+    async editCaption(
+        token: string,
+        chatId: number,
+        messageId: number,
+        captionHtml: string,
+        options: MessageOptions = {},
+    ): Promise<void> {
+        await this.call(token, "editMessageCaption", {
+            chat_id: chatId,
+            message_id: messageId,
+            caption: captionHtml,
+            parse_mode: "HTML",
+            reply_markup: options.keyboard ?? { inline_keyboard: [] },
+        })
+    }
+
+    async deleteChannelPost(
+        token: string,
+        chatId: number,
+        messageId: number,
+    ): Promise<ChannelPostRemoval> {
+        try {
+            await this.call(token, "deleteMessage", { chat_id: chatId, message_id: messageId })
+            return "removed"
+        } catch (error) {
+            if (!(error instanceof TelegramApiError) || !CANNOT_DELETE.test(error.description)) {
+                throw error
+            }
+            return ALREADY_DELETED.test(error.description) ? "removed" : "refused"
+        }
+    }
+
+    async leaveChat(token: string, chatId: number): Promise<void> {
+        try {
+            await this.call(token, "leaveChat", { chat_id: chatId })
+        } catch (error) {
+            if (!(error instanceof TelegramApiError) || !NOT_A_MEMBER.test(error.description)) {
+                throw error
+            }
+        }
+    }
+
+    async getChatMemberCount(token: string, chatId: number): Promise<number> {
+        return this.call<number>(token, "getChatMemberCount", { chat_id: chatId })
     }
 
     async sendDocument(

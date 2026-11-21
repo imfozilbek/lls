@@ -7,10 +7,12 @@ import { TelegramApiError } from "../src/telegram/gateway.js"
 import type {
     BotCommand,
     BotDescriptions,
+    ChannelPostRemoval,
     BotInfo,
     ManagedBotButton,
     MessageOptions,
     OutgoingFile,
+    SentPhoto,
     TelegramGateway,
     VideoLink,
 } from "../src/telegram/gateway.js"
@@ -236,15 +238,65 @@ export class FakeTelegram implements TelegramGateway {
         file: OutgoingFile,
         html: string,
         options?: MessageOptions,
-    ): Promise<void> {
+    ): Promise<SentPhoto> {
         if (this.failReplies) {
             throw new TelegramApiError("sendPhoto", "Forbidden: bot was blocked by the user")
         }
         this.refuseUnstarted("sendPhoto", token, chatId)
+        this.refuseInChannel("sendPhoto", chatId)
         if (this.failPhotos) {
             throw new TelegramApiError("sendPhoto", "Bad Request: PHOTO_INVALID_DIMENSIONS")
         }
         this.photoFiles.push({ token, chatId, file, html, options })
+        const messageId = this.nextMessageId++
+        return { messageId, photoFileId: `photo-${messageId}` }
+    }
+    /** Simulates what Telegram says in the shop's channel (lost rights, a deleted post). */
+    channelError: string | null = null
+    private refuseInChannel(method: string, chatId: number): void {
+        if (chatId < 0 && this.channelError !== null) {
+            throw new TelegramApiError(method, this.channelError)
+        }
+    }
+    readonly captions: {
+        token: string
+        chatId: number
+        messageId: number
+        html: string
+        options?: MessageOptions
+    }[] = []
+    async editCaption(
+        token: string,
+        chatId: number,
+        messageId: number,
+        html: string,
+        options?: MessageOptions,
+    ): Promise<void> {
+        this.refuseInChannel("editMessageCaption", chatId)
+        this.captions.push({ token, chatId, messageId, html, options })
+    }
+    readonly channelRemovals: { token: string; chatId: number; messageId: number }[] = []
+    /** Simulates Telegram not deleting a post. */
+    refuseDelete = false
+    async deleteChannelPost(
+        token: string,
+        chatId: number,
+        messageId: number,
+    ): Promise<ChannelPostRemoval> {
+        if (this.refuseDelete) {
+            return "refused"
+        }
+        this.channelRemovals.push({ token, chatId, messageId })
+        return "removed"
+    }
+    readonly left: { token: string; chatId: number }[] = []
+    async leaveChat(token: string, chatId: number): Promise<void> {
+        this.left.push({ token, chatId })
+    }
+    /** A channel's subscribers. */
+    memberCount = 231
+    async getChatMemberCount(_token: string, _chatId: number): Promise<number> {
+        return this.memberCount
     }
     async sendDocument(
         token: string,
