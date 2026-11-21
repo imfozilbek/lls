@@ -63,5 +63,11 @@
             "namespace_id": "1005",
             "simple": { "limit": 10, "period": 60 },
         },
+        // «Eski postlarni qo'shish»: one page of the channel and up to ten buttons a request.
+        {
+            "name": "HISTORY_LIMITER",
+            "namespace_id": "1006",
+            "simple": { "limit": 20, "period": 60 },
+        },
     ],
 }

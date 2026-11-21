@@ -82,6 +82,7 @@ import {
     LoseShopChannelUseCase,
     DisconnectShopChannelUseCase,
     GetShopChannelUseCase,
+    RelinkChannelPostUseCase,
     CreateAdLinkUseCase,
     ListSourceLinksUseCase,
     OpenSourceLinkUseCase,
@@ -107,19 +108,29 @@ import {
 } from "./repositories/source-link.repository.js"
 import { D1TripRepository } from "./repositories/trip.repository.js"
 import { OrsRoutePlanner } from "./routing.js"
+import { WebChannelHistory, telegramWebBase } from "./telegram/channel-history.js"
 import { TelegramGuideSender } from "./telegram/guides.js"
 import { TelegramPhoneAskSender } from "./telegram/phone-asks.js"
 
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
 import type { LoginKeys } from "./telegram-login.js"
-import type { Clock, DeliveryDeps, DemoShopDeps, SourceLinkDeps, TripDeps } from "@zumda/core"
+import type {
+    ChannelHistoryReader,
+    Clock,
+    DeliveryDeps,
+    DemoShopDeps,
+    SourceLinkDeps,
+    TripDeps,
+} from "@zumda/core"
 
 export interface ServiceDeps {
     telegram: TelegramGateway
     clock: Clock
     /** Telegram Login's public keys (tests and the stand bring their own). */
     loginKeys?: LoginKeys
+    /** Public channels' past (tests bring their own pages). */
+    history?: ChannelHistoryReader
 }
 
 export interface UseCases {
@@ -206,6 +217,7 @@ export interface UseCases {
     loseShopChannel: LoseShopChannelUseCase
     disconnectShopChannel: DisconnectShopChannelUseCase
     getShopChannel: GetShopChannelUseCase
+    relinkChannelPost: RelinkChannelPostUseCase
     createAdLink: CreateAdLinkUseCase
     listSourceLinks: ListSourceLinksUseCase
     openSourceLink: OpenSourceLinkUseCase
@@ -226,6 +238,7 @@ export interface Services extends ServiceDeps {
     /** The shop's own Telegram channel, and the posts and ad links customers came from. */
     shopChannels: D1ShopChannelRepository
     sourceLinks: D1SourceLinkRepository
+    history: ChannelHistoryReader
     useCases: UseCases
 }
 
@@ -235,6 +248,7 @@ type ChannelUseCases = Pick<
     | "loseShopChannel"
     | "disconnectShopChannel"
     | "getShopChannel"
+    | "relinkChannelPost"
     | "createAdLink"
     | "listSourceLinks"
     | "openSourceLink"
@@ -272,6 +286,7 @@ function channelUseCases(deps: SourceLinkDeps): ChannelUseCases {
         loseShopChannel: new LoseShopChannelUseCase(channels),
         disconnectShopChannel: new DisconnectShopChannelUseCase({ businesses, channels }),
         getShopChannel: new GetShopChannelUseCase({ businesses, channels }),
+        relinkChannelPost: new RelinkChannelPostUseCase(deps),
         createAdLink: new CreateAdLinkUseCase(deps),
         listSourceLinks: new ListSourceLinksUseCase(deps),
         openSourceLink: new OpenSourceLinkUseCase(deps),
@@ -426,6 +441,9 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         managedBots,
         shopChannels: channel.shopChannels,
         sourceLinks: channel.sourceLinks,
+        history:
+            deps.history ??
+            new WebChannelHistory(undefined, telegramWebBase(env.TELEGRAM_WEB_BASE)),
         useCases: {
             registerShop: new RegisterShopUseCase(businesses, clock, managedBots, districts),
             managedBotChanged: new ManagedBotChangedUseCase(businesses, managedBots, clock),

@@ -60,6 +60,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
             clock,
             loginKeys:
                 overrides.loginKeys ?? publishedKeys(telegramOauthBase(env.TELEGRAM_OAUTH_BASE)),
+            ...(overrides.history ? { history: overrides.history } : {}),
         }
         return createServices(env, deps)
     }

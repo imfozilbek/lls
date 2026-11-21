@@ -13,6 +13,20 @@ export enum SourceLinkKind {
 
 export const SOURCE_LINK_KINDS: readonly SourceLinkKind[] = Object.values(SourceLinkKind)
 
+/**
+ * Who made the post: Zumda («Kanalga joylash»: its caption is Zumda's to keep true), or the
+ * owner in Telegram (the text is theirs; Zumda only puts «Buyurtma berish» under it).
+ */
+export enum SourceLinkOrigin {
+    ZUMDA = "zumda",
+    CHANNEL = "channel",
+}
+
+export const SOURCE_LINK_ORIGINS: readonly SourceLinkOrigin[] = Object.values(SourceLinkOrigin)
+
+/** The first words of a post made in Telegram, enough to know it in the list. */
+export const POST_PREVIEW_MAX = 120
+
 /** «Super kids»: the ad's name, short enough for a row in the list. */
 export const LINK_LABEL_MAX = 40
 /**
@@ -50,6 +64,7 @@ export interface SourceLinkProps {
     id: string
     businessId: string
     kind: SourceLinkKind
+    origin: SourceLinkOrigin
     /** The product it opens; an ad link may open the whole shop. */
     productId?: string
     label?: string
@@ -57,12 +72,30 @@ export interface SourceLinkProps {
     ownerText?: string
     /** The post's facts when it was last written (`postKeyOf`). */
     postKey?: string
+    /** A post made in Telegram: its first words. */
+    preview?: string
+    /** «Buyurtma berish» is under the post (a Zumda post always has it). */
+    buttonAt?: Date
     counts: LinkCounts
     createdAt: Date
     deletedAt?: Date
 }
 
 const NO_COUNTS: LinkCounts = { opens: 0, orders: 0, sales: 0, revenue: 0 }
+
+/** One line of the post's text: spaces and line breaks folded, cut at a word. */
+export function postPreviewOf(text: string | undefined): string | undefined {
+    const line = text?.replace(/\s+/g, " ").trim()
+    if (!line) {
+        return undefined
+    }
+    if (line.length <= POST_PREVIEW_MAX) {
+        return line
+    }
+    const cut = line.slice(0, POST_PREVIEW_MAX - 1)
+    const space = cut.lastIndexOf(" ")
+    return `${(space > POST_PREVIEW_MAX / 2 ? cut.slice(0, space) : cut).trimEnd()}…`
+}
 
 export class SourceLink {
     private constructor(private props: SourceLinkProps) {}
@@ -88,6 +121,7 @@ export class SourceLink {
             id: SourceLink.newCode(),
             businessId: input.businessId,
             kind: SourceLinkKind.AD,
+            origin: SourceLinkOrigin.ZUMDA,
             label: requireText("label", input.label, LINK_LABEL_MAX),
             ...(input.productId === undefined ? {} : { productId: input.productId }),
             counts: { ...NO_COUNTS },
@@ -108,9 +142,35 @@ export class SourceLink {
             id: SourceLink.newCode(),
             businessId: input.businessId,
             kind: SourceLinkKind.POST,
+            origin: SourceLinkOrigin.ZUMDA,
             productId: input.productId,
             ...(ownerText === undefined ? {} : { ownerText }),
             postKey: input.postKey,
+            counts: { ...NO_COUNTS },
+            createdAt: input.now,
+        })
+    }
+
+    /**
+     * A post the owner made in Telegram, now in Zumda: the product its text names, or the whole
+     * shop. Its button comes with `buttonAttached` once Telegram took it.
+     */
+    static channelPost(input: {
+        businessId: string
+        ref: PostRef
+        productId?: string
+        text?: string
+        now: Date
+    }): SourceLink {
+        const preview = postPreviewOf(input.text)
+        return new SourceLink({
+            id: SourceLink.newCode(),
+            businessId: input.businessId,
+            kind: SourceLinkKind.POST,
+            origin: SourceLinkOrigin.CHANNEL,
+            ...(input.productId === undefined ? {} : { productId: input.productId }),
+            post: { ...input.ref },
+            ...(preview === undefined ? {} : { preview }),
             counts: { ...NO_COUNTS },
             createdAt: input.now,
         })
@@ -134,6 +194,33 @@ export class SourceLink {
 
     get isPost(): boolean {
         return this.props.kind === SourceLinkKind.POST
+    }
+
+    get origin(): SourceLinkOrigin {
+        return this.props.origin
+    }
+
+    /** Made by Zumda: its caption is Zumda's to write. */
+    get isZumdaPost(): boolean {
+        return this.isPost && this.props.origin === SourceLinkOrigin.ZUMDA
+    }
+
+    /** Made by the owner in Telegram: its text is theirs, only the button is Zumda's. */
+    get isChannelPost(): boolean {
+        return this.isPost && this.props.origin === SourceLinkOrigin.CHANNEL
+    }
+
+    get preview(): string | undefined {
+        return this.props.preview
+    }
+
+    /** «Buyurtma berish» is under it: a Zumda post always, a channel post once Telegram took it. */
+    get hasButton(): boolean {
+        return this.isZumdaPost || this.props.buttonAt !== undefined
+    }
+
+    get buttonAt(): Date | undefined {
+        return this.props.buttonAt
     }
 
     get productId(): string | undefined {
@@ -178,6 +265,26 @@ export class SourceLink {
             throw new ValidationError("Only a new post is placed in the channel")
         }
         this.props = { ...this.props, post: { ...ref } }
+    }
+
+    /** Telegram took «Buyurtma berish» under the owner's post. */
+    buttonAttached(now: Date): void {
+        if (!this.isChannelPost) {
+            throw new ValidationError("Only a post made in the channel gets a button later")
+        }
+        this.props = { ...this.props, buttonAt: now }
+    }
+
+    /**
+     * The owner's post leads to another product, or to the whole shop (`undefined`). The button
+     * keeps its code: nothing changes in Telegram.
+     */
+    relink(productId: string | undefined): void {
+        if (!this.isChannelPost) {
+            throw new ValidationError("Only a post made in the channel takes another product")
+        }
+        const { productId: _before, ...rest } = this.props
+        this.props = productId === undefined ? rest : { ...rest, productId }
     }
 
     /** Its name, price and age were written again. */

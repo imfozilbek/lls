@@ -59,7 +59,7 @@ export class ConnectShopChannelUseCase {
         if (before?.isSameChat(input.chatId)) {
             // The connected channel again (a new title, or an admin of it changed the bot's
             // rights and it may still post): no news for the owner, and the bot stays.
-            const kept = at(before.connectedAt)
+            const kept = at(before.connectedAt).keepsStateOf(before)
             await this.deps.channels.save(kept)
             return { kind: "unchanged", channel: kept }
         }

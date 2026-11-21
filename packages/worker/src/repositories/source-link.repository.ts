@@ -1,6 +1,6 @@
-import { SOURCE_LINK_KINDS, ShopChannel, SourceLink } from "@zumda/core"
+import { SOURCE_LINK_KINDS, SOURCE_LINK_ORIGINS, ShopChannel, SourceLink } from "@zumda/core"
 
-import { oneOf, optional } from "./rows.js"
+import { oneOf, optional, placeholders } from "./rows.js"
 
 import type {
     ShopChannelRepository,
@@ -15,12 +15,18 @@ interface ChannelRow {
     title: string
     username: string | null
     connected_at: number
+    updates_version: number
+    history_before: number | null
+    history_done_at: number | null
 }
 
 interface LinkRow {
     id: string
     business_id: string
     kind: string
+    origin: string
+    preview: string | null
+    button_at: number | null
     product_id: string | null
     label: string | null
     chat_id: number | null
@@ -36,11 +42,13 @@ interface LinkRow {
     deleted_at: number | null
 }
 
-export const CHANNEL_SQL = `SELECT business_id, chat_id, title, username, connected_at
+export const CHANNEL_SQL = `SELECT business_id, chat_id, title, username, connected_at,
+    updates_version, history_before, history_done_at
     FROM shop_channels WHERE business_id = ?`
 
-const LINK_COLUMNS = `id, business_id, kind, product_id, label, chat_id, message_id, photo_file_id,
-    owner_text, post_key, opens, orders, sales, revenue, created_at, deleted_at`
+const LINK_COLUMNS = `id, business_id, kind, origin, preview, button_at, product_id, label, chat_id,
+    message_id, photo_file_id, owner_text, post_key, opens, orders, sales, revenue, created_at,
+    deleted_at`
 
 export const LINK_BY_ID_SQL = `SELECT ${LINK_COLUMNS} FROM source_links
     WHERE id = ? AND business_id = ?`
@@ -60,11 +68,32 @@ export const LIVE_ADS_COUNT_SQL = `SELECT COUNT(*) AS n FROM (
     WHERE business_id = ? AND kind = 'ad' AND deleted_at IS NULL
     LIMIT ?)`
 
-/** A product's name or price changed: its newest live posts in the channel of now. */
+/**
+ * A product's name or price changed: Zumda's own newest live posts of it in the channel of now
+ * (the owner's posts made in Telegram keep their words).
+ */
 export const PRODUCT_POSTS_SQL = `SELECT ${LINK_COLUMNS} FROM source_links
     WHERE business_id = ? AND product_id = ? AND kind = 'post' AND deleted_at IS NULL
-      AND chat_id = ?
+      AND chat_id = ? AND origin = 'zumda'
     ORDER BY created_at DESC LIMIT ?`
+
+/** The posts of a channel Zumda knows, among these (the unique index of a post). */
+export function knownPostsSql(count: number): string {
+    return `SELECT message_id FROM source_links
+    WHERE chat_id = ? AND message_id IN (${placeholders(count)}) AND message_id IS NOT NULL`
+}
+
+/** One post of a channel, by the unique index of a post. */
+export const POST_LINK_SQL = `SELECT ${LINK_COLUMNS} FROM source_links
+    WHERE chat_id = ? AND message_id = ? AND message_id IS NOT NULL`
+
+const LINK_INSERT = `INSERT INTO source_links (id, business_id, kind, origin, preview, button_at,
+    product_id, label, chat_id, message_id, photo_file_id, owner_text, post_key, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+
+/** A post made in Telegram: written once, however often it is seen. */
+export const CHANNEL_POST_INSERT = `${LINK_INSERT}
+    ON CONFLICT (chat_id, message_id) WHERE message_id IS NOT NULL DO NOTHING`
 
 /** The link's opens grow only when this person's last visit was not this very link. */
 export const VISIT_OPENS_SQL = `UPDATE source_links SET opens = opens + 1
@@ -86,6 +115,9 @@ function toChannel(row: ChannelRow): ShopChannel {
         title: row.title,
         ...(row.username === null ? {} : { username: row.username }),
         connectedAt: new Date(row.connected_at),
+        updatesVersion: row.updates_version,
+        ...(row.history_before === null ? {} : { historyBefore: row.history_before }),
+        ...(row.history_done_at === null ? {} : { historyDoneAt: new Date(row.history_done_at) }),
     })
 }
 
@@ -102,6 +134,9 @@ function toLink(row: LinkRow): SourceLink {
         id: row.id,
         businessId: row.business_id,
         kind: oneOf(row.kind, SOURCE_LINK_KINDS, "source_links.kind"),
+        origin: oneOf(row.origin, SOURCE_LINK_ORIGINS, "source_links.origin"),
+        preview: optional(row.preview),
+        buttonAt: row.button_at === null ? undefined : new Date(row.button_at),
         productId: optional(row.product_id),
         label: optional(row.label),
         post,
@@ -124,11 +159,15 @@ export class D1ShopChannelRepository implements ShopChannelRepository {
     async save(channel: ShopChannel): Promise<void> {
         await this.db
             .prepare(
-                `INSERT INTO shop_channels (business_id, chat_id, title, username, connected_at)
-                 VALUES (?, ?, ?, ?, ?)
+                `INSERT INTO shop_channels (business_id, chat_id, title, username, connected_at,
+                    updates_version, history_before, history_done_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT (business_id) DO UPDATE SET chat_id = excluded.chat_id,
                     title = excluded.title, username = excluded.username,
-                    connected_at = excluded.connected_at`,
+                    connected_at = excluded.connected_at,
+                    updates_version = excluded.updates_version,
+                    history_before = excluded.history_before,
+                    history_done_at = excluded.history_done_at`,
             )
             .bind(
                 channel.businessId,
@@ -136,6 +175,9 @@ export class D1ShopChannelRepository implements ShopChannelRepository {
                 channel.title,
                 channel.username ?? null,
                 channel.connectedAt.getTime(),
+                channel.updatesVersion,
+                channel.historyBefore ?? null,
+                channel.historyDoneAt?.getTime() ?? null,
             )
             .run()
     }
@@ -156,17 +198,16 @@ export class D1SourceLinkRepository implements SourceLinkRepository {
         return row ? toLink(row) : null
     }
 
-    async insert(link: SourceLink): Promise<void> {
-        await this.db
-            .prepare(
-                `INSERT INTO source_links (id, business_id, kind, product_id, label, chat_id,
-                    message_id, photo_file_id, owner_text, post_key, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            )
+    private bindLink(sql: string, link: SourceLink): D1PreparedStatement {
+        return this.db
+            .prepare(sql)
             .bind(
                 link.id,
                 link.businessId,
                 link.kind,
+                link.origin,
+                link.preview ?? null,
+                link.buttonAt?.getTime() ?? null,
                 link.productId ?? null,
                 link.label ?? null,
                 link.post?.chatId ?? null,
@@ -176,6 +217,38 @@ export class D1SourceLinkRepository implements SourceLinkRepository {
                 link.postKey ?? null,
                 link.createdAt.getTime(),
             )
+    }
+
+    async insert(link: SourceLink): Promise<void> {
+        await this.bindLink(LINK_INSERT, link).run()
+    }
+
+    async insertChannelPost(link: SourceLink): Promise<boolean> {
+        const { meta } = await this.bindLink(CHANNEL_POST_INSERT, link).run()
+        return meta.changes > 0
+    }
+
+    async knownPosts(chatId: number, messageIds: readonly number[]): Promise<Set<number>> {
+        if (messageIds.length === 0) {
+            return new Set()
+        }
+        const { results } = await this.db
+            .prepare(knownPostsSql(messageIds.length))
+            .bind(chatId, ...messageIds)
+            .all<{ message_id: number }>()
+        return new Set(results.map((row) => row.message_id))
+    }
+
+    async findByPost(chatId: number, messageId: number): Promise<SourceLink | null> {
+        const row = await this.db.prepare(POST_LINK_SQL).bind(chatId, messageId).first<LinkRow>()
+        return row ? toLink(row) : null
+    }
+
+    /** Only the product: the owner's post leads elsewhere, its button keeps its code. */
+    async saveProduct(link: SourceLink): Promise<void> {
+        await this.db
+            .prepare("UPDATE source_links SET product_id = ? WHERE id = ? AND business_id = ?")
+            .bind(link.productId ?? null, link.id, link.businessId)
             .run()
     }
 

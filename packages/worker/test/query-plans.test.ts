@@ -31,6 +31,7 @@ import {
 } from "../src/repositories/order.repository.js"
 import { COUNT_SQL, NEXT_SQL } from "../src/repositories/phone-ask.repository.js"
 import {
+    CATALOG_NAMES,
     NAMES_OF,
     PHOTOS_OF,
     SHOWCASE_ALL_FROM,
@@ -46,8 +47,10 @@ import {
     LIVE_ADS_COUNT_SQL,
     LIVE_CHANNEL_POSTS_SQL,
     LIVE_LINKS_SQL,
+    POST_LINK_SQL,
     PRODUCT_POSTS_SQL,
     VISIT_OPENS_SQL,
+    knownPostsSql,
 } from "../src/repositories/source-link.repository.js"
 import {
     OPEN_TRIPS_OF_BUSINESS_SQL,
@@ -149,6 +152,12 @@ describe("query plans", () => {
     it("a shop's product names for a list: the catalog index alone, no product row", async () => {
         const plan = await planOf(NAMES_OF, ["biz-1"])
         expect(plan.join("\n")).toContain("USING COVERING INDEX idx_products_catalog")
+    })
+
+    it("a shop's ids and names for a channel post: the shop's products by the catalog index", async () => {
+        const plan = (await planOf(CATALOG_NAMES, ["biz-1"])).join("\n")
+        expect(plan).toContain("USING INDEX idx_products_catalog (business_id=?)")
+        expect(plan).not.toMatch(/SCAN products\b/)
     })
 
     it("a courier's orders: open ones and today's finished ones, two index ranges", async () => {
@@ -298,6 +307,18 @@ describe("query plans", () => {
             expectIndexed(plan, ["idx_source_links_product_posts (business_id=? AND product_id=?)"])
             expect(plan.join("\n")).not.toContain("TEMP B-TREE")
             noScan(plan)
+        })
+
+        it("the channel's posts Zumda knows: the post index, one key each", async () => {
+            const plan = await planOf(knownPostsSql(3), [-100, 1, 2, 3])
+            // Only the index: the posts' numbers are all it needs.
+            expect(plan.join("\n")).toContain(
+                "USING COVERING INDEX idx_source_links_post (chat_id=? AND message_id=?)",
+            )
+            noScan(plan)
+            const one = await planOf(POST_LINK_SQL, [-100, 1])
+            expectIndexed(one, ["idx_source_links_post (chat_id=? AND message_id=?)"])
+            noScan(one)
         })
 
         it("a visit: the person's last link by its key, and the opens by the link's key", async () => {

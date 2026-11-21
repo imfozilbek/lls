@@ -28,7 +28,11 @@ import { sendWelcome, welcomePictureUrl, welcomeVideo } from "../telegram/welcom
 import { handleAdminMessage } from "./admin-bot.js"
 import { handleBusinessMessage, handleReviewCallback } from "./business-bot.js"
 import { handleCourierBotCallback, handleCourierBotMessage } from "./courier-bot.js"
-import { handleChannelMembership, handleSourceStart } from "./shop-channel-bot.js"
+import {
+    handleChannelMembership,
+    handleChannelPost,
+    handleSourceStart,
+} from "./shop-channel-bot.js"
 
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
@@ -96,6 +100,12 @@ async function handleShopUpdate(
         await handleSafely(() =>
             handleChannelMembership(services, business, token, membership, texts),
         )
+    }
+    const post = update.channel_post
+    if (post) {
+        // A post Telegram could not take a button for now is not worth holding the shop's other
+        // updates back (Telegram sends them in turn): «Eski postlar» picks it up later.
+        await handleSafely(() => handleChannelPost(services, business, post))
     }
     const callback = update.callback_query
     const review = callback ? parseCourierReviewCallback(callback.data ?? "") : null

@@ -1,4 +1,4 @@
-import { Language, SourceLinkKind, Unit } from "@zumda/core"
+import { Language, SourceLinkKind, SourceLinkOrigin, Unit } from "@zumda/core"
 import { beforeAll, describe, expect, it } from "vitest"
 
 import { dictionaryFor, registerStaff } from "../i18n/index.js"
@@ -15,6 +15,8 @@ function link(counts: Partial<SourceLinkDTO>): SourceLinkDTO {
     return {
         id: "l",
         kind: SourceLinkKind.AD,
+        origin: SourceLinkOrigin.ZUMDA,
+        button: true,
         opens: 0,
         orders: 0,
         sales: 0,

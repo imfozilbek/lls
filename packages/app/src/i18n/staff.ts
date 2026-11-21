@@ -72,6 +72,8 @@ export const staffUz = {
         TOO_MANY_LINKS:
             "Reklama uchun havolalar 50 tadan oshmaydi: avval keraksizini olib tashlang.",
         POST_NOT_DELETABLE: "Post o'chmadi. Uni kanalda o'zingiz o'chiring.",
+        POST_NOT_RELINKABLE: "Zumda orqali joylangan post o'z mahsulotiga olib boradi.",
+        CHANNEL_HISTORY_FAILED: "Telegram hozir javob bermadi. Birozdan keyin yana bosing.",
     },
     trip: {
         sameWay: "Shu yo'nalishda yana {n} ta",

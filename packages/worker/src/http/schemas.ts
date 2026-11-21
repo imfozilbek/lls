@@ -437,6 +437,11 @@ export const sourceLinksQuery = pageQuery.extend({
     kind: z.enum(SOURCE_LINK_KINDS),
 })
 
+/** «Mahsulotni tanlash»: the product the owner's post leads to, or null for the whole shop. */
+export const relinkBody = z.object({
+    productId: z.string().min(1).max(64).nullable(),
+})
+
 /** «Yangi havola»: the ad's name, and the product it opens (the whole shop otherwise). */
 export const adLinkBody = z.object({
     label: z.string().trim().min(1).max(LINK_LABEL_MAX),

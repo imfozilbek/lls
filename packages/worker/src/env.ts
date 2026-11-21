@@ -32,6 +32,8 @@ export interface Bindings extends Env {
     TELEGRAM_API_BASE?: string
     /** Local stand only: a fake Telegram Login (its keys) on localhost. Never set in production. */
     TELEGRAM_OAUTH_BASE?: string
+    /** Local stand only: fake public channel pages (`t.me/s`) on localhost. Never in production. */
+    TELEGRAM_WEB_BASE?: string
     /** OpenRouteService key: trips' way along the roads. Without it the app draws straight lines. */
     ORS_API_KEY?: string
     /** Local stand and tests only: a fake OpenRouteService. Never set in production. */

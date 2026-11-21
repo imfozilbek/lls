@@ -11,15 +11,23 @@ import {
     channelPostQuery,
     idParam,
     onInvalid,
+    relinkBody,
     sourceLinksQuery,
 } from "../http/schemas.js"
 import { sourceStartUrl, startChannelUrl } from "../telegram/app-links.js"
-import { deleteSourceLinkUseCase, publishPostUseCase } from "../telegram/channel-publisher.js"
-import { TelegramApiError } from "../telegram/gateway.js"
+import { ChannelPageError } from "../telegram/channel-history.js"
+import {
+    deleteSourceLinkUseCase,
+    importChannelHistoryUseCase,
+    publishPostUseCase,
+} from "../telegram/channel-publisher.js"
+import { SHOP_BOT_UPDATES_VERSION, TelegramApiError } from "../telegram/gateway.js"
 
 import type { AppEnv } from "../env.js"
+import type { BotCredentials } from "../repositories/business.repository.js"
+import type { Services } from "../services.js"
 import type { OutgoingFile } from "../telegram/gateway.js"
-import type { Business, SourceLinkDTO } from "@zumda/core"
+import type { Business, ShopChannel, SourceLinkDTO } from "@zumda/core"
 import type { Context } from "hono"
 
 /** A link with the address to give out: the shop's bot, told which link was pressed. */
@@ -33,6 +41,41 @@ async function postPhoto(c: Context<AppEnv>): Promise<OutgoingFile | null> {
         return null
     }
     return { name: "post.jpg", contentType: "image/jpeg", bytes: await readJpeg(c.req.raw) }
+}
+
+/** The shop's bot hears Telegram again, with every kind of update Zumda needs of it now. */
+async function registerShopWebhook(c: Context<AppEnv>, credentials: BotCredentials): Promise<void> {
+    await c
+        .get("services")
+        .telegram.setWebhook(
+            credentials.token,
+            `${new URL(c.req.url).origin}/tg/${credentials.botId}`,
+            credentials.webhookSecret,
+        )
+}
+
+/**
+ * A channel connected while the bot heard less (before every post came to Zumda) hears it all
+ * from the owner's next look at «Telegram kanal»; Telegram not answering waits for the next one.
+ */
+async function keepUpdatesCurrent(
+    c: Context<AppEnv>,
+    services: Services,
+    channel: ShopChannel,
+    credentials: BotCredentials,
+): Promise<void> {
+    if (channel.updatesVersion >= SHOP_BOT_UPDATES_VERSION) {
+        return
+    }
+    try {
+        await registerShopWebhook(c, credentials)
+        await services.shopChannels.save(channel.withUpdates(SHOP_BOT_UPDATES_VERSION))
+    } catch (error) {
+        if (!(error instanceof TelegramApiError)) {
+            throw error
+        }
+        console.warn("Shop bot webhook not renewed", error.description)
+    }
 }
 
 /**
@@ -54,6 +97,9 @@ export const channelRoutes = new Hono<AppEnv>()
             return c.json({ channel: null })
         }
         const credentials = await services.businesses.getBotCredentials(business.id)
+        if (credentials) {
+            await keepUpdatesCurrent(c, services, channel, credentials)
+        }
         const subscribers = credentials
             ? await services.telegram
                   .getChatMemberCount(credentials.token, channel.chatId)
@@ -77,11 +123,7 @@ export const channelRoutes = new Hono<AppEnv>()
             throw new ApiError(502, "CHANNEL_SETUP_FAILED", "The shop's bot is not connected")
         }
         try {
-            await services.telegram.setWebhook(
-                credentials.token,
-                `${new URL(c.req.url).origin}/tg/${credentials.botId}`,
-                credentials.webhookSecret,
-            )
+            await registerShopWebhook(c, credentials)
         } catch (error) {
             if (error instanceof TelegramApiError) {
                 throw new ApiError(502, "CHANNEL_SETUP_FAILED", "Telegram did not answer")
@@ -137,6 +179,53 @@ export const channelRoutes = new Hono<AppEnv>()
                 }
                 throw error
             }
+        },
+    )
+
+    /**
+     * «Eski postlarni qo'shish»: one page of the channel's past, up to ten posts with their
+     * button. The app presses again while `more`, and after `seconds` when Telegram asked to wait.
+     */
+    .post(
+        "/channel/history",
+        rateLimit("HISTORY_LIMITER", (c) => shopOf(c).id),
+        async (c) => {
+            const services = c.get("services")
+            const business = shopOf(c)
+            try {
+                const outcome = await importChannelHistoryUseCase(services, business).execute({
+                    actorTelegramId: c.get("auth").user.id,
+                    businessId: business.id,
+                    now: services.clock.now(),
+                })
+                return c.json(outcome)
+            } catch (error) {
+                if (error instanceof TelegramApiError || error instanceof ChannelPageError) {
+                    // Where it stopped is kept: the next press goes on from there.
+                    console.warn("Channel history not read", error.message)
+                    throw new ApiError(502, "CHANNEL_HISTORY_FAILED", "Telegram did not answer")
+                }
+                throw error
+            }
+        },
+    )
+
+    /** «Mahsulotni tanlash»: the owner's own post leads to another product, or the whole shop. */
+    .patch(
+        "/links/:id",
+        zValidator("param", idParam, onInvalid),
+        zValidator("json", relinkBody, onInvalid),
+        async (c) => {
+            const services = c.get("services")
+            const business = shopOf(c)
+            const { productId } = c.req.valid("json")
+            const link = await services.useCases.relinkChannelPost.execute({
+                actorTelegramId: c.get("auth").user.id,
+                businessId: business.id,
+                linkId: c.req.valid("param").id,
+                ...(productId === null ? {} : { productId }),
+            })
+            return c.json(withUrl(business, link))
         },
     )
 
