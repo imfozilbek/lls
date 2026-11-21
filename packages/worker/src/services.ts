@@ -78,6 +78,14 @@ import {
     RequestNetworkCourierUseCase,
     SetDistrictUseCase,
     SetNetworkMembershipUseCase,
+    ConnectShopChannelUseCase,
+    LoseShopChannelUseCase,
+    DisconnectShopChannelUseCase,
+    GetShopChannelUseCase,
+    CreateAdLinkUseCase,
+    ListSourceLinksUseCase,
+    OpenSourceLinkUseCase,
+    FindOrderSourceUseCase,
 } from "@zumda/core"
 
 import { platformAdminIds } from "./env.js"
@@ -93,6 +101,10 @@ import { D1PayoutCardRepository } from "./repositories/payout-card.repository.js
 import { D1PhoneAskRecipients } from "./repositories/phone-ask.repository.js"
 import { D1ProductRepository } from "./repositories/product.repository.js"
 import { R2ReceiptStore } from "./repositories/receipt.store.js"
+import {
+    D1ShopChannelRepository,
+    D1SourceLinkRepository,
+} from "./repositories/source-link.repository.js"
 import { D1TripRepository } from "./repositories/trip.repository.js"
 import { OrsRoutePlanner } from "./routing.js"
 import { TelegramGuideSender } from "./telegram/guides.js"
@@ -101,7 +113,7 @@ import { TelegramPhoneAskSender } from "./telegram/phone-asks.js"
 import type { Bindings } from "./env.js"
 import type { TelegramGateway } from "./telegram/gateway.js"
 import type { LoginKeys } from "./telegram-login.js"
-import type { Clock, DeliveryDeps, DemoShopDeps, TripDeps } from "@zumda/core"
+import type { Clock, DeliveryDeps, DemoShopDeps, SourceLinkDeps, TripDeps } from "@zumda/core"
 
 export interface ServiceDeps {
     telegram: TelegramGateway
@@ -190,6 +202,14 @@ export interface UseCases {
     pickUpTrip: PickUpTripUseCase
     refreshTripRoute: RefreshTripRouteUseCase
     listShopTrips: ListShopTripsUseCase
+    connectShopChannel: ConnectShopChannelUseCase
+    loseShopChannel: LoseShopChannelUseCase
+    disconnectShopChannel: DisconnectShopChannelUseCase
+    getShopChannel: GetShopChannelUseCase
+    createAdLink: CreateAdLinkUseCase
+    listSourceLinks: ListSourceLinksUseCase
+    openSourceLink: OpenSourceLinkUseCase
+    findOrderSource: FindOrderSourceUseCase
 }
 
 export interface Services extends ServiceDeps {
@@ -203,7 +223,60 @@ export interface Services extends ServiceDeps {
     networkOffers: D1NetworkOfferRepository
     /** Bots Zumda | Business created and manages for owners. */
     managedBots: D1ManagedBotRepository
+    /** The shop's own Telegram channel, and the posts and ad links customers came from. */
+    shopChannels: D1ShopChannelRepository
+    sourceLinks: D1SourceLinkRepository
     useCases: UseCases
+}
+
+type ChannelUseCases = Pick<
+    UseCases,
+    | "connectShopChannel"
+    | "loseShopChannel"
+    | "disconnectShopChannel"
+    | "getShopChannel"
+    | "createAdLink"
+    | "listSourceLinks"
+    | "openSourceLink"
+    | "findOrderSource"
+>
+
+/** The shop's channel and its links; posting, deleting and editing need Telegram (the Worker's). */
+function channelParts(
+    db: D1Database,
+    businesses: D1BusinessRepository,
+    products: D1ProductRepository,
+): {
+    shopChannels: D1ShopChannelRepository
+    sourceLinks: D1SourceLinkRepository
+    useCases: ChannelUseCases
+} {
+    const shopChannels = new D1ShopChannelRepository(db)
+    const sourceLinks = new D1SourceLinkRepository(db)
+    return {
+        shopChannels,
+        sourceLinks,
+        useCases: channelUseCases({
+            businesses,
+            products,
+            channels: shopChannels,
+            links: sourceLinks,
+        }),
+    }
+}
+
+function channelUseCases(deps: SourceLinkDeps): ChannelUseCases {
+    const { businesses, channels, links } = deps
+    return {
+        connectShopChannel: new ConnectShopChannelUseCase({ businesses, channels }),
+        loseShopChannel: new LoseShopChannelUseCase(channels),
+        disconnectShopChannel: new DisconnectShopChannelUseCase({ businesses, channels }),
+        getShopChannel: new GetShopChannelUseCase({ businesses, channels }),
+        createAdLink: new CreateAdLinkUseCase(deps),
+        listSourceLinks: new ListSourceLinksUseCase(deps),
+        openSourceLink: new OpenSourceLinkUseCase(deps),
+        findOrderSource: new FindOrderSourceUseCase(links),
+    }
 }
 
 type TripUseCases = Pick<
@@ -336,6 +409,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const routes = new OrsRoutePlanner(env.ORS_API_KEY, env.ORS_API_BASE)
     const tripDeps: TripDeps = { ...courierAccess, trips, routes, newId: newTripId }
     const cardBook = { businesses, cards, clock }
+    const channel = channelParts(env.DB, businesses, products)
 
     return {
         env,
@@ -350,6 +424,8 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         districts,
         networkOffers: new D1NetworkOfferRepository(env.DB),
         managedBots,
+        shopChannels: channel.shopChannels,
+        sourceLinks: channel.sourceLinks,
         useCases: {
             registerShop: new RegisterShopUseCase(businesses, clock, managedBots, districts),
             managedBotChanged: new ManagedBotChangedUseCase(businesses, managedBots, clock),
@@ -406,6 +482,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             listPlatformShops: new ListPlatformShopsUseCase(businesses, customers, admins, clock),
             freeNetworkCouriers: new FreeNetworkCouriersUseCase(network),
             ...tripUseCases(tripDeps),
+            ...channel.useCases,
         },
     }
 }

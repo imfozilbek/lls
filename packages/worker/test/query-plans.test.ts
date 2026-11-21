@@ -14,6 +14,8 @@ import {
     CASH_OPEN_FROM,
     CASH_OPEN_WHERE,
     LINE_REMOVED_SQL,
+    LINK_ORDER_SQL,
+    LINK_SALE_SQL,
     OPEN_PAYMENTS_FROM,
     OPEN_PAYMENTS_WHERE,
     REFUND_OWED_FROM,
@@ -37,6 +39,16 @@ import {
     inCategory,
     inCategoryBinds,
 } from "../src/repositories/product.repository.js"
+import {
+    CHANNEL_SQL,
+    LAST_VISIT_SQL,
+    LINK_BY_ID_SQL,
+    LIVE_ADS_COUNT_SQL,
+    LIVE_CHANNEL_POSTS_SQL,
+    LIVE_LINKS_SQL,
+    PRODUCT_POSTS_SQL,
+    VISIT_OPENS_SQL,
+} from "../src/repositories/source-link.repository.js"
 import {
     OPEN_TRIPS_OF_BUSINESS_SQL,
     WITH_TRIP_SQL,
@@ -254,5 +266,53 @@ describe("query plans", () => {
         expectIndexed(await planOf(TRANSFER_REJECTIONS_SQL, ["customer-1", "order-1"]), [
             "idx_orders_customer_rejected (customer_id=?)",
         ])
+    })
+
+    describe("the shop's channel and its links", () => {
+        const LINKS_KEY = "sqlite_autoindex_source_links_1"
+        /** No list ever walks every link of the platform. */
+        const noScan = (plan: string[]): void =>
+            expect(plan.join("\n")).not.toMatch(/SCAN (source_links|source_visits|shop_channels)\b/)
+
+        it("the channel and a link by their keys", async () => {
+            const channel = await planOf(CHANNEL_SQL, ["biz-1"])
+            expectIndexed(channel, ["sqlite_autoindex_shop_channels_1 (business_id=?)"])
+            expectIndexed(await planOf(LINK_BY_ID_SQL, ["code", "biz-1"]), [`${LINKS_KEY} (id=?)`])
+        })
+
+        it("a page of live posts or ad links, newest first, by the live index", async () => {
+            const ads = await planOf(LIVE_LINKS_SQL, ["biz-1", "ad", 21, 0])
+            expectIndexed(ads, ["idx_source_links_live (business_id=? AND kind=?)"])
+            expect(ads.join("\n")).not.toContain("TEMP B-TREE")
+            const posts = await planOf(LIVE_CHANNEL_POSTS_SQL, ["biz-1", "post", -100, 21, 0])
+            expectIndexed(posts, ["idx_source_links_live (business_id=? AND kind=?)"])
+            noScan(ads)
+            noScan(posts)
+            const count = await planOf(LIVE_ADS_COUNT_SQL, ["biz-1", 50])
+            expectIndexed(count, ["idx_source_links_live (business_id=? AND kind=?)"])
+            noScan(count)
+        })
+
+        it("a product's live posts, by the posts index", async () => {
+            const plan = await planOf(PRODUCT_POSTS_SQL, ["biz-1", "p-1", -100, 20])
+            expectIndexed(plan, ["idx_source_links_product_posts (business_id=? AND product_id=?)"])
+            expect(plan.join("\n")).not.toContain("TEMP B-TREE")
+            noScan(plan)
+        })
+
+        it("a visit: the person's last link by its key, and the opens by the link's key", async () => {
+            const opens = await planOf(VISIT_OPENS_SQL, ["code", "biz-1", "biz-1", 7, "code"])
+            expectIndexed(opens, [`${LINKS_KEY} (id=?)`])
+            noScan(opens)
+            const last = await planOf(LAST_VISIT_SQL, ["biz-1", 7, 0])
+            noScan(last)
+            expect(last.join("\n")).toMatch(/SEARCH source_visits USING PRIMARY KEY/)
+        })
+
+        it("an order and a sale count for their link by its key", async () => {
+            expectIndexed(await planOf(LINK_ORDER_SQL, ["code", "biz-1"]), [`${LINKS_KEY} (id=?)`])
+            const sale = await planOf(LINK_SALE_SQL, [1, "code", "biz-1", "o-1", 1])
+            expectIndexed(sale, [`${LINKS_KEY} (id=?)`, ORDERS_KEY])
+        })
     })
 })
