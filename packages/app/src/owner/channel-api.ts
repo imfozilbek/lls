@@ -1,6 +1,12 @@
 import { query, request } from "../lib/api.js"
 
-import type { Page, ShopChannelDTO, SourceLinkDTO, SourceLinkKind } from "@zumda/core"
+import type {
+    HistoryOutcome,
+    Page,
+    ShopChannelDTO,
+    SourceLinkDTO,
+    SourceLinkKind,
+} from "@zumda/core"
 
 /** The connected channel and Telegram's count of its subscribers (none when it cannot say). */
 export type ChannelInfo = ShopChannelDTO & { subscribers: number | null }
@@ -30,4 +36,9 @@ export const channelApi = {
         request("POST", "/api/owner/links", { label, ...(productId ? { productId } : {}) }),
     /** An ad link stops counting; a post is deleted in the channel too. */
     removeLink: (id: string): Promise<void> => request("DELETE", `/api/owner/links/${id}`),
+    /** «Mahsulotni tanlash»: the owner's own post leads to this product, or the whole shop. */
+    relink: (id: string, productId: string | null): Promise<SourceLinkView> =>
+        request("PATCH", `/api/owner/links/${id}`, { productId }),
+    /** «Eski postlarni ham qo'shish»: one page of the channel's past, up to ten posts. */
+    history: (): Promise<HistoryOutcome> => request("POST", "/api/owner/channel/history"),
 }

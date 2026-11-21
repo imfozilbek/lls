@@ -1,37 +1,19 @@
-import { SourceLinkKind } from "@zumda/core"
 import { useEffect, useState } from "react"
 
-import { errorText, fill, useLanguage, useT } from "../i18n/index.js"
-import { formatTime } from "../lib/format.js"
-import { usePagedList } from "../lib/paged.js"
+import { errorText, fill, useT } from "../i18n/index.js"
 import { useRefresh } from "../lib/refresh.js"
-import { confirm, haptic, openTelegramLink } from "../lib/telegram.js"
+import { confirm, haptic } from "../lib/telegram.js"
 import { toast } from "../stores/toast.js"
-import { LoadMore } from "../ui/load-more.js"
-import { Button, Section, Skeleton, Spinner } from "../ui/primitives.js"
-import { ProductImage } from "../ui/product-image.js"
+import { Button, Skeleton, Spinner } from "../ui/primitives.js"
 
+import { ChannelPosts } from "./ChannelPosts.js"
 import { channelApi } from "./channel-api.js"
 import { MegaphoneIcon } from "./channel-icons.js"
 import { channelFailToast, useShopChannel } from "./channel-state.js"
-import { linkCountsText } from "./channel-words.js"
-import { useOwner } from "./store.js"
 
-import type { ChannelInfo, SourceLinkView } from "./channel-api.js"
+import type { ChannelInfo } from "./channel-api.js"
 import type { ShopChannelState } from "./channel-state.js"
-import type { ProductDTO, ShopOwnerDTO } from "@zumda/core"
-
-/** The owner's products, loaded once: a post and a link show the product they lead to. */
-export function useOwnerProducts(): readonly ProductDTO[] | null {
-    const products = useOwner((state) => state.products)
-    const loadProducts = useOwner((state) => state.loadProducts)
-    useEffect(() => {
-        if (products === null) {
-            loadProducts().catch(() => undefined)
-        }
-    }, [products, loadProducts])
-    return products
-}
+import type { ShopOwnerDTO } from "@zumda/core"
 
 /** «Kanalni bog'lash» and, while the owner is on Telegram's screen, that the app is waiting. */
 export function ConnectChannel({ state }: { state: ShopChannelState }): React.JSX.Element {
@@ -110,124 +92,10 @@ function ChannelCard({ info }: { info: ChannelInfo }): React.JSX.Element {
     )
 }
 
-function PostRow({
-    post,
-    product,
-    onDelete,
-}: {
-    post: SourceLinkView
-    product: ProductDTO | undefined
-    onDelete(): Promise<void>
-}): React.JSX.Element {
-    const t = useT()
-    const c = t.owner.channel
-    const language = useLanguage()
-    const [deleting, setDeleting] = useState(false)
-    const name = product?.name ?? c.post.button
-    return (
-        <li className="flex flex-col gap-3 py-3">
-            <div className="flex items-start gap-3">
-                <ProductImage
-                    imageKey={product?.imageKey}
-                    category={product?.category ?? "other"}
-                    alt={name}
-                    name={product?.name}
-                    iconSize={20}
-                    className="h-14 w-14 shrink-0 rounded-control"
-                />
-                <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold">{name}</p>
-                    <p className="text-sm text-tg-hint">{formatTime(post.createdAt, language)}</p>
-                    <p className="text-sm text-tg-subtitle">{linkCountsText(c, post, language)}</p>
-                </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-                {post.postUrl ? (
-                    <Button
-                        variant="secondary"
-                        onClick={(): void => {
-                            haptic.tap()
-                            openTelegramLink(post.postUrl ?? "")
-                        }}
-                    >
-                        {c.openPost}
-                    </Button>
-                ) : null}
-                <Button
-                    variant="quietDanger"
-                    loading={deleting}
-                    onClick={(): void => {
-                        setDeleting(true)
-                        void onDelete().finally(() => setDeleting(false))
-                    }}
-                >
-                    {c.deletePost}
-                </Button>
-            </div>
-        </li>
-    )
-}
-
-/** The posts Zumda made in the channel of now, newest first, with what each brought. */
-function ChannelPosts({
-    info,
-    reloadChannel,
-}: {
-    info: ChannelInfo
-    reloadChannel(): Promise<void>
-}): React.JSX.Element {
-    const t = useT()
-    const c = t.owner.channel
-    const products = useOwnerProducts()
-    const byId = new Map((products ?? []).map((product) => [product.id, product]))
-    const list = usePagedList(`channel-posts:${info.connectedAt}`, (page) =>
-        channelApi.links(SourceLinkKind.POST, page),
-    )
-    // The pull: the posts' counts and the channel's subscribers together.
-    useRefresh(() => Promise.all([list.refresh(), reloadChannel()]))
-    const remove = async (post: SourceLinkView): Promise<void> => {
-        if (!(await confirm(c.deletePostConfirm, { yes: t.common.delete, destructive: true }))) {
-            return
-        }
-        try {
-            await channelApi.removeLink(post.id)
-            list.update((items) => items.filter((item) => item.id !== post.id))
-            haptic.success()
-            toast(c.postDeleted, "success")
-        } catch (caught) {
-            channelFailToast(t, caught)
-        }
-    }
-    return (
-        <Section title={c.posts}>
-            <p className="-mt-1 px-1 text-sm text-tg-hint">{c.syncHint}</p>
-            {list.items === null ? (
-                <Skeleton className="h-24 rounded-tile" />
-            ) : list.items.length === 0 ? (
-                <p className="rounded-tile bg-tg-secondary p-4 text-sm text-tg-subtitle">
-                    {c.noPosts}
-                </p>
-            ) : (
-                <ul className="divide-y divide-tg-separator rounded-tile bg-tg-secondary px-4">
-                    {list.items.map((post) => (
-                        <PostRow
-                            key={post.id}
-                            post={post}
-                            product={post.productId ? byId.get(post.productId) : undefined}
-                            onDelete={(): Promise<void> => remove(post)}
-                        />
-                    ))}
-                </ul>
-            )}
-            <LoadMore list={list} />
-        </Section>
-    )
-}
-
 /**
  * «Telegram kanal» in «Sozlamalar» (owner's decision, November 2026): the shop's bot becomes the
  * channel's admin from Telegram's own screen; then every product goes to the channel with one
- * button, and each post says how many came, ordered and got it.
+ * button, every post there gets «Buyurtma berish», and each says how many came, ordered and got it.
  */
 export function ChannelGroup({ shop }: { shop: ShopOwnerDTO }): React.JSX.Element {
     const t = useT()
@@ -266,7 +134,7 @@ export function ChannelGroup({ shop }: { shop: ShopOwnerDTO }): React.JSX.Elemen
     return (
         <>
             <ChannelCard info={info} />
-            <ChannelPosts info={info} reloadChannel={load} />
+            <ChannelPosts info={info} reloadChannel={load} setInfo={state.set} />
             <Button
                 variant="quietDanger"
                 className="self-start"

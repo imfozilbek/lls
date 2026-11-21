@@ -5,7 +5,7 @@ import { dictionaryFor, registerStaff } from "../i18n/index.js"
 import { staffUz } from "../i18n/staff.js"
 import { formatMoney } from "../lib/format.js"
 
-import { linkCountsText, postPreview } from "./channel-words.js"
+import { linkCountsText, postLines, postPreview } from "./channel-words.js"
 
 import type { ProductDTO, SourceLinkDTO } from "@zumda/core"
 
@@ -49,6 +49,32 @@ describe("the channel's words", () => {
         expect(linkCountsText(c, sold, Language.UZ)).toBe(
             `12 kishi kirdi · 2 ta buyurtma · 1 ta yetkazildi: ${money(110_000)}`,
         )
+    })
+
+    it("a post in the list: Zumda's by its product, the owner's own by its words and target", () => {
+        const c = dictionaryFor(Language.UZ).owner.channel
+        const zumda = link({ kind: SourceLinkKind.POST })
+        expect(postLines(c, zumda, "Fetr kitobcha")).toEqual({
+            title: "Fetr kitobcha",
+            source: "Zumda orqali joylangan",
+        })
+        const own = link({
+            kind: SourceLinkKind.POST,
+            origin: SourceLinkOrigin.CHANNEL,
+            preview: "Yangi fetr kitobcha keldi",
+        })
+        expect(postLines(c, own, "Fetr kitobcha")).toEqual({
+            title: "Yangi fetr kitobcha keldi",
+            source: "Siz joylagan",
+            target: "Qayerga olib boradi: Fetr kitobcha",
+        })
+        // A photo without words, its button to the whole shop.
+        const bare = link({ kind: SourceLinkKind.POST, origin: SourceLinkOrigin.CHANNEL })
+        expect(postLines(c, bare, undefined)).toEqual({
+            title: "Rasm yoki video",
+            source: "Siz joylagan",
+            target: "Qayerga olib boradi: Hamma mahsulotlar",
+        })
     })
 
     it("the post's price and age, as the shop's bot writes them under the owner's words", () => {

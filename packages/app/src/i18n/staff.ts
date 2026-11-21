@@ -606,7 +606,7 @@ export const staffUz = {
         channel: {
             none: "Bog'lanmagan",
             hint: "Kanalga post joylash",
-            intro: "Do'koningizning Telegram kanalini bog'lang: mahsulotni bir tugma bilan kanalga joylaysiz, post ostida «Buyurtma berish» tugmasi bo'ladi.",
+            intro: "Do'koningizning Telegram kanalini bog'lang: kanaldagi har bir post ostida «Buyurtma berish» tugmasi bo'ladi, mahsulotni esa bir tugma bilan joylaysiz.",
             connect: "Kanalni bog'lash",
             connectHint:
                 "Telegram kanalingizni tanlashni so'raydi, keyin botingiz kanalga admin bo'lib qo'shiladi. Kerakli huquqlar o'zi belgilanadi.",
@@ -621,8 +621,34 @@ export const staffUz = {
                 "Kanalni ajratasizmi? Bot kanaldan chiqadi, postlar esa kanalda turaveradi.",
             disconnected: "Kanal ajratildi",
             posts: "Kanaldagi postlar",
-            noPosts: "Hozircha post yo'q. Mahsulot sahifasida «Kanalga joylash» tugmasini bosing.",
-            syncHint: "Nomi, narxi yoki yoshi o'zgarsa, postlar ham o'zi o'zgaradi.",
+            noPosts:
+                "Hozircha post yo'q. Kanalga yangi post joylang yoki mahsulot sahifasida «Kanalga joylash»ni bosing.",
+            autoHint:
+                "Kanalga o'zingiz qo'ygan postlar ham shu yerda ko'rinadi: ularning ostiga ham «Buyurtma berish» tugmasini bot o'zi qo'yadi.",
+            syncHint:
+                "Mahsulotning nomi, narxi yoki yoshi o'zgarsa, Zumda orqali joylangan postlar ham o'zi o'zgaradi.",
+            fromZumda: "Zumda orqali joylangan",
+            fromTelegram: "Siz joylagan",
+            /** The owner's post had no words: a photo or a video. */
+            noText: "Rasm yoki video",
+            buttonSet: "Tugmasi bor",
+            buttonNotSet: "Tugmasi yo'q",
+            noButtonHint: "Bir nechta rasm bilan chiqqan post ostiga Telegram tugma qo'ymaydi.",
+            pickProduct: "Mahsulotni tanlash",
+            pickTitle: "Post qaysi mahsulotga olib borsin?",
+            relinked: "Endi shu mahsulotga olib boradi",
+            relinkedShop: "Endi hamma mahsulotlarga olib boradi",
+            history: {
+                title: "Eski postlar",
+                hint: "Kanaldagi oldingi postlarni ham qo'shing: bot ularni o'zi o'qib chiqadi va ostiga «Buyurtma berish» tugmasini qo'yadi.",
+                start: "Eski postlarni ham qo'shish",
+                going: "Bot eski postlarni o'qiyapti…",
+                added: "Qo'shildi: {n} ta post",
+                wait: "Telegram biroz kutib turishni so'radi. {s} soniyadan keyin o'zi davom etadi.",
+                done: "Eski postlarning hammasi qo'shildi",
+                unavailable:
+                    "Yopiq kanalning eski postlarini bot ko'ra olmaydi, yangilari esa qo'shiladi.",
+            },
             opens: "{n} kishi kirdi",
             orders: "{n} ta buyurtma",
             sales: "{n} ta yetkazildi",
