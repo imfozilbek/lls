@@ -74,6 +74,9 @@ export const staffUz = {
         POST_NOT_DELETABLE: "Post o'chmadi. Uni kanalda o'zingiz o'chiring.",
         POST_NOT_RELINKABLE: "Zumda orqali joylangan post o'z mahsulotiga olib boradi.",
         CHANNEL_HISTORY_FAILED: "Telegram hozir javob bermadi. Birozdan keyin yana bosing.",
+        VIDEO_TOO_LARGE: "Video 50 MB dan katta: qisqaroq video tanlang.",
+        UNSUPPORTED_VIDEO: "Bu video turi to'g'ri kelmaydi: MP4 yoki MOV video tanlang.",
+        VIDEO_SIZE_UNKNOWN: "Video hajmi aniqlanmadi. Qayta urinib ko'ring.",
     },
     trip: {
         sameWay: "Shu yo'nalishda yana {n} ta",
@@ -667,6 +670,22 @@ export const staffUz = {
                 saveFirst: "Avval o'zgarishlarni saqlang.",
                 noChannel: "Kanal hali bog'lanmagan. Uni bog'lang, keyin shu yerda joylaysiz.",
                 photoFailed: "Rasm ochilmadi. Qayta urinib ko'ring.",
+                media: "Rasmlar va video",
+                addPhoto: "Rasm qo'shish",
+                pickVideo: "Video tanlash",
+                remove: "Olib tashlash",
+                maxPhotos: "Ko'pi bilan 4 ta rasm",
+                collageHint:
+                    "Bir nechta rasm bitta rasmga yig'iladi: shunda post ostida «Buyurtma berish» tugmasi turadi.",
+                videoHint: "Video bilan faqat video joylanadi, rasmlar qo'shilmaydi.",
+                uploading: "Video yuklanmoqda: {p}%",
+                keepOpen: "Video yuklanguncha ilovani yopmang.",
+                layouts: {
+                    side: "Yonma-yon",
+                    stack: "Ustma-ust",
+                    bigTwo: "Bittasi katta",
+                    grid: "To'rtta katak",
+                },
                 /** The post as the bot writes it (`worker/src/telegram/post-caption.ts`). */
                 priceFrom: "{price} dan",
                 ageLine: "👶 {age} yoshdan",

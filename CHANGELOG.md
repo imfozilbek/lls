@@ -7,6 +7,14 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### A channel post with several photos or a video
+- **«Rasmlar va video»** in «Kanalga joylash»: the product's photos at first, more from the
+  phone, up to four. Two to four go as one collage (the layout picked by chips) with «🛒 Buyurtma
+  berish» under it: Telegram shows no button under an album.
+- **A video** instead (MP4 or MOV, up to 50 MB) with its upload's progress; it goes on to
+  Telegram as it comes, nothing is stored on our side. A new price edits its caption.
+- Migration `0036` (additive): what a post carries.
+
 ### Every post of the shop's channel in Zumda
 - **A post the owner makes in Telegram** gets «🛒 Buyurtma berish» at once (owner's decision,
   November 2026): to the one product its words name, or to the whole shop. The owner's words stay

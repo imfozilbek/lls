@@ -1,17 +1,19 @@
 import {
     DeleteSourceLinkUseCase,
+    PostMedia,
     ImportChannelHistoryUseCase,
     Language,
     PublishPostUseCase,
     RecordChannelPostUseCase,
     SyncProductPostsUseCase,
+    postHasCaption,
 } from "@zumda/core"
 
 import { TelegramApiError } from "./gateway.js"
 import { postCaption, postKeyboard } from "./post-caption.js"
 import { textsFor } from "./texts.js"
 
-import type { OutgoingFile } from "./gateway.js"
+import type { OutgoingFile, OutgoingVideo } from "./gateway.js"
 import type { BotTexts } from "./texts.js"
 import type { Services } from "../services.js"
 import type {
@@ -76,14 +78,18 @@ function said(error: unknown, pattern: RegExp): boolean {
 }
 
 /**
- * The shop's channel through its own bot. `photo` is the picture the app drew for a new post (a
- * JPEG: Telegram may refuse the WebP the catalog keeps).
+ * What a new post carries above its words: the picture the app drew (one photo or a collage, a
+ * JPEG: Telegram may refuse the WebP the catalog keeps), or a video from the owner's phone.
  */
+export type PostUpload =
+    { kind: "photo"; file: OutgoingFile } | { kind: "video"; video: OutgoingVideo }
+
+/** The shop's channel through its own bot. */
 export class TelegramChannelPublisher implements ChannelPublisher {
     constructor(
         private readonly services: Services,
         private readonly business: Business,
-        private readonly photo: OutgoingFile | null = null,
+        private readonly upload: PostUpload | null = null,
     ) {}
 
     /** A channel speaks to everyone: Uzbek, like every Zumda text. */
@@ -115,15 +121,28 @@ export class TelegramChannelPublisher implements ChannelPublisher {
         const caption = postCaption(post.facts, post.ownerText, this.texts)
         const options = { keyboard: this.keyboard(post.linkId) }
         try {
-            if (this.photo) {
-                const sent = await this.services.telegram.sendPhotoFile(
+            const telegram = this.services.telegram
+            if (this.upload?.kind === "video") {
+                const sent = await telegram.sendVideoFile(
                     token,
                     channel.chatId,
-                    this.photo,
+                    this.upload.video,
                     caption,
                     options,
                 )
-                return { kind: "posted", ref: { chatId: channel.chatId, ...sent } }
+                const ref = { chatId: channel.chatId, ...sent, media: PostMedia.VIDEO }
+                return { kind: "posted", ref }
+            }
+            if (this.upload) {
+                const sent = await telegram.sendPhotoFile(
+                    token,
+                    channel.chatId,
+                    this.upload.file,
+                    caption,
+                    options,
+                )
+                const ref = { chatId: channel.chatId, ...sent, media: PostMedia.PHOTO }
+                return { kind: "posted", ref }
             }
             const sent = await this.services.telegram.sendMessage(
                 token,
@@ -149,7 +168,7 @@ export class TelegramChannelPublisher implements ChannelPublisher {
         const caption = postCaption(facts, link.ownerText, this.texts)
         const options = { keyboard: this.keyboard(link.id) }
         try {
-            if (post.photoFileId) {
+            if (postHasCaption(post)) {
                 await this.services.telegram.editCaption(
                     token,
                     channel.chatId,
@@ -230,9 +249,9 @@ function linkDeps(services: Services): SourceLinkDeps {
 export function publishPostUseCase(
     services: Services,
     business: Business,
-    photo: OutgoingFile | null,
+    upload: PostUpload | null,
 ): PublishPostUseCase {
-    const publisher = new TelegramChannelPublisher(services, business, photo)
+    const publisher = new TelegramChannelPublisher(services, business, upload)
     return new PublishPostUseCase({ ...linkDeps(services), publisher })
 }
 

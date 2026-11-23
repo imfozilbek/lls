@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers"
 import { beforeEach, describe, expect, it } from "vitest"
 
-import { ShopChannel, SourceLink, SourceLinkKind, SourceLinkOrigin } from "@zumda/core"
+import { PostMedia, ShopChannel, SourceLink, SourceLinkKind, SourceLinkOrigin } from "@zumda/core"
 
 import {
     D1ShopChannelRepository,
@@ -117,6 +117,11 @@ describe("the shop's channel and its links in D1", () => {
         expect(read?.post).toEqual({ chatId: CHAT, messageId: 100, photoFileId: "file" })
         expect(read?.kind).toBe(SourceLinkKind.POST)
         expect(read?.origin).toBe(SourceLinkOrigin.ZUMDA)
+        expect(read?.post?.media).toBeUndefined()
+        const shown = SourceLink.post({ businessId, productId: "p-2", postKey: "k", now: NOW })
+        shown.posted({ chatId: CHAT, messageId: 900, media: PostMedia.VIDEO })
+        await links.insert(shown)
+        expect((await links.findById(businessId, shown.id))?.post?.media).toBe(PostMedia.VIDEO)
         expect(read?.isZumdaPost).toBe(true)
         expect(read?.counts).toEqual({ opens: 0, orders: 0, sales: 0, revenue: 0 })
         expect(await links.findById("another-shop", written.id)).toBeNull()

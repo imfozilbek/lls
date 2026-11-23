@@ -1,5 +1,7 @@
 import { query, request } from "../lib/api.js"
 
+import { uploadVideo } from "./video-upload.js"
+
 import type {
     HistoryOutcome,
     Page,
@@ -29,6 +31,19 @@ export const channelApi = {
             "POST",
             `/api/owner/channel/posts${query({ productId, text: text || undefined })}`,
             photo ?? undefined,
+        ),
+    /** A video post: the bytes go on to Telegram as they come, with the upload's progress. */
+    postVideo: (
+        productId: string,
+        text: string,
+        video: { file: File; type: string },
+        onProgress: (fraction: number) => void,
+    ): Promise<SourceLinkView> =>
+        uploadVideo(
+            `/api/owner/channel/posts${query({ productId, text: text || undefined })}`,
+            video.file,
+            video.type,
+            onProgress,
         ),
     links: (kind: SourceLinkKind, page = 1): Promise<Page<SourceLinkView>> =>
         request("GET", `/api/owner/links${query({ kind, page })}`),

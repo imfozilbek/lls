@@ -142,7 +142,7 @@ export function setAdminBot(): void {
     adminBot = true
 }
 
-function authHeaders(): Headers {
+export function authHeaders(): Headers {
     const headers = new Headers({ "X-Telegram-Init-Data": webApp()?.initData ?? "" })
     if (webSession) {
         headers.set("Authorization", `Bearer ${webSession}`)
@@ -246,6 +246,11 @@ function refusal(answer: Answer): ApiError {
         error?.message ?? answer.statusText,
         error?.details,
     )
+}
+
+/** The same refusal for a call made apart (a video's upload with its progress). */
+export function refusalOf(status: number, statusText: string, text: string): ApiError {
+    return refusal({ status, statusText, text })
 }
 
 function isOk(status: number): boolean {

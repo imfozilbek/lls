@@ -148,6 +148,43 @@ describe("HttpTelegramGateway", () => {
         }
     })
 
+    it("streams a video through as one multipart upload, never retried", async () => {
+        let form: FormData | undefined
+        let calls = 0
+        const fetcher = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+            calls += 1
+            form = await new Request("https://t.example/", {
+                method: "POST",
+                headers: init?.headers,
+                body: init?.body,
+            }).formData()
+            return new Response(JSON.stringify({ ok: true, result: { message_id: 77 } }))
+        }) as typeof fetch
+        const bytes = new Uint8Array(3000).map((_, i) => i % 251)
+        const keyboard = { inline_keyboard: [[{ text: "Buyurtma", url: "https://t.me/b" }]] }
+        const sent = await new HttpTelegramGateway(fetcher).sendVideoFile(
+            "t",
+            -100,
+            {
+                name: 'po"st.mp4',
+                contentType: "video/mp4",
+                size: bytes.byteLength,
+                body: new Response(bytes).body ?? new ReadableStream(),
+            },
+            "<b>Fetr</b>",
+            { keyboard },
+        )
+        expect(sent).toEqual({ messageId: 77 })
+        expect(calls).toBe(1)
+        expect(form?.get("chat_id")).toBe("-100")
+        expect(form?.get("caption")).toBe("<b>Fetr</b>")
+        expect(form?.get("supports_streaming")).toBe("true")
+        expect(JSON.parse(String(form?.get("reply_markup")))).toEqual(keyboard)
+        const file = form?.get("video") as File
+        expect(file.name).toBe("po_st.mp4")
+        expect(new Uint8Array(await file.arrayBuffer())).toEqual(bytes)
+    })
+
     it("puts buttons under a post; Telegram's no is the caller's to read", async () => {
         const { fetcher, calls } = fakeFetch(true)
         const keyboard = { inline_keyboard: [[{ text: "Buyurtma", url: "https://t.me/b" }]] }

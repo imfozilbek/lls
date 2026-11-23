@@ -21,12 +21,12 @@ import {
     importChannelHistoryUseCase,
     publishPostUseCase,
 } from "../telegram/channel-publisher.js"
-import { SHOP_BOT_UPDATES_VERSION, TelegramApiError } from "../telegram/gateway.js"
+import { MAX_VIDEO_BYTES, SHOP_BOT_UPDATES_VERSION, TelegramApiError } from "../telegram/gateway.js"
 
 import type { AppEnv } from "../env.js"
 import type { BotCredentials } from "../repositories/business.repository.js"
 import type { Services } from "../services.js"
-import type { OutgoingFile } from "../telegram/gateway.js"
+import type { PostUpload } from "../telegram/channel-publisher.js"
 import type { Business, ShopChannel, SourceLinkDTO } from "@zumda/core"
 import type { Context } from "hono"
 
@@ -35,12 +35,43 @@ function withUrl(business: Business, link: SourceLinkDTO): SourceLinkDTO & { url
     return { ...link, url: sourceStartUrl(business.bot.username, link.id) }
 }
 
-/** The JPEG the app drew for the post, or none (a post without a photo). */
-async function postPhoto(c: Context<AppEnv>): Promise<OutgoingFile | null> {
-    if (!c.req.header("Content-Type")?.startsWith("image/")) {
+/** The videos Telegram shows as videos: a phone's mp4, and an iPhone's mov. */
+const VIDEO_TYPES: Record<string, string> = {
+    "video/mp4": "post.mp4",
+    "video/quicktime": "post.mov",
+}
+
+/** A video from the owner's phone, streamed on to Telegram: its size must be told and fit. */
+function postVideo(c: Context<AppEnv>, type: string): PostUpload {
+    const name = VIDEO_TYPES[type]
+    const body = c.req.raw.body
+    if (!name || !body) {
+        throw new ApiError(415, "UNSUPPORTED_VIDEO", "Upload an MP4 or MOV video")
+    }
+    const size = Number(c.req.header("Content-Length") ?? "")
+    if (!Number.isSafeInteger(size) || size <= 0) {
+        throw new ApiError(411, "VIDEO_SIZE_UNKNOWN", "The video's size is missing")
+    }
+    if (size > MAX_VIDEO_BYTES) {
+        throw new ApiError(413, "VIDEO_TOO_LARGE", "The video is larger than 50 MB")
+    }
+    return { kind: "video", video: { name, contentType: type, size, body } }
+}
+
+/**
+ * What the post carries: the JPEG the app drew (one photo or a collage), a video, or none (a text
+ * post).
+ */
+async function postUpload(c: Context<AppEnv>): Promise<PostUpload | null> {
+    const type = c.req.header("Content-Type")?.split(";")[0]?.trim().toLowerCase() ?? ""
+    if (type.startsWith("video/")) {
+        return postVideo(c, type)
+    }
+    if (!type.startsWith("image/")) {
         return null
     }
-    return { name: "post.jpg", contentType: "image/jpeg", bytes: await readJpeg(c.req.raw) }
+    const file = { name: "post.jpg", contentType: "image/jpeg", bytes: await readJpeg(c.req.raw) }
+    return { kind: "photo", file }
 }
 
 /** The shop's bot hears Telegram again, with every kind of update Zumda needs of it now. */
@@ -162,9 +193,9 @@ export const channelRoutes = new Hono<AppEnv>()
             const services = c.get("services")
             const business = shopOf(c)
             const { productId, text } = c.req.valid("query")
-            const photo = await postPhoto(c)
+            const upload = await postUpload(c)
             try {
-                const post = await publishPostUseCase(services, business, photo).execute({
+                const post = await publishPostUseCase(services, business, upload).execute({
                     actorTelegramId: c.get("auth").user.id,
                     businessId: business.id,
                     productId,

@@ -5,8 +5,10 @@ import {
     LINK_LABEL_MAX,
     POST_PREVIEW_MAX,
     POST_TEXT_MAX,
+    PostMedia,
     SourceLink,
     SourceLinkKind,
+    postHasCaption,
     postPreviewOf,
 } from "../../domain/entities/source-link.js"
 import { Unit } from "../../domain/enums/unit.js"
@@ -176,5 +178,16 @@ describe("the shop's channel", () => {
         expect(() => connect("no spaces")).toThrow(ValidationError)
         expect(connect().isSameChat(-1001234567890)).toBe(true)
         expect(connect().isSameChat(-1009)).toBe(false)
+    })
+})
+
+describe("a post's words", () => {
+    it("are a caption under a photo, a collage or a video; a message's text otherwise", () => {
+        const at = { chatId: -100, messageId: 7 }
+        expect(postHasCaption({ ...at, media: PostMedia.VIDEO })).toBe(true)
+        expect(postHasCaption({ ...at, media: PostMedia.PHOTO })).toBe(true)
+        // A photo post sent before the kind was kept: its photo's id tells it.
+        expect(postHasCaption({ ...at, photoFileId: "AgAD" })).toBe(true)
+        expect(postHasCaption(at)).toBe(false)
     })
 })

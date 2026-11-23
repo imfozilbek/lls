@@ -1,8 +1,15 @@
-import { SOURCE_LINK_KINDS, SOURCE_LINK_ORIGINS, ShopChannel, SourceLink } from "@zumda/core"
+import {
+    POST_MEDIA,
+    SOURCE_LINK_KINDS,
+    SOURCE_LINK_ORIGINS,
+    ShopChannel,
+    SourceLink,
+} from "@zumda/core"
 
 import { oneOf, optional, placeholders } from "./rows.js"
 
 import type {
+    PostRef,
     ShopChannelRepository,
     SourceLinkKind,
     SourceLinkRepository,
@@ -32,6 +39,7 @@ interface LinkRow {
     chat_id: number | null
     message_id: number | null
     photo_file_id: string | null
+    post_media: string | null
     owner_text: string | null
     post_key: string | null
     opens: number
@@ -47,7 +55,7 @@ export const CHANNEL_SQL = `SELECT business_id, chat_id, title, username, connec
     FROM shop_channels WHERE business_id = ?`
 
 const LINK_COLUMNS = `id, business_id, kind, origin, preview, button_at, product_id, label, chat_id,
-    message_id, photo_file_id, owner_text, post_key, opens, orders, sales, revenue, created_at,
+    message_id, photo_file_id, post_media, owner_text, post_key, opens, orders, sales, revenue, created_at,
     deleted_at`
 
 export const LINK_BY_ID_SQL = `SELECT ${LINK_COLUMNS} FROM source_links
@@ -88,8 +96,9 @@ export const POST_LINK_SQL = `SELECT ${LINK_COLUMNS} FROM source_links
     WHERE chat_id = ? AND message_id = ? AND message_id IS NOT NULL`
 
 const LINK_INSERT = `INSERT INTO source_links (id, business_id, kind, origin, preview, button_at,
-    product_id, label, chat_id, message_id, photo_file_id, owner_text, post_key, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    product_id, label, chat_id, message_id, photo_file_id, post_media, owner_text, post_key,
+    created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 
 /** A post made in Telegram: written once, however often it is seen. */
 export const CHANNEL_POST_INSERT = `${LINK_INSERT}
@@ -121,6 +130,13 @@ function toChannel(row: ChannelRow): ShopChannel {
     })
 }
 
+/** Where a post is in its channel and what it carries; an ad link has none of it. */
+function postColumns(post: PostRef | undefined): (string | number | null)[] {
+    return post
+        ? [post.chatId, post.messageId, post.photoFileId ?? null, post.media ?? null]
+        : [null, null, null, null]
+}
+
 function toLink(row: LinkRow): SourceLink {
     const post =
         row.chat_id !== null && row.message_id !== null
@@ -128,6 +144,9 @@ function toLink(row: LinkRow): SourceLink {
                   chatId: row.chat_id,
                   messageId: row.message_id,
                   ...(row.photo_file_id === null ? {} : { photoFileId: row.photo_file_id }),
+                  ...(row.post_media === null
+                      ? {}
+                      : { media: oneOf(row.post_media, POST_MEDIA, "source_links.post_media") }),
               }
             : undefined
     return SourceLink.restore({
@@ -210,9 +229,7 @@ export class D1SourceLinkRepository implements SourceLinkRepository {
                 link.buttonAt?.getTime() ?? null,
                 link.productId ?? null,
                 link.label ?? null,
-                link.post?.chatId ?? null,
-                link.post?.messageId ?? null,
-                link.post?.photoFileId ?? null,
+                ...postColumns(link.post),
                 link.ownerText ?? null,
                 link.postKey ?? null,
                 link.createdAt.getTime(),
