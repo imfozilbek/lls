@@ -7,8 +7,8 @@ import { truncateSync, writeFileSync } from "node:fs"
 
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, apiAs, resetStand } from "../support/stand.js"
 import { pngImage } from "../support/images.js"
+import { FOOD, PEOPLE, apiAs, resetStand } from "../support/stand.js"
 import { callsOf, channelMembership, lastSeq } from "../support/telegram.js"
 import { openApp } from "../support/webapp.js"
 
