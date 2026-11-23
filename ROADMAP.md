@@ -214,6 +214,9 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Every post of the channel: the owner's own posts get «Buyurtma berish» at once (to the
       product their words name, or the shop; «Mahsulotni tanlash»); the past read from the
       channel's public page, ten posts a press (migration `0035`)
+- [x] «Rasmlar va video»: up to four photos as one collage with the button, or a video up to
+      50 MB (migration `0036`)
+- [ ] A carousel (Bot API 10.x slideshow): after a check on old phones
 - [ ] On production: a test channel from a real Android and iPhone; ABC bolajon's first post;
       a button under an owner's own post; the past read to the first post
 

@@ -433,7 +433,15 @@ cover each one's whole process; what exactly comes from the meeting with them.
   - **«Kanalga joylash»** in a saved product on sale (`POST_PRODUCT_UNAVAILABLE`): the owner's
     words (the description first, up to 850 characters, `POST_TEXT_MAX`), the photo drawn again
     as a JPEG by the app (a text post without one), the price («… dan» with variants) and the age,
-    and «🛒 Buyurtma berish» (`/start s_<code>` in the shop's bot). A new name, price or age edits
+    and «🛒 Buyurtma berish» (`/start s_<code>` in the shop's bot). **«Rasmlar va video»**
+    (owner's decision, November 2026): the product's photos at first, more from the phone up to
+    four; two to four become one collage drawn in the app (`owner/post-collage.ts`: «Yonma-yon»,
+    «Ustma-ust», «Bittasi katta», «To'rtta katak»), since Telegram shows no button under an
+    album. Or one video instead (MP4 or MOV, up to 50 MB, `MAX_VIDEO_BYTES`): it streams through
+    the Worker to `sendVideo` (`streamedUpload`, never held in memory), the app shows its
+    progress (XHR, 10 minutes) and keeps itself open. Nothing is stored on our side; the post
+    keeps what it carries (`source_links.post_media`) so a new price edits its caption. A
+    carousel (Bot API 10.x `sendRichMessage` slideshow) waits for a check on old phones. A new name, price or age edits
     the last 20 posts of the product in the channel of now, in the background, keeping the
     owner's words; the photo, the stock and «Sotuvda bor» change no post (owner's decision).
     Zumda deletes only its own posts («Postni o'chirish», `POST_NOT_DELETABLE` when Telegram

@@ -210,6 +210,10 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
   belgilanadi. Bog'lanishi bilan bot sizga yozadi.
   - Mahsulot sahifasida **Kanalga joylash** tugmasini bosing, matn yozing va joylang. Post tagida
     **Buyurtma berish** tugmasi chiqadi: uni bosgan odam darhol mahsulotni ko'radi.
+  - Kanalga joylashda 4 tagacha rasm tanlash mumkin: ular bitta rasmga yig'iladi, shunda post
+    ostida **Buyurtma berish** tugmasi turadi.
+  - Rasm o'rniga video ham joylasa bo'ladi: MP4 yoki MOV, 50 MB dan oshmasin. Video yuklanguncha
+    ilovani yopmang.
   - Kanalga o'zingiz qo'ygan postlar ham Zumdaga tushadi: ularning ostiga ham **Buyurtma
     berish** tugmasini bot o'zi qo'yadi. Matnda mahsulot nomi bo'lsa, tugma shu mahsulotga olib
     boradi, bo'lmasa hamma mahsulotlarga. **Mahsulotni tanlash** bilan buni o'zgartirasiz.
