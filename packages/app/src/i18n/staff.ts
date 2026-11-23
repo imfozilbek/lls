@@ -670,6 +670,22 @@ export const staffUz = {
                 saveFirst: "Avval o'zgarishlarni saqlang.",
                 noChannel: "Kanal hali bog'lanmagan. Uni bog'lang, keyin shu yerda joylaysiz.",
                 photoFailed: "Rasm ochilmadi. Qayta urinib ko'ring.",
+                media: "Rasmlar va video",
+                addPhoto: "Rasm qo'shish",
+                pickVideo: "Video tanlash",
+                remove: "Olib tashlash",
+                maxPhotos: "Ko'pi bilan 4 ta rasm",
+                collageHint:
+                    "Bir nechta rasm bitta rasmga yig'iladi: shunda post ostida «Buyurtma berish» tugmasi turadi.",
+                videoHint: "Video bilan faqat video joylanadi, rasmlar qo'shilmaydi.",
+                uploading: "Video yuklanmoqda: {p}%",
+                keepOpen: "Video yuklanguncha ilovani yopmang.",
+                layouts: {
+                    side: "Yonma-yon",
+                    stack: "Ustma-ust",
+                    bigTwo: "Bittasi katta",
+                    grid: "To'rtta katak",
+                },
                 /** The post as the bot writes it (`worker/src/telegram/post-caption.ts`). */
                 priceFrom: "{price} dan",
                 ageLine: "👶 {age} yoshdan",
