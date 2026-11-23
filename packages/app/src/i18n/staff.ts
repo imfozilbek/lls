@@ -74,6 +74,9 @@ export const staffUz = {
         POST_NOT_DELETABLE: "Post o'chmadi. Uni kanalda o'zingiz o'chiring.",
         POST_NOT_RELINKABLE: "Zumda orqali joylangan post o'z mahsulotiga olib boradi.",
         CHANNEL_HISTORY_FAILED: "Telegram hozir javob bermadi. Birozdan keyin yana bosing.",
+        VIDEO_TOO_LARGE: "Video 50 MB dan katta: qisqaroq video tanlang.",
+        UNSUPPORTED_VIDEO: "Bu video turi to'g'ri kelmaydi: MP4 yoki MOV video tanlang.",
+        VIDEO_SIZE_UNKNOWN: "Video hajmi aniqlanmadi. Qayta urinib ko'ring.",
     },
     trip: {
         sameWay: "Shu yo'nalishda yana {n} ta",

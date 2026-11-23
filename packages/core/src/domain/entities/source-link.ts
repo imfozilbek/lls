@@ -45,11 +45,26 @@ export const SOURCE_VISIT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 const CODE_BYTES = 8
 const CODE = /^[A-Za-z0-9_-]{11}$/
 
+/** What a post Zumda sent carries above its words: its caption is edited, not its text. */
+export enum PostMedia {
+    PHOTO = "photo",
+    VIDEO = "video",
+}
+
+export const POST_MEDIA: readonly PostMedia[] = Object.values(PostMedia)
+
 /** The post in the channel: where it is, and Telegram's photo to show again in the bot. */
 export interface PostRef {
     chatId: number
     messageId: number
     photoFileId?: string
+    /** A photo or a video with a caption; none: a text post (or one sent before it was kept). */
+    media?: PostMedia
+}
+
+/** Its words are a caption (a photo or a video), not a message's text. */
+export function postHasCaption(post: PostRef): boolean {
+    return post.media !== undefined || post.photoFileId !== undefined
 }
 
 /** What the link brought. Revenue is the goods of delivered orders, integer UZS. */

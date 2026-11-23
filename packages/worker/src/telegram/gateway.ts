@@ -108,6 +108,20 @@ export interface OutgoingFile {
     bytes: Uint8Array
 }
 
+/** Telegram takes a bot's upload up to this size (sendVideo by multipart). */
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024
+
+/**
+ * A video on its way from the owner's phone to the channel: its bytes pass through as a stream,
+ * never held whole in the Worker's memory.
+ */
+export interface OutgoingVideo {
+    name: string
+    contentType: string
+    size: number
+    body: ReadableStream<Uint8Array>
+}
+
 /** A picture sent: its message, and Telegram's id of the photo to send again without bytes. */
 export interface SentPhoto {
     messageId: number
@@ -206,6 +220,14 @@ export interface TelegramGateway {
         captionHtml: string,
         options?: MessageOptions,
     ): Promise<SentPhoto>
+    /** A video from the owner's phone with an HTML caption and buttons: a channel post. */
+    sendVideoFile(
+        token: string,
+        chatId: number,
+        video: OutgoingVideo,
+        captionHtml: string,
+        options?: MessageOptions,
+    ): Promise<{ messageId: number }>
     /** A post's caption written again, with its buttons (an edit without them drops them). */
     editCaption(
         token: string,
@@ -307,6 +329,56 @@ export const SHOP_BOT_UPDATES = ["message", "callback_query", "my_chat_member", 
  * is registered again (`shop_channels.updates_version`) when its owner opens «Telegram kanal».
  */
 export const SHOP_BOT_UPDATES_VERSION = 1
+
+const MULTIPART_LINE = "\r\n"
+
+/** A file's name as a multipart header may carry it: no quotes, no line breaks. */
+function headerSafe(name: string): string {
+    return name.replace(/["\r\n\\]/g, "_") || "video"
+}
+
+/**
+ * A multipart body of text fields and one file that streams through: its length is known, so
+ * Telegram gets a plain upload and the Worker never holds the file.
+ */
+export function streamedUpload(
+    fields: Record<string, string>,
+    fileField: string,
+    file: OutgoingVideo,
+): { contentType: string; body: ReadableStream<Uint8Array>; done: Promise<void> } {
+    const boundary = `zumda${crypto.randomUUID().replace(/-/g, "")}`
+    const encoder = new TextEncoder()
+    const parts = Object.entries(fields).map(
+        ([name, value]) =>
+            `--${boundary}${MULTIPART_LINE}Content-Disposition: form-data; name="${name}"` +
+            `${MULTIPART_LINE}${MULTIPART_LINE}${value}${MULTIPART_LINE}`,
+    )
+    const head = encoder.encode(
+        `${parts.join("")}--${boundary}${MULTIPART_LINE}Content-Disposition: form-data; ` +
+            `name="${fileField}"; filename="${headerSafe(file.name)}"${MULTIPART_LINE}` +
+            `Content-Type: ${file.contentType}${MULTIPART_LINE}${MULTIPART_LINE}`,
+    )
+    const tail = encoder.encode(`${MULTIPART_LINE}--${boundary}--${MULTIPART_LINE}`)
+    const { readable, writable } = new FixedLengthStream(
+        head.byteLength + file.size + tail.byteLength,
+    )
+    const done = (async (): Promise<void> => {
+        const start = writable.getWriter()
+        await start.write(head)
+        start.releaseLock()
+        await file.body.pipeTo(writable, { preventClose: true })
+        const end = writable.getWriter()
+        await end.write(tail)
+        await end.close()
+    })()
+    // A broken upload fails the request itself; this only keeps the rejection handled.
+    done.catch(() => undefined)
+    return {
+        contentType: `multipart/form-data; boundary=${boundary}`,
+        body: readable,
+        done: done.catch(() => undefined),
+    }
+}
 
 /** Escapes text for Telegram HTML parse mode. */
 export function escapeHtml(text: string): string {
@@ -501,6 +573,32 @@ export class HttpTelegramGateway implements TelegramGateway {
         await this.call(token, "setMyShortDescription", {
             short_description: texts.shortDescription,
         })
+    }
+
+    async sendVideoFile(
+        token: string,
+        chatId: number,
+        video: OutgoingVideo,
+        captionHtml: string,
+        options: MessageOptions = {},
+    ): Promise<{ messageId: number }> {
+        const fields: Record<string, string> = {
+            chat_id: String(chatId),
+            caption: captionHtml,
+            parse_mode: "HTML",
+            supports_streaming: "true",
+            ...(options.keyboard ? { reply_markup: JSON.stringify(options.keyboard) } : {}),
+        }
+        const upload = streamedUpload(fields, "video", video)
+        // A stream is read once: Telegram asking to wait is the caller's to answer, not ours.
+        const sent = await this.send<{ message_id: number }>(
+            token,
+            "sendVideo",
+            { headers: { "Content-Type": upload.contentType }, body: upload.body },
+            true,
+        )
+        await upload.done
+        return { messageId: sent.message_id }
     }
 
     async sendPhotoFile(

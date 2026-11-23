@@ -320,6 +320,63 @@ describe("the shop's channel", () => {
         })
     })
 
+    describe("a video post", () => {
+        const VIDEO = new Uint8Array(4096).fill(7)
+        // A browser tells the size; a test request does not, so it is said here.
+        const video = (type = "video/mp4", size = VIDEO.byteLength): Promise<Response> =>
+            owner()(`/api/owner/channel/posts?productId=${productId}&text=Ko'ring`, {
+                method: "POST",
+                headers: { "Content-Type": type, "Content-Length": String(size) },
+                body: VIDEO,
+            })
+
+        beforeEach(async () => {
+            await madeAdmin()
+        })
+
+        it("streams the video on to the channel with the words, the price and the button", async () => {
+            const response = await video()
+            expect(response.status).toBe(201)
+            const sent = client.telegram.videoFiles.at(-1)
+            expect(sent).toMatchObject({
+                chatId: CHAT,
+                name: "post.mp4",
+                contentType: "video/mp4",
+                bytes: VIDEO.byteLength,
+            })
+            expect(sent?.html).toContain("Ko'ring")
+            expect(sent?.html).toContain("💰 <b>110 000 so'm</b>")
+            expect(sent?.options?.keyboard?.inline_keyboard[0]?.[0]?.text).toBe(
+                "🛒 Buyurtma berish",
+            )
+            expect(client.telegram.photoFiles).toHaveLength(0)
+        })
+
+        it("a new price edits its caption, never its text", async () => {
+            await video()
+            await owner()(`/api/owner/products/${productId}`, {
+                method: "PATCH",
+                json: { price: 99_000 },
+            })
+            expect(client.telegram.captions.at(-1)?.html).toContain("💰 <b>99 000 so'm</b>")
+            expect(client.telegram.edited.filter((m) => m.chatId === CHAT)).toHaveLength(0)
+        })
+
+        it("refuses a video Telegram does not show, and one over 50 MB", async () => {
+            const webm = await video("video/webm")
+            expect(webm.status).toBe(415)
+            expect((await json<{ error: { code: string } }>(webm)).error.code).toBe(
+                "UNSUPPORTED_VIDEO",
+            )
+            const big = await video("video/mp4", 50 * 1024 * 1024 + 1)
+            expect(big.status).toBe(413)
+            expect((await json<{ error: { code: string } }>(big)).error.code).toBe(
+                "VIDEO_TOO_LARGE",
+            )
+            expect(client.telegram.videoFiles).toHaveLength(0)
+        })
+    })
+
     describe("a post stays true", () => {
         beforeEach(async () => {
             await madeAdmin()

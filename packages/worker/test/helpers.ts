@@ -13,6 +13,7 @@ import type {
     ManagedBotButton,
     MessageOptions,
     OutgoingFile,
+    OutgoingVideo,
     SentPhoto,
     TelegramGateway,
     VideoLink,
@@ -258,6 +259,28 @@ export class FakeTelegram implements TelegramGateway {
         if (chatId < 0 && this.channelError !== null) {
             throw new TelegramApiError(method, this.channelError)
         }
+    }
+    /** Videos posted in a channel: their name, type and the bytes that streamed through. */
+    readonly videoFiles: {
+        chatId: number
+        name: string
+        contentType: string
+        bytes: number
+        html: string
+        options?: MessageOptions
+    }[] = []
+    async sendVideoFile(
+        _token: string,
+        chatId: number,
+        video: OutgoingVideo,
+        html: string,
+        options?: MessageOptions,
+    ): Promise<{ messageId: number }> {
+        this.refuseInChannel("sendVideo", chatId)
+        const bytes = (await new Response(video.body).arrayBuffer()).byteLength
+        const { name, contentType } = video
+        this.videoFiles.push({ chatId, name, contentType, bytes, html, options })
+        return { messageId: this.nextMessageId++ }
     }
     readonly captions: {
         token: string
