@@ -336,7 +336,28 @@ describe("the shop's support group", () => {
 
             await pressed(`q_p${product.id}`)
             expect(client.telegram.sent.at(-2)?.html).toContain("«Fetr kitobcha» haqida")
-            expect(toCustomer().at(-1)).toContain("«Fetr kitobcha» haqida savolingizni")
+            // Under the product's card (goal 23): its name and price, then the greeting.
+            expect(toCustomer().at(-1)).toContain("<b>Fetr kitobcha</b>")
+            expect(toCustomer().at(-1)).toContain("Bu mahsulot haqida savolingizni yozing")
+            // The order's live message says the customer may ask here.
+            expect(toCustomer().some((m) => m.includes("Savolingiz bo'lsa, shu yerga"))).toBe(true)
+        })
+
+        it("«Savolim bor» on the storefront: a question to the shop", async () => {
+            await madeAdmin()
+            await pressed("q_s")
+            expect(client.telegram.topics).toHaveLength(1)
+            expect(toCustomer().at(-1)).toBe(
+                "Assalomu alaykum! Savolingizni shu yerga yozing, tez orada javob beramiz.",
+            )
+        })
+
+        it("the greeting says the customer may ask here only while the group is there", async () => {
+            await pressed("")
+            expect(toCustomer().at(-1)).not.toContain("Savolingiz bo'lsa")
+            await madeAdmin()
+            await pressed("")
+            expect(toCustomer().at(-1)).toContain("Savolingiz bo'lsa, shu yerga yozing")
         })
 
         it("someone else's order is not told; without a group the bot greets", async () => {
@@ -345,7 +366,7 @@ describe("the shop's support group", () => {
             await madeAdmin()
             await pressed("q_onot-theirs", STRANGER)
             expect(client.telegram.sent.at(-1)).toMatchObject({ chatId: STRANGER.id })
-            expect(client.telegram.sent.at(-1)?.html).toContain("Savolingizni yozing")
+            expect(client.telegram.sent.at(-1)?.html).toContain("Savolingizni shu yerga yozing")
             expect(client.telegram.sent.some((m) => m.html.includes("haqida yozmoqchi"))).toBe(
                 false,
             )

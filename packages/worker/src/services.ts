@@ -339,13 +339,14 @@ function supportParts(
         customers: D1CustomerRepository
         orders: D1OrderRepository
         products: D1ProductRepository
+        sourceLinks: D1SourceLinkRepository
         clock: Clock
     },
 ): {
     repos: { supportGroups: D1SupportGroupRepository; supportThreads: D1SupportThreadRepository }
     useCases: SupportUseCases
 } {
-    const { businesses, customers, orders, products, clock } = deps
+    const { businesses, customers, orders, products, sourceLinks, clock } = deps
     const supportGroups = new D1SupportGroupRepository(db)
     const supportThreads = new D1SupportThreadRepository(db)
     const supportRefusals = new D1SupportRefusalRepository(db)
@@ -363,7 +364,12 @@ function supportParts(
             findSupportCustomer: new FindSupportCustomerUseCase(threadDeps),
             markSupportAnswered: new MarkSupportAnsweredUseCase(threadDeps),
             supportTopicOfCustomer: new SupportTopicOfCustomerUseCase(threadDeps),
-            supportContext: new SupportContextUseCase({ customers, orders, products }),
+            supportContext: new SupportContextUseCase({
+                customers,
+                orders,
+                products,
+                links: sourceLinks,
+            }),
         },
     }
 }
@@ -504,7 +510,8 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const tripDeps: TripDeps = { ...courierAccess, trips, routes, newId: newTripId }
     const cardBook = { businesses, cards, clock }
     const channel = channelParts(env.DB, businesses, products)
-    const support = supportParts(env.DB, { businesses, customers, orders, products, clock })
+    const supportRepos = { businesses, customers, orders, products, clock }
+    const support = supportParts(env.DB, { ...supportRepos, sourceLinks: channel.sourceLinks })
 
     return {
         env,

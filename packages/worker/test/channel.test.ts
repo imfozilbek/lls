@@ -29,6 +29,7 @@ import type { TestClient } from "./helpers.js"
 const SECRET_HEADER = "X-Telegram-Bot-Api-Secret-Token"
 const CHAT = -1001234567890
 const CHANNEL = { id: CHAT, type: "channel", title: "ABC o'yinchoqlar", username: "abc_kanal" }
+const SUPPORT_CHAT = -1005550001
 const STRANGER = { id: 3003, first_name: "Begona", language_code: "uz" }
 const COURIER = { id: 5005, first_name: "Jasur", language_code: "uz" }
 
@@ -266,6 +267,61 @@ describe("the shop's channel", () => {
             expect(button?.url).toBe(`https://t.me/osh_markaz_bot?start=s_${link.id}`)
             expect(link.url).toBe(button?.url)
             expect(link.postUrl).toMatch(/^https:\/\/t\.me\/abc_kanal\/\d+$/)
+        })
+
+        it("a shop that answers questions adds «💬 Savolim bor», older posts too", async () => {
+            const first = await json<LinkJson>(await post())
+            expect(
+                client.telegram.photoFiles.at(-1)?.options?.keyboard?.inline_keyboard,
+            ).toHaveLength(1)
+            // The support group connects (goal 23): the bot says so in its description.
+            await shopUpdate({
+                my_chat_member: {
+                    chat: {
+                        id: SUPPORT_CHAT,
+                        type: "supergroup",
+                        title: "Savollar",
+                        is_forum: true,
+                    },
+                    from: OWNER,
+                    date: 0,
+                    new_chat_member: {
+                        status: "administrator",
+                        user: { id: SHOP_BOT.id, is_bot: true, first_name: "Osh Markaz" },
+                        can_manage_topics: true,
+                    },
+                },
+            })
+            const question = {
+                text: "💬 Savolim bor",
+                url: `https://t.me/osh_markaz_bot?start=q_l${first.id}`,
+            }
+            const messageId = Number(first.postUrl?.split("/").at(-1))
+            expect(client.telegram.buttons.at(-1)).toMatchObject({ chatId: CHAT, messageId })
+            expect(client.telegram.buttons.at(-1)?.keyboard.inline_keyboard[1]?.[0]).toEqual(
+                question,
+            )
+            expect(client.telegram.descriptions.at(-1)?.description).toContain("Savolingiz bo'lsa")
+
+            const second = await json<LinkJson>(await post())
+            const rows = client.telegram.photoFiles.at(-1)?.options?.keyboard?.inline_keyboard
+            expect(rows?.[1]?.[0]?.url).toBe(`https://t.me/osh_markaz_bot?start=q_l${second.id}`)
+
+            // Pressed: the bot greets under the product's card; the topic hears the product.
+            await shopUpdate({
+                message: {
+                    message_id: 1,
+                    from: STRANGER,
+                    chat: { id: STRANGER.id, type: "private" },
+                    date: 0,
+                    text: `/start q_l${first.id}`,
+                },
+            })
+            const greeting = client.telegram.sent.filter((m) => m.chatId === STRANGER.id).at(-1)
+            expect(greeting?.html).toContain("<b>Fetr kitobcha</b>")
+            expect(greeting?.html).toContain("Bu mahsulot haqida savolingizni yozing")
+            const inTopic = client.telegram.sent.filter((m) => m.chatId === SUPPORT_CHAT)
+            expect(inTopic.at(-1)?.html).toContain("«Fetr kitobcha» haqida yozmoqchi")
         })
 
         it("without a photo it is a text post", async () => {

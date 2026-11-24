@@ -5,6 +5,8 @@ import { requireOwner, shopOf } from "../auth.js"
 import { ApiError } from "../http/errors.js"
 import { startGroupUrl } from "../telegram/app-links.js"
 import { TelegramApiError } from "../telegram/gateway.js"
+import { inBackground } from "../telegram/notifier.js"
+import { supportReachChanged } from "../telegram/support-reach.js"
 
 import { registerShopWebhook } from "./channel.routes.js"
 
@@ -79,6 +81,9 @@ export const supportRoutes = new Hono<AppEnv>()
             await services.telegram.leaveChat(credentials.token, removed.chatId).catch(() => {
                 // The group is forgotten either way; the owner may remove the bot by hand.
             })
+        }
+        if (removed) {
+            inBackground(c.executionCtx, services, supportReachChanged(services, business))
         }
         return c.body(null, 204)
     })

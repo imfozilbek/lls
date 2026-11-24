@@ -3,16 +3,14 @@ import { cn } from "../lib/cn.js"
 import { haptic, openTelegramLink } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 
-import { Icon } from "./icons.js"
-
-import type { IconProps } from "./icons.js"
+import { ChatIcon } from "./icons.js"
 
 /**
- * «Do'konga xabar yozish» and what it needs, in its own module: only the order screen and the
+ * «Savolim bor» and what it needs, in its own module: only the order screen and the
  * product's sheet (lazy chunks) draw it, so none of it is in a customer's first download.
  */
 
-/** What «Do'konga xabar yozish» was pressed on: the customer's order, or a product. */
+/** What «Savolim bor» was pressed on: the customer's order, or a product. */
 export type SupportAbout = { orderId: string } | { productId: string }
 
 /**
@@ -24,15 +22,8 @@ export function supportStartLink(botUsername: string, about: SupportAbout): stri
     return `https://t.me/${botUsername}?start=${payload}`
 }
 
-/** A speech bubble: «Do'konga xabar yozish». */
-export const ChatIcon = (p: IconProps): React.JSX.Element => (
-    <Icon {...p}>
-        <path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5h-7.5L7 20.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5z" />
-        <path d="M8 10h8M8 13h5" />
-    </Icon>
-)
 /**
- * «Do'konga xabar yozish» (goal 21): only for a shop that answers from its support group. Opens
+ * «Savolim bor» (goals 21, 23): only for a shop that answers from its support group. Opens
  * the shop's bot on what it is about; the customer writes there, the answer comes there.
  */
 export function WriteShopLink({

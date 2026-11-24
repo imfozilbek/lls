@@ -215,7 +215,11 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Goal 22: a required «Ishga tayyor» step; «Qanday qilinadi?» per step; why a try failed in
       the app with «Qayta urinish»; a topic's ❓/✅ icon, its name «Ism · telefon», its pinned
       card (phone, orders, the last one); a new order as a line in the topic (migration `0038`)
-- [ ] On production: ❓/✅ seen by a helper, the card pinned, the name with the phone after an order
+- [ ] On production: 🔴/🟢 seen by a helper, the card pinned, the name with the phone after an order
+- [x] Goal 23: «💬 Savolim bor» under channel posts (the newest 20 too, when the group comes),
+      the bot greets under the product's card; the bot's description, its greeting and the
+      order's message say the customer may ask; «Savolim bor» on the storefront, order, product
+- [ ] On production: ABC's description, a post with both buttons, a question from a post
 
 ### M4s. The shop's own channel and ad links 🔨 (owner's decisions, November 2026; goal 20)
 - [x] «Telegram kanal»: connected from Telegram's own screen; someone else's or a demo's

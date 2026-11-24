@@ -19,6 +19,7 @@ import {
     BagIcon,
     BotIcon,
     CardIcon,
+    ChatIcon,
     CheckIcon,
     ChevronIcon,
     ClockIcon,
@@ -28,7 +29,6 @@ import {
     ScooterIcon,
 } from "../ui/icons.js"
 import { Button } from "../ui/primitives.js"
-import { ChatIcon } from "../ui/write-shop.js"
 
 import { useOwner } from "./store.js"
 import { saveTick, useTick } from "./ticks.js"

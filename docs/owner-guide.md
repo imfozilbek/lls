@@ -232,8 +232,9 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
   - **Guruhni bog'lash** tugmasini bosing va guruhni tanlang: bot guruhga admin bo'lib qo'shiladi.
   - Mijozga javob berish uchun uning mavzusiga yozing: javob mijozga botdan boradi, shaxsiy
     akkauntingiz ko'rinmaydi.
-  - Mijoz ilovada **Do'konga xabar yozish** tugmasini bossa, mavzuda u qaysi buyurtma yoki
-    mahsulot haqida so'rayotgani ko'rinadi.
+  - Mijoz ilovada yoki kanaldagi post ostida **💬 Savolim bor** tugmasini bossa, mavzuda u
+    qaysi buyurtma yoki mahsulot haqida so'rayotgani ko'rinadi. Guruh bog'langanda bot tavsifi,
+    salomlashuvi va buyurtma xabari mijozga savolini shu yerga yozishni aytadi.
   - Mavzu belgisi: 🔴 mijoz javob kutmoqda, 🟢 javob berildi. Mavzu nomida mijozning ismi va
     telefoni bor, tepadagi mahkamlangan xabarda esa uning buyurtmalari.
 - **Reklama uchun havolalar** (**Sozlamalar → Havola, QR-kod va vitrina**): boshqa kanalda

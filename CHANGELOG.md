@@ -7,6 +7,12 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### «💬 Savolim bor»: customers know they may ask the shop's bot (goal 23)
+- **Under channel posts** «💬 Savolim bor» below «Buyurtma berish», the newest 20 posts too when
+  the group comes; pressed, the bot greets under the product's card and the topic hears which.
+- **The bot's description, its greeting and the order's message** say the customer may write
+  here; «Savolim bor» on the storefront, the order and the product.
+
 ### The support group made easy to work in
 - **«Ishga tayyor»** asks for the support group (owner's decision: no shop without it), and
   «Mijozlar savollari» says what to press in Telegram, step by step, and why a try failed, with

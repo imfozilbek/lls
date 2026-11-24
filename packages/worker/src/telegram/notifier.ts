@@ -810,15 +810,22 @@ export class Notifier {
         await this.services.telegram.setProfilePhoto(credentials.token, jpeg)
     }
 
-    /** The shop bot's description and profile line, always with «Zumda asosida ishlaydi». */
-    async shopBotDescriptions(shop: ShopOwnerDTO): Promise<void> {
+    /**
+     * The shop bot's description and profile line, always with «Zumda asosida ishlaydi»; a shop
+     * that answers in its support group says customers may write here (goal 23).
+     */
+    async shopBotDescriptions(shop: Pick<ShopOwnerDTO, "id" | "name" | "type">): Promise<void> {
         const credentials = await this.services.businesses.getBotCredentials(shop.id)
         if (!credentials) {
             throw new Error(`No bot credentials for shop ${shop.id}`)
         }
         const texts = textsFor(Language.UZ, shop.type)
+        const asks = (await this.services.supportGroups.find(shop.id)) !== null
+        const template = asks
+            ? texts.shopBotDescription.replace("\n\n", `\n${texts.supportHint}\n\n`)
+            : texts.shopBotDescription
         await this.services.telegram.setDescriptions(credentials.token, {
-            description: fitShopName(texts.shopBotDescription, shop.name, BOT_DESCRIPTION_MAX, {
+            description: fitShopName(template, shop.name, BOT_DESCRIPTION_MAX, {
                 openMenu: texts.openMenu,
             }),
             shortDescription: fitShopName(
@@ -829,7 +836,6 @@ export class Notifier {
         })
     }
 
-    /** The shop bot answers through this Worker: its webhook and the menu button to the app. */
     async connectShopBot(shop: ShopOwnerDTO, workerOrigin: string): Promise<void> {
         if (shop.managedBot) {
             // The owner may have changed the token in @BotFather without Telegram telling us.
@@ -1087,6 +1093,11 @@ export class Notifier {
         return sent.messageId
     }
 
+    /** The shop's own bot, when the shop answers in its support group: ask here (goal 23). */
+    private async asksHere(business: Business, showcase: boolean): Promise<boolean> {
+        return !showcase && (await this.services.supportGroups.find(business.id)) !== null
+    }
+
     /**
      * The customer's one live message about the order (owner's decision, November 2026). What
      * they wait for (`ring`) comes as a new message with a sound and the one before goes; the
@@ -1110,10 +1121,12 @@ export class Notifier {
         const origin = this.services.env.APP_ORIGIN
         const slug = business.slug.value
         const card = formatCustomerCard(order, reader, event, phone?.number)
+        const asks = await this.asksHere(business, showcase)
         const text = [
             ...(business.isDemo() ? [t.demoOrder] : []),
             ...(showcase ? [`<b>${escapeHtml(business.name)}</b>`] : []),
             card,
+            ...(asks ? [t.supportHint] : []),
         ].join("\n")
         const keyboard = customerKeyboard(
             order,
