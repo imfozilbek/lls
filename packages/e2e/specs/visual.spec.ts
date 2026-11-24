@@ -2,9 +2,12 @@
  * Every main screen on a narrow phone (360 px): nothing sticks out sideways, and a screenshot is
  * kept for a human look. The app is always light (owner's decision), even in a dark Telegram.
  */
+import { writeFileSync } from "node:fs"
+
 import { expect, test } from "@playwright/test"
 
 import { pngImage } from "../support/images.js"
+import { flatSurfaces, smallTargets } from "../support/look.js"
 import { unreadableText } from "../support/readability.js"
 import {
     FOOD,
@@ -29,6 +32,13 @@ test.beforeAll(async () => {
     })
 })
 
+/** What a look at every screen found: kept beside the screenshots for a human review. */
+const looks: { screen: string; flat: unknown[]; small: unknown[] }[] = []
+
+test.afterAll(() => {
+    writeFileSync("screenshots/look-report.json", `${JSON.stringify(looks, null, 2)}\n`)
+})
+
 async function snap(page: Page, name: string, theme: string): Promise<void> {
     await page.waitForTimeout(400) // entry animations
     const overflow = await page.evaluate(
@@ -37,6 +47,8 @@ async function snap(page: Page, name: string, theme: string): Promise<void> {
     expect(overflow, `${name} is wider than the screen`).toBeLessThanOrEqual(0)
     // Every word on the screen is readable: AA contrast on its own surface, 13 px or more.
     expect(await unreadableText(page), `${name} has text that is hard to read`).toEqual([])
+    // A card melting into what is under it, a target under 44 px: listed for the review.
+    looks.push({ screen: name, flat: await flatSurfaces(page), small: await smallTargets(page) })
     await page.screenshot({ path: `screenshots/${theme}/${name}.png`, fullPage: true })
 }
 
