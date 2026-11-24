@@ -180,10 +180,13 @@ async function handleShopMessage(
     }
     // Waiting for approval: the bot already answers, the shop opens soon.
     const welcome = business.isPending() ? texts.shopOpensSoon : texts.shopWelcome
+    // A shop that answers in its support group says the customer may ask here (goal 23).
+    const asks = !business.isPending() && (await services.supportGroups.find(business.id)) !== null
+    const greeting = fill(welcome, { shop: `<b>${escapeHtml(business.name)}</b>` })
     await services.telegram.sendMessage(
         token,
         message.chat.id,
-        fill(welcome, { shop: `<b>${escapeHtml(business.name)}</b>` }),
+        asks ? `${greeting}\n\n${texts.supportHint}` : greeting,
         { keyboard },
     )
 }

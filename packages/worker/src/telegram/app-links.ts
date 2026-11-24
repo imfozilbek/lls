@@ -26,6 +26,14 @@ export function sourceStartUrl(botUsername: string, code: string): string {
     return `https://t.me/${botUsername}?start=${SOURCE_START}${code}`
 }
 
+/**
+ * «Savolim bor» under a channel post (goal 23): the shop's bot, told the post, so the question is
+ * about the product the post leads to now (`q_l<code>`), or the whole shop (`q_s`).
+ */
+export function supportStartUrl(botUsername: string, code?: string): string {
+    return `https://t.me/${botUsername}?start=q_${code === undefined ? "s" : `l${code}`}`
+}
+
 /** The prefix of a source link's `/start` payload: `s_<code>`. */
 export const SOURCE_START = "s_"
 

@@ -1,6 +1,6 @@
 import { Language, Unit } from "@zumda/core"
 
-import { sourceStartUrl } from "./app-links.js"
+import { sourceStartUrl, supportStartUrl } from "./app-links.js"
 import { formatMoney } from "./format.js"
 import { escapeHtml } from "./gateway.js"
 import { fill } from "./texts.js"
@@ -35,13 +35,25 @@ export function postCaption(facts: PostFacts, ownerText: string | undefined, t: 
     return lines.join("\n")
 }
 
-/** «🛒 Buyurtma berish» under a post: the shop's bot, told which post was pressed. */
-export function postKeyboard(botUsername: string, linkId: string, t: BotTexts): InlineKeyboard {
-    return {
-        inline_keyboard: [
-            [{ text: t.orderButton, url: sourceStartUrl(botUsername, linkId), style: "success" }],
-        ],
-    }
+/**
+ * «🛒 Buyurtma berish» under a post: the shop's bot, told which post was pressed. A shop that
+ * answers questions in its support group (goal 23) adds «💬 Savolim bor» below it.
+ */
+export function postKeyboard(
+    botUsername: string,
+    linkId: string,
+    t: BotTexts,
+    asks = false,
+): InlineKeyboard {
+    const order = [
+        {
+            text: t.orderButton,
+            url: sourceStartUrl(botUsername, linkId),
+            style: "success" as const,
+        },
+    ]
+    const question = [{ text: t.supportButton, url: supportStartUrl(botUsername, linkId) }]
+    return { inline_keyboard: asks ? [order, question] : [order] }
 }
 
 /** The card the shop's bot sends for a pressed link: the name, the price, sold out or not. */

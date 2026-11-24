@@ -5,6 +5,7 @@ import {
     Language,
     PublishPostUseCase,
     RecordChannelPostUseCase,
+    SourceLinkKind,
     SyncProductPostsUseCase,
     postHasCaption,
 } from "@zumda/core"
@@ -112,14 +113,21 @@ export class TelegramChannelPublisher implements ChannelPublisher {
         return this.tokenOnce
     }
 
-    private keyboard(linkId: string): ReturnType<typeof postKeyboard> {
-        return postKeyboard(this.business.bot.username, linkId, this.texts)
+    /** Read once a request: whether the shop answers questions (its support group). */
+    private asksOnce: Promise<boolean> | undefined
+
+    private async keyboard(linkId: string): Promise<ReturnType<typeof postKeyboard>> {
+        this.asksOnce ??= this.services.supportGroups
+            .find(this.business.id)
+            .then((group) => group !== null)
+        const asks = await this.asksOnce
+        return postKeyboard(this.business.bot.username, linkId, this.texts, asks)
     }
 
     async publish(channel: ShopChannel, post: ChannelPost): Promise<PublishOutcome> {
         const token = await this.token()
         const caption = postCaption(post.facts, post.ownerText, this.texts)
-        const options = { keyboard: this.keyboard(post.linkId) }
+        const options = { keyboard: await this.keyboard(post.linkId) }
         try {
             const telegram = this.services.telegram
             if (this.upload?.kind === "video") {
@@ -166,7 +174,7 @@ export class TelegramChannelPublisher implements ChannelPublisher {
         }
         const token = await this.token()
         const caption = postCaption(facts, link.ownerText, this.texts)
-        const options = { keyboard: this.keyboard(link.id) }
+        const options = { keyboard: await this.keyboard(link.id) }
         try {
             if (postHasCaption(post)) {
                 await this.services.telegram.editCaption(
@@ -210,7 +218,7 @@ export class TelegramChannelPublisher implements ChannelPublisher {
                 await this.token(),
                 channel.chatId,
                 link.post.messageId,
-                this.keyboard(link.id),
+                await this.keyboard(link.id),
             )
             return { kind: "attached" }
         } catch (error) {
@@ -297,4 +305,36 @@ export async function syncProductPosts(
         productId,
         now: services.clock.now(),
     })
+}
+
+/** The newest posts whose buttons follow the support group (goal 23). */
+export const POSTS_REBUTTONED = 20
+
+/**
+ * The shop's support group came or went: the newest posts with buttons get «💬 Savolim bor», or
+ * lose it. One post Telegram refuses (deleted, too old) leaves the others as they go.
+ */
+export async function refreshPostButtons(services: Services, business: Business): Promise<void> {
+    const channel = await services.shopChannels.find(business.id)
+    if (!channel) {
+        return
+    }
+    const posts = await services.sourceLinks.listLive(business.id, SourceLinkKind.POST, {
+        offset: 0,
+        limit: POSTS_REBUTTONED,
+        chatId: channel.chatId,
+    })
+    const publisher = new TelegramChannelPublisher(services, business)
+    for (const link of posts) {
+        if (!link.hasButton) {
+            continue
+        }
+        const outcome = await publisher.attachButton(channel, link).catch((error: unknown) => {
+            console.warn("Post buttons not refreshed", String(error))
+            return { kind: "refused" } as const
+        })
+        if (outcome.kind === "noRights" || outcome.kind === "wait") {
+            return
+        }
+    }
 }

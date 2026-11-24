@@ -1,11 +1,15 @@
-import { Language, OpenSupportThreadUseCase } from "@zumda/core"
+import { Language, OpenSupportThreadUseCase, postFactsOf } from "@zumda/core"
 
 import { isRecipientProblem } from "../alerts.js"
+import { appKeyboard, productAppUrl } from "../telegram/app-links.js"
 import { TOPIC_GONE, TelegramApiError, escapeHtml } from "../telegram/gateway.js"
 import { Notifier } from "../telegram/notifier.js"
+import { productCardCaption } from "../telegram/post-caption.js"
+import { supportReachChanged } from "../telegram/support-reach.js"
 import { fill, textsFor } from "../telegram/texts.js"
 import { hasContent } from "../telegram/updates.js"
 
+import { sendProductCard } from "./shop-channel-bot.js"
 import {
     completeOldTopic,
     groupTexts,
@@ -42,10 +46,14 @@ const PRIVATE = "private"
 const NO_TOPIC_RIGHTS =
     /not enough rights|need administrator rights|CHAT_ADMIN_REQUIRED|not a member|kicked|chat not found|the chat is not a forum|CHAT_NOT_MODIFIED|Forbidden/i
 
-/** `/start q_o<orderId>` or `q_p<productId>`: «Do'konga xabar yozish» in the app. */
-const SUPPORT_START = /^\/start\s+q_([op])([A-Za-z0-9_-]{1,62})\s*$/
+/**
+ * «Savolim bor»: `/start q_o<orderId>` (an order, in the app), `q_p<productId>` (a product, in the
+ * app), `q_l<code>` (under a channel post: the product the post leads to now) or `q_s` (the shop).
+ */
+const SUPPORT_START = /^\/start\s+q_(?:([opl])([A-Za-z0-9_-]{1,61})|s)\s*$/
 
-export type SupportStart = { orderId: string } | { productId: string }
+export type SupportStart =
+    { orderId: string } | { productId: string } | { linkId: string } | Record<string, never>
 
 export function parseSupportStart(text: string | undefined): SupportStart | null {
     const match = SUPPORT_START.exec(text?.trim() ?? "")
@@ -53,7 +61,16 @@ export function parseSupportStart(text: string | undefined): SupportStart | null
         return null
     }
     const [, kind, id = ""] = match
-    return kind === "o" ? { orderId: id } : { productId: id }
+    switch (kind) {
+        case "o":
+            return { orderId: id }
+        case "p":
+            return { productId: id }
+        case "l":
+            return { linkId: id }
+        default:
+            return {}
+    }
 }
 
 function named(title: string): string {
@@ -119,6 +136,7 @@ export async function handleSupportMembership(
         })
         if (lost) {
             await notifier.channelNews(business, fill(t.supportLost, { group: named(lost.title) }))
+            await supportReachChanged(services, business)
         }
         return
     }
@@ -148,6 +166,7 @@ export async function handleSupportMembership(
                 business,
                 fill(t.supportLost, { group: named(outcome.group.title) }),
             )
+            await supportReachChanged(services, business)
             return
         case "connected":
             await connected(services, business, token, outcome, t)
@@ -177,6 +196,7 @@ async function connected(
         business,
         fill(t.supportConnected, { group: named(outcome.group.title) }),
     )
+    await supportReachChanged(services, business)
 }
 
 /** An anonymous admin writes as the group; any other bot is never copied to a customer. */
@@ -291,6 +311,7 @@ async function routeOf(
             business,
             fill(t.supportLost, { group: named(route.group.title) }),
         )
+        await supportReachChanged(services, business)
     }
     if (route.kind === "thread" && route.created && profile) {
         const topic = {
@@ -396,10 +417,9 @@ function aboutWords(
         }
     }
     if (about?.kind === "product") {
-        const product = escapeHtml(about.name)
         return {
-            topic: fill(g.supportAboutProduct, { product }),
-            ask: fill(t.supportAskProduct, { product }),
+            topic: fill(g.supportAboutProduct, { product: escapeHtml(about.name) }),
+            ask: t.supportAskProduct,
         }
     }
     return { ask: t.supportAsk }
@@ -441,6 +461,32 @@ export async function handleSupportStart(
             return false
         }
     }
-    await services.telegram.sendMessage(token, message.chat.id, words.ask)
+    await greet(services, { business, token, chatId: message.chat.id }, about, words.ask)
     return true
+}
+
+/**
+ * The bot greets the customer who pressed «Savolim bor»: under the product's card (its photo,
+ * name and price) when the question is about one, as text otherwise.
+ */
+async function greet(
+    services: Services,
+    to: { business: Business; token: string; chatId: number },
+    about: SupportAbout | null,
+    ask: string,
+): Promise<void> {
+    const { business, token, chatId } = to
+    const product =
+        about?.kind === "product" ? await services.products.findById(about.productId) : null
+    if (!product?.belongsTo(business.id)) {
+        await services.telegram.sendMessage(token, chatId, ask)
+        return
+    }
+    const t = textsFor(Language.UZ, business.type)
+    const now = services.clock.now()
+    const soldOut = product.soldOut || !product.isAvailableAt(now)
+    const caption = [productCardCaption(postFactsOf(product), soldOut, t), "", ask].join("\n")
+    const url = productAppUrl(services.env.APP_ORIGIN, business.slug.value, product.id)
+    const keyboard = appKeyboard(t.seeProduct, url)
+    await sendProductCard(services, { token, chatId, product }, caption, keyboard)
 }

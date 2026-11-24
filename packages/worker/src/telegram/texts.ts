@@ -399,11 +399,14 @@ const BASE = {
         supportPhone: "📞 {phone}",
         supportOrderLine: "🛒 #{n} · {sum} · {method}",
         supportSent: "✅ Xabaringiz do'konga yuborildi. Javob shu yerga keladi.",
-        supportAsk: "✍️ Savolingizni yozing. Do'kon javobi shu yerga keladi.",
+        supportAsk: "Assalomu alaykum! Savolingizni shu yerga yozing, tez orada javob beramiz.",
         supportAskOrder:
-            "✍️ #{n} buyurtma bo'yicha savolingizni yozing. Do'kon javobi shu yerga keladi.",
+            "Assalomu alaykum! #{n} buyurtma bo'yicha savolingizni yozing, tez orada javob beramiz.",
         supportAskProduct:
-            "✍️ «{product}» haqida savolingizni yozing. Do'kon javobi shu yerga keladi.",
+            "Assalomu alaykum! Bu mahsulot haqida savolingizni yozing, tez orada javob beramiz.",
+        /** «Savolim bor» (goal 23): under a channel post, and where the bot tells it can be asked. */
+        supportButton: "💬 Savolim bor",
+        supportHint: "💬 Savolingiz bo'lsa, shu yerga yozing: javob beramiz.",
         supportAboutOrder: "🧾 Mijoz #{n} buyurtma haqida yozmoqchi · {sum} · {status}",
         supportAboutProduct: "🛍 Mijoz «{product}» haqida yozmoqchi",
         supportCustomerGone: "⚠️ Mijoz botni bloklagan, xabaringiz unga bormadi.",

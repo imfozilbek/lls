@@ -128,16 +128,20 @@ async function productPhoto(services: Services, product: Product): Promise<Outgo
  * The product's card: the post's own photo by Telegram's id, or the catalog's photo; Telegram
  * refusing a picture leaves the text (someone who never pressed Start is no failure of ours).
  */
-async function sendProductCard(
+/**
+ * A product's card in the bot: the post's photo by its Telegram id when a post was pressed, else
+ * the catalog's photo, else text.
+ */
+export async function sendProductCard(
     services: Services,
-    card: { token: string; chatId: number; link: SourceLink; product: Product },
+    card: { token: string; chatId: number; link?: SourceLink; product: Product },
     caption: string,
     keyboard: InlineKeyboard,
 ): Promise<void> {
     const { token, chatId, link, product } = card
     const telegram = services.telegram
     try {
-        const fileId = link.post?.photoFileId
+        const fileId = link?.post?.photoFileId
         if (fileId) {
             await telegram.sendPhoto(token, chatId, fileId, caption, { keyboard })
             return
