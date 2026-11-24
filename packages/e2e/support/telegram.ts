@@ -298,6 +298,64 @@ export function channelPost(
     })
 }
 
+/** A group with topics: the shop's support group (goal 21). */
+export interface TgGroup {
+    id: number
+    title: string
+    /** Topics are on. */
+    isForum: boolean
+}
+
+/**
+ * Telegram tells the shop's bot that `from` changed its place in `group`: added it as an admin
+ * who may make topics («administrator»), or removed it («left»).
+ */
+export function groupMembership(
+    slug: string,
+    from: TgUser,
+    group: TgGroup,
+    status: "administrator" | "left",
+): Promise<Response> {
+    const shop = shopBySlug(slug)
+    return postUpdate(`/tg/${shop.bot.id}`, shop.bot.webhookSecret, {
+        my_chat_member: {
+            chat: { id: group.id, title: group.title, type: "supergroup", is_forum: group.isForum },
+            from: { ...from, is_bot: false },
+            date: Math.floor(Date.now() / 1000),
+            old_chat_member: { status: "left", user: { id: shop.bot.id, is_bot: true } },
+            new_chat_member: {
+                status,
+                user: { id: shop.bot.id, is_bot: true },
+                ...(status === "administrator"
+                    ? { can_manage_topics: true, can_pin_messages: true }
+                    : {}),
+            },
+        },
+    })
+}
+
+/** Someone of the shop writes in the group: in a customer's topic, or in General (none). */
+export function groupMessage(
+    slug: string,
+    from: TgUser,
+    group: TgGroup,
+    message: { threadId?: number; text: string },
+): Promise<Response> {
+    const shop = shopBySlug(slug)
+    return postUpdate(`/tg/${shop.bot.id}`, shop.bot.webhookSecret, {
+        message: {
+            message_id: updateId,
+            date: Math.floor(Date.now() / 1000),
+            chat: { id: group.id, title: group.title, type: "supergroup", is_forum: true },
+            from: { ...from, is_bot: false },
+            ...(message.threadId === undefined
+                ? {}
+                : { message_thread_id: message.threadId, is_topic_message: true }),
+            text: message.text,
+        },
+    })
+}
+
 export function shopChat(slug: string): Chat {
     const shop = shopBySlug(slug)
     return chat(`/tg/${shop.bot.id}`, shop.bot.webhookSecret)

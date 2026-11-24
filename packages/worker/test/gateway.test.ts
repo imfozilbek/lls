@@ -382,6 +382,45 @@ describe("HttpTelegramGateway", () => {
         ).rejects.toBeInstanceOf(TelegramApiError)
     })
 
+    it("copies a message into a topic and makes topics (the support group)", async () => {
+        const { fetcher, calls } = fakeFetch({ message_id: 9, message_thread_id: 44 })
+        const gateway = new HttpTelegramGateway(fetcher)
+        expect(await gateway.copyMessage("t", 2002, 5, -1007, { threadId: 44 })).toEqual({
+            messageId: 9,
+        })
+        expect(calls[0]?.url).toContain("/copyMessage")
+        expect(calls[0]?.body).toMatchObject({
+            chat_id: -1007,
+            from_chat_id: 2002,
+            message_id: 5,
+            message_thread_id: 44,
+        })
+        expect(await gateway.createForumTopic("t", -1007, "Aziz")).toEqual({ threadId: 44 })
+        expect(calls[1]?.body).toEqual({ chat_id: -1007, name: "Aziz" })
+        await gateway.sendMessage("t", -1007, "salom", { threadId: 44 })
+        expect(calls[2]?.body).toMatchObject({ message_thread_id: 44 })
+    })
+
+    it("a topic deleted already is fine to delete", async () => {
+        const answering = (description: string): typeof fetch =>
+            (async () =>
+                new Response(JSON.stringify({ ok: false, description }), {
+                    status: 400,
+                })) as typeof fetch
+        await expect(
+            new HttpTelegramGateway(
+                answering("Bad Request: message thread not found"),
+            ).deleteForumTopic("t", -1007, 44),
+        ).resolves.toBeUndefined()
+        await expect(
+            new HttpTelegramGateway(answering("Bad Request: not enough rights")).deleteForumTopic(
+                "t",
+                -1007,
+                44,
+            ),
+        ).rejects.toBeInstanceOf(TelegramApiError)
+    })
+
     it("throws TelegramApiError when Telegram says no", async () => {
         const { fetcher } = fakeFetch(null, false)
         await expect(new HttpTelegramGateway(fetcher).getMe("bad")).rejects.toThrow(

@@ -65,6 +65,11 @@ export interface ShopPublicDTO {
     opensSoon: boolean
     /** A demo shop («Namuna»): its orders are not real, its card is a test card. */
     demo: boolean
+    /**
+     * The shop answers customers' messages from its support group: «Do'konga yozish» opens the
+     * shop's bot (goal 21). False in lists.
+     */
+    supportChat: boolean
 }
 
 export interface PayoutCardDTO {
@@ -113,6 +118,8 @@ export function toShopPublicDTO(
         callPhone?: Phone
         /** No number to call the shop on: no way to order yet (`NO_SHOP_PHONE`). */
         noPhone?: boolean
+        /** The shop has a support group connected. */
+        supportChat?: boolean
     } = {},
 ): ShopPublicDTO {
     const { fee, freeFrom, minOrder } = business.delivery
@@ -150,6 +157,7 @@ export function toShopPublicDTO(
         paymentMethods: options.noPhone ? [] : business.paymentMethods(),
         opensSoon: business.isPending(),
         demo: business.isDemo(),
+        supportChat: options.supportChat === true,
     }
 }
 

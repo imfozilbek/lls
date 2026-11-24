@@ -53,6 +53,8 @@ export interface MessageOptions {
     silent?: boolean
     /** A photo's caption over the picture: the sum is read first. */
     captionAbove?: boolean
+    /** A topic of a group with topics: a customer's own topic in the shop's support group. */
+    threadId?: number
 }
 
 /** What every send takes besides its text: the message answered, the silence. */
@@ -68,6 +70,7 @@ function sendExtras(options: MessageOptions): Record<string, unknown> {
                   },
               }),
         ...(options.silent ? { disable_notification: true } : {}),
+        ...(options.threadId === undefined ? {} : { message_thread_id: options.threadId }),
     }
 }
 
@@ -240,6 +243,22 @@ export interface TelegramGateway {
     deleteChannelPost(token: string, chatId: number, messageId: number): Promise<ChannelPostRemoval>
     /** The bot leaves a chat; not being there any more is fine. */
     leaveChat(token: string, chatId: number): Promise<void>
+    /**
+     * A message copied from one chat to another as the bot's own (no «Forwarded from»): a
+     * customer's message into their topic, the shop's answer back to the customer. A message
+     * Telegram cannot copy (a service message, a poll's quiz) is refused with an error.
+     */
+    copyMessage(
+        token: string,
+        fromChatId: number,
+        messageId: number,
+        toChatId: number,
+        options?: MessageOptions,
+    ): Promise<{ messageId: number }>
+    /** A new topic in a group with topics: its id. */
+    createForumTopic(token: string, chatId: number, name: string): Promise<{ threadId: number }>
+    /** Deletes a topic and its messages; gone already is fine. */
+    deleteForumTopic(token: string, chatId: number, threadId: number): Promise<void>
     /** People in a chat: a channel's subscribers. */
     getChatMemberCount(token: string, chatId: number): Promise<number>
     /** A file in the chat: the owner's CSV report or the QR poster. */
@@ -314,6 +333,9 @@ const NOTHING_TO_CLEAR = /message to edit not found|message is not modified/i
 
 /** A post already deleted by someone: removed all the same. */
 const ALREADY_DELETED = /message to delete not found/i
+
+/** A topic deleted in Telegram (with its messages): nothing more to delete, or to write in. */
+export const TOPIC_GONE = /message thread not found|TOPIC_ID_INVALID|topic_deleted|TOPIC_DELETED/i
 
 /** The bot is not in the chat any more: leaving changes nothing. */
 const NOT_A_MEMBER = /not a member|chat not found|kicked|Forbidden/i
@@ -669,6 +691,48 @@ export class HttpTelegramGateway implements TelegramGateway {
             await this.call(token, "leaveChat", { chat_id: chatId })
         } catch (error) {
             if (!(error instanceof TelegramApiError) || !NOT_A_MEMBER.test(error.description)) {
+                throw error
+            }
+        }
+    }
+
+    async copyMessage(
+        token: string,
+        fromChatId: number,
+        messageId: number,
+        toChatId: number,
+        options: MessageOptions = {},
+    ): Promise<{ messageId: number }> {
+        const copied = await this.call<{ message_id: number }>(token, "copyMessage", {
+            chat_id: toChatId,
+            from_chat_id: fromChatId,
+            message_id: messageId,
+            ...sendExtras(options),
+            ...(options.keyboard ? { reply_markup: options.keyboard } : {}),
+        })
+        return { messageId: copied.message_id }
+    }
+
+    async createForumTopic(
+        token: string,
+        chatId: number,
+        name: string,
+    ): Promise<{ threadId: number }> {
+        const topic = await this.call<{ message_thread_id: number }>(token, "createForumTopic", {
+            chat_id: chatId,
+            name,
+        })
+        return { threadId: topic.message_thread_id }
+    }
+
+    async deleteForumTopic(token: string, chatId: number, threadId: number): Promise<void> {
+        try {
+            await this.call(token, "deleteForumTopic", {
+                chat_id: chatId,
+                message_thread_id: threadId,
+            })
+        } catch (error) {
+            if (!(error instanceof TelegramApiError) || !TOPIC_GONE.test(error.description)) {
                 throw error
             }
         }

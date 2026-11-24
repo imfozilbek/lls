@@ -21,6 +21,8 @@ export const staffUz = {
         BOT_PHOTO_FAILED: "Telegram bot rasmini qabul qilmadi. Keyinroq qayta urinib ko'ring.",
         CHANNEL_SETUP_FAILED:
             "Telegram hozir javob bermadi, kanal bog'lanmadi. Birozdan keyin qayta urinib ko'ring.",
+        SUPPORT_SETUP_FAILED:
+            "Telegram hozir javob bermadi, guruh bog'lanmadi. Birozdan keyin qayta urinib ko'ring.",
         CHANNEL_POST_FAILED:
             "Post kanalga joylanmadi: Telegram qabul qilmadi. Birozdan keyin qayta urinib ko'ring.",
         CARD_EXISTS: "Bu karta allaqachon qo'shilgan.",
@@ -436,6 +438,7 @@ export const staffUz = {
             acceptingBackOn: "Buyurtmalar yana qabul qilinmoqda",
             linkGroup: "Havola, QR-kod va vitrina",
             channelGroup: "Telegram kanal",
+            supportGroup: "Mijozlar savollari",
             summary: {
                 free: "Bepul yetkazish",
                 later: "Narxi keyin aytiladi",
@@ -710,6 +713,31 @@ export const staffUz = {
                 needName: "Havolaga nom bering",
                 needProduct: "Qaysi mahsulotga olib borishini tanlang",
             },
+        },
+        /** The shop's support group: one topic a customer (goal 21). */
+        support: {
+            none: "Bog'lanmagan",
+            hint: "Mijozlar savoliga javob berish",
+            intro: "Mijoz do'kon botiga yozsa, xabari sizning yopiq guruhingizga tushadi: har bir mijozga alohida mavzu. Mavzuga yozgan javobingiz mijozga botdan boradi, shaxsiy akkauntingiz ko'rinmaydi.",
+            steps: [
+                "Telegramda yangi guruh yarating va xodimlaringizni qo'shing.",
+                "Guruh sozlamalarida «Mavzular»ni yoqing.",
+                "Pastdagi tugmani bosing va guruhni tanlang.",
+            ],
+            connect: "Guruhni bog'lash",
+            connectHint:
+                "Telegram guruhingizni tanlashni so'raydi, keyin bot guruhga admin bo'lib qo'shiladi. Kerakli huquqlar o'zi belgilanadi.",
+            alreadyIn: "Bot guruhda allaqachon bo'lsa, uni guruhdan chiqarib, qayta qo'shing.",
+            waiting:
+                "Telegramda guruhni tanlang va botni admin qiling. Bog'lanishi bilan shu yerda ko'rinadi.",
+            connected: "Guruh bog'landi",
+            card: "Mijozlar xabari shu guruhga keladi",
+            replyHint: "Mijozga javob berish uchun uning mavzusiga yozing.",
+            disconnect: "Guruhni ajratish",
+            disconnectConfirm:
+                "Guruhni ajratasizmi? Bot guruhdan chiqadi, mijozlar xabari endi kelmaydi.",
+            disconnected: "Guruh ajratildi",
+            demo: "Namuna do'konda mijozlar guruhi bo'lmaydi.",
         },
         showcaseOrder: "Zumda vitrinasidan · komissiya {sum}",
     },

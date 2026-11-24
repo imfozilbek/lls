@@ -410,4 +410,66 @@ describe("rows read per request, on six months of history", () => {
         },
         SEED_TIMEOUT_MS,
     )
+    it(
+        "the support group: a customer's first message, the next one, the shop's answer",
+        async () => {
+            const { counter, client, customer } = await seed()
+            const business = await env.DB.prepare(
+                "SELECT id, webhook_secret FROM businesses",
+            ).first<{ id: string; webhook_secret: string }>()
+            await env.DB.prepare(
+                `INSERT INTO support_groups (business_id, chat_id, title, connected_at)
+                 VALUES (?, -1002, 'Savollar', 0)`,
+            )
+                .bind(business?.id)
+                .run()
+            let updateId = 1
+            const update = (message: object): Promise<Response> =>
+                client.request(`/tg/${SHOP_BOT.id}`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-Telegram-Bot-Api-Secret-Token": business?.webhook_secret ?? "",
+                    },
+                    body: JSON.stringify({ update_id: updateId++, message }),
+                })
+            const fromCustomer = {
+                message_id: 50,
+                from: CUSTOMER,
+                chat: { id: CUSTOMER.id, type: "private" },
+                text: "Salom, bormi?",
+            }
+            counter.take()
+            expect((await update(fromCustomer)).status).toBe(200)
+            const first = counter.take()
+            // Measured 7 read, 2 written: the shop, the group, the topic (written once), the
+            // card's last order of a customer with six months of history (one row of a range).
+            expect(first.read).toBeLessThanOrEqual(10)
+            expect(first.written).toBeLessThanOrEqual(3)
+            expect((await update({ ...fromCustomer, message_id: 51 })).status).toBe(200)
+            const next = counter.take()
+            // Measured 3: the shop, the group, the topic.
+            expect(next.read).toBeLessThanOrEqual(4)
+            expect(next.written).toBe(0)
+            const threadId = client.telegram.topics[0]?.threadId
+            const answer = await update({
+                message_id: 52,
+                from: { id: 4004, first_name: "Dilnoza" },
+                chat: { id: -1002, type: "supergroup", is_forum: true },
+                message_thread_id: threadId,
+                is_topic_message: true,
+                text: "Bor",
+            })
+            expect(answer.status).toBe(200)
+            expect(client.telegram.copies.at(-1)?.toChatId).toBe(CUSTOMER.id)
+            const reply = counter.take()
+            // Measured 3: the shop, the group, whose topic it is.
+            expect(reply.read).toBeLessThanOrEqual(4)
+            expect(reply.written).toBe(0)
+            // The storefront asks whether the shop answers messages: one row more (measured 3).
+            await customer("/api/shop")
+            expect(counter.take().read).toBeLessThanOrEqual(4)
+        },
+        SEED_TIMEOUT_MS,
+    )
 })

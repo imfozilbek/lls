@@ -10,6 +10,8 @@ const TABLES = [
     "source_visits",
     "source_links",
     "shop_channels",
+    "support_threads",
+    "support_groups",
     "network_offers",
     "order_items",
     "cash_handovers",

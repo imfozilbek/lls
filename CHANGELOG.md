@@ -7,6 +7,16 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The shop's support group
+- **«Mijozlar savollari»** in «Sozlamalar»: the owner connects a closed group with topics from
+  Telegram's own screen (owner's decision, November 2026). A customer's message to the shop's bot
+  goes to their own topic there, with a card (the name, the last order); what the shop's people
+  write in the topic goes back from the shop's bot, the owner's own account stays hidden. Without
+  a group the bot answers as before.
+- **«Do'konga xabar yozish»** on the order screen and the product's sheet: the topic hears which
+  order or product the question is about.
+- Migration `0037` (additive): the group and each customer's topic. No message is stored.
+
 ### A channel post with several photos or a video
 - **«Rasmlar va video»** in «Kanalga joylash»: the product's photos at first, more from the
   phone, up to four. Two to four go as one collage (the layout picked by chips) with «🛒 Buyurtma

@@ -225,6 +225,15 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
   - Har bir post uchun necha kishi kirdi, nechta buyurtma berildi, nechtasi yetkazildi va qancha
     pulga ekanini ko'rasiz. Siz bosganingiz sanalmaydi.
   - Bot kanalda allaqachon admin bo'lsa, uni adminlikdan olib tashlab, qayta qo'shing.
+- **Mijozlar savollari** (**Sozlamalar → Mijozlar savollari**): mijoz botingizga yozsa, xabari
+  sizning yopiq guruhingizga tushadi, har bir mijozga alohida mavzu.
+  - Telegramda yangi guruh yarating va xodimlaringizni qo'shing. Guruh sozlamalarida
+    «Mavzular»ni yoqing.
+  - **Guruhni bog'lash** tugmasini bosing va guruhni tanlang: bot guruhga admin bo'lib qo'shiladi.
+  - Mijozga javob berish uchun uning mavzusiga yozing: javob mijozga botdan boradi, shaxsiy
+    akkauntingiz ko'rinmaydi.
+  - Mijoz ilovada **Do'konga xabar yozish** tugmasini bossa, mavzuda u qaysi buyurtma yoki
+    mahsulot haqida so'rayotgani ko'rinadi.
 - **Reklama uchun havolalar** (**Sozlamalar → Havola, QR-kod va vitrina**): boshqa kanalda
   reklama berganda har biriga alohida havola bering: qaysi reklama qancha buyurtma olib kelganini
   shu yerda ko'rasiz.

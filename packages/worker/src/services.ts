@@ -79,6 +79,12 @@ import {
     SetDistrictUseCase,
     SetNetworkMembershipUseCase,
     ConnectShopChannelUseCase,
+    ConnectSupportGroupUseCase,
+    DisconnectSupportGroupUseCase,
+    FindSupportCustomerUseCase,
+    GetSupportGroupUseCase,
+    LoseSupportGroupUseCase,
+    SupportContextUseCase,
     LoseShopChannelUseCase,
     DisconnectShopChannelUseCase,
     GetShopChannelUseCase,
@@ -106,6 +112,10 @@ import {
     D1ShopChannelRepository,
     D1SourceLinkRepository,
 } from "./repositories/source-link.repository.js"
+import {
+    D1SupportGroupRepository,
+    D1SupportThreadRepository,
+} from "./repositories/support.repository.js"
 import { D1TripRepository } from "./repositories/trip.repository.js"
 import { OrsRoutePlanner } from "./routing.js"
 import { WebChannelHistory, telegramWebBase } from "./telegram/channel-history.js"
@@ -222,6 +232,12 @@ export interface UseCases {
     listSourceLinks: ListSourceLinksUseCase
     openSourceLink: OpenSourceLinkUseCase
     findOrderSource: FindOrderSourceUseCase
+    connectSupportGroup: ConnectSupportGroupUseCase
+    loseSupportGroup: LoseSupportGroupUseCase
+    disconnectSupportGroup: DisconnectSupportGroupUseCase
+    getSupportGroup: GetSupportGroupUseCase
+    findSupportCustomer: FindSupportCustomerUseCase
+    supportContext: SupportContextUseCase
 }
 
 export interface Services extends ServiceDeps {
@@ -239,6 +255,9 @@ export interface Services extends ServiceDeps {
     shopChannels: D1ShopChannelRepository
     sourceLinks: D1SourceLinkRepository
     history: ChannelHistoryReader
+    /** The shop's support group, and each customer's topic in it (goal 21). */
+    supportGroups: D1SupportGroupRepository
+    supportThreads: D1SupportThreadRepository
     useCases: UseCases
 }
 
@@ -291,6 +310,52 @@ function channelUseCases(deps: SourceLinkDeps): ChannelUseCases {
         listSourceLinks: new ListSourceLinksUseCase(deps),
         openSourceLink: new OpenSourceLinkUseCase(deps),
         findOrderSource: new FindOrderSourceUseCase(links),
+    }
+}
+
+type SupportUseCases = Pick<
+    UseCases,
+    | "getShopBySlug"
+    | "connectSupportGroup"
+    | "loseSupportGroup"
+    | "disconnectSupportGroup"
+    | "getSupportGroup"
+    | "findSupportCustomer"
+    | "supportContext"
+>
+
+/** The shop's support group and its customers' topics (goal 21). */
+function supportParts(
+    db: D1Database,
+    deps: {
+        businesses: D1BusinessRepository
+        customers: D1CustomerRepository
+        orders: D1OrderRepository
+        products: D1ProductRepository
+        clock: Clock
+    },
+): {
+    repos: { supportGroups: D1SupportGroupRepository; supportThreads: D1SupportThreadRepository }
+    useCases: SupportUseCases
+} {
+    const { businesses, customers, orders, products, clock } = deps
+    const supportGroups = new D1SupportGroupRepository(db)
+    const supportThreads = new D1SupportThreadRepository(db)
+    return {
+        repos: { supportGroups, supportThreads },
+        useCases: {
+            // The storefront says whether the shop answers messages (`supportChat`).
+            getShopBySlug: new GetShopBySlugUseCase(businesses, clock, customers, supportGroups),
+            connectSupportGroup: new ConnectSupportGroupUseCase({ businesses, supportGroups }),
+            loseSupportGroup: new LoseSupportGroupUseCase(supportGroups),
+            disconnectSupportGroup: new DisconnectSupportGroupUseCase({
+                businesses,
+                supportGroups,
+            }),
+            getSupportGroup: new GetSupportGroupUseCase({ businesses, supportGroups }),
+            findSupportCustomer: new FindSupportCustomerUseCase({ supportGroups, supportThreads }),
+            supportContext: new SupportContextUseCase({ customers, orders, products }),
+        },
     }
 }
 
@@ -405,6 +470,11 @@ function adminUseCases(
 }
 
 /** Per-request wiring of repositories and use cases. Construction is cheap. */
+/** Public channels' past, read from Telegram's own web pages. */
+function webHistory(env: Bindings): ChannelHistoryReader {
+    return new WebChannelHistory(undefined, telegramWebBase(env.TELEGRAM_WEB_BASE))
+}
+
 export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const businesses = new D1BusinessRepository(env.DB, env.TOKEN_ENC_KEY)
     const products = new D1ProductRepository(env.DB)
@@ -425,6 +495,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const tripDeps: TripDeps = { ...courierAccess, trips, routes, newId: newTripId }
     const cardBook = { businesses, cards, clock }
     const channel = channelParts(env.DB, businesses, products)
+    const support = supportParts(env.DB, { businesses, customers, orders, products, clock })
 
     return {
         env,
@@ -441,9 +512,8 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
         managedBots,
         shopChannels: channel.shopChannels,
         sourceLinks: channel.sourceLinks,
-        history:
-            deps.history ??
-            new WebChannelHistory(undefined, telegramWebBase(env.TELEGRAM_WEB_BASE)),
+        ...support.repos,
+        history: deps.history ?? webHistory(env),
         useCases: {
             registerShop: new RegisterShopUseCase(businesses, clock, managedBots, districts),
             managedBotChanged: new ManagedBotChangedUseCase(businesses, managedBots, clock),
@@ -454,7 +524,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             removePayoutCard: new RemovePayoutCardUseCase(cardBook),
             reviewShop: new ReviewShopUseCase(businesses, admins, clock),
             resubmitShop: new ResubmitShopUseCase(businesses, clock),
-            getShopBySlug: new GetShopBySlugUseCase(businesses, clock, customers),
+            ...support.useCases,
             listMyShops: new ListMyShopsUseCase(businesses, clock),
             updateShop: new UpdateShopUseCase(businesses, clock, districts),
             createProduct: new CreateProductUseCase(businesses, products),

@@ -33,6 +33,13 @@ import {
     handleChannelPost,
     handleSourceStart,
 } from "./shop-channel-bot.js"
+import {
+    handleGroupMessage,
+    handleSupportMembership,
+    handleSupportStart,
+    isPrivate,
+    relayCustomerMessage,
+} from "./support-bot.js"
 
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
@@ -91,14 +98,19 @@ async function handleShopUpdate(
     update: Update,
 ): Promise<void> {
     const message = update.message
-    if (message) {
+    if (message && isPrivate(message)) {
         await handleSafely(() => handleShopMessage(services, business, token, message))
+    } else if (message) {
+        await handleSafely(() => handleGroupMessage(services, business, token, message))
     }
     const membership = update.my_chat_member
     if (membership) {
         const texts = textsFor(languageFromTelegram(membership.from.language_code), business.type)
         await handleSafely(() =>
             handleChannelMembership(services, business, token, membership, texts),
+        )
+        await handleSafely(() =>
+            handleSupportMembership(services, business, token, membership, texts),
         )
     }
     const post = update.channel_post
@@ -146,7 +158,12 @@ async function handleShopMessage(
         )
         return
     }
+    const isOwner = from.id === business.ownerTelegramId.value
     if (!isStart(message.text)) {
+        // A customer's question goes to the shop's support group, when it has one (goal 21).
+        if (!isOwner && (await relayCustomerMessage(services, business, token, message, texts))) {
+            return
+        }
         await services.telegram.sendMessage(token, message.chat.id, texts.onlyInApp, { keyboard })
         return
     }
@@ -154,7 +171,10 @@ async function handleShopMessage(
     if (await handleSourceStart(services, business, start, texts)) {
         return
     }
-    if (from.id === business.ownerTelegramId.value) {
+    if (!isOwner && (await handleSupportStart(services, business, token, message, texts))) {
+        return
+    }
+    if (isOwner) {
         await ownerStarted(services, business, token, { chatId: message.chat.id, texts })
         return
     }

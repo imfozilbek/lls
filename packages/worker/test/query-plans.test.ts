@@ -53,6 +53,11 @@ import {
     knownPostsSql,
 } from "../src/repositories/source-link.repository.js"
 import {
+    SUPPORT_GROUP_SQL,
+    THREAD_BY_CUSTOMER_SQL,
+    THREAD_BY_TOPIC_SQL,
+} from "../src/repositories/support.repository.js"
+import {
     OPEN_TRIPS_OF_BUSINESS_SQL,
     WITH_TRIP_SQL,
     insertTripSql,
@@ -275,6 +280,21 @@ describe("query plans", () => {
         expectIndexed(await planOf(TRANSFER_REJECTIONS_SQL, ["customer-1", "order-1"]), [
             "idx_orders_customer_rejected (customer_id=?)",
         ])
+    })
+
+    describe("the shop's support group", () => {
+        it("the group, a customer's topic and an answer's customer by their keys", async () => {
+            expectIndexed(await planOf(SUPPORT_GROUP_SQL, ["biz-1"]), [
+                "sqlite_autoindex_support_groups_1 (business_id=?)",
+            ])
+            const topic = await planOf(THREAD_BY_CUSTOMER_SQL, [-100, 2002])
+            expect(topic.join("\n")).toMatch(
+                /SEARCH support_threads USING PRIMARY KEY \(chat_id=\? AND customer_telegram_id=\?\)/,
+            )
+            expectIndexed(await planOf(THREAD_BY_TOPIC_SQL, [-100, 7]), [
+                "idx_support_threads_thread (chat_id=? AND thread_id=?)",
+            ])
+        })
     })
 
     describe("the shop's channel and its links", () => {
