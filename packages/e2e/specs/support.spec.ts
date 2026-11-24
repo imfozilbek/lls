@@ -265,8 +265,11 @@ test("«Savolim bor» on the storefront: the bot greets and the question goes to
 }) => {
     const app = await openApp(page, { user: PEOPLE.customerUz, shop: FOOD })
     await page.getByRole("button", { name: "Savolim bor" }).click()
-    const link = (await app.calls()).filter((c) => c.method === "openTelegramLink").at(-1)
+    const calls = await app.calls()
+    const link = calls.filter((c) => c.method === "openTelegramLink").at(-1)
     expect(link?.args[0]).toBe(`https://t.me/${SHOP.bot.username}?start=q_s`)
+    // The shop closes: the customer sees the chat to write in, not the shop over it.
+    expect(calls.map((c) => c.method).slice(-2)).toEqual(["openTelegramLink", "close"])
     await page.screenshot({ path: "screenshots/support-storefront-button.png" })
     const since = await lastSeq()
     await shopChat(FOOD).send(PEOPLE.customerUz, "/start q_s")
