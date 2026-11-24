@@ -244,6 +244,25 @@ describe("a customer's topic", () => {
         expect(threads.items[0]).toMatchObject({ waitingSince: NOW, topicName: "Aziz Karimov" })
     })
 
+    it("a topic made before names were kept is unnamed until it gets one", async () => {
+        await threads.insert({
+            businessId: "biz-1",
+            chatId: GROUP,
+            customerTelegramId: CUSTOMER_TG,
+            threadId: 10,
+            createdAt: NOW,
+        })
+        expect(await open()).toMatchObject({ threadId: 10, created: false, unnamed: true })
+        await threads.saveName(GROUP, CUSTOMER_TG, "Aziz Karimov · @aziz")
+        expect(await open()).toMatchObject({ threadId: 10, unnamed: false })
+        expect(topics.opened).toHaveLength(0)
+    })
+
+    it("a new topic is named from the start", async () => {
+        expect(await open()).toMatchObject({ created: true, unnamed: false })
+        expect(await open()).toMatchObject({ created: false, unnamed: false })
+    })
+
     it("waits for the shop's answer: ❓ turns once, ✅ turns once", async () => {
         const answered = (threadId = 100, chatId = GROUP): Promise<boolean> =>
             new MarkSupportAnsweredUseCase({
