@@ -276,16 +276,18 @@ test("outside Telegram: the sign-in pages, then «Mening bizneslarim», light", 
     await snap(page, "56-my-businesses", "light")
 })
 
-test("a dark Telegram theme still shows the light app, framed in white", async ({ page }) => {
+test("a dark Telegram theme still shows the light app, framed in the page's gray", async ({
+    page,
+}) => {
     const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD, theme: "dark" })
     await expect(page.getByRole("heading", { name: "Osh Markaz" })).toBeVisible()
     const colors = await page.evaluate(() => {
         const body = getComputedStyle(document.body)
         return { background: body.backgroundColor, text: body.color }
     })
-    expect(colors).toEqual({ background: "rgb(255, 255, 255)", text: "rgb(17, 24, 39)" })
+    expect(colors).toEqual({ background: "rgb(243, 244, 246)", text: "rgb(17, 24, 39)" })
     const painted = (await app.calls())
         .filter((c) => c.method === "setHeaderColor" || c.method === "setBackgroundColor")
         .map((c) => c.args[0])
-    expect(painted).toEqual(["#ffffff", "#ffffff"])
+    expect(painted).toEqual(["#f3f4f6", "#f3f4f6"])
 })
