@@ -8,6 +8,8 @@ The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin pa
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
 ### The shop's own storefront, and a number kept from customers (goal 24)
+- **A new look on every screen**: a light gray page with white cards and soft shadows, Telegram's
+  frame painted the same gray, so white product photos never melt into the page.
 - **Four layouts** the owner picks in «Sozlamalar» → «Vitrina qanday ko'rinadi»: «Ikki ustunda»,
   «Ro'yxat ko'rinishida», «Katta rasm bilan» (a product's photos swiped), «Bo'limlarga
   ajratilgan» (a shelf a category, «Yangi kelganlar» first); until then the photos decide.

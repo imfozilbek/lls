@@ -209,8 +209,8 @@ Pilot: **food, water and grocery at the same time.**
       until then), a cover, «Yangi kelganlar» on the shelves (migration `0039`)
 - [x] «Raqamni mijozlarga ko'rsatmaslik»: the number kept from customers while the support group
       answers them; couriers see it; the group gone, it shows again
-- [ ] Every screen a light gray page with white cards and soft shadows; Telegram's frame the same
-      gray; every screen checked at 390 px
+- [x] Every screen a light gray page with white cards and soft shadows; Telegram's frame the same
+      gray; 51 screens checked on the stand: no melted card, no target under a finger, AA text
 - [ ] On production: ABC bolajon in its layout with a cover; the number kept back, then shown
       again when the group goes
 

@@ -1193,7 +1193,7 @@ console.log            // Use logger
 **UI Stack:**
 | Task | Stack |
 |------|-------|
-| Mini App (customer + owner) | React + Vite + Tailwind, the light palette + brand tokens. **Always light** (owner's decision): Telegram's dark theme is ignored; its header, background and bottom bar are painted white |
+| Mini App (customer + owner) | React + Vite + Tailwind, the light palette + brand tokens. **Always light** (owner's decision): Telegram's dark theme is ignored; every screen is a light gray page (`#f3f4f6`) with white cards and soft shadows (`shadow-card`, `shadow-raised`; owner's decision, November 2026, goal 24), and Telegram's header, background and bottom bar are painted the same gray (`PAGE_COLOR`) |
 | Font | System font (per brand guidelines): 0 KB, native look in Telegram |
 | Animations | CSS transitions/keyframes with custom easing and timing. Motion library only where CSS is not enough |
 | Owner section ("Мой магазин") | Same Mini App, lazy-loaded chunk (customers never download it) |
