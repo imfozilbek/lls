@@ -166,6 +166,9 @@ open but renews the visit: one row; a press within the same hour could skip it).
 sensor in `imfozilbek/dream-infra` watches the real total; measure the writes again before adding
 more to an order's way.
 
+«Savolim bor» (goal 23) reads the shop's support group (one row by its key) once per message
+to the customer and per /start: about +1 500 reads a day at 300 orders, no writes.
+
 ## R2 storage
 
 | What | Size | Grows? |

@@ -409,9 +409,15 @@ cover each one's whole process; what exactly comes from the meeting with them.
     the shop's bot (an anonymous admin too); the General topic, service notes, other bots and
     other groups go nowhere: the bot never talks in a group. A customer who blocked the bot: one
     line in the topic.
-  - **«Do'konga xabar yozish»** (`ShopPublicDTO.supportChat`) next to «Do'konga qo'ng'iroq» on the
-    order and in the product's sheet: `/start q_o<order>` or `q_p<product>`; the topic hears which
-    (only the customer's own order, only this shop's product). Without a group, nothing changes.
+  - **«💬 Savolim bor»** (`ShopPublicDTO.supportChat`; owner's decisions, goal 23): on the
+    storefront next to «Qo'ng'iroq» (`/start q_s`), on the order (`q_o<order>`), in the product's
+    sheet (`q_p<product>`), and under every channel post below «Buyurtma berish» (`q_l<code>`:
+    the product the post leads to now; the newest 20 posts get or lose it when the group comes
+    or goes, `POSTS_REBUTTONED`; albums have no buttons). The topic hears which (only the
+    customer's own order, only this shop's product); the bot greets under the product's card
+    («Bu mahsulot haqida savolingizni yozing, tez orada javob beramiz»). The bot's description,
+    its /start greeting and the order's live message from the shop's bot carry «💬 Savolingiz
+    bo'lsa, shu yerga yozing: javob beramiz.» Without a group, none of it shows.
   - **No shop without it (owner's decision, goal 22):** a required «Ishga tayyor» step (not for a
     demo); «Qanday qilinadi?» under each step (Telegram's menu items in Uzbek, English in brackets:
     «Mavzular» (Topics), never Russian); the last refusal or loss (`support_refusals`) shown with
@@ -1461,10 +1467,14 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Ad links: «Yangi havola» «Super kids» to one product → pressed: counted once, never the owner
 - [ ] Support group: a group with «Mavzular» → «Guruhni bog'lash» → the bot an admin → «guruhi
       Zumdaga bog'landi» → a customer writes the shop's bot → their topic with the card → the
-      owner answers there → the customer gets it from the shop's bot → «Do'konga xabar yozish» on
+      owner answers there → the customer gets it from the shop's bot → «Savolim bor» on
       an order names it in the topic; 🔴 on the question, 🟢 on the answer, 🔴 again; the card
       pinned; an order: «🛒 #…» in the topic, «Ism · telefon»; a group without «Mavzular»: the
       reason in the app and «Qayta urinish»; on a real Android and iPhone
+- [ ] «Savolim bor»: the group connected → the bot's description has «Savolingiz bo'lsa» → the
+      newest posts get «💬 Savolim bor» → pressed: the product's card and the greeting, the topic
+      names the product; the storefront's «Savolim bor»; the order's message says where to ask;
+      the group gone → the button leaves the posts; on a real Android and iPhone
 - [ ] Every post: a post made in Telegram naming a product → «Buyurtma berish» under it to that
       product → «Mahsulotni tanlash» → «Hamma mahsulotlar»; an album: «Tugmasi yo'q»; «Eski
       postlarni ham qo'shish» → «Eski postlarning hammasi qo'shildi»; on a real channel
