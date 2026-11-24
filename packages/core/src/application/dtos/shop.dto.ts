@@ -9,6 +9,7 @@ import type { BusinessType } from "../../domain/enums/business-type.js"
 import type { Feature } from "../../domain/enums/feature.js"
 import type { OwnerChat } from "../../domain/enums/owner-chat.js"
 import type { PaymentMethod, PaymentOptions } from "../../domain/enums/payment.js"
+import type { StorefrontLayout } from "../../domain/enums/storefront-layout.js"
 import type { Phone } from "../../domain/value-objects/phone.js"
 import type { WeeklySchedule } from "../../domain/value-objects/working-hours.js"
 
@@ -25,13 +26,25 @@ export interface ShopPublicDTO {
     type: BusinessType
     brandColor: string
     logoKey?: string
+    /** «Muqova rasmi»: the wide picture over the storefront (goal 24). */
+    coverKey?: string
+    /**
+     * «Vitrina qanday ko'rinadi»: how the storefront shows the catalog. `null`: never chosen, the
+     * app decides by the photos.
+     */
+    storefrontLayout: StorefrontLayout | null
     address?: string
     location?: LocationDTO
-    /** E.164: the shop's own number for customers, as the owner typed it (empty: none). */
+    /**
+     * E.164: the shop's own number for customers, as the owner typed it (empty: none). Only on
+     * the opened storefront and in the owner's view, never in a list; not for a customer while
+     * the owner hides the number (`phoneHidden`).
+     */
     contactPhone?: string
     /**
      * The number to call the shop on: its own, or the owner's (`shopCallPhone`). Only on the
-     * opened storefront, never in the showcase list.
+     * opened storefront, never in the showcase list; not for a customer while the number is
+     * hidden.
      */
     callPhone?: string
     delivery: {
@@ -95,6 +108,11 @@ export interface ShopOwnerDTO extends ShopPublicDTO {
     rejection?: { at: string; reason?: string }
     /** Can the shop's own bot write to the owner (pressed Start in it)? */
     ownerChat: OwnerChat
+    /**
+     * «Raqamni mijozlarga ko'rsatmaslik»: the owner's choice. Customers miss the number only
+     * while the support group is connected too.
+     */
+    phoneHidden: boolean
     createdAt: string
 }
 
@@ -115,6 +133,11 @@ export function toShopPublicDTO(
     now: Date,
     options: {
         withCard?: boolean
+        /**
+         * The shop's numbers (`contactPhone`, `callPhone`): the opened storefront and the owner's
+         * view. A list never carries them; neither does a customer's view of a hidden number.
+         */
+        withPhone?: boolean
         callPhone?: Phone
         /** No number to call the shop on: no way to order yet (`NO_SHOP_PHONE`). */
         noPhone?: boolean
@@ -133,10 +156,12 @@ export function toShopPublicDTO(
         type: business.type,
         brandColor: business.brandColor.hex,
         logoKey: business.logoKey,
+        coverKey: business.coverKey,
+        storefrontLayout: business.storefrontLayout ?? null,
         address: business.address,
         location: toLocationDTO(business.location),
-        contactPhone: business.contactPhone?.number,
-        callPhone: options.callPhone?.number,
+        contactPhone: options.withPhone ? business.contactPhone?.number : undefined,
+        callPhone: options.withPhone ? options.callPhone?.number : undefined,
         delivery: {
             fee: charges ? fee.amount : 0,
             freeFrom: charges ? freeFrom?.amount : undefined,
@@ -163,7 +188,7 @@ export function toShopPublicDTO(
 
 export function toShopOwnerDTO(business: Business, now: Date): ShopOwnerDTO {
     return {
-        ...toShopPublicDTO(business, now, { withCard: true }),
+        ...toShopPublicDTO(business, now, { withCard: true, withPhone: true }),
         status: business.status,
         ownerTelegramId: business.ownerTelegramId.value,
         managedBot: business.botSource === BotSource.MANAGED,
@@ -179,6 +204,7 @@ export function toShopOwnerDTO(business: Business, now: Date): ShopOwnerDTO {
             reason: business.rejection.reason,
         },
         ownerChat: business.ownerChat,
+        phoneHidden: business.phoneHidden,
         createdAt: business.createdAt.toISOString(),
     }
 }

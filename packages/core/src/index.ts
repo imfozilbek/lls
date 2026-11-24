@@ -16,6 +16,7 @@ export * from "./domain/enums/order-status.js"
 export * from "./domain/enums/payment.js"
 export * from "./domain/enums/region.js"
 export * from "./domain/enums/send-way.js"
+export * from "./domain/enums/storefront-layout.js"
 export * from "./domain/enums/unit.js"
 
 // Domain - Shared

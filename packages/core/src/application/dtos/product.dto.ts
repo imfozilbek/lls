@@ -35,12 +35,22 @@ export interface ProductDTO {
     stock?: number
     /** Counted and gone: the customer sees it and cannot add it. */
     soldOut?: true
+    /**
+     * When the owner added it (ISO), only while it is new (`NEW_PRODUCT_DAYS`, the server's
+     * clock): the storefront's «Yangi kelganlar». Absent for older products and in the showcase.
+     */
+    addedAt?: string
 }
 
 /** Who reads it: the owner sees the count, a customer only that it is gone. */
 export type ProductAudience = "owner" | "customer"
 
-export function toProductDTO(product: Product, audience: ProductAudience = "owner"): ProductDTO {
+/** `now`: the catalog of one shop, which marks its new products; lists elsewhere pass none. */
+export function toProductDTO(
+    product: Product,
+    audience: ProductAudience = "owner",
+    now?: Date,
+): ProductDTO {
     return {
         id: product.id,
         businessId: product.businessId,
@@ -61,5 +71,6 @@ export function toProductDTO(product: Product, audience: ProductAudience = "owne
         ...(product.options ? { options: product.options.toJSON() } : {}),
         ...(audience === "owner" && product.stock !== undefined ? { stock: product.stock } : {}),
         ...(product.soldOut ? { soldOut: true as const } : {}),
+        ...(now && product.isNewAt(now) ? { addedAt: product.createdAt.toISOString() } : {}),
     }
 }

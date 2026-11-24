@@ -31,6 +31,11 @@ const MAX_WEIGHT_STEP = 10_000
 const MAX_STOCK = 10_000_000
 /** Photos of one product (owner's decision, November 2026): the main one and two more. */
 export const MAX_PHOTOS = 3
+/**
+ * «Yangi kelganlar» (owner's decision, November 2026; goal 24): a product is new this many days
+ * after the owner added it.
+ */
+export const NEW_PRODUCT_DAYS = 30
 
 export interface ProductProps {
     id: string
@@ -299,6 +304,13 @@ export class Product {
     }
     get createdAt(): Date {
         return this.props.createdAt
+    }
+    /**
+     * Added within `NEW_PRODUCT_DAYS` of `now`, on the server's clock: a phone set to the wrong
+     * day never decides what is new.
+     */
+    isNewAt(now: Date): boolean {
+        return now.getTime() < addDays(this.props.createdAt, NEW_PRODUCT_DAYS).getTime()
     }
     get updatedAt(): Date {
         return this.props.updatedAt

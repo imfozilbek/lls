@@ -6,6 +6,7 @@ import { Feature } from "../../../domain/enums/feature.js"
 import { OrderChannel } from "../../../domain/enums/order-channel.js"
 import { OwnerChat } from "../../../domain/enums/owner-chat.js"
 import { PaymentMethod, PaymentOptions } from "../../../domain/enums/payment.js"
+import { StorefrontLayout } from "../../../domain/enums/storefront-layout.js"
 import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
 import { BrandColor } from "../../../domain/value-objects/brand-color.js"
@@ -238,5 +239,37 @@ describe("Business", () => {
         expect(business.ownerChatClosedAt).toEqual(new Date(2000))
         // Not an edit of the shop: its version stays.
         expect(business.updatedAt).toBe(updated)
+    })
+})
+
+describe("the storefront's look and the shop's number (goal 24)", () => {
+    it("keeps the layout once chosen, and a cover the way it keeps the logo", () => {
+        const business = makeBusiness()
+        expect(business.storefrontLayout).toBeUndefined()
+        expect(business.coverKey).toBeUndefined()
+        business.setStorefrontLayout(StorefrontLayout.SHELVES)
+        business.updateProfile({ coverKey: "shops/biz-1/cover/a.webp" })
+        expect(business.storefrontLayout).toBe(StorefrontLayout.SHELVES)
+        expect(business.coverKey).toBe("shops/biz-1/cover/a.webp")
+        // A name change leaves the cover; `null` removes it, the layout stays.
+        business.updateProfile({ name: "Osh Markaz №1" })
+        expect(business.coverKey).toBe("shops/biz-1/cover/a.webp")
+        business.updateProfile({ coverKey: null })
+        expect(business.coverKey).toBeUndefined()
+        expect(business.storefrontLayout).toBe(StorefrontLayout.SHELVES)
+    })
+
+    it("keeps the number from customers only while the support group answers them", () => {
+        const business = makeBusiness()
+        expect(business.phoneHidden).toBe(false)
+        expect(business.showsPhoneToCustomers(false)).toBe(true)
+        expect(business.showsPhoneToCustomers(true)).toBe(true)
+        business.setPhoneHidden(true)
+        expect(business.showsPhoneToCustomers(true)).toBe(false)
+        // The group gone: the number shows again by itself, the owner's choice kept for later.
+        expect(business.showsPhoneToCustomers(false)).toBe(true)
+        expect(business.phoneHidden).toBe(true)
+        business.setPhoneHidden(false)
+        expect(business.showsPhoneToCustomers(true)).toBe(true)
     })
 })

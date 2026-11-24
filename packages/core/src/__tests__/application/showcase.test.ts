@@ -141,6 +141,10 @@ describe("Zumda showcase", () => {
     it("lists showcase shops, open ones first", async () => {
         const shops = await new ListShowcaseShopsUseCase(businesses, clock).execute()
         expect(shops.map((s) => s.slug).sort()).toEqual(["baraka", "osh-markaz"])
+        // A list never carries a shop's number: it comes with the opened storefront only.
+        expect(shops.every((s) => s.contactPhone === undefined && s.callPhone === undefined)).toBe(
+            true,
+        )
     })
 
     it("only a platform admin signs or ends a deal", async () => {

@@ -79,6 +79,7 @@ export const staffUz = {
         VIDEO_TOO_LARGE: "Video 50 MB dan katta: qisqaroq video tanlang.",
         UNSUPPORTED_VIDEO: "Bu video turi to'g'ri kelmaydi: MP4 yoki MOV video tanlang.",
         VIDEO_SIZE_UNKNOWN: "Video hajmi aniqlanmadi. Qayta urinib ko'ring.",
+        SUPPORT_GROUP_REQUIRED: "Avval mijozlar savollari guruhini bog'lang.",
     },
     trip: {
         sameWay: "Shu yo'nalishda yana {n} ta",

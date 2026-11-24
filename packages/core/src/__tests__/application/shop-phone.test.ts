@@ -6,6 +6,7 @@ import { shopCallPhone } from "../../application/use-cases/shop/shop-phone.js"
 import { Customer } from "../../domain/entities/customer.js"
 import { Language } from "../../domain/enums/language.js"
 import { Phone } from "../../domain/value-objects/phone.js"
+import { SupportGroup } from "../../domain/value-objects/support-group.js"
 import { TelegramId } from "../../domain/value-objects/telegram-id.js"
 import {
     CUSTOMER_TG,
@@ -24,6 +25,7 @@ import {
     InMemoryProducts,
     fixedClock,
 } from "../in-memory.js"
+import { InMemorySupportGroups } from "../in-memory-support.js"
 
 import type { Business } from "../../domain/entities/business.js"
 
@@ -124,5 +126,53 @@ describe("no phone, no orders (owner's decision, October 2026)", () => {
         const demo = makeBusiness({ phone: false })
         demo.makeDemo(NOON_MONDAY_UZ)
         await expect(order(demo)).resolves.toMatchObject({ status: "pending" })
+    })
+})
+
+describe("a number kept from customers (owner's decision, November 2026; goal 24)", () => {
+    /** The storefront as `viewer` opens it, the owner having hidden the number or not. */
+    async function storefront(
+        hidden: boolean,
+        group: boolean,
+        viewer: number,
+    ): ReturnType<GetShopBySlugUseCase["execute"]> {
+        const businesses = new InMemoryBusinesses()
+        const customers = new InMemoryCustomers()
+        const groups = new InMemorySupportGroups()
+        const shop = makeBusiness()
+        shop.setPhoneHidden(hidden)
+        await businesses.save(shop)
+        await ownerAsCustomer(customers, OWNER_PHONE)
+        if (group) {
+            await groups.save(
+                SupportGroup.connect({
+                    businessId: shop.id,
+                    chatId: -1001234567890,
+                    title: "Osh Markaz savollar",
+                    connectedAt: NOON_MONDAY_UZ,
+                }),
+            )
+        }
+        return new GetShopBySlugUseCase(businesses, clock, customers, groups).execute(
+            "osh-markaz",
+            viewer,
+        )
+    }
+
+    it("leaves both numbers out for a customer while the support group answers", async () => {
+        const shop = await storefront(true, true, CUSTOMER_TG)
+        expect(shop.callPhone).toBeUndefined()
+        expect(shop.contactPhone).toBeUndefined()
+        expect(shop.supportChat).toBe(true)
+        // A hidden number is still a number: the shop takes orders.
+        expect(shop.paymentMethods).not.toHaveLength(0)
+    })
+
+    it("shows them to the owner, and to every customer once the group is gone", async () => {
+        const own = await storefront(true, true, OWNER_TG)
+        expect(own.callPhone).toBe(SHOP_PHONE)
+        expect(own.contactPhone).toBe(SHOP_PHONE)
+        expect((await storefront(true, false, CUSTOMER_TG)).callPhone).toBe(SHOP_PHONE)
+        expect((await storefront(false, true, CUSTOMER_TG)).callPhone).toBe(SHOP_PHONE)
     })
 })

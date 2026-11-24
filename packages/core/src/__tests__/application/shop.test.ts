@@ -20,6 +20,7 @@ import { BusinessStatus } from "../../domain/enums/business-status.js"
 import { BusinessType } from "../../domain/enums/business-type.js"
 import { DeliveryPrice } from "../../domain/enums/delivery-price.js"
 import { Region } from "../../domain/enums/region.js"
+import { StorefrontLayout } from "../../domain/enums/storefront-layout.js"
 import { BusinessRuleViolationError } from "../../domain/errors/business-rule.error.js"
 import { ConflictError } from "../../domain/errors/conflict.error.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
@@ -27,6 +28,7 @@ import { EntityNotFoundError } from "../../domain/errors/not-found.error.js"
 import { ValidationError } from "../../domain/errors/validation.error.js"
 import { Money } from "../../domain/value-objects/money.js"
 import { Location } from "../../domain/value-objects/location.js"
+import { SupportGroup } from "../../domain/value-objects/support-group.js"
 import { NOON_MONDAY_UZ, OWNER_TG, STRANGER_TG, TEST_CARD, makeBusiness } from "../fixtures.js"
 import {
     InMemoryBusinesses,
@@ -36,6 +38,7 @@ import {
     InMemoryPayoutCards,
     fixedClock,
 } from "../in-memory.js"
+import { InMemorySupportGroups } from "../in-memory-support.js"
 
 import type { RegisterShopInput } from "../../application/use-cases/shop/register-shop.use-case.js"
 
@@ -474,6 +477,66 @@ describe("shop use cases", () => {
                     patch: { name: "Hacked" },
                 }),
             ).rejects.toThrow(ForbiddenError)
+        })
+
+        it("keeps the storefront's layout the owner chose; an unknown one is refused", async () => {
+            await businesses.save(makeBusiness())
+            const update = new UpdateShopUseCase(businesses, clock)
+            const before = await update.execute({
+                actorTelegramId: OWNER_TG,
+                businessId: "biz-1",
+                patch: { name: "Osh Markaz" },
+            })
+            expect(before.storefrontLayout).toBeNull()
+            const chosen = await update.execute({
+                actorTelegramId: OWNER_TG,
+                businessId: "biz-1",
+                patch: { storefrontLayout: "shelves", coverKey: "shops/biz-1/cover/a.webp" },
+            })
+            expect(chosen.storefrontLayout).toBe(StorefrontLayout.SHELVES)
+            expect(chosen.coverKey).toBe("shops/biz-1/cover/a.webp")
+            await expect(
+                update.execute({
+                    actorTelegramId: OWNER_TG,
+                    businessId: "biz-1",
+                    patch: { storefrontLayout: "carousel" },
+                }),
+            ).rejects.toThrow(ValidationError)
+            const removed = await update.execute({
+                actorTelegramId: OWNER_TG,
+                businessId: "biz-1",
+                patch: { coverKey: null },
+            })
+            expect(removed.coverKey).toBeUndefined()
+            expect(removed.storefrontLayout).toBe(StorefrontLayout.SHELVES)
+        })
+
+        it("hides the number only for a shop whose support group answers customers", async () => {
+            await businesses.save(makeBusiness())
+            const groups = new InMemorySupportGroups()
+            const update = new UpdateShopUseCase(businesses, clock, undefined, groups)
+            const hide = (phoneHidden: boolean): ReturnType<UpdateShopUseCase["execute"]> =>
+                update.execute({
+                    actorTelegramId: OWNER_TG,
+                    businessId: "biz-1",
+                    patch: { phoneHidden },
+                })
+            await expect(hide(true)).rejects.toMatchObject({ rule: "SUPPORT_GROUP_REQUIRED" })
+            await groups.save(
+                SupportGroup.connect({
+                    businessId: "biz-1",
+                    chatId: -1001234567890,
+                    title: "Osh Markaz savollar",
+                    connectedAt: NOON_MONDAY_UZ,
+                }),
+            )
+            expect((await hide(true)).phoneHidden).toBe(true)
+            // The group lost later: a form sent again as it was still saves, and off always works.
+            await groups.remove("biz-1")
+            expect((await hide(true)).phoneHidden).toBe(true)
+            expect((await hide(false)).phoneHidden).toBe(false)
+            // The owner still sees the number in their own view.
+            expect((await hide(false)).contactPhone).toBeDefined()
         })
     })
 })

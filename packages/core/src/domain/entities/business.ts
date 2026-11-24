@@ -15,6 +15,7 @@ import { Money } from "../value-objects/money.js"
 import { WorkingHours } from "../value-objects/working-hours.js"
 
 import type { DeliveryPriceChoice } from "../enums/delivery-price.js"
+import type { StorefrontLayout } from "../enums/storefront-layout.js"
 import type { Location } from "../value-objects/location.js"
 import type { PayoutCard } from "../value-objects/payout-card.js"
 import type { Phone } from "../value-objects/phone.js"
@@ -71,10 +72,25 @@ export interface BusinessProps {
     botSource?: BotSource
     brandColor: BrandColor
     logoKey?: string
+    /**
+     * «Muqova rasmi» (owner's decision, November 2026; goal 24): a wide picture over the
+     * storefront, an R2 key like the logo's. Absent: none.
+     */
+    coverKey?: string
+    /**
+     * «Vitrina qanday ko'rinadi»: how the storefront shows the catalog. Absent: not chosen, the
+     * photos decide.
+     */
+    storefrontLayout?: StorefrontLayout
     address?: string
     location?: Location
     /** The number customers call about an order (a transfer the owner did not see). Optional. */
     contactPhone?: Phone
+    /**
+     * «Raqamni mijozlarga ko'rsatmaslik» (owner's decision, November 2026; goal 24): customers do
+     * not see the shop's number while its support group answers them; couriers always do.
+     */
+    phoneHidden?: boolean
     delivery: DeliverySettings
     workingHours: WorkingHours
     features: Feature[]
@@ -137,6 +153,8 @@ export interface ProfilePatch {
     name?: string
     brandColor?: BrandColor
     logoKey?: string | null
+    /** «Muqova rasmi»; `null` removes it. */
+    coverKey?: string | null
     address?: string | null
     location?: Location | null
     contactPhone?: Phone | null
@@ -254,6 +272,13 @@ export class Business {
     get logoKey(): string | undefined {
         return this.props.logoKey
     }
+    get coverKey(): string | undefined {
+        return this.props.coverKey
+    }
+    /** Undefined: the owner never chose; the storefront goes by the photos. */
+    get storefrontLayout(): StorefrontLayout | undefined {
+        return this.props.storefrontLayout
+    }
     get address(): string | undefined {
         return this.props.address
     }
@@ -262,6 +287,17 @@ export class Business {
     }
     get contactPhone(): Phone | undefined {
         return this.props.contactPhone
+    }
+    /** The owner asked to keep the number from customers (it works only with a support group). */
+    get phoneHidden(): boolean {
+        return this.props.phoneHidden === true
+    }
+    /**
+     * Customers see the shop's number unless the owner hid it while a support group answers them
+     * (owner's decision, November 2026): the group gone, the number shows again by itself.
+     */
+    showsPhoneToCustomers(supportGroupConnected: boolean): boolean {
+        return !(this.phoneHidden && supportGroupConnected)
     }
     get delivery(): DeliverySettings {
         return { ...this.props.delivery }
@@ -560,6 +596,9 @@ export class Business {
         if (patch.logoKey !== undefined) {
             this.props.logoKey = patch.logoKey ?? undefined
         }
+        if (patch.coverKey !== undefined) {
+            this.props.coverKey = patch.coverKey ?? undefined
+        }
         if (patch.address !== undefined) {
             this.props.address = optionalText("address", patch.address, ADDRESS_MAX)
         }
@@ -597,6 +636,21 @@ export class Business {
 
     setNetworkDelivery(on: boolean): void {
         this.props.networkDelivery = on
+        this.touch()
+    }
+
+    /** «Vitrina qanday ko'rinadi»: once chosen, a layout is changed, never unset. */
+    setStorefrontLayout(layout: StorefrontLayout): void {
+        this.props.storefrontLayout = layout
+        this.touch()
+    }
+
+    /**
+     * «Raqamni mijozlarga ko'rsatmaslik». The use case checks the support group before turning it
+     * on; turning it off needs nothing.
+     */
+    setPhoneHidden(hidden: boolean): void {
+        this.props.phoneHidden = hidden
         this.touch()
     }
 
