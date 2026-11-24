@@ -67,7 +67,8 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   (`p:` asks, `pc:`/`pn:` answer, `a:`, `x:`, `k:`, `n:`, `net:`, `r:`) and a button that opens the Mini App on what it is
   about (`telegram/app-links.ts`: an order `&order=<id>`, «Platforma» `&admin=…`). A shared contact
   is taken (the phone: «Raqamni yuborish»). Any other text gets one line («ish esa ilovada») with
-  the button to the app. Never add a bot command: add a
+  the button to the app; the one exception is a shop with a support group (below): a customer's
+  message to the shop's bot goes to the shop's people. Never add a bot command: add a
   screen.
 - **The greeting is the role's instruction video (owner's decision, October 2026).** `/start` in
   Zumda | Business and Zumda | Shop, and in Zumda | Kuryer for someone new (no link to a shop),
@@ -389,6 +390,28 @@ cover each one's whole process; what exactly comes from the meeting with them.
   yana qo'shish», «Nusxa olish»; a typed draft is guarded. «Ro'yxat bilan qo'shish»: one product
   a line «Nomi narx [birlik]», up to 50 in one `db.batch` (`POST /api/owner/products/bulk`, 5 a
   minute), a name the shop has is skipped.
+- **The shop's support group (owner's decisions, November 2026; goal 21):** customers ask the
+  shop's bot, the shop's people answer from their own closed group; the owner's account stays
+  hidden. Not the channel's comments group (that one is open, and separate).
+  - **Connected from Telegram's own screen.** «Sozlamalar» → «Mijozlar savollari» → «Guruhni
+    bog'lash» registers the shop bot's webhook again and opens
+    `t.me/<bot>?startgroup&admin=manage_topics+pin_messages`. The bot made an admin who may make
+    topics, by the owner, in a group with topics («Mavzular»), connects it (`support_groups`, one a
+    shop: a new one replaces it and the bot leaves the old). Someone else, a demo shop, a group
+    without topics or without the right: the bot leaves and the owner hears why. Removed, or the
+    right taken: forgotten, the owner hears it. «Guruhni ajratish»: Zumda forgets it, the bot
+    leaves.
+  - **A topic a customer.** A customer's message (not a command, not the phone) to the shop's bot
+    is copied (`copyMessage`) to their own topic, made on the first one (their Telegram name, a
+    card with the last order here) with «Xabaringiz do'konga yuborildi» once; a topic deleted in
+    Telegram is made again. No message is stored (`support_threads`: whose topic, per group).
+  - **The answer.** Anything a person writes in a customer's topic goes to that customer from
+    the shop's bot (an anonymous admin too); the General topic, service notes, other bots and
+    other groups go nowhere: the bot never talks in a group. A customer who blocked the bot: one
+    line in the topic.
+  - **«Do'konga xabar yozish»** (`ShopPublicDTO.supportChat`) next to «Do'konga qo'ng'iroq» on the
+    order and in the product's sheet: `/start q_o<order>` or `q_p<product>`; the topic hears which
+    (only the customer's own order, only this shop's product). Without a group, nothing changes.
 - **A toy shop's tabs (owner's decisions, November 2026):** «Rivojlantiruvchi o'yinchoqlar»,
   «Mantiqiy o'yinlar», «Kitoblar» stand on the goods shelf after «Bolalar tovarlari». A product
   stands in up to three categories (`MAX_CATEGORIES`): the main one, which an order line and the
@@ -687,6 +710,8 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | ShopChannel | business_id (one a shop), chat_id, title, username, connected_at, updates_version (the bot's updates registered), history_before / history_done_at (the past read so far): the shop's Telegram channel, while its bot may post there |
 | SourceLink | id (the code of `s_<code>`), business_id, kind (post/ad), origin (zumda/channel: a post Zumda made or the owner's own), preview (the owner's post's first words), button_at (its «Buyurtma berish» put), product_id (none: the whole shop), label (an ad's name), post (chat_id, message_id, photo_file_id), owner_text, post_key (name, price, age the post says), opens, orders, sales, revenue, created_at, deleted_at: a channel post or an ad link and what it brought |
 | SourceVisit | (business_id, telegram_id), link_id, at: the last link a person pressed at a shop |
+| SupportGroup | business_id (one a shop), chat_id, title, connected_at: the shop's closed group with topics, while its bot may make topics there |
+| SupportThread | (chat_id, customer_telegram_id), business_id, thread_id, created_at: a customer's own topic in a support group (no message is stored) |
 | Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock, `removed_at`: «Yo'q»), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; refund_owed: owed back for lines taken out with «Yo'q»; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), delivery_free (the shop promised free delivery: snapshot), source_link_id (the post or ad link the customer came by, within 7 days: snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
@@ -796,8 +821,8 @@ opening (`launchSurelyOutdated`: a phone set to the wrong day is never locked ou
 
 **Bot webhook:**
 - Register with `setWebhook` + `secret_token`. Reject requests without a matching
-  `X-Telegram-Bot-Api-Secret-Token` header. A shop's bot hears `message`, `callback_query`,
-  `my_chat_member` and `channel_post` (its channel).
+  `X-Telegram-Bot-Api-Secret-Token` header. A shop's bot hears `message` (its chats and its
+  support group), `callback_query`, `my_chat_member` and `channel_post` (its channel).
 - Button presses: user = `callback_query.from.id`. Check that this user owns the business.
 
 **Which token verifies initData:** Telegram signs initData with the token of the bot that opened
@@ -1420,6 +1445,10 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
       kirdi · 1 ta buyurtma», after delivery its goods → a new price edits the post → «Postni
       o'chirish»; added by someone else or for a demo: the bot leaves; on a real Android and iPhone
 - [ ] Ad links: «Yangi havola» «Super kids» to one product → pressed: counted once, never the owner
+- [ ] Support group: a group with «Mavzular» → «Guruhni bog'lash» → the bot an admin → «guruhi
+      Zumdaga bog'landi» → a customer writes the shop's bot → their topic with the card → the
+      owner answers there → the customer gets it from the shop's bot → «Do'konga xabar yozish» on
+      an order names it in the topic; on a real Android and iPhone
 - [ ] Every post: a post made in Telegram naming a product → «Buyurtma berish» under it to that
       product → «Mahsulotni tanlash» → «Hamma mahsulotlar»; an album: «Tugmasi yo'q»; «Eski
       postlarni ham qo'shish» → «Eski postlarning hammasi qo'shildi»; on a real channel

@@ -203,6 +203,16 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Add a list of products at once («Ro'yxat bilan qo'shish», up to 50)
 - [ ] On production: a pilot adds 10 products from the catalog and gets an order
 
+### M4t. The shop's support group 🔨 (owner's decisions, November 2026; goal 21)
+- [x] «Mijozlar savollari»: a closed group with topics connected from Telegram's own screen;
+      someone else's, a demo's, a group without topics or without the right refused; the bot
+      removed: forgotten and told
+- [x] A customer's message to the shop's bot goes to their own topic (made with a card: the last
+      order); an answer in the topic goes back from the shop's bot; nothing is stored
+- [x] «Do'konga xabar yozish» on the order and the product's sheet: the topic hears which
+      (migration `0037`)
+- [ ] On production: ABC bolajon's group connected from a phone; a question and its answer
+
 ### M4s. The shop's own channel and ad links 🔨 (owner's decisions, November 2026; goal 20)
 - [x] «Telegram kanal»: connected from Telegram's own screen; someone else's or a demo's
       channel refused; the bot removed: disconnected and told

@@ -60,6 +60,9 @@ Rows read per request (authentication included):
 | A pressed post or ad link (`/start s_<code>`) | 4 read, 2 written (the link's count, the visit) | each press |
 | A post the owner made in Telegram (`channel_post`) | 42 read (the shop's names for the guess: one row a product, 40 here), 5 written (the post's row and its indexes) | each post |
 | «Eski postlarni ham qo'shish», one press | 63 read, 51 written (a page of the channel, the shop's names once, ten posts, where it stopped) | once a channel: ~30 presses for 300 posts |
+| A customer's message to the shop's bot with a support group (goal 21) | 3 read (the shop, the group, the topic); the first one 7 read, 2 written (the topic, the card's last order: one row of an index range) | each message: ~10 shops × 20 a day |
+| The shop's answer in a customer's topic | 3 read (the shop, the group, whose topic) | each answer: ~10 shops × 20 a day |
+| The storefront (`/api/shop`) | +1 (whether the shop has a support group) | each opening |
 
 What the measurement found and fixed on the way (before, on the same data):
 
@@ -150,9 +153,10 @@ D1 counts every index entry written as a row: an order row has over a dozen inde
 | Orders that came by a post or an ad link (the link's order and sale counters, measured +3) | ~100 × 3 (heavy 150) | 300 | 450 |
 | Posts the owners made in Telegram (each written once with its indexes, measured 5) | 10 shops × 5 posts × 5 | 250 | 500 |
 | «Eski postlar»: a channel's past, once (about 5 a post; a heavy day: one channel of 300 posts) | once a channel | 0 | 1 500 |
-| **Total** | | **~17 650** | **~23 900** |
+| Support topics: a customer's first message to a shop (the topic's row and its index; no message is stored) | ~30 new customers × 2 (heavy 100) | 60 | 200 |
+| **Total** | | **~17 710** | **~24 100** |
 
-The heavy day passes the share (~23 900 of 20 000, the account's limit is 100 000): the
+The heavy day passes the share (~24 100 of 20 000, the account's limit is 100 000): the
 customer's live message added 4 rows an order (+1 200 a day), the shop's channel ~1 500 more
 (November 2026: presses and the orders they bring), and a channel's past read in one day ~1 500
 (once a channel: the owner may read it over several days, where it stopped is kept). The presses are a guess until a real channel
