@@ -209,8 +209,11 @@ export class OpenSupportThreadUseCase {
     async execute(input: {
         businessId: string
         customerTelegramId: number
-        /** The topic's name: what the customer is called in Telegram. */
-        name: string
+        /**
+         * The topic's name («Ism · telefon»): asked for only when a topic is made, since the
+         * phone given to this shop costs reads every other message would not need.
+         */
+        nameOf: () => Promise<string>
         /** Their topic was deleted in Telegram: a new one takes its place. */
         staleThreadId?: number
         now: Date
@@ -231,7 +234,8 @@ export class OpenSupportThreadUseCase {
             )
             return { kind: "thread", group, threadId: known.threadId, created: false, nowWaiting }
         }
-        const opened = await this.deps.topics.open(group, input.name)
+        const name = await input.nameOf()
+        const opened = await this.deps.topics.open(group, name)
         if (opened.kind === "noRights") {
             await this.deps.supportGroups.remove(group.businessId)
             return { kind: "lost", group }
@@ -243,7 +247,7 @@ export class OpenSupportThreadUseCase {
             threadId: opened.threadId,
             createdAt: input.now,
             waitingSince: input.now,
-            topicName: input.name,
+            topicName: name,
         }
         const made = {
             kind: "thread",

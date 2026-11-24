@@ -209,7 +209,7 @@ describe("a customer's topic", () => {
         }).execute({
             businessId: "biz-1",
             customerTelegramId: CUSTOMER_TG,
-            name: "Aziz Karimov",
+            nameOf: async () => "Aziz Karimov",
             ...(staleThreadId === undefined ? {} : { staleThreadId }),
             now: NOW,
         })
