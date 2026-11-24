@@ -555,6 +555,14 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    /** «O'zbekiston bo'ylab yetkazamiz» goes only with the customer paying the carrier. */
+    static nationwideNeedsCarrier(): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "NATIONWIDE_NEEDS_CARRIER",
+            "Delivery across the country needs the customer to pay the carrier",
+        )
+    }
+
     /**
      * «Raqamni mijozlarga ko'rsatmaslik» needs the shop's support group (owner's decision,
      * November 2026): a customer who cannot call must still reach the shop.

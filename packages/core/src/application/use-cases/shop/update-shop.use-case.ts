@@ -42,6 +42,8 @@ export interface ShopSettingsPatch {
         customerPaysCarrier?: boolean
         /** The owner's choice of how delivery is paid; left out: the choice made before stays. */
         price?: DeliveryPriceChoice
+        /** «O'zbekiston bo'ylab yetkazamiz»; left out: as it was. */
+        nationwide?: boolean
     }
     /** `null` = always open. */
     workingHours?: WeeklySchedule | null
@@ -121,6 +123,7 @@ function applyPatch(business: Business, patch: ShopSettingsPatch): void {
                 radiusMeters: patch.delivery.radiusMeters ?? undefined,
                 customerPaysCarrier:
                     patch.delivery.customerPaysCarrier ?? business.delivery.customerPaysCarrier,
+                nationwide: patch.delivery.nationwide ?? business.delivery.nationwide,
             },
             patch.delivery.price,
         )

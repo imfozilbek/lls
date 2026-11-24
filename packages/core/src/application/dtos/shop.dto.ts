@@ -57,6 +57,8 @@ export interface ShopPublicDTO {
         customerPaysCarrier: boolean
         /** How the customer pays for delivery: the one thing every screen says about it. */
         price: DeliveryPrice
+        /** «O'zbekiston bo'ylab yetkazib beramiz (pochta, taksi)»: no radius, sent anywhere. */
+        nationwide: boolean
     }
     workingHours: WeeklySchedule | null
     acceptingOrders: boolean
@@ -127,6 +129,25 @@ function toPayoutCardDTO(business: Business): PayoutCardDTO | undefined {
     return card && { number: card.number, holder: card.holder }
 }
 
+/** What a customer is told about delivery: only what the shop's choice of price promises. */
+function toDeliveryDTO(business: Business): ShopPublicDTO["delivery"] {
+    const { fee, freeFrom, minOrder, radiusMeters } = business.delivery
+    const price = business.deliveryPrice
+    const nationwide = price === DeliveryPrice.LATER && business.delivery.nationwide === true
+    // Only a shop that asks a fee has one: a service or a price told later shows none.
+    const charges = price === DeliveryPrice.FEE
+    return {
+        fee: charges ? fee.amount : 0,
+        freeFrom: charges ? freeFrom?.amount : undefined,
+        minOrder: minOrder?.amount,
+        // Sent across the country: no radius to tell.
+        radiusMeters: business.location && !nationwide ? radiusMeters : undefined,
+        customerPaysCarrier: price === DeliveryPrice.LATER,
+        price,
+        nationwide,
+    }
+}
+
 /** `withCard`: the shop opened by a customer, who may pay by transfer. Lists never carry it. */
 export function toShopPublicDTO(
     business: Business,
@@ -145,10 +166,6 @@ export function toShopPublicDTO(
         supportChat?: boolean
     } = {},
 ): ShopPublicDTO {
-    const { fee, freeFrom, minOrder } = business.delivery
-    const price = business.deliveryPrice
-    // Only a shop that asks a fee has one: a service or a price told later shows none.
-    const charges = price === DeliveryPrice.FEE
     return {
         id: business.id,
         slug: business.slug.value,
@@ -162,14 +179,7 @@ export function toShopPublicDTO(
         location: toLocationDTO(business.location),
         contactPhone: options.withPhone ? business.contactPhone?.number : undefined,
         callPhone: options.withPhone ? options.callPhone?.number : undefined,
-        delivery: {
-            fee: charges ? fee.amount : 0,
-            freeFrom: charges ? freeFrom?.amount : undefined,
-            minOrder: minOrder?.amount,
-            radiusMeters: business.location ? business.delivery.radiusMeters : undefined,
-            customerPaysCarrier: price === DeliveryPrice.LATER,
-            price,
-        },
+        delivery: toDeliveryDTO(business),
         workingHours: business.workingHours.toJSON(),
         acceptingOrders: business.acceptingOrders,
         isOpen: business.isOpenAt(now),
