@@ -7,6 +7,21 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The shop's own storefront, and a number kept from customers (goal 24)
+- **Four layouts** the owner picks in «Sozlamalar» → «Vitrina qanday ko'rinadi»: «Ikki ustunda»,
+  «Ro'yxat ko'rinishida», «Katta rasm bilan» (a product's photos swiped), «Bo'limlarga
+  ajratilgan» (a shelf a category, «Yangi kelganlar» first); until then the photos decide.
+- **«Muqova rasmi»**: a wide picture over the storefront, the logo on its edge; the header is
+  shorter: the name, its state, one line of facts, round buttons. «Mijozlar shunday ko'radi»
+  opens the storefront itself.
+- **«Raqamni mijozlarga ko'rsatmaslik»**: while the support group answers customers, they write
+  with «Savolim bor» instead of calling; couriers see the number; the group gone, it shows again.
+- **A finger's size everywhere** (44 px or more): the catalog's rows, an order line's photo, the
+  bot step's links, the buttons of «Ishga tayyor»; a product's photo opens it, as its name does.
+  The map's credit «© OpenStreetMap» stays in sight: no «i» to press.
+- The first download may be 150 KB gzip. Migration `0039` (additive): the layout, the cover, the
+  hidden number.
+
 ### «💬 Savolim bor»: customers know they may ask the shop's bot (goal 23)
 - **Under channel posts** «💬 Savolim bor» below «Buyurtma berish», the newest 20 posts too when
   the group comes; pressed, the bot greets under the product's card and the topic hears which.

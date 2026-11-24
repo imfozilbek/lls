@@ -237,6 +237,14 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
     salomlashuvi va buyurtma xabari mijozga savolini shu yerga yozishni aytadi.
   - Mavzu belgisi: 🔴 mijoz javob kutmoqda, 🟢 javob berildi. Mavzu nomida mijozning ismi va
     telefoni bor, tepadagi mahkamlangan xabarda esa uning buyurtmalari.
+  - **Raqamni mijozlarga ko'rsatmaslik** (**Sozlamalar → Do'kon**). Bu sozlama faqat guruh bilan
+    ishlaydi. Yoqsangiz, mijozlar sizga «Savolim bor» tugmasi bilan yozishadi, kuryerlarga esa
+    raqam ko'rinadi. Guruh bo'lmasa, raqam mijozlarga yana ko'rinadi.
+- **Vitrina qanday ko'rinadi** (**Sozlamalar → Vitrina qanday ko'rinadi**). To'rt ko'rinishdan
+  birini tanlang. Tanlamasangiz, Zumda mahsulot rasmlariga qarab o'zi tanlaydi.
+  - **Muqova rasmi**: do'kon tepasidagi katta rasm. Uni istalgan vaqtda boshqasiga almashtirasiz
+    yoki o'chirasiz.
+  - **Mijozlar shunday ko'radi**: bu tugma do'koningizni mijoz ko'zi bilan ko'rsatadi.
 - **Reklama uchun havolalar** (**Sozlamalar → Havola, QR-kod va vitrina**): boshqa kanalda
   reklama berganda har biriga alohida havola bering: qaysi reklama qancha buyurtma olib kelganini
   shu yerda ko'rasiz.

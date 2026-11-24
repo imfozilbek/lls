@@ -203,6 +203,17 @@ Pilot: **food, water and grocery at the same time.**
 - [x] Add a list of products at once («Ro'yxat bilan qo'shish», up to 50)
 - [ ] On production: a pilot adds 10 products from the catalog and gets an order
 
+### M4u. The new look and the shop's own storefront 🔨 (owner's decisions, November 2026; goal 24)
+- [x] The first download may be 150 KB gzip
+- [x] Four storefront layouts the owner picks in «Vitrina qanday ko'rinadi» (the photos decide
+      until then), a cover, «Yangi kelganlar» on the shelves (migration `0039`)
+- [x] «Raqamni mijozlarga ko'rsatmaslik»: the number kept from customers while the support group
+      answers them; couriers see it; the group gone, it shows again
+- [ ] Every screen a light gray page with white cards and soft shadows; Telegram's frame the same
+      gray; every screen checked at 390 px
+- [ ] On production: ABC bolajon in its layout with a cover; the number kept back, then shown
+      again when the group goes
+
 ### M4t. The shop's support group 🔨 (owner's decisions, November 2026; goal 21)
 - [x] «Mijozlar savollari»: a closed group with topics connected from Telegram's own screen;
       someone else's, a demo's, a group without topics or without the right refused; the bot

@@ -122,7 +122,21 @@ Zumda is the platform brand. Customers see the **shop's brand**; the app shows a
   `/tg/admin` for Zumda | Platforma (`/tg/business` and `/tg/platform` still answer the approval
   buttons of older cards).
 - **One Mini App for all shops.** The shop bot's menu button opens it with `?shop=<slug>`.
-- **Per-shop branding:** name, logo, brand color. Everything else is shared.
+- **Per-shop branding:** name, logo, brand color, the cover and the storefront's layout.
+  Everything else is shared.
+- **The storefront's look (owner's decisions, November 2026; goal 24):** the owner picks it in
+  «Sozlamalar» → «Vitrina qanday ko'rinadi» (`businesses.storefront_layout`):
+  - «Ikki ustunda» (`grid`): two columns of white cards;
+  - «Ro'yxat ko'rinishida» (`list`): rows in a card a category;
+  - «Katta rasm bilan» (`feed`): one product a row, its photos swiped;
+  - «Bo'limlarga ajratilgan» (`shelves`): a shelf a category, the fullest first; «Hammasi»
+    shows one as two columns.
+  Never chosen, the photos decide (a list when fewer than half the products have one). The
+  shelves lead with «Yangi kelganlar»: what was added in 30 days by the server's clock
+  (`ProductDTO.addedAt`), up to 10, none below 3. «Muqova rasmi» (`cover_key`, R2
+  `shops/<id>/cover/`) is a wide picture over the storefront, the logo on its edge; the header
+  is the name, its state, one line of facts and round buttons. «Mijozlar shunday ko'radi» opens
+  the storefront itself.
 - **Zumda's look (owner's decision, October 2026):** the mark is a green pin with a house
   (`brand/`, scheme "Bog'": `#15803D`, `#14532D`, mint `#DCFCE7`); a new shop is green until the
   owner picks a color.
@@ -718,7 +732,7 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 
 | Entity | Key Fields |
 |--------|------------|
-| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order, customer_pays_carrier, delivery_price_set: the owner chose the price), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery («Tuman tarmog'idan foydalanish», off by default) |
+| Business | id, slug, name, type (grocery/food/service/store), owner_telegram_id, status (pending/active/disabled), bot (id, username, encrypted token, webhook secret), brand (color, logo_key), location, address, contact_phone (E.164: customers and couriers call it; empty: the owner's shared phone stands in), delivery (radius, fee, free_from, min_order, customer_pays_carrier, delivery_price_set: the owner chose the price), working_hours (per day), features, accepting_orders, bottle_deposit, marketplace (commission rate, joined_at) or none, payment_options (card/cash/both, default card), payout cards (list in `payout_cards`, up to 20) + payment card (the one customers see; required for transfers), service fee rate (bps; plan), district_id, network_delivery («Tuman tarmog'idan foydalanish», off by default), storefront_layout (grid/list/feed/shelves; NULL: the photos decide), cover_key («Muqova rasmi»), phone_hidden («Raqamni mijozlarga ko'rsatmaslik», only with a support group) |
 | Product | id, business_id, name, description, price (integer UZS per unit; with variants the cheapest one), unit, step (grams for weight units), category (shared taxonomy; the main one), more_categories (up to two more, storefront only), age_from (0, 1, 3, 5, 7, 12: children's goods), image_key (the main photo), more_images (up to two more), is_available, unavailable_until (stop-list for today), returnable (19 l / 20 l bottle), options (variants: one picked, each with its price; add-ons: several, priced on top; goal 17), stock (what is left in base units when the owner counts it; NULL: not counted) |
 | Customer | id, telegram_id (global, unique), name, phone (from Telegram contact), language |
 | CustomerBusiness | customer_id, business_id, first_order_at: whose customer this is |
@@ -974,6 +988,15 @@ etish» from the shop bot (`k:<courierId>:approve|decline`) or approves in "Мо
   - the shop's number (`shopCallPhone`): «Mijozlar uchun telefon», or, while it is empty, the
     phone the owner shared with Zumda; without either the shop takes no orders (see "No phone,
     no orders"); a courier without a phone is neither approved nor given orders.
+  - **A number kept from customers** (owner's decision, November 2026; goal 24): «Raqamni
+    mijozlarga ko'rsatmaslik» (`businesses.phone_hidden`, under «Mijozlar uchun telefon»)
+    works only while the shop's support group is connected (`SUPPORT_GROUP_REQUIRED` to turn
+    it on without one). The server then leaves `callPhone` and `contactPhone` out of a
+    customer's storefront (the owner still gets them) and «📞 Do'kon» out of the customer's
+    message; customers write with «Savolim bor». Couriers always see it; it is still the shop's
+    number for `NO_SHOP_PHONE`. The group gone, the number shows again by itself, and the owner
+    hears «Raqamingiz mijozlarga yana ko'rinadi.». A list (the showcase) never carries a shop's
+    number.
 - Texts depend on the business type (grocery: «Katalog», «Yig'ilmoqda»; food: «Menyu»,
   «Tayyorlanmoqda»; service: «Xizmatlar», «Bajarilmoqda»).
 - Before the first order, the app calls `requestWriteAccess()` so the shop bot may message the customer.
@@ -1478,6 +1501,13 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Every post: a post made in Telegram naming a product → «Buyurtma berish» under it to that
       product → «Mahsulotni tanlash» → «Hamma mahsulotlar»; an album: «Tugmasi yo'q»; «Eski
       postlarni ham qo'shish» → «Eski postlarning hammasi qo'shildi»; on a real channel
+- [ ] Storefront look: «Vitrina qanday ko'rinadi» → «Bo'limlarga ajratilgan» → the customer sees
+      «Yangi kelganlar» first, «Hammasi» shows a category in two columns; «Katta rasm bilan»
+      swipes a product's photos; a cover over the storefront, changed and removed; «Mijozlar
+      shunday ko'radi»; on a real Android and iPhone
+- [ ] Hidden number: without the group the switch says to connect it; with it the storefront and
+      the order show only «Savolim bor», the customer's message has no «📞 Do'kon», the courier's
+      card keeps the number; the group gone → «Qo'ng'iroq» again
 - [ ] Empty states handling
 
 ## Release Checklist
