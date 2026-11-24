@@ -32,6 +32,7 @@ import { CardBlock, PaymentLine } from "../ui/payment.js"
 import { Button, EmptyState, Section, Skeleton } from "../ui/primitives.js"
 import { ReceiptThumb } from "../ui/receipt.js"
 import { BottomSpacer } from "../ui/shell.js"
+import { WriteShopLink } from "../ui/write-shop.js"
 
 import { deliveryWords } from "./delivery-words.js"
 import { useReorder } from "./reorder.js"
@@ -166,7 +167,9 @@ function Calls({ order }: { order: OrderDTO }): React.JSX.Element | null {
     const shopPhone = useSession((state) => state.shop?.callPhone)
     const courier = order.courierPhone
     const shop = moneyOpen(order) ? undefined : shopPhone
-    if (!courier && !shop) {
+    // A shop with a support group also takes a written question about this order (goal 21).
+    const writes = useSession((state) => state.shop?.supportChat === true)
+    if (!courier && !shop && !writes) {
         return null
     }
     return (
@@ -182,6 +185,7 @@ function Calls({ order }: { order: OrderDTO }): React.JSX.Element | null {
                 />
             ) : null}
             {shop ? <CallLink phone={shop} label={t.pay.callShop} /> : null}
+            <WriteShopLink about={{ orderId: order.id }} />
         </div>
     )
 }

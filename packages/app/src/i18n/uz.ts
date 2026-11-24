@@ -460,6 +460,8 @@ export const uz = {
         /** A courier is on the order, but it has not left the shop yet. */
         courierAssigned: "Kuryer: {name}",
         callCourier: "Kuryerga qo'ng'iroq",
+        /** Opens the shop's bot: the question goes to the shop's support group (goal 21). */
+        writeShop: "Do'konga xabar yozish",
         bottlesBack: "Qaytariladigan bo'sh idish: {n} ta",
         /** A line the shop did not have («Yo'q»): out of the order, shown struck through. */
         missingItem: "Do'konda yo'q edi",

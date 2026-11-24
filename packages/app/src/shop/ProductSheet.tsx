@@ -7,6 +7,7 @@ import { useCart } from "../stores/cart.js"
 import { PlusIcon } from "../ui/icons.js"
 import { Button, Spinner, Stepper } from "../ui/primitives.js"
 import { Sheet } from "../ui/sheet.js"
+import { WriteShopLink } from "../ui/write-shop.js"
 
 import { AgeBadge } from "./age-badge.js"
 import { ProductGallery } from "./product-gallery.js"
@@ -88,6 +89,8 @@ export function ProductSheet({
                         )}
                     </div>
                 )}
+                {/* A question about it goes to the shop's people, with the product named. */}
+                <WriteShopLink about={{ productId: product.id }} />
             </div>
         </Sheet>
     )

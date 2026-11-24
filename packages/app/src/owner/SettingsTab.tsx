@@ -46,6 +46,7 @@ import { PaymentCardsSection } from "./PaymentCardsSection.js"
 import { PaymentOptionsSection } from "./PaymentOptionsSection.js"
 import { PosterSection } from "./PosterSection.js"
 import { ShareOwnPhone } from "./ShareOwnPhone.js"
+import { SUPPORT_CACHE_KEY, SupportGroup } from "./SupportGroup.js"
 import { DeliveryPriceChoices } from "./delivery-price.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
 import { useOwner } from "./store.js"
@@ -712,6 +713,7 @@ type SettingsGroup =
     | "card"
     | "courier"
     | "channel"
+    | "support"
     | "link"
 
 const GROUPS: SettingsGroup[] = [
@@ -723,6 +725,7 @@ const GROUPS: SettingsGroup[] = [
     "courier",
     "features",
     "channel",
+    "support",
     "link",
 ]
 
@@ -749,6 +752,7 @@ function groupTitle(s: Settings, group: SettingsGroup): string {
         card: s.paymentGroup,
         courier: s.couriers,
         channel: s.channelGroup,
+        support: s.supportGroup,
         link: s.linkGroup,
     }
     return titles[group]
@@ -794,6 +798,15 @@ function channelSummary(c: Dictionary["owner"]["channel"]): { text: string } {
         return { text: c.hint }
     }
     return { text: seen.info ? seen.info.title : c.none }
+}
+
+/** The support group seen this session, by name; before that, what the part is for. */
+function supportSummary(s: Dictionary["owner"]["support"]): { text: string } {
+    const seen = cached<{ info: { title: string } | null }>(`state:${scopedKey(SUPPORT_CACHE_KEY)}`)
+    if (seen === undefined) {
+        return { text: s.hint }
+    }
+    return { text: seen.info ? seen.info.title : s.none }
 }
 
 /** One line under each part's name: what is set there now. */
@@ -850,6 +863,7 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
                       ].join(" · "),
                   },
         channel: channelSummary(t.owner.channel),
+        support: supportSummary(t.owner.support),
         link: { text: `t.me/${shop.botUsername}` },
     }
 }
@@ -1030,6 +1044,8 @@ function GroupBody({
             )
         case "channel":
             return <ChannelGroup shop={shop} />
+        case "support":
+            return <SupportGroup shop={shop} />
         case "link":
             return <LinkGroup shop={shop} />
     }
