@@ -10,7 +10,9 @@ const TOPIC_NAME_MAX = 128
  * The customer's name in a topic's name: a phone shows about 25-30 characters of a topic in the
  * list, so the name is cut to leave room for the number after it.
  */
-const TOPIC_PERSON_MAX = 20
+const TOPIC_PERSON_MAX = 18
+/** Put after a name cut short. */
+const ELLIPSIS = "…"
 /** «+998 90 123 45 67» reads «90 123 45 67» in a list of Uzbek shops' customers. */
 const UZ_PREFIX = "+998 "
 const SEPARATOR = " · "
@@ -104,9 +106,14 @@ function cut(text: string, max: number): string {
     return [...text].slice(0, max).join("")
 }
 
+/** A name longer than `max` characters: its first `max`, then «…». */
+function shorten(text: string, max: number): string {
+    return [...text].length > max ? `${cut(text, max).trim()}${ELLIPSIS}` : text
+}
+
 /**
- * A topic's name (owner's decision, November 2026): «Aziz Karimov · 90 123 45 67», the name cut to
- * 20 characters; without a phone given to this shop «Aziz Karimov · @aziz», without either just
+ * A topic's name (owner's decision, November 2026): «Aziz Karimov · 90 123 45 67», a name over
+ * 18 characters cut to them with «…»; without a phone given to this shop «Aziz Karimov · @aziz», without either just
  * the name; no name: `fallback`. Never empty, never over Telegram's 128.
  */
 export function supportTopicName(person: SupportPerson, fallback: string): string {
@@ -114,7 +121,7 @@ export function supportTopicName(person: SupportPerson, fallback: string): strin
         .map((part) => part?.trim() ?? "")
         .filter((part) => part !== "")
         .join(" ")
-    const name = cut(full === "" ? fallback : full, TOPIC_PERSON_MAX).trim()
+    const name = shorten(full === "" ? fallback : full, TOPIC_PERSON_MAX)
     const username = person.username?.trim()
     const tail = person.phone ? shortPhone(person.phone) : username ? `@${username}` : undefined
     return cut(tail ? `${name}${SEPARATOR}${tail}` : name, TOPIC_NAME_MAX)

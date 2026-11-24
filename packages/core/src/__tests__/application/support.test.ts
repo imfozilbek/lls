@@ -340,7 +340,16 @@ describe("a customer's topic", () => {
         expect(supportTopicName({ firstName: "" }, "Mijoz")).toBe("Mijoz")
         // The name leaves room for the number: a phone shows about 30 characters of it.
         const long = supportTopicName({ firstName: "😀".repeat(200), phone: "+998901234567" }, "M")
-        expect(long).toBe(`${"😀".repeat(20)} · 90 123 45 67`)
+        expect(long).toBe(`${"😀".repeat(18)}… · 90 123 45 67`)
+        // A long name is cut with «…»; one of 18 characters stays whole.
+        const named = (firstName: string, lastName?: string): string =>
+            supportTopicName({ firstName, ...(lastName ? { lastName } : {}) }, "M")
+        expect(named("Abdurahmonbek", "Ismoilov")).toBe("Abdurahmonbek Ismo…")
+        expect(named("Abdurahmonbek", "Ismo")).toBe("Abdurahmonbek Ismo")
+        expect(named("Abdurahmonbek", "Ismoi")).toBe("Abdurahmonbek Ismo…")
+        // No space before «…» when the cut falls after a word.
+        expect(named("Abdurahmonbekjon", "Ismoilov")).toBe("Abdurahmonbekjon I…")
+        expect(named("Abdurahmonbekjonn", "Is")).toBe("Abdurahmonbekjonn…")
         expect(shortPhone("+79161234567")).toBe("+79161234567")
     })
 })
