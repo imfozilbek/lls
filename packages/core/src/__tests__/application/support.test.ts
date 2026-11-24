@@ -45,6 +45,9 @@ import {
     InMemorySupportThreads,
 } from "../in-memory-support.js"
 
+import { SourceLink } from "../../domain/entities/source-link.js"
+import { InMemorySourceLinks } from "../in-memory-channel.js"
+
 import type { BotMadeGroupAdmin } from "../../application/use-cases/support/support.use-cases.js"
 import type { Business } from "../../domain/entities/business.js"
 
@@ -360,13 +363,15 @@ describe("what the shop's people see about the customer", () => {
     let customers: InMemoryCustomers
     let orders: InMemoryOrders
     let context: SupportContextUseCase
+    let links: InMemorySourceLinks
 
     beforeEach(async () => {
         businesses = new InMemoryBusinesses()
         products = new InMemoryProducts()
         customers = new InMemoryCustomers()
         orders = new InMemoryOrders()
-        context = new SupportContextUseCase({ customers, orders, products })
+        links = new InMemorySourceLinks()
+        context = new SupportContextUseCase({ customers, orders, products, links })
         await businesses.save(makeBusiness())
         await businesses.save(makeBusiness({ id: "biz-2" }))
         await products.save(makeProduct({ name: "Fetr kitobcha" }))
@@ -431,5 +436,26 @@ describe("what the shop's people see about the customer", () => {
         })
         expect(await about({ productId: "prod-2" })).toBeNull()
         expect(await about({})).toBeNull()
+    })
+
+    it("«Savolim bor» under a post: the product the post leads to, none for the whole shop", async () => {
+        const post = SourceLink.post({
+            businessId: "biz-1",
+            productId: "prod-1",
+            postKey: "k",
+            now: new Date(0),
+        })
+        const shop = SourceLink.ad({ businessId: "biz-1", label: "Hamma", now: new Date(0) })
+        await links.insert(post)
+        await links.insert(shop)
+        const about = (
+            linkId: string,
+            businessId = "biz-1",
+        ): ReturnType<SupportContextUseCase["about"]> =>
+            context.about({ businessId, customerTelegramId: CUSTOMER_TG, linkId })
+        expect(await about(post.id)).toMatchObject({ kind: "product", name: "Fetr kitobcha" })
+        expect(await about(shop.id)).toBeNull()
+        expect(await about(post.id, "biz-2")).toBeNull()
+        expect(await about("nope")).toBeNull()
     })
 })

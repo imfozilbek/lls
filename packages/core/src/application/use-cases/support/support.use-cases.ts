@@ -11,6 +11,7 @@ import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { CustomerRepository } from "../../ports/customer-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
 import type { ProductRepository } from "../../ports/product-repository.js"
+import type { SourceLinkRepository } from "../../ports/source-links.js"
 import type {
     SupportGroupRepository,
     SupportRefusalRepository,
@@ -379,6 +380,7 @@ export interface SupportContextDeps {
     customers: CustomerRepository
     orders: OrderRepository
     products: ProductRepository
+    links: SourceLinkRepository
 }
 
 /** What the topic's pinned card says about the customer at this shop. */
@@ -434,7 +436,20 @@ export class SupportContextUseCase {
         customerTelegramId: number
         orderId?: string
         productId?: string
+        /** «Savolim bor» under a channel post: about the product the post leads to now. */
+        linkId?: string
     }): Promise<SupportAbout | null> {
+        if (input.linkId !== undefined) {
+            const link = await this.deps.links.findById(input.businessId, input.linkId)
+            const productId = link?.isLive ? link.productId : undefined
+            return productId === undefined
+                ? null
+                : this.about({
+                      businessId: input.businessId,
+                      customerTelegramId: input.customerTelegramId,
+                      productId,
+                  })
+        }
         if (input.orderId !== undefined) {
             const order = await this.deps.orders.findById(input.orderId)
             const customer = await this.deps.customers.findByTelegramId(input.customerTelegramId)
