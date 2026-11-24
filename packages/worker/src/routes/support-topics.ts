@@ -18,13 +18,16 @@ import type {
 
 /**
  * How a customer's topic looks in the shop's support group (owner's decisions, November 2026;
- * goal 22): its icon says whether the customer waits for an answer (❓) or got one (✅), its name
+ * goal 22): its icon says whether the customer waits for an answer (🔴) or got one (🟢), its name
  * «Ism · telefon» tells same-named customers apart, its pinned card says who they are here.
  */
 
-/** Telegram's set of topic icons may lack one: the next in the list stands in for it. */
-const WAITING_ICONS = ["❓", "❔", "❗"]
-const ANSWERED_ICONS = ["✅", "✔", "👍"]
+/**
+ * 🔴 waits for the shop, 🟢 answered (owner's decision, November 2026). Telegram's set of topic
+ * icons may lack one: the next in the list stands in for it.
+ */
+const WAITING_ICONS = ["🔴", "❓", "❔", "❗"]
+const ANSWERED_ICONS = ["🟢", "✅", "✔", "👍"]
 /** «✔️» and «✔» are one icon: the variation selector is not part of it. */
 const VARIATION = /️/g
 /** The card counts orders up to this; more read «10+». */

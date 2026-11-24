@@ -405,6 +405,20 @@ describe("the shop's support group", () => {
             expect(client.telegram.pins).toHaveLength(pinsBefore + 1)
         })
 
+        it("the red and green circles stand first when Telegram's set has them", async () => {
+            client.telegram.topicIcons = [
+                { emoji: "❓", customEmojiId: "icon-waiting" },
+                { emoji: "🔴", customEmojiId: "icon-red" },
+                { emoji: "✅", customEmojiId: "icon-answered" },
+                { emoji: "🟢", customEmojiId: "icon-green" },
+            ]
+            await madeAdmin()
+            await customerSays({ text: "Salom" })
+            expect(client.telegram.topics[0]?.icon).toBe("icon-red")
+            await shopSays(threadOf())
+            expect(iconsOf()).toEqual(["icon-green"])
+        })
+
         it("without the icons in Telegram's set the topic works as before", async () => {
             client.telegram.topicIcons = []
             await madeAdmin()
