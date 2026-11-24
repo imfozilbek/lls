@@ -7,6 +7,13 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Compact: products higher on the storefront, a frame on every picture
+- The storefront's header is one row of pills, the search opens from the magnifier at the start
+  of the tabs: the first row of products shows on the first screen.
+- Every picture has a thin frame; product cards too, so a white photo never melts into the page.
+- Secondary buttons, chips and filters are 38 px pills, a step inside a screen 40 px; the main
+  button at the bottom and a sheet's confirm stay large.
+
 ### Across the country, and «Savolim bor» shows the chat
 - **«O'zbekiston bo'ylab yetkazamiz»** in «Yetkazib berish» for a shop whose price is told later:
   the storefront says «O'zbekiston bo'ylab yetkazib beramiz (pochta, taksi)», no radius holds.
