@@ -349,6 +349,8 @@ export type ShopPatch = Partial<{
         radiusMeters?: number | null
         /** The customer pays the carrier: «Narxi keyin aytiladi». */
         customerPaysCarrier?: boolean
+        /** «O'zbekiston bo'ylab yetkazamiz»: only with the carrier; left out: as it was. */
+        nationwide?: boolean
         /** The owner's choice of how delivery is paid; left out: the choice made stays. */
         price?: DeliveryPriceChoice
     }

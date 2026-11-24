@@ -186,7 +186,7 @@ function ShopRow({
     // The card's own shop decides: a service or a price never chosen says nothing.
     const fee = deliveryFact(shopDelivery(shop.delivery), {
         free: t.shop.deliveryFree,
-        later: t.shop.deliveryApart,
+        later: shop.delivery.nationwide ? t.shop.deliveryNationwide : t.shop.deliveryApart,
         fee: (sum) => fill(t.shop.deliveryFee, { sum: formatMoney(sum, language) }),
     })
     return (

@@ -1,6 +1,6 @@
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
-import { haptic, openTelegramLink } from "../lib/telegram.js"
+import { haptic, openChatAndClose } from "../lib/telegram.js"
 import { useSession } from "../stores/session.js"
 
 import { ChatIcon } from "./icons.js"
@@ -44,7 +44,7 @@ export function WriteShopLink({
             type="button"
             onClick={(): void => {
                 haptic.tap()
-                openTelegramLink(supportStartLink(shop.botUsername, about))
+                openChatAndClose(supportStartLink(shop.botUsername, about))
             }}
             className={cn(
                 "tap flex min-h-12 items-center justify-center gap-2 rounded-control px-4 py-2 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand",

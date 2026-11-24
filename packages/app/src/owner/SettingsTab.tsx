@@ -77,6 +77,8 @@ interface Form {
     radiusKm: number | null
     /** How the customer pays for delivery: chosen by the owner; `unset` until then. */
     price: DeliveryPrice
+    /** «O'zbekiston bo'ylab yetkazamiz»: only with «Narxi keyin aytiladi». */
+    nationwide: boolean
     hours: Hours
     features: Feature[]
     bottleDeposit: number | null
@@ -117,6 +119,7 @@ function formOf(shop: ShopOwnerDTO): Form {
             ? Math.round(shop.deliveryRadiusMeters / METERS_PER_KM)
             : null,
         price: shop.delivery.price,
+        nationwide: shop.delivery.nationwide,
         hours: hoursOf(shop.workingHours),
         features: [...shop.features],
         bottleDeposit: shop.bottleDeposit || null,
@@ -137,6 +140,7 @@ function patchOf(form: Form): ShopPatch {
             minOrder: form.minOrder,
             radiusMeters: form.radiusKm ? form.radiusKm * METERS_PER_KM : null,
             customerPaysCarrier: form.price === DeliveryPrice.LATER,
+            nationwide: form.price === DeliveryPrice.LATER && form.nationwide,
             // Sent only once the owner chose: a save of other fields never chooses for them.
             ...(isDeliveryPriceChoice(form.price) ? { price: form.price } : {}),
         },
@@ -468,6 +472,19 @@ function DeliveryFields({
                     </Field>
                 </>
             )}
+            {form.price === DeliveryPrice.LATER ? (
+                <label className="flex min-h-[52px] items-center gap-3 rounded-tile bg-tg-secondary px-4 py-3">
+                    <span className="flex-1">
+                        <span className="block font-medium">{s.nationwide}</span>
+                        <span className="block text-sm text-tg-subtitle">{s.nationwideHint}</span>
+                    </span>
+                    <Switch
+                        checked={form.nationwide}
+                        onChange={(nationwide): void => patch({ nationwide })}
+                        label={s.nationwide}
+                    />
+                </label>
+            ) : null}
             <Field label={s.minOrder} htmlFor="min-order">
                 <MoneyInput
                     id="min-order"
@@ -475,22 +492,25 @@ function DeliveryFields({
                     onChange={(minOrder): void => patch({ minOrder })}
                 />
             </Field>
-            <Field label={s.radius} htmlFor="radius" hint={s.radiusHint}>
-                <TextInput
-                    id="radius"
-                    inputMode="numeric"
-                    placeholder={s.radiusNone}
-                    value={form.radiusKm === null ? "" : String(form.radiusKm)}
-                    onChange={(e): void => {
-                        const digits = e.target.value.replace(/\D/g, "")
-                        patch({
-                            radiusKm: digits
-                                ? Math.min(Number(digits), MAX_RADIUS_KM) || null
-                                : null,
-                        })
-                    }}
-                />
-            </Field>
+            {/* Sent across the country: no radius to set. */}
+            {form.price === DeliveryPrice.LATER && form.nationwide ? null : (
+                <Field label={s.radius} htmlFor="radius" hint={s.radiusHint}>
+                    <TextInput
+                        id="radius"
+                        inputMode="numeric"
+                        placeholder={s.radiusNone}
+                        value={form.radiusKm === null ? "" : String(form.radiusKm)}
+                        onChange={(e): void => {
+                            const digits = e.target.value.replace(/\D/g, "")
+                            patch({
+                                radiusKm: digits
+                                    ? Math.min(Number(digits), MAX_RADIUS_KM) || null
+                                    : null,
+                            })
+                        }}
+                    />
+                </Field>
+            )}
         </Section>
     )
 }

@@ -502,6 +502,10 @@ export const staffUz = {
             radius: "Yetkazish radiusi, km",
             radiusHint: "Bo'sh qoldirsangiz, masofa cheklanmaydi.",
             radiusNone: "Cheklovsiz",
+            /** «Narxi keyin aytiladi» only (owner's decision, November 2026). */
+            nationwide: "O'zbekiston bo'ylab yetkazamiz",
+            nationwideHint:
+                "Mijozlar butun O'zbekistondan buyurtma beradi, siz pochta yoki taksi bilan jo'natasiz.",
             currentColor: "Hozirgi rang",
             colorNames: ["Yashil", "Firuza", "Ko'k", "Binafsha", "Malina", "Olovrang", "Tilla"],
             hours: "Ish vaqti",
