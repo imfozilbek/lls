@@ -16,7 +16,7 @@ import { deliveryFact, shopDelivery } from "../lib/delivery-price.js"
 import { formatMoney, kmText } from "../lib/format.js"
 import { opensWhen } from "../lib/opening.js"
 import { takesOrdersNow } from "../lib/shop-ready.js"
-import { callLink, haptic, openTelegramLink } from "../lib/telegram.js"
+import { callLink, haptic, openChatAndClose } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { useRouter } from "../stores/router.js"
 import {
@@ -66,7 +66,8 @@ function shopFacts(shop: Shop, t: Dictionary, language: Language): string[] {
     // Only what the shop said: nothing about delivery until the owner chose its price.
     const price = deliveryFact(shopDelivery(delivery), {
         free: t.shop.deliveryFree,
-        later: t.shop.deliveryApart,
+        // Sent across the country: where to, not when the price comes.
+        later: delivery.nationwide ? t.shop.deliveryNationwide : t.shop.deliveryApart,
         fee: (sum) => fill(t.shop.deliveryFee, { sum: money(sum) }),
     })
     const facts = price ? [price] : []
@@ -293,7 +294,7 @@ function HeaderActions({ shop, glance }: { shop: Shop; glance: OrdersGlance }): 
                     label={t.order.writeShop}
                     onClick={(): void => {
                         haptic.tap()
-                        openTelegramLink(`https://t.me/${shop.botUsername}?start=q_s`)
+                        openChatAndClose(`https://t.me/${shop.botUsername}?start=q_s`)
                     }}
                 />
             ) : null}

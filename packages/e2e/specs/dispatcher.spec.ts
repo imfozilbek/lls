@@ -141,7 +141,7 @@ test("the customer follows the parcel on the order screen; the dispatcher closes
     await expect(notes.locator("li").first()).toContainText("Qarshiga yetdi")
     await expect(notes).toContainText("Trek: UZ123456")
     await expect(page.getByRole("link", { name: /Dispetcherga qo'ng'iroq/ })).toBeVisible()
-    await expect(page.getByText("keyin aytiladi", { exact: true })).toBeVisible()
+    await expect(page.getByText("jo'natilganda ma'lum qilinadi", { exact: true })).toBeVisible()
 
     const delivered = await apiAs(PEOPLE.courier, `/courier/orders/${order.id}`, {
         courierBot: true,

@@ -9,7 +9,7 @@ import { Language, SendWay } from "@zumda/core"
 const WORDS = {
     [Language.UZ]: {
         /** The totals' delivery line when the price comes after the order (paid to the carrier). */
-        apart: "keyin aytiladi",
+        apart: "jo'natilganda ma'lum qilinadi",
         apartHint: "Masofaga qarab, jo'natilganda aytiladi. Uni yetkazuvchiga o'zingiz to'laysiz.",
         dispatcher: "Dispetcher: {name}",
         callDispatcher: "Dispetcherga qo'ng'iroq",

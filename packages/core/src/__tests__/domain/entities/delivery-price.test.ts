@@ -6,7 +6,9 @@ import { BusinessType } from "../../../domain/enums/business-type.js"
 import { DeliveryPrice, isDeliveryPriceChoice } from "../../../domain/enums/delivery-price.js"
 import { OrderChannel } from "../../../domain/enums/order-channel.js"
 import { Unit } from "../../../domain/enums/unit.js"
+import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
+import { Location } from "../../../domain/value-objects/location.js"
 import { Money } from "../../../domain/value-objects/money.js"
 import { makeBusiness } from "../../fixtures.js"
 
@@ -129,5 +131,29 @@ describe("the order keeps what was promised about delivery", () => {
         expect(placeOrder({ deliveryFee: 0, deliveryFree: true, carrier: true }).deliveryFree).toBe(
             false,
         )
+    })
+
+    it("«O'zbekiston bo'ylab yetkazamiz»: only with the carrier, and then no radius holds", () => {
+        const shop = makeBusiness({ delivery: { fee: Money.zero(), radiusMeters: 3_000 } })
+        shop.updateProfile({ location: Location.create(41.3111, 69.2797) })
+        const far = Location.create(39.65, 66.96)
+        // A shop that charges a fee has its own couriers: never the country.
+        shop.updateDelivery({ fee: Money.of(5_000) }, DeliveryPrice.FEE)
+        expect(() => shop.updateDelivery({ fee: Money.of(5_000), nationwide: true })).toThrow(
+            BusinessRuleViolationError,
+        )
+        shop.updateDelivery(
+            { fee: Money.zero(), radiusMeters: 3_000, nationwide: true },
+            DeliveryPrice.LATER,
+        )
+        expect(shop.delivery.nationwide).toBe(true)
+        expect(() => shop.assertDeliversTo(far)).not.toThrow()
+        // Another price switches it off by itself, and the radius holds again.
+        shop.updateDelivery(
+            { fee: Money.zero(), radiusMeters: 3_000, nationwide: true },
+            DeliveryPrice.FREE,
+        )
+        expect(shop.delivery.nationwide).toBe(false)
+        expect(() => shop.assertDeliversTo(far)).toThrow(/delivery zone/)
     })
 })

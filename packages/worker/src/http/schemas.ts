@@ -298,6 +298,8 @@ export const shopPatchBody = z.object({
             radiusMeters: z.number().int().min(1).max(100_000).nullable().optional(),
             /** The customer pays the carrier; left out: as it was. */
             customerPaysCarrier: z.boolean().optional(),
+            /** «O'zbekiston bo'ylab yetkazamiz»; left out: as it was. */
+            nationwide: z.boolean().optional(),
             /** The owner's choice of how delivery is paid; left out: the choice made stays. */
             price: z.enum(DELIVERY_PRICE_CHOICES).optional(),
         })

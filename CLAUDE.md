@@ -210,8 +210,12 @@ cover each one's whole process; what exactly comes from the meeting with them.
 - **«Narxi keyin aytiladi»** (owner's decision, November 2026: the toy shop sends by a taxi or the
   post): the customer pays the carrier directly; the order adds no delivery fee (a snapshot
   `customer_pays_carrier`). The storefront and the showcase say «Yetkazib berish narxi keyin
-  aytiladi», the checkout «keyin aytiladi» with «Masofaga qarab, jo'natilganda aytiladi. Uni
-  yetkazuvchiga o'zingiz to'laysiz.», and the bot's first message says it too. The dispatcher's
+  aytiladi», the checkout «jo'natilganda ma'lum qilinadi» with «Masofaga qarab, jo'natilganda
+  aytiladi. Uni yetkazuvchiga o'zingiz to'laysiz.», and the bot's first message says it too.
+  **«O'zbekiston bo'ylab yetkazamiz»** (owner's decision, November 2026; only with this price,
+  `NATIONWIDE_NEEDS_CARRIER`, `businesses.delivers_nationwide`, migration `0040`): the shop sends
+  by the post or a taxi anywhere, so no radius holds and none is asked; the storefront and the
+  showcase say «O'zbekiston bo'ylab yetkazib beramiz (pochta, taksi)» instead. The dispatcher's
   «Jo'natdim» carries the price in its note, required on any way (the field «Yetkazib berish
   narxi»). Such an order never goes to the district network (`CARRIER_NOT_FOR_NETWORK`).
 - **The transfer screenshot (owner's decision, October 2026).** «O'tkazdim» carries the
@@ -423,7 +427,9 @@ cover each one's whole process; what exactly comes from the meeting with them.
     the shop's bot (an anonymous admin too); the General topic, service notes, other bots and
     other groups go nowhere: the bot never talks in a group. A customer who blocked the bot: one
     line in the topic.
-  - **«💬 Savolim bor»** (`ShopPublicDTO.supportChat`; owner's decisions, goal 23): on the
+  - **«💬 Savolim bor»** (`ShopPublicDTO.supportChat`; owner's decisions, goal 23; it closes the
+    app after opening the chat, `openChatAndClose`, so the chat is what the customer sees; the
+    cart stays on the phone): on the
     storefront next to «Qo'ng'iroq» (`/start q_s`), on the order (`q_o<order>`), in the product's
     sheet (`q_p<product>`), and under every channel post below «Buyurtma berish» (`q_l<code>`:
     the product the post leads to now; the newest 20 posts get or lose it when the group comes

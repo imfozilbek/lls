@@ -117,6 +117,8 @@ export const uz = {
         deliveryFee: "Yetkazish {sum}",
         deliveryFree: "Bepul yetkazish",
         deliveryApart: "Yetkazib berish narxi keyin aytiladi",
+        /** A shop that sends across the country (owner's decision, November 2026). */
+        deliveryNationwide: "O'zbekiston bo'ylab yetkazib beramiz (pochta, taksi)",
         freeFrom: "{sum}dan bepul",
         minOrder: "Minimal {sum}",
         radius: "{km} km gacha yetkazamiz",

@@ -51,6 +51,12 @@ export interface DeliverySettings {
      * A fee above 0 or the customer paying the carrier is a choice by itself.
      */
     priceChosen?: boolean
+    /**
+     * «O'zbekiston bo'ylab yetkazamiz» (owner's decision, November 2026): a shop that sends by the
+     * post or a taxi delivers anywhere in the country, so no radius holds. Only with the customer
+     * paying the carrier.
+     */
+    nationwide?: boolean
 }
 
 /** The shop's deal with Zumda for sales through the marketplace channel. */
@@ -172,10 +178,15 @@ function validateDelivery(delivery: DeliverySettings): DeliverySettings {
             freeFrom: undefined,
             customerPaysCarrier: true,
             priceChosen: true,
+            nationwide: delivery.nationwide === true,
         }
     }
+    // Across the country only by the post or a taxi the customer pays.
+    if (delivery.nationwide) {
+        throw BusinessRuleViolationError.nationwideNeedsCarrier()
+    }
     const priceChosen = delivery.priceChosen === true || !delivery.fee.isZero()
-    return { ...delivery, customerPaysCarrier: false, priceChosen }
+    return { ...delivery, customerPaysCarrier: false, priceChosen, nationwide: false }
 }
 
 /** The settings as the owner's choice of price makes them: the other fields as given. */
@@ -188,12 +199,13 @@ function withPrice(delivery: DeliverySettings, price: DeliveryPriceChoice): Deli
                 freeFrom: undefined,
                 customerPaysCarrier: false,
                 priceChosen: true,
+                nationwide: false,
             }
         case DeliveryPrice.FEE:
             if (delivery.fee.isZero()) {
                 throw ValidationError.fromField("delivery.fee", "A price is needed", 0)
             }
-            return { ...delivery, customerPaysCarrier: false, priceChosen: true }
+            return { ...delivery, customerPaysCarrier: false, priceChosen: true, nationwide: false }
         case DeliveryPrice.LATER:
             return { ...delivery, customerPaysCarrier: true, priceChosen: true }
     }
@@ -548,11 +560,12 @@ export class Business {
      * refunded. A shop without a radius (or without a location) delivers anywhere.
      */
     assertDeliversTo(destination: Location | undefined): void {
-        const { radiusMeters } = this.props.delivery
+        const { radiusMeters, nationwide } = this.props.delivery
         if (!destination) {
             throw BusinessRuleViolationError.locationRequired(radiusMeters)
         }
-        if (radiusMeters === undefined || !this.props.location) {
+        // Sent by the post or a taxi anywhere in the country: no radius holds.
+        if (nationwide || radiusMeters === undefined || !this.props.location) {
             return
         }
         const distance = this.props.location.distanceTo(destination)

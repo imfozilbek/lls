@@ -80,6 +80,7 @@ export const staffUz = {
         UNSUPPORTED_VIDEO: "Bu video turi to'g'ri kelmaydi: MP4 yoki MOV video tanlang.",
         VIDEO_SIZE_UNKNOWN: "Video hajmi aniqlanmadi. Qayta urinib ko'ring.",
         SUPPORT_GROUP_REQUIRED: "Avval mijozlar savollari guruhini bog'lang.",
+        NATIONWIDE_NEEDS_CARRIER: "Avval «Narxi keyin aytiladi»ni tanlang.",
     },
     trip: {
         sameWay: "Shu yo'nalishda yana {n} ta",
@@ -501,6 +502,10 @@ export const staffUz = {
             radius: "Yetkazish radiusi, km",
             radiusHint: "Bo'sh qoldirsangiz, masofa cheklanmaydi.",
             radiusNone: "Cheklovsiz",
+            /** «Narxi keyin aytiladi» only (owner's decision, November 2026). */
+            nationwide: "O'zbekiston bo'ylab yetkazamiz",
+            nationwideHint:
+                "Mijozlar butun O'zbekistondan buyurtma beradi, siz pochta yoki taksi bilan jo'natasiz.",
             currentColor: "Hozirgi rang",
             colorNames: ["Yashil", "Firuza", "Ko'k", "Binafsha", "Malina", "Olovrang", "Tilla"],
             hours: "Ish vaqti",

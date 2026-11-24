@@ -7,6 +7,13 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Across the country, and «Savolim bor» shows the chat
+- **«O'zbekiston bo'ylab yetkazamiz»** in «Yetkazib berish» for a shop whose price is told later:
+  the storefront says «O'zbekiston bo'ylab yetkazib beramiz (pochta, taksi)», no radius holds.
+  Inside the order the price is «jo'natilganda ma'lum qilinadi». Migration `0040` (additive).
+- **«Savolim bor»** opens the shop's chat and closes the shop, so the customer sees where to
+  write; the cart is kept on the phone.
+
 ### The shop's own storefront, and a number kept from customers (goal 24)
 - **A new look on every screen**: a light gray page with white cards and soft shadows, Telegram's
   frame painted the same gray, so white product photos never melt into the page.

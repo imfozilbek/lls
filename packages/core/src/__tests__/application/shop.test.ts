@@ -90,6 +90,7 @@ describe("shop use cases", () => {
                 minOrder: undefined,
                 customerPaysCarrier: false,
                 price: DeliveryPrice.FEE,
+                nationwide: false,
             })
             expect(shop.location).toEqual({ latitude: 41.32, longitude: 69.23 })
             expect(shop.botUsername).toBe("Osh_Markaz_bot")
@@ -395,7 +396,21 @@ describe("shop use cases", () => {
                 fee: 0,
                 customerPaysCarrier: true,
                 price: DeliveryPrice.LATER,
+                nationwide: false,
             })
+            // «O'zbekiston bo'ylab yetkazamiz»: kept until the owner says otherwise.
+            const country = await update.execute({
+                actorTelegramId: OWNER_TG,
+                businessId: "biz-1",
+                patch: { delivery: { ...base, radiusMeters: 5_000, nationwide: true } },
+            })
+            expect(country.delivery).toMatchObject({ nationwide: true, radiusMeters: undefined })
+            const again = await update.execute({
+                actorTelegramId: OWNER_TG,
+                businessId: "biz-1",
+                patch: { delivery: base },
+            })
+            expect(again.delivery.nationwide).toBe(true)
         })
 
         it("owner updates settings", async () => {
@@ -424,6 +439,7 @@ describe("shop use cases", () => {
                 radiusMeters: 4_000,
                 customerPaysCarrier: false,
                 price: DeliveryPrice.FEE,
+                nationwide: false,
             })
             expect(shop.deliveryRadiusMeters).toBe(4_000)
             expect(shop.workingHours).toEqual({ mon: { open: "10:00", close: "22:00" } })

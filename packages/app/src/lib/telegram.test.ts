@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
+    openChatAndClose,
     PAGE_COLOR,
     callLink,
     canRequestChat,
@@ -321,5 +322,28 @@ describe("launchSurelyOutdated", () => {
         expect(launchOutdated()).toBe(true)
         expect(launchSurelyOutdated()).toBe(false)
         expect(launchSurelyOutdated(Date.now() + DAY_MS)).toBe(false)
+    })
+})
+
+describe("openChatAndClose («Savolim bor»)", () => {
+    afterEach(() => vi.unstubAllGlobals())
+
+    it("opens the shop's chat and closes the app, so the chat is what the customer sees", () => {
+        const calls: string[] = []
+        const app = {
+            initData: "signed",
+            openTelegramLink: (url: string): void => void calls.push(`open ${url}`),
+            close: (): void => void calls.push("close"),
+        }
+        vi.stubGlobal("window", { Telegram: { WebApp: app } })
+        openChatAndClose("https://t.me/abc_bot?start=q_s")
+        expect(calls).toEqual(["open https://t.me/abc_bot?start=q_s", "close"])
+    })
+
+    it("in a browser only the link opens", () => {
+        const open = vi.fn()
+        vi.stubGlobal("window", { open })
+        openChatAndClose("https://t.me/abc_bot?start=q_s")
+        expect(open).toHaveBeenCalledWith("https://t.me/abc_bot?start=q_s", "_blank", "noopener")
     })
 })

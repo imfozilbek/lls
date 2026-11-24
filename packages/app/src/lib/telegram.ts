@@ -568,6 +568,19 @@ export function openTelegramLink(url: string): void {
 }
 
 /**
+ * «Savolim bor» (owner's decision, November 2026): opens the shop's chat and closes the app, so
+ * the customer sees where to write instead of the shop over the chat. The cart and the checkout
+ * draft are kept on the phone and come back with the shop. In a browser only the link opens.
+ */
+export function openChatAndClose(url: string): void {
+    openTelegramLink(url)
+    const app = webApp()
+    if (app?.openTelegramLink) {
+        app.close?.()
+    }
+}
+
+/**
  * A link outside Telegram (a bank app's own address): Telegram hands it to the app that claims
  * it, or to the browser; in a plain browser a new tab.
  */

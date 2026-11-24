@@ -139,3 +139,36 @@ test("a service says nothing about delivery: storefront, cart, settings, «Ishga
     await expect(page.getByRole("radiogroup", { name: "Yetkazib berish narxi" })).toHaveCount(0)
     await expect(page.getByLabel("Yetkazish narxi")).toHaveCount(0)
 })
+
+test("«O'zbekiston bo'ylab yetkazamiz»: the storefront says where to, the cart when the price comes", async ({
+    page,
+}) => {
+    await openApp(page, { user: PEOPLE.groceryOwner, shop: GROCERY })
+    await page.getByRole("button", { name: "Mening do'konim" }).click()
+    await page.getByRole("tab", { name: "Sozlamalar" }).click()
+    await openGroup(page, "Yetkazib berish")
+    const nationwide = page.getByRole("switch", { name: "O'zbekiston bo'ylab yetkazamiz" })
+    // Only with «Narxi keyin aytiladi»: a shop with its own price has its own couriers.
+    await expect(nationwide).toHaveCount(0)
+    await page
+        .getByRole("radiogroup", { name: "Yetkazib berish narxi" })
+        .getByRole("radio", { name: /Narxi keyin aytiladi/ })
+        .click()
+    await nationwide.click()
+    // Across the country: no radius to set.
+    await expect(page.getByLabel("Yetkazish radiusi, km")).toHaveCount(0)
+    await bottomButton(page).click()
+    await expect(page.getByText("Saqlandi").first()).toBeVisible()
+
+    await openApp(page, { user: PEOPLE.customer, shop: GROCERY })
+    await expect(
+        page.getByText("O'zbekiston bo'ylab yetkazib beramiz (pochta, taksi)"),
+    ).toBeVisible()
+    await expect(page.getByText("Yetkazib berish narxi keyin aytiladi")).toHaveCount(0)
+    await page
+        .getByRole("button", { name: /^Qo'shish:/ })
+        .first()
+        .click()
+    await toCart(page)
+    await expect(page.getByText("jo'natilganda ma'lum qilinadi", { exact: true })).toBeVisible()
+})

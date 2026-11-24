@@ -10,6 +10,7 @@ const shop = (price: DeliveryPrice, fee = 0): ShopPublicDTO["delivery"] => ({
     fee,
     price,
     customerPaysCarrier: price === DeliveryPrice.LATER,
+    nationwide: false,
 })
 
 const words = { free: "Bepul yetkazish", later: "Keyin", fee: (sum: number): string => `${sum}` }

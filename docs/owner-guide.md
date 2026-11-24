@@ -187,6 +187,10 @@ Bekor qilish: **❌ Bekor qilish** (ilovada sababini yozish mumkin).
 **Mening do'konim → Sozlamalar → Buyurtma qabul qilish**: o'chiring. Keyin yana yoqing.
 Shu yerda nom, logotip, rang, yetkazish narxi va radiusni ham o'zgartirasiz.
 
+**O'zbekiston bo'ylab yetkazamiz** (**Sozlamalar → Yetkazib berish**, «Narxi keyin aytiladi»
+tanlanganda). Pochta yoki taksi bilan butun O'zbekistonga jo'natsangiz, shu tugmani yoqing: vitrinada
+«O'zbekiston bo'ylab yetkazib beramiz» yoziladi.
+
 **Bot rasmi va tavsifi avtomatik.** Botingiz rasmini Zumda o'zi qo'yadi: logotipingiz (logotip
 bo'lmasa: do'kon nomi rangingizda) va burchakda Zumda belgisi. Logotip, nom yoki rangni
 o'zgartirsangiz, rasm ham yangilanadi. Bot tavsifi ham avtomatik: do'kon nomi va «Zumda asosida
