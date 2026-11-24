@@ -14,7 +14,7 @@
         "@protomaps/basemaps": "5.7.2",
         "@zumda/core": "*",
         "clsx": "^2",
-        "maplibre-gl": "6.16.0",
+        "maplibre-gl": "6.19.0",
         "pmtiles": "4.5.0",
         "react": "~19.2.9",
         "react-dom": "~19.2.9",
