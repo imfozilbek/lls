@@ -268,7 +268,7 @@ const BASE = {
         lineRemovedOwner: "❌ {item}: yo'q",
         refundOwedOwner: "💸 {sum} qaytarish kerak",
         /** «Yetkazish haqini mijoz o'zi to'laydi»: nothing of it is in the total. */
-        deliveryApart: "keyin aytiladi, mijoz yetkazuvchiga o'zi to'laydi",
+        deliveryApart: "jo'natilganda ma'lum qilinadi, mijoz yetkazuvchiga o'zi to'laydi",
         /** The first message about the order: the price comes when it is sent. */
         carrierPriceLater:
             "💵 Yetkazib berish narxi jo'natilganda aytiladi, uni yetkazuvchiga o'zingiz to'laysiz.",

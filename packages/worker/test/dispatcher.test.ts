@@ -324,7 +324,9 @@ describe("a dispatcher sends the order on and keeps the customer told", () => {
         const first = client.telegram.sent.slice(told).find((m) => m.chatId === CUSTOMER.id)
         expect(first?.html).toContain("Yetkazib berish narxi jo'natilganda aytiladi")
         const card = client.telegram.sent.slice(told).find((m) => m.chatId === OWNER.id)
-        expect(card?.html).toContain("keyin aytiladi, mijoz yetkazuvchiga o'zi to'laydi")
+        expect(card?.html).toContain(
+            "jo'natilganda ma'lum qilinadi, mijoz yetkazuvchiga o'zi to'laydi",
+        )
 
         // The dispatcher tells the price: «Jo'natdim» without it is refused, whatever the way.
         expect((await step(order, "ready")).status).toBe(200)

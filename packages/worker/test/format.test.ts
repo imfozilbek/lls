@@ -398,7 +398,7 @@ describe("the delivery line says only what the shop promised (owner's decision, 
             "Yetkazib berish: bepul",
         )
         expect(formatOrderForOwner(order({ customerPaysCarrier: true }), reader)).toContain(
-            "Yetkazib berish: keyin aytiladi, mijoz yetkazuvchiga o'zi to'laydi",
+            "Yetkazib berish: jo'natilganda ma'lum qilinadi, mijoz yetkazuvchiga o'zi to'laydi",
         )
         // A price never chosen: nothing about delivery, never «bepul».
         expect(formatOrderForOwner(order({}), reader)).not.toContain("Yetkazib berish")

@@ -77,6 +77,7 @@ interface BusinessRow {
     storefront_layout: string | null
     cover_key: string | null
     phone_hidden: number
+    delivers_nationwide: number
     created_at: number
     updated_at: number
 }
@@ -88,7 +89,8 @@ const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_us
     marketplace_commission_bps, marketplace_joined_at, payout_card_number, payout_card_holder,
     district_id, network_delivery, payment_card_id, contact_phone, payment_options, rejected_at,
     review_note, owner_chat_open_at, owner_chat_closed_at, demo_at, customer_pays_carrier,
-    delivery_price_set, storefront_layout, cover_key, phone_hidden, created_at, updated_at`
+    delivery_price_set, storefront_layout, cover_key, phone_hidden, delivers_nationwide,
+    created_at, updated_at`
 
 interface SecretRow {
     bot_id: number
@@ -139,6 +141,7 @@ function reconstitute(row: BusinessRow): Business {
             radiusMeters: optional(row.delivery_radius_m),
             ...(row.customer_pays_carrier === 1 ? { customerPaysCarrier: true } : {}),
             ...(row.delivery_price_set === 1 ? { priceChosen: true } : {}),
+            ...(row.delivers_nationwide === 1 ? { nationwide: true } : {}),
         },
         workingHours: WorkingHours.fromJSON(
             row.working_hours === null ? null : (JSON.parse(row.working_hours) as WeeklySchedule),
@@ -233,6 +236,7 @@ function mutableValues(b: Business): (string | number | null)[] {
         b.storefrontLayout ?? null,
         b.coverKey ?? null,
         flag(b.phoneHidden),
+        flag(b.delivery.nationwide === true),
         // Last: the guarded UPDATE puts the new version in its place.
         b.updatedAt.getTime(),
     ]
@@ -344,9 +348,10 @@ export class D1BusinessRepository implements BusinessRepository {
                         payout_card_holder, district_id, network_delivery, payment_card_id,
                         contact_phone, payment_options, rejected_at, review_note, demo_at,
                         customer_pays_carrier, delivery_price_set, storefront_layout, cover_key,
-                        phone_hidden, updated_at, id, slug, type, owner_telegram_id, bot_id,
-                        bot_username, bot_token_enc, webhook_secret, created_at, bot_source)
-                     VALUES (${placeholders(43)})`,
+                        phone_hidden, delivers_nationwide, updated_at, id, slug, type,
+                        owner_telegram_id, bot_id, bot_username, bot_token_enc, webhook_secret,
+                        created_at, bot_source)
+                     VALUES (${placeholders(44)})`,
                 )
                 .bind(
                     ...mutableValues(business),
@@ -443,7 +448,7 @@ export class D1BusinessRepository implements BusinessRepository {
                     network_delivery = ?, payment_card_id = ?, contact_phone = ?,
                     payment_options = ?, rejected_at = ?, review_note = ?, demo_at = ?,
                     customer_pays_carrier = ?, delivery_price_set = ?, storefront_layout = ?,
-                    cover_key = ?, phone_hidden = ?, updated_at = ?
+                    cover_key = ?, phone_hidden = ?, delivers_nationwide = ?, updated_at = ?
                  WHERE id = ?${guard}`,
             )
             .bind(...values, business.id, ...(expected === undefined ? [] : [expected]))

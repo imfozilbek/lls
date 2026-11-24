@@ -551,7 +551,7 @@ describe("inside a shop", () => {
                 network_delivery, payment_card_id, bot_source, rejected_at, review_note,
                 contact_phone, payment_options, owner_chat_open_at, owner_chat_closed_at, demo_at,
                 customer_pays_carrier, delivery_price_set, storefront_layout, cover_key,
-                phone_hidden
+                phone_hidden, delivers_nationwide
              FROM businesses WHERE slug = ?`,
         )
             .bind(slug)
