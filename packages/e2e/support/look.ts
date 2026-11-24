@@ -2,6 +2,10 @@
  * How a screen looks to a person (goal 24): a card that melts into what is under it (white on
  * white, gray on gray: the same color, no shadow, no border), and a tap target under 44 px.
  * Both run in the page on what is visible now.
+ *
+ * A target a little smaller (36 px or more each way) passes when a 44 px circle on its middle
+ * reaches no other target: WCAG 2.5.8's spacing rule, at a finger's size instead of 24 px. The
+ * week's seven days fit a 360 px phone only so (41 px wide, 4 px apart).
  */
 import type { Page } from "@playwright/test"
 
@@ -56,6 +60,7 @@ function scanFlat(): Flat[] {
             box.width < 48 ||
             box.height < 32 ||
             style.backgroundImage !== "none" ||
+            element.querySelector("canvas") !== null ||
             element.closest("[aria-hidden='true']")
         ) {
             continue
@@ -67,11 +72,11 @@ function scanFlat(): Flat[] {
     return found
 }
 
-/** Runs in the page: what a finger presses, smaller than 44 × 44 px. */
+/** Runs in the page: what a finger presses, smaller than 44 × 44 px with no room around it. */
 function scanTargets(): SmallTarget[] {
+    const finger = 44
     const selector =
         "button, a[href], [role=button], [role=tab], [role=radio], [role=switch], [role=checkbox], select, summary, input:not([type=hidden]):not([type=file])"
-    const found: SmallTarget[] = []
     /** Not a target to judge: hidden, disabled, or a link inside a sentence (read, then pressed). */
     const skipped = (element: Element, box: DOMRect): boolean =>
         box.width === 0 ||
@@ -80,25 +85,42 @@ function scanTargets(): SmallTarget[] {
         element.closest("[aria-hidden='true'], [inert]") !== null ||
         (element as HTMLButtonElement).disabled ||
         (element.tagName === "A" && element.closest("p") !== null)
+    const targets: { element: Element; box: DOMRect }[] = []
     for (const element of document.querySelectorAll(selector)) {
         // A field inside its label is pressed anywhere on the label.
         const pressed = element.matches("input, select")
             ? (element.closest("label") ?? element)
             : element
         const box = pressed.getBoundingClientRect()
-        if (skipped(element, box)) {
-            continue
-        }
-        if (box.width < 44 - 0.5 || box.height < 44 - 0.5) {
-            const text = (element.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 40)
-            found.push({
-                what: text || element.getAttribute("aria-label") || element.tagName.toLowerCase(),
-                width: Math.round(box.width),
-                height: Math.round(box.height),
-            })
+        if (!skipped(element, box)) {
+            targets.push({ element, box })
         }
     }
-    return found
+    /** How far a point is from a box: 0 inside it. */
+    const away = (x: number, y: number, box: DOMRect): number =>
+        Math.hypot(
+            Math.max(box.left - x, 0, x - box.right),
+            Math.max(box.top - y, 0, y - box.bottom),
+        )
+    /** A little smaller, with a finger's circle around its middle that touches no other target. */
+    const roomy = (box: DOMRect): boolean => {
+        const x = box.left + box.width / 2
+        const y = box.top + box.height / 2
+        return (
+            Math.min(box.width, box.height) >= 36 &&
+            targets.every((other) => other.box === box || away(x, y, other.box) >= finger / 2)
+        )
+    }
+    return targets
+        .filter(({ box }) => (box.width < finger - 0.5 || box.height < finger - 0.5) && !roomy(box))
+        .map(({ element, box }) => ({
+            what:
+                (element.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 40) ||
+                element.getAttribute("aria-label") ||
+                element.tagName.toLowerCase(),
+            width: Math.round(box.width),
+            height: Math.round(box.height),
+        }))
 }
 
 export function flatSurfaces(page: Page): Promise<Flat[]> {
