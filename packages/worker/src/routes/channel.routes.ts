@@ -75,7 +75,10 @@ async function postUpload(c: Context<AppEnv>): Promise<PostUpload | null> {
 }
 
 /** The shop's bot hears Telegram again, with every kind of update Zumda needs of it now. */
-async function registerShopWebhook(c: Context<AppEnv>, credentials: BotCredentials): Promise<void> {
+export async function registerShopWebhook(
+    c: Context<AppEnv>,
+    credentials: BotCredentials,
+): Promise<void> {
     await c
         .get("services")
         .telegram.setWebhook(

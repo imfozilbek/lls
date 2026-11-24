@@ -15,17 +15,45 @@ const userSchema = z.object({
     last_name: z.string().optional(),
     username: z.string().optional(),
     language_code: z.string().optional(),
+    is_bot: z.boolean().optional(),
 })
+
+/** What a message may carry that is worth copying: words, a picture, a voice, a file. */
+const CONTENT_KEYS = [
+    "text",
+    "photo",
+    "video",
+    "voice",
+    "audio",
+    "document",
+    "sticker",
+    "animation",
+    "video_note",
+    "location",
+] as const
 
 const updateSchema = z.object({
     message: z
         .object({
+            /** Absent only in old fixtures: a message without it is never copied. */
+            message_id: z.number().int().optional(),
             from: userSchema.optional(),
-            chat: z.object({ id: z.number().int() }),
+            /** An anonymous admin of a group writes as the group itself. */
+            sender_chat: z.object({ id: z.number().int() }).optional(),
+            chat: z.object({ id: z.number().int(), type: z.string().optional() }),
+            /** A topic of a group with topics: a customer's own in the shop's support group. */
+            message_thread_id: z.number().int().optional(),
+            is_topic_message: z.boolean().optional(),
             text: z.string().optional(),
             contact: z
                 .object({ phone_number: z.string(), user_id: z.number().int().optional() })
                 .optional(),
+            ...Object.fromEntries(
+                CONTENT_KEYS.filter((key) => key !== "text").map((key) => [
+                    key,
+                    z.unknown().optional(),
+                ]),
+            ),
         })
         .optional(),
     /** Managed Bots: a bot was created for us to manage, or its token or owner changed. */
@@ -46,12 +74,15 @@ const updateSchema = z.object({
                 type: z.string(),
                 title: z.string().optional(),
                 username: z.string().optional(),
+                /** A group with topics: the shop's support group needs them. */
+                is_forum: z.boolean().optional(),
             }),
             from: userSchema,
             new_chat_member: z.object({
                 status: z.string(),
                 user: z.object({ id: z.number().int() }),
                 can_post_messages: z.boolean().optional(),
+                can_manage_topics: z.boolean().optional(),
             }),
         })
         .optional(),
@@ -108,6 +139,11 @@ export function toTelegramUser(user: z.infer<typeof userSchema>): TelegramUser {
 export async function readUpdate(request: Request): Promise<Update | null> {
     const parsed = updateSchema.safeParse(await request.json().catch(() => null))
     return parsed.success ? parsed.data : null
+}
+
+/** A message people wrote (words, a picture, a voice…), not a service note of the chat. */
+export function hasContent(message: IncomingMessage): boolean {
+    return CONTENT_KEYS.some((key) => (message as Record<string, unknown>)[key] !== undefined)
 }
 
 export function isStart(text: string | undefined): boolean {

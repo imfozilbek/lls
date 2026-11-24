@@ -37,6 +37,14 @@ export function startChannelUrl(botUsername: string): string {
     return `https://t.me/${botUsername}?startchannel&admin=post_messages+edit_messages+delete_messages`
 }
 
+/**
+ * Telegram's own screen to add the shop's bot to a group the owner picks, as an admin who may
+ * make topics (one a customer) and pin the first message of each (goal 21).
+ */
+export function startGroupUrl(botUsername: string): string {
+    return `https://t.me/${botUsername}?startgroup&admin=manage_topics+pin_messages`
+}
+
 /** The storefront opened right on one product (the card the shop's bot sends for a link). */
 export function productAppUrl(appOrigin: string, slug: string, productId: string): string {
     return `${shopAppUrl(appOrigin, slug)}&product=${encodeURIComponent(productId)}`

@@ -178,8 +178,14 @@ describe("the shop's channel", () => {
             const before = toOwner().length
             await madeAdmin({ chat: { id: -100555, type: "supergroup", title: "Guruh" } })
             await member("kicked", { chat: { id: CUSTOMER.id, type: "private" } })
-            expect(client.telegram.left).toHaveLength(0)
-            expect(toOwner()).toHaveLength(before)
+            expect(await json(await owner()("/api/owner/channel"))).toEqual({ channel: null })
+            // A group is the support group's (goal 21): never a word about a channel.
+            expect(
+                toOwner()
+                    .slice(before)
+                    .some((html) => html.includes("kanal")),
+            ).toBe(false)
+            expect(client.telegram.left.some((l) => l.chatId === CUSTOMER.id)).toBe(false)
         })
 
         it("a new channel replaces the old one; the echo of leaving it is no news", async () => {

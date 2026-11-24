@@ -377,6 +377,33 @@ const BASE = {
         channelNotByOwner:
             "📣 Botni {channel} kanaliga siz qo'shmadingiz, shuning uchun bot kanaldan chiqdi. Kanalni ilovada o'zingiz bog'lang.",
         channelDemo: "📣 Namuna do'kon kanalga bog'lanmaydi: bot {channel} kanalidan chiqdi.",
+        /** The shop's support group: one topic a customer (owner's decision, November 2026). */
+        supportConnected:
+            "💬 {group} guruhi Zumdaga bog'landi. Endi mijoz botga yozsa, xabari shu guruhda alohida mavzuga tushadi. Javobni o'sha mavzuga yozing.",
+        supportLost:
+            "💬 Bot endi {group} guruhida mavzu ocha olmaydi. Guruhni ilovada qayta bog'lang.",
+        supportNotByOwner:
+            "💬 Botni {group} guruhiga siz qo'shmadingiz, shuning uchun bot guruhdan chiqdi. Guruhni ilovada o'zingiz bog'lang.",
+        supportDemo: "💬 Namuna do'kon guruhga bog'lanmaydi: bot {group} guruhidan chiqdi.",
+        supportNotForum:
+            "💬 {group} guruhida mavzular yoqilmagan, shuning uchun bot chiqdi. Guruh sozlamalarida «Mavzular»ni yoqing va ilovada qayta bog'lang.",
+        supportNoTopics:
+            "💬 Botga {group} guruhida mavzu ochish huquqi berilmadi, shuning uchun bot chiqdi. Ilovadagi «Guruhni bog'lash» tugmasi orqali qayta qo'shing.",
+        supportHello:
+            "👋 Salom! Mijozlar {bot} ga yozgan xabarlar shu guruhga keladi: har bir mijozga alohida mavzu. Mavzu ichida yozgan javobingizni bot mijozga do'kon nomidan yuboradi.",
+        supportTopicName: "Mijoz",
+        supportReplyHint: "Shu mavzuga yozgan javobingiz mijozga boradi.",
+        supportLastOrder: "🧾 Oxirgi buyurtma: #{n} · {sum} · {status}",
+        supportNoOrders: "🧾 Hali buyurtma bermagan",
+        supportSent: "✅ Xabaringiz do'konga yuborildi. Javob shu yerga keladi.",
+        supportAsk: "✍️ Savolingizni yozing. Do'kon javobi shu yerga keladi.",
+        supportAskOrder:
+            "✍️ #{n} buyurtma bo'yicha savolingizni yozing. Do'kon javobi shu yerga keladi.",
+        supportAskProduct:
+            "✍️ «{product}» haqida savolingizni yozing. Do'kon javobi shu yerga keladi.",
+        supportAboutOrder: "🧾 Mijoz #{n} buyurtma haqida yozmoqchi · {sum} · {status}",
+        supportAboutProduct: "🛍 Mijoz «{product}» haqida yozmoqchi",
+        supportCustomerGone: "⚠️ Mijoz botni bloklagan, xabaringiz unga bormadi.",
         /** A post's button, and the product's card the bot sends when it is pressed. */
         orderButton: "🛒 Buyurtma berish",
         priceFrom: "{price} dan",

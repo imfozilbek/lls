@@ -334,6 +334,51 @@ export class FakeTelegram implements TelegramGateway {
     async leaveChat(token: string, chatId: number): Promise<void> {
         this.left.push({ token, chatId })
     }
+    /** Messages copied: a customer's into their topic, the shop's answer back. */
+    readonly copies: {
+        token: string
+        fromChatId: number
+        messageId: number
+        toChatId: number
+        options?: MessageOptions
+    }[] = []
+    /** Topics made in support groups, and the ones deleted. */
+    readonly topics: { token: string; chatId: number; name: string; threadId: number }[] = []
+    readonly deletedTopics: { chatId: number; threadId: number }[] = []
+    /** Topics deleted in Telegram: copying into them answers «message thread not found». */
+    readonly goneTopics = new Set<number>()
+    /** The bot may not make topics there any more. */
+    failTopics = false
+    private nextThreadId = 500
+    async copyMessage(
+        token: string,
+        fromChatId: number,
+        messageId: number,
+        toChatId: number,
+        options?: MessageOptions,
+    ): Promise<{ messageId: number }> {
+        if (options?.threadId !== undefined && this.goneTopics.has(options.threadId)) {
+            throw new TelegramApiError("copyMessage", "Bad Request: message thread not found")
+        }
+        this.refuseUnstarted("copyMessage", token, toChatId)
+        this.copies.push({ token, fromChatId, messageId, toChatId, options })
+        return { messageId: this.nextMessageId++ }
+    }
+    async createForumTopic(
+        token: string,
+        chatId: number,
+        name: string,
+    ): Promise<{ threadId: number }> {
+        if (this.failTopics) {
+            throw new TelegramApiError("createForumTopic", "Bad Request: not enough rights")
+        }
+        const threadId = this.nextThreadId++
+        this.topics.push({ token, chatId, name, threadId })
+        return { threadId }
+    }
+    async deleteForumTopic(_token: string, chatId: number, threadId: number): Promise<void> {
+        this.deletedTopics.push({ chatId, threadId })
+    }
     /** A channel's subscribers. */
     memberCount = 231
     async getChatMemberCount(_token: string, _chatId: number): Promise<number> {

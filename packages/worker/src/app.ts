@@ -25,6 +25,7 @@ import { ownerRoutes } from "./routes/owner.routes.js"
 import { payoutCardRoutes } from "./routes/payout-card.routes.js"
 import { platformRoutes } from "./routes/platform.routes.js"
 import { showcaseRoutes } from "./routes/showcase.routes.js"
+import { supportRoutes } from "./routes/support.routes.js"
 import { webSessionRoutes } from "./routes/web-session.routes.js"
 import { webhookRoutes } from "./routes/webhook.routes.js"
 import { createServices } from "./services.js"
@@ -109,6 +110,7 @@ export function createApp(overrides: Partial<ServiceDeps> = {}): Hono<AppEnv> {
         .route("/owner", moneyRoutes)
         .route("/owner", payoutCardRoutes)
         .route("/owner", channelRoutes)
+        .route("/owner", supportRoutes)
         .route("/courier", courierRoutes)
         .route("/platform", platformRoutes)
         .route("/admin", adminRoutes)
