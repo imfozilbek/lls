@@ -42,7 +42,7 @@ function VariantTiles({
                         className={cn(
                             "tap rounded-control px-2 py-2.5 text-center transition-colors duration-200",
                             variant.id === value
-                                ? "bg-brand/10 text-brand ring-2 ring-inset ring-brand"
+                                ? "bg-tg-section text-brand ring-2 ring-inset ring-brand"
                                 : "bg-tg-secondary",
                         )}
                     >
@@ -74,7 +74,7 @@ function AddonList({
             <legend className="mb-1 px-1 text-sm font-semibold text-tg-hint">
                 {t.shop.addons}
             </legend>
-            <ul className="divide-y divide-tg-separator">
+            <ul className="divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary px-3">
                 {(product.options?.addons ?? []).map((addon) => {
                     const on = value.includes(addon.id)
                     return (

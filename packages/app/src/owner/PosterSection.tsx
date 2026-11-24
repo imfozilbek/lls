@@ -74,7 +74,7 @@ function PosterSheet({
             <img
                 src={poster.preview}
                 alt={s.posterImage}
-                className="mx-auto aspect-[4/5] w-full max-w-[16rem] animate-pop rounded-control bg-tg-secondary object-contain shadow-sm"
+                className="mx-auto aspect-[4/5] w-full max-w-[16rem] animate-pop rounded-control bg-tg-secondary object-contain shadow-card"
             />
             <Button
                 size="lg"

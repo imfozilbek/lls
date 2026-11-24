@@ -221,7 +221,7 @@ function PullIndicator({
             aria-label="refresh"
             data-testid="pull-indicator"
             className={cn(
-                "pointer-events-none fixed left-1/2 top-0 z-bar grid h-10 w-10 place-items-center rounded-full bg-tg-bg shadow-lg ring-1 ring-tg-separator",
+                "pointer-events-none fixed left-1/2 top-0 z-bar grid h-10 w-10 place-items-center rounded-full bg-tg-section shadow-raised ring-1 ring-tg-separator",
                 refreshing && "transition-transform duration-200 ease-out-quart",
             )}
             style={{ transform: `translate(-50%, ${at - 44}px)`, opacity: Math.min(1, at / 40) }}
@@ -251,11 +251,11 @@ function EdgeBubble({ drag }: { drag: Drag }): React.JSX.Element | null {
         <div
             data-testid={back ? "swipe-back" : "swipe-forward"}
             className={cn(
-                "pointer-events-none fixed z-bar grid h-11 w-11 place-items-center rounded-full shadow-lg transition-colors duration-150",
+                "pointer-events-none fixed z-bar grid h-11 w-11 place-items-center rounded-full shadow-raised transition-colors duration-150",
                 back ? "left-0" : "right-0",
                 ready
                     ? "bg-brand text-brand-ink"
-                    : "bg-tg-bg text-tg-text ring-1 ring-tg-separator",
+                    : "bg-tg-section text-tg-text ring-1 ring-tg-separator",
             )}
             style={{
                 top: drag.y - 22,

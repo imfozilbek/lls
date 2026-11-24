@@ -921,7 +921,7 @@ function Deliveries({
                     <h2 className="px-1 text-sm font-semibold text-tg-subtitle">
                         {t.courier.doneToday} · {done.length}
                     </h2>
-                    <ul className="divide-y divide-tg-separator">
+                    <ul className="mt-2 divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary px-3">
                         {done.map((order) => (
                             <DoneRow key={order.id} order={order} />
                         ))}

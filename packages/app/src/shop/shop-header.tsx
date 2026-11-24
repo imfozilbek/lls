@@ -352,16 +352,19 @@ export function ShopHeader({ shop }: { shop: Shop }): React.JSX.Element {
     return (
         <header className="pb-2">
             {cover ? <ShopCover src={cover} /> : null}
-            <div className={cn("flex gap-3 px-4", cover ? "-mt-9 items-end" : "items-center pt-4")}>
+            <div
+                className={cn("flex gap-3 px-4", cover ? "-mt-9 items-start" : "items-center pt-4")}
+            >
                 <ShopLogo
                     name={shop.name}
                     logoKey={shop.logoKey}
                     className={cn(
-                        "rounded-[1.1rem] text-2xl shadow-card ring-[3px] ring-tg-section",
+                        "relative rounded-[1.1rem] text-2xl shadow-card ring-[3px] ring-tg-section",
                         cover ? "h-[4.5rem] w-[4.5rem]" : "h-14 w-14",
                     )}
                 />
-                <div className="min-w-0 flex-1 pb-0.5">
+                {/* Under a cover the words start below its edge: only the logo sits on it. */}
+                <div className={cn("min-w-0 flex-1 pb-0.5", cover && "pt-10")}>
                     <h1 className="truncate text-xl font-bold leading-tight">{shop.name}</h1>
                     <p className="mt-0.5 flex items-center gap-1.5 text-sm text-tg-hint">
                         <span

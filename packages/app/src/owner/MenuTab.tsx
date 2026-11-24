@@ -285,7 +285,7 @@ function ProductGroups({
         return found.length === 0 ? (
             <p className="py-8 text-center text-tg-hint">{t.shop.nothingFound}</p>
         ) : (
-            <ul className="divide-y divide-tg-separator">
+            <ul className="divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary px-3">
                 {found.map((product) => (
                     <ProductRow key={product.id} product={product} />
                 ))}
@@ -303,7 +303,7 @@ function ProductGroups({
                             {names[category] ?? category}
                         </h2>
                     ) : null}
-                    <ul className="divide-y divide-tg-separator">
+                    <ul className="mt-2 divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary px-3">
                         {products
                             .filter((product) => product.category === category)
                             .map((product) => (

@@ -8,7 +8,7 @@ export function AgeBadge({ product }: { product: ProductDTO }): React.JSX.Elemen
         return null
     }
     return (
-        <span className="ml-1.5 rounded-full bg-tg-secondary px-1.5 py-0.5 text-xs font-semibold text-tg-text">
+        <span className="ml-1.5 rounded-full bg-tg-hint/15 px-1.5 py-0.5 text-xs font-semibold text-tg-text">
             {ageLabel(product.ageFrom)}
         </span>
     )

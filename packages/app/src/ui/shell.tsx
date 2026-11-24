@@ -77,7 +77,7 @@ export function ToastHost(): React.JSX.Element {
                     type="button"
                     key={toast.id}
                     onClick={(): void => dismiss(toast.id)}
-                    className="pointer-events-auto flex w-full max-w-md animate-rise items-center gap-3 rounded-control bg-tg-text px-4 py-3 text-left text-sm font-medium text-tg-bg shadow-lg"
+                    className="pointer-events-auto flex w-full max-w-md animate-rise items-center gap-3 rounded-control bg-tg-text px-4 py-3 text-left text-sm font-medium text-tg-bg shadow-raised"
                 >
                     <span
                         className={

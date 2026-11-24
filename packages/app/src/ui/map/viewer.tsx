@@ -44,7 +44,7 @@ export function MapViewer({
                     type="button"
                     onClick={onClose}
                     aria-label={t.map.close}
-                    className="tap absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-tg-bg shadow-lg"
+                    className="tap absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-tg-section shadow-raised"
                 >
                     <CloseIcon size={22} />
                 </button>

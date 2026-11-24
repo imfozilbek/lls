@@ -116,22 +116,32 @@ export function webApp(): WebApp | null {
     return app && app.initData ? app : null
 }
 
-/** The app's own surface: Telegram's header and bottom bar match it, even in a dark theme. */
-export const LIGHT_SURFACE = "#ffffff"
+/** The page's gray: Telegram's header, background and bottom bar match it (goal 24). */
+export const PAGE_COLOR = "#f3f4f6"
 
 /**
- * Always light (owner's decision): paint Telegram's frame around the app white too, so a dark
- * Telegram theme does not frame a light app. Older clients simply skip it.
+ * Always light (owner's decision): paint Telegram's frame the page's gray, so a dark Telegram
+ * theme never frames the light app. A header takes a color of its own only from Bot API 6.9
+ * (before it, only the theme's keys, and anything else throws); a color an old client refuses
+ * leaves its own frame, never a broken app.
  */
 export function paintLightFrame(app: WebApp | null): void {
-    if (!app?.isVersionAtLeast("6.1")) {
+    if (!app) {
         return
     }
-    app.setHeaderColor?.(LIGHT_SURFACE)
-    app.setBackgroundColor?.(LIGHT_SURFACE)
-    if (app.isVersionAtLeast("7.10")) {
-        app.setBottomBarColor?.(LIGHT_SURFACE)
+    const paint = (version: string, set: ((color: string) => void) | undefined): void => {
+        if (!set || !app.isVersionAtLeast(version)) {
+            return
+        }
+        try {
+            set.call(app, PAGE_COLOR)
+        } catch (error) {
+            console.warn("Telegram refused the frame color", error)
+        }
     }
+    paint("6.9", app.setHeaderColor)
+    paint("6.1", app.setBackgroundColor)
+    paint("7.10", app.setBottomBarColor)
 }
 
 /** The native bottom button exists only inside real Telegram clients. */

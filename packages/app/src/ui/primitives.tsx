@@ -54,7 +54,7 @@ export function Button({
                 size === "lg" ? "h-[52px] px-5 text-lg" : "h-11 px-4 text-base",
                 // Not available: a calm gray, readable; busy keeps its own color and a spinner.
                 disabled && !loading
-                    ? "bg-tg-secondary text-tg-hint shadow-none"
+                    ? "bg-tg-separator text-tg-hint shadow-none"
                     : VARIANTS[variant],
                 className,
             )}
@@ -273,7 +273,7 @@ export function Segmented<T extends string>({
     onChange(value: T): void
 }): React.JSX.Element {
     return (
-        <div className="flex min-h-[52px] rounded-control bg-tg-secondary p-1" role="tablist">
+        <div className="flex min-h-[52px] rounded-control bg-tg-separator p-1" role="tablist">
             {options.map((option) => (
                 <button
                     key={option.value}
@@ -287,7 +287,7 @@ export function Segmented<T extends string>({
                     className={cn(
                         "tap min-h-11 flex-1 rounded-[0.625rem] px-2 text-sm font-semibold transition-colors duration-200",
                         option.value === value
-                            ? "bg-tg-bg text-tg-text shadow-sm"
+                            ? "bg-tg-section text-tg-text shadow-card"
                             : "text-tg-subtitle",
                     )}
                 >

@@ -257,7 +257,7 @@ function ProductResult({
                     />
                     {/* Run out at the shop: found as it is, the shop shows it can't be added. */}
                     {product.soldOut ? (
-                        <span className="absolute bottom-2 right-2 rounded-full bg-tg-bg px-3 py-1.5 text-sm font-semibold text-tg-subtitle shadow-md">
+                        <span className="absolute bottom-2 right-2 rounded-full bg-tg-section px-3 py-1.5 text-sm font-semibold text-tg-subtitle shadow-raised">
                             {t.shop.soldOut}
                         </span>
                     ) : null}

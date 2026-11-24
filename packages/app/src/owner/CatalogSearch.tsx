@@ -80,7 +80,7 @@ export function CatalogSearch({
             <label
                 className={cn(
                     "flex h-14 items-center gap-3 rounded-control bg-tg-secondary px-4 transition-shadow duration-200",
-                    "focus-within:bg-tg-bg focus-within:ring-2 focus-within:ring-brand",
+                    "focus-within:bg-tg-section focus-within:ring-2 focus-within:ring-brand",
                 )}
             >
                 <SearchIcon size={22} className="shrink-0 text-tg-hint" />
@@ -97,7 +97,7 @@ export function CatalogSearch({
             {typed ? null : <p className="px-1 text-sm text-tg-hint">{p.catalogHint}</p>}
             {failed ? <p className="px-1 text-sm text-tg-hint">{p.catalogFailed}</p> : null}
             {results.length > 0 ? (
-                <ul className="flex flex-col divide-y divide-tg-separator">
+                <ul className="flex flex-col divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary px-3">
                     {results.map((template) => (
                         <li key={`${template.name}|${template.category}`}>
                             <button

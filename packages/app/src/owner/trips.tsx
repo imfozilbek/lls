@@ -171,7 +171,7 @@ function ArrowButton({
                 haptic.select()
                 onClick()
             }}
-            className="tap grid h-11 w-11 place-items-center rounded-full bg-tg-bg disabled:opacity-30"
+            className="tap grid h-11 w-11 place-items-center rounded-full bg-tg-section shadow-card disabled:opacity-30"
         >
             <ChevronIcon size={18} className={up ? "-rotate-90" : "rotate-90"} />
         </button>

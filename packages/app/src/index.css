@@ -6,19 +6,26 @@
     /*
      * Always light (owner's decision): one palette, whatever theme Telegram uses. The names
      * match Telegram's (`tg-*` in Tailwind), so a dark palette stays one more block here.
+     * Three levels keep their roles: the page (`tg-bg`), what stands on it (`tg-secondary`:
+     * cards, fields, chips) and what sits inside a card (`tg-bg` again). Every screen is a light
+     * gray page with white cards (owner's decision, November 2026; goal 24); Telegram's header,
+     * background and bottom bar are painted the page's gray (`PAGE_COLOR`, lib/telegram.ts).
      */
     :root {
         color-scheme: light;
-        --ui-bg: #ffffff;
+        --ui-bg: #f3f4f6;
         --ui-text: #111827;
-        /* ≥5:1 on white, gray and tinted surfaces (WCAG AA for body text in sunlight). */
-        --ui-hint: #5b6472;
+        /* ≥5:1 on the page, on white and on /15 tints over the page (WCAG AA in sunlight). */
+        --ui-hint: #525a67;
         --ui-link: #0369a1;
-        --ui-secondary: #f3f4f6;
+        --ui-secondary: #ffffff;
+        /* Always white: what floats over photos, maps and the page (the «+», a map's close). */
         --ui-section: #ffffff;
         --ui-separator: #e5e7eb;
         --ui-destructive: #b91c1c;
-        --ui-subtitle: #5b6472;
+        --ui-subtitle: #525a67;
+        /* Shadows are the text's ink at low strength, never a hue of their own. */
+        --ui-shadow-rgb: 17 24 39;
     }
 
     html,
@@ -79,16 +86,26 @@
         @apply transition-transform duration-150 ease-out-quart active:scale-[0.97];
     }
 
+    /*
+     * A card on the gray page lifts with a soft shadow (goal 24). Every screen draws its cards as
+     * `rounded-tile bg-tg-secondary`, so one rule reaches them all; `@apply` keeps Tailwind's ring
+     * variables, so a card's glow ring still shows over its shadow.
+     */
+    .rounded-tile.bg-tg-secondary {
+        @apply shadow-card;
+    }
+
     .field {
         @apply w-full rounded-control border border-transparent bg-tg-secondary px-4 py-3 text-[1rem] leading-[1.4rem] text-tg-text outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-tg-hint focus:border-brand focus:shadow-[0_0_0_3px_rgb(var(--brand-rgb,14_165_233)/0.18)];
     }
 
+    /* A shade darker than the page: seen on the gray page and inside a white card alike. */
     .skeleton {
         background: linear-gradient(
             90deg,
-            var(--ui-secondary) 25%,
-            color-mix(in srgb, var(--ui-secondary) 70%, var(--ui-bg)) 50%,
-            var(--ui-secondary) 75%
+            var(--ui-separator) 25%,
+            color-mix(in srgb, var(--ui-separator) 50%, var(--ui-secondary)) 50%,
+            var(--ui-separator) 75%
         );
         background-size: 200% 100%;
         @apply animate-shimmer rounded-control;

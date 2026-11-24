@@ -120,16 +120,18 @@ function MenuSkeleton(): React.JSX.Element {
                     <Skeleton className="h-4 w-24" />
                 </div>
             </div>
-            <div className="mt-4 flex gap-2">
-                <Skeleton className="h-8 w-32 rounded-full" />
-                <Skeleton className="h-8 w-28 rounded-full" />
+            {/* The header's round buttons, then two columns of cards (goal 24). */}
+            <div className="mt-4 flex gap-7">
+                {[0, 1, 2].map((i) => (
+                    <Skeleton key={i} className="h-11 w-11 rounded-full" />
+                ))}
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-x-3 gap-y-5">
+            <div className="mt-6 grid grid-cols-2 gap-3">
                 {[0, 1, 2, 3].map((i) => (
-                    <div key={i} className="flex flex-col gap-2">
-                        <Skeleton className="aspect-[4/3] rounded-tile" />
-                        <Skeleton className="h-4 w-3/4" />
-                        <Skeleton className="h-4 w-1/2" />
+                    <div key={i} className="flex flex-col gap-2 rounded-tile bg-tg-secondary pb-3">
+                        <Skeleton className="aspect-square rounded-t-tile" />
+                        <Skeleton className="mx-3 h-4 w-3/4" />
+                        <Skeleton className="mx-3 h-4 w-1/2" />
                     </div>
                 ))}
             </div>
