@@ -11,10 +11,11 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **«Ishga tayyor»** asks for the support group (owner's decision: no shop without it), and
   «Mijozlar savollari» says what to press in Telegram, step by step, and why a try failed, with
   «Qayta urinish».
+- **A long name** in a topic's name is cut to 18 characters with «…».
 - **A topic made before** gets its name «Ism · telefon» and its pinned card once, on the
   customer's next message.
-- **A topic shows who waits:** ❓ until someone of the shop answers, then ✅; a new question
-  brings ❓ back and opens a closed topic.
+- **A topic shows who waits:** 🔴 until someone of the shop answers, then 🟢; a new question
+  brings 🔴 back and opens a closed topic.
 - **A topic tells who the customer is:** its name «Ism · telefon», its pinned card with the phone
   given to this shop, how many orders («⭐ 5 ta buyurtma» or «🆕 Yangi mijoz») and the last one;
   a new order comes as a quiet line «🛒 #14 · 96 000 so'm · karta».
