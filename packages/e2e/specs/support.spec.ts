@@ -2,7 +2,7 @@
  * The shop's support group (owner's decision, November 2026; goal 21): a closed group with topics
  * connected from Telegram's own screen. A customer's message to the shop's bot goes to their own
  * topic there; what the shop's people write in the topic goes back from the shop's bot; the app's
- * «Do'konga xabar yozish» tells the topic which order or product it is about.
+ * «Savolim bor» tells the topic which order or product it is about.
  */
 import { expect, test } from "@playwright/test"
 
@@ -224,16 +224,14 @@ test("a customer with a topic orders: a line in it, the card written again", asy
     expect(threadId).toBeGreaterThan(0)
 })
 
-test("«Do'konga xabar yozish» on an order and a product tells the topic what about", async ({
-    page,
-}) => {
+test("«Savolim bor» on an order and a product tells the topic what about", async ({ page }) => {
     const order = await placeOrder(PEOPLE.customerUz, FOOD, [{ productId: P1, quantity: 1 }])
     await openApp(page, {
         user: PEOPLE.customerUz,
         shop: FOOD,
         query: `?shop=${FOOD}&order=${order.id}`,
     })
-    const write = page.getByRole("button", { name: "Do'konga xabar yozish" })
+    const write = page.getByRole("button", { name: "Savolim bor" })
     await expect(write).toBeVisible()
     await page.screenshot({ path: "screenshots/support-order-button.png" })
     const since = await lastSeq()
@@ -257,9 +255,22 @@ test("the app's button opens the shop's bot on the order", async ({ page }) => {
         shop: FOOD,
         query: `?shop=${FOOD}&order=${order.id}`,
     })
-    await page.getByRole("button", { name: "Do'konga xabar yozish" }).click()
+    await page.getByRole("button", { name: "Savolim bor" }).click()
     const link = (await app.calls()).filter((c) => c.method === "openTelegramLink").at(-1)
     expect(link?.args[0]).toBe(`https://t.me/${SHOP.bot.username}?start=q_o${order.id}`)
+})
+
+test("«Savolim bor» on the storefront: the bot greets and the question goes to the group", async ({
+    page,
+}) => {
+    const app = await openApp(page, { user: PEOPLE.customerUz, shop: FOOD })
+    await page.getByRole("button", { name: "Savolim bor" }).click()
+    const link = (await app.calls()).filter((c) => c.method === "openTelegramLink").at(-1)
+    expect(link?.args[0]).toBe(`https://t.me/${SHOP.bot.username}?start=q_s`)
+    await page.screenshot({ path: "screenshots/support-storefront-button.png" })
+    const since = await lastSeq()
+    await shopChat(FOOD).send(PEOPLE.customerUz, "/start q_s")
+    await waitForMessage(PEOPLE.customerUz.id, "tez orada javob beramiz", since)
 })
 
 test("«Guruhni ajratish»: the button leaves the customer's screens", async ({ page }) => {
@@ -275,5 +286,5 @@ test("«Guruhni ajratish»: the button leaves the customer's screens", async ({ 
         query: `?shop=${FOOD}&order=${order.id}`,
     })
     await expect(page.getByText(`#${order.number}`).first()).toBeVisible()
-    await expect(page.getByRole("button", { name: "Do'konga xabar yozish" })).toHaveCount(0)
+    await expect(page.getByRole("button", { name: "Savolim bor" })).toHaveCount(0)
 })
