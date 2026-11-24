@@ -102,8 +102,10 @@ test("the application reaches the admin; the pending shop opens only for its own
     await expect(page.getByText("Ariza tekshirilmoqda")).toBeVisible()
     const ready = page.getByRole("region", { name: "Ishga tayyor" })
     await expect(ready).toContainText("To'lov usuli")
-    // The location came with the application; the bot writes. The delivery price is still asked.
-    await expect(ready).toContainText("2/8")
+    // The location came with the application; the bot writes. The delivery price is still asked,
+    // and the support group (goal 22).
+    await expect(ready).toContainText("2/9")
+    await expect(ready).toContainText("Mijozlar savollari uchun guruh")
     await expect(ready).toContainText("Yetkazib berish narxi")
     await app.back()
     await expect(page.getByText("Yangi Non")).toBeVisible()

@@ -37,8 +37,9 @@ async function topicOf(name: string, since: number): Promise<number> {
     let threadId = 0
     await expect
         .poll(async () => {
-            const made = (await callsOf("createForumTopic", since)).find(
-                (c) => c.body["name"] === name,
+            // «Ism · telefon»: the name first, the phone after it when the shop has it.
+            const made = (await callsOf("createForumTopic", since)).find((c) =>
+                String(c.body["name"]).startsWith(name),
             )
             threadId = made ? await topicIdOf(made.seq) : 0
             return threadId
@@ -67,6 +68,46 @@ test("without a group a customer's message gets the old answer", async () => {
     await shopChat(FOOD).send(PEOPLE.customer, "Salom, osh bormi?")
     await waitForMessage(PEOPLE.customer.id, "ish esa ilovada", since)
     expect(await callsOf("copyMessage", since)).toHaveLength(0)
+})
+
+test("«Ishga tayyor» asks for the support group and leads to it", async ({ page }) => {
+    await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
+    await page.getByRole("button", { name: "Mening do'konim" }).click()
+    const folded = page.getByRole("button", { expanded: false }).filter({ hasText: "Ishga tayyor" })
+    if (await folded.count()) {
+        await folded.click()
+    }
+    const ready = page.getByRole("region", { name: "Ishga tayyor" })
+    const step = ready.getByRole("button", { name: /Mijozlar savollari uchun guruh/ })
+    await expect(step).toBeVisible()
+    await page.screenshot({ path: "screenshots/support-ready-step.png" })
+    await step.click()
+    await expect(page.getByRole("heading", { name: "Mijozlar savollari" })).toBeVisible()
+})
+
+test("a group without topics, or added by someone else: the bot leaves, the app says why", async ({
+    page,
+}) => {
+    const since = await lastSeq()
+    const plain: TgGroup = { id: -1005550009, title: "Oddiy guruh", isForum: false }
+    await groupMembership(FOOD, PEOPLE.foodOwner, plain, "administrator")
+    await waitForMessage(PEOPLE.foodOwner.id, "mavzular yoqilmagan", since)
+    await groupMembership(FOOD, PEOPLE.stranger, { ...plain, isForum: true }, "administrator")
+    await waitForMessage(PEOPLE.foodOwner.id, "guruhiga siz qo'shmadingiz", since)
+    const left = await callsOf("leaveChat", since)
+    expect(left.map((c) => Number(c.body["chat_id"]))).toEqual([plain.id, plain.id])
+
+    // The owner opens «Mijozlar savollari»: the last refusal, said plainly, and the way again.
+    await ownerSettings(page)
+    const alert = page.getByRole("alert")
+    await expect(alert).toContainText("«Oddiy guruh» guruhi bog'lanmadi")
+    await expect(alert).toContainText("Botni guruhga boshqa odam qo'shdi")
+    await expect(alert.getByRole("button", { name: "Qayta urinish" })).toBeVisible()
+    // What to press in Telegram, a step at a time.
+    await page.getByRole("button", { name: "Qanday qilinadi?" }).nth(1).click()
+    await expect(page.getByText("«Mavzular» (Topics)ni yoqing")).toBeVisible()
+    await page.waitForTimeout(400) // entry animations, for the screenshot
+    await page.screenshot({ path: "screenshots/support-refused.png" })
 })
 
 test("the owner connects the group from Telegram's own screen", async ({ page }) => {
@@ -100,17 +141,6 @@ test("the owner connects the group from Telegram's own screen", async ({ page })
     await page.screenshot({ path: "screenshots/support-connected.png" })
 })
 
-test("a group without topics, or added by someone else: the bot leaves", async () => {
-    const since = await lastSeq()
-    const plain: TgGroup = { id: -1005550009, title: "Oddiy guruh", isForum: false }
-    await groupMembership(FOOD, PEOPLE.foodOwner, plain, "administrator")
-    await waitForMessage(PEOPLE.foodOwner.id, "mavzular yoqilmagan", since)
-    await groupMembership(FOOD, PEOPLE.stranger, { ...plain, isForum: true }, "administrator")
-    await waitForMessage(PEOPLE.foodOwner.id, "guruhiga siz qo'shmadingiz", since)
-    const left = await callsOf("leaveChat", since)
-    expect(left.map((c) => Number(c.body["chat_id"]))).toEqual([plain.id, plain.id])
-})
-
 test("a customer writes: their own topic, and the shop's answer comes back", async () => {
     const since = await lastSeq()
     await shopChat(FOOD).send(PEOPLE.customer, "Salom, osh bormi?")
@@ -124,6 +154,10 @@ test("a customer writes: their own topic, and the shop's answer comes back", asy
         message_thread_id: threadId,
     })
     await waitForMessage(PEOPLE.customer.id, "Xabaringiz do'konga yuborildi", since)
+    // The topic waits from the start (❓), its card pinned at the top.
+    const made = (await callsOf("createForumTopic", since)).at(-1)
+    expect(made?.body["icon_custom_emoji_id"]).toBe("icon-waiting")
+    await expect.poll(async () => (await callsOf("pinChatMessage", since)).length).toBe(1)
 
     // The next message goes to the same topic, without another word to the customer.
     const next = await lastSeq()
@@ -138,6 +172,24 @@ test("a customer writes: their own topic, and the shop's answer comes back", asy
     await expect
         .poll(async () => (await callsOf("copyMessage", answer)).at(-1)?.body["chat_id"])
         .toBe(PEOPLE.customer.id)
+    // Answered: ✅; a second answer changes nothing.
+    await expect
+        .poll(async () =>
+            (await callsOf("editForumTopic", answer)).map((c) => c.body["icon_custom_emoji_id"]),
+        )
+        .toEqual(["icon-answered"])
+    await groupMessage(FOOD, HELPER, GROUP, { threadId, text: "Yana kerakmi?" })
+    await expect.poll(async () => (await callsOf("copyMessage", answer)).length).toBe(2)
+    expect(await callsOf("editForumTopic", answer)).toHaveLength(1)
+    // The customer asks again: ❓, and the topic opens if someone closed it.
+    const again = await lastSeq()
+    await shopChat(FOOD).send(PEOPLE.customer, "Qachon olib kelasiz?")
+    await expect
+        .poll(async () =>
+            (await callsOf("editForumTopic", again)).map((c) => c.body["icon_custom_emoji_id"]),
+        )
+        .toEqual(["icon-waiting"])
+    expect(await callsOf("reopenForumTopic", again)).toHaveLength(1)
     // The General topic stays in the group.
     const general = await lastSeq()
     await groupMessage(FOOD, HELPER, GROUP, { text: "Bugun kim navbatchi?" })
@@ -152,6 +204,24 @@ test("a customer who blocked the bot: the topic hears it", async () => {
     const note = await waitForMessage(GROUP.id, "Mijoz botni bloklagan", since)
     expect(note.text).not.toContain("Javob")
     await controlTelegram({ blocked: [] })
+})
+
+test("a customer with a topic orders: a line in it, the card written again", async () => {
+    const threadId = await topicOf("Aziz Karimov", 0)
+    const since = await lastSeq()
+    const order = await placeOrder(PEOPLE.customer, FOOD, [{ productId: P1, quantity: 1 }])
+    const line = await waitForMessage(GROUP.id, `🛒 #${order.number}`, since)
+    expect(line.text).toContain("so'm")
+    const card = await waitForCall("editMessageText", SHOP.bot.token, since)
+    expect(String(card.body["text"])).toContain("ta buyurtma")
+    expect(String(card.body["text"])).toContain("📞")
+    // The name carries the phone the customer gave the shop with the order.
+    const names = [
+        ...(await callsOf("createForumTopic", 0)),
+        ...(await callsOf("editForumTopic", 0)),
+    ].flatMap((c) => (typeof c.body["name"] === "string" ? [c.body["name"]] : []))
+    expect(names.at(-1)).toMatch(/^Aziz Karimov · \d{2} \d{3} \d{2} \d{2}$/)
+    expect(threadId).toBeGreaterThan(0)
 })
 
 test("«Do'konga xabar yozish» on an order and a product tells the topic what about", async ({
