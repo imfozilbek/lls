@@ -23,6 +23,7 @@ import {
     OPTION_LIMITS,
     PAYMENT_OPTIONS,
     REGIONS,
+    STOREFRONT_LAYOUTS,
     UNITS,
     isAge,
     WEEKDAYS,
@@ -307,6 +308,10 @@ export const shopPatchBody = z.object({
     paymentOptions: z.enum(PAYMENT_OPTIONS).optional(),
     features: z.array(z.enum(FEATURES)).max(10).optional(),
     bottleDeposit: z.number().int().min(0).max(1_000_000).optional(),
+    /** «Vitrina qanday ko'rinadi»: once chosen, changed, never unset (no `null`). */
+    storefrontLayout: z.enum(STOREFRONT_LAYOUTS).optional(),
+    /** «Raqamni mijozlarga ko'rsatmaslik»: on only with the support group (the core checks). */
+    phoneHidden: z.boolean().optional(),
 })
 
 export const registerShopBody = z

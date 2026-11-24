@@ -47,6 +47,7 @@ import { Notifier, inBackground } from "../telegram/notifier.js"
 
 import type { AppEnv } from "../env.js"
 import type { Services } from "../services.js"
+import type { ShopOwnerDTO } from "@zumda/core"
 import type { Context } from "hono"
 
 /** Sets the picture the app drew; Telegram's refusal is a 502 the app can name. */
@@ -70,7 +71,6 @@ export async function setShopBotPhoto(
 /** A product's fields a channel post shows (`PostFacts`). */
 const POST_FACT_FIELDS = ["name", "price", "options", "unit", "ageFrom"] as const
 
-/** "Мой магазин": only the owner of the shop from `X-Shop`. */
 /** The trips orders just left (moved to a courier or another trip): their way is planned again. */
 function refreshLeftTrips(
     c: Context<AppEnv>,
@@ -89,6 +89,36 @@ function refreshLeftTrips(
     }
 }
 
+/**
+ * A picture of the shop the owner uploads: its logo, or the cover over its storefront (goal 24).
+ * The new file is saved, then its key, then the file it replaced goes. The previous key is read
+ * first: the use case changes this same object (6 October 2026: every new logo deleted itself).
+ */
+async function putShopPicture(
+    c: Context<AppEnv>,
+    picture: "logo" | "cover",
+): Promise<ShopOwnerDTO> {
+    const business = shopOf(c)
+    const previousKey = picture === "logo" ? business.logoKey : business.coverKey
+    const services = c.get("services")
+    const key = await storeImage(
+        c.env.BUCKET,
+        `shops/${business.id}/${picture}`,
+        c.req.header("Content-Type"),
+        await readImageBody(c.req.raw),
+    )
+    const shop = await withStoredImage(c.env.BUCKET, key, () =>
+        services.useCases.updateShop.execute({
+            actorTelegramId: c.get("auth").user.id,
+            businessId: business.id,
+            patch: picture === "logo" ? { logoKey: key } : { coverKey: key },
+        }),
+    )
+    await replaceImage(c.env.BUCKET, previousKey, key)
+    return shop
+}
+
+/** "Мой магазин": only the owner of the shop from `X-Shop`. */
 export const ownerRoutes = new Hono<AppEnv>()
     .use(requireOwner)
 
@@ -131,25 +161,21 @@ export const ownerRoutes = new Hono<AppEnv>()
         return c.json({ ownerChat })
     })
 
-    .put("/shop/logo", async (c) => {
+    .put("/shop/logo", async (c) => c.json(await putShopPicture(c, "logo")))
+
+    /** «Muqova rasmi»: a wide picture over the storefront. */
+    .put("/shop/cover", async (c) => c.json(await putShopPicture(c, "cover")))
+
+    /** «Rasmni o'chirish»: the key goes first, then its file. */
+    .delete("/shop/cover", async (c) => {
         const business = shopOf(c)
-        // Read now: the use case below changes this same object.
-        const previousKey = business.logoKey
-        const services = c.get("services")
-        const key = await storeImage(
-            c.env.BUCKET,
-            `shops/${business.id}/logo`,
-            c.req.header("Content-Type"),
-            await readImageBody(c.req.raw),
-        )
-        const shop = await withStoredImage(c.env.BUCKET, key, () =>
-            services.useCases.updateShop.execute({
-                actorTelegramId: c.get("auth").user.id,
-                businessId: business.id,
-                patch: { logoKey: key },
-            }),
-        )
-        await replaceImage(c.env.BUCKET, previousKey, key)
+        const previousKey = business.coverKey
+        const shop = await c.get("services").useCases.updateShop.execute({
+            actorTelegramId: c.get("auth").user.id,
+            businessId: business.id,
+            patch: { coverKey: null },
+        })
+        await deleteImage(c.env.BUCKET, previousKey)
         return c.json(shop)
     })
 

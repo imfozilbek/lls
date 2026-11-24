@@ -292,3 +292,110 @@ describe("no phone, no orders (owner's decision, October 2026)", () => {
         expect(await json(refused)).toMatchObject({ error: { code: "NO_SHOP_PHONE" } })
     })
 })
+
+/**
+ * «Raqamni mijozlarga ko'rsatmaslik» (owner's decision, November 2026; goal 24): customers miss the
+ * shop's number while its support group answers them; the owner and the courier never do.
+ */
+describe("a number kept from customers", () => {
+    let client: TestClient
+    let shopId: string
+    let slug: string
+    const owner = (): ReturnType<TestClient["as"]> =>
+        client.as(OWNER, { botToken: SHOP_BOT_TOKEN, shop: slug })
+    const customer = (): ReturnType<TestClient["as"]> =>
+        client.as(CUSTOMER, { botToken: SHOP_BOT_TOKEN, shop: slug })
+    const courier = (): ReturnType<TestClient["as"]> => client.as(COURIER, { courierBot: true })
+    const hide = (phoneHidden: boolean): Promise<Response> =>
+        owner()("/api/owner/shop", { method: "PATCH", json: { phoneHidden } })
+    const connectGroup = (): Promise<unknown> =>
+        env.DB.prepare(
+            `INSERT INTO support_groups (business_id, chat_id, title, connected_at)
+             VALUES (?, -1001234567890, 'Osh Markaz savollar', 0)`,
+        )
+            .bind(shopId)
+            .run()
+
+    beforeEach(async () => {
+        client = testClient({ bots: { [SHOP_BOT_TOKEN]: SHOP_BOT } })
+        const shop = await createActiveShop(client)
+        shopId = shop.id
+        slug = shop.slug
+    })
+
+    it("needs the support group; then customers write instead of calling", async () => {
+        const refused = await hide(true)
+        expect(refused.status).toBe(422)
+        expect(await json(refused)).toMatchObject({ error: { code: "SUPPORT_GROUP_REQUIRED" } })
+        await connectGroup()
+        const saved = await json<{ phoneHidden: boolean; contactPhone?: string }>(await hide(true))
+        expect(saved).toMatchObject({ phoneHidden: true, contactPhone: SHOP_PHONE })
+
+        const seen = await json<{ paymentMethods: string[] }>(await customer()("/api/shop"))
+        expect(seen).not.toHaveProperty("callPhone")
+        expect(seen).not.toHaveProperty("contactPhone")
+        expect(seen).toMatchObject({ supportChat: true })
+        // A hidden number is still a number: the shop takes orders.
+        expect(seen.paymentMethods).not.toEqual([])
+        // The owner opening their own storefront still sees it.
+        expect(await json(await owner()("/api/shop"))).toMatchObject({ callPhone: SHOP_PHONE })
+    })
+
+    it("the customer's message has no number, the courier's card keeps it", async () => {
+        await connectGroup()
+        await hide(true)
+        const courierId = await hireCourier(client, { slug }, COURIER)
+        const product = await json<{ id: string }>(
+            await owner()("/api/owner/products", {
+                method: "POST",
+                json: { name: "Osh", price: 35_000, unit: "portion", category: "meals" },
+            }),
+        )
+        await customer()("/api/me")
+        await sharePhoneWithShops(CUSTOMER.id)
+        const order = await json<Order>(
+            await customer()("/api/orders", {
+                method: "POST",
+                json: {
+                    items: [{ productId: product.id, quantity: 1 }],
+                    address: "Navoiy 12",
+                    location: PIN,
+                },
+            }),
+        )
+        const first = client.telegram.sent.find(
+            (m) => m.chatId === CUSTOMER.id && m.html.includes("#1"),
+        )
+        expect(first?.html).not.toContain("📞 Do'kon")
+        expect(first?.html).toContain("Savolingiz bo'lsa")
+
+        await sendReceipt(customer(), order.id)
+        await owner()(`/api/owner/orders/${order.id}/payment`, {
+            method: "PATCH",
+            json: { action: "paid" },
+        })
+        await owner()(`/api/owner/orders/${order.id}/courier`, {
+            method: "PUT",
+            json: { courierId },
+        })
+        const card = client.telegram.sent.find(
+            (m) => m.chatId === COURIER.id && m.html.includes("#1"),
+        )
+        expect(card?.html).toContain("+998 90 123 45 01")
+        const home = await json<{ orders: { shopPhone?: string }[] }>(
+            await courier()("/api/courier/home"),
+        )
+        expect(home.orders[0]?.shopPhone).toBe(SHOP_PHONE)
+    })
+
+    it("without the group the number shows again by itself; off needs nothing", async () => {
+        await connectGroup()
+        await hide(true)
+        await env.DB.prepare("DELETE FROM support_groups WHERE business_id = ?").bind(shopId).run()
+        expect(await json(await customer()("/api/shop"))).toMatchObject({ callPhone: SHOP_PHONE })
+        // The choice is kept: a form sent again as it was still saves, and off always works.
+        expect((await hide(true)).status).toBe(200)
+        expect(await json(await hide(false))).toMatchObject({ phoneHidden: false })
+        expect((await hide("yes" as unknown as boolean)).status).toBe(400)
+    })
+})

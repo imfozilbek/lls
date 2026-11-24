@@ -321,6 +321,7 @@ function channelUseCases(deps: SourceLinkDeps): ChannelUseCases {
 type SupportUseCases = Pick<
     UseCases,
     | "getShopBySlug"
+    | "updateShop"
     | "connectSupportGroup"
     | "loseSupportGroup"
     | "disconnectSupportGroup"
@@ -340,13 +341,14 @@ function supportParts(
         orders: D1OrderRepository
         products: D1ProductRepository
         sourceLinks: D1SourceLinkRepository
+        districts: D1DistrictRepository
         clock: Clock
     },
 ): {
     repos: { supportGroups: D1SupportGroupRepository; supportThreads: D1SupportThreadRepository }
     useCases: SupportUseCases
 } {
-    const { businesses, customers, orders, products, sourceLinks, clock } = deps
+    const { businesses, customers, orders, products, sourceLinks, districts, clock } = deps
     const supportGroups = new D1SupportGroupRepository(db)
     const supportThreads = new D1SupportThreadRepository(db)
     const supportRefusals = new D1SupportRefusalRepository(db)
@@ -357,6 +359,8 @@ function supportParts(
         useCases: {
             // The storefront says whether the shop answers messages (`supportChat`).
             getShopBySlug: new GetShopBySlugUseCase(businesses, clock, customers, supportGroups),
+            // The number is kept from customers only by a shop whose group answers them.
+            updateShop: new UpdateShopUseCase(businesses, clock, districts, supportGroups),
             connectSupportGroup: new ConnectSupportGroupUseCase(groupDeps),
             loseSupportGroup: new LoseSupportGroupUseCase(groupDeps),
             disconnectSupportGroup: new DisconnectSupportGroupUseCase(groupDeps),
@@ -510,7 +514,7 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
     const tripDeps: TripDeps = { ...courierAccess, trips, routes, newId: newTripId }
     const cardBook = { businesses, cards, clock }
     const channel = channelParts(env.DB, businesses, products)
-    const supportRepos = { businesses, customers, orders, products, clock }
+    const supportRepos = { businesses, customers, orders, products, districts, clock }
     const support = supportParts(env.DB, { ...supportRepos, sourceLinks: channel.sourceLinks })
 
     return {
@@ -542,7 +546,6 @@ export function createServices(env: Bindings, deps: ServiceDeps): Services {
             resubmitShop: new ResubmitShopUseCase(businesses, clock),
             ...support.useCases,
             listMyShops: new ListMyShopsUseCase(businesses, clock),
-            updateShop: new UpdateShopUseCase(businesses, clock, districts),
             createProduct: new CreateProductUseCase(businesses, products),
             createProducts: new CreateProductsUseCase(businesses, products),
             updateProduct: new UpdateProductUseCase(businesses, products, clock),

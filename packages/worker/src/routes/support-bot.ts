@@ -135,7 +135,11 @@ export async function handleSupportMembership(
             now: services.clock.now(),
         })
         if (lost) {
-            await notifier.channelNews(business, fill(t.supportLost, { group: named(lost.title) }))
+            const news = [
+                fill(t.supportLost, { group: named(lost.title) }),
+                ...(business.phoneHidden ? [t.supportLostPhone] : []),
+            ]
+            await notifier.channelNews(business, news.join("\n"))
             await supportReachChanged(services, business)
         }
         return
