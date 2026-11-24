@@ -212,6 +212,10 @@ Pilot: **food, water and grocery at the same time.**
 - [x] «Do'konga xabar yozish» on the order and the product's sheet: the topic hears which
       (migration `0037`)
 - [ ] On production: ABC bolajon's group connected from a phone; a question and its answer
+- [x] Goal 22: a required «Ishga tayyor» step; «Qanday qilinadi?» per step; why a try failed in
+      the app with «Qayta urinish»; a topic's ❓/✅ icon, its name «Ism · telefon», its pinned
+      card (phone, orders, the last one); a new order as a line in the topic (migration `0038`)
+- [ ] On production: ❓/✅ seen by a helper, the card pinned, the name with the phone after an order
 
 ### M4s. The shop's own channel and ad links 🔨 (owner's decisions, November 2026; goal 20)
 - [x] «Telegram kanal»: connected from Telegram's own screen; someone else's or a demo's
