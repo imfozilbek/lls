@@ -75,7 +75,11 @@ function ShopMark({
     const logo = imageUrl(shop.logoKey)
     if (logo) {
         return (
-            <img src={logo} alt="" className={cn(size, "shrink-0 rounded-[0.8rem] object-cover")} />
+            <img
+                src={logo}
+                alt=""
+                className={cn(size, "pic-frame shrink-0 rounded-[0.8rem] object-cover")}
+            />
         )
     }
     return (
@@ -253,7 +257,7 @@ function ProductResult({
                         imageKey={product.imageKey}
                         category={product.category}
                         alt={product.name}
-                        className="aspect-[4/3] w-full rounded-tile"
+                        className="aspect-[4/3] w-full rounded-tile border border-tg-separator"
                     />
                     {/* Run out at the shop: found as it is, the shop shows it can't be added. */}
                     {product.soldOut ? (

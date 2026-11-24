@@ -244,7 +244,7 @@ function CoverPicker({
                     <img
                         src={cover}
                         alt=""
-                        className="aspect-[5/2] w-full animate-pop rounded-control bg-tg-bg object-cover"
+                        className="pic-frame aspect-[5/2] w-full animate-pop rounded-control bg-tg-bg object-cover"
                     />
                 ) : null}
                 <p className="px-1 text-sm text-tg-hint">{look.coverHint}</p>

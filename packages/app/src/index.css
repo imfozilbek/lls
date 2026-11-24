@@ -99,6 +99,12 @@
         @apply w-full rounded-control border border-transparent bg-tg-secondary px-4 py-3 text-[1rem] leading-[1.4rem] text-tg-text outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-tg-hint focus:border-brand focus:shadow-[0_0_0_3px_rgb(var(--brand-rgb,14_165_233)/0.18)];
     }
 
+    /* Every picture's thin frame (owner's decision, November 2026): a white photo never melts
+       into a white card or the gray page. */
+    .pic-frame {
+        border: 1px solid var(--ui-separator);
+    }
+
     /* A shade darker than the page: seen on the gray page and inside a white card alike. */
     .skeleton {
         background: linear-gradient(

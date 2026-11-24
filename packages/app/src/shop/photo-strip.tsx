@@ -52,15 +52,18 @@ function StripPhoto({
     alt,
     place,
     onOpen,
+    framed,
 }: {
     product: ProductDTO
     imageKey: string
     alt: string
     place: string
     onOpen: (() => void) | undefined
+    framed: boolean
 }): React.JSX.Element {
     const image = (
         <ProductImage
+            framed={framed}
             imageKey={imageKey}
             category={product.category}
             alt={alt}
@@ -122,6 +125,7 @@ export function PhotoStrip({
     dotLabel,
     ownsSwipe = false,
     onOpen,
+    framed = true,
     children,
 }: {
     product: ProductDTO
@@ -132,6 +136,8 @@ export function PhotoStrip({
     ownsSwipe?: boolean
     /** A press on a photo opens the product (the storefront's cards; never the sheet itself). */
     onOpen?: () => void
+    /** The photos' thin frame; off inside a card that frames them already. */
+    framed?: boolean
     /** Drawn over the photos (the «+», the age). */
     children?: React.ReactNode
 }): React.JSX.Element | null {
@@ -150,6 +156,7 @@ export function PhotoStrip({
                     alt={product.name}
                     place={cn("w-full", frame)}
                     onOpen={onOpen}
+                    framed={framed}
                 />
                 {children}
             </div>
@@ -190,6 +197,7 @@ export function PhotoStrip({
                             alt={`${product.name}: ${dotLabel(index + 1)}`}
                             place="h-full w-full shrink-0 snap-center"
                             onOpen={onOpen}
+                            framed={framed}
                         />
                     ))}
                 </div>

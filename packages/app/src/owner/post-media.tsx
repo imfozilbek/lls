@@ -52,7 +52,11 @@ export function CollagePreview({ media }: { media: PostMediaState }): React.JSX.
     if (layout === CollageLayout.SINGLE) {
         const photo = media.photos[0]
         return photo ? (
-            <img src={photo.url} alt="" className="mt-2 max-h-64 w-full bg-tg-bg object-cover" />
+            <img
+                src={photo.url}
+                alt=""
+                className="pic-frame mt-2 max-h-64 w-full bg-tg-bg object-cover"
+            />
         ) : null
     }
     const square = layout === CollageLayout.GRID

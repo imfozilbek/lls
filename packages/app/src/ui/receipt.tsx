@@ -98,7 +98,7 @@ function ReceiptViewer({ url, onClose }: { url: string; onClose(): void }): Reac
                     src={url}
                     alt={receipt.title}
                     // A screenshot is a tall phone screen: its room is kept while it loads.
-                    className="mx-auto aspect-[9/19] w-full max-w-md bg-tg-secondary object-contain"
+                    className="pic-frame mx-auto aspect-[9/19] w-full max-w-md bg-tg-secondary object-contain"
                 />
             </div>
         </div>,

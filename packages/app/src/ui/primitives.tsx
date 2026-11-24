@@ -28,6 +28,20 @@ const VARIANTS: Record<ButtonVariant, string> = {
     quietDanger: "bg-transparent text-tg-destructive active:bg-danger/10",
 }
 
+/**
+ * Compact pills (owner's decision, November 2026): a step inside a screen is 40 px, the others
+ * 38 px with 13 px words, like the storefront's header; a sheet's and the screen's own big step
+ * (`lg`) keeps 52 px for the thumb.
+ */
+function buttonSize(variant: ButtonVariant, size: "md" | "lg"): string {
+    if (size === "lg") {
+        return "h-[52px] gap-2 rounded-control px-5 text-lg"
+    }
+    return variant === "primary"
+        ? "h-10 gap-1.5 rounded-full px-4 text-sm"
+        : "h-[38px] gap-1.5 rounded-full px-3.5 text-xs"
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     variant?: ButtonVariant
     size?: "md" | "lg"
@@ -49,9 +63,9 @@ export function Button({
         <button
             type="button"
             className={cn(
-                "tap inline-flex items-center justify-center gap-2 rounded-control font-semibold",
+                "tap inline-flex items-center justify-center font-semibold",
                 "disabled:cursor-not-allowed disabled:active:scale-100",
-                size === "lg" ? "h-[52px] px-5 text-lg" : "h-11 px-4 text-base",
+                buttonSize(variant, size),
                 // Not available: a calm gray, readable; busy keeps its own color and a spinner.
                 disabled && !loading
                     ? "bg-tg-separator text-tg-hint shadow-none"

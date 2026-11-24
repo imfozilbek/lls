@@ -246,7 +246,7 @@ export function ProductTile({
         <article
             id={anchored ? productAnchor(product.id) : undefined}
             className={cn(
-                "flex animate-rise scroll-mt-28 flex-col overflow-hidden rounded-tile bg-tg-secondary transition-shadow duration-500",
+                "flex animate-rise scroll-mt-28 flex-col overflow-hidden rounded-tile border border-tg-separator bg-tg-secondary transition-shadow duration-500",
                 glowing && GLOW,
                 className,
             )}
@@ -259,6 +259,7 @@ export function ProductTile({
                         category={product.category}
                         alt={product.name}
                         name={product.name}
+                        framed={false}
                         className="aspect-square w-full"
                     />
                 </PhotoPress>
@@ -338,7 +339,7 @@ export function FeedCard({
         <article
             id={productAnchor(product.id)}
             className={cn(
-                "animate-rise scroll-mt-28 overflow-hidden rounded-tile bg-tg-secondary transition-shadow duration-500",
+                "animate-rise scroll-mt-28 overflow-hidden rounded-tile border border-tg-separator bg-tg-secondary transition-shadow duration-500",
                 glowing && GLOW,
             )}
             style={{ animationDelay: `${Math.min(index, 4) * 40}ms` }}
@@ -348,6 +349,7 @@ export function FeedCard({
                 frame="aspect-square"
                 dotLabel={(n): string => `${product.name}: ${fill(t.shop.photoOf, { n })}`}
                 onOpen={(): void => openDetail(product)}
+                framed={false}
             >
                 <CartControl product={product} look="photo" />
             </PhotoStrip>

@@ -58,6 +58,7 @@ function AnswerButtons({
             {no ? (
                 <Button
                     variant="danger"
+                    size="lg"
                     loading={busy === "no"}
                     disabled={busy !== null}
                     onClick={(): void => onAnswer("no")}

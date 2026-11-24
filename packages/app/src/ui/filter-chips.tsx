@@ -28,7 +28,7 @@ export function FilterChips<T extends string>({
         <div
             role="group"
             aria-label={label}
-            className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="-mx-4 flex gap-1.5 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
             {options.map((option) => {
                 const on = option.value === value
@@ -42,7 +42,7 @@ export function FilterChips<T extends string>({
                             onChange(option.value)
                         }}
                         className={cn(
-                            "tap flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand",
+                            "tap flex h-[38px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-xs font-semibold transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand",
                             on ? "bg-brand text-brand-ink" : "bg-tg-secondary text-tg-text",
                         )}
                     >
