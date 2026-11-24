@@ -171,7 +171,8 @@ function UnpaidBanner({
 /** One of the header's round buttons: a white circle over its word, a 44 px target or more. */
 const ACTION = "tap relative flex min-w-[3.5rem] shrink-0 flex-col items-center gap-1.5 text-center"
 const ACTION_FACE = "grid h-12 w-12 place-items-center rounded-full shadow-card"
-const ACTION_WORD = "whitespace-nowrap text-[0.75rem] font-semibold leading-tight"
+// 13 px: the smallest words the app writes (read in the sun, `visual.spec`).
+const ACTION_WORD = "whitespace-nowrap text-xs font-semibold leading-tight"
 
 function HeaderAction({
     icon,
