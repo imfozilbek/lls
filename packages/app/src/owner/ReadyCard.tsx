@@ -122,7 +122,7 @@ function TickButton({ label, onTick }: { label: string; onTick(): void }): React
                 haptic.success()
                 onTick()
             }}
-            className="tap shrink-0 rounded-full bg-tg-bg px-3 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+            className="tap min-h-11 shrink-0 rounded-full bg-tg-bg px-4 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
         >
             {label}
         </button>

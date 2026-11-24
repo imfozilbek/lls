@@ -155,7 +155,7 @@ function ProductSummary({
                 haptic.tap()
                 push({ name: "product", id: product.id })
             }}
-            className="tap flex min-w-0 flex-1 items-center gap-3 text-left"
+            className="tap flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left"
         >
             {product.imageKey ? (
                 <ProductImage

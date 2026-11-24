@@ -59,8 +59,8 @@ export function LinePhoto({
             imageKey={product?.imageKey}
             category={item.category}
             alt=""
-            iconSize={18}
-            className="h-10 w-10 rounded-control"
+            iconSize={20}
+            className="h-11 w-11 rounded-control"
         />
     )
     if (!product) {

@@ -13,7 +13,7 @@ import { Stepper } from "../ui/primitives.js"
 import { ProductImage } from "../ui/product-image.js"
 
 import { AgeBadge } from "./age-badge.js"
-import { PhotoStrip, photoKeys } from "./photo-strip.js"
+import { PhotoPress, PhotoStrip, photoKeys } from "./photo-strip.js"
 import { hasOptions } from "./product-options.js"
 
 import type { ProductDTO } from "@zumda/core"
@@ -253,13 +253,15 @@ export function ProductTile({
             style={{ animationDelay: `${Math.min(index, 8) * 30}ms` }}
         >
             <div className="relative">
-                <ProductImage
-                    imageKey={product.imageKey}
-                    category={product.category}
-                    alt={product.name}
-                    name={product.name}
-                    className="aspect-square w-full"
-                />
+                <PhotoPress onPress={(): void => openDetail(product)} className="w-full">
+                    <ProductImage
+                        imageKey={product.imageKey}
+                        category={product.category}
+                        alt={product.name}
+                        name={product.name}
+                        className="aspect-square w-full"
+                    />
+                </PhotoPress>
                 <CartControl product={product} look="photo" />
             </div>
             <button
@@ -291,24 +293,27 @@ export function ProductRow({ product }: { product: ProductDTO }): React.JSX.Elem
                 glowing && cn("rounded-tile", GLOW),
             )}
         >
-            <ProductImage
-                imageKey={product.imageKey}
-                category={product.category}
-                alt={product.name}
-                iconSize={22}
-                inset
-                className="h-16 w-16 shrink-0 rounded-control"
-            />
+            {/* One button, the photo and the words: the whole row opens the product. */}
             <button
                 type="button"
                 onClick={(): void => openDetail(product)}
-                className="tap min-w-0 flex-1 rounded-control text-left"
+                className="tap flex min-w-0 flex-1 items-center gap-3 rounded-control text-left"
             >
-                <h3 className="line-clamp-2 font-medium leading-snug">{product.name}</h3>
-                {product.description ? (
-                    <p className="line-clamp-1 text-sm text-tg-hint">{product.description}</p>
-                ) : null}
-                <PriceLine product={product} />
+                <ProductImage
+                    imageKey={product.imageKey}
+                    category={product.category}
+                    alt=""
+                    iconSize={22}
+                    inset
+                    className="h-16 w-16 shrink-0 rounded-control"
+                />
+                <span className="min-w-0 flex-1">
+                    <h3 className="line-clamp-2 font-medium leading-snug">{product.name}</h3>
+                    {product.description ? (
+                        <p className="line-clamp-1 text-sm text-tg-hint">{product.description}</p>
+                    ) : null}
+                    <PriceLine product={product} />
+                </span>
             </button>
             <CartControl product={product} look="row" />
         </li>
@@ -342,6 +347,7 @@ export function FeedCard({
                 product={product}
                 frame="aspect-square"
                 dotLabel={(n): string => `${product.name}: ${fill(t.shop.photoOf, { n })}`}
+                onOpen={(): void => openDetail(product)}
             >
                 <CartControl product={product} look="photo" />
             </PhotoStrip>

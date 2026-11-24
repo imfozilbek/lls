@@ -159,7 +159,9 @@ function useMapInstance(
                     center: [center.longitude, center.latitude],
                     zoom: zoom ?? DEFAULT_ZOOM,
                     interactive,
-                    attributionControl: { compact: true },
+                    // The credit always in sight: no «i» to press (a 24 px target with an
+                    // English name), and the licence is kept on every map.
+                    attributionControl: { compact: false },
                     dragRotate: false,
                     pitchWithRotate: false,
                     touchPitch: false,
