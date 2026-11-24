@@ -16,6 +16,8 @@ import type {
     OutgoingVideo,
     SentPhoto,
     TelegramGateway,
+    TopicChange,
+    TopicIcon,
     VideoLink,
 } from "../src/telegram/gateway.js"
 import type { LoginKeys } from "../src/telegram-login.js"
@@ -343,7 +345,13 @@ export class FakeTelegram implements TelegramGateway {
         options?: MessageOptions
     }[] = []
     /** Topics made in support groups, and the ones deleted. */
-    readonly topics: { token: string; chatId: number; name: string; threadId: number }[] = []
+    readonly topics: {
+        token: string
+        chatId: number
+        name: string
+        threadId: number
+        icon?: string
+    }[] = []
     readonly deletedTopics: { chatId: number; threadId: number }[] = []
     /** Topics deleted in Telegram: copying into them answers «message thread not found». */
     readonly goneTopics = new Set<number>()
@@ -368,13 +376,47 @@ export class FakeTelegram implements TelegramGateway {
         token: string,
         chatId: number,
         name: string,
+        iconCustomEmojiId?: string,
     ): Promise<{ threadId: number }> {
         if (this.failTopics) {
             throw new TelegramApiError("createForumTopic", "Bad Request: not enough rights")
         }
         const threadId = this.nextThreadId++
-        this.topics.push({ token, chatId, name, threadId })
+        this.topics.push({
+            token,
+            chatId,
+            name,
+            threadId,
+            ...(iconCustomEmojiId ? { icon: iconCustomEmojiId } : {}),
+        })
         return { threadId }
+    }
+    /** Topics renamed or given another icon, in order. */
+    readonly topicEdits: { chatId: number; threadId: number; change: TopicChange }[] = []
+    readonly reopened: { chatId: number; threadId: number }[] = []
+    readonly pins: { chatId: number; messageId: number }[] = []
+    /** Telegram's set of topic icons: what `getForumTopicIcons` gives. */
+    topicIcons: TopicIcon[] = [
+        { emoji: "❓", customEmojiId: "icon-waiting" },
+        { emoji: "✅", customEmojiId: "icon-answered" },
+        { emoji: "🔥", customEmojiId: "icon-fire" },
+    ]
+    async editForumTopic(
+        _token: string,
+        chatId: number,
+        threadId: number,
+        change: TopicChange,
+    ): Promise<void> {
+        this.topicEdits.push({ chatId, threadId, change })
+    }
+    async reopenForumTopic(_token: string, chatId: number, threadId: number): Promise<void> {
+        this.reopened.push({ chatId, threadId })
+    }
+    async getForumTopicIcons(_token: string): Promise<TopicIcon[]> {
+        return this.topicIcons
+    }
+    async pinMessage(_token: string, chatId: number, messageId: number): Promise<void> {
+        this.pins.push({ chatId, messageId })
     }
     async deleteForumTopic(_token: string, chatId: number, threadId: number): Promise<void> {
         this.deletedTopics.push({ chatId, threadId })

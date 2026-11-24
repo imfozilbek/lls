@@ -10,6 +10,7 @@ import { freeNetworkCouriersSql } from "../src/repositories/courier.repository.j
 import { countSql, nextSql } from "../src/repositories/guide.repository.js"
 import {
     ACTIVE_VERSION_SQL,
+    CUSTOMER_ORDER_COUNT_SQL,
     BY_STATUS,
     CASH_OPEN_FROM,
     CASH_OPEN_WHERE,
@@ -53,7 +54,10 @@ import {
     knownPostsSql,
 } from "../src/repositories/source-link.repository.js"
 import {
+    MARK_ANSWERED_SQL,
+    MARK_WAITING_SQL,
     SUPPORT_GROUP_SQL,
+    SUPPORT_REFUSAL_SQL,
     THREAD_BY_CUSTOMER_SQL,
     THREAD_BY_TOPIC_SQL,
 } from "../src/repositories/support.repository.js"
@@ -294,6 +298,22 @@ describe("query plans", () => {
             expectIndexed(await planOf(THREAD_BY_TOPIC_SQL, [-100, 7]), [
                 "idx_support_threads_thread (chat_id=? AND thread_id=?)",
             ])
+        })
+
+        it("a topic waits or is answered by its key; the refusal by the shop", async () => {
+            const waiting = await planOf(MARK_WAITING_SQL, [1, -100, 2002])
+            expect(waiting.join("\n")).toMatch(/SEARCH support_threads USING PRIMARY KEY/)
+            expectIndexed(await planOf(MARK_ANSWERED_SQL, [-100, 7]), [
+                "idx_support_threads_thread (chat_id=? AND thread_id=?)",
+            ])
+            expectIndexed(await planOf(SUPPORT_REFUSAL_SQL, ["biz-1"]), [
+                "sqlite_autoindex_support_refusals_1 (business_id=?)",
+            ])
+        })
+
+        it("a customer's orders at a shop are counted by their index, up to a cap", async () => {
+            const count = await planOf(CUSTOMER_ORDER_COUNT_SQL, ["c-1", "biz-1", 11])
+            expectIndexed(count, ["idx_orders_customer (customer_id=? AND business_id=?)"])
         })
     })
 

@@ -1,11 +1,20 @@
-import { Language, OpenSupportThreadUseCase, supportTopicName } from "@zumda/core"
+import { Language, OpenSupportThreadUseCase } from "@zumda/core"
 
 import { isRecipientProblem } from "../alerts.js"
-import { formatMoney } from "../telegram/format.js"
 import { TOPIC_GONE, TelegramApiError, escapeHtml } from "../telegram/gateway.js"
 import { Notifier } from "../telegram/notifier.js"
 import { fill, textsFor } from "../telegram/texts.js"
 import { hasContent } from "../telegram/updates.js"
+
+import {
+    groupTexts,
+    postTopicCard,
+    showTopicStatus,
+    statusIcons,
+    supportOrderLine,
+    topicCardText,
+    topicNameOf,
+} from "./support-topics.js"
 
 import type { Services } from "../services.js"
 import type { BotTexts } from "../telegram/texts.js"
@@ -14,7 +23,8 @@ import type {
     Business,
     SupportGroup,
     SupportAbout,
-    SupportOrderFacts,
+    SupportPerson,
+    SupportProfile,
     SupportRoute,
     SupportTopics,
     TopicOutcome,
@@ -49,11 +59,6 @@ function named(title: string): string {
     return `<b>«${escapeHtml(title)}»</b>`
 }
 
-/** A group's own words are Uzbek: the shop's people read them. */
-function groupTexts(business: Business): BotTexts {
-    return textsFor(Language.UZ, business.type)
-}
-
 /** The shop's support group through its own bot. */
 class TelegramSupportTopics implements SupportTopics {
     constructor(
@@ -63,10 +68,13 @@ class TelegramSupportTopics implements SupportTopics {
 
     async open(group: SupportGroup, name: string): Promise<TopicOutcome> {
         try {
+            // A new topic waits for the shop's answer from the start: its ❓ comes with it.
+            const icons = await statusIcons(this.services, this.token)
             const topic = await this.services.telegram.createForumTopic(
                 this.token,
                 group.chatId,
                 name,
+                icons.waiting,
             )
             return { kind: "opened", threadId: topic.threadId }
         } catch (error) {
@@ -106,6 +114,7 @@ export async function handleSupportMembership(
         const lost = await services.useCases.loseSupportGroup.execute({
             businessId: business.id,
             chatId: chat.id,
+            now: services.clock.now(),
         })
         if (lost) {
             await notifier.channelNews(business, fill(t.supportLost, { group: named(lost.title) }))
@@ -220,13 +229,33 @@ export async function handleGroupMessage(
             { threadId, replyTo: messageId, silent: true },
         )
     }
+    // Answered (or the customer cannot hear it): nobody waits in this topic any more, its ✅.
+    const answered = await services.useCases.markSupportAnswered.execute({
+        businessId: business.id,
+        chatId: message.chat.id,
+        threadId,
+    })
+    if (answered) {
+        await showTopicStatus(services, token, { chatId: message.chat.id, threadId }, false)
+    }
 }
 
 export function isPrivate(message: IncomingMessage): boolean {
     return message.chat.type === undefined || message.chat.type === PRIVATE
 }
 
-/** The customer's topic, made with its first card when new. */
+function personOf(from: NonNullable<IncomingMessage["from"]>): SupportPerson {
+    return {
+        firstName: from.first_name,
+        ...(from.last_name ? { lastName: from.last_name } : {}),
+        ...(from.username ? { username: from.username } : {}),
+    }
+}
+
+/**
+ * The customer's topic: made with its pinned card and its name «Ism · telefon» when new; an
+ * answered one shows ❓ again (and opens, if the shop's people closed it).
+ */
 async function routeOf(
     services: Services,
     business: Business,
@@ -238,7 +267,9 @@ async function routeOf(
     if (!from) {
         return { kind: "none" }
     }
-    const g = groupTexts(business)
+    const person = personOf(from)
+    // Read only for a new topic: its name and its card.
+    let profile: SupportProfile | undefined
     const route = await new OpenSupportThreadUseCase({
         supportGroups: services.supportGroups,
         supportThreads: services.supportThreads,
@@ -246,10 +277,10 @@ async function routeOf(
     }).execute({
         businessId: business.id,
         customerTelegramId: from.id,
-        name: supportTopicName(
-            { firstName: from.first_name, ...(from.last_name ? { lastName: from.last_name } : {}) },
-            g.supportTopicName,
-        ),
+        nameOf: async () => {
+            profile = await services.useCases.supportContext.profile(business.id, from.id)
+            return topicNameOf(business, person, profile)
+        },
         ...(staleThreadId === undefined ? {} : { staleThreadId }),
         now: services.clock.now(),
     })
@@ -260,43 +291,19 @@ async function routeOf(
             fill(t.supportLost, { group: named(route.group.title) }),
         )
     }
-    if (route.kind === "thread" && route.created) {
-        await topicCard(services, business, token, { route, message })
+    if (route.kind === "thread" && route.created && profile) {
+        const topic = {
+            chatId: route.group.chatId,
+            threadId: route.threadId,
+            customerTelegramId: from.id,
+        }
+        await postTopicCard(services, token, topic, topicCardText(business, person, profile))
+    }
+    if (route.kind === "thread" && route.nowWaiting) {
+        const topic = { chatId: route.group.chatId, threadId: route.threadId }
+        await showTopicStatus(services, token, topic, true)
     }
     return route
-}
-
-function orderLine(template: string, order: SupportOrderFacts, t: BotTexts): string {
-    return fill(template, {
-        n: order.number,
-        sum: formatMoney(order.total, Language.UZ),
-        status: t.statusNames[order.status],
-    })
-}
-
-/** The first message of a new topic: who the customer is and their last order here. */
-async function topicCard(
-    services: Services,
-    business: Business,
-    token: string,
-    input: { route: Extract<SupportRoute, { kind: "thread" }>; message: IncomingMessage },
-): Promise<void> {
-    const from = input.message.from
-    if (!from) {
-        return
-    }
-    const g = groupTexts(business)
-    const last = await services.useCases.supportContext.lastOrder(business.id, from.id)
-    const name = [from.first_name, from.last_name].filter(Boolean).join(" ") || g.supportTopicName
-    const lines = [
-        `👤 <b>${escapeHtml(name)}</b>${from.username ? ` · @${escapeHtml(from.username)}` : ""}`,
-        last ? orderLine(g.supportLastOrder, last, g) : g.supportNoOrders,
-        g.supportReplyHint,
-    ]
-    await services.telegram.sendMessage(token, input.route.group.chatId, lines.join("\n"), {
-        threadId: input.route.threadId,
-        silent: true,
-    })
 }
 
 function topicGone(error: unknown): boolean {
@@ -372,7 +379,7 @@ function aboutWords(
 ): { topic?: string; ask: string } {
     if (about?.kind === "order") {
         return {
-            topic: orderLine(g.supportAboutOrder, about.order, g),
+            topic: supportOrderLine(g.supportAboutOrder, about.order, g),
             ask: fill(t.supportAskOrder, { n: about.order.number }),
         }
     }

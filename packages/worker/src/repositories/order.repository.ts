@@ -660,6 +660,10 @@ export function orderSaveStatement(
     }
 }
 
+/** A customer's orders at a shop, not cancelled, counted up to a cap: never the whole history. */
+export const CUSTOMER_ORDER_COUNT_SQL = `SELECT COUNT(*) AS n FROM (SELECT 1 FROM orders
+    WHERE customer_id = ? AND business_id = ? AND status != 'cancelled' LIMIT ?)`
+
 export class D1OrderRepository implements OrderRepository {
     constructor(private readonly db: D1Database) {}
 
@@ -959,6 +963,14 @@ export class D1OrderRepository implements OrderRepository {
             [customerId, businessId],
             page,
         )
+    }
+
+    async countByCustomer(customerId: string, businessId: string, atMost: number): Promise<number> {
+        const row = await this.db
+            .prepare(CUSTOMER_ORDER_COUNT_SQL)
+            .bind(customerId, businessId, atMost)
+            .first<{ n: number }>()
+        return row?.n ?? 0
     }
 
     /** Counts by creation time; money of delivered orders by delivery time. Two scans. */

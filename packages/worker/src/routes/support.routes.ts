@@ -9,11 +9,16 @@ import { TelegramApiError } from "../telegram/gateway.js"
 import { registerShopWebhook } from "./channel.routes.js"
 
 import type { AppEnv } from "../env.js"
-import type { SupportGroup } from "@zumda/core"
+import type { SupportGroup, SupportRefusal } from "@zumda/core"
 
 /** What the owner sees of the support group: its name and since when. */
 function toSupportGroupDTO(group: SupportGroup): { title: string; connectedAt: string } {
     return { title: group.title, connectedAt: group.connectedAt.toISOString() }
+}
+
+/** Why the last try failed, for the app to say (and since when: newer than the owner's press). */
+function toRefusalDTO(refusal: SupportRefusal): { reason: string; title: string; at: string } {
+    return { reason: refusal.reason, title: refusal.title, at: refusal.at.toISOString() }
 }
 
 /**
@@ -24,11 +29,14 @@ export const supportRoutes = new Hono<AppEnv>()
     .use(requireOwner)
 
     .get("/support", async (c) => {
-        const group = await c.get("services").useCases.getSupportGroup.execute({
+        const { group, refusal } = await c.get("services").useCases.getSupportGroup.execute({
             actorTelegramId: c.get("auth").user.id,
             businessId: shopOf(c).id,
         })
-        return c.json({ group: group ? toSupportGroupDTO(group) : null })
+        return c.json({
+            group: group ? toSupportGroupDTO(group) : null,
+            refusal: refusal ? toRefusalDTO(refusal) : null,
+        })
     })
 
     /**

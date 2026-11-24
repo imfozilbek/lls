@@ -84,7 +84,9 @@ import {
     FindSupportCustomerUseCase,
     GetSupportGroupUseCase,
     LoseSupportGroupUseCase,
+    MarkSupportAnsweredUseCase,
     SupportContextUseCase,
+    SupportTopicOfCustomerUseCase,
     LoseShopChannelUseCase,
     DisconnectShopChannelUseCase,
     GetShopChannelUseCase,
@@ -114,6 +116,7 @@ import {
 } from "./repositories/source-link.repository.js"
 import {
     D1SupportGroupRepository,
+    D1SupportRefusalRepository,
     D1SupportThreadRepository,
 } from "./repositories/support.repository.js"
 import { D1TripRepository } from "./repositories/trip.repository.js"
@@ -237,6 +240,8 @@ export interface UseCases {
     disconnectSupportGroup: DisconnectSupportGroupUseCase
     getSupportGroup: GetSupportGroupUseCase
     findSupportCustomer: FindSupportCustomerUseCase
+    markSupportAnswered: MarkSupportAnsweredUseCase
+    supportTopicOfCustomer: SupportTopicOfCustomerUseCase
     supportContext: SupportContextUseCase
 }
 
@@ -321,6 +326,8 @@ type SupportUseCases = Pick<
     | "disconnectSupportGroup"
     | "getSupportGroup"
     | "findSupportCustomer"
+    | "markSupportAnswered"
+    | "supportTopicOfCustomer"
     | "supportContext"
 >
 
@@ -341,19 +348,21 @@ function supportParts(
     const { businesses, customers, orders, products, clock } = deps
     const supportGroups = new D1SupportGroupRepository(db)
     const supportThreads = new D1SupportThreadRepository(db)
+    const supportRefusals = new D1SupportRefusalRepository(db)
+    const groupDeps = { businesses, supportGroups, supportRefusals }
+    const threadDeps = { supportGroups, supportThreads }
     return {
         repos: { supportGroups, supportThreads },
         useCases: {
             // The storefront says whether the shop answers messages (`supportChat`).
             getShopBySlug: new GetShopBySlugUseCase(businesses, clock, customers, supportGroups),
-            connectSupportGroup: new ConnectSupportGroupUseCase({ businesses, supportGroups }),
-            loseSupportGroup: new LoseSupportGroupUseCase(supportGroups),
-            disconnectSupportGroup: new DisconnectSupportGroupUseCase({
-                businesses,
-                supportGroups,
-            }),
-            getSupportGroup: new GetSupportGroupUseCase({ businesses, supportGroups }),
-            findSupportCustomer: new FindSupportCustomerUseCase({ supportGroups, supportThreads }),
+            connectSupportGroup: new ConnectSupportGroupUseCase(groupDeps),
+            loseSupportGroup: new LoseSupportGroupUseCase(groupDeps),
+            disconnectSupportGroup: new DisconnectSupportGroupUseCase(groupDeps),
+            getSupportGroup: new GetSupportGroupUseCase(groupDeps),
+            findSupportCustomer: new FindSupportCustomerUseCase(threadDeps),
+            markSupportAnswered: new MarkSupportAnsweredUseCase(threadDeps),
+            supportTopicOfCustomer: new SupportTopicOfCustomerUseCase(threadDeps),
             supportContext: new SupportContextUseCase({ customers, orders, products }),
         },
     }

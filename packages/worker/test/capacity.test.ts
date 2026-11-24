@@ -442,14 +442,16 @@ describe("rows read per request, on six months of history", () => {
             counter.take()
             expect((await update(fromCustomer)).status).toBe(200)
             const first = counter.take()
-            // Measured 7 read, 2 written: the shop, the group, the topic (written once), the
-            // card's last order of a customer with six months of history (one row of a range).
-            expect(first.read).toBeLessThanOrEqual(10)
+            // Measured 20 read, 3 written: the shop, the group, the topic (written once with its
+            // name), and the pinned card of a customer with six months of history: the phone
+            // given to this shop, their orders counted up to 11 (never the history), the last one.
+            expect(first.read).toBeLessThanOrEqual(25)
             expect(first.written).toBeLessThanOrEqual(3)
             expect((await update({ ...fromCustomer, message_id: 51 })).status).toBe(200)
             const next = counter.take()
-            // Measured 3: the shop, the group, the topic.
-            expect(next.read).toBeLessThanOrEqual(4)
+            // Measured 4: the shop, the group, the topic, and the one conditional UPDATE that
+            // finds it waiting already (nothing written: its ❓ stays).
+            expect(next.read).toBeLessThanOrEqual(5)
             expect(next.written).toBe(0)
             const threadId = client.telegram.topics[0]?.threadId
             const answer = await update({
@@ -463,9 +465,10 @@ describe("rows read per request, on six months of history", () => {
             expect(answer.status).toBe(200)
             expect(client.telegram.copies.at(-1)?.toChatId).toBe(CUSTOMER.id)
             const reply = counter.take()
-            // Measured 3: the shop, the group, whose topic it is.
-            expect(reply.read).toBeLessThanOrEqual(4)
-            expect(reply.written).toBe(0)
+            // Measured 5 read, 1 written: the shop, the group, whose topic it is, and the topic
+            // answered (its ✅): written once a turn of the talk, never per message.
+            expect(reply.read).toBeLessThanOrEqual(6)
+            expect(reply.written).toBe(1)
             // The storefront asks whether the shop answers messages: one row more (measured 3).
             await customer("/api/shop")
             expect(counter.take().read).toBeLessThanOrEqual(4)

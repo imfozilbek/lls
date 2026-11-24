@@ -255,8 +255,26 @@ export interface TelegramGateway {
         toChatId: number,
         options?: MessageOptions,
     ): Promise<{ messageId: number }>
-    /** A new topic in a group with topics: its id. */
-    createForumTopic(token: string, chatId: number, name: string): Promise<{ threadId: number }>
+    /** A new topic in a group with topics, with a custom emoji icon when given: its id. */
+    createForumTopic(
+        token: string,
+        chatId: number,
+        name: string,
+        iconCustomEmojiId?: string,
+    ): Promise<{ threadId: number }>
+    /** A topic's new name or icon; the same again is fine. */
+    editForumTopic(
+        token: string,
+        chatId: number,
+        threadId: number,
+        change: TopicChange,
+    ): Promise<void>
+    /** A topic closed by people opens again; one open already is fine. */
+    reopenForumTopic(token: string, chatId: number, threadId: number): Promise<void>
+    /** The custom emoji any topic may have as its icon (Telegram's own set). */
+    getForumTopicIcons(token: string): Promise<TopicIcon[]>
+    /** Pins a message (a topic's card) without a sound; pinned already is fine. */
+    pinMessage(token: string, chatId: number, messageId: number): Promise<void>
     /** Deletes a topic and its messages; gone already is fine. */
     deleteForumTopic(token: string, chatId: number, threadId: number): Promise<void>
     /** People in a chat: a channel's subscribers. */
@@ -282,6 +300,17 @@ export interface TelegramGateway {
     setProfilePhoto(token: string, jpeg: Uint8Array): Promise<void>
     /** The empty-chat description (≤512) and the profile line (≤120). */
     setDescriptions(token: string, texts: BotDescriptions): Promise<void>
+}
+
+export interface TopicChange {
+    name?: string
+    iconCustomEmojiId?: string
+}
+
+/** One icon of Telegram's set for topics: the emoji it shows, and its id to set it. */
+export interface TopicIcon {
+    emoji: string
+    customEmojiId: string
 }
 
 export interface BotCommand {
@@ -333,6 +362,9 @@ const NOTHING_TO_CLEAR = /message to edit not found|message is not modified/i
 
 /** A post already deleted by someone: removed all the same. */
 const ALREADY_DELETED = /message to delete not found/i
+
+/** The topic, or the pin, is as asked already. */
+const NOT_MODIFIED = /TOPIC_NOT_MODIFIED|not modified|CHAT_NOT_MODIFIED/i
 
 /** A topic deleted in Telegram (with its messages): nothing more to delete, or to write in. */
 export const TOPIC_GONE = /message thread not found|TOPIC_ID_INVALID|topic_deleted|TOPIC_DELETED/i
@@ -717,12 +749,72 @@ export class HttpTelegramGateway implements TelegramGateway {
         token: string,
         chatId: number,
         name: string,
+        iconCustomEmojiId?: string,
     ): Promise<{ threadId: number }> {
         const topic = await this.call<{ message_thread_id: number }>(token, "createForumTopic", {
             chat_id: chatId,
             name,
+            ...(iconCustomEmojiId ? { icon_custom_emoji_id: iconCustomEmojiId } : {}),
         })
         return { threadId: topic.message_thread_id }
+    }
+
+    async editForumTopic(
+        token: string,
+        chatId: number,
+        threadId: number,
+        change: TopicChange,
+    ): Promise<void> {
+        await this.unlessUnchanged(() =>
+            this.call(token, "editForumTopic", {
+                chat_id: chatId,
+                message_thread_id: threadId,
+                ...(change.name === undefined ? {} : { name: change.name }),
+                ...(change.iconCustomEmojiId === undefined
+                    ? {}
+                    : { icon_custom_emoji_id: change.iconCustomEmojiId }),
+            }),
+        )
+    }
+
+    async reopenForumTopic(token: string, chatId: number, threadId: number): Promise<void> {
+        await this.unlessUnchanged(() =>
+            this.call(token, "reopenForumTopic", { chat_id: chatId, message_thread_id: threadId }),
+        )
+    }
+
+    async getForumTopicIcons(token: string): Promise<TopicIcon[]> {
+        const stickers = await this.call<{ emoji?: string; custom_emoji_id?: string }[]>(
+            token,
+            "getForumTopicIconStickers",
+            {},
+        )
+        return stickers.flatMap((sticker) =>
+            sticker.emoji && sticker.custom_emoji_id
+                ? [{ emoji: sticker.emoji, customEmojiId: sticker.custom_emoji_id }]
+                : [],
+        )
+    }
+
+    async pinMessage(token: string, chatId: number, messageId: number): Promise<void> {
+        await this.unlessUnchanged(() =>
+            this.call(token, "pinChatMessage", {
+                chat_id: chatId,
+                message_id: messageId,
+                disable_notification: true,
+            }),
+        )
+    }
+
+    /** Telegram says the topic or the pin is as asked already: nothing was wrong. */
+    private async unlessUnchanged(work: () => Promise<unknown>): Promise<void> {
+        try {
+            await work()
+        } catch (error) {
+            if (!(error instanceof TelegramApiError) || !NOT_MODIFIED.test(error.description)) {
+                throw error
+            }
+        }
     }
 
     async deleteForumTopic(token: string, chatId: number, threadId: number): Promise<void> {
