@@ -28,6 +28,7 @@ import {
     ScooterIcon,
 } from "../ui/icons.js"
 import { Button } from "../ui/primitives.js"
+import { ChatIcon } from "../ui/write-shop.js"
 
 import { useOwner } from "./store.js"
 import { saveTick, useTick } from "./ticks.js"
@@ -128,6 +129,36 @@ function TickButton({ label, onTick }: { label: string; onTick(): void }): React
     )
 }
 
+/** Owner's decision, November 2026: until then customers see nothing about delivery. */
+function deliveryStep(t: Dictionary["owner"]["ready"], priced: boolean | null): ReadyItem[] {
+    return priced === null
+        ? []
+        : [
+              {
+                  id: "delivery",
+                  icon: <ScooterIcon size={20} />,
+                  title: t.deliveryPrice,
+                  hint: t.deliveryPriceHint,
+                  done: priced,
+              },
+          ]
+}
+
+/** Owner's decision, November 2026: customers ask the shop only through its group. */
+function supportStep(t: Dictionary["owner"]["ready"], connected: boolean | null): ReadyItem[] {
+    return connected === null
+        ? []
+        : [
+              {
+                  id: "support",
+                  icon: <ChatIcon size={20} />,
+                  title: t.support,
+                  hint: t.supportHint,
+                  done: connected,
+              },
+          ]
+}
+
 function itemsOf(
     t: Dictionary["owner"]["ready"],
     state: {
@@ -143,6 +174,8 @@ function itemsOf(
         delivers: boolean
         /** Someone accepted the invite and waits for the owner's tap. */
         waiting: string | null
+        /** The support group is connected; `null`: a demo shop, which has none. */
+        supportChat: boolean | null
     },
 ): ReadyItem[] {
     return [
@@ -174,18 +207,7 @@ function itemsOf(
             hint: t.locationHint,
             done: state.located,
         },
-        // Owner's decision, November 2026: until then customers see nothing about delivery.
-        ...(state.priced === null
-            ? []
-            : [
-                  {
-                      id: "delivery" as const,
-                      icon: <ScooterIcon size={20} />,
-                      title: t.deliveryPrice,
-                      hint: t.deliveryPriceHint,
-                      done: state.priced,
-                  },
-              ]),
+        ...deliveryStep(t, state.priced),
         {
             id: "hours",
             icon: <ClockIcon size={20} />,
@@ -215,6 +237,7 @@ function itemsOf(
             hint: state.waiting ? fill(t.courierWaiting, { name: state.waiting }) : t.courierHint,
             done: state.delivers,
         },
+        ...supportStep(t, state.supportChat),
     ]
 }
 
@@ -242,6 +265,7 @@ function readyState(
         hasPhone: phoneReady(shop),
         delivers: known.ticks.selfDelivery || known.couriers.some((courier) => courier.isActive),
         waiting: known.couriers.find((courier) => courier.status === "pending")?.name ?? null,
+        supportChat: shop.demo ? null : shop.supportChat,
     }
 }
 

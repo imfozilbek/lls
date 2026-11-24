@@ -2,13 +2,18 @@ import { SupportGroup } from "../../../domain/value-objects/support-group.js"
 import { requireBusiness, requireOwnedBusiness } from "../shared.js"
 
 import type { OrderStatus } from "../../../domain/enums/order-status.js"
-import type { SupportThread } from "../../../domain/value-objects/support-group.js"
+import type {
+    SupportRefusal,
+    SupportRefusalReason,
+    SupportThread,
+} from "../../../domain/value-objects/support-group.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { CustomerRepository } from "../../ports/customer-repository.js"
 import type { OrderRepository } from "../../ports/order-repository.js"
 import type { ProductRepository } from "../../ports/product-repository.js"
 import type {
     SupportGroupRepository,
+    SupportRefusalRepository,
     SupportThreadRepository,
     SupportTopics,
 } from "../../ports/support.js"
@@ -16,6 +21,8 @@ import type {
 export interface SupportGroupDeps {
     businesses: BusinessRepository
     supportGroups: SupportGroupRepository
+    /** Why the last connecting failed, or the group was lost: the app says it. */
+    supportRefusals: SupportRefusalRepository
 }
 
 /** Telegram says the shop's bot became an admin of a group someone picked (`?startgroup`). */
@@ -32,13 +39,13 @@ export interface BotMadeGroupAdmin {
     now: Date
 }
 
-export type SupportRefusal = "notOwner" | "demo" | "notForum" | "noTopics"
+export type SupportConnectRefusal = Exclude<SupportRefusalReason, "lost">
 
 export type SupportConnectOutcome =
     | { kind: "connected"; group: SupportGroup; replaced?: SupportGroup }
     | { kind: "unchanged"; group: SupportGroup }
     | { kind: "lost"; group: SupportGroup }
-    | { kind: "refused"; why: SupportRefusal }
+    | { kind: "refused"; why: SupportConnectRefusal }
 
 /**
  * The shop's support group, connected from Telegram's own screen (`?startgroup`). One per shop:
@@ -53,10 +60,18 @@ export class ConnectSupportGroupUseCase {
         const business = await requireBusiness(this.deps.businesses, input.businessId)
         const before = await this.deps.supportGroups.find(business.id)
         const usable = input.isForum && input.canManageTopics
+        const refuse = (reason: SupportRefusalReason, title: string): Promise<void> =>
+            this.deps.supportRefusals.save({
+                businessId: business.id,
+                reason,
+                title,
+                at: input.now,
+            })
         if (before?.isSameChat(input.chatId)) {
             // The connected group again: a co-admin changed the bot's rights, or its title.
             if (!usable) {
                 await this.deps.supportGroups.remove(business.id)
+                await refuse("lost", before.title)
                 return { kind: "lost", group: before }
             }
             const kept = before.renamed(input.title)
@@ -68,6 +83,7 @@ export class ConnectSupportGroupUseCase {
             demo: business.isDemo(),
         })
         if (refusal) {
+            await refuse(refusal, input.title)
             return { kind: "refused", why: refusal }
         }
         const group = SupportGroup.connect({
@@ -77,6 +93,7 @@ export class ConnectSupportGroupUseCase {
             connectedAt: input.now,
         })
         await this.deps.supportGroups.save(group)
+        await this.deps.supportRefusals.clear(business.id)
         return { kind: "connected", group, ...(before ? { replaced: before } : {}) }
     }
 }
@@ -84,7 +101,7 @@ export class ConnectSupportGroupUseCase {
 function refusalOf(
     input: BotMadeGroupAdmin,
     shop: { owner: boolean; demo: boolean },
-): SupportRefusal | null {
+): SupportConnectRefusal | null {
     if (!shop.owner) {
         return "notOwner"
     }
@@ -102,14 +119,24 @@ function refusalOf(
  * nothing: returns null.
  */
 export class LoseSupportGroupUseCase {
-    constructor(private readonly supportGroups: SupportGroupRepository) {}
+    constructor(private readonly deps: Omit<SupportGroupDeps, "businesses">) {}
 
-    async execute(input: { businessId: string; chatId: number }): Promise<SupportGroup | null> {
-        const group = await this.supportGroups.find(input.businessId)
+    async execute(input: {
+        businessId: string
+        chatId: number
+        now: Date
+    }): Promise<SupportGroup | null> {
+        const group = await this.deps.supportGroups.find(input.businessId)
         if (!group?.isSameChat(input.chatId)) {
             return null
         }
-        await this.supportGroups.remove(input.businessId)
+        await this.deps.supportGroups.remove(input.businessId)
+        await this.deps.supportRefusals.save({
+            businessId: input.businessId,
+            reason: "lost",
+            title: group.title,
+            at: input.now,
+        })
         return group
     }
 }
@@ -131,15 +158,24 @@ export class DisconnectSupportGroupUseCase {
     }
 }
 
+/** The owner's view: the group connected now, and why the last try failed (if it did). */
+export interface SupportGroupState {
+    group: SupportGroup | null
+    refusal: SupportRefusal | null
+}
+
 export class GetSupportGroupUseCase {
     constructor(private readonly deps: SupportGroupDeps) {}
 
     async execute(input: {
         actorTelegramId: number
         businessId: string
-    }): Promise<SupportGroup | null> {
+    }): Promise<SupportGroupState> {
         await requireOwnedBusiness(this.deps.businesses, input.businessId, input.actorTelegramId)
-        return this.deps.supportGroups.find(input.businessId)
+        const group = await this.deps.supportGroups.find(input.businessId)
+        // A group connected now: an older refusal says nothing any more.
+        const refusal = group ? null : await this.deps.supportRefusals.find(input.businessId)
+        return { group, refusal }
     }
 }
 
@@ -152,12 +188,19 @@ export interface SupportThreadDeps {
 /**
  * Where a customer's message goes: `none` (the shop has no support group: the bot answers as
  * before), `lost` (the bot may not make topics there any more: the group is forgotten), or the
- * customer's topic, made for them on their first message (`created`).
+ * customer's topic, made for them on their first message (`created`); `nowWaiting`: an answered
+ * topic waits again (its ❓ to show).
  */
 export type SupportRoute =
     | { kind: "none" }
     | { kind: "lost"; group: SupportGroup }
-    | { kind: "thread"; group: SupportGroup; threadId: number; created: boolean }
+    | {
+          kind: "thread"
+          group: SupportGroup
+          threadId: number
+          created: boolean
+          nowWaiting: boolean
+      }
 
 /** A customer wrote to the shop's bot: their own topic in the shop's support group. */
 export class OpenSupportThreadUseCase {
@@ -166,8 +209,11 @@ export class OpenSupportThreadUseCase {
     async execute(input: {
         businessId: string
         customerTelegramId: number
-        /** The topic's name: what the customer is called in Telegram. */
-        name: string
+        /**
+         * The topic's name («Ism · telefon»): asked for only when a topic is made, since the
+         * phone given to this shop costs reads every other message would not need.
+         */
+        nameOf: () => Promise<string>
         /** Their topic was deleted in Telegram: a new one takes its place. */
         staleThreadId?: number
         now: Date
@@ -181,9 +227,15 @@ export class OpenSupportThreadUseCase {
             input.customerTelegramId,
         )
         if (known && known.threadId !== input.staleThreadId) {
-            return { kind: "thread", group, threadId: known.threadId, created: false }
+            const nowWaiting = await this.deps.supportThreads.markWaiting(
+                group.chatId,
+                input.customerTelegramId,
+                input.now,
+            )
+            return { kind: "thread", group, threadId: known.threadId, created: false, nowWaiting }
         }
-        const opened = await this.deps.topics.open(group, input.name)
+        const name = await input.nameOf()
+        const opened = await this.deps.topics.open(group, name)
         if (opened.kind === "noRights") {
             await this.deps.supportGroups.remove(group.businessId)
             return { kind: "lost", group }
@@ -194,13 +246,22 @@ export class OpenSupportThreadUseCase {
             customerTelegramId: input.customerTelegramId,
             threadId: opened.threadId,
             createdAt: input.now,
+            waitingSince: input.now,
+            topicName: name,
         }
+        const made = {
+            kind: "thread",
+            group,
+            threadId: opened.threadId,
+            created: true,
+            nowWaiting: false,
+        } as const
         if (known) {
             await this.deps.supportThreads.replace(thread)
-            return { kind: "thread", group, threadId: opened.threadId, created: true }
+            return made
         }
         if (await this.deps.supportThreads.insert(thread)) {
-            return { kind: "thread", group, threadId: opened.threadId, created: true }
+            return made
         }
         // Two messages at once made two topics: the first one written wins.
         await this.deps.topics.discard(group, opened.threadId)
@@ -209,7 +270,7 @@ export class OpenSupportThreadUseCase {
             input.customerTelegramId,
         )
         return first
-            ? { kind: "thread", group, threadId: first.threadId, created: false }
+            ? { kind: "thread", group, threadId: first.threadId, created: false, nowWaiting: false }
             : { kind: "none" }
     }
 }
@@ -237,6 +298,53 @@ export class FindSupportCustomerUseCase {
     }
 }
 
+/**
+ * Someone of the shop answered in a customer's topic: true only when the topic was waiting (its
+ * ✅ to show); a second answer, or an answer in a topic nobody waits in, changes nothing.
+ */
+export class MarkSupportAnsweredUseCase {
+    constructor(
+        private readonly deps: Pick<SupportThreadDeps, "supportGroups" | "supportThreads">,
+    ) {}
+
+    async execute(input: {
+        businessId: string
+        chatId: number
+        threadId: number
+    }): Promise<boolean> {
+        const group = await this.deps.supportGroups.find(input.businessId)
+        if (!group?.isSameChat(input.chatId)) {
+            return false
+        }
+        return this.deps.supportThreads.markAnswered(input.chatId, input.threadId)
+    }
+}
+
+/** The customer's topic in the shop's support group of now, if they have one. */
+export class SupportTopicOfCustomerUseCase {
+    constructor(
+        private readonly deps: Pick<SupportThreadDeps, "supportGroups" | "supportThreads">,
+    ) {}
+
+    async execute(input: {
+        businessId: string
+        customerTelegramId: number
+    }): Promise<{ group: SupportGroup; thread: SupportThread } | null> {
+        const group = await this.deps.supportGroups.find(input.businessId)
+        if (!group) {
+            return null
+        }
+        const thread = await this.deps.supportThreads.findByCustomer(
+            group.chatId,
+            input.customerTelegramId,
+        )
+        return thread ? { group, thread } : null
+    }
+}
+
+/** «⭐ 10+ ta buyurtma»: the card counts a customer's orders up to this, never the whole history. */
+export const SUPPORT_ORDERS_SHOWN = 10
+
 /** One of the customer's orders at this shop, as the shop's people see it in the topic. */
 export interface SupportOrderFacts {
     orderId: string
@@ -256,6 +364,15 @@ export interface SupportContextDeps {
     products: ProductRepository
 }
 
+/** What the topic's pinned card says about the customer at this shop. */
+export interface SupportProfile {
+    /** The phone they gave THIS shop (E.164); none when they gave it only to another shop. */
+    phone?: string
+    /** Their orders here that were not cancelled, up to `SUPPORT_ORDERS_SHOWN` + 1 («10+»). */
+    orders: number
+    lastOrder: SupportOrderFacts | null
+}
+
 /**
  * What the shop's people see about a customer: their last order at this shop, and what
  * «Do'konga yozish» was pressed on. Someone else's order, or another shop's product, is never
@@ -264,28 +381,35 @@ export interface SupportContextDeps {
 export class SupportContextUseCase {
     constructor(private readonly deps: SupportContextDeps) {}
 
-    /** The customer's newest order at this shop, if any. */
-    async lastOrder(
-        businessId: string,
-        customerTelegramId: number,
-    ): Promise<SupportOrderFacts | null> {
+    /**
+     * The customer at this shop: the phone they gave it, how many orders (counted up to 11, never
+     * the history), the newest one.
+     */
+    async profile(businessId: string, customerTelegramId: number): Promise<SupportProfile> {
         const customer = await this.deps.customers.findByTelegramId(customerTelegramId)
         if (!customer) {
-            return null
+            return { orders: 0, lastOrder: null }
         }
-        const page = await this.deps.orders.listByCustomer(customer.id, businessId, {
-            page: 1,
-            limit: 1,
-        })
+        const [shared, orders, page] = await Promise.all([
+            customer.phone
+                ? this.deps.customers.hasSharedPhoneWith(customer.id, businessId)
+                : Promise.resolve(false),
+            this.deps.orders.countByCustomer(customer.id, businessId, SUPPORT_ORDERS_SHOWN + 1),
+            this.deps.orders.listByCustomer(customer.id, businessId, { page: 1, limit: 1 }),
+        ])
         const order = page.data[0]
-        return order
-            ? {
-                  orderId: order.id,
-                  number: order.number,
-                  total: order.total.amount,
-                  status: order.status,
-              }
-            : null
+        return {
+            ...(shared && customer.phone ? { phone: customer.phone.number } : {}),
+            orders,
+            lastOrder: order
+                ? {
+                      orderId: order.id,
+                      number: order.number,
+                      total: order.total.amount,
+                      status: order.status,
+                  }
+                : null,
+        }
     }
 
     async about(input: {

@@ -412,6 +412,19 @@ cover each one's whole process; what exactly comes from the meeting with them.
   - **«Do'konga xabar yozish»** (`ShopPublicDTO.supportChat`) next to «Do'konga qo'ng'iroq» on the
     order and in the product's sheet: `/start q_o<order>` or `q_p<product>`; the topic hears which
     (only the customer's own order, only this shop's product). Without a group, nothing changes.
+  - **No shop without it (owner's decision, goal 22):** a required «Ishga tayyor» step (not for a
+    demo); «Qanday qilinadi?» under each step (Telegram's menu items in Uzbek, English in brackets:
+    «Mavzular» (Topics), never Russian); the last refusal or loss (`support_refusals`) shown with
+    «Qayta urinish».
+  - **A topic shows who waits:** its emoji icon ❓ until a person of the shop answers, then ✅
+    (`waiting_since`, one conditional UPDATE: changed only when the state does); a new question
+    opens a closed topic. Icons from `getForumTopicIconStickers`, once a process; missing: none.
+    A bot cannot pin or reorder topics (Bot API 10.5): Telegram puts the newest on top.
+  - **A topic tells who the customer is:** its name «Ism · telefon» (`supportTopicName`: the name
+    cut to 20, the phone given to THIS shop, else @username), renamed only when it would change;
+    a pinned card (the phone, «🆕 Yangi mijoz» or «⭐ N ta buyurtma» counted up to 11, the last
+    order), written again in place on a new order, which also comes as a quiet line «🛒 #14 ·
+    96 000 so'm · karta».
 - **A toy shop's tabs (owner's decisions, November 2026):** «Rivojlantiruvchi o'yinchoqlar»,
   «Mantiqiy o'yinlar», «Kitoblar» stand on the goods shelf after «Bolalar tovarlari». A product
   stands in up to three categories (`MAX_CATEGORIES`): the main one, which an order line and the
@@ -711,7 +724,8 @@ admins (`client_error`). Same shape as `@samiyev/kit/observe`: swap in its impor
 | SourceLink | id (the code of `s_<code>`), business_id, kind (post/ad), origin (zumda/channel: a post Zumda made or the owner's own), preview (the owner's post's first words), button_at (its «Buyurtma berish» put), product_id (none: the whole shop), label (an ad's name), post (chat_id, message_id, photo_file_id), owner_text, post_key (name, price, age the post says), opens, orders, sales, revenue, created_at, deleted_at: a channel post or an ad link and what it brought |
 | SourceVisit | (business_id, telegram_id), link_id, at: the last link a person pressed at a shop |
 | SupportGroup | business_id (one a shop), chat_id, title, connected_at: the shop's closed group with topics, while its bot may make topics there |
-| SupportThread | (chat_id, customer_telegram_id), business_id, thread_id, created_at: a customer's own topic in a support group (no message is stored) |
+| SupportThread | (chat_id, customer_telegram_id), business_id, thread_id, created_at, waiting_since (❓; NULL: ✅), card_message_id (the pinned card), topic_name: a customer's own topic in a support group (no message is stored) |
+| SupportRefusal | business_id (one a shop), reason (notOwner/demo/notForum/noTopics/lost), title, at: why the last try to connect failed, cleared when a group is connected |
 | Order | id, business_id, number (per shop), customer_id, channel, items (name + unit + category + price + total snapshot, the variant and add-ons picked, `from_stock`: took counted stock, `removed_at`: «Yo'q»), subtotal, delivery_fee, deposit_total, bottles_returned, total, commission (rate + amount), status, courier (id, name and phone: snapshots), address, location, landmark, comment, cancel_reason, payment (method card_transfer/cash; status unpaid/awaiting/paid/refund_due/refunded, paid_at; card shown: snapshot; receipt: private R2 key, SHA-256, sent at, reused from, the customer's earlier refusals; transfer_rejections; refund_owed: owed back for lines taken out with «Yo'q»; cash: the courier who took it (`cash_courier_id`) and when the shop got it (`cash_received_at`)), delivered_at, network_requested_at, network_alerted_at, delivery_fee_to (snapshot), dispatcher (snapshot), owner_delivers («O'zim yetkazaman»), sent_via (self/taxi/post/other), delivery_notes (the dispatcher's, JSON), customer_pays_carrier (snapshot), delivery_free (the shop promised free delivery: snapshot), source_link_id (the post or ad link the customer came by, within 7 days: snapshot), service fee (rate + amount; plan) |
 | CashHandover | History only: the `cash_handovers` table stays (additive schema), unused: cash is handed over per order (`orders.cash_received_at`) |
 
@@ -1448,7 +1462,9 @@ the Login Widget's Trusted Origin and Redirect URI are manual (no Bot API method
 - [ ] Support group: a group with «Mavzular» → «Guruhni bog'lash» → the bot an admin → «guruhi
       Zumdaga bog'landi» → a customer writes the shop's bot → their topic with the card → the
       owner answers there → the customer gets it from the shop's bot → «Do'konga xabar yozish» on
-      an order names it in the topic; on a real Android and iPhone
+      an order names it in the topic; ❓ on the question, ✅ on the answer, ❓ again; the card
+      pinned; an order: «🛒 #…» in the topic, «Ism · telefon»; a group without «Mavzular»: the
+      reason in the app and «Qayta urinish»; on a real Android and iPhone
 - [ ] Every post: a post made in Telegram naming a product → «Buyurtma berish» under it to that
       product → «Mahsulotni tanlash» → «Hamma mahsulotlar»; an album: «Tugmasi yo'q»; «Eski
       postlarni ham qo'shish» → «Eski postlarning hammasi qo'shildi»; on a real channel

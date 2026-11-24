@@ -15,6 +15,8 @@ import {
 } from "../http/schemas.js"
 import { Notifier, inBackground } from "../telegram/notifier.js"
 
+import { supportOrderPlaced } from "./support-topics.js"
+
 import type { AppEnv } from "../env.js"
 
 /** What a customer does inside a shop's Mini App. */
@@ -88,6 +90,18 @@ export const customerRoutes = new Hono<AppEnv>()
         const notifier = new Notifier(services)
         inBackground(c.executionCtx, services, notifier.orderPlaced(business, order))
         inBackground(c.executionCtx, services, notifier.askForTransfer(business, order))
+        // A customer who asked the shop before: the order shows in their topic too (goal 22).
+        const person = {
+            telegramId: user.id,
+            firstName: user.firstName,
+            ...(user.lastName ? { lastName: user.lastName } : {}),
+            ...(user.username ? { username: user.username } : {}),
+        }
+        inBackground(
+            c.executionCtx,
+            services,
+            supportOrderPlaced(services, business, order, person),
+        )
         return c.json(order, 201)
     })
 

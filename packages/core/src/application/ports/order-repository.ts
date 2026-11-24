@@ -28,6 +28,8 @@ export interface OrderRepository {
     listByCourier(courierId: string, since: Date): Promise<Order[]>
     /** Newest first. */
     listByCustomer(customerId: string, businessId: string, page: PageRequest): Promise<Page<Order>>
+    /** The customer's orders at this shop, not cancelled, counted up to `atMost` (never more read). */
+    countByCustomer(customerId: string, businessId: string, atMost: number): Promise<number>
     /** Counts by creation time and money by delivery time, both in [from, to). */
     moneyTotals(businessId: string, from: Date, to: Date): Promise<MoneyTotals>
     /**

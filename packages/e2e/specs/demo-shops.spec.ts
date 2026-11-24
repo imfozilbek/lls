@@ -68,7 +68,7 @@ test.describe.configure({ mode: "serial" })
 test.beforeAll(resetStand)
 
 for (const demo of DEMOS) {
-    test(`${demo.name}: open, with its logo, nothing left to set up, takes an order`, async ({
+    test(`${demo.name}: open, with its logo, only the support group left to set up, takes an order`, async ({
         page,
     }) => {
         await openApp(page, { user: PEOPLE.customer, shop: demo.slug })
@@ -85,7 +85,11 @@ for (const demo of DEMOS) {
         await page.getByRole("button", { name: "Mening do'konim" }).click()
         await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
         await expect(page.getByText("Faol buyurtma yo'q")).toBeVisible()
-        await expect(page.getByText("Ishga tayyor")).toHaveCount(0)
+        // Everything set up but the support group (goal 22: without it customers cannot ask).
+        const ready = page.getByRole("region", { name: "Ishga tayyor" })
+        const left = ready.getByRole("button", { disabled: false })
+        await expect(left).toHaveCount(1)
+        await expect(left).toContainText("Mijozlar savollari uchun guruh")
 
         const order = await placeOrder(PEOPLE.customer, demo.slug, [demo.line], demo.extra)
         expect(order.number).toBe(1)

@@ -256,9 +256,19 @@ const ALWAYS_OK = new Set([
     // The shop's channel: a post's new price, and the bot leaving a channel.
     "editMessageCaption",
     "leaveChat",
-    // The support group: a spare topic deleted.
+    // The support group: a spare topic deleted, a topic's icon or name, reopened, its card pinned.
     "deleteForumTopic",
+    "editForumTopic",
+    "reopenForumTopic",
+    "pinChatMessage",
 ])
+
+/** Telegram's set of topic icons (a few of them): the support group's ❓ and ✅ are there. */
+const TOPIC_ICONS = [
+    { emoji: "❓", custom_emoji_id: "icon-waiting", type: "custom_emoji" },
+    { emoji: "✅", custom_emoji_id: "icon-answered", type: "custom_emoji" },
+    { emoji: "🔥", custom_emoji_id: "icon-fire", type: "custom_emoji" },
+]
 
 /** Telegram's count of a channel's subscribers, shown on «Telegram kanal». */
 const CHANNEL_SUBSCRIBERS = 231
@@ -336,6 +346,9 @@ function otherAnswer(state: State, call: BotCall): [number, unknown] {
     }
     if (call.method === "copyMessage") {
         return [200, { ok: true, result: { message_id: state.nextMessageId++ } }]
+    }
+    if (call.method === "getForumTopicIconStickers") {
+        return [200, { ok: true, result: TOPIC_ICONS }]
     }
     if (call.method === "createForumTopic") {
         const topic = { message_thread_id: state.nextMessageId++, name: call.body["name"] }

@@ -193,7 +193,7 @@ describe("the shop's support group", () => {
             const threadId = client.telegram.topics[0]?.threadId
             const card = client.telegram.sent.find((m) => m.options?.threadId === threadId)
             expect(card?.html).toContain("Aziz Karimov")
-            expect(card?.html).toContain("Hali buyurtma bermagan")
+            expect(card?.html).toContain("Yangi mijoz")
             expect(client.telegram.copies.at(-1)).toMatchObject({
                 fromChatId: CUSTOMER.id,
                 toChatId: GROUP_ID,
@@ -349,6 +349,143 @@ describe("the shop's support group", () => {
             expect(client.telegram.sent.some((m) => m.html.includes("haqida yozmoqchi"))).toBe(
                 false,
             )
+        })
+    })
+    describe("the topic tells who waits and who the customer is (goal 22)", () => {
+        const threadOf = (): number => client.telegram.topics[0]?.threadId ?? 0
+        const iconsOf = (): (string | undefined)[] =>
+            client.telegram.topicEdits.map((e) => e.change.iconCustomEmojiId).filter(Boolean)
+
+        it("a new topic waits (❓), its card pinned; an answer ✅, a new question ❓ again", async () => {
+            await madeAdmin()
+            await customerSays({ text: "Salom, bormi?" })
+            expect(client.telegram.topics[0]).toMatchObject({
+                name: "Aziz Karimov",
+                icon: "icon-waiting",
+            })
+            const threadId = threadOf()
+            const card = client.telegram.sent.find((m) => m.options?.threadId === threadId)
+            expect(client.telegram.pins).toHaveLength(1)
+            expect(card?.html).toContain("Yangi mijoz")
+
+            await shopSays(threadId)
+            await shopSays(threadId, { text: "Yana bir narsa" })
+            expect(iconsOf()).toEqual(["icon-answered"])
+
+            await customerSays({ text: "Rahmat, yana savol" })
+            await customerSays({ text: "Yana bitta" })
+            expect(iconsOf()).toEqual(["icon-answered", "icon-waiting"])
+            expect(client.telegram.reopened).toEqual([{ chatId: GROUP_ID, threadId }])
+        })
+
+        it("without the icons in Telegram's set the topic works as before", async () => {
+            client.telegram.topicIcons = []
+            await madeAdmin()
+            await customerSays({ text: "Salom" })
+            expect(client.telegram.topics[0]?.icon).toBeUndefined()
+            await shopSays(threadOf())
+            expect(client.telegram.copies.at(-1)?.toChatId).toBe(CUSTOMER.id)
+            expect(iconsOf()).toEqual([])
+        })
+
+        it("an order: a line in the topic, the card written again, the name with the phone", async () => {
+            await madeAdmin()
+            await customerSays({ text: "Salom" })
+            const threadId = threadOf()
+            const cardId = client.telegram.pins[0]?.messageId
+            const product = await json<{ id: string }>(
+                await owner()("/api/owner/products", {
+                    method: "POST",
+                    json: { name: "Fetr kitobcha", price: 110_000, unit: "pcs", category: "meals" },
+                }),
+            )
+            await as(CUSTOMER)("/api/me")
+            await sharePhoneWithShops(CUSTOMER.id)
+            await as(CUSTOMER)("/api/orders", {
+                method: "POST",
+                json: {
+                    items: [{ productId: product.id, quantity: 1 }],
+                    address: "Navoiy 12",
+                    location: PIN,
+                },
+            })
+            await expect
+                .poll(() => client.telegram.topicEdits.some((e) => e.change.name !== undefined))
+                .toBe(true)
+            const line = client.telegram.sent.find(
+                (m) => m.options?.threadId === threadId && m.html.startsWith("🛒 #1"),
+            )
+            expect(line?.html).toContain("karta")
+            const card = client.telegram.edited.find((m) => m.messageId === cardId)
+            expect(card?.html).toContain("1 ta buyurtma")
+            expect(card?.html).toContain("📞 +998")
+            const renamed = client.telegram.topicEdits.find((e) => e.change.name !== undefined)
+            expect(renamed?.change.name).toMatch(/^Aziz Karimov · \d{2} \d{3} \d{2} \d{2}$/)
+        })
+
+        it("a card deleted in Telegram comes again, pinned", async () => {
+            await madeAdmin()
+            await customerSays({ text: "Salom" })
+            const cardId = client.telegram.pins[0]?.messageId ?? 0
+            client.telegram.deletedMessages.add(cardId)
+            const product = await json<{ id: string }>(
+                await owner()("/api/owner/products", {
+                    method: "POST",
+                    json: { name: "Osh", price: 35_000, unit: "pcs", category: "meals" },
+                }),
+            )
+            await as(CUSTOMER)("/api/me")
+            await sharePhoneWithShops(CUSTOMER.id)
+            await as(CUSTOMER)("/api/orders", {
+                method: "POST",
+                json: {
+                    items: [{ productId: product.id, quantity: 1 }],
+                    address: "Navoiy 12",
+                    location: PIN,
+                },
+            })
+            await expect.poll(() => client.telegram.pins.length).toBe(2)
+        })
+
+        it("an order of someone without a topic writes nothing in the group", async () => {
+            await madeAdmin()
+            const product = await json<{ id: string }>(
+                await owner()("/api/owner/products", {
+                    method: "POST",
+                    json: { name: "Osh", price: 35_000, unit: "pcs", category: "meals" },
+                }),
+            )
+            await as(CUSTOMER)("/api/me")
+            await sharePhoneWithShops(CUSTOMER.id)
+            const placed = await as(CUSTOMER)("/api/orders", {
+                method: "POST",
+                json: {
+                    items: [{ productId: product.id, quantity: 1 }],
+                    address: "Navoiy 12",
+                    location: PIN,
+                },
+            })
+            expect(placed.status).toBe(201)
+            const inGroup = client.telegram.sent.filter(
+                (m) => m.chatId === GROUP_ID && m.options?.threadId !== undefined,
+            )
+            expect(inGroup).toHaveLength(0)
+        })
+
+        it("why the last try failed is in the app, until a group is connected", async () => {
+            await madeAdmin({ chat: { ...GROUP, is_forum: false } })
+            const failed = await json<{ refusal: { reason: string; title: string } | null }>(
+                await owner()("/api/owner/support"),
+            )
+            expect(failed.refusal).toMatchObject({ reason: "notForum", title: "ABC savollar" })
+            await madeAdmin()
+            const connected = await json<{ refusal: null }>(await owner()("/api/owner/support"))
+            expect(connected.refusal).toBeNull()
+            await member("left")
+            const lost = await json<{ refusal: { reason: string } }>(
+                await owner()("/api/owner/support"),
+            )
+            expect(lost.refusal.reason).toBe("lost")
         })
     })
 })

@@ -12,6 +12,7 @@ const TABLES = [
     "shop_channels",
     "support_threads",
     "support_groups",
+    "support_refusals",
     "network_offers",
     "order_items",
     "cash_handovers",

@@ -133,6 +133,8 @@ export const staffUz = {
             courierWaiting: "{name} taklifni qabul qildi: tasdiqlang",
             bot: "Botingizni oching",
             botHint: "Start bosing: buyurtmalar shu botga keladi",
+            support: "Mijozlar savollari uchun guruh",
+            supportHint: "Mijozlarning savollari guruhingizga tushadi",
             selfDeliver: "O'zim yetkazaman",
             alwaysOpen: "Kecha-kunduz ochiqmiz",
             optional: "Ixtiyoriy",
@@ -724,6 +726,26 @@ export const staffUz = {
                 "Guruh sozlamalarida «Mavzular»ni yoqing.",
                 "Pastdagi tugmani bosing va guruhni tanlang.",
             ],
+            /** What to press in Telegram, a step each («Qanday qilinadi?»). */
+            howTo: "Qanday qilinadi?",
+            stepDetails: [
+                "Chatlar ro'yxatida qalamchani bosing: Android'da pastda o'ngda, iPhone'da tepada o'ngda. «Yangi guruh» (New Group)ni tanlang, xodimlaringizni belgilang va guruhga nom qo'ying.",
+                "Guruhga kiring va yuqoridagi nomini bosing. «Tahrirlash» (Edit)ni bosing, «Mavzular» (Topics)ni yoqing va saqlang.",
+                "Tugma Telegramni ochadi. Ro'yxatdan guruhingizni tanlang. Kerakli huquqlar o'zi belgilangan, faqat saqlang.",
+            ],
+            /** Why the last try failed: «{group}» is the group's name. */
+            refusedTitle: "«{group}» guruhi bog'lanmadi",
+            lostTitle: "«{group}» guruhi uzildi",
+            refused: {
+                notOwner: "Botni guruhga boshqa odam qo'shdi. Guruhni o'zingiz bog'lang.",
+                demo: "Namuna do'konda mijozlar guruhi bo'lmaydi.",
+                notForum:
+                    "Guruhda mavzular yoqilmagan. Guruh sozlamalarida «Mavzular»ni yoqing va qayta urinib ko'ring.",
+                noTopics:
+                    "Botga mavzu ochish huquqi berilmadi. Qayta bog'lang: kerakli huquqlar o'zi belgilanadi.",
+                lost: "Bot guruhdan chiqarildi. Guruhni qayta bog'lang.",
+            },
+            retry: "Qayta urinish",
             connect: "Guruhni bog'lash",
             connectHint:
                 "Telegram guruhingizni tanlashni so'raydi, keyin bot guruhga admin bo'lib qo'shiladi. Kerakli huquqlar o'zi belgilanadi.",

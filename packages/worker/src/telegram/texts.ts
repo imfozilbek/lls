@@ -394,7 +394,10 @@ const BASE = {
         supportTopicName: "Mijoz",
         supportReplyHint: "Shu mavzuga yozgan javobingiz mijozga boradi.",
         supportLastOrder: "🧾 Oxirgi buyurtma: #{n} · {sum} · {status}",
-        supportNoOrders: "🧾 Hali buyurtma bermagan",
+        supportNewCustomer: "🆕 Yangi mijoz",
+        supportOrders: "⭐ {n} ta buyurtma",
+        supportPhone: "📞 {phone}",
+        supportOrderLine: "🛒 #{n} · {sum} · {method}",
         supportSent: "✅ Xabaringiz do'konga yuborildi. Javob shu yerga keladi.",
         supportAsk: "✍️ Savolingizni yozing. Do'kon javobi shu yerga keladi.",
         supportAskOrder:

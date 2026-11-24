@@ -401,6 +401,44 @@ describe("HttpTelegramGateway", () => {
         expect(calls[2]?.body).toMatchObject({ message_thread_id: 44 })
     })
 
+    it("a topic's icon and name, its icons set, a pin; «the same again» is fine", async () => {
+        const { fetcher, calls } = fakeFetch([
+            { emoji: "❓", custom_emoji_id: "q" },
+            { emoji: "✅", custom_emoji_id: "ok" },
+            { emoji: "🔥" },
+        ])
+        const gateway = new HttpTelegramGateway(fetcher)
+        expect(await gateway.getForumTopicIcons("t")).toEqual([
+            { emoji: "❓", customEmojiId: "q" },
+            { emoji: "✅", customEmojiId: "ok" },
+        ])
+        await gateway.editForumTopic("t", -1007, 44, { iconCustomEmojiId: "ok" })
+        expect(calls[1]?.body).toEqual({
+            chat_id: -1007,
+            message_thread_id: 44,
+            icon_custom_emoji_id: "ok",
+        })
+        await gateway.createForumTopic("t", -1007, "Aziz", "q")
+        expect(calls[2]?.body).toEqual({ chat_id: -1007, name: "Aziz", icon_custom_emoji_id: "q" })
+        await gateway.pinMessage("t", -1007, 9)
+        expect(calls[3]?.body).toEqual({
+            chat_id: -1007,
+            message_id: 9,
+            disable_notification: true,
+        })
+        const unchanged = (async () =>
+            new Response(
+                JSON.stringify({ ok: false, description: "Bad Request: TOPIC_NOT_MODIFIED" }),
+                { status: 400 },
+            )) as typeof fetch
+        await expect(
+            new HttpTelegramGateway(unchanged).reopenForumTopic("t", -1007, 44),
+        ).resolves.toBeUndefined()
+        await expect(
+            new HttpTelegramGateway(unchanged).editForumTopic("t", -1007, 44, { name: "A" }),
+        ).resolves.toBeUndefined()
+    })
+
     it("a topic deleted already is fine to delete", async () => {
         const answering = (description: string): typeof fetch =>
             (async () =>

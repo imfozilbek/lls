@@ -7,6 +7,17 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### The support group made easy to work in
+- **«Ishga tayyor»** asks for the support group (owner's decision: no shop without it), and
+  «Mijozlar savollari» says what to press in Telegram, step by step, and why a try failed, with
+  «Qayta urinish».
+- **A topic shows who waits:** ❓ until someone of the shop answers, then ✅; a new question
+  brings ❓ back and opens a closed topic.
+- **A topic tells who the customer is:** its name «Ism · telefon», its pinned card with the phone
+  given to this shop, how many orders («⭐ 5 ta buyurtma» or «🆕 Yangi mijoz») and the last one;
+  a new order comes as a quiet line «🛒 #14 · 96 000 so'm · karta».
+- Migration `0038` (additive): a topic's state, card and name; the last refusal.
+
 ### The shop's support group
 - **«Mijozlar savollari»** in «Sozlamalar»: the owner connects a closed group with topics from
   Telegram's own screen (owner's decision, November 2026). A customer's message to the shop's bot

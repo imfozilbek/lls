@@ -8,12 +8,18 @@ import {
     FindSupportCustomerUseCase,
     GetSupportGroupUseCase,
     LoseSupportGroupUseCase,
+    MarkSupportAnsweredUseCase,
     OpenSupportThreadUseCase,
     SupportContextUseCase,
+    SupportTopicOfCustomerUseCase,
 } from "../../application/use-cases/support/support.use-cases.js"
 import { OrderStatus } from "../../domain/enums/order-status.js"
 import { ForbiddenError } from "../../domain/errors/forbidden.error.js"
-import { SupportGroup, supportTopicName } from "../../domain/value-objects/support-group.js"
+import {
+    SupportGroup,
+    shortPhone,
+    supportTopicName,
+} from "../../domain/value-objects/support-group.js"
 import { ValidationError } from "../../domain/errors/validation.error.js"
 import {
     CUSTOMER_TG,
@@ -35,6 +41,7 @@ import {
 import {
     FakeSupportTopics,
     InMemorySupportGroups,
+    InMemorySupportRefusals,
     InMemorySupportThreads,
 } from "../in-memory-support.js"
 
@@ -48,12 +55,17 @@ const OTHER_GROUP = -1005550002
 describe("the support group", () => {
     let businesses: InMemoryBusinesses
     let groups: InMemorySupportGroups
+    let refusals: InMemorySupportRefusals
     let shop: Business
 
     const connect = (
         input: Partial<BotMadeGroupAdmin> = {},
     ): ReturnType<ConnectSupportGroupUseCase["execute"]> =>
-        new ConnectSupportGroupUseCase({ businesses, supportGroups: groups }).execute({
+        new ConnectSupportGroupUseCase({
+            businesses,
+            supportGroups: groups,
+            supportRefusals: refusals,
+        }).execute({
             businessId: shop.id,
             actorTelegramId: OWNER_TG,
             chatId: GROUP,
@@ -67,6 +79,7 @@ describe("the support group", () => {
     beforeEach(async () => {
         businesses = new InMemoryBusinesses()
         groups = new InMemorySupportGroups()
+        refusals = new InMemorySupportRefusals()
         shop = makeBusiness()
         await businesses.save(shop)
     })
@@ -90,6 +103,7 @@ describe("the support group", () => {
         const lost = await connect({ canManageTopics: false })
         expect(lost.kind).toBe("lost")
         expect(await groups.find(shop.id)).toBeNull()
+        expect((await refusals.find(shop.id))?.reason).toBe("lost")
     })
 
     it("someone else, a demo shop, a group without topics or without the right is refused", async () => {
@@ -102,22 +116,51 @@ describe("the support group", () => {
             kind: "refused",
             why: "noTopics",
         })
+        expect(await refusals.find(shop.id)).toMatchObject({
+            reason: "noTopics",
+            title: "ABC savollar",
+        })
         shop.makeDemo(NOW)
         expect(await connect()).toEqual({ kind: "refused", why: "demo" })
         expect(await groups.find(shop.id)).toBeNull()
     })
 
+    it("a refusal is remembered for the app until a group is connected", async () => {
+        await connect({ isForum: false, title: "Oddiy guruh" })
+        const deps = { businesses, supportGroups: groups, supportRefusals: refusals }
+        const asOwner = { actorTelegramId: OWNER_TG, businessId: shop.id }
+        const failed = await new GetSupportGroupUseCase(deps).execute(asOwner)
+        expect(failed).toMatchObject({
+            group: null,
+            refusal: { reason: "notForum", title: "Oddiy guruh" },
+        })
+        await connect()
+        const connected = await new GetSupportGroupUseCase(deps).execute(asOwner)
+        expect(connected.refusal).toBeNull()
+        expect(connected.group?.chatId).toBe(GROUP)
+        expect(await refusals.find(shop.id)).toBeNull()
+    })
+
     it("losing it: only news about the group connected now counts", async () => {
         await connect()
-        const lose = new LoseSupportGroupUseCase(groups)
-        expect(await lose.execute({ businessId: shop.id, chatId: OTHER_GROUP })).toBeNull()
-        expect((await lose.execute({ businessId: shop.id, chatId: GROUP }))?.chatId).toBe(GROUP)
+        const lose = new LoseSupportGroupUseCase({
+            supportGroups: groups,
+            supportRefusals: refusals,
+        })
+        const at = { businessId: shop.id, now: NOW }
+        expect(await lose.execute({ ...at, chatId: OTHER_GROUP })).toBeNull()
+        expect(await refusals.find(shop.id)).toBeNull()
+        expect((await lose.execute({ ...at, chatId: GROUP }))?.chatId).toBe(GROUP)
         expect(await groups.find(shop.id)).toBeNull()
+        expect(await refusals.find(shop.id)).toMatchObject({
+            reason: "lost",
+            title: "ABC savollar",
+        })
     })
 
     it("«Guruhni ajratish» and the group's card are the owner's only", async () => {
         await connect()
-        const deps = { businesses, supportGroups: groups }
+        const deps = { businesses, supportGroups: groups, supportRefusals: refusals }
         const asStranger = { actorTelegramId: STRANGER_TG, businessId: shop.id }
         await expect(new GetSupportGroupUseCase(deps).execute(asStranger)).rejects.toBeInstanceOf(
             ForbiddenError,
@@ -126,7 +169,7 @@ describe("the support group", () => {
             new DisconnectSupportGroupUseCase(deps).execute(asStranger),
         ).rejects.toBeInstanceOf(ForbiddenError)
         const asOwner = { actorTelegramId: OWNER_TG, businessId: shop.id }
-        expect((await new GetSupportGroupUseCase(deps).execute(asOwner))?.chatId).toBe(GROUP)
+        expect((await new GetSupportGroupUseCase(deps).execute(asOwner)).group?.chatId).toBe(GROUP)
         expect((await new DisconnectSupportGroupUseCase(deps).execute(asOwner))?.chatId).toBe(GROUP)
         expect(await new DisconnectSupportGroupUseCase(deps).execute(asOwner)).toBeNull()
     })
@@ -166,7 +209,7 @@ describe("a customer's topic", () => {
         }).execute({
             businessId: "biz-1",
             customerTelegramId: CUSTOMER_TG,
-            name: "Aziz Karimov",
+            nameOf: async () => "Aziz Karimov",
             ...(staleThreadId === undefined ? {} : { staleThreadId }),
             now: NOW,
         })
@@ -198,6 +241,36 @@ describe("a customer's topic", () => {
         expect(topics.opened).toEqual([{ chatId: GROUP, name: "Aziz Karimov", threadId: 100 }])
         expect(await open()).toMatchObject({ kind: "thread", threadId: 100, created: false })
         expect(topics.opened).toHaveLength(1)
+        expect(threads.items[0]).toMatchObject({ waitingSince: NOW, topicName: "Aziz Karimov" })
+    })
+
+    it("waits for the shop's answer: ❓ turns once, ✅ turns once", async () => {
+        const answered = (threadId = 100, chatId = GROUP): Promise<boolean> =>
+            new MarkSupportAnsweredUseCase({
+                supportGroups: groups,
+                supportThreads: threads,
+            }).execute({ businessId: "biz-1", chatId, threadId })
+        await open()
+        // A new topic waits from the start: its ❓ came with it.
+        expect(await open()).toMatchObject({ nowWaiting: false })
+        expect(await answered(100, OTHER_GROUP)).toBe(false)
+        expect(await answered()).toBe(true)
+        expect(await answered()).toBe(false)
+        expect(await open()).toMatchObject({ nowWaiting: true })
+        expect(await open()).toMatchObject({ nowWaiting: false })
+    })
+
+    it("the customer's topic is found by who they are", async () => {
+        const of = (): ReturnType<SupportTopicOfCustomerUseCase["execute"]> =>
+            new SupportTopicOfCustomerUseCase({
+                supportGroups: groups,
+                supportThreads: threads,
+            }).execute({ businessId: "biz-1", customerTelegramId: CUSTOMER_TG })
+        expect(await of()).toBeNull()
+        await open()
+        expect((await of())?.thread.threadId).toBe(100)
+        await groups.remove("biz-1")
+        expect(await of()).toBeNull()
     })
 
     it("a shop without a support group answers as before", async () => {
@@ -238,12 +311,18 @@ describe("a customer's topic", () => {
         expect(await find(OTHER_GROUP, 100)).toBeNull()
     })
 
-    it("a topic is named as the customer is in Telegram", () => {
-        expect(supportTopicName({ firstName: " Aziz ", lastName: "Karimov" }, "Mijoz")).toBe(
-            "Aziz Karimov",
+    it("a topic is named «Ism · telefon», else «Ism · @username», else the name", () => {
+        const aziz = { firstName: " Aziz ", lastName: "Karimov", username: "aziz" }
+        expect(supportTopicName({ ...aziz, phone: "+998901234567" }, "Mijoz")).toBe(
+            "Aziz Karimov · 90 123 45 67",
         )
+        expect(supportTopicName(aziz, "Mijoz")).toBe("Aziz Karimov · @aziz")
+        expect(supportTopicName({ firstName: "Aziz" }, "Mijoz")).toBe("Aziz")
         expect(supportTopicName({ firstName: "" }, "Mijoz")).toBe("Mijoz")
-        expect([...supportTopicName({ firstName: "😀".repeat(200) }, "Mijoz")]).toHaveLength(128)
+        // The name leaves room for the number: a phone shows about 30 characters of it.
+        const long = supportTopicName({ firstName: "😀".repeat(200), phone: "+998901234567" }, "M")
+        expect(long).toBe(`${"😀".repeat(20)} · 90 123 45 67`)
+        expect(shortPhone("+79161234567")).toBe("+79161234567")
     })
 })
 
@@ -285,15 +364,26 @@ describe("what the shop's people see about the customer", () => {
         return placed.id
     }
 
-    it("their last order at this shop, or nothing", async () => {
-        expect(await context.lastOrder("biz-1", CUSTOMER_TG)).toBeNull()
+    it("the card: their phone only when given to this shop, orders counted, the last one", async () => {
+        expect(await context.profile("biz-1", CUSTOMER_TG)).toEqual({ orders: 0, lastOrder: null })
         const orderId = await placeOrder()
-        expect(await context.lastOrder("biz-1", CUSTOMER_TG)).toMatchObject({
-            orderId,
-            number: 1,
-            status: OrderStatus.PENDING,
+        expect(await context.profile("biz-1", CUSTOMER_TG)).toMatchObject({
+            phone: "+998901234567",
+            orders: 1,
+            lastOrder: { orderId, number: 1, status: OrderStatus.PENDING },
         })
-        expect(await context.lastOrder("biz-2", CUSTOMER_TG)).toBeNull()
+        // Another shop knows nothing of them: no phone, no orders.
+        expect(await context.profile("biz-2", CUSTOMER_TG)).toEqual({
+            orders: 0,
+            lastOrder: null,
+        })
+    })
+
+    it("orders are counted up to 11, never the whole history", async () => {
+        for (let i = 0; i < 12; i++) {
+            await placeOrder()
+        }
+        expect((await context.profile("biz-1", CUSTOMER_TG)).orders).toBe(11)
     })
 
     it("«Do'konga yozish» on their own order, or a product of this shop", async () => {

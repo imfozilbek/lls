@@ -369,6 +369,15 @@ export class InMemoryOrders implements OrderRepository {
             .sort((a, b) => b.number - a.number)
         return paginate(matching, page)
     }
+    async countByCustomer(customerId: string, businessId: string, atMost: number): Promise<number> {
+        const mine = [...this.items.values()].filter(
+            (o) =>
+                o.customerId === customerId &&
+                o.businessId === businessId &&
+                o.status !== OrderStatus.CANCELLED,
+        )
+        return Math.min(mine.length, atMost)
+    }
     async moneyTotals(businessId: string, from: Date, to: Date): Promise<MoneyTotals> {
         const mine = [...this.items.values()].filter((o) => o.businessId === businessId)
         const created = mine.filter((o) => o.createdAt >= from && o.createdAt < to)
