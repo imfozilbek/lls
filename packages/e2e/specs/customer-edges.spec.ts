@@ -193,7 +193,7 @@ test("a long catalog has a search: Latin or Cyrillic, nothing found says so", as
                 data: unknown[]
             }
         ).data.length
-    // More than 20 products: the search field appears.
+    // More than 20 products: the magnifier at the start of the tabs opens the search field.
     const add = async (name: string): Promise<void> => {
         const created = await apiAs(PEOPLE.groceryOwner, "/owner/products", {
             shop: GROCERY,
@@ -207,12 +207,17 @@ test("a long catalog has a search: Latin or Cyrillic, nothing found says so", as
         await add(`Mahsulot ${i}`)
     }
     await openApp(page, { user: PEOPLE.customer, shop: GROCERY })
+    await page.getByRole("button", { name: "Katalogdan qidirish" }).click()
     const search = page.getByRole("textbox", { name: "Katalogdan qidirish" })
+    await expect(search).toBeFocused()
     await search.fill("шоколад")
     await expect(page.getByRole("heading", { name: "Shokolad Alpen" })).toBeVisible()
     await expect(page.getByRole("heading", { name: /^Mahsulot/ })).toHaveCount(0)
     await search.fill("zzzz")
     await expect(page.getByText("Hech narsa topilmadi")).toBeVisible()
+    // «✕» closes the field: the tabs and the whole catalog come back.
     await page.getByRole("button", { name: "Qidiruvni tozalash" }).click()
     await expect(page.getByRole("heading", { name: /^Mahsulot/ }).first()).toBeVisible()
+    await expect(search).toHaveCount(0)
+    await expect(page.getByRole("button", { name: "Katalogdan qidirish" })).toBeVisible()
 })

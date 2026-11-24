@@ -77,8 +77,14 @@ function scanTargets(): SmallTarget[] {
     const finger = 44
     const selector =
         "button, a[href], [role=button], [role=tab], [role=radio], [role=switch], [role=checkbox], select, summary, input:not([type=hidden]):not([type=file])"
-    /** Not a target to judge: hidden, disabled, or a link inside a sentence (read, then pressed). */
+    // An open sheet covers the screen: what is behind it cannot be pressed.
+    const modal = document.querySelector("[aria-modal='true']")
+    /**
+     * Not a target to judge: hidden, disabled, behind an open sheet, or a link inside a sentence
+     * (read, then pressed).
+     */
     const skipped = (element: Element, box: DOMRect): boolean =>
+        (modal !== null && !modal.contains(element)) ||
         box.width === 0 ||
         box.height === 0 ||
         getComputedStyle(element).visibility === "hidden" ||
