@@ -244,6 +244,38 @@ function topicGone(error: unknown): boolean {
 }
 
 /**
+ * A topic made before its name and card were kept (goal 22): named «Ism · telefon» and given its
+ * pinned card once, on the customer's next message. Telegram refusing it costs only the hint:
+ * the message itself still goes.
+ */
+export async function completeOldTopic(
+    services: Services,
+    token: string,
+    thread: SupportThread,
+    card: { business: Business; person: SupportPerson; profile: SupportProfile },
+): Promise<void> {
+    const { business, person, profile } = card
+    try {
+        await renameTopic(services, token, thread, topicNameOf(business, person, profile))
+        await postTopicCard(
+            services,
+            token,
+            {
+                chatId: thread.chatId,
+                threadId: thread.threadId,
+                customerTelegramId: thread.customerTelegramId,
+            },
+            topicCardText(business, person, profile),
+        )
+    } catch (error) {
+        if (!(error instanceof TelegramApiError)) {
+            throw error
+        }
+        console.warn("Old topic not completed", error.description)
+    }
+}
+
+/**
  * A customer who has a topic placed an order (owner's decision, November 2026): a quiet line in
  * their topic, the pinned card written again, and the name with the phone they gave now. A shop
  * without a support group, or a customer without a topic, costs one or two reads and nothing else.
