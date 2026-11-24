@@ -7,6 +7,7 @@ import type { ShopOwnerDTO, ShopPublicDTO } from "../../dtos/shop.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
 import type { CustomerRepository } from "../../ports/customer-repository.js"
+import type { SupportGroupRepository } from "../../ports/support.js"
 
 /**
  * Storefront entry: a turned-off or rejected shop is visible only to its owner. It carries the
@@ -17,6 +18,8 @@ export class GetShopBySlugUseCase {
         private readonly businesses: BusinessRepository,
         private readonly clock: Clock,
         private readonly customers: Pick<CustomerRepository, "findByTelegramId">,
+        /** Whether the shop answers messages (`supportChat`): one row read when given. */
+        private readonly supportGroups?: Pick<SupportGroupRepository, "find">,
     ) {}
 
     async execute(slug: string, viewerTelegramId?: number): Promise<ShopPublicDTO> {
@@ -25,11 +28,13 @@ export class GetShopBySlugUseCase {
             throw EntityNotFoundError.businessBySlug(slug)
         }
         const callPhone = await shopCallPhone(business, this.customers)
+        const supportChat = Boolean(await this.supportGroups?.find(business.id))
         // No number to call, no orders: the storefront says it will start taking them soon.
         return toShopPublicDTO(business, this.clock.now(), {
             withCard: true,
             callPhone,
             noPhone: callPhone === undefined && !business.isDemo(),
+            supportChat,
         })
     }
 }
