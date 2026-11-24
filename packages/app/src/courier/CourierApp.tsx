@@ -329,10 +329,10 @@ function DeliveryCard({
                         </p>
                     ) : null}
                     <details className="group">
-                        <summary className="tap cursor-pointer list-none px-1 py-2 text-sm font-medium text-brand">
+                        <summary className="tap flex min-h-11 cursor-pointer list-none items-center rounded-control px-1 text-sm font-medium text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand">
                             {t.order.items} · {order.items.length}
                         </summary>
-                        <OrderItems order={order} />
+                        <OrderItems order={order} inset />
                     </details>
                 </>
             ) : null}

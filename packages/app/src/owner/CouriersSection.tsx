@@ -81,7 +81,7 @@ function DayChips({
 }): React.JSX.Element {
     const s = useT().owner.settings
     return (
-        <div role="group" aria-label={s.workDays} className="flex gap-1.5">
+        <div role="group" aria-label={s.workDays} className="-mx-2 flex gap-1">
             {WEEKDAYS.map((day, index) => {
                 const on = days.includes(day)
                 const toggle = (): void => {
@@ -135,7 +135,7 @@ function CourierContacts({ courier }: { courier: CourierDTO }): React.JSX.Elemen
                 {courier.phone ? (
                     <a
                         {...callLink(courier.phone)}
-                        className="-my-2 inline-flex items-center py-2 font-medium text-brand active:opacity-70"
+                        className="-my-3 inline-flex items-center py-3 font-medium text-brand active:opacity-70"
                     >
                         {formatPhone(courier.phone)}
                     </a>
