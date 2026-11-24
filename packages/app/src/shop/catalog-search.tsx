@@ -1,5 +1,5 @@
 import { searchText } from "@zumda/core"
-import { useRef } from "react"
+import { useEffect, useRef } from "react"
 
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
@@ -14,14 +14,22 @@ export const SEARCH_FROM = 20
 export function CatalogSearch({
     value,
     onChange,
+    onClose,
     className,
 }: {
     value: string
     onChange(value: string): void
+    /** Opened from the storefront's magnifier: focused at once, «✕» closes it back to the tabs. */
+    onClose?: () => void
     className?: string
 }): React.JSX.Element {
     const t = useT()
     const input = useRef<HTMLInputElement>(null)
+    useEffect(() => {
+        if (onClose) {
+            input.current?.focus()
+        }
+    }, [onClose])
     return (
         <div className={cn("relative px-4 pt-1", className)}>
             <SearchIcon
@@ -40,14 +48,18 @@ export function CatalogSearch({
                 onChange={(e): void => onChange(e.target.value)}
                 className="field h-12 pl-12 pr-12 shadow-card"
             />
-            {value ? (
+            {value || onClose ? (
                 <button
                     type="button"
                     aria-label={t.shop.clearSearch}
                     onClick={(): void => {
                         haptic.select()
                         onChange("")
-                        input.current?.focus()
+                        if (onClose) {
+                            onClose()
+                        } else {
+                            input.current?.focus()
+                        }
                     }}
                     className="tap absolute right-5 top-1/2 mt-0.5 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full text-tg-hint"
                 >
