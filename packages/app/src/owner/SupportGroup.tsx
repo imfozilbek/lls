@@ -9,9 +9,8 @@ import { confirm, haptic, openTelegramLink } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
-import { AlertIcon, ChevronIcon } from "../ui/icons.js"
+import { AlertIcon, ChatIcon, ChevronIcon } from "../ui/icons.js"
 import { Button, Skeleton, Spinner } from "../ui/primitives.js"
-import { ChatIcon } from "../ui/write-shop.js"
 
 import type { ShopOwnerDTO } from "@zumda/core"
 

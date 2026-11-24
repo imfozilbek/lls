@@ -376,3 +376,11 @@ export function CategoryIcon({
     const own = CATEGORY_PATHS[category] ?? CATEGORY_PATHS[CATEGORY_LOOKS_LIKE[category] ?? ""]
     return <Icon {...p}>{own ?? CATEGORY_PATHS["other"]}</Icon>
 }
+
+/** A speech bubble: «Savolim bor». */
+export const ChatIcon = (p: IconProps): React.JSX.Element => (
+    <Icon {...p}>
+        <path d="M5 5.5h14a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5h-7.5L7 20.5V17H5a1.5 1.5 0 0 1-1.5-1.5V7A1.5 1.5 0 0 1 5 5.5z" />
+        <path d="M8 10h8M8 13h5" />
+    </Icon>
+)
