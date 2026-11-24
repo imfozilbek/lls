@@ -170,7 +170,6 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
-    /** The shop's location is in no district of the delivery network. */
     /** «Tuman tarmog'idan foydalanish» is off: the shop's orders never go to the network. */
     static networkOff(businessId: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
@@ -180,6 +179,7 @@ export class BusinessRuleViolationError extends DomainError {
         )
     }
 
+    /** The shop's location is in no district of the delivery network. */
     static noDistrict(businessId: string): BusinessRuleViolationError {
         return new BusinessRuleViolationError(
             "NO_DISTRICT",
@@ -552,6 +552,18 @@ export class BusinessRuleViolationError extends DomainError {
             "POST_NOT_DELETABLE",
             "Telegram did not delete the post",
             { linkId },
+        )
+    }
+
+    /**
+     * «Raqamni mijozlarga ko'rsatmaslik» needs the shop's support group (owner's decision,
+     * November 2026): a customer who cannot call must still reach the shop.
+     */
+    static supportGroupRequired(businessId: string): BusinessRuleViolationError {
+        return new BusinessRuleViolationError(
+            "SUPPORT_GROUP_REQUIRED",
+            "Connect the customers' questions group first",
+            { businessId },
         )
     }
 }

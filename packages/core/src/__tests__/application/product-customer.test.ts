@@ -205,6 +205,22 @@ describe("product use cases", () => {
         ).rejects.toThrow(ValidationError)
     })
 
+    it("marks what the owner added in the last 30 days, for «Yangi kelganlar»", async () => {
+        await products.save(makeProduct())
+        const day = 24 * 60 * 60 * 1000
+        const listAt = (ms: number): Promise<{ data: { addedAt?: string }[] }> =>
+            new ListProductsUseCase(businesses, products, fixedClock(new Date(ms))).execute({
+                businessId: "biz-1",
+                audience: "customer",
+                actorTelegramId: CUSTOMER_TG,
+            })
+        const fresh = await listAt(Date.now())
+        expect(fresh.data[0]?.addedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/)
+        // A month later it is one of the shop's products, nothing more.
+        const later = await listAt(Date.now() + 31 * day)
+        expect(later.data[0]).not.toHaveProperty("addedAt")
+    })
+
     it("a shop waiting for approval shows its catalog; a turned-off one hides it", async () => {
         const waiting = makeBusiness({ id: "biz-3", active: false })
         await businesses.save(waiting)

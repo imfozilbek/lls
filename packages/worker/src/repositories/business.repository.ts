@@ -13,6 +13,7 @@ import {
     PAYMENT_OPTIONS,
     PayoutCard,
     Phone,
+    STOREFRONT_LAYOUTS,
     Slug,
     TelegramId,
     WorkingHours,
@@ -73,6 +74,9 @@ interface BusinessRow {
     owner_chat_open_at: number | null
     owner_chat_closed_at: number | null
     demo_at: number | null
+    storefront_layout: string | null
+    cover_key: string | null
+    phone_hidden: number
     created_at: number
     updated_at: number
 }
@@ -84,7 +88,7 @@ const COLUMNS = `id, slug, name, type, owner_telegram_id, status, bot_id, bot_us
     marketplace_commission_bps, marketplace_joined_at, payout_card_number, payout_card_holder,
     district_id, network_delivery, payment_card_id, contact_phone, payment_options, rejected_at,
     review_note, owner_chat_open_at, owner_chat_closed_at, demo_at, customer_pays_carrier,
-    delivery_price_set, created_at, updated_at`
+    delivery_price_set, storefront_layout, cover_key, phone_hidden, created_at, updated_at`
 
 interface SecretRow {
     bot_id: number
@@ -163,6 +167,12 @@ function reconstitute(row: BusinessRow): Business {
         ownerChatOpenAt: optionalDate(row.owner_chat_open_at),
         ownerChatClosedAt: optionalDate(row.owner_chat_closed_at),
         demoAt: optionalDate(row.demo_at),
+        storefrontLayout:
+            row.storefront_layout === null
+                ? undefined
+                : oneOf(row.storefront_layout, STOREFRONT_LAYOUTS, "storefront layout"),
+        coverKey: optional(row.cover_key),
+        phoneHidden: bool(row.phone_hidden),
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
     })
@@ -220,6 +230,10 @@ function mutableValues(b: Business): (string | number | null)[] {
         b.demoAt?.getTime() ?? null,
         flag(b.delivery.customerPaysCarrier === true),
         flag(b.delivery.priceChosen === true),
+        b.storefrontLayout ?? null,
+        b.coverKey ?? null,
+        flag(b.phoneHidden),
+        // Last: the guarded UPDATE puts the new version in its place.
         b.updatedAt.getTime(),
     ]
 }
@@ -329,11 +343,10 @@ export class D1BusinessRepository implements BusinessRepository {
                         marketplace_commission_bps, marketplace_joined_at, payout_card_number,
                         payout_card_holder, district_id, network_delivery, payment_card_id,
                         contact_phone, payment_options, rejected_at, review_note, demo_at,
-                        customer_pays_carrier, delivery_price_set, updated_at, id, slug, type,
-                        owner_telegram_id, bot_id, bot_username, bot_token_enc, webhook_secret,
-                        created_at, bot_source)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        customer_pays_carrier, delivery_price_set, storefront_layout, cover_key,
+                        phone_hidden, updated_at, id, slug, type, owner_telegram_id, bot_id,
+                        bot_username, bot_token_enc, webhook_secret, created_at, bot_source)
+                     VALUES (${placeholders(43)})`,
                 )
                 .bind(
                     ...mutableValues(business),
@@ -429,7 +442,8 @@ export class D1BusinessRepository implements BusinessRepository {
                     payout_card_number = ?, payout_card_holder = ?, district_id = ?,
                     network_delivery = ?, payment_card_id = ?, contact_phone = ?,
                     payment_options = ?, rejected_at = ?, review_note = ?, demo_at = ?,
-                    customer_pays_carrier = ?, delivery_price_set = ?, updated_at = ?
+                    customer_pays_carrier = ?, delivery_price_set = ?, storefront_layout = ?,
+                    cover_key = ?, phone_hidden = ?, updated_at = ?
                  WHERE id = ?${guard}`,
             )
             .bind(...values, business.id, ...(expected === undefined ? [] : [expected]))

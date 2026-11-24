@@ -9,7 +9,7 @@ import { compressImage } from "../lib/image.js"
 import { useMainAction } from "../lib/main-button.js"
 import { useRefresh } from "../lib/refresh.js"
 import { haptic } from "../lib/telegram.js"
-import { CatalogSearch, matches } from "../shop/MenuScreen.js"
+import { CatalogSearch, matches } from "../shop/catalog-search.js"
 import { useRouter } from "../stores/router.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
@@ -155,7 +155,7 @@ function ProductSummary({
                 haptic.tap()
                 push({ name: "product", id: product.id })
             }}
-            className="tap flex min-w-0 flex-1 items-center gap-3 text-left"
+            className="tap flex min-h-11 min-w-0 flex-1 items-center gap-3 text-left"
         >
             {product.imageKey ? (
                 <ProductImage
@@ -285,7 +285,7 @@ function ProductGroups({
         return found.length === 0 ? (
             <p className="py-8 text-center text-tg-hint">{t.shop.nothingFound}</p>
         ) : (
-            <ul className="divide-y divide-tg-separator">
+            <ul className="divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary px-3">
                 {found.map((product) => (
                     <ProductRow key={product.id} product={product} />
                 ))}
@@ -303,7 +303,7 @@ function ProductGroups({
                             {names[category] ?? category}
                         </h2>
                     ) : null}
-                    <ul className="divide-y divide-tg-separator">
+                    <ul className="mt-2 divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary px-3">
                         {products
                             .filter((product) => product.category === category)
                             .map((product) => (

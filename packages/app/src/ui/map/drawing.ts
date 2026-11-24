@@ -45,7 +45,7 @@ const CHECK_GLYPH =
 
 function markerClasses(marker: MapMarker): string {
     const base =
-        "zumda-pin flex items-center justify-center rounded-full border-2 border-white font-bold shadow-lg"
+        "zumda-pin flex items-center justify-center rounded-full border-2 border-white font-bold shadow-raised"
     if (marker.kind === "shop") {
         return `${base} h-9 w-9 bg-tg-text text-white`
     }

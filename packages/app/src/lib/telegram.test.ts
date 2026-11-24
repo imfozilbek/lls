@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
-    LIGHT_SURFACE,
+    PAGE_COLOR,
     callLink,
     canRequestChat,
     launchOutdated,
@@ -161,21 +161,39 @@ describe("paintLightFrame", () => {
         return { app, painted }
     }
 
-    it("paints Telegram's header, background and bottom bar white, even in a dark theme", () => {
+    it("paints Telegram's header, background and bottom bar the page's gray, even in a dark theme", () => {
         const { app, painted } = client("8.0")
         paintLightFrame(app)
+        expect(PAGE_COLOR).toBe("#f3f4f6")
         expect(painted).toEqual([
-            `header ${LIGHT_SURFACE}`,
-            `background ${LIGHT_SURFACE}`,
-            `bottom ${LIGHT_SURFACE}`,
+            `header ${PAGE_COLOR}`,
+            `background ${PAGE_COLOR}`,
+            `bottom ${PAGE_COLOR}`,
         ])
     })
 
     it("older clients get what they support; outside Telegram nothing happens", () => {
-        const { app, painted } = client("7.0")
-        paintLightFrame(app)
-        expect(painted).toEqual([`header ${LIGHT_SURFACE}`, `background ${LIGHT_SURFACE}`])
+        const recent = client("7.0")
+        paintLightFrame(recent.app)
+        expect(recent.painted).toEqual([`header ${PAGE_COLOR}`, `background ${PAGE_COLOR}`])
+        // Before 6.9 a header takes only the theme's keys: left as it is.
+        const old = client("6.2")
+        paintLightFrame(old.app)
+        expect(old.painted).toEqual([`background ${PAGE_COLOR}`])
         expect(() => paintLightFrame(null)).not.toThrow()
+    })
+
+    it("a color an old client refuses never breaks the app", () => {
+        const { app, painted } = client("8.0")
+        const refusing = {
+            ...app,
+            isVersionAtLeast: app.isVersionAtLeast,
+            setHeaderColor: (): void => {
+                throw new Error("WebAppHeaderColorInvalid")
+            },
+        } as unknown as WebApp
+        expect(() => paintLightFrame(refusing)).not.toThrow()
+        expect(painted).toEqual([`background ${PAGE_COLOR}`, `bottom ${PAGE_COLOR}`])
     })
 })
 

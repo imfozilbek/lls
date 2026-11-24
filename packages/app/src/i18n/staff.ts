@@ -79,6 +79,7 @@ export const staffUz = {
         VIDEO_TOO_LARGE: "Video 50 MB dan katta: qisqaroq video tanlang.",
         UNSUPPORTED_VIDEO: "Bu video turi to'g'ri kelmaydi: MP4 yoki MOV video tanlang.",
         VIDEO_SIZE_UNKNOWN: "Video hajmi aniqlanmadi. Qayta urinib ko'ring.",
+        SUPPORT_GROUP_REQUIRED: "Avval mijozlar savollari guruhini bog'lang.",
     },
     trip: {
         sameWay: "Shu yo'nalishda yana {n} ta",
@@ -441,6 +442,25 @@ export const staffUz = {
             linkGroup: "Havola, QR-kod va vitrina",
             channelGroup: "Telegram kanal",
             supportGroup: "Mijozlar savollari",
+            /** «Vitrina qanday ko'rinadi» (owner's decisions, November 2026; goal 24). */
+            look: {
+                group: "Vitrina qanday ko'rinadi",
+                hint: "Mijozlar do'koningizni shunday ko'radi. Istalgan vaqtda o'zgartirish mumkin.",
+                layouts: {
+                    grid: { name: "Ikki ustunda", hint: "Har qanday do'kon uchun" },
+                    list: { name: "Ro'yxat ko'rinishida", hint: "Taomlar ro'yxati uchun qulay" },
+                    feed: { name: "Katta rasm bilan", hint: "Rasmlari chiroyli mahsulotlar uchun" },
+                    shelves: { name: "Bo'limlarga ajratilgan", hint: "Mahsulot ko'p bo'lsa qulay" },
+                },
+                cover: "Muqova rasmi",
+                coverHint: "Do'kon tepasida katta rasm",
+                coverAdd: "Rasm qo'shish",
+                coverChange: "Boshqa rasm qo'yish",
+                coverRemove: "Rasmni o'chirish",
+                coverRemoveAsk: "Muqova rasmini o'chirasizmi?",
+                coverRemoved: "Muqova rasmi olib tashlandi",
+                preview: "Mijozlar shunday ko'radi",
+            },
             summary: {
                 free: "Bepul yetkazish",
                 later: "Narxi keyin aytiladi",
@@ -493,6 +513,11 @@ export const staffUz = {
             contactPhoneHint:
                 "Mijozlar va kuryerlar shu raqamga qo'ng'iroq qiladi. Bo'sh qolsa, Zumda'ga bergan raqamingiz ko'rinadi.",
             contactPhoneBad: "Raqam to'liq emas: masalan, +998 90 123 45 67",
+            /** «Raqamni mijozlarga ko'rsatmaslik» (owner's decision, November 2026; goal 24). */
+            phoneHidden: "Raqamni mijozlarga ko'rsatmaslik",
+            phoneHiddenHint:
+                "Mijozlar sizga «Savolim bor» tugmasi bilan yozishadi, kuryerlarga esa raqam ko'rinadi.",
+            phoneHiddenNeedsGroup: "Avval mijozlar savollari guruhini bog'lang.",
             ownPhone: "Raqamimni yuborish",
             ownPhoneHint: "Telegram'dagi raqamingiz do'kon raqami bo'ladi: yozish shart emas.",
             ownPhoneSaved: "Raqamingiz saqlandi: mijozlar shu raqamga qo'ng'iroq qiladi",

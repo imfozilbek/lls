@@ -255,7 +255,9 @@ export class ListProductsUseCase {
             },
             normalizePage(input),
         )
-        return mapPage(page, (product) => toProductDTO(product, input.audience))
+        // The same clock for the whole page: «Yangi kelganlar» never splits on a second.
+        const now = this.clock.now()
+        return mapPage(page, (product) => toProductDTO(product, input.audience, now))
     }
 }
 

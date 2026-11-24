@@ -382,6 +382,8 @@ const BASE = {
             "💬 {group} guruhi Zumdaga bog'landi. Endi mijoz botga yozsa, xabari shu guruhda alohida mavzuga tushadi. Javobni o'sha mavzuga yozing.",
         supportLost:
             "💬 Bot endi {group} guruhida mavzu ocha olmaydi. Guruhni ilovada qayta bog'lang.",
+        /** The owner kept the number from customers: without the group it shows again (goal 24). */
+        supportLostPhone: "Raqamingiz mijozlarga yana ko'rinadi.",
         supportNotByOwner:
             "💬 Botni {group} guruhiga siz qo'shmadingiz, shuning uchun bot guruhdan chiqdi. Guruhni ilovada o'zingiz bog'lang.",
         supportDemo: "💬 Namuna do'kon guruhga bog'lanmaydi: bot {group} guruhidan chiqdi.",

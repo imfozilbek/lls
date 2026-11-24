@@ -1,5 +1,7 @@
 import { FEATURES } from "../../../domain/enums/feature.js"
 import { PAYMENT_OPTIONS } from "../../../domain/enums/payment.js"
+import { STOREFRONT_LAYOUTS } from "../../../domain/enums/storefront-layout.js"
+import { BusinessRuleViolationError } from "../../../domain/errors/business-rule.error.js"
 import { requireOneOf } from "../../../domain/shared/guards.js"
 import { BrandColor } from "../../../domain/value-objects/brand-color.js"
 import { Location } from "../../../domain/value-objects/location.js"
@@ -17,11 +19,16 @@ import type { LocationDTO, ShopOwnerDTO } from "../../dtos/shop.dto.js"
 import type { BusinessRepository } from "../../ports/business-repository.js"
 import type { Clock } from "../../ports/clock.js"
 import type { DistrictRepository } from "../../ports/district-repository.js"
+import type { SupportGroupRepository } from "../../ports/support.js"
 
 export interface ShopSettingsPatch {
     name?: string
     brandColor?: string
     logoKey?: string | null
+    /** «Muqova rasmi»: set by the upload route only; `null` removes it. */
+    coverKey?: string | null
+    /** «Vitrina qanday ko'rinadi»: one of `STOREFRONT_LAYOUTS`; never unset once chosen. */
+    storefrontLayout?: string
     address?: string | null
     location?: LocationDTO | null
     /** The number customers call about an order; `null` or "" removes it. */
@@ -47,6 +54,11 @@ export interface ShopSettingsPatch {
     networkDelivery?: boolean
     /** Which ways of paying the shop takes: card, cash or both. */
     paymentOptions?: string
+    /**
+     * «Raqamni mijozlarga ko'rsatmaslik». Turning it on needs the support group
+     * (`SUPPORT_GROUP_REQUIRED`); turning it off, or sending it unchanged, never does.
+     */
+    phoneHidden?: boolean
 }
 
 export interface UpdateShopInput {
@@ -61,6 +73,8 @@ export class UpdateShopUseCase {
         private readonly clock: Clock,
         /** Without it, a moved shop keeps its district (tests that do not need districts). */
         private readonly districts?: DistrictRepository,
+        /** Whether the shop has a support group, read only to hide its number. */
+        private readonly supportGroups?: Pick<SupportGroupRepository, "find">,
     ) {}
 
     async execute(input: UpdateShopInput): Promise<ShopOwnerDTO> {
@@ -69,12 +83,30 @@ export class UpdateShopUseCase {
             input.businessId,
             input.actorTelegramId,
         )
+        await this.requireGroupToHidePhone(business, input.patch)
         applyPatch(business, input.patch)
         if (input.patch.location !== undefined && this.districts) {
             business.setDistrict(await districtIdFor(this.districts, business.location))
         }
         await this.businesses.save(business)
         return toShopOwnerDTO(business, this.clock.now())
+    }
+
+    /**
+     * A customer who cannot call must still reach the shop (owner's decision, November 2026):
+     * the number is hidden only by a shop whose support group is connected. Checked only when
+     * the switch goes on, so a form sent again as it was never fails on it.
+     */
+    private async requireGroupToHidePhone(
+        business: Business,
+        patch: ShopSettingsPatch,
+    ): Promise<void> {
+        if (patch.phoneHidden !== true || business.phoneHidden) {
+            return
+        }
+        if (!this.supportGroups || !(await this.supportGroups.find(business.id))) {
+            throw BusinessRuleViolationError.supportGroupRequired(business.id)
+        }
     }
 }
 
@@ -113,12 +145,21 @@ function applyPatch(business: Business, patch: ShopSettingsPatch): void {
             requireOneOf("paymentOptions", patch.paymentOptions, PAYMENT_OPTIONS),
         )
     }
+    if (patch.storefrontLayout !== undefined) {
+        business.setStorefrontLayout(
+            requireOneOf("storefrontLayout", patch.storefrontLayout, STOREFRONT_LAYOUTS),
+        )
+    }
+    if (patch.phoneHidden !== undefined) {
+        business.setPhoneHidden(patch.phoneHidden)
+    }
 }
 
 function toProfilePatch(patch: ShopSettingsPatch): ProfilePatch {
     const profile: ProfilePatch = {
         name: patch.name,
         logoKey: patch.logoKey,
+        coverKey: patch.coverKey,
         address: patch.address,
     }
     if (patch.brandColor !== undefined) {

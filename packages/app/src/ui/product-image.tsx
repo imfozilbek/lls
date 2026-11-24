@@ -20,6 +20,46 @@ function tintOf(category: string): string {
 /** Photos already on screen once this session: shown again at once, never faded in twice. */
 const seen = new Set<string>()
 
+/** While there is no photo on screen: the name's first letter, or the category's drawing. */
+function Placeholder({
+    letter,
+    category,
+    iconSize,
+}: {
+    letter: string
+    category: string
+    iconSize: number
+}): React.JSX.Element {
+    if (letter) {
+        return (
+            <div className="absolute inset-0 grid place-items-center" aria-hidden="true">
+                <span className="text-5xl font-bold opacity-80">{letter}</span>
+                <CategoryIcon
+                    category={category}
+                    size={18}
+                    strokeWidth={1.75}
+                    className="absolute left-3 top-3 opacity-70"
+                />
+            </div>
+        )
+    }
+    return (
+        <div className="absolute inset-0 grid place-items-center text-brand/70">
+            <CategoryIcon category={category} size={iconSize} strokeWidth={1.5} />
+        </div>
+    )
+}
+
+/** The photo over its placeholder: faded in once a session, multiplied on a card's gray. */
+function photoClass(inset: boolean, known: boolean, loaded: boolean): string {
+    return cn(
+        "absolute inset-0 h-full w-full object-cover",
+        inset && "mix-blend-multiply",
+        !known && "transition-opacity duration-300 ease-out-quart",
+        loaded ? "opacity-100" : "opacity-0",
+    )
+}
+
 /** Photo with a calm brand-tinted placeholder (category drawing) while loading or when missing. */
 export function ProductImage({
     imageKey,
@@ -28,6 +68,7 @@ export function ProductImage({
     className,
     iconSize = 34,
     name,
+    inset = false,
 }: {
     imageKey?: string
     category: string
@@ -36,6 +77,11 @@ export function ProductImage({
     iconSize?: number
     /** Without a photo, the first letter of the name says what it is at a glance. */
     name?: string
+    /**
+     * A small photo inside a white card: drawn on the card's inner gray, its white background
+     * multiplied into it, so the photo keeps its edge (goal 24).
+     */
+    inset?: boolean
 }): React.JSX.Element {
     const src = imageUrl(imageKey)
     // State is tied to the URL, so a new or removed photo starts from a clean placeholder.
@@ -48,23 +94,16 @@ export function ProductImage({
     const failed = src !== undefined && failedSrc === src
     const letter = !src && name ? name.trim().charAt(0).toUpperCase() : ""
     return (
-        <div className={cn("relative overflow-hidden text-brand", tintOf(category), className)}>
-            {!loaded && letter ? (
-                <div className="absolute inset-0 grid place-items-center" aria-hidden="true">
-                    <span className="text-5xl font-bold opacity-80">{letter}</span>
-                    <CategoryIcon
-                        category={category}
-                        size={18}
-                        strokeWidth={1.75}
-                        className="absolute left-3 top-3 opacity-70"
-                    />
-                </div>
-            ) : null}
-            {!loaded && !letter ? (
-                <div className="absolute inset-0 grid place-items-center text-brand/70">
-                    <CategoryIcon category={category} size={iconSize} strokeWidth={1.5} />
-                </div>
-            ) : null}
+        <div
+            className={cn(
+                "relative overflow-hidden text-brand",
+                inset && src ? "bg-tg-bg" : tintOf(category),
+                className,
+            )}
+        >
+            {loaded ? null : (
+                <Placeholder letter={letter} category={category} iconSize={iconSize} />
+            )}
             {src && !failed ? (
                 <img
                     src={src}
@@ -79,11 +118,7 @@ export function ProductImage({
                         setFailedSrc(src)
                         void reportMissingImage(src, "product")
                     }}
-                    className={cn(
-                        "absolute inset-0 h-full w-full object-cover",
-                        !known && "transition-opacity duration-300 ease-out-quart",
-                        loaded ? "opacity-100" : "opacity-0",
-                    )}
+                    className={photoClass(inset, known, loaded)}
                 />
             ) : null}
         </div>

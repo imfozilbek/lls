@@ -83,6 +83,12 @@ const config: Config = {
                 tile: "1.125rem",
                 control: "0.875rem",
             },
+            // Two shadows only (goal 24): a card resting on the page, and what floats over a
+            // photo, a map or the page. The ink is the text's color at low strength.
+            boxShadow: {
+                card: "0 1px 2px rgb(var(--ui-shadow-rgb) / 0.05), 0 4px 14px -6px rgb(var(--ui-shadow-rgb) / 0.12)",
+                raised: "0 1px 3px rgb(var(--ui-shadow-rgb) / 0.1), 0 6px 16px -6px rgb(var(--ui-shadow-rgb) / 0.24)",
+            },
             zIndex: {
                 sticky: "10",
                 bar: "20",

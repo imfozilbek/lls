@@ -14,9 +14,12 @@ import type { OrderDTO, OrderItemDTO, ProductDTO } from "@zumda/core"
 export function OrderItems({
     order,
     products,
+    inset = false,
 }: {
     order: OrderDTO
     products?: ReadonlyMap<string, ProductDTO>
+    /** Inside a card (the courier's): its inner color, so the lines never melt into the card. */
+    inset?: boolean
 }): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -30,7 +33,7 @@ export function OrderItems({
             />
         ) : null
     return (
-        <div className="rounded-tile bg-tg-secondary p-4">
+        <div className={inset ? "rounded-tile bg-tg-bg p-4" : "rounded-tile bg-tg-secondary p-4"}>
             <ul className="flex flex-col gap-2">
                 {order.items.map((item) => (
                     <li

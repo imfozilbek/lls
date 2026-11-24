@@ -217,6 +217,11 @@ async function seedSql(tokenKey: string): Promise<string> {
         "DELETE FROM source_visits;",
         "DELETE FROM source_links;",
         "DELETE FROM shop_channels;",
+        // The support group, its topics and why it went (migrations 0037, 0038): they point at
+        // the shops too, and a spec may end with a group lost.
+        "DELETE FROM support_threads;",
+        "DELETE FROM support_refusals;",
+        "DELETE FROM support_groups;",
         "DELETE FROM order_items;",
         "DELETE FROM cash_handovers;",
         "DELETE FROM orders;",

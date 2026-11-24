@@ -161,6 +161,24 @@ describe("the shop's support group", () => {
             expect(shop.supportChat).toBe(false)
         })
 
+        it("a number kept from customers shows again when the group is lost", async () => {
+            await madeAdmin()
+            const hidden = await owner()("/api/owner/shop", {
+                method: "PATCH",
+                json: { phoneHidden: true },
+            })
+            expect(hidden.status).toBe(200)
+            await member("left")
+            expect(toOwner().at(-1)).toContain("Raqamingiz mijozlarga yana ko'rinadi.")
+            const shop = await json<{ callPhone?: string }>(await as(CUSTOMER)("/api/shop"))
+            expect(shop.callPhone).toBeDefined()
+            // Without the hidden number the owner hears only that the group is gone.
+            await owner()("/api/owner/shop", { method: "PATCH", json: { phoneHidden: false } })
+            await madeAdmin()
+            await member("left")
+            expect(toOwner().at(-1)).not.toContain("Raqamingiz")
+        })
+
         it("«Guruhni ajratish»: forgotten, and the bot leaves", async () => {
             await madeAdmin()
             const response = await owner()("/api/owner/support", { method: "DELETE" })

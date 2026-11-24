@@ -144,12 +144,12 @@ export function CartLines({
                             }
                         })
                     }}
-                    className="tap -mr-2 inline-flex min-h-11 items-center rounded-control px-3 text-sm font-semibold text-tg-subtitle active:bg-tg-secondary"
+                    className="tap -mr-2 inline-flex min-h-11 items-center rounded-control px-3 text-sm font-semibold text-tg-subtitle active:bg-tg-bg"
                 >
                     {t.cart.clear}
                 </button>
             </div>
-            <ul className="mt-1 divide-y divide-tg-separator">
+            <ul className="mt-1 divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary px-3">
                 {cart.lines.map((line) => (
                     <Line key={line.key} line={line} />
                 ))}

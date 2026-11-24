@@ -169,13 +169,18 @@ more to an order's way.
 «Savolim bor» (goal 23) reads the shop's support group (one row by its key) once per message
 to the customer and per /start: about +1 500 reads a day at 300 orders, no writes.
 
+The storefront's look (goal 24) adds no request and no read: the layout, the cover and the
+hidden number are columns of the shop's own row. A showcase order's message reads the support
+group too, only for a shop that keeps its number back (one row by its key). Saving a layout or
+the switch writes the shop's row once, like any other setting.
+
 ## R2 storage
 
 | What | Size | Grows? |
 |------|-----:|--------|
 | The map: the current file and the one before (`map-data.mjs` removes the rest) | ~550 MB | no |
 | Fonts and icons of the map | a few MB | no |
-| Product photos (10 shops × 100 × up to 3 × ~80 KB) and logos, posters | ~100-250 MB | with the catalogs only |
+| Product photos (10 shops × 100 × up to 3 × ~80 KB) and logos, covers (one a shop, ~150 KB), posters | ~100-250 MB | with the catalogs only |
 | Transfer screenshots (`zumda-receipts`): 300 a day × ~150 KB (1 280 px) × 30 days | ~1.35 GB | no: R2 deletes each after 30 days |
 | **Total** | **~2 GB** | |
 

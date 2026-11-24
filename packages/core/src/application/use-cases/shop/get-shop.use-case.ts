@@ -11,7 +11,8 @@ import type { SupportGroupRepository } from "../../ports/support.js"
 
 /**
  * Storefront entry: a turned-off or rejected shop is visible only to its owner. It carries the
- * number to call the shop on (its own, or the owner's).
+ * number to call the shop on (its own, or the owner's), unless the owner hides it from customers
+ * while the support group answers them (goal 24); the owner always sees it.
  */
 export class GetShopBySlugUseCase {
     constructor(
@@ -29,9 +30,12 @@ export class GetShopBySlugUseCase {
         }
         const callPhone = await shopCallPhone(business, this.customers)
         const supportChat = Boolean(await this.supportGroups?.find(business.id))
-        // No number to call, no orders: the storefront says it will start taking them soon.
+        const isOwner = viewerTelegramId === business.ownerTelegramId.value
+        // No number to call, no orders: the storefront says it will start taking them soon. A
+        // hidden number is still a number: the shop takes orders, customers write instead.
         return toShopPublicDTO(business, this.clock.now(), {
             withCard: true,
+            withPhone: isOwner || business.showsPhoneToCustomers(supportChat),
             callPhone,
             noPhone: callPhone === undefined && !business.isDemo(),
             supportChat,

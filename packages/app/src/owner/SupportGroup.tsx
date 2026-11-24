@@ -169,7 +169,7 @@ function Step({
                         haptic.tap()
                         setOpen(!open)
                     }}
-                    className="tap -ml-2 flex h-9 items-center gap-1 self-start rounded-control px-2 text-sm font-semibold text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                    className="tap -my-1 -ml-2 flex h-11 items-center gap-1 self-start rounded-control px-2 text-sm font-semibold text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
                 >
                     {s.howTo}
                     <ChevronIcon

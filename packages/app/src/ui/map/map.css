@@ -1,5 +1,12 @@
-/* OpenStreetMap's credit stays (its licence asks for it): quiet, readable (13 px). */
-.zumda-map .maplibregl-ctrl-attrib {
+/*
+ * OpenStreetMap's credit stays in sight (its licence asks for it): quiet, readable (13 px), a
+ * small pill off the map's rounded corner. Never folded behind an «i»: nothing to press.
+ */
+.zumda-map .maplibregl-ctrl.maplibregl-ctrl-attrib {
+    margin: 0 8px 8px 0;
+    padding: 0 8px;
+    border-radius: 9999px;
     font-size: 13px;
-    background: rgb(255 255 255 / 0.75);
+    line-height: 20px;
+    background: rgb(255 255 255 / 0.8);
 }

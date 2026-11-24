@@ -1093,9 +1093,24 @@ export class Notifier {
         return sent.messageId
     }
 
-    /** The shop's own bot, when the shop answers in its support group: ask here (goal 23). */
-    private async asksHere(business: Business, showcase: boolean): Promise<boolean> {
-        return !showcase && (await this.services.supportGroups.find(business.id)) !== null
+    /**
+     * How the customer reaches the shop from the order's message. `asks`: the shop answers in its
+     * support group, so the customer may write to its bot (goal 23; never on a showcase order,
+     * whose customer hears from Zumda | Shop). `phone`: the shop's number, unless the owner keeps
+     * it from customers while that group answers them (goal 24). The group is read once, and for
+     * a showcase order only when the number may be hidden.
+     */
+    private async customerReach(
+        business: Business,
+        showcase: boolean,
+    ): Promise<{ asks: boolean; phone?: string }> {
+        const group =
+            (!showcase || business.phoneHidden) &&
+            (await this.services.supportGroups.find(business.id)) !== null
+        const phone = business.showsPhoneToCustomers(group)
+            ? (await shopCallPhone(business, this.services.customers))?.number
+            : undefined
+        return { asks: group && !showcase, phone }
     }
 
     /**
@@ -1116,12 +1131,11 @@ export class Notifier {
         }
         const reader = { language: customer.language, type: business.type }
         const t = textsFor(customer.language, business.type)
-        const phone = await shopCallPhone(business, this.services.customers)
         const showcase = order.channel === OrderChannel.MARKETPLACE
         const origin = this.services.env.APP_ORIGIN
         const slug = business.slug.value
-        const card = formatCustomerCard(order, reader, event, phone?.number)
-        const asks = await this.asksHere(business, showcase)
+        const { asks, phone } = await this.customerReach(business, showcase)
+        const card = formatCustomerCard(order, reader, event, phone)
         const text = [
             ...(business.isDemo() ? [t.demoOrder] : []),
             ...(showcase ? [`<b>${escapeHtml(business.name)}</b>`] : []),

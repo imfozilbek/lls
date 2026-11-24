@@ -113,7 +113,7 @@ export function ScreenSkeleton(): React.JSX.Element {
 export function SheetLoading(): React.JSX.Element {
     return (
         <div
-            className="fixed inset-x-0 bottom-0 z-sheet flex h-40 items-center justify-center rounded-t-tile bg-tg-bg text-tg-hint shadow-lg"
+            className="fixed inset-x-0 bottom-0 z-sheet flex h-40 items-center justify-center rounded-t-tile bg-tg-bg text-tg-hint shadow-raised"
             aria-busy="true"
         >
             <Spinner className="h-6 w-6" />

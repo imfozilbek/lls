@@ -182,7 +182,7 @@ export function BulkAdd(): React.JSX.Element {
                     <p className="px-1 text-sm font-semibold text-tg-hint">
                         {fill(p.bulkReady, { n: ready.length })}
                     </p>
-                    <ul className="flex flex-col divide-y divide-tg-separator">
+                    <ul className="flex flex-col divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary px-3">
                         {rows.map((row, line) => (
                             <RowView key={line} row={row} />
                         ))}

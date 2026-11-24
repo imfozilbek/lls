@@ -81,7 +81,7 @@ export function PlatformApp({
                 <button
                     type="button"
                     onClick={onSignOut}
-                    className="tap mx-auto mt-2 block rounded-control px-3 py-2 text-sm font-semibold text-tg-hint focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                    className="tap mx-auto mt-2 block min-h-11 rounded-control px-4 text-sm font-semibold text-tg-hint focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
                 >
                     {web.signOut}
                 </button>

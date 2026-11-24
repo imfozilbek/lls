@@ -26,7 +26,7 @@ export function LanguageSwitch(): React.JSX.Element | null {
         return null
     }
     return (
-        <div className="flex rounded-full bg-tg-secondary p-0.5 text-xs font-semibold">
+        <div className="flex rounded-full bg-tg-separator p-0.5 text-xs font-semibold">
             {LANGUAGES.map((code) => (
                 <button
                     key={code}
@@ -35,7 +35,9 @@ export function LanguageSwitch(): React.JSX.Element | null {
                     aria-pressed={code === language}
                     className={cn(
                         "tap h-10 min-w-11 rounded-full px-2.5 uppercase transition-colors duration-200",
-                        code === language ? "bg-tg-bg text-tg-text shadow-sm" : "text-tg-hint",
+                        code === language
+                            ? "bg-tg-section text-tg-text shadow-card"
+                            : "text-tg-hint",
                     )}
                 >
                     {code}

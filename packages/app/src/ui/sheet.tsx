@@ -54,7 +54,7 @@ export function Sheet({
                 onClick={onClose}
                 className="absolute inset-0 animate-fade-in bg-black/40"
             />
-            <div className="pb-safe relative animate-sheet-in rounded-t-[1.5rem] bg-tg-bg px-4 pt-3 shadow-2xl">
+            <div className="pb-safe relative animate-sheet-in rounded-t-[1.5rem] bg-tg-bg px-4 pt-3 shadow-raised">
                 <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-tg-hint/30" aria-hidden />
                 <h2 className="mb-3 text-lg font-bold">{title}</h2>
                 <div

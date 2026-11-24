@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { OrderItem } from "../../../domain/entities/order-item.js"
-import { Product } from "../../../domain/entities/product.js"
+import { NEW_PRODUCT_DAYS, Product } from "../../../domain/entities/product.js"
 import { Language } from "../../../domain/enums/language.js"
 import { Unit } from "../../../domain/enums/unit.js"
 import { ValidationError } from "../../../domain/errors/validation.error.js"
@@ -18,6 +18,17 @@ describe("Product", () => {
         expect(product.position).toBe(0)
         expect(product.belongsTo("biz-1")).toBe(true)
         expect(product.belongsTo("biz-2")).toBe(false)
+    })
+
+    it("is new for 30 days after the owner added it, by the server's clock", () => {
+        const product = makeProduct()
+        const added = product.createdAt.getTime()
+        const day = 24 * 60 * 60 * 1000
+        expect(product.isNewAt(new Date(added))).toBe(true)
+        expect(product.isNewAt(new Date(added + (NEW_PRODUCT_DAYS - 1) * day))).toBe(true)
+        expect(product.isNewAt(new Date(added + NEW_PRODUCT_DAYS * day))).toBe(false)
+        // Added "after" now (a clock moved back): still new, never a negative age.
+        expect(product.isNewAt(new Date(added - day))).toBe(true)
     })
 
     it("rejects invalid data", () => {
