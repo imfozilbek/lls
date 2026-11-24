@@ -79,7 +79,7 @@ export function listenForCrashes(
  */
 export function reportMissingImage(
     src: string,
-    what: "logo" | "product",
+    what: "logo" | "product" | "cover",
     send: (facts: CrashFacts) => void = sendCrash,
     request: typeof fetch = fetch,
     seen: Set<string> = missingSeen,

@@ -139,6 +139,9 @@ export const uz = {
         },
         dayOff: "Bugun dam olish kuni",
         all: "Hammasi",
+        /** «Bo'limlarga ajratilgan»: the shelf of what the shop added lately (goal 24). */
+        newArrivals: "Yangi kelganlar",
+        seeAllNew: "Hammasini ko'rish",
         /** «15 000 so'm dan»: a product with variants costs from its cheapest one. */
         from: "dan",
         addons: "Qo'shimchalar",
