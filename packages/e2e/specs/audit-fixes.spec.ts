@@ -27,6 +27,8 @@ test("a photo that failed to upload: «Saqlash» again saves it, never a second 
         mimeType: "image/png",
         buffer: pngImage(300),
     })
+    // The photo is shrunk in the app first: «Saqlash» before it is ready would send no photo.
+    await expect(page.getByText("Asosiy", { exact: true })).toBeVisible()
     await page.getByLabel("Narxi").fill("25000")
     // The weak network drops the photo once.
     let failed = false
