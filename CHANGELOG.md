@@ -17,8 +17,10 @@ deploy were removed; they stay available at git tag `legacy-v0`. Versions are bu
 - **«Raqamni mijozlarga ko'rsatmaslik»**: while the support group answers customers, they write
   with «Savolim bor» instead of calling; couriers see the number; the group gone, it shows again.
 - **A finger's size everywhere** (44 px or more): the catalog's rows, an order line's photo, the
-  bot step's links, the buttons of «Ishga tayyor»; a product's photo opens it, as its name does.
-  The map's credit «© OpenStreetMap» stays in sight: no «i» to press.
+  bot step's links, the buttons of «Ishga tayyor», the courier's «Tarkibi», a courier's phone,
+  «Qanday qilinadi?», «Chiqish»; the week's seven days are 41 px wide with room between them
+  (WCAG 2.5.8's spacing at 44 px). A product's photo opens it, as its name does. The map's
+  credit «© OpenStreetMap» stays in sight: no «i» to press.
 - The first download may be 150 KB gzip. Migration `0039` (additive): the layout, the cover, the
   hidden number.
 
