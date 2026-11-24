@@ -20,6 +20,7 @@ import { useBackButton, useClosingGuard, useMainAction } from "../lib/main-butto
 import { useRefresh } from "../lib/refresh.js"
 import { paymentReady } from "../lib/shop-ready.js"
 import { confirm, getLocation, haptic } from "../lib/telegram.js"
+import { resolveLayout } from "../shop/menu-layout.js"
 import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
 import { AlertIcon, CheckIcon, ChevronIcon, CopyIcon, PinIcon, WifiOffIcon } from "../ui/icons.js"
@@ -42,6 +43,7 @@ import { AdLinks } from "./AdLinks.js"
 import { ChannelGroup } from "./ChannelGroup.js"
 import { CouriersSection, NetworkSection } from "./CouriersSection.js"
 import { HoursEditor } from "./HoursEditor.js"
+import { LookSection } from "./LookSection.js"
 import { PaymentCardsSection } from "./PaymentCardsSection.js"
 import { PaymentOptionsSection } from "./PaymentOptionsSection.js"
 import { PosterSection } from "./PosterSection.js"
@@ -49,6 +51,7 @@ import { ShareOwnPhone } from "./ShareOwnPhone.js"
 import { SUPPORT_CACHE_KEY, SupportGroup } from "./SupportGroup.js"
 import { DeliveryPriceChoices } from "./delivery-price.js"
 import { hasOpenDay, hoursOf, scheduleOf } from "./hours.js"
+import { phoneSwitchState } from "./phone-switch.js"
 import { useOwner } from "./store.js"
 import { saveTick, useTick } from "./ticks.js"
 
@@ -649,6 +652,57 @@ function FeatureFields({
     )
 }
 
+/**
+ * «Raqamni mijozlarga ko'rsatmaslik» (owner's decision, November 2026; goal 24): customers write
+ * to the shop's bot instead of calling, couriers still see the number. Only with the support
+ * group: without it the switch says so, and a number hidden before shows again by itself.
+ */
+function PhoneHiddenSwitch({
+    shop,
+    onSaved,
+}: {
+    shop: ShopOwnerDTO
+    onSaved(shop: ShopOwnerDTO): void
+}): React.JSX.Element {
+    const t = useT()
+    const s = t.owner.settings
+    const group = useSession((state) => state.shop?.supportChat === true)
+    const [hidden, setHidden] = useState(shop.phoneHidden)
+    useEffect(() => setHidden(shop.phoneHidden), [shop.phoneHidden])
+    const state = phoneSwitchState(hidden, group)
+    const change = async (next: boolean): Promise<void> => {
+        if (state === "needsGroup") {
+            haptic.error()
+            toast(s.phoneHiddenNeedsGroup, "error")
+            return
+        }
+        setHidden(next)
+        try {
+            onSaved(await api.owner.updateShop({ phoneHidden: next }))
+            toast(s.saved, "success")
+        } catch (caught) {
+            setHidden(!next)
+            failToast(t, caught)
+        }
+    }
+    return (
+        <div className="flex flex-col gap-1.5 rounded-tile bg-tg-secondary p-4">
+            <div className="flex items-center gap-3">
+                <span className="flex-1 font-semibold">{s.phoneHidden}</span>
+                <Switch
+                    checked={hidden}
+                    inactive={state === "needsGroup"}
+                    onChange={(next): void => void change(next)}
+                    label={s.phoneHidden}
+                />
+            </div>
+            <p className="text-sm text-tg-hint">
+                {state === "available" ? s.phoneHiddenHint : s.phoneHiddenNeedsGroup}
+            </p>
+        </div>
+    )
+}
+
 /** Logo, name, color and the number customers call. */
 function ShopFields({
     shop,
@@ -705,6 +759,7 @@ function ShopFields({
                 />
             </Field>
             {form.contactPhone.trim() ? null : <ShareOwnPhone />}
+            {shop.demo ? null : <PhoneHiddenSwitch shop={shop} onSaved={onSaved} />}
         </Section>
     )
 }
@@ -712,6 +767,7 @@ function ShopFields({
 /** The parts of «Sozlamalar»: the first screen lists them, a tap opens one. */
 type SettingsGroup =
     | "shop"
+    | "look"
     | "delivery"
     | "hours"
     | "location"
@@ -724,6 +780,7 @@ type SettingsGroup =
 
 const GROUPS: SettingsGroup[] = [
     "shop",
+    "look",
     "delivery",
     "hours",
     "location",
@@ -752,6 +809,7 @@ type Settings = Dictionary["owner"]["settings"]
 function groupTitle(s: Settings, group: SettingsGroup): string {
     const titles: Record<SettingsGroup, string> = {
         shop: s.shop,
+        look: s.look.group,
         delivery: s.delivery,
         hours: s.hours,
         location: s.address,
@@ -828,8 +886,10 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
             loadCouriers().catch(() => undefined)
         }
     }, [couriers, loadCouriers])
+    const catalog = useSession((state) => state.catalog)
     const radius = shop.deliveryRadiusMeters
     const on = shop.features.map((f) => s.featureNames[f])
+    const layout = s.look.layouts[resolveLayout(shop.storefrontLayout, catalog)].name
     const team = couriers?.filter((c) => c.status === "active").length
     // Someone accepted the invite and waits: the owner's tap is the only thing missing.
     const waiting = couriers?.filter((c) => c.status === "pending").length ?? 0
@@ -839,6 +899,7 @@ function useSummaries(shop: ShopOwnerDTO): Record<SettingsGroup, { text: string;
                 .filter(Boolean)
                 .join(" · "),
         },
+        look: { text: [layout, shop.coverKey ? s.look.cover : null].filter(Boolean).join(" · ") },
         delivery: {
             text: [
                 deliveryPrice(s, shop, language),
@@ -1021,6 +1082,8 @@ function GroupBody({
     switch (group) {
         case "shop":
             return <ShopFields shop={shop} onSaved={onSaved} form={form} patch={patch} />
+        case "look":
+            return <LookSection shop={shop} onSaved={onSaved} />
         case "delivery":
             return <DeliveryFields form={form} patch={patch} />
         case "hours":

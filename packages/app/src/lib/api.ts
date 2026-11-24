@@ -33,6 +33,7 @@ import type {
     MoneyReportDTO,
     ShopPublicDTO,
     ShowcaseProductDTO,
+    StorefrontLayout,
     TripDTO,
 } from "@zumda/core"
 
@@ -357,6 +358,10 @@ export type ShopPatch = Partial<{
     features: string[]
     bottleDeposit: number
     paymentOptions: PaymentOptions
+    /** «Vitrina qanday ko'rinadi»: once chosen, changed, never unset. */
+    storefrontLayout: StorefrontLayout
+    /** «Raqamni mijozlarga ko'rsatmaslik»: on only with the support group. */
+    phoneHidden: boolean
 }>
 
 export interface ProductInput {
@@ -459,6 +464,10 @@ export const api = {
             request("PATCH", "/api/owner/shop", patch),
         uploadLogo: (image: Blob): Promise<ShopOwnerDTO> =>
             request("PUT", "/api/owner/shop/logo", image),
+        /** «Muqova rasmi»: the wide picture over the storefront (goal 24). */
+        uploadCover: (image: Blob): Promise<ShopOwnerDTO> =>
+            request("PUT", "/api/owner/shop/cover", image),
+        removeCover: (): Promise<ShopOwnerDTO> => request("DELETE", "/api/owner/shop/cover"),
         /** Zumda's picture on the shop bot (`lib/bot-avatar.ts`). */
         setBotPhoto: (jpeg: Blob): Promise<void> =>
             request("PUT", "/api/owner/shop/bot-photo", jpeg),

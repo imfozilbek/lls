@@ -219,10 +219,16 @@ export function Switch({
     checked,
     onChange,
     label,
+    inactive = false,
 }: {
     checked: boolean
     onChange(checked: boolean): void
     label: string
+    /**
+     * Cannot flip yet: drawn dimmed, never dead (a tap reaches `onChange`, which says why; the
+     * reason also stands in words next to it).
+     */
+    inactive?: boolean
 }): React.JSX.Element {
     return (
         <button
@@ -234,7 +240,10 @@ export function Switch({
                 haptic.select()
                 onChange(!checked)
             }}
-            className="group relative -my-1.5 grid h-11 w-[60px] shrink-0 place-items-center"
+            className={cn(
+                "group relative -my-1.5 grid h-11 w-[60px] shrink-0 place-items-center",
+                inactive && "opacity-50",
+            )}
         >
             {/* The track is 52×32; the button around it is the 44 px a thumb needs. */}
             <span
