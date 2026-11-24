@@ -1078,7 +1078,7 @@ document.innerHTML = x                 // XSS
 | DB query | < 100ms |
 | Worker CPU | < 10ms per request |
 | Worker memory | < 128MB |
-| Mini App initial JS | ≤ 100 KB gzip (regional mobile internet is slow) |
+| Mini App initial JS | ≤ 150 KB gzip (regional mobile internet is slow; owner's decision, November 2026) |
 
 **AVOID:**
 - N+1 queries: use JOIN or `db.batch`

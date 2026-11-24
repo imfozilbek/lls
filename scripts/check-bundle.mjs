@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // The Mini App's first JS must stay small on slow regional mobile internet (CLAUDE.md:
-// "Mini App initial JS <= 100 KB gzip"). Run after `vite build`: sums the gzip size of the entry
+// "Mini App initial JS <= 150 KB gzip"). Run after `vite build`: sums the gzip size of the entry
 // script in dist/index.html and every chunk it imports statically, and fails above the budget.
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 import { gzipSync } from "node:zlib"
 
-const BUDGET_KB = 100
+const BUDGET_KB = 150
 const KB = 1000
 const dist = process.argv[2] ?? "dist"
 
