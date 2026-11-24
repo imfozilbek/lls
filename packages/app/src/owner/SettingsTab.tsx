@@ -151,13 +151,19 @@ export function sectionId(section: ReadySection): string {
 
 /**
  * The saved shop goes to the session at once (the brand color, the checklist), keeping what only
- * the storefront answer carries (`callPhone`); then the storefront answer itself, quietly: the
+ * the storefront answer carries (`callPhone`, `supportChat`); then the storefront answer itself, quietly: the
  * owner's own number may stand in for the shop's, and only the server knows it.
  */
 export function publish(shop: ShopOwnerDTO): void {
     applyBrand(shop.brandColor)
     const session = useSession.getState()
-    session.setShop({ ...shop, callPhone: session.shop?.callPhone, viewerRole: "owner" })
+    session.setShop({
+        ...shop,
+        callPhone: session.shop?.callPhone,
+        // The owner's answer never knows the support group: the storefront's does.
+        supportChat: session.shop?.supportChat ?? false,
+        viewerRole: "owner",
+    })
     api.shop()
         .then((fresh) => {
             if (useSession.getState().shop?.id === fresh.id) {
@@ -738,6 +744,7 @@ const READY_GROUP: Record<ReadySection, SettingsGroup> = {
     delivery: "delivery",
     hours: "hours",
     courier: "courier",
+    support: "support",
 }
 
 type Settings = Dictionary["owner"]["settings"]

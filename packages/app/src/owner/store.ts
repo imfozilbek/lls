@@ -8,7 +8,8 @@ import type { CourierDTO, ProductDTO } from "@zumda/core"
 export type OwnerTab = "orders" | "menu" | "money" | "settings"
 
 /** The places in «Sozlamalar» that «Ishga tayyor» leads to. */
-export type ReadySection = "card" | "phone" | "location" | "delivery" | "hours" | "logo" | "courier"
+export type ReadySection =
+    "card" | "phone" | "location" | "delivery" | "hours" | "logo" | "courier" | "support"
 
 interface OwnerState {
     /** The business this state belongs to: «Mening bizneslarim» switches between several. */

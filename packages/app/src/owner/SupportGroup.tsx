@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
-import { errorText, useT } from "../i18n/index.js"
+import { errorText, fill, useT } from "../i18n/index.js"
 import { ApiError, request } from "../lib/api.js"
+import { cn } from "../lib/cn.js"
 import { usePolling } from "../lib/polling.js"
 import { useRefresh } from "../lib/refresh.js"
 import { confirm, haptic, openTelegramLink } from "../lib/telegram.js"
 import { useCachedState } from "../lib/use-cached.js"
+import { useSession } from "../stores/session.js"
 import { toast } from "../stores/toast.js"
+import { AlertIcon, ChevronIcon } from "../ui/icons.js"
 import { Button, Skeleton, Spinner } from "../ui/primitives.js"
 import { ChatIcon } from "../ui/write-shop.js"
 
@@ -18,6 +21,13 @@ export interface SupportGroupInfo {
     connectedAt: string
 }
 
+/** Why the last try failed (or the group was lost), and when: the server's own words. */
+export interface SupportRefusalInfo {
+    reason: "notOwner" | "demo" | "notForum" | "noTopics" | "lost"
+    title: string
+    at: string
+}
+
 /** The session cache key of the group: «Sozlamalar» shows its name from it. */
 export const SUPPORT_CACHE_KEY = "owner-support"
 
@@ -26,7 +36,8 @@ const WAIT_POLL_MS = 15_000
 const WAIT_FOR_MS = 5 * 60_000
 
 const supportApi = {
-    group: (): Promise<{ group: SupportGroupInfo | null }> => request("GET", "/api/owner/support"),
+    group: (): Promise<{ group: SupportGroupInfo | null; refusal: SupportRefusalInfo | null }> =>
+        request("GET", "/api/owner/support"),
     /** The shop's bot hears the group from now on; `url` opens Telegram's own screen. */
     connect: (): Promise<{ url: string }> => request("POST", "/api/owner/support/connect"),
     disconnect: (): Promise<void> => request("DELETE", "/api/owner/support"),
@@ -45,7 +56,18 @@ interface SupportState {
     connecting: boolean
     /** The owner is on Telegram's screen: the group shows here the moment it is connected. */
     waiting: boolean
+    /** Why the last try failed: shown until a group is connected. */
+    refusal: SupportRefusalInfo | null
     set(info: SupportGroupInfo | null): void
+}
+
+/** The storefront's `supportChat` follows what the owner sees here: the checklist reads it. */
+function syncSession(connected: boolean): void {
+    const session = useSession.getState()
+    const shop = session.shop
+    if (shop && shop.supportChat !== connected) {
+        session.setShop({ ...shop, supportChat: connected })
+    }
 }
 
 /**
@@ -55,19 +77,36 @@ interface SupportState {
  */
 function useSupportGroup(): SupportState {
     const t = useT()
-    const [cached, setCached] = useCachedState<{ info: SupportGroupInfo | null }>(SUPPORT_CACHE_KEY)
+    const [cached, setCached] = useCachedState<{
+        info: SupportGroupInfo | null
+        refusal?: SupportRefusalInfo | null
+    }>(SUPPORT_CACHE_KEY)
     const [connecting, setConnecting] = useState(false)
     const [waitingSince, setWaitingSince] = useState<number | null>(null)
     const info = cached?.info
+    const refusal = cached?.refusal ?? null
     const set = useCallback(
-        (next: SupportGroupInfo | null) => setCached({ info: next }),
+        (next: SupportGroupInfo | null) => {
+            setCached({ info: next, refusal: null })
+            syncSession(next !== null)
+        },
         [setCached],
     )
     const load = useCallback(async (): Promise<void> => {
-        const { group } = await supportApi.group()
-        set(group)
-    }, [set])
-    const waiting = waitingSince !== null && info === null
+        const { group, refusal: why } = await supportApi.group()
+        setCached({ info: group, refusal: why })
+        syncSession(group !== null)
+    }, [setCached])
+    // Telegram's screen was left with a refusal newer than the press: no more waiting, it is said.
+    const refusedNow =
+        waitingSince !== null && refusal !== null && Date.parse(refusal.at) >= waitingSince
+    useEffect(() => {
+        if (refusedNow) {
+            setWaitingSince(null)
+            haptic.error()
+        }
+    }, [refusedNow])
+    const waiting = waitingSince !== null && info === null && !refusedNow
     usePolling(() => load().catch(() => undefined), WAIT_POLL_MS, waiting)
     useEffect(() => {
         if (waitingSince === null) {
@@ -102,7 +141,54 @@ function useSupportGroup(): SupportState {
             setConnecting(false)
         }
     }
-    return { info, load, connect, connecting, waiting, set }
+    return { info, load, connect, connecting, waiting, refusal, set }
+}
+
+/** One step, with what to press in Telegram under «Qanday qilinadi?». */
+function Step({
+    index,
+    text,
+    detail,
+}: {
+    index: number
+    text: string
+    detail: string
+}): React.JSX.Element {
+    const s = useT().owner.support
+    const [open, setOpen] = useState(false)
+    return (
+        <li className="flex items-start gap-3">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand text-xs font-bold text-brand-ink">
+                {index + 1}
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col">
+                <span className="pt-0.5">{text}</span>
+                <button
+                    type="button"
+                    aria-expanded={open}
+                    onClick={(): void => {
+                        haptic.tap()
+                        setOpen(!open)
+                    }}
+                    className="tap -ml-2 flex h-9 items-center gap-1 self-start rounded-control px-2 text-sm font-semibold text-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                >
+                    {s.howTo}
+                    <ChevronIcon
+                        size={14}
+                        className={cn(
+                            "transition-transform duration-200",
+                            open ? "-rotate-90" : "rotate-90",
+                        )}
+                    />
+                </button>
+                {open ? (
+                    <p className="animate-fade-in rounded-control bg-tg-bg p-3 text-sm text-tg-subtitle">
+                        {detail}
+                    </p>
+                ) : null}
+            </div>
+        </li>
+    )
 }
 
 /** What to do in Telegram first: a group of the shop's people, with topics on. */
@@ -111,14 +197,41 @@ function Steps(): React.JSX.Element {
     return (
         <ol className="flex flex-col gap-2">
             {s.steps.map((step, index) => (
-                <li key={step} className="flex items-start gap-3">
-                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-brand text-xs font-bold text-brand-ink">
-                        {index + 1}
-                    </span>
-                    <span className="pt-0.5">{step}</span>
-                </li>
+                <Step key={step} index={index} text={step} detail={s.stepDetails[index] ?? ""} />
             ))}
         </ol>
+    )
+}
+
+/** Why the last try failed, said plainly, with the way to try again. */
+function Refusal({
+    refusal,
+    state,
+}: {
+    refusal: SupportRefusalInfo
+    state: SupportState
+}): React.JSX.Element {
+    const s = useT().owner.support
+    const title = refusal.reason === "lost" ? s.lostTitle : s.refusedTitle
+    return (
+        <div
+            className="flex animate-fade-in flex-col gap-2 rounded-control bg-danger/10 p-3"
+            role="alert"
+        >
+            <p className="flex items-center gap-2 font-semibold">
+                <AlertIcon size={18} className="shrink-0 text-danger" />
+                {fill(title, { group: refusal.title })}
+            </p>
+            <p className="text-sm text-tg-subtitle">{s.refused[refusal.reason]}</p>
+            <Button
+                variant="surface"
+                className="self-start"
+                loading={state.connecting}
+                onClick={(): void => void state.connect()}
+            >
+                {s.retry}
+            </Button>
+        </div>
     )
 }
 
@@ -139,6 +252,9 @@ function NotConnected({
                 <ChatIcon size={26} />
             </span>
             <p>{s.intro}</p>
+            {state.refusal && !state.waiting ? (
+                <Refusal refusal={state.refusal} state={state} />
+            ) : null}
             <Steps />
             <Button
                 size="lg"
