@@ -6,19 +6,22 @@ import { writeFileSync } from "node:fs"
 
 import { expect, test } from "@playwright/test"
 
+import { APP_URL } from "../stand/config.js"
 import { pngImage } from "../support/images.js"
 import { flatSurfaces, smallTargets } from "../support/look.js"
 import { unreadableText } from "../support/readability.js"
 import {
     FOOD,
     PEOPLE,
+    STORE,
     WATER,
     apiAs,
     placeOrder,
     resetStand,
     payAndStart,
 } from "../support/stand.js"
-import { bottomButton, openApp, pickOnMap } from "../support/webapp.js"
+import { stubTelegramLogin } from "../support/telegram-login.js"
+import { bottomButton, openApp, openSettings, pickOnMap, settingsBack } from "../support/webapp.js"
 
 import type { Page } from "@playwright/test"
 
@@ -181,8 +184,97 @@ for (const theme of ["light"] as const) {
         await page.getByRole("button", { name: "Mening do'konim" }).click()
         await expect(page.getByText("Tuman tarmog'idan kuryer qidirilmoqda").first()).toBeVisible()
         await snap(page, "26-owner-network-order", theme)
+        // Taken: the courier's whole card, the shop and the customer's place.
+        await openApp(page, { user: PEOPLE.networkCourier, courierBot: true, theme })
+        await page.getByRole("button", { name: "Olaman" }).first().click()
+        await expect(page.getByText("Navoiy 12").first()).toBeVisible()
+        await snap(page, "33-courier-delivery", theme)
     })
 }
+
+/** Every part of «Sozlamalar», by its name in the list and the screenshot's. */
+const SETTINGS_PARTS: readonly (readonly [string, string])[] = [
+    ["Do'kon", "shop"],
+    ["Vitrina qanday ko'rinadi", "look"],
+    ["Yetkazib berish", "delivery"],
+    ["Ish vaqti", "hours"],
+    ["Manzil", "address"],
+    ["To'lov", "payment"],
+    ["Kuryerlar", "couriers"],
+    ["Do'kon imkoniyatlari", "features"],
+    ["Telegram kanal", "channel"],
+    ["Mijozlar savollari", "support"],
+    ["Havola, QR-kod va vitrina", "link"],
+]
+
+test("every part of «Sozlamalar», light", async ({ page }) => {
+    await openApp(page, { user: PEOPLE.foodOwner, shop: FOOD })
+    await page.getByRole("button", { name: "Mening do'konim" }).click()
+    for (const [index, [part, name]] of SETTINGS_PARTS.entries()) {
+        await openSettings(page, part)
+        await snap(page, `${60 + index}-settings-${name}`, "light")
+        await settingsBack(page)
+    }
+})
+
+test("the storefront's four looks under a cover, and a product up close, light", async ({
+    page,
+}) => {
+    const cover = await apiAs(PEOPLE.storeOwner, "/owner/shop/cover", {
+        shop: STORE,
+        method: "PUT",
+        png: pngImage(400, [190, 24, 93]),
+    })
+    expect(cover.status).toBe(200)
+    for (const [index, layout] of ["grid", "list", "feed", "shelves"].entries()) {
+        const saved = await apiAs(PEOPLE.storeOwner, "/owner/shop", {
+            shop: STORE,
+            method: "PATCH",
+            json: { storefrontLayout: layout },
+        })
+        expect(saved.status).toBe(200)
+        await openApp(page, { user: PEOPLE.customer, shop: STORE })
+        await expect(page.getByRole("heading", { name: "Uy Bozori" })).toBeVisible()
+        await snap(page, `${40 + index}-storefront-${layout}`, "light")
+    }
+    await page.getByRole("heading", { name: "LED lampochka" }).first().click()
+    await expect(page.getByRole("dialog")).toBeVisible()
+    await snap(page, "44-product-sheet", "light")
+})
+
+test("«Platforma», light", async ({ page }) => {
+    await openApp(page, { user: PEOPLE.admin, adminBot: true })
+    await expect(page.getByRole("heading", { name: "Platforma" })).toBeVisible()
+    await snap(page, "50-platforma-applications", "light")
+    const tabs = [
+        ["Bizneslar", "shops"],
+        ["Tumanlar", "districts"],
+        ["Qo'llanma", "guides"],
+    ] as const
+    for (const [index, [tab, name]] of tabs.entries()) {
+        await page.getByRole("tab", { name: tab }).click()
+        await snap(page, `${51 + index}-platforma-${name}`, "light")
+    }
+})
+
+test("outside Telegram: the sign-in pages, then «Mening bizneslarim», light", async ({ page }) => {
+    // A page of its own: no Telegram in it, as in a plain browser.
+    await page.route("https://telegram.org/**", (route) =>
+        route.fulfill({ status: 200, contentType: "text/javascript", body: "" }),
+    )
+    await stubTelegramLogin(page, () => ({ user: PEOPLE.foodOwner }))
+    await page.goto(`${APP_URL}/?mode=admin`)
+    await expect(page.getByRole("heading", { name: "Zumda | Platforma" })).toBeVisible()
+    await snap(page, "54-platforma-web-login", "light")
+    await page.goto(`${APP_URL}/?mode=business`)
+    await expect(page.getByRole("heading", { name: "Zumda Business" })).toBeVisible()
+    await snap(page, "55-business-web-login", "light")
+    await page.getByRole("button", { name: "Telegram orqali kirish" }).click()
+    await expect(page.getByRole("tab", { name: "Buyurtmalar" })).toBeVisible()
+    await page.getByRole("button", { name: "Orqaga" }).click()
+    await expect(page.getByRole("heading", { name: "Mening bizneslarim" })).toBeVisible()
+    await snap(page, "56-my-businesses", "light")
+})
 
 test("a dark Telegram theme still shows the light app, framed in white", async ({ page }) => {
     const app = await openApp(page, { user: PEOPLE.customer, shop: FOOD, theme: "dark" })
