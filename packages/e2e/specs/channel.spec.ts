@@ -74,10 +74,15 @@ test("the owner connects the channel from Telegram's own screen", async ({ page 
     // The shop's bot hears the channel from now on (a shop connected before needs no reconnect).
     const webhook = await waitForCall("setWebhook", SHOP.bot.token, since)
     expect(webhook.body["allowed_updates"]).toContain("my_chat_member")
-    const link = (await app.calls()).filter((c) => c.method === "openTelegramLink").at(-1)
-    expect(link?.args[0]).toBe(
-        `https://t.me/${SHOP.bot.username}?startchannel&admin=post_messages+edit_messages+delete_messages`,
-    )
+    // The app opens Telegram's screen once its request came back: waited for, not raced.
+    await expect
+        .poll(
+            async () =>
+                (await app.calls()).filter((c) => c.method === "openTelegramLink").at(-1)?.args[0],
+        )
+        .toBe(
+            `https://t.me/${SHOP.bot.username}?startchannel&admin=post_messages+edit_messages+delete_messages`,
+        )
     await expect(page.getByText("Bog'lanishi bilan shu yerda ko'rinadi")).toBeVisible()
 
     // The owner picked the channel and made the bot its admin there.

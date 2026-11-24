@@ -256,6 +256,8 @@ const ALWAYS_OK = new Set([
     // The shop's channel: a post's new price, and the bot leaving a channel.
     "editMessageCaption",
     "leaveChat",
+    // The support group: a spare topic deleted.
+    "deleteForumTopic",
 ])
 
 /** Telegram's count of a channel's subscribers, shown on «Telegram kanal». */
@@ -283,7 +285,14 @@ function rotateManagedToken(state: State, botId: number): string {
     return currentManagedToken(state, botId)
 }
 
-const WRITES = new Set(["sendMessage", "sendPhoto", "sendVideo", "sendDocument", "sendChatAction"])
+const WRITES = new Set([
+    "sendMessage",
+    "sendPhoto",
+    "sendVideo",
+    "sendDocument",
+    "sendChatAction",
+    "copyMessage",
+])
 
 /**
  * Telegram refuses a message to someone who blocked the bot or never pressed Start in it, and
@@ -315,6 +324,24 @@ function sentPhoto(state: State, call: BotCall): [number, unknown] {
 /** Whatever Telegram would refuse this call for: the person, an outage, a pause it asked for. */
 function refusalOf(state: State, bot: Bot, call: BotCall): [number, unknown] | null {
     return refused(state, bot, call) ?? buttonsRefused(state, call)
+}
+
+/**
+ * The support group: a copied message, and a new topic (its id is its first message's); any
+ * other method is unknown to Telegram.
+ */
+function otherAnswer(state: State, call: BotCall): [number, unknown] {
+    if (ALWAYS_OK.has(call.method)) {
+        return [200, { ok: true, result: true }]
+    }
+    if (call.method === "copyMessage") {
+        return [200, { ok: true, result: { message_id: state.nextMessageId++ } }]
+    }
+    if (call.method === "createForumTopic") {
+        const topic = { message_thread_id: state.nextMessageId++, name: call.body["name"] }
+        return [200, { ok: true, result: { ...topic, icon_color: 0 } }]
+    }
+    return fail(404, `Not Found: method ${call.method}`)
 }
 
 function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
@@ -350,9 +377,7 @@ function answer(state: State, bot: Bot, call: BotCall): [number, unknown] {
                 { ok: true, result: rotateManagedToken(state, Number(call.body["user_id"])) },
             ]
         default:
-            return ALWAYS_OK.has(call.method)
-                ? [200, { ok: true, result: true }]
-                : fail(404, `Not Found: method ${call.method}`)
+            return otherAnswer(state, call)
     }
 }
 

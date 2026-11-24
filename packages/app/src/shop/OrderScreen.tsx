@@ -133,15 +133,24 @@ function RemindShop({
  * settled fastest by a call. Under the card while the money is open; after «Pul kelmadi» it says
  * why to call.
  */
-function CallShop({ problem }: { problem: boolean }): React.JSX.Element | null {
+function CallShop({
+    problem,
+    orderId,
+}: {
+    problem: boolean
+    orderId: string
+}): React.JSX.Element | null {
     const t = useT()
     const phone = useSession((state) => state.shop?.callPhone)
-    if (!phone) {
+    const writes = useSession((state) => state.shop?.supportChat === true)
+    if (!phone && !writes) {
         return null
     }
     return (
         <div className="flex flex-col gap-1.5">
-            <CallLink phone={phone} label={t.pay.callShop} />
+            {phone ? <CallLink phone={phone} label={t.pay.callShop} /> : null}
+            {/* A written question about this order, next to the call (goal 21). */}
+            <WriteShopLink about={{ orderId }} />
             {problem ? <p className="px-1 text-sm text-tg-hint">{t.pay.callShopHint}</p> : null}
         </div>
     )
@@ -167,8 +176,9 @@ function Calls({ order }: { order: OrderDTO }): React.JSX.Element | null {
     const shopPhone = useSession((state) => state.shop?.callPhone)
     const courier = order.courierPhone
     const shop = moneyOpen(order) ? undefined : shopPhone
-    // A shop with a support group also takes a written question about this order (goal 21).
-    const writes = useSession((state) => state.shop?.supportChat === true)
+    // A shop with a support group also takes a written question about this order (goal 21);
+    // while the money is open it stands next to the call under the card.
+    const writes = useSession((state) => state.shop?.supportChat === true) && !moneyOpen(order)
     if (!courier && !shop && !writes) {
         return null
     }
@@ -185,7 +195,7 @@ function Calls({ order }: { order: OrderDTO }): React.JSX.Element | null {
                 />
             ) : null}
             {shop ? <CallLink phone={shop} label={t.pay.callShop} /> : null}
-            <WriteShopLink about={{ orderId: order.id }} />
+            {writes ? <WriteShopLink about={{ orderId: order.id }} /> : null}
         </div>
     )
 }
@@ -248,7 +258,7 @@ function Payment({
                 />
             ) : null}
             {moneyOpen(order) ? (
-                <CallShop problem={unpaid && order.payment.rejections > 0} />
+                <CallShop problem={unpaid && order.payment.rejections > 0} orderId={order.id} />
             ) : null}
         </Section>
     )
