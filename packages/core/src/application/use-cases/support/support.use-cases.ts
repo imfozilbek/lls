@@ -189,7 +189,8 @@ export interface SupportThreadDeps {
  * Where a customer's message goes: `none` (the shop has no support group: the bot answers as
  * before), `lost` (the bot may not make topics there any more: the group is forgotten), or the
  * customer's topic, made for them on their first message (`created`); `nowWaiting`: an answered
- * topic waits again (its ❓ to show).
+ * topic waits again (its ❓ to show); `unnamed`: a topic made before its name and card were kept
+ * (goal 22), to be named and given its card once.
  */
 export type SupportRoute =
     | { kind: "none" }
@@ -200,6 +201,7 @@ export type SupportRoute =
           threadId: number
           created: boolean
           nowWaiting: boolean
+          unnamed: boolean
       }
 
 /** A customer wrote to the shop's bot: their own topic in the shop's support group. */
@@ -232,7 +234,14 @@ export class OpenSupportThreadUseCase {
                 input.customerTelegramId,
                 input.now,
             )
-            return { kind: "thread", group, threadId: known.threadId, created: false, nowWaiting }
+            return {
+                kind: "thread",
+                group,
+                threadId: known.threadId,
+                created: false,
+                nowWaiting,
+                unnamed: known.topicName === undefined,
+            }
         }
         const name = await input.nameOf()
         const opened = await this.deps.topics.open(group, name)
@@ -255,6 +264,7 @@ export class OpenSupportThreadUseCase {
             threadId: opened.threadId,
             created: true,
             nowWaiting: false,
+            unnamed: false,
         } as const
         if (known) {
             await this.deps.supportThreads.replace(thread)
@@ -270,7 +280,14 @@ export class OpenSupportThreadUseCase {
             input.customerTelegramId,
         )
         return first
-            ? { kind: "thread", group, threadId: first.threadId, created: false, nowWaiting: false }
+            ? {
+                  kind: "thread",
+                  group,
+                  threadId: first.threadId,
+                  created: false,
+                  nowWaiting: false,
+                  unnamed: false,
+              }
             : { kind: "none" }
     }
 }

@@ -7,6 +7,7 @@ import { fill, textsFor } from "../telegram/texts.js"
 import { hasContent } from "../telegram/updates.js"
 
 import {
+    completeOldTopic,
     groupTexts,
     postTopicCard,
     showTopicStatus,
@@ -298,6 +299,17 @@ async function routeOf(
             customerTelegramId: from.id,
         }
         await postTopicCard(services, token, topic, topicCardText(business, person, profile))
+    }
+    if (route.kind === "thread" && route.unnamed) {
+        const old = {
+            businessId: business.id,
+            chatId: route.group.chatId,
+            customerTelegramId: from.id,
+            threadId: route.threadId,
+            createdAt: services.clock.now(),
+        }
+        const known = await services.useCases.supportContext.profile(business.id, from.id)
+        await completeOldTopic(services, token, old, { business, person, profile: known })
     }
     if (route.kind === "thread" && route.nowWaiting) {
         const topic = { chatId: route.group.chatId, threadId: route.threadId }

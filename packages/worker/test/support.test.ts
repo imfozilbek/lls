@@ -378,6 +378,47 @@ describe("the shop's support group", () => {
             expect(client.telegram.reopened).toEqual([{ chatId: GROUP_ID, threadId }])
         })
 
+        it("a topic made before names were kept is named and given its card once", async () => {
+            await madeAdmin()
+            await customerSays({ text: "Salom" })
+            const threadId = threadOf()
+            // As goal 21 left it: no name kept, no card.
+            await env.DB.prepare(
+                "UPDATE support_threads SET topic_name = NULL, card_message_id = NULL",
+            ).run()
+            const pinsBefore = client.telegram.pins.length
+
+            await customerSays({ text: "Yana savol" })
+            const renamed = client.telegram.topicEdits.filter((e) => e.change.name !== undefined)
+            expect(renamed).toEqual([
+                { chatId: GROUP_ID, threadId, change: { name: "Aziz Karimov" } },
+            ])
+            expect(client.telegram.pins).toHaveLength(pinsBefore + 1)
+            const row = await env.DB.prepare(
+                "SELECT topic_name, card_message_id FROM support_threads",
+            ).first<{ topic_name: string | null; card_message_id: number | null }>()
+            expect(row?.topic_name).toBe("Aziz Karimov")
+            expect(row?.card_message_id).toBe(client.telegram.pins.at(-1)?.messageId)
+
+            await customerSays({ text: "Yana bitta" })
+            expect(client.telegram.topicEdits.filter((e) => e.change.name)).toHaveLength(1)
+            expect(client.telegram.pins).toHaveLength(pinsBefore + 1)
+        })
+
+        it("the red and green circles stand first when Telegram's set has them", async () => {
+            client.telegram.topicIcons = [
+                { emoji: "❓", customEmojiId: "icon-waiting" },
+                { emoji: "🔴", customEmojiId: "icon-red" },
+                { emoji: "✅", customEmojiId: "icon-answered" },
+                { emoji: "🟢", customEmojiId: "icon-green" },
+            ]
+            await madeAdmin()
+            await customerSays({ text: "Salom" })
+            expect(client.telegram.topics[0]?.icon).toBe("icon-red")
+            await shopSays(threadOf())
+            expect(iconsOf()).toEqual(["icon-green"])
+        })
+
         it("without the icons in Telegram's set the topic works as before", async () => {
             client.telegram.topicIcons = []
             await madeAdmin()

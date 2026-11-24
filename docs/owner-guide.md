@@ -234,7 +234,7 @@ ishlaydi». BotFather'da qo'lda o'zgartirish shart emas.
     akkauntingiz ko'rinmaydi.
   - Mijoz ilovada **Do'konga xabar yozish** tugmasini bossa, mavzuda u qaysi buyurtma yoki
     mahsulot haqida so'rayotgani ko'rinadi.
-  - Mavzu belgisi: ❓ mijoz javob kutmoqda, ✅ javob berildi. Mavzu nomida mijozning ismi va
+  - Mavzu belgisi: 🔴 mijoz javob kutmoqda, 🟢 javob berildi. Mavzu nomida mijozning ismi va
     telefoni bor, tepadagi mahkamlangan xabarda esa uning buyurtmalari.
 - **Reklama uchun havolalar** (**Sozlamalar → Havola, QR-kod va vitrina**): boshqa kanalda
   reklama berganda har biriga alohida havola bering: qaysi reklama qancha buyurtma olib kelganini
