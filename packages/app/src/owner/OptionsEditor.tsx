@@ -3,7 +3,9 @@ import { OPTION_LIMITS } from "@zumda/core"
 import { useT, fill } from "../i18n/index.js"
 import { haptic } from "../lib/telegram.js"
 import { CloseIcon, ListIcon, PlusIcon } from "../ui/icons.js"
-import { MoneyInput, TextInput } from "../ui/primitives.js"
+import { Button, MoneyInput, TextInput } from "../ui/primitives.js"
+
+import { kindsHint } from "./kinds-hint.js"
 
 import type { ProductOptionsProps } from "@zumda/core"
 
@@ -228,6 +230,91 @@ function UsualAddons({
     )
 }
 
+/** The name says the product comes in kinds: a card that cannot be missed, one tap opens them. */
+function KindsNudge({ onOpen }: { onOpen(): void }): React.JSX.Element {
+    const t = useT()
+    return (
+        <div className="flex flex-col gap-3 rounded-tile border-[1.5px] border-brand bg-brand/5 p-3.5">
+            <p className="text-sm">{t.owner.product.kindsNudge}</p>
+            <Button
+                icon={<ListIcon size={18} />}
+                className="self-start"
+                onClick={(): void => {
+                    haptic.tap()
+                    onOpen()
+                }}
+            >
+                {t.owner.product.variants}
+            </Button>
+        </div>
+    )
+}
+
+/** Variants: the hint when the name asks for them, a closed block, or the rows being typed. */
+function VariantsBlock({
+    draft,
+    name,
+    price,
+    onChange,
+}: {
+    draft: OptionsDraft
+    name: string
+    price: number | null
+    onChange(draft: OptionsDraft): void
+}): React.JSX.Element {
+    const t = useT()
+    const p = t.owner.product
+    const row = (): OptionRow => ({ id: newId(), name: "", price: null })
+    const hint = kindsHint(name)
+    return draft.variants.length === 0 && hint ? (
+        <KindsNudge
+            onOpen={(): void =>
+                onChange({
+                    ...draft,
+                    group: draft.group || p.kindsGroups[hint.group],
+                    variants: Array.from({ length: hint.count ?? 2 }, () => ({
+                        ...row(),
+                        price,
+                    })),
+                })
+            }
+        />
+    ) : draft.variants.length === 0 ? (
+        <OpenBlock
+            title={p.variants}
+            hint={p.variantsHint}
+            icon={<ListIcon size={20} />}
+            onOpen={(): void => onChange({ ...draft, variants: [row(), row()] })}
+        />
+    ) : (
+        <Group
+            title={p.variants}
+            hint={p.variantsHint}
+            more={p.addVariant}
+            onMore={
+                draft.variants.length < OPTION_LIMITS.variants
+                    ? (): void => onChange({ ...draft, variants: [...draft.variants, row()] })
+                    : undefined
+            }
+        >
+            <TextInput
+                value={draft.group}
+                maxLength={30}
+                aria-label={p.variantsWhat}
+                placeholder={`${p.variantsWhat} ${p.variantsWhatPlaceholder}`}
+                className="bg-tg-bg"
+                onChange={(e): void => onChange({ ...draft, group: e.target.value })}
+            />
+            <Rows
+                rows={draft.variants}
+                nameLabel={p.variantName}
+                namePlaceholder={p.variantPlaceholder}
+                onChange={(variants): void => onChange({ ...draft, variants })}
+            />
+        </Group>
+    )
+}
+
 /**
  * Variants (one is picked, each with its price: «0,3 l», «0,4 l») and add-ons (several, priced on
  * top, 0 is free). Closed until the owner needs them; a weight item takes no add-ons.
@@ -235,10 +322,16 @@ function UsualAddons({
 export function OptionsEditor({
     draft,
     addons,
+    name,
+    price,
     suggestions = [],
     onChange,
 }: {
     draft: OptionsDraft
+    /** The product's name: «6 xil», «ranglarda», «katta» ask for variants. */
+    name: string
+    /** Its price: the rows the hint opens start with it, kinds and colours mostly cost the same. */
+    price: number | null
     /** False for weight items: they sell by the gram, add-ons do not fit. */
     addons: boolean
     /** Add-ons people usually take with a catalog product: one tap adds a row. */
@@ -255,41 +348,7 @@ export function OptionsEditor({
             : []
     return (
         <>
-            {draft.variants.length === 0 ? (
-                <OpenBlock
-                    title={p.variants}
-                    hint={p.variantsHint}
-                    icon={<ListIcon size={20} />}
-                    onOpen={(): void => onChange({ ...draft, variants: [row(), row()] })}
-                />
-            ) : (
-                <Group
-                    title={p.variants}
-                    hint={p.variantsHint}
-                    more={p.addVariant}
-                    onMore={
-                        draft.variants.length < OPTION_LIMITS.variants
-                            ? (): void =>
-                                  onChange({ ...draft, variants: [...draft.variants, row()] })
-                            : undefined
-                    }
-                >
-                    <TextInput
-                        value={draft.group}
-                        maxLength={30}
-                        aria-label={p.variantsWhat}
-                        placeholder={`${p.variantsWhat} ${p.variantsWhatPlaceholder}`}
-                        className="bg-tg-bg"
-                        onChange={(e): void => onChange({ ...draft, group: e.target.value })}
-                    />
-                    <Rows
-                        rows={draft.variants}
-                        nameLabel={p.variantName}
-                        namePlaceholder={p.variantPlaceholder}
-                        onChange={(variants): void => onChange({ ...draft, variants })}
-                    />
-                </Group>
-            )}
+            <VariantsBlock draft={draft} name={name} price={price} onChange={onChange} />
             {!addons ? null : draft.addons.length === 0 ? (
                 <OpenBlock
                     title={p.addons}

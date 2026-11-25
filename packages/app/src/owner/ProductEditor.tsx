@@ -541,7 +541,7 @@ function CategoryField({
                     <button
                         type="button"
                         onClick={(): void => setAll(true)}
-                        className="tap self-start px-1 py-2 text-sm font-medium text-brand"
+                        className="tap flex min-h-11 items-center self-start px-1 text-sm font-medium text-brand"
                     >
                         {t.owner.product.moreCategories}
                     </button>
@@ -616,7 +616,7 @@ function KindFields({
                     <button
                         type="button"
                         onClick={(): void => setAllUnits(true)}
-                        className="tap self-start px-1 py-2 text-sm font-medium text-brand"
+                        className="tap flex min-h-11 items-center self-start px-1 text-sm font-medium text-brand"
                     >
                         {t.owner.product.moreUnits}
                     </button>
@@ -1217,6 +1217,8 @@ function EditorFields({
         <OptionsEditor
             draft={draft.options}
             addons={!isWeightUnit(draft.unit)}
+            name={draft.name}
+            price={draft.price}
             suggestions={draft.suggestedAddons}
             onChange={(next): void => patch({ options: next })}
         />

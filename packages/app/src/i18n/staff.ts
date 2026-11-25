@@ -317,7 +317,11 @@ export const staffUz = {
             photoFailed: "Rasmni yuklab bo'lmadi. Boshqa rasm tanlang.",
             priceHint: "Faqat butun so'm",
             variants: "Variantlar",
-            variantsHint: "O'lchami yoki hajmi har xil narxda",
+            variantsHint: "Mijoz o'zi tanlaydi",
+            /** The name says the product comes in kinds («6 xil», «ranglarda», «katta»). */
+            kindsNudge:
+                "Bu mahsulot bir necha xil bo'lsa, har birini variant qilib yozing: mijoz o'zi tanlaydi.",
+            kindsGroups: { kind: "Turi", colour: "Rangi", size: "O'lchami" },
             variantsWhat: "Nima tanlanadi?",
             variantsWhatPlaceholder: "Masalan: Hajmi",
             variantName: "Variant nomi",
