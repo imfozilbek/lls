@@ -4,7 +4,8 @@
  */
 import { expect, test } from "@playwright/test"
 
-import { FOOD, PEOPLE, apiAs, placeOrder, resetStand } from "../support/stand.js"
+import { flatSurfaces, smallTargets } from "../support/look.js"
+import { FOOD, PEOPLE, STORE, apiAs, placeOrder, resetStand } from "../support/stand.js"
 import { lastSeq, messagesTo } from "../support/telegram.js"
 import { bottomButton, openApp } from "../support/webapp.js"
 
@@ -78,6 +79,9 @@ test("the customer picks «0,4 l» with the syrup: 22 000 a cup, priced by the s
     await row.getByRole("button", { name: "Qo'shish: Latte" }).click()
     const sheet = page.getByRole("dialog", { name: "Latte" })
     await expect(sheet.getByText("Hajmi")).toBeVisible()
+    // Nothing is picked for the customer: a silently picked «0,3 l» is the wrong cup.
+    await expect(sheet.getByRole("radio", { checked: true })).toHaveCount(0)
+    await expect(sheet.getByRole("button", { name: "Bittasini tanlang" })).toBeDisabled()
     await sheet.getByRole("radio", { name: /0,4 l/ }).click()
     await sheet.getByRole("checkbox", { name: /Karamel sirop/ }).click()
     await sheet.getByRole("button", { name: /Savatga · 22/ }).click()
@@ -110,4 +114,44 @@ test("the customer picks «0,4 l» with the syrup: 22 000 a cup, priced by the s
             ),
         )
         .toBe(true)
+})
+
+test("a name with colours asks for variants; the customer picks a colour, the price once", async ({
+    page,
+}) => {
+    await openApp(page, { user: PEOPLE.storeOwner, shop: STORE })
+    await page.getByRole("button", { name: "Mening do'konim" }).click()
+    await page.getByRole("tab", { name: "Katalog" }).click()
+    await bottomButton(page).click() // «Mahsulot qo'shish»
+    const name = "Hello shapka. Yashil va xaki ranglarda"
+    await page.getByLabel("Katalogdan qidirish").fill(name)
+    await page.getByRole("button", { name: `«${name}» deb o'zim yozaman` }).click()
+    await page.getByLabel("Narxi").first().fill("25000")
+    await expect(page.getByText("har birini variant qilib yozing")).toBeVisible()
+    expect(await smallTargets(page)).toEqual([])
+    await page.getByText("har birini variant qilib yozing").scrollIntoViewIfNeeded()
+    await page.screenshot({ path: "screenshots/variants/kinds-hint.png" })
+    await page.getByRole("button", { name: "Variantlar" }).click()
+    await expect(page.getByLabel("Nima tanlanadi?")).toHaveValue("Rangi")
+    const names = page.getByLabel("Variant nomi")
+    await expect(names).toHaveCount(2)
+    await names.nth(0).fill("Yashil")
+    await names.nth(1).fill("Xaki")
+    await expect(page.getByLabel("Narxi: Xaki")).toHaveValue(/25/)
+    await bottomButton(page).click() // «Saqlash»
+    await expect(page.getByText("Saqlandi")).toBeVisible()
+
+    await openApp(page, { user: PEOPLE.customer, shop: STORE })
+    await page.getByRole("button", { name: `Qo'shish: ${name}` }).click()
+    const sheet = page.getByRole("dialog", { name })
+    await expect(sheet.getByText("Rangi")).toBeVisible()
+    // One price for both: the tiles carry only the names.
+    await expect(sheet.getByRole("radio", { name: "Xaki", exact: true })).toBeVisible()
+    await expect(sheet.getByRole("button", { name: "Bittasini tanlang" })).toBeDisabled()
+    expect(await flatSurfaces(page)).toEqual([])
+    expect(await smallTargets(page)).toEqual([])
+    await page.screenshot({ path: "screenshots/variants/pick-colour.png" })
+    await sheet.getByRole("radio", { name: "Xaki", exact: true }).click()
+    await sheet.getByRole("button", { name: /Savatga · 25/ }).click()
+    await expect(page.getByRole("button", { name: `Qo'shish: ${name}` })).toHaveText("1")
 })
