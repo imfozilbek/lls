@@ -162,6 +162,7 @@ export function OptionsPicker({
                     )}
                 />
                 <Button
+                    size="lg"
                     className="flex-1"
                     onClick={(): void => {
                         haptic.success()

@@ -1219,6 +1219,12 @@ console.log            // Use logger
   collected lists every line). A list that
   spans states gets chips with counts (`ui/filter-chips.tsx`): orders by stage, the catalog by
   state, «Bizneslar» by marks. A label names what the button does, never a near thing.
+- **Compact by default (owner's decisions, November 2026):** every picture has a thin frame
+  (`.pic-frame`, 1 px `--ui-separator`; off only inside a card that frames it already); a
+  secondary button, a chip and a filter are a 38 px pill with 13 px words, a step inside a
+  screen (`primary` `md`) a 40 px pill; the screen's main button and a sheet's confirm stay
+  52 px (`lg`). The storefront's header: one row of pills («Buyurtmalarim», «Xarita»,
+  «Qo'ng'iroq» or «Savolim bor»), the search behind the magnifier at the start of the tabs.
 - **An order line shows its product (a shop owner's ask, November 2026):** the owner's card and
   the customer's order start each line with the product's photo (`ui/line-photo.tsx`, found by id
   in the products the app already holds: no query); a tap opens it read-only

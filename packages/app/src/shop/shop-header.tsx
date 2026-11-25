@@ -169,11 +169,15 @@ function UnpaidBanner({
     )
 }
 
-/** One of the header's round buttons: a white circle over its word, a 44 px target or more. */
-const ACTION = "tap relative flex min-w-[3.5rem] shrink-0 flex-col items-center gap-1.5 text-center"
-const ACTION_FACE = "grid h-12 w-12 place-items-center rounded-full shadow-card"
-// 13 px: the smallest words the app writes (read in the sun, `visual.spec`).
-const ACTION_WORD = "whitespace-nowrap text-xs font-semibold leading-tight"
+/**
+ * One of the header's buttons (owner's decision, November 2026): a white pill, the icon beside its
+ * word, 38 px high with room around it (a finger's 44 px, `visual.spec`). 13 px: the smallest
+ * words the app writes.
+ */
+const ACTION =
+    "tap relative flex h-[38px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-xs font-semibold shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+const ACTION_PLAIN = "bg-tg-secondary text-tg-text"
+const ACTION_ICON = "shrink-0 text-brand"
 
 function HeaderAction({
     icon,
@@ -190,19 +194,16 @@ function HeaderAction({
     badge?: string
 }): React.JSX.Element {
     return (
-        <button type="button" onClick={onClick} className={ACTION}>
-            <span
-                className={cn(
-                    ACTION_FACE,
-                    accent ? "bg-brand text-brand-ink" : "bg-tg-secondary text-brand",
-                )}
-            >
-                {icon}
-            </span>
-            <span className={ACTION_WORD}>{label}</span>
+        <button
+            type="button"
+            onClick={onClick}
+            className={cn(ACTION, accent ? "bg-brand text-brand-ink" : ACTION_PLAIN)}
+        >
+            <span className={accent ? "shrink-0" : ACTION_ICON}>{icon}</span>
+            {label}
             {badge ? (
                 <>
-                    <span className="absolute right-2.5 top-0 h-3 w-3 rounded-full bg-brand ring-2 ring-tg-bg" />
+                    <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-brand ring-2 ring-tg-bg" />
                     <span className="sr-only">, {badge}</span>
                 </>
             ) : null}
@@ -234,12 +235,10 @@ function MapAction({ shop }: { shop: Shop }): React.JSX.Element | null {
             zone={zone}
             href={mapUrl(location)}
             label={t.shop.map}
-            className={ACTION}
+            className={cn(ACTION, ACTION_PLAIN)}
         >
-            <span className={cn(ACTION_FACE, "bg-tg-secondary text-brand")}>
-                <PinIcon size={22} />
-            </span>
-            <span className={ACTION_WORD}>{t.shop.map}</span>
+            <PinIcon size={18} className={ACTION_ICON} />
+            {t.shop.map}
         </MapButton>
     )
 }
@@ -255,17 +254,11 @@ function HeaderActions({ shop, glance }: { shop: Shop; glance: OrdersGlance }): 
     const owner = shop.viewerRole === "owner"
     const call = Boolean(shop.callPhone) && !owner
     const ask = shop.supportChat && !owner
-    const count = 1 + (shop.location ? 1 : 0) + (call ? 1 : 0) + (ask ? 1 : 0) + (owner ? 1 : 0)
     return (
-        <div
-            className={cn(
-                // Spread when the row is full; a few stay together. A narrow phone scrolls it.
-                "mt-4 flex overflow-x-auto px-4 pb-1 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-                count >= 4 ? "justify-between gap-2" : "gap-7",
-            )}
-        >
+        // One row; a narrow phone scrolls it sideways, like the tabs.
+        <div className="mt-2.5 flex gap-1.5 overflow-x-auto px-4 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <HeaderAction
-                icon={<ReceiptIcon size={22} />}
+                icon={<ReceiptIcon size={18} />}
                 label={t.shop.myOrders}
                 badge={glance.active ? t.shop.activeOrder : undefined}
                 onClick={(): void => {
@@ -279,18 +272,16 @@ function HeaderActions({ shop, glance }: { shop: Shop; glance: OrdersGlance }): 
                 <a
                     {...callLink(shop.callPhone)}
                     onClick={(): void => haptic.tap()}
-                    className={ACTION}
+                    className={cn(ACTION, ACTION_PLAIN)}
                 >
-                    <span className={cn(ACTION_FACE, "bg-tg-secondary text-brand")}>
-                        <PhoneIcon size={22} />
-                    </span>
-                    <span className={ACTION_WORD}>{t.shop.call}</span>
+                    <PhoneIcon size={18} className={ACTION_ICON} />
+                    {t.shop.call}
                 </a>
             ) : null}
             {/* «Savolim bor» (goal 23): the shop answers in its bot, from its support group. */}
             {ask ? (
                 <HeaderAction
-                    icon={<ChatIcon size={22} />}
+                    icon={<ChatIcon size={18} />}
                     label={t.order.writeShop}
                     onClick={(): void => {
                         haptic.tap()
@@ -300,7 +291,7 @@ function HeaderActions({ shop, glance }: { shop: Shop; glance: OrdersGlance }): 
             ) : null}
             {owner ? (
                 <HeaderAction
-                    icon={<StoreIcon size={22} />}
+                    icon={<StoreIcon size={18} />}
                     label={t.shop.manage}
                     onClick={(): void => push({ name: "owner" })}
                     accent
@@ -317,7 +308,7 @@ function ShopCover({ src }: { src: string }): React.JSX.Element | null {
         return null
     }
     return (
-        <div className="aspect-[5/2] max-h-56 w-full overflow-hidden rounded-b-[1.5rem] bg-tg-secondary">
+        <div className="pic-frame aspect-[5/2] max-h-56 w-full overflow-hidden rounded-b-[1.5rem] border-t-0 bg-tg-secondary">
             <img
                 src={src}
                 alt=""

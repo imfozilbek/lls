@@ -1,7 +1,7 @@
 import { useT } from "../i18n/index.js"
 import { cn } from "../lib/cn.js"
 import { haptic } from "../lib/telegram.js"
-import { ChevronIcon } from "../ui/icons.js"
+import { ChevronIcon, SearchIcon } from "../ui/icons.js"
 
 import { NEW_CHIP, newShelf, shelvesOf } from "./menu-layout.js"
 import { FeedCard, ProductRow, ProductTile } from "./product-cards.js"
@@ -20,13 +20,17 @@ export function CategoryChips({
     categories,
     active,
     onChange,
+    onSearch,
 }: {
     categories: string[]
     active: string | null
     onChange(category: string | null): void
+    /** A long catalog: the row starts with the magnifier that opens the search field. */
+    onSearch?: () => void
 }): React.JSX.Element | null {
     const t = useT()
-    if (categories.length < 2) {
+    const tabs = categories.length >= 2
+    if (!tabs && !onSearch) {
         return null
     }
     const chip = (key: string | null, label: string): React.JSX.Element => (
@@ -39,7 +43,7 @@ export function CategoryChips({
             }}
             aria-pressed={active === key}
             className={cn(
-                "tap h-11 shrink-0 rounded-full px-4 text-sm font-semibold shadow-card transition-colors duration-200",
+                "tap h-[38px] shrink-0 rounded-full px-3.5 text-xs font-semibold shadow-card transition-colors duration-200",
                 active === key ? "bg-brand text-brand-ink" : "bg-tg-secondary text-tg-text",
             )}
         >
@@ -47,9 +51,22 @@ export function CategoryChips({
         </button>
     )
     return (
-        <nav className="sticky top-0 z-sticky flex gap-2 overflow-x-auto bg-tg-bg/95 px-4 py-2.5 backdrop-blur [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)]">
-            {chip(null, t.shop.all)}
-            {categories.map((c) => chip(c, chipLabel(t, c)))}
+        <nav className="sticky top-0 z-sticky flex gap-1.5 overflow-x-auto bg-tg-bg/95 px-4 py-2.5 backdrop-blur [scrollbar-width:none] [mask-image:linear-gradient(to_right,black_85%,transparent)]">
+            {onSearch ? (
+                <button
+                    type="button"
+                    aria-label={t.shop.search}
+                    onClick={(): void => {
+                        haptic.tap()
+                        onSearch()
+                    }}
+                    className="tap grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-tg-secondary shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand"
+                >
+                    <SearchIcon size={18} />
+                </button>
+            ) : null}
+            {tabs ? chip(null, t.shop.all) : null}
+            {tabs ? categories.map((c) => chip(c, chipLabel(t, c))) : null}
         </nav>
     )
 }
@@ -81,7 +98,7 @@ function byCategory(products: readonly ProductDTO[]): { category: string; items:
 
 function RowsCard({ products }: { products: readonly ProductDTO[] }): React.JSX.Element {
     return (
-        <ul className="mx-4 divide-y divide-tg-separator overflow-hidden rounded-tile bg-tg-secondary">
+        <ul className="mx-4 divide-y divide-tg-separator overflow-hidden rounded-tile border border-tg-separator bg-tg-secondary">
             {products.map((product) => (
                 <ProductRow key={product.id} product={product} />
             ))}

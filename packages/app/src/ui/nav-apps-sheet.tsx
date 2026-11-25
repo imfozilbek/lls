@@ -45,7 +45,7 @@ export function NavAppsSheet({
                                 width={48}
                                 height={48}
                                 decoding="async"
-                                className="h-12 w-12 rounded-[0.75rem] shadow-card"
+                                className="pic-frame h-12 w-12 rounded-[0.75rem] shadow-card"
                             />
                             <span>{app.name}</span>
                         </button>

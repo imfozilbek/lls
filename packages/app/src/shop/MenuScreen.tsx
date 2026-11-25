@@ -1,5 +1,5 @@
 import { StorefrontLayout, searchWords } from "@zumda/core"
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useLanguage, useT } from "../i18n/index.js"
 import { formatMoney } from "../lib/format.js"
@@ -85,6 +85,58 @@ function CatalogBody({
     }
 }
 
+/**
+ * The tabs, or the search field in their place (goal 24): a long catalog searches from the
+ * magnifier at the start of the tabs, so the top of the storefront stays short.
+ */
+function TabsOrSearch({
+    catalog,
+    tabs,
+    active,
+    query,
+    onQuery,
+    onTab,
+}: {
+    catalog: readonly ProductDTO[]
+    tabs: string[]
+    active: string | null
+    query: string
+    onQuery(query: string): void
+    onTab(tab: string | null): void
+}): React.JSX.Element | null {
+    const [searching, setSearching] = useState(false)
+    const closeSearch = useCallback((): void => {
+        onQuery("")
+        setSearching(false)
+    }, [onQuery])
+    if (searching) {
+        return (
+            <CatalogSearch
+                value={query}
+                onChange={onQuery}
+                onClose={closeSearch}
+                className="pb-1 pt-2.5"
+            />
+        )
+    }
+    return (
+        <CategoryChips
+            categories={tabs}
+            active={active}
+            onChange={onTab}
+            onSearch={
+                catalog.length > SEARCH_FROM
+                    ? (): void => {
+                          // The search looks through the whole catalog, not one tab.
+                          onTab(null)
+                          setSearching(true)
+                      }
+                    : undefined
+            }
+        />
+    )
+}
+
 export function MenuScreen(): React.JSX.Element {
     const t = useT()
     const language = useLanguage()
@@ -114,6 +166,7 @@ export function MenuScreen(): React.JSX.Element {
         (p) => (!active || underChip(p, active)) && (words.length === 0 || matches(p, words)),
     )
     const cart = summarize(lines, catalog)
+
     const detail = useProductDetail((state) => state.product)
     useFocusedProduct(catalog)
     // Leaving the menu closes the product: it never pops open again on the next visit.
@@ -134,11 +187,15 @@ export function MenuScreen(): React.JSX.Element {
     return (
         <main>
             <ShopHeader shop={shop} />
-            {catalog.length > SEARCH_FROM ? (
-                <CatalogSearch value={query} onChange={setQuery} className="pt-2" />
-            ) : null}
             <div ref={catalogTop} className="scroll-mt-0" />
-            <CategoryChips categories={tabs} active={active} onChange={setCategory} />
+            <TabsOrSearch
+                catalog={catalog}
+                tabs={tabs}
+                active={active}
+                query={query}
+                onQuery={setQuery}
+                onTab={setCategory}
+            />
             <CatalogBody
                 catalog={catalog}
                 visible={visible}

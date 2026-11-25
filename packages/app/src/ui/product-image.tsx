@@ -69,6 +69,7 @@ export function ProductImage({
     iconSize = 34,
     name,
     inset = false,
+    framed = true,
 }: {
     imageKey?: string
     category: string
@@ -82,6 +83,8 @@ export function ProductImage({
      * multiplied into it, so the photo keeps its edge (goal 24).
      */
     inset?: boolean
+    /** The thin frame every picture has; off only inside a card that frames it already. */
+    framed?: boolean
 }): React.JSX.Element {
     const src = imageUrl(imageKey)
     // State is tied to the URL, so a new or removed photo starts from a clean placeholder.
@@ -97,6 +100,7 @@ export function ProductImage({
         <div
             className={cn(
                 "relative overflow-hidden text-brand",
+                framed && "pic-frame",
                 inset && src ? "bg-tg-bg" : tintOf(category),
                 className,
             )}

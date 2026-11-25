@@ -35,7 +35,7 @@ export function ShopLogo({
                     setFailed(src)
                     void reportMissingImage(src, "logo")
                 }}
-                className={cn("shrink-0 object-cover", className)}
+                className={cn("pic-frame shrink-0 object-cover", className)}
             />
         )
     }
