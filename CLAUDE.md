@@ -408,6 +408,11 @@ cover each one's whole process; what exactly comes from the meeting with them.
   yana qo'shish», «Nusxa olish»; a typed draft is guarded. «Ro'yxat bilan qo'shish»: one product
   a line «Nomi narx [birlik]», up to 50 in one `db.batch` (`POST /api/owner/products/bulk`, 5 a
   minute), a name the shop has is skipped.
+- **Variants (owner's decisions, November 2026):** none is picked for the customer: the sheet's
+  button says «Bittasini tanlang» until one is tapped; tiles of one price carry only the names. A
+  name that gives kinds away («6 xil», «ranglarda», a size as its last word: `owner/kinds-hint.ts`)
+  brings a hint in the product form that opens «Variantlar» with «Turi», «Rangi» or «O'lchami»,
+  the rows it counts and the product's price.
 - **The shop's support group (owner's decisions, November 2026; goal 21):** customers ask the
   shop's bot, the shop's people answer from their own closed group; the owner's account stays
   hidden. Not the channel's comments group (that one is open, and separate).

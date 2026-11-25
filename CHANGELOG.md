@@ -7,6 +7,15 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Variants the customer cannot miss
+- **Nothing is picked for the customer**: the sheet's button says «Bittasini tanlang» until a
+  variant is tapped (a silently picked «kichik» was the wrong pizza). Short names stand three a
+  row, longer two, long ones a row each; when all cost the same, the tiles carry only the names.
+- **The form asks for variants** when the name gives kinds away («6 xil», «Yashil va xaki
+  ranglarda», «Pizza ( katta )»): «Variantlar» opens them with «Turi», «Rangi» or «O'lchami», as
+  many rows as the name counts, each at the product's price. No shop had variants yet.
+- «Boshqa» and «Boshqa bo'limlar» in the product form are a finger's size.
+
 ### Compact: products higher on the storefront, a frame on every picture
 - The storefront's header is one row of pills, the search opens from the magnifier at the start
   of the tabs: the first row of products shows on the first screen.
