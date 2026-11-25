@@ -129,10 +129,27 @@ function scanTargets(): SmallTarget[] {
         }))
 }
 
-export function flatSurfaces(page: Page): Promise<Flat[]> {
+/**
+ * Waits for every animation that ends (a sheet sliding in, the stepper's pop): a box measured
+ * mid-scale reads 43 px for a 44 px button. Endless ones (a spinner) are left running.
+ */
+async function settle(page: Page): Promise<void> {
+    await page.evaluate(() =>
+        Promise.all(
+            document
+                .getAnimations()
+                .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+                .map((a) => a.finished.catch(() => undefined)),
+        ),
+    )
+}
+
+export async function flatSurfaces(page: Page): Promise<Flat[]> {
+    await settle(page)
     return page.evaluate(scanFlat)
 }
 
-export function smallTargets(page: Page): Promise<SmallTarget[]> {
+export async function smallTargets(page: Page): Promise<SmallTarget[]> {
+    await settle(page)
     return page.evaluate(scanTargets)
 }
