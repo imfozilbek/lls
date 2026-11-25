@@ -312,7 +312,7 @@ test("couriers: invite to the courier bot, approve in the app, days, remove", as
     await expect(pending.getByText("Bobur")).toBeVisible()
     // No phone yet: the approval waits for it (owner's decision, October 2026).
     await expect(pending.getByRole("button", { name: "Tasdiqlash" })).toBeDisabled()
-    await expect(pending.getByText("Kuryer raqamini yuborgach tasdiqlay olasiz")).toBeVisible()
+    await expect(pending.getByText("Kuryer raqamini yuborganidan keyin tasdiqlaysiz")).toBeVisible()
     await courierChat().shareContact(PEOPLE.newCourier, "+998901114004")
     // The owner hears it once there is someone to approve: the name and the phone together.
     const ask = await waitForMessage(

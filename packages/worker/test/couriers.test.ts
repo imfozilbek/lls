@@ -169,7 +169,7 @@ describe("shop couriers, verticals and channels", () => {
             },
         })
         expect(client.telegram.answerTexts.at(-1)).toBe(
-            "Kuryer hali raqamini yubormagan: raqam kelgach tasdiqlang",
+            "Kuryer hali raqamini yubormadi: raqami kelgach tasdiqlang",
         )
         const [stillWaiting] = await json<{ status: string }[]>(
             await as(OWNER)("/api/owner/couriers"),

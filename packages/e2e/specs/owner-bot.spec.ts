@@ -119,7 +119,7 @@ test("after Start in the shop's bot the step ticks and the poster comes from the
     await expect(page.getByRole("button", { name: /Botingizni oching/ })).toBeHidden()
     const after = await lastSeq()
     const sheet = await posterSheet(page)
-    await expect(sheet.getByText("Plakat bot bilan chatga ham yuborildi")).toBeVisible()
+    await expect(sheet.getByText("Plakat Telegram'ga ham yuborildi")).toBeVisible()
     const tries = (await callsOf("sendDocument", after)).filter(
         (c) => Number(c.body["chat_id"]) === OWNER.id,
     )
