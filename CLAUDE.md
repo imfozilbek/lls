@@ -679,6 +679,7 @@ bunx wrangler deploy                           # Deploy Worker
 scripts/check-access.sh                        # Launch keys work? (Cloudflare, bots; read-only)
 scripts/check-dashes.sh --all                  # No em dash anywhere (CI and pre-commit too)
 node scripts/map-data.mjs                      # Build the map of Uzbekistan into map-build/ (CI uploads it)
+python3 -I scripts/prizma-texts.py              # Every product string through Prizma → prizma-report.md (local)
 gh api -X POST repos/imfozilbek/lls/dispatches -f event_type=deploy  # Deploy main again (Claude)
 gh api -X POST repos/imfozilbek/lls/dispatches -f event_type=map     # Build the map again (Claude)
 ```
@@ -1237,7 +1238,9 @@ console.log            // Use logger
 - **Living Uzbek (owner's decision, November 2026):** a new or changed string goes through the
   Prizma corpus check (`tools/native/native_check.py` of `imfozilbek/data-driven-approach`,
   27 M words of public Uzbek channels; Gemini's variants too when its key is set); a variant is
-  taken only when the corpus rates it no worse and flags nothing new.
+  taken only when the corpus rates it no worse and flags nothing new. All of them at once:
+  `scripts/prizma-texts.py` (1 100 strings, placeholders filled with samples; run it before a PR
+  that adds words). Most findings are plain Uzbek the news corpus lacks: they stay.
 - **Native feel (owner's decision, October 2026):** every screen with server data registers
   `useRefresh` (pull down from the top) and keeps its data on refresh; data comes through
   `usePagedList` / `useCachedState` (this session's copy at once, a quiet refresh behind it,

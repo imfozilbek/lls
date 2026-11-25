@@ -7,6 +7,13 @@ All notable changes to Zumda will be documented in this file.
 The platform was rebuilt. The old NestJS + MongoDB API, the old bot and admin panel, and the VPS
 deploy were removed; they stay available at git tag `legacy-v0`. Versions are bumped at release.
 
+### Every string through Prizma
+- All 1 100 strings of the app and the bots went through the corpus check. 22 read better now
+  («Sizda bunga ruxsat yo'q», «Hisobot Telegram'ga yuborildi», «Kartaning 16 xonali raqamini
+  yozing», «Mahsulotlar tez orada qo'shiladi», «Do'kon yopilgach buyurtma qabul qilinmaydi»…),
+  each rated no worse and flagging nothing new; the rest stay as they are.
+- `scripts/prizma-texts.py` runs them all again and writes `prizma-report.md`.
+
 ### Variants the customer cannot miss
 - **Nothing is picked for the customer**: the sheet's button says «Bittasini tanlang» until a
   variant is tapped (a silently picked «kichik» was the wrong pizza). Short names stand three a
