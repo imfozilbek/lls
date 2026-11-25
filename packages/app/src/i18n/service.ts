@@ -20,7 +20,7 @@ export const SERVICE_UZ = (base: Dictionary): Overrides<Dictionary> => ({
     shop: {
         ...base.shop,
         emptyTitle: "Xizmatlar hali yo'q",
-        emptyText: "Do'kon tez orada xizmatlarni qo'shadi.",
+        emptyText: "Xizmatlar tez orada qo'shiladi.",
         search: "Xizmatlardan qidirish",
         radius: "{km} km gacha xizmat ko'rsatamiz",
     },

@@ -6,7 +6,7 @@ export const staffUz = {
     /** Error words only staff screens can meet: merged into `errors` when the chunk loads. */
     staffErrors: {
         ORDER_NOT_ASSIGNABLE: "Yo'lga chiqqan buyurtmaga kuryer tayinlab bo'lmaydi.",
-        COURIER_NOT_AVAILABLE: "Bu kuryer hozir buyurtma ola olmaydi.",
+        COURIER_NOT_AVAILABLE: "Bu kuryer hozir buyurtma qabul qila olmaydi.",
         NETWORK_ORDER_TAKEN: "Bu buyurtmani boshqa kuryer allaqachon oldi.",
         NETWORK_OFF: "Tuman tarmog'i o'chirilgan. Uni sozlamalarda yoqish mumkin.",
         NO_DISTRICT: "Do'koningiz hali Zumda tarmog'i tumanlaridan tashqarida.",
@@ -43,7 +43,7 @@ export const staffUz = {
         DISTRICT_EXISTS: "Bu nomli tuman bor. Uni ro'yxatdan ochib o'zgartiring.",
         CASH_NOT_WITH_COURIER: "Bu naqd pul allaqachon olingan. Ro'yxat yangilandi.",
         CASH_NOT_FOR_NETWORK:
-            "Naqd buyurtma tuman tarmog'iga berilmaydi: o'z kuryeringiz olib boradi.",
+            "Naqd to'lovli buyurtma tuman tarmog'iga berilmaydi: uni o'z kuryeringiz olib boradi.",
         NOT_A_TRANSFER: "Bu buyurtma naqd pulga: o'tkazma kerak emas.",
         CASH_NOT_FOR_DISPATCHER:
             "Naqd buyurtma dispetcherga berilmaydi: pulni eshikda olib boradigan kuryer oladi.",
@@ -53,7 +53,7 @@ export const staffUz = {
             "Avval buyurtmani kuryerga topshiring yoki «O'zim yetkazaman»ni tanlang.",
         SEND_WAY_REQUIRED: "Bu buyurtmani dispetcher jo'natadi: qanday jo'natilganini u yozadi.",
         NOT_A_DISPATCHER_ORDER: "Bu buyurtma dispetcherda emas. Ro'yxat yangilandi.",
-        NOTES_CLOSED: "Buyurtma yakunlangan: endi izoh qo'shib bo'lmaydi.",
+        NOTES_CLOSED: "Buyurtma yakunlangan, endi izoh yozib bo'lmaydi.",
         TOO_MANY_NOTES: "Bitta buyurtmaga 20 tadan ortiq izoh yozib bo'lmaydi.",
         NOT_OWN_COURIER: "Faqat do'konning o'z kuryeri dispetcher bo'la oladi.",
         NOT_FOR_TRIP:
@@ -125,7 +125,7 @@ export const staffUz = {
             deliveryPrice: "Yetkazib berish narxi",
             deliveryPriceHint: "Mijoz yetkazish uchun qancha to'lashini tanlang",
             hours: "Ish vaqti",
-            hoursHint: "Yopiq vaqtda buyurtma qabul qilinmaydi",
+            hoursHint: "Do'kon yopilgach buyurtma qabul qilinmaydi",
             products: "Kamida 3 ta mahsulot",
             productsHint: "Hozir: {n} ta",
             logo: "Logotip",
@@ -215,7 +215,7 @@ export const staffUz = {
         noCouriers: "Hali kuryer yo'q: o'zingiz yetkazasiz yoki kuryer taklif qilasiz.",
         inviteCourier: "Kuryer taklif qilish",
         toNetwork: "Tuman tarmog'i kuryeri",
-        toNetworkHint: "Tumanning birinchi bo'sh kuryeri oladi",
+        toNetworkHint: "Tumandagi bo'sh kuryerlardan kim birinchi bo'lsa, o'sha oladi",
         networkSearching: "Tuman tarmog'idan kuryer qidirilmoqda…",
         networkJustAsked: "Hozirgina so'raldi",
         ageNew: "Hozirgina keldi",
@@ -315,7 +315,7 @@ export const staffUz = {
             needStock: "Omborda qancha borligini yozing",
             deleteConfirm: "Mahsulotni o'chirasizmi?",
             photoFailed: "Rasmni yuklab bo'lmadi. Boshqa rasm tanlang.",
-            priceHint: "Faqat butun so'm",
+            priceHint: "Faqat so'mda, tiyinsiz",
             variants: "Variantlar",
             variantsHint: "Mijoz o'zi tanlaydi",
             /** The name says the product comes in kinds («6 xil», «ranglarda», «katta»). */
@@ -371,7 +371,7 @@ export const staffUz = {
             bulkLeft: "Qolgan qatorlarni tuzating",
             bulkErrors: {
                 noPrice: "Narxini yozing: «{name} 5000»",
-                badPrice: "Narx butun so'mda bo'lsin",
+                badPrice: "Narxni tiyinsiz yozing",
                 twin: "Ro'yxatda ikki marta",
                 longName: "Nomi juda uzun",
             },
@@ -403,7 +403,7 @@ export const staffUz = {
             refundConfirm:
                 "#{n} buyurtma uchun {sum} mijozga qaytarildimi? Buni ortga qaytarib bo'lmaydi.",
             export: "Hisobotni chatga yuborish (Excel)",
-            exportSent: "Hisobot bot bilan chatga yuborildi",
+            exportSent: "Hisobot Telegram'ga yuborildi",
             exportSentBusiness:
                 "Botingiz sizga yoza olmadi: hisobot Zumda Business'ga yuborildi. Botingizni oching va Start bosing.",
             exportSentNone: "Bot sizga yoza olmadi: avval botingizni oching va Start bosing.",
@@ -532,7 +532,7 @@ export const staffUz = {
             ownPhoneSaved: "Raqamingiz saqlandi: mijozlar shu raqamga qo'ng'iroq qiladi",
             ownPhoneLate: "Raqam hali kelmadi. Bir ozdan keyin qayta urinib ko'ring.",
             needShopName: "Do'kon nomini yozing",
-            needOpenDay: "«Ish vaqti»da kamida bitta kunni yoqing",
+            needOpenDay: "«Ish vaqti»da kamida bir kunni yoqing",
             location: "Do'kon joylashuvi",
             setLocation: "Joylashuvni yangilash",
             couriers: "Kuryerlar",
@@ -547,7 +547,7 @@ export const staffUz = {
             pendingTitle: "Tasdiqlashni kutmoqda",
             approve: "Tasdiqlash",
             decline: "Rad etish",
-            waitPhone: "Kuryer raqamini yuborgach tasdiqlay olasiz: bot undan so'radi",
+            waitPhone: "Kuryer raqamini yuborganidan keyin tasdiqlaysiz: bot uni so'radi",
             approved: "Kuryer tasdiqlandi",
             workDays: "Ish kunlari",
             offToday: "Bugun ishlamaydi",
@@ -599,7 +599,7 @@ export const staffUz = {
             useForPayment: "Shu kartaga to'lansin",
             addCard: "Karta qo'shish",
             saveCard: "Kartani saqlash",
-            cardNeedNumber: "Kartaning 16 raqamini to'liq yozing",
+            cardNeedNumber: "Kartaning 16 xonali raqamini yozing",
             cardNeedHolder: "Kartadagi ismni yozing",
             removeCard: "Kartani o'chirish",
             removeCardConfirm: "Kartani o'chirasizmi?",
@@ -619,7 +619,7 @@ export const staffUz = {
             poster: "Chop etish uchun QR-kod",
             posterHint:
                 "QR-kodli plakat: shu yerda yuklab oling, bot chatga ham yuboradi. Chop eting yoki Instagramga joylang.",
-            posterSent: "Plakat bot bilan chatga ham yuborildi",
+            posterSent: "Plakat Telegram'ga ham yuborildi",
             posterSentBusiness:
                 "Botingiz sizga yoza olmadi, shuning uchun plakat Zumda Business'ga yuborildi. Botingizni oching va Start bosing.",
             posterSentNone:
@@ -845,13 +845,13 @@ export const staffUz = {
         },
         noteLabel: "Mijozga izoh",
         notePlaceholder: "Trek raqami, mashina raqami, haydovchi telefoni, yo'l haqi",
-        noteHint: "Mijoz buni do'kon botidan oladi va buyurtmasida ko'radi.",
+        noteHint: "Mijoz buni do'kon botidan oladi va buyurtmasida ham ko'radi.",
         noteNeeded: "«Boshqa» bo'lsa, kim olib ketganini yozing",
         /** «Narxi keyin aytiladi»: the dispatcher tells the customer the delivery price. */
         priceLabel: "Yetkazib berish narxi",
         pricePlaceholder: "Masalan: taksi, 25 000 so'm",
         priceNeeded: "Mijozga yetkazib berish narxini yozing",
-        sentToast: "#{n} jo'natildi: mijozga xabar ketdi",
+        sentToast: "#{n} jo'natildi: mijozga xabar berildi",
         addNote: "Izoh qo'shish",
         noteTitle: "#{n}: mijozga izoh",
         noteSend: "Yuborish",

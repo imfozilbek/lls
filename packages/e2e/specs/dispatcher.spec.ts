@@ -110,7 +110,7 @@ test("the dispatcher sees where from and where to, sends it by post with the tra
     await expect(send).toBeDisabled()
     await sheet.getByRole("textbox", { name: "Yetkazib berish narxi" }).fill("Trek: UZ123456")
     await send.click()
-    await expect(page.getByText(`#${order.number} jo'natildi: mijozga xabar ketdi`)).toBeVisible()
+    await expect(page.getByText(`#${order.number} jo'natildi: mijozga xabar berildi`)).toBeVisible()
     await expect(mine.getByText("Pochta orqali jo'natildi")).toBeVisible()
     await expect(mine.getByText("Trek: UZ123456")).toBeVisible()
 

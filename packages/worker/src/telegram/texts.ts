@@ -185,7 +185,7 @@ const BASE = {
         callbackOutdated: "Holat allaqachon o'zgargan",
         /** «Pul keldi» before the customer's screenshot (owner's decision, November 2026). */
         callbackNoReceipt: "Avval mijoz chekni yuklashi kerak. Shundan keyin pulni tekshirasiz.",
-        callbackForbidden: "Bu amal siz uchun emas",
+        callbackForbidden: "Sizda bunga ruxsat yo'q",
         courierBotWelcome:
             "<b>Zumda kuryer boti.</b>\n\nTumandagi do'kon, oshxona va xizmatlar buyurtmalari shu yerga keladi. Ishni boshlash uchun biznes egasidan taklif havolasini so'rang.",
         courierBotHome: "🚚 Siz kuryersiz: {shops}. Smenaga chiqing, buyurtmalar shu yerga keladi.",
@@ -195,7 +195,7 @@ const BASE = {
         /** Without a phone no shop approves the courier and no order comes (owner's decision). */
         courierPhoneFirst:
             "📱 Raqamingizni yuboring: do'kon va mijozlar sizga qo'ng'iroq qila olishi kerak. Raqamsiz buyurtma kelmaydi.",
-        courierNoPhone: "Kuryer hali raqamini yubormagan: raqam kelgach tasdiqlang",
+        courierNoPhone: "Kuryer hali raqamini yubormadi: raqami kelgach tasdiqlang",
         sharePhone: "📱 Raqamni yuborish",
         courierJoinedOwner: "🚚 {name} kuryer bo'lish taklifini qabul qildi. Tasdiqlaysizmi?",
         approveCourier: "✅ Tasdiqlash",
@@ -224,7 +224,7 @@ const BASE = {
         skipNetwork: "Hozir emas",
         networkJoined:
             "✅ Siz tuman tarmog'idasiz. Smenaga chiqing, yaqindagi buyurtmalar shu yerga keladi.",
-        networkSkipped: "Yaxshi. «Yetkazishlarim»da yoqish mumkin.",
+        networkSkipped: "Yaxshi. Keyin «Yetkazishlarim» bo'limida yoqishingiz mumkin.",
         callbackTaken: "Bu buyurtmani allaqachon olishdi",
         inviteInvalid: "😔 Bu taklif havolasi ishlamaydi. Do'kon egasidan yangisini so'rang.",
         myDeliveries: "🚚 Yetkazishlarim",
