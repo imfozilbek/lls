@@ -148,6 +148,8 @@ export const uz = {
         from: "dan",
         addons: "Qo'shimchalar",
         variant: "Turini tanlang",
+        /** The sheet's button until a variant is picked: none is picked for the customer. */
+        pickOne: "Bittasini tanlang",
         toCart: "Savatga · {sum}",
         add: "Qo'shish",
         emptyTitle: "Katalog hali bo'sh",

@@ -10,7 +10,19 @@ import { Button, Stepper } from "../ui/primitives.js"
 
 import type { ProductDTO } from "@zumda/core"
 
-/** A variant: one of a row of tiles, the price under the name. */
+/** Short names three a row, longer two, long ones a row each with the price on the right. */
+const THREE_A_ROW = 8
+const TWO_A_ROW = 16
+
+export function columnsFor(names: readonly string[]): 1 | 2 | 3 {
+    const longest = Math.max(0, ...names.map((name) => name.length))
+    return longest <= THREE_A_ROW ? 3 : longest <= TWO_A_ROW ? 2 : 1
+}
+
+/**
+ * The variants: tiles, none picked until the customer taps one. When every variant costs the
+ * same (colours, kinds), the tiles carry only the names: the price is on the button.
+ */
 function VariantTiles({
     product,
     value,
@@ -23,12 +35,19 @@ function VariantTiles({
     const t = useT()
     const language = useLanguage()
     const variants = product.options?.variants ?? []
+    const onePrice = new Set(variants.map((v) => v.price)).size === 1
+    const columns = columnsFor(variants.map((v) => v.name))
     return (
         <fieldset className="flex flex-col gap-2">
             <legend className="mb-2 px-1 text-sm font-semibold text-tg-hint">
                 {product.options?.group ?? t.shop.variant}
             </legend>
-            <div className="grid grid-cols-3 gap-2">
+            <div
+                className={cn(
+                    "grid gap-2",
+                    columns === 3 ? "grid-cols-3" : columns === 2 ? "grid-cols-2" : "grid-cols-1",
+                )}
+            >
                 {variants.map((variant) => (
                     <button
                         key={variant.id}
@@ -40,16 +59,21 @@ function VariantTiles({
                             onChange(variant.id)
                         }}
                         className={cn(
-                            "tap rounded-control px-2 py-2.5 text-center transition-colors duration-200",
+                            "tap min-h-12 rounded-control px-3 py-2.5 transition-colors duration-200",
+                            columns === 1
+                                ? "flex items-center justify-between gap-3 text-left"
+                                : "text-center",
                             variant.id === value
                                 ? "bg-tg-section text-brand ring-2 ring-inset ring-brand"
                                 : "bg-tg-secondary",
                         )}
                     >
                         <span className="block font-semibold leading-tight">{variant.name}</span>
-                        <span className="block text-sm tabular-nums opacity-80">
-                            {formatMoney(variant.price, language)}
-                        </span>
+                        {onePrice ? null : (
+                            <span className="block shrink-0 text-sm tabular-nums opacity-80">
+                                {formatMoney(variant.price, language)}
+                            </span>
+                        )}
                     </button>
                 ))}
             </div>
@@ -115,8 +139,8 @@ function AddonList({
 }
 
 /**
- * The pick of a product with variants and add-ons, inside its sheet: a variant (the cheapest
- * first chosen), add-ons, how many, and «Savatga · sum». The server prices it again.
+ * The pick of a product with variants and add-ons, inside its sheet: a variant (the customer
+ * taps one), add-ons, how many, and «Savatga · sum». The server prices it again.
  */
 export function OptionsPicker({
     product,
@@ -129,8 +153,9 @@ export function OptionsPicker({
     const language = useLanguage()
     const add = useCart((state) => state.add)
     const variants = product.options?.variants ?? []
-    const cheapest = [...variants].sort((a, b) => a.price - b.price)[0]
-    const [variantId, setVariantId] = useState(cheapest?.id)
+    // None picked for the customer: a silently picked «kichik» is the wrong pizza (November 2026).
+    const [variantId, setVariantId] = useState<string | undefined>(undefined)
+    const unpicked = variants.length > 0 && variantId === undefined
     const [addonIds, setAddonIds] = useState<string[]>([])
     const [count, setCount] = useState(1)
     const pick = { ...(variantId ? { variantId } : {}), addonIds }
@@ -164,6 +189,7 @@ export function OptionsPicker({
                 <Button
                     size="lg"
                     className="flex-1"
+                    disabled={unpicked}
                     onClick={(): void => {
                         haptic.success()
                         const key = lineKey(product.id, pick)
@@ -173,12 +199,18 @@ export function OptionsPicker({
                         onDone()
                     }}
                 >
-                    {fill(t.shop.toCart, {
-                        sum: formatMoney(
-                            lineTotal(product, product.step * Math.min(count, room), unitPrice),
-                            language,
-                        ),
-                    })}
+                    {unpicked
+                        ? t.shop.pickOne
+                        : fill(t.shop.toCart, {
+                              sum: formatMoney(
+                                  lineTotal(
+                                      product,
+                                      product.step * Math.min(count, room),
+                                      unitPrice,
+                                  ),
+                                  language,
+                              ),
+                          })}
                 </Button>
             </div>
         </div>
